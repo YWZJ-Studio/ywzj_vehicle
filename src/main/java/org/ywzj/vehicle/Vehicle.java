@@ -5,22 +5,25 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.ywzj.vehicle.all.AllBlockEntities;
-import org.ywzj.vehicle.all.AllBlocks;
-import org.ywzj.vehicle.all.AllItems;
-import org.ywzj.vehicle.all.AllTabs;
+import org.ywzj.vehicle.all.*;
+import org.ywzj.vehicle.network.Channel;
 
 @Mod(Vehicle.MOD_ID)
 public class Vehicle {
 
     public static final String MOD_ID = "ywzj_vehicle";
+    public static final String PROTOCOL = "1.0";
+    public static final String CHANNEL = "ywzj_vehicle_channel";
 
     public Vehicle(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
         AllBlocks.register(modEventBus);
         AllItems.register(modEventBus);
+        AllEntities.register(modEventBus);
         AllBlockEntities.register(modEventBus);
+        AllSounds.register(modEventBus);
         AllTabs.register(modEventBus);
+        modEventBus.register(Channel.class);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 

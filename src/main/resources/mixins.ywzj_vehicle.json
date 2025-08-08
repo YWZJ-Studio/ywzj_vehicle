@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "org.ywzj.vehicle.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "refmap": "ywzj_tarkov.refmap.json",
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": []
+}

@@ -1,0 +1,10 @@
+{
+  "item_group.ywzj_vehicle.name": "Example",
+  "block.ywzj_vehicle.test_block": "Example Block",
+  "key.category.ywzj_vehicle": "永无止境：载具",
+  "key.ywzj_vehicle.forward.desc": "前进",
+  "key.ywzj_vehicle.backward.desc": "后退",
+  "key.ywzj_vehicle.left.desc": "左转",
+  "key.ywzj_vehicle.right.desc": "右转",
+  "key.ywzj_vehicle.main_weapon_shoot.desc": "主武器射击"
+}

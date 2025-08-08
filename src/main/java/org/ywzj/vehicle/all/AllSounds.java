@@ -1,0 +1,32 @@
+package org.ywzj.vehicle.all;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import org.ywzj.vehicle.Vehicle;
+
+import java.util.HashMap;
+
+public class AllSounds {
+
+    public static final HashMap<String, RegistryObject<SoundEvent>> SOUNDS = new HashMap<>();
+    public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, Vehicle.MOD_ID);
+
+    public static final RegistryObject<SoundEvent> LAV_150_ENGINE_START = registerSoundEvent("lav150_engine_start", new ResourceLocation(Vehicle.MOD_ID, "lav150_engine_start"));
+    public static final RegistryObject<SoundEvent> LAV_150_ENGINE_IDLE = registerSoundEvent("lav150_engine_idle", new ResourceLocation(Vehicle.MOD_ID, "lav150_engine_idle"));
+    public static final RegistryObject<SoundEvent> LAV_150_ENGINE_RUN = registerSoundEvent("lav150_engine_run", new ResourceLocation(Vehicle.MOD_ID, "lav150_engine_run"));
+
+    private static RegistryObject<SoundEvent> registerSoundEvent(String name, ResourceLocation soundResourceLocation) {
+        RegistryObject<SoundEvent> soundEventRegistryObject = SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(soundResourceLocation));
+        SOUNDS.put(name, soundEventRegistryObject);
+        return soundEventRegistryObject;
+    }
+
+    public static void register(IEventBus eventBus) {
+        SOUND_EVENTS.register(eventBus);
+    }
+
+}

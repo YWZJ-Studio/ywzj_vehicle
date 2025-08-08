@@ -1,0 +1,14 @@
+{
+  "lav150_engine_start": {
+    "sounds": ["ywzj_vehicle:lav150/lav150_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.lav150_engine_start"
+  },
+  "lav150_engine_idle": {
+    "sounds": ["ywzj_vehicle:lav150/lav150_engine_idle"],
+    "subtitle": "ywzj_vehicle.sounds.lav150_engine_idle"
+  },
+  "lav150_engine_run": {
+    "sounds": ["ywzj_vehicle:lav150/lav150_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
+  }
+}
