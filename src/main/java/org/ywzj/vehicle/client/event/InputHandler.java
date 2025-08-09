@@ -14,6 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.entity.WeaponUnit;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
@@ -75,7 +76,7 @@ public class InputHandler {
                 sendControl(abstractVehicle, controlUnit);
             }
             if (MAIN_WEAPON_SHOOT_KEY.isDown()) {
-                AbstractVehicle.WeaponUnit weaponUnit = abstractVehicle.weaponUnits.get(index);
+                WeaponUnit weaponUnit = abstractVehicle.weaponUnits.get(index);
                 ItemStack taczWeapon = weaponUnit.getTaczWeapon();
                 if (taczWeapon.getItem() instanceof IGun iGun) {
                     int rpm = iGun.getRPM(taczWeapon);

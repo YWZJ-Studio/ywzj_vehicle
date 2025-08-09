@@ -11,10 +11,12 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.client.resource.BedrockModelLoader;
 import org.ywzj.vehicle.entity.Lav150;
+import org.ywzj.vehicle.entity.WeaponUnit;
 
 public class Lav150Renderer extends EntityRenderer<Lav150> {
 
@@ -50,10 +52,14 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
         float turnRotation = vt * 16;
 
         // 炮塔旋转
-        float machineGunYRot = pEntity.getEntityData().get(Lav150.TURRET_Y_ROT) - pEntity.getYRot();
-
+        float machineGunYRot = 0;
         // 炮塔俯仰
-        float machineGunXRot = pEntity.getEntityData().get(Lav150.TURRET_X_ROT);
+        float machineGunXRot = 0;
+        if (!pEntity.weaponUnits.isEmpty()) {
+            WeaponUnit weaponUnit = pEntity.weaponUnits.get(0);
+            machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot) - pEntity.getYRot();
+            machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
+        }
 
         // 应用动画
         wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));

@@ -56,6 +56,9 @@ public class Lav150 extends AbstractVehicle {
                 .setAmmoCount(1)
                 .setAmmoInBarrel(true)
                 .build());
+        machineGunTurret.xRotSpeed = TURRET_X_ROT_SPEED;
+        machineGunTurret.yRotSpeed = TURRET_Y_ROT_SPEED;
+        machineGunTurret.maxXRot = MAX_TURRET_X_ROT;
         this.weaponUnits.add(machineGunTurret);
     }
 
@@ -69,6 +72,18 @@ public class Lav150 extends AbstractVehicle {
     }
 
     @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
+        super.onSyncedDataUpdated(pKey);
+        if (TURRET_X_ROT.equals(pKey)) {
+            WeaponUnit machineGunTurret = weaponUnits.get(0);
+            machineGunTurret.xRot = entityData.get(TURRET_X_ROT);
+        } else if (TURRET_Y_ROT.equals(pKey)) {
+            WeaponUnit machineGunTurret = weaponUnits.get(0);
+            machineGunTurret.yRot = entityData.get(TURRET_Y_ROT);
+        }
+    }
+
+    @Override
     public void tick() {
         super.tick();
         if (level().isClientSide) {
@@ -77,8 +92,8 @@ public class Lav150 extends AbstractVehicle {
             tickSound();
         } else {
             tickMove();
-            tickWeapon();
         }
+        tickWeapon();
     }
 
     @Override
@@ -124,12 +139,12 @@ public class Lav150 extends AbstractVehicle {
             return;
         }
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        float xRot = camera.getXRot() - 20;
+        float xRot = camera.getXRot() - 10;
         float yRot = camera.getYRot();
         WeaponUnit machineGunTurret = weaponUnits.get(0);
-        if (machineGunTurret.xRot != xRot || machineGunTurret.yRot != yRot) {
-            machineGunTurret.xRot = xRot;
-            machineGunTurret.yRot = yRot;
+        if (machineGunTurret.aimXRot != xRot || machineGunTurret.aimXRot != yRot) {
+            machineGunTurret.aimXRot = xRot;
+            machineGunTurret.aimYRot = yRot;
             ClientWeaponUnitControl control = new ClientWeaponUnitControl();
             control.vehicleEntityId = this.getId();
             control.weaponIndex = 0;
@@ -243,22 +258,7 @@ public class Lav150 extends AbstractVehicle {
 
     private void tickWeapon() {
         WeaponUnit machineGunTurret = weaponUnits.get(0);
-        if (machineGunTurret.xRot < machineGunTurret.aimXRot) {
-            machineGunTurret.xRot += TURRET_X_ROT_SPEED;
-            machineGunTurret.xRot = Math.min(machineGunTurret.xRot, machineGunTurret.aimXRot);
-            machineGunTurret.xRot = Math.min(machineGunTurret.xRot, MAX_TURRET_X_ROT);
-        } else if (machineGunTurret.xRot > machineGunTurret.aimXRot) {
-            machineGunTurret.xRot -= TURRET_X_ROT_SPEED;
-            machineGunTurret.xRot = Math.max(machineGunTurret.xRot, machineGunTurret.aimXRot);
-            machineGunTurret.xRot = Math.max(machineGunTurret.xRot, -MAX_TURRET_X_ROT);
-        }
-        if (machineGunTurret.yRot < machineGunTurret.aimYRot) {
-            machineGunTurret.yRot += TURRET_Y_ROT_SPEED;
-            machineGunTurret.yRot = Math.min(machineGunTurret.yRot, machineGunTurret.aimYRot);
-        } else if (machineGunTurret.yRot > machineGunTurret.aimYRot) {
-            machineGunTurret.yRot -= TURRET_Y_ROT_SPEED;
-            machineGunTurret.yRot = Math.max(machineGunTurret.yRot, machineGunTurret.aimYRot);
-        }
+        machineGunTurret.tick();
         this.entityData.set(TURRET_X_ROT, machineGunTurret.xRot);
         this.entityData.set(TURRET_Y_ROT, machineGunTurret.yRot);
     }
@@ -267,7 +267,7 @@ public class Lav150 extends AbstractVehicle {
     public void shoot(int weaponIndex) {
         if (weaponIndex == 0) {
             WeaponUnit machineGunTurret = weaponUnits.get(0);
-            Vec3 ammoSpawnPosition = this.position().add(0, 1, 0);
+            Vec3 ammoSpawnPosition = this.position().add(0, 2.5, 0);
             machineGunTurret.shoot(ammoSpawnPosition, true, null);
         }
     }

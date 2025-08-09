@@ -5,6 +5,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.entity.WeaponUnit;
 
 import java.util.function.Supplier;
 
@@ -51,7 +52,7 @@ public class ClientWeaponUnitControl {
                     if (message.shoot) {
                         vehicle.shoot(message.weaponIndex);
                     } else {
-                        AbstractVehicle.WeaponUnit serverWeaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
+                        WeaponUnit serverWeaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
                         serverWeaponUnit.aimXRot = message.xRot;
                         serverWeaponUnit.aimYRot = message.yRot % 360;
                     }

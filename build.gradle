@@ -85,12 +85,19 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
     jarJar(implementation(fg.deobf("xxx:simplebedrockmodel-1.5.0-forge+mc1.20.1:1"))) {
         jarJar.ranged(it, "[1.5.0,)")
     }
     compileOnly("com.maydaymemory:mae:1.0.2")
     implementation fg.deobf('xxx:tacz-1.20.1-1.1.6-hotfix-lrl:1')
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.3.6")) {
+        jarJar.ranged(it, "[0.3.6,)")
+    }
+
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 tasks.named('processResources', ProcessResources).configure {

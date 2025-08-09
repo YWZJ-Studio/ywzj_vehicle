@@ -5,6 +5,8 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ywzj.vehicle.all.*;
 import org.ywzj.vehicle.network.Channel;
 
@@ -14,6 +16,7 @@ public class Vehicle {
     public static final String MOD_ID = "ywzj_vehicle";
     public static final String PROTOCOL = "1.0";
     public static final String CHANNEL = "ywzj_vehicle_channel";
+    public static final Logger LOGGER = LogManager.getLogger(Vehicle.class);
 
     public Vehicle(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
