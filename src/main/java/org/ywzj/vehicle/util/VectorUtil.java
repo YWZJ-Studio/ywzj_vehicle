@@ -14,8 +14,8 @@ import org.joml.Vector4f;
 public class VectorUtil {
 
     public static double fov = 70;
-    public static Matrix4f modelViewMatrix;
-    public static Matrix4f projectionMatrix;
+    public static Matrix4f modelViewMatrix = new Matrix4f();
+    public static Matrix4f projectionMatrix = new Matrix4f();
 
     // 感谢 Minecraft-Ping-Wheel 开源
     // https://github.com/LukenSkyne/Minecraft-Ping-Wheel/blob/138295954dab9d2451ad19e16d8d413ef018a2d8/common/src/main/java/nx/pingwheel/common/helper/MathUtils.java#L15

@@ -1,11 +1,11 @@
 package org.ywzj.vehicle.entity;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -39,15 +39,23 @@ public abstract class AbstractVehicle extends Mob {
         return new Vec3(0, 1.5, 0);
     }
 
+    @Override
+    public void load(CompoundTag pCompound) {
+        super.load(pCompound);
+        if (this.getDriver() != null) {
+            controlUnit.setOperator(this.getDriver());
+        }
+    }
+
     public static class ControlUnit {
 
-        public Player operator;
+        public Entity operator;
         public boolean forward;
         public boolean backward;
         public boolean left;
         public boolean right;
 
-        public void setOperator(Player operator) {
+        public void setOperator(Entity operator) {
             this.operator = operator;
         }
 

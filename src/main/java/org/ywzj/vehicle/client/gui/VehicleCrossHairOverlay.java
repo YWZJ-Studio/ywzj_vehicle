@@ -11,6 +11,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.entity.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
@@ -20,11 +21,13 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
     private static double screenYO = 0;
     private static double screenX = 0;
     private static double screenY = 0;
+    private static boolean show = true;
 
     private static double screenAimXO = 0;
     private static double screenAimYO = 0;
     private static double screenAimX = 0;
     private static double screenAimY = 0;
+    private static boolean showAim = true;
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -36,21 +39,25 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             var weapon = !vehicle.weaponUnits.isEmpty() ? vehicle.weaponUnits.get(0) : null;
             if (weapon != null) {
-                double x = Mth.lerp(partialTick, screenXO, screenX);
-                double y = Mth.lerp(partialTick, screenYO, screenY);
+                if (show) {
+                    double x = Mth.lerp(partialTick, screenXO, screenX);
+                    double y = Mth.lerp(partialTick, screenYO, screenY);
 
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().translate(x, y, 0);
-                guiGraphics.fill(-1, -1, 1, 1, 0xFF00FF00);
-                guiGraphics.pose().popPose();
+                    guiGraphics.pose().pushPose();
+                    guiGraphics.pose().translate(x, y, 0);
+                    guiGraphics.fill(-1, -1, 1, 1, 0xFF00FF00);
+                    guiGraphics.pose().popPose();
+                }
 
-                double x1 = Mth.lerp(partialTick, screenAimXO, screenAimX);
-                double y1 = Mth.lerp(partialTick, screenAimYO, screenAimY);
+                if (showAim) {
+                    double x = Mth.lerp(partialTick, screenAimXO, screenAimX);
+                    double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
 
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().translate(x1, y1, 0);
-                guiGraphics.fill(-2, -2, 2, 2, 0xFFFF0000);
-                guiGraphics.pose().popPose();
+                    guiGraphics.pose().pushPose();
+                    guiGraphics.pose().translate(x, y, 0);
+                    guiGraphics.fill(-2, -2, 2, 2, 0xFFFF0000);
+                    guiGraphics.pose().popPose();
+                }
             }
         }
     }
@@ -68,35 +75,38 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             var weapon = !vehicle.weaponUnits.isEmpty() ? vehicle.weaponUnits.get(0) : null;
             if (weapon != null) {
+                Vec3 start = player.position().add(0, 2.5, 0);
 
-                Vec3 start = vehicle.position().add(0, 2.5, 0);
-                Vec3 end = start.add(calculateViewVector(weapon.xRot, weapon.yRot).normalize().scale(128));
-
-                var r = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-                Vec3 hitPos = r.getLocation();
-                Vec3 screenPos = VectorUtil.worldToScreen(hitPos);
-                if (screenPos.z >= 0) {
+                Vec3 screenPos1 = getHitScreenPos(start, weapon.xRot, weapon.yRot, player);
+                if (screenPos1.z >= 0) {
                     screenXO = screenX;
                     screenYO = screenY;
-                    screenX = screenPos.x;
-                    screenY = screenPos.y;
+                    screenX = screenPos1.x;
+                    screenY = screenPos1.y;
+                    show = true;
+                } else {
+                    show = false;
                 }
 
-                start = vehicle.position().add(0, 2.5, 0);
-                end = start.add(calculateViewVector(weapon.aimXRot, weapon.aimYRot).normalize().scale(128));
-
-                r = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-                hitPos = r.getLocation();
-                screenPos = VectorUtil.worldToScreen(hitPos);
-                if (screenPos.z >= 0) {
+                Vec3 screenPos2 = getHitScreenPos(start, weapon.aimXRot, weapon.aimYRot, player);
+                if (screenPos1.z >= 0) {
                     screenAimXO = screenAimX;
                     screenAimYO = screenAimY;
-                    screenAimX = screenPos.x;
-                    screenAimY = screenPos.y;
+                    screenAimX = screenPos2.x;
+                    screenAimY = screenPos2.y;
+                    showAim = true;
+                } else  {
+                    showAim = false;
                 }
-
             }
         }
+    }
+
+    private static @NotNull Vec3 getHitScreenPos(Vec3 start, float xRot, float yRot, Player player) {
+        Vec3 end = start.add(calculateViewVector(xRot, yRot).normalize().scale(128));
+        var result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        Vec3 hitPos = result.getLocation();
+        return VectorUtil.worldToScreen(hitPos);
     }
 
     public static Vec3 calculateViewVector(float pXRot, float pYRot) {

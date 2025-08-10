@@ -18,6 +18,7 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> LAV_150_ENGINE_START = registerSoundEvent("lav150_engine_start", new ResourceLocation(Vehicle.MOD_ID, "lav150_engine_start"));
     public static final RegistryObject<SoundEvent> LAV_150_ENGINE_IDLE = registerSoundEvent("lav150_engine_idle", new ResourceLocation(Vehicle.MOD_ID, "lav150_engine_idle"));
     public static final RegistryObject<SoundEvent> LAV_150_ENGINE_RUN = registerSoundEvent("lav150_engine_run", new ResourceLocation(Vehicle.MOD_ID, "lav150_engine_run"));
+    public static final RegistryObject<SoundEvent> LAV_150_SHOOT = registerSoundEvent("entity.lav150.shoot", new ResourceLocation(Vehicle.MOD_ID, "entity.lav150.shoot"));
 
     private static RegistryObject<SoundEvent> registerSoundEvent(String name, ResourceLocation soundResourceLocation) {
         RegistryObject<SoundEvent> soundEventRegistryObject = SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(soundResourceLocation));

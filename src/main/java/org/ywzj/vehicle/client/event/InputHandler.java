@@ -1,11 +1,9 @@
 package org.ywzj.vehicle.client.event;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
@@ -77,14 +75,11 @@ public class InputHandler {
             }
             if (MAIN_WEAPON_SHOOT_KEY.isDown()) {
                 WeaponUnit weaponUnit = abstractVehicle.weaponUnits.get(index);
-                ItemStack taczWeapon = weaponUnit.getTaczWeapon();
-                if (taczWeapon.getItem() instanceof IGun iGun) {
-                    int rpm = iGun.getRPM(taczWeapon);
-                    float interval = 60f / rpm * 1000;
-                    if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                        sendShoot(abstractVehicle, index);
-                        lastFireTimeMillis = System.currentTimeMillis();
-                    }
+                int rpm = 400;
+                float interval = 60f / rpm * 1000;
+                if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
+                    sendShoot(abstractVehicle, index);
+                    lastFireTimeMillis = System.currentTimeMillis();
                 }
             }
         }

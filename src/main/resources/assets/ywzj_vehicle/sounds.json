@@ -10,5 +10,9 @@
   "lav150_engine_run": {
     "sounds": ["ywzj_vehicle:lav150/lav150_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
+  },
+  "entity.lav150.shoot": {
+    "sounds": ["ywzj_vehicle:lav150/shoot"],
+    "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
   }
 }

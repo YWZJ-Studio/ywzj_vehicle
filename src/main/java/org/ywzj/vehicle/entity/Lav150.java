@@ -1,7 +1,5 @@
 package org.ywzj.vehicle.entity;
 
-import com.tacz.guns.api.item.builder.GunItemBuilder;
-import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -9,7 +7,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -50,15 +47,11 @@ public class Lav150 extends AbstractVehicle {
 
     public Lav150(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        WeaponUnit machineGunTurret = new WeaponUnit(this, GunItemBuilder.create()
-                .setId(new ResourceLocation("tacz:m107"))
-                .setFireMode(FireMode.AUTO)
-                .setAmmoCount(1)
-                .setAmmoInBarrel(true)
-                .build());
+        WeaponUnit machineGunTurret = new WeaponUnit(this);
         machineGunTurret.xRotSpeed = TURRET_X_ROT_SPEED;
         machineGunTurret.yRotSpeed = TURRET_Y_ROT_SPEED;
-        machineGunTurret.maxXRot = MAX_TURRET_X_ROT;
+        machineGunTurret.maxXRot = 15;
+        machineGunTurret.minXRot = -30;
         this.weaponUnits.add(machineGunTurret);
     }
 
@@ -122,7 +115,6 @@ public class Lav150 extends AbstractVehicle {
             if (index == 0) {
                 controlUnit.setOperator(null);
             }
-            weaponUnits.get(index).setOperator(null);
         }
         level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.HOSTILE);
         return this.position().add(new Vec3(getLookAngle().z, 0,  getLookAngle().x).normalize().scale(-2.5f));
@@ -267,8 +259,10 @@ public class Lav150 extends AbstractVehicle {
     public void shoot(int weaponIndex) {
         if (weaponIndex == 0) {
             WeaponUnit machineGunTurret = weaponUnits.get(0);
-            Vec3 ammoSpawnPosition = this.position().add(0, 2.5, 0);
-            machineGunTurret.shoot(ammoSpawnPosition, true, null);
+            Vec3 offset = calculateViewVector(machineGunTurret.xRot, machineGunTurret.yRot).normalize().scale(2.7f);
+            Vec3 ammoSpawnPosition = this.position().add(0, 2.5, 0).subtract(this.getDeltaMovement().multiply(1, 0, 1).scale(3)).add(offset);
+            machineGunTurret.shoot(ammoSpawnPosition);
+            this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
         }
     }
 
