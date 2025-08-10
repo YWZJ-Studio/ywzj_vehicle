@@ -15,7 +15,7 @@ public class AllEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Vehicle.MOD_ID);
 
     public static final RegistryObject<EntityType<Lav150>> LAV150 = ENTITIES.register("lav150",
-            () -> EntityType.Builder.of(Lav150::new, MobCategory.MISC).sized(4f, 2.5f)
+            () -> EntityType.Builder.of(Lav150::new, MobCategory.MISC).sized(2.5f, 2.5f)
                     .clientTrackingRange(128)
                     .build("lav150"));
 

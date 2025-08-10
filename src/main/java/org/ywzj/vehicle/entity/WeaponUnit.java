@@ -24,7 +24,7 @@ public class WeaponUnit {
 
     public void shoot(Vec3 ammoSpawnPosition) {
         BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition);
-        bulletEntity.shootFromRotation(vehicle, xRot, yRot, 0, 10.0f, 0f);
+        bulletEntity.shootFromRotation(vehicle, xRot, yRot, 0, 10.0f, 1f);
         bulletEntity.setDamage(25);
         bulletEntity.setHeadShot(1.5f);
         vehicle.level().addFreshEntity(bulletEntity);

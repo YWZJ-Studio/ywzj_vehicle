@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.client.resource.BedrockModelLoader;
@@ -27,7 +28,16 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
     @Override
     public void render(Lav150 pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         pPoseStack.pushPose();
-        pPoseStack.mulPose(Axis.YP.rotationDegrees(180 - pEntityYaw));
+
+        Vec3 root = new Vec3(0, 0, 0);
+
+        pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+        pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.prevRoll, pEntity.getRoll())), (float) root.x, (float) root.y, (float) root.z);
+
+        pPoseStack.rotateAround(Axis.YP.rotationDegrees(180), (float) root.x, (float) root.y, (float) root.z);
+
+
         BedrockModel model = BedrockModelLoader.getModel(BedrockModelLoader.LAV150);
         VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(Vehicle.modLoc("textures/entity/lav150.png")));
 
