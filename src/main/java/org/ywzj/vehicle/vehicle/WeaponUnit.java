@@ -1,10 +1,19 @@
-package org.ywzj.vehicle.entity;
+package org.ywzj.vehicle.vehicle;
 
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkEvent;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.weapon.BulletEntity;
+import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+
+import java.util.function.Supplier;
 
 public class WeaponUnit {
+
     private final AbstractVehicle vehicle;
     private LivingEntity operator;
     public float aimXRot;
@@ -56,4 +65,23 @@ public class WeaponUnit {
             }
         }
     }
+
+    public static void onClientMessageReceived(ClientWeaponUnitControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        if (ctxSupplier.get().getSender() != null) {
+            Level level = ctxSupplier.get().getSender().level();
+            Entity entity = level.getEntity(message.vehicleEntityId);
+            if (entity instanceof AbstractVehicle vehicle) {
+                if (message.weaponIndex < vehicle.weaponUnits.size()) {
+                    if (message.shoot) {
+                        vehicle.shoot(message.weaponIndex);
+                    } else {
+                        WeaponUnit serverWeaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
+                        serverWeaponUnit.aimXRot = message.xRot;
+                        serverWeaponUnit.aimYRot = message.yRot % 360;
+                    }
+                }
+            }
+        }
+    }
+
 }

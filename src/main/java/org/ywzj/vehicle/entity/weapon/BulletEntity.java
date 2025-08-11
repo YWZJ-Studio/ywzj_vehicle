@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.entity;
+package org.ywzj.vehicle.entity.weapon;
 
 import com.tacz.guns.api.entity.ITargetEntity;
 import com.tacz.guns.api.entity.KnockBackModifier;
@@ -14,7 +14,6 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -29,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -42,16 +42,6 @@ import java.util.function.Function;
  * 动能武器打出的子弹实体。
  */
 public class BulletEntity extends Projectile implements IEntityAdditionalSpawnData {
-    public static final EntityType<BulletEntity> TYPE = EntityType.Builder.<BulletEntity>of(BulletEntity::new, MobCategory.MISC)
-            .noSummon()
-            .noSave()
-            .fireImmune()
-            .sized(0.0625F, 0.0625F)
-            .clientTrackingRange(5)
-            .updateInterval(5)
-            .setShouldReceiveVelocityUpdates(false)
-            .setCustomClientFactory(BulletEntity::new)
-            .build("bullet");
 
     private float damage;
     private int life = 200;
@@ -63,7 +53,6 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
     private int pierce = 1;
     // 初始位置
     private Vec3 startPos;
-
     private float armorIgnore;
     private float headShot;
 
@@ -78,19 +67,18 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
     }
 
     public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z) {
-        this(TYPE, level);
+        this(AllEntities.BULLET.get(), level);
         this.setOwner(throwerIn);
         this.setPos(x, y, z);
         this.startPos = this.position();
     }
 
     public BulletEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(TYPE, level);
+        super(AllEntities.BULLET.get(), level);
     }
 
     @Override
-    protected void defineSynchedData() {
-    }
+    protected void defineSynchedData() {}
 
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
@@ -200,7 +188,6 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
                 }
             }
             this.onHitBlock(result, startVec, endVec);
-
         }
     }
 
@@ -397,4 +384,5 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
         }
         return super.ownedBy(entity);
     }
+
 }

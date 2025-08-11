@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.entity;
+package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -24,6 +24,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Lav150 extends AbstractVehicle {
 
@@ -53,6 +54,11 @@ public class Lav150 extends AbstractVehicle {
         machineGunTurret.maxXRot = 15;
         machineGunTurret.minXRot = -30;
         this.weaponUnits.add(machineGunTurret);
+    }
+
+    @Override
+    public Vec3 getCameraOffset() {
+        return new Vec3(0, 1.5, 0);
     }
 
     @Override
@@ -115,6 +121,7 @@ public class Lav150 extends AbstractVehicle {
             if (index == 0) {
                 controlUnit.setOperator(null);
             }
+            weaponUnits.get(index).setOperator(null);
         }
         level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.HOSTILE);
         return this.position().add(new Vec3(getLookAngle().z, 0,  getLookAngle().x).normalize().scale(-2.5f));

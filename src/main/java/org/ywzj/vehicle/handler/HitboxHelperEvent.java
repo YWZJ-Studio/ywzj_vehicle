@@ -9,6 +9,7 @@ import org.ywzj.vehicle.util.HitboxHelper;
 
 @Mod.EventBusSubscriber
 public class HitboxHelperEvent {
+
     @SubscribeEvent(receiveCanceled = true)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.side == LogicalSide.SERVER && event.phase == TickEvent.Phase.END) {
@@ -18,6 +19,7 @@ public class HitboxHelperEvent {
 
     @SubscribeEvent(receiveCanceled = true)
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        HitboxHelper.onPlayerLoggedOut(event.getEntity());
+        HitboxHelper.clearCache(event.getEntity());
     }
+
 }

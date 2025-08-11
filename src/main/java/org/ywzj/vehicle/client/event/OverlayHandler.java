@@ -7,7 +7,7 @@ import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 @Mod.EventBusSubscriber
 public class OverlayHandler {
@@ -26,4 +26,5 @@ public class OverlayHandler {
             }
         }
     }
+
 }

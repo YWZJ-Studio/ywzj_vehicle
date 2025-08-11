@@ -1,10 +1,8 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
-import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.ControlUnit;
 
 import java.util.function.Supplier;
 
@@ -37,19 +35,7 @@ public class ClientVehicleMoveControl {
     }
 
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        if (ctxSupplier.get().getSender() != null) {
-            Level level = ctxSupplier.get().getSender().level();
-            Entity entity = level.getEntity(message.vehicleEntityId);
-            if (entity instanceof AbstractVehicle vehicle) {
-                if (ctxSupplier.get().getSender() != vehicle.controlUnit.operator) {
-                    return;
-                }
-                vehicle.controlUnit.forward = message.forward;
-                vehicle.controlUnit.backward = message.backward;
-                vehicle.controlUnit.left = message.left;
-                vehicle.controlUnit.right = message.right;
-            }
-        }
+        ControlUnit.onClientMessageReceived(message, ctxSupplier);
     }
 
 }

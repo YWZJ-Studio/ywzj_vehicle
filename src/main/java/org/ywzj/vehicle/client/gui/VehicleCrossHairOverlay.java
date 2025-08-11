@@ -12,11 +12,12 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
 @Mod.EventBusSubscriber
 public class VehicleCrossHairOverlay implements IGuiOverlay {
+
     private static double screenXO = 0;
     private static double screenYO = 0;
     private static double screenX = 0;
@@ -45,7 +46,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
 
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    guiGraphics.fill(-1, -1, 1, 1, 0xFF00FF00);
+                    drawCircle(guiGraphics, 0 ,0, 10, 0xFFFFFFFF);
                     guiGraphics.pose().popPose();
                 }
 
@@ -55,7 +56,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
 
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    guiGraphics.fill(-2, -2, 2, 2, 0xFFFF0000);
+                    drawCircle(guiGraphics, 0 ,0, 5, 0xFFFFFFFF);
                     guiGraphics.pose().popPose();
                 }
             }
@@ -117,6 +118,15 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         float f4 = Mth.cos(f);
         float f5 = Mth.sin(f);
         return new Vec3(f3 * f4, -f5, f2 * f4);
+    }
+
+    private static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
+        float c = 2 * 3.1415f / 32;
+        for (int i = 0; i < 32; i += 1) {
+            float rx = Mth.cos(c * i) * r;
+            float ry = Mth.sin(c * i) * r;
+            guiGraphics.fill((int) (x + rx), (int) (y + ry), (int) (x + rx) + 1, (int) (y + ry) + 1, color);
+        }
     }
 
 }

@@ -16,8 +16,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.client.resource.BedrockModelLoader;
-import org.ywzj.vehicle.entity.Lav150;
-import org.ywzj.vehicle.entity.WeaponUnit;
+import org.ywzj.vehicle.entity.vehicle.Lav150;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Lav150Renderer extends EntityRenderer<Lav150> {
 

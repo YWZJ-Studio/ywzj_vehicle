@@ -14,10 +14,11 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class EntityUtil {
+
     private static final Predicate<Entity> PROJECTILE_TARGETS = input -> input != null && input.isPickable() && !input.isSpectator();
+
     @Nullable
     public static EntityResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
-
         Vec3 hitVec = null;
         Entity hitEntity = null;
         boolean headshot = false;
@@ -95,6 +96,7 @@ public class EntityUtil {
     }
 
     public static class EntityResult {
+
         private final Entity entity;
         private final Vec3 hitVec;
         private final boolean headshot;
@@ -119,5 +121,7 @@ public class EntityUtil {
         public boolean isHeadshot() {
             return this.headshot;
         }
+
     }
+
 }

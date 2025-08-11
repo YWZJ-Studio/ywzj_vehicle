@@ -16,11 +16,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.entity.BulletEntity;
+import org.ywzj.vehicle.entity.weapon.BulletEntity;
 
 import java.util.Optional;
 
 public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
+
     public BulletEntityRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
@@ -75,4 +76,5 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
     public ResourceLocation getTextureLocation(@NotNull BulletEntity entity) {
         return null;
     }
+
 }

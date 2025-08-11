@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.WeakHashMap;
 
 public final class HitboxHelper {
+
     // 玩家位置缓存表
     private static final WeakHashMap<Player, LinkedList<Vec3>> PLAYER_POSITION = new WeakHashMap<>();
     // 玩家命中箱缓存表
@@ -24,9 +25,7 @@ public final class HitboxHelper {
 
     public static void onPlayerTick(Player player) {
         if (player.isSpectator()) {
-            PLAYER_POSITION.remove(player);
-            PLAYER_HITBOXES.remove(player);
-            PLAYER_VELOCITY.remove(player);
+            clearCache(player);
             return;
         }
         LinkedList<Vec3> positions = PLAYER_POSITION.computeIfAbsent(player, p -> new LinkedList<>());
@@ -46,7 +45,7 @@ public final class HitboxHelper {
         }
     }
 
-    public static void onPlayerLoggedOut(Player player) {
+    public static void clearCache(Player player) {
         PLAYER_POSITION.remove(player);
         PLAYER_HITBOXES.remove(player);
         PLAYER_VELOCITY.remove(player);
@@ -109,4 +108,5 @@ public final class HitboxHelper {
         boundingBox = boundingBox.move(velocity.multiply(-5, -5, -5));
         return boundingBox;
     }
+
 }

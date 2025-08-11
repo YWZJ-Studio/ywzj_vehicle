@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.entity;
+package org.ywzj.vehicle.entity.vehicle;
 
 import com.mojang.math.Axis;
 import net.minecraft.core.BlockPos;
@@ -9,6 +9,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -20,6 +21,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
+import org.ywzj.vehicle.vehicle.ControlUnit;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +31,7 @@ public abstract class AbstractVehicle extends Mob {
 
     public ControlUnit controlUnit = new ControlUnit();
     public List<WeaponUnit> weaponUnits = new ArrayList<>();
-
-    public float roll;
+    private float roll;
     public float prevRoll;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -37,8 +39,18 @@ public abstract class AbstractVehicle extends Mob {
         this.setMaxUpStep(1.0f);
     }
 
+    public abstract Vec3 getCameraOffset();
+
     public Entity getDriver() {
         return getFirstPassenger();
+    }
+
+    public WeaponUnit getOwnWeaponUnit(LivingEntity pPassenger) {
+        int index = getPassengers().indexOf(pPassenger);
+        if (index != -1 && index < weaponUnits.size()) {
+            return weaponUnits.get(index);
+        }
+        return null;
     }
 
     public abstract void shoot(int weaponIndex);
@@ -51,22 +63,38 @@ public abstract class AbstractVehicle extends Mob {
         return super.hurt(source, amount);
     }
 
-    public Vec3 getCameraOffset() {
-        return new Vec3(0, 1.5, 0);
-    }
-
     @Override
     public void load(CompoundTag pCompound) {
         super.load(pCompound);
         if (this.getDriver() != null) {
             controlUnit.setOperator(this.getDriver());
         }
+        for (int index = 0; index < getPassengers().size(); index++) {
+            if (index >= weaponUnits.size()) {
+                break;
+            }
+            if (getPassengers().get(index) instanceof LivingEntity livingEntity) {
+                weaponUnits.get(index).setOperator(livingEntity);
+            }
+        }
+    }
+
+    @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
+        int index = getPassengers().indexOf(pPassenger);
+        if (index != -1) {
+            if (index == 0) {
+                controlUnit.setOperator(null);
+            }
+            weaponUnits.get(index).setOperator(null);
+        }
+        return super.getDismountLocationForPassenger(pPassenger);
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.prevRoll = this.getRoll();
+        this.prevRoll = this.roll;
         this.terrainCompact(2.7f, 3.61f);
     }
 
@@ -185,33 +213,12 @@ public abstract class AbstractVehicle extends Mob {
             float diffX = org.joml.Math.clamp(-15f, 15f, Mth.wrapDegrees((float) (-(x1 + x2)) - getXRot()));
             setXRot(Mth.clamp(getXRot() + 0.15f * diffX, -45f, 45f));
 
-            float diffZ = Math.clamp(-15f, 15f, Mth.wrapDegrees((float) (-(z1 + z2)) - getRoll()));
-            setZRot(Mth.clamp(getRoll() + 0.15f * diffZ, -45f, 45f));
+            float diffZ = Math.clamp(-15f, 15f, Mth.wrapDegrees((float) (-(z1 + z2)) - roll));
+            setZRot(Mth.clamp(roll + 0.15f * diffZ, -45f, 45f));
         } else if (isInWater()) {
             setXRot(getXRot() * 0.9f);
-            setZRot(getRoll() * 0.9f);
+            setZRot(roll * 0.9f);
         }
-    }
-
-    public static class ControlUnit {
-
-        public Entity operator;
-        public boolean forward;
-        public boolean backward;
-        public boolean left;
-        public boolean right;
-
-        public void setOperator(Entity operator) {
-            this.operator = operator;
-        }
-
-        public void reset() {
-            forward = false;
-            backward = false;
-            left = false;
-            right = false;
-        }
-
     }
 
 }

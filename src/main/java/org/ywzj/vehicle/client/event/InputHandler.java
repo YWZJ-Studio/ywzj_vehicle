@@ -11,11 +11,12 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.Vehicle;
-import org.ywzj.vehicle.entity.AbstractVehicle;
-import org.ywzj.vehicle.entity.WeaponUnit;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.vehicle.ControlUnit;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 @Mod.EventBusSubscriber(modid = Vehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class InputHandler {
@@ -66,7 +67,7 @@ public class InputHandler {
                 return;
             }
             if (index == 0) {
-                AbstractVehicle.ControlUnit controlUnit = new AbstractVehicle.ControlUnit();
+                ControlUnit controlUnit = new ControlUnit();
                 controlUnit.forward = FORWARD.isDown();
                 controlUnit.backward = BACKWARD.isDown();
                 controlUnit.left = LEFT.isDown();
@@ -85,7 +86,7 @@ public class InputHandler {
         }
     }
 
-    private static void sendControl(AbstractVehicle abstractVehicle, AbstractVehicle.ControlUnit controlUnit) {
+    private static void sendControl(AbstractVehicle abstractVehicle, ControlUnit controlUnit) {
         ClientVehicleMoveControl control = new ClientVehicleMoveControl();
         control.vehicleEntityId = abstractVehicle.getId();
         control.forward = controlUnit.forward;

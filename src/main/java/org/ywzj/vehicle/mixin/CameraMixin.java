@@ -10,10 +10,11 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 @Mixin(Camera.class)
 public abstract class CameraMixin {
+
     @Shadow
     protected abstract void move(double x, double y, double z);
 

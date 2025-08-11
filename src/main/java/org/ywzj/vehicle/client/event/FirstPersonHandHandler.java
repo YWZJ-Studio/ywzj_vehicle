@@ -6,7 +6,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.ywzj.vehicle.entity.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 @Mod.EventBusSubscriber
 public class FirstPersonHandHandler {
@@ -23,4 +23,5 @@ public class FirstPersonHandHandler {
             event.setCanceled(true);
         }
     }
+
 }
