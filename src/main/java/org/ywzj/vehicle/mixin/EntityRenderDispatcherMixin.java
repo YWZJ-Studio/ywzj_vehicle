@@ -1,0 +1,24 @@
+package org.ywzj.vehicle.mixin;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.world.entity.Entity;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.ywzj.vehicle.client.render.util.OBBRenderer;
+import org.ywzj.vehicle.entity.OBBEntity;
+
+@Mixin(EntityRenderDispatcher.class)
+public class EntityRenderDispatcherMixin {
+
+    @Inject(method = "renderHitbox(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;F)V",
+            at = @At("RETURN"))
+    private static void renderHitbox(PoseStack pMatrixStack, VertexConsumer pBuffer, Entity pEntity, float pPartialTicks, CallbackInfo ci) {
+        if (pEntity instanceof OBBEntity obbEntity) {
+            OBBRenderer.INSTANCE.render(pEntity.position(), obbEntity.getOBBs(), pMatrixStack, pBuffer, 0, 1, 0, 1, pPartialTicks);
+        }
+    }
+}

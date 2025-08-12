@@ -6,6 +6,7 @@
   "refmap": "ywzj_tarkov.refmap.json",
   "client": [
     "CameraMixin",
+    "EntityRenderDispatcherMixin",
     "LevelRendererMixin",
     "MouseHandlerMixin"
   ],

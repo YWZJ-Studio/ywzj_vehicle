@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -20,13 +21,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.util.OBB;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
-public class Lav150 extends AbstractVehicle {
+import java.util.List;
+
+public class Lav150 extends AbstractVehicle implements OBBEntity {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(Lav150.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(Lav150.class, EntityDataSerializers.FLOAT);
@@ -46,6 +55,9 @@ public class Lav150 extends AbstractVehicle {
     private VehicleSound engineIdleSound;
     private VehicleSound engineRunSound;
 
+    private OBB obb1;
+    private OBB obb2;
+
     public Lav150(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         WeaponUnit machineGunTurret = new WeaponUnit(this);
@@ -54,6 +66,41 @@ public class Lav150 extends AbstractVehicle {
         machineGunTurret.maxXRot = 15;
         machineGunTurret.minXRot = -30;
         this.weaponUnits.add(machineGunTurret);
+        obb1 = new OBB(this.position().toVector3f(), new Vector3f(0.65f, 0.35f, 1f), new Quaternionf());
+        obb2 = new OBB(this.position().toVector3f(), new Vector3f(1.25f, 1f, 2.25f), new Quaternionf());
+    }
+
+    @Override
+    public List<OBB> getOBBs() {
+        return List.of(obb1, obb2);
+    }
+
+    @Override
+    public void updateOBBs() {
+        Matrix4f transform = getVehicleTransform(1);
+
+        Vector4f p1 = transformPosition(transform, 0, 2.35f, 0f);
+        obb1.setCenter(new Vector3f(p1.x, p1.y, p1.z));
+        obb1.setRotation(combineRotations(1));
+
+        Vector4f p2 = transformPosition(transform, 0, 1, 0f);
+        obb2.setCenter(new Vector3f(p2.x, p2.y, p2.z));
+        obb2.setRotation(combineRotations(1));
+    }
+
+    // 合并三个旋转（Yaw -> Pitch -> Roll）
+    public Quaternionf combineRotations(float partialTicks) {
+        // 1. 获取三个独立的旋转四元数
+        Quaternionf yawRot = Axis.YP.rotationDegrees(-Mth.lerp(partialTicks, yRotO, getYRot()));
+        Quaternionf pitchRot = Axis.XP.rotationDegrees(Mth.lerp(partialTicks, xRotO, getXRot()));
+        Quaternionf rollRot = Axis.ZP.rotationDegrees(Mth.lerp(partialTicks, prevRoll, getRoll()));
+
+        // 2. 按照正确顺序合并：先Yaw，再Pitch，最后Roll
+        Quaternionf combined = new Quaternionf(yawRot);   // 初始化为Yaw旋转
+        combined.mul(pitchRot);  // 应用Pitch旋转
+        combined.mul(rollRot);   // 应用Roll旋转
+
+        return combined;
     }
 
     @Override
@@ -93,6 +140,7 @@ public class Lav150 extends AbstractVehicle {
             tickMove();
         }
         tickWeapon();
+        updateOBBs();
     }
 
     @Override
