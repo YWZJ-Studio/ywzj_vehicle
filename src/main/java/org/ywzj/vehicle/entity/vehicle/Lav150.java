@@ -1,8 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import com.mojang.math.Axis;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -14,25 +12,23 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.util.OBB;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
+import java.lang.Math;
 import java.util.List;
 
 public class Lav150 extends AbstractVehicle implements OBBEntity {
@@ -93,7 +89,7 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
         // 1. 获取三个独立的旋转四元数
         Quaternionf yawRot = Axis.YP.rotationDegrees(-Mth.lerp(partialTicks, yRotO, getYRot()));
         Quaternionf pitchRot = Axis.XP.rotationDegrees(Mth.lerp(partialTicks, xRotO, getXRot()));
-        Quaternionf rollRot = Axis.ZP.rotationDegrees(Mth.lerp(partialTicks, prevRoll, getRoll()));
+        Quaternionf rollRot = Axis.ZP.rotationDegrees(Mth.lerp(partialTicks, zRotO, getZRot()));
 
         // 2. 按照正确顺序合并：先Yaw，再Pitch，最后Roll
         Quaternionf combined = new Quaternionf(yawRot);   // 初始化为Yaw旋转
@@ -163,19 +159,6 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
     }
 
     @Override
-    public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
-        int index = getPassengers().indexOf(pPassenger);
-        if (index != -1) {
-            if (index == 0) {
-                controlUnit.setOperator(null);
-            }
-            weaponUnits.get(index).setOperator(null);
-        }
-        level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.HOSTILE);
-        return this.position().add(new Vec3(getLookAngle().z, 0,  getLookAngle().x).normalize().scale(-2.5f));
-    }
-
-    @Override
     public double getPassengersRidingOffset() {
         return 0.8f;
     }
@@ -185,18 +168,16 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
         if (!(getDriver() instanceof LocalPlayer)) {
             return;
         }
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        float xRot = camera.getXRot() - 10;
-        float yRot = camera.getYRot();
+        Vector2f v = LocalVehiclePlayer.instance.cameraToWeaponRot();
         WeaponUnit machineGunTurret = weaponUnits.get(0);
-        if (machineGunTurret.aimXRot != xRot || machineGunTurret.aimXRot != yRot) {
-            machineGunTurret.aimXRot = xRot;
-            machineGunTurret.aimYRot = yRot;
+        if (machineGunTurret.aimXRot != v.x || machineGunTurret.aimYRot != v.y) {
+            machineGunTurret.aimXRot = v.x;
+            machineGunTurret.aimYRot = v.y;
             ClientWeaponUnitControl control = new ClientWeaponUnitControl();
             control.vehicleEntityId = this.getId();
             control.weaponIndex = 0;
-            control.xRot = xRot;
-            control.yRot = yRot;
+            control.xRot = v.x;
+            control.yRot = v.y;
             Channel.CHANNEL.sendToServer(control);
         }
     }
@@ -316,7 +297,11 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
             WeaponUnit machineGunTurret = weaponUnits.get(0);
             Vec3 offset = calculateViewVector(machineGunTurret.xRot, machineGunTurret.yRot).normalize().scale(2.7f);
             Vec3 ammoSpawnPosition = this.position().add(0, 2.5, 0).subtract(this.getDeltaMovement().multiply(1, 0, 1).scale(3)).add(offset);
-            machineGunTurret.shoot(ammoSpawnPosition);
+            Vec3 relativePos = ammoSpawnPosition.subtract(this.position());
+            Vector3f rotPos = this.calculateVehicleRot()
+                    .transform(new Vector3f((float) relativePos.x, (float) relativePos.y, (float) relativePos.z));
+            Vec3 finalPos = this.position().add(-rotPos.x, rotPos.y, -rotPos.z);
+            machineGunTurret.shoot(finalPos);
             this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
         }
     }

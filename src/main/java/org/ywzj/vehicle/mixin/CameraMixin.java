@@ -5,6 +5,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,13 +17,18 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 public abstract class CameraMixin {
 
     @Shadow
-    protected abstract void move(double x, double y, double z);
+    protected abstract void setPosition(double pX, double pY, double pZ);
+
+    @Shadow private Vec3 position;
 
     @Inject(method = "setup", at = @At("TAIL"))
-    public void superbWarfare$setup(BlockGetter area, Entity entity, boolean thirdPerson, boolean inverseView, float tickDelta, CallbackInfo ci) {
-        if (entity instanceof Player player && player.getVehicle() instanceof AbstractVehicle vehicle) {
-            Vec3 offset = vehicle.getCameraOffset();
-            this.move(offset.x, offset.y, offset.z);
+    public void superbWarfare$setup(BlockGetter pLevel, Entity pEntity, boolean pDetached, boolean pThirdPersonReverse, float pPartialTick, CallbackInfo ci) {
+        if (pEntity instanceof Player player && player.getVehicle() instanceof AbstractVehicle vehicle) {
+            Vec3 relativePos = this.position.add(vehicle.getCameraOffset()).subtract(vehicle.position());
+            Vector3f rotPos = vehicle.calculateVehicleRot()
+                    .transform(new Vector3f((float) relativePos.x, (float) relativePos.y, (float) relativePos.z));
+            Vec3 finalPos = vehicle.position().add(-rotPos.x, rotPos.y, -rotPos.z);
+            this.setPosition(finalPos.x, finalPos.y, finalPos.z);
         }
     }
 

@@ -18,9 +18,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.joml.*;
 import org.joml.Math;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
 import org.ywzj.vehicle.vehicle.ControlUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -31,12 +30,30 @@ public abstract class AbstractVehicle extends Mob {
 
     public ControlUnit controlUnit = new ControlUnit();
     public List<WeaponUnit> weaponUnits = new ArrayList<>();
-    private float roll;
-    public float prevRoll;
+    private float zRot;
+    public float zRotO;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setMaxUpStep(1.0f);
+    }
+
+    public float getZRot() {
+        return zRot;
+    }
+
+    public void setZRot(float rot) {
+        zRot = rot;
+    }
+
+    public Matrix3f calculateVehicleRot() {
+        Quaternionf q = new Quaternionf();
+        q.rotateY(Math.toRadians(this.getYRot()))
+                .rotateX(Math.toRadians(this.getXRot()))
+                .rotateZ(Math.toRadians(this.getZRot()));
+        Matrix3f axisRollMat = new Matrix3f();
+        q.get(axisRollMat);
+        return axisRollMat;
     }
 
     public abstract Vec3 getCameraOffset();
@@ -94,25 +111,16 @@ public abstract class AbstractVehicle extends Mob {
     @Override
     public void tick() {
         super.tick();
-        this.prevRoll = this.roll;
+        this.zRotO = this.zRot;
         this.terrainCompact(2.7f, 3.61f);
     }
-
-    public float getRoll() {
-        return roll;
-    }
-
-    public void setZRot(float rot) {
-        roll = rot;
-    }
-
 
     public Matrix4f getVehicleYOffsetTransform(float ticks) {
         Matrix4f transform = new Matrix4f();
         transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo + rotateYOffset(), getY() + rotateYOffset()), (float) Mth.lerp(ticks, zo, getZ()));
         transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(ticks, yRotO, getYRot())));
         transform.rotate(Axis.XP.rotationDegrees(Mth.lerp(ticks, xRotO, getXRot())));
-        transform.rotate(Axis.ZP.rotationDegrees(Mth.lerp(ticks, prevRoll, getRoll())));
+        transform.rotate(Axis.ZP.rotationDegrees(Mth.lerp(ticks, zRotO, getZRot())));
         return transform;
     }
 
@@ -235,11 +243,11 @@ public abstract class AbstractVehicle extends Mob {
             float diffX = org.joml.Math.clamp(-15f, 15f, Mth.wrapDegrees((float) (-(x1 + x2)) - getXRot()));
             setXRot(Mth.clamp(getXRot() + 0.15f * diffX, -45f, 45f));
 
-            float diffZ = Math.clamp(-15f, 15f, Mth.wrapDegrees((float) (-(z1 + z2)) - roll));
-            setZRot(Mth.clamp(roll + 0.15f * diffZ, -45f, 45f));
+            float diffZ = Math.clamp(-15f, 15f, Mth.wrapDegrees((float) (-(z1 + z2)) - zRot));
+            setZRot(Mth.clamp(zRot + 0.15f * diffZ, -45f, 45f));
         } else if (isInWater()) {
             setXRot(getXRot() * 0.9f);
-            setZRot(roll * 0.9f);
+            setZRot(zRot * 0.9f);
         }
     }
 

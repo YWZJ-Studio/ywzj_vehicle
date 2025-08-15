@@ -33,7 +33,7 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
 
         pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.prevRoll, pEntity.getRoll())), (float) root.x, (float) root.y, (float) root.z);
+        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
         pPoseStack.rotateAround(Axis.YP.rotationDegrees(180), (float) root.x, (float) root.y, (float) root.z);
 
@@ -67,7 +67,7 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
         float machineGunXRot = 0;
         if (!pEntity.weaponUnits.isEmpty()) {
             WeaponUnit weaponUnit = pEntity.weaponUnits.get(0);
-            machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot) - pEntity.getYRot();
+            machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
             machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
         }
 

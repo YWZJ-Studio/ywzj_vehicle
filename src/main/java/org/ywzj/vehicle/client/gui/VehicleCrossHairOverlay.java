@@ -12,6 +12,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
@@ -46,7 +47,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
 
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    drawCircle(guiGraphics, 0 ,0, 10, 0xFFFFFFFF);
+                    drawCircle(guiGraphics, 0 ,0, 5, 0xFFFFFFFF);
                     guiGraphics.pose().popPose();
                 }
 
@@ -56,7 +57,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
 
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    drawCircle(guiGraphics, 0 ,0, 5, 0xFFFFFFFF);
+                    drawCircle(guiGraphics, 0 ,0, 10, 0xFFFFFFFF);
                     guiGraphics.pose().popPose();
                 }
             }
@@ -74,11 +75,13 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
+            // todo: 根据玩家获取操控武器
             var weapon = !vehicle.weaponUnits.isEmpty() ? vehicle.weaponUnits.get(0) : null;
             if (weapon != null) {
                 Vec3 start = player.position().add(0, 2.5, 0);
 
-                Vec3 screenPos1 = getHitScreenPos(start, weapon.xRot, weapon.yRot, player);
+                Vector2f v1 = weapon.worldRot();
+                Vec3 screenPos1 = getHitScreenPos(start, v1.x, v1.y, player);
                 if (screenPos1.z >= 0) {
                     screenXO = screenX;
                     screenYO = screenY;
@@ -89,7 +92,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     show = false;
                 }
 
-                Vec3 screenPos2 = getHitScreenPos(start, weapon.aimXRot, weapon.aimYRot, player);
+                Vector2f v2 = weapon.worldAimRot();
+                Vec3 screenPos2 = getHitScreenPos(start, v2.x, v2.y, player);
                 if (screenPos1.z >= 0) {
                     screenAimXO = screenAimX;
                     screenAimYO = screenAimY;

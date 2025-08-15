@@ -6,6 +6,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
+import org.joml.Matrix3f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
@@ -23,7 +26,7 @@ public class WeaponUnit {
     public float xRotO;
     public float yRotO;
     public float xRotSpeed;
-    public  float yRotSpeed;
+    public float yRotSpeed;
     public float maxXRot;
     public float minXRot;
 
@@ -31,9 +34,29 @@ public class WeaponUnit {
         this.vehicle = vehicle;
     }
 
+    public Vector2f worldRot() {
+        return toWorldRot(xRot, yRot);
+    }
+
+    public Vector2f worldAimRot() {
+        return toWorldRot(aimXRot, aimYRot);
+    }
+
+    private Vector2f toWorldRot(float xRot, float yRot) {
+        float xRotR = (float) Math.toRadians(xRot);
+        float yRotR = (float) Math.toRadians(yRot);
+        Vector3f weaponDirection = new Vector3f(Mth.cos(xRotR) * Mth.sin(yRotR) , -Mth.sin(xRotR), Mth.cos(xRotR) * Mth.cos(yRotR));
+        Matrix3f axisRollMat = vehicle.calculateVehicleRot();
+        Vector3f v = axisRollMat.transform(weaponDirection);
+        float yaw = (float) Math.toDegrees(Math.atan2(v.x, v.z));
+        float pitch = (float) Math.toDegrees(Math.atan2(-v.y, Math.hypot(v.x, v.z)));
+        return new Vector2f(pitch, yaw);
+    }
+
     public void shoot(Vec3 ammoSpawnPosition) {
         BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition);
-        bulletEntity.shootFromRotation(vehicle, xRot, yRot, 0, 10.0f, 1f);
+        Vector2f v = worldRot();
+        bulletEntity.shootFromRotation(vehicle, v.x, v.y, 0, 10.0f, 1f);
         bulletEntity.setDamage(25);
         bulletEntity.setHeadShot(1.5f);
         vehicle.level().addFreshEntity(bulletEntity);
