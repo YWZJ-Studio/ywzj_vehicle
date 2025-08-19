@@ -11,6 +11,11 @@ public class ClientWeaponUnitControl {
     public int vehicleEntityId;
     public int weaponIndex;
     public boolean shoot;
+    public float ammoX;
+    public float ammoY;
+    public float ammoZ;
+    public float ammoXRot;
+    public float ammoYRot;
     public float xRot;
     public float yRot;
 
@@ -22,10 +27,15 @@ public class ClientWeaponUnitControl {
         control.weaponIndex =  buf.readInt();
         control.shoot = buf.readBoolean();
         if (control.shoot) {
-            return control;
+            control.ammoX = buf.readFloat();
+            control.ammoY = buf.readFloat();
+            control.ammoZ = buf.readFloat();
+            control.ammoXRot = buf.readFloat();
+            control.ammoYRot = buf.readFloat();
+        } else {
+            control.xRot = buf.readFloat();
+            control.yRot = buf.readFloat();
         }
-        control.xRot = buf.readFloat();
-        control.yRot = buf.readFloat();
         return control;
     }
 
@@ -34,14 +44,19 @@ public class ClientWeaponUnitControl {
         buf.writeInt(weaponIndex);
         buf.writeBoolean(shoot);
         if (shoot) {
-            return;
+            buf.writeFloat(ammoX);
+            buf.writeFloat(ammoY);
+            buf.writeFloat(ammoZ);
+            buf.writeFloat(ammoXRot);
+            buf.writeFloat(ammoYRot);
+        } else {
+            buf.writeFloat(xRot);
+            buf.writeFloat(yRot);
         }
-        buf.writeFloat(xRot);
-        buf.writeFloat(yRot);
     }
 
     public static void onClientMessageReceived(ClientWeaponUnitControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        WeaponUnit.onClientMessageReceived( message, ctxSupplier);
+        ctxSupplier.get().enqueueWork(() -> WeaponUnit.onClientMessageReceived( message, ctxSupplier));
     }
 
 }

@@ -41,9 +41,10 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
     public static final float FORWARD_ACCELERATION = 0.005f + GROUND_FRICTION_ACCELERATION;
     public static final float BACKWARD_ACCELERATION = 0.005f + GROUND_FRICTION_ACCELERATION;
     public static final float TURN_ACCELERATION = 0.1f;
-    public static final float TURRET_X_ROT_SPEED = 0.5f;
+    public static final float TURRET_X_ROT_SPEED = 3f;
     public static final float TURRET_Y_ROT_SPEED = 3f;
-    public static final float MAX_TURRET_X_ROT = 30;
+    public static final float MAX_TURRET_X_ROT = 15;
+    public static final float MIN_TURRET_X_ROT = -30;
     public static final float MAX_SPEED = 0.5f;
     public static final float MAX_TURN = 2f;
     public float wheelRotation;
@@ -56,11 +57,11 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
 
     public Lav150(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        WeaponUnit machineGunTurret = new WeaponUnit(this);
+        WeaponUnit machineGunTurret = new WeaponUnit(this, new Vec3(0d, 2.5d, 0d), 2.7f);
         machineGunTurret.xRotSpeed = TURRET_X_ROT_SPEED;
         machineGunTurret.yRotSpeed = TURRET_Y_ROT_SPEED;
-        machineGunTurret.maxXRot = 15;
-        machineGunTurret.minXRot = -30;
+        machineGunTurret.xRotMax = MAX_TURRET_X_ROT;
+        machineGunTurret.xRotMin = MIN_TURRET_X_ROT;
         this.weaponUnits.add(machineGunTurret);
         obb1 = new OBB(this.position().toVector3f(), new Vector3f(0.65f, 0.35f, 1f), new Quaternionf());
         obb2 = new OBB(this.position().toVector3f(), new Vector3f(1.25f, 1f, 2.25f), new Quaternionf());
@@ -170,9 +171,9 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
         }
         Vector2f v = LocalVehiclePlayer.instance.cameraToWeaponRot();
         WeaponUnit machineGunTurret = weaponUnits.get(0);
-        if (machineGunTurret.aimXRot != v.x || machineGunTurret.aimYRot != v.y) {
-            machineGunTurret.aimXRot = v.x;
-            machineGunTurret.aimYRot = v.y;
+        if (machineGunTurret.xAimRot != v.x || machineGunTurret.yAimRot != v.y) {
+            machineGunTurret.xAimRot = v.x;
+            machineGunTurret.yAimRot = v.y;
             ClientWeaponUnitControl control = new ClientWeaponUnitControl();
             control.vehicleEntityId = this.getId();
             control.weaponIndex = 0;
@@ -270,7 +271,7 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
         entityData.set(TURN_SPEED, vt);
         // 转向幅度应用于车身朝向
         // 轮式载具仅存在前进速度时可运动转向
-        if (Math.abs(vf) > 0.05) {
+        if (Math.abs(vf) > 0.03) {
             if (vf < 0) {
                 vt *= -1;
             }
@@ -287,21 +288,17 @@ public class Lav150 extends AbstractVehicle implements OBBEntity {
     private void tickWeapon() {
         WeaponUnit machineGunTurret = weaponUnits.get(0);
         machineGunTurret.tick();
-        this.entityData.set(TURRET_X_ROT, machineGunTurret.xRot);
-        this.entityData.set(TURRET_Y_ROT, machineGunTurret.yRot);
+        if (!level().isClientSide()) {
+            this.entityData.set(TURRET_X_ROT, machineGunTurret.xRot);
+            this.entityData.set(TURRET_Y_ROT, machineGunTurret.yRot);
+        }
     }
 
     @Override
-    public void shoot(int weaponIndex) {
+    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         if (weaponIndex == 0) {
             WeaponUnit machineGunTurret = weaponUnits.get(0);
-            Vec3 offset = calculateViewVector(machineGunTurret.xRot, machineGunTurret.yRot).normalize().scale(2.7f);
-            Vec3 ammoSpawnPosition = this.position().add(0, 2.5, 0).subtract(this.getDeltaMovement().multiply(1, 0, 1).scale(3)).add(offset);
-            Vec3 relativePos = ammoSpawnPosition.subtract(this.position());
-            Vector3f rotPos = this.calculateVehicleRot()
-                    .transform(new Vector3f((float) relativePos.x, (float) relativePos.y, (float) relativePos.z));
-            Vec3 finalPos = this.position().add(-rotPos.x, rotPos.y, -rotPos.z);
-            machineGunTurret.shoot(finalPos);
+            machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
             this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
         }
     }

@@ -6,57 +6,61 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
-import org.joml.Matrix3f;
 import org.joml.Vector2f;
-import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.function.Supplier;
 
 public class WeaponUnit {
 
     private final AbstractVehicle vehicle;
+    private final Vec3 boltOffset;
+    private final float barrelLength;
     private LivingEntity operator;
-    public float aimXRot;
-    public float aimYRot;
+    public float xAimRot;
+    public float yAimRot;
     public float xRot;
     public float yRot;
     public float xRotO;
     public float yRotO;
     public float xRotSpeed;
     public float yRotSpeed;
-    public float maxXRot;
-    public float minXRot;
+    public float xRotMax;
+    public float xRotMin;
 
-    public WeaponUnit(AbstractVehicle vehicle) {
+    public WeaponUnit(AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength) {
         this.vehicle = vehicle;
+        this.boltOffset = boltOffset;
+        this.barrelLength = barrelLength;
+    }
+
+    public Vec3 boltPosition() {
+        return vehicle.relativeRotPos(vehicle.position().add(boltOffset));
+    }
+
+    public Vec3 ammoSpawnPosition() {
+        Vec3 barrelOffset = VectorUtil.calculateViewVector(xRot, yRot).normalize().scale(barrelLength);
+        Vec3 basePos = vehicle.position().add(boltOffset).add(barrelOffset);
+        return vehicle.relativeRotPos(basePos);
     }
 
     public Vector2f worldRot() {
         return toWorldRot(xRot, yRot);
     }
 
-    public Vector2f worldAimRot() {
-        return toWorldRot(aimXRot, aimYRot);
-    }
-
     private Vector2f toWorldRot(float xRot, float yRot) {
-        float xRotR = (float) Math.toRadians(xRot);
-        float yRotR = (float) Math.toRadians(yRot);
-        Vector3f weaponDirection = new Vector3f(Mth.cos(xRotR) * Mth.sin(yRotR) , -Mth.sin(xRotR), Mth.cos(xRotR) * Mth.cos(yRotR));
-        Matrix3f axisRollMat = vehicle.calculateVehicleRot();
-        Vector3f v = axisRollMat.transform(weaponDirection);
+        Vec3 v = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, yRot), false);
         float yaw = (float) Math.toDegrees(Math.atan2(v.x, v.z));
         float pitch = (float) Math.toDegrees(Math.atan2(-v.y, Math.hypot(v.x, v.z)));
         return new Vector2f(pitch, yaw);
     }
 
-    public void shoot(Vec3 ammoSpawnPosition) {
+    public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition);
-        Vector2f v = worldRot();
-        bulletEntity.shootFromRotation(vehicle, v.x, v.y, 0, 10.0f, 1f);
+        bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 1f);
         bulletEntity.setDamage(25);
         bulletEntity.setHeadShot(1.5f);
         vehicle.level().addFreshEntity(bulletEntity);
@@ -71,20 +75,20 @@ public class WeaponUnit {
             this.xRotO = this.xRot;
             this.yRotO = this.yRot;
         } else {
-            float xDiff = Mth.wrapDegrees(this.aimXRot - this.xRot);
-            float yDiff = Mth.wrapDegrees(this.aimYRot - this.yRot);
+            float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
+            float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
 
             if (Math.abs(xDiff) > xRotSpeed) {
                 this.xRot += Math.signum(xDiff) * xRotSpeed;
             } else {
-                this.xRot = this.aimXRot;
+                this.xRot = this.xAimRot;
             }
-            this.xRot = Math.max(Math.min(this.xRot, maxXRot), minXRot);
+            this.xRot = Math.max(Math.min(this.xRot, xRotMax), xRotMin);
 
             if (Math.abs(yDiff) > yRotSpeed) {
                 this.yRot += Math.signum(yDiff) * yRotSpeed;
             } else {
-                this.yRot = this.aimYRot;
+                this.yRot = this.yAimRot;
             }
         }
     }
@@ -96,15 +100,19 @@ public class WeaponUnit {
             if (entity instanceof AbstractVehicle vehicle) {
                 if (message.weaponIndex < vehicle.weaponUnits.size()) {
                     if (message.shoot) {
-                        vehicle.shoot(message.weaponIndex);
+                        vehicle.shoot(message.weaponIndex, new Vec3(message.ammoX, message.ammoY, message.ammoZ), message.ammoXRot, message.ammoYRot);
                     } else {
                         WeaponUnit serverWeaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
-                        serverWeaponUnit.aimXRot = message.xRot;
-                        serverWeaponUnit.aimYRot = message.yRot % 360;
+                        serverWeaponUnit.xAimRot = message.xRot;
+                        serverWeaponUnit.yAimRot = message.yRot % 360;
                     }
                 }
             }
         }
+    }
+
+    public AbstractVehicle getVehicle() {
+        return vehicle;
     }
 
 }

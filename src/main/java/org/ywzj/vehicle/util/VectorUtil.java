@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.util;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
@@ -46,4 +47,15 @@ public class VectorUtil {
             fov = event.getFOV();
         }
     }
+
+    public static Vec3 calculateViewVector(float pXRot, float pYRot) {
+        float f = pXRot * ((float)Math.PI / 180F);
+        float f1 = -pYRot * ((float)Math.PI / 180F);
+        float f2 = Mth.cos(f1);
+        float f3 = Mth.sin(f1);
+        float f4 = Mth.cos(f);
+        float f5 = Mth.sin(f);
+        return new Vec3(f3 * f4, -f5, f2 * f4);
+    }
+
 }

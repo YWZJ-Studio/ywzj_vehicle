@@ -46,14 +46,41 @@ public abstract class AbstractVehicle extends Mob {
         zRot = rot;
     }
 
-    public Matrix3f calculateVehicleRot() {
+    public Vec3 relativeRotPos(Vec3 worldPos) {
+        Vec3 relPos = worldPos.subtract(this.position());
         Quaternionf q = new Quaternionf();
-        q.rotateY(Math.toRadians(this.getYRot()))
+        q.rotateY(Math.toRadians(-this.getYRot()))
                 .rotateX(Math.toRadians(this.getXRot()))
                 .rotateZ(Math.toRadians(this.getZRot()));
         Matrix3f axisRollMat = new Matrix3f();
         q.get(axisRollMat);
-        return axisRollMat;
+        Vector3f rotPos = axisRollMat.transform(new Vector3f((float) relPos.x, (float) relPos.y, (float) relPos.z));
+
+        //todo 测试
+//        Vec3 pos = this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+//        Level level = this.level();
+//        if (level.isClientSide) {
+//            level.addParticle(new DustParticleOptions(new Vector3f(0.0F, 1.0F, 0.0F), 1.0F), true, pos.x, pos.y, pos.z, 0, 0, 0);
+//        } else {
+//            level = Minecraft.getInstance().level;
+//            level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 0.0F, 0.0F), 1.0F), true, pos.x, pos.y, pos.z, 0, 0, 0);
+//        }
+
+        return this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+    }
+
+    public Vec3 relativeRotDirection(Vec3 worldDirection, boolean reverse) {
+        Quaternionf q = new Quaternionf();
+        q.rotateY(Math.toRadians(this.getYRot()))
+                .rotateX(Math.toRadians(this.getXRot()))
+                .rotateZ(Math.toRadians(-this.getZRot()));
+        Matrix3f axisRollMat = new Matrix3f();
+        q.get(axisRollMat);
+        if (reverse) {
+            axisRollMat = axisRollMat.transpose();
+        }
+        Vector3f d = axisRollMat.transform(new Vector3f((float) -worldDirection.x(), (float) worldDirection.y(), (float) worldDirection.z()));
+        return new Vec3(d.x, d.y, d.z);
     }
 
     public abstract Vec3 getCameraOffset();
@@ -70,7 +97,7 @@ public abstract class AbstractVehicle extends Mob {
         return null;
     }
 
-    public abstract void shoot(int weaponIndex);
+    public abstract void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot);
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

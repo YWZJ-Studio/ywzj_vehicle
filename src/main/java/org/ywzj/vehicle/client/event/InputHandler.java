@@ -4,11 +4,13 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -76,10 +78,12 @@ public class InputHandler {
             }
             if (MAIN_WEAPON_SHOOT_KEY.isDown()) {
                 WeaponUnit weaponUnit = abstractVehicle.weaponUnits.get(index);
+                Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
+                Vector2f rot = weaponUnit.worldRot();
                 int rpm = 400;
                 float interval = 60f / rpm * 1000;
                 if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                    sendShoot(abstractVehicle, index);
+                    sendShoot(abstractVehicle, index, ammoSpawnPosition, rot.x, rot.y);
                     lastFireTimeMillis = System.currentTimeMillis();
                 }
             }
@@ -96,11 +100,16 @@ public class InputHandler {
         Channel.CHANNEL.sendToServer(control);
     }
 
-    private static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex) {
+    private static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         ClientWeaponUnitControl control = new ClientWeaponUnitControl();
         control.vehicleEntityId = abstractVehicle.getId();
         control.weaponIndex = weaponIndex;
         control.shoot = true;
+        control.ammoX = (float) ammoSpawnPosition.x;
+        control.ammoY = (float) ammoSpawnPosition.y;
+        control.ammoZ = (float) ammoSpawnPosition.z;
+        control.ammoXRot = ammoXRot;
+        control.ammoYRot = ammoYRot;
         Channel.CHANNEL.sendToServer(control);
     }
 

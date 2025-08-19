@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 @Mod.EventBusSubscriber
 public class VehicleCrossHairOverlay implements IGuiOverlay {
@@ -78,50 +79,41 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             // todo: 根据玩家获取操控武器
             var weapon = !vehicle.weaponUnits.isEmpty() ? vehicle.weaponUnits.get(0) : null;
             if (weapon != null) {
-                Vec3 start = player.position().add(0, 2.5, 0);
-
-                Vector2f v1 = weapon.worldRot();
-                Vec3 screenPos1 = getHitScreenPos(start, v1.x, v1.y, player);
-                if (screenPos1.z >= 0) {
-                    screenXO = screenX;
-                    screenYO = screenY;
-                    screenX = screenPos1.x;
-                    screenY = screenPos1.y;
-                    show = true;
-                } else {
-                    show = false;
-                }
-
-                Vector2f v2 = weapon.worldAimRot();
-                Vec3 screenPos2 = getHitScreenPos(start, v2.x, v2.y, player);
-                if (screenPos1.z >= 0) {
+                // 瞄准位置
+                Vec3 aimScreenPos = getHitScreenPos(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(),
+                        LocalVehiclePlayer.instance.cameraAimRotX,
+                        LocalVehiclePlayer.instance.cameraAimRotY,
+                        player);
+                if (aimScreenPos.z >= 0) {
                     screenAimXO = screenAimX;
                     screenAimYO = screenAimY;
-                    screenAimX = screenPos2.x;
-                    screenAimY = screenPos2.y;
+                    screenAimX = aimScreenPos.x;
+                    screenAimY = aimScreenPos.y;
                     showAim = true;
                 } else  {
                     showAim = false;
+                }
+                // 瞄准落点
+                Vector2f rot = weapon.worldRot();
+                Vec3 hitScreenPos = getHitScreenPos(weapon.ammoSpawnPosition(), rot.x, rot.y, player);
+                if (hitScreenPos.z >= 0) {
+                    screenXO = screenX;
+                    screenYO = screenY;
+                    screenX = hitScreenPos.x;
+                    screenY = hitScreenPos.y;
+                    show = true;
+                } else {
+                    show = false;
                 }
             }
         }
     }
 
     private static @NotNull Vec3 getHitScreenPos(Vec3 start, float xRot, float yRot, Player player) {
-        Vec3 end = start.add(calculateViewVector(xRot, yRot).normalize().scale(128));
+        Vec3 end = start.add(VectorUtil.calculateViewVector(xRot, yRot).normalize().scale(128));
         var result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 hitPos = result.getLocation();
         return VectorUtil.worldToScreen(hitPos);
-    }
-
-    public static Vec3 calculateViewVector(float pXRot, float pYRot) {
-        float f = pXRot * ((float)Math.PI / 180F);
-        float f1 = -pYRot * ((float)Math.PI / 180F);
-        float f2 = Mth.cos(f1);
-        float f3 = Mth.sin(f1);
-        float f4 = Mth.cos(f);
-        float f5 = Mth.sin(f);
-        return new Vec3(f3 * f4, -f5, f2 * f4);
     }
 
     private static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
