@@ -3,15 +3,18 @@
   "package": "org.ywzj.vehicle.mixin",
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
-  "refmap": "ywzj_tarkov.refmap.json",
+  "refmap": "ywzj_vehicle.refmap.json",
   "client": [
-    "CameraMixin",
-    "EntityRenderDispatcherMixin",
-    "LevelRendererMixin",
-    "MouseHandlerMixin"
+    "client.CameraMixin",
+    "client.EntityRenderDispatcherMixin",
+    "client.LevelRendererMixin",
+    "client.MouseHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
-  "mixins": []
+  "mixins": [
+    "server.ChunkMapMixin",
+    "server.ServerEntityMixin"
+  ]
 }
