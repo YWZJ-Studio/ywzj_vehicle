@@ -16,6 +16,7 @@ import org.joml.Vector2f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 @Mod.EventBusSubscriber
 public class VehicleCrossHairOverlay implements IGuiOverlay {
@@ -40,22 +41,19 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            var weapon = !vehicle.weaponUnits.isEmpty() ? vehicle.weaponUnits.get(0) : null;
-            if (weapon != null) {
+            WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
+            if (weaponUnit != null) {
                 if (show) {
                     double x = Mth.lerp(partialTick, screenXO, screenX);
                     double y = Mth.lerp(partialTick, screenYO, screenY);
-
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
                     drawCircle(guiGraphics, 0 ,0, 5, 0xFFFFFFFF);
                     guiGraphics.pose().popPose();
                 }
-
                 if (showAim) {
                     double x = Mth.lerp(partialTick, screenAimXO, screenAimX);
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
-
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
                     drawCircle(guiGraphics, 0 ,0, 10, 0xFFFFFFFF);
@@ -76,9 +74,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            // todo: 根据玩家获取操控武器
-            var weapon = !vehicle.weaponUnits.isEmpty() ? vehicle.weaponUnits.get(0) : null;
-            if (weapon != null) {
+            WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
+            if (weaponUnit != null) {
                 // 瞄准位置
                 Vec3 aimScreenPos = getHitScreenPos(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(),
                         LocalVehiclePlayer.instance.cameraAimRotX,
@@ -94,8 +91,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     showAim = false;
                 }
                 // 瞄准落点
-                Vector2f rot = weapon.worldRot();
-                Vec3 hitScreenPos = getHitScreenPos(weapon.ammoSpawnPosition(), rot.x, rot.y, player);
+                Vector2f rot = weaponUnit.worldRot();
+                Vec3 hitScreenPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), rot.x, rot.y, player);
                 if (hitScreenPos.z >= 0) {
                     screenXO = screenX;
                     screenYO = screenY;

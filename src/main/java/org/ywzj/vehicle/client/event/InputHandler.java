@@ -63,27 +63,26 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null) {
             return;
         }
-        if (player.getVehicle() instanceof AbstractVehicle abstractVehicle) {
-            int index = abstractVehicle.getPassengers().indexOf(player);
-            if (index == -1) {
-                return;
-            }
-            if (index == 0) {
+        if (player.getVehicle() instanceof AbstractVehicle vehicle) {
+            if (player.equals(vehicle.controlUnit.operator)) {
                 ControlUnit controlUnit = new ControlUnit();
                 controlUnit.forward = FORWARD.isDown();
                 controlUnit.backward = BACKWARD.isDown();
                 controlUnit.left = LEFT.isDown();
                 controlUnit.right = RIGHT.isDown();
-                sendControl(abstractVehicle, controlUnit);
+                sendControl(vehicle, controlUnit);
             }
             if (MAIN_WEAPON_SHOOT_KEY.isDown()) {
-                WeaponUnit weaponUnit = abstractVehicle.weaponUnits.get(index);
+                WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
+                if (weaponUnit == null) {
+                    return;
+                }
                 Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
                 Vector2f rot = weaponUnit.worldRot();
                 int rpm = 400;
                 float interval = 60f / rpm * 1000;
                 if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                    sendShoot(abstractVehicle, index, ammoSpawnPosition, rot.x, rot.y);
+                    sendShoot(vehicle, vehicle.weaponUnits.indexOf(weaponUnit), ammoSpawnPosition, rot.x, rot.y);
                     lastFireTimeMillis = System.currentTimeMillis();
                 }
             }

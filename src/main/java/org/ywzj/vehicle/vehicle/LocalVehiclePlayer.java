@@ -14,6 +14,12 @@ public class LocalVehiclePlayer {
 
     public static LocalVehiclePlayer instance;
     private final LocalPlayer player;
+    public double cameraX;
+    public double cameraY;
+    public double cameraZ;
+    public double cameraXO;
+    public double cameraYO;
+    public double cameraZO;
     public float cameraAimRotX;
     public float cameraAimRotY;
     public int view;
@@ -23,6 +29,21 @@ public class LocalVehiclePlayer {
 
     private LocalVehiclePlayer() {
         player = Minecraft.getInstance().player;
+    }
+
+    public void tick() {
+        if (onVehicle()) {
+            AbstractVehicle vehicle = getVehicle();
+            Vec3 vehicleCameraPos = vehicle.relativeRotPos(player.position()
+                    .add(new Vec3(0, player.getEyeHeight(), 0))
+                    .add(vehicle.getCameraOffset()));
+            cameraXO = cameraX;
+            cameraYO = cameraY;
+            cameraZO = cameraZ;
+            cameraX = vehicleCameraPos.x;
+            cameraY = vehicleCameraPos.y;
+            cameraZ = vehicleCameraPos.z;
+        }
     }
 
     public boolean onVehicle() {
@@ -48,13 +69,10 @@ public class LocalVehiclePlayer {
         Vec3 end = start.add(VectorUtil.calculateViewVector(cameraAimRotX, cameraAimRotY).normalize().scale(128));
         BlockHitResult result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 hitPos = result.getLocation();
-
-        //todo 测试
-//        player.level().addParticle(new DustParticleOptions(new Vector3f(0.0F, 1.0F, 0.0F), 1.0F), true, hitPos.x, hitPos.y, hitPos.z, 0, 0, 0);
-
-        //todo 根据玩家获取操控武器
-        WeaponUnit weaponUnit = vehicle.weaponUnits.get(0);
-
+        WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
+        if (weaponUnit == null) {
+            return null;
+        }
         Vec3 breechBoltWorldPos = weaponUnit.boltPosition();
         Vec3 v = vehicle.relativeRotDirection(new Vec3(hitPos.x - breechBoltWorldPos.x, hitPos.y - breechBoltWorldPos.y, hitPos.z - breechBoltWorldPos.z), true);
         float pitch = (float) Math.toDegrees(Math.atan2(-v.y, Math.hypot(v.x, v.z)));

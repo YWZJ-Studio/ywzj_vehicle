@@ -56,7 +56,7 @@ public class ClientWeaponUnitControl {
     }
 
     public static void onClientMessageReceived(ClientWeaponUnitControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ctxSupplier.get().enqueueWork(() -> WeaponUnit.onClientMessageReceived( message, ctxSupplier));
+        ctxSupplier.get().enqueueWork(() -> WeaponUnit.onClientMessageReceived(message, ctxSupplier));
     }
 
 }

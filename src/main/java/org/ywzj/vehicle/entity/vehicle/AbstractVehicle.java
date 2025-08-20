@@ -1,16 +1,20 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,24 +22,162 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.PacketDistributor;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 import org.ywzj.vehicle.vehicle.ControlUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class AbstractVehicle extends Mob {
 
-    public ControlUnit controlUnit = new ControlUnit();
-    public List<WeaponUnit> weaponUnits = new ArrayList<>();
+    public List<Integer> passengerIdsBySeat = new ArrayList<>();
+    public int seats = 4;
+    public final ControlUnit controlUnit = new ControlUnit();
+    public final List<WeaponUnit> weaponUnits = new ArrayList<>();
+    public float wide;
+    public float length;
     private float zRot;
     public float zRotO;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setMaxUpStep(1.0f);
+        this.initWeaponUnits();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.zRotO = this.zRot;
+        this.terrainCompact(wide, length);
+        if (level().isClientSide) {
+            tickAim();
+            tickSound();
+            tickParticle();
+        } else {
+            tickMove();
+        }
+        tickWeapon();
+    }
+
+    public abstract void initWeaponUnits();
+
+    @OnlyIn(Dist.CLIENT)
+    protected abstract void tickAim();
+
+    @OnlyIn(Dist.CLIENT)
+    protected abstract void tickSound();
+
+    @OnlyIn(Dist.CLIENT)
+    protected abstract void tickParticle();
+
+    protected abstract void tickMove();
+
+    protected abstract void tickWeapon();
+
+    public abstract Vec3 getCameraOffset();
+
+    public void onEnterVehicle(Player pPlayer) {
+        int seat = passengerIdsBySeat.indexOf(null);
+        if (seat == -1 && passengerIdsBySeat.size() < seats) {
+            passengerIdsBySeat.add(null);
+            seat = passengerIdsBySeat.size() - 1;
+        }
+        if (seat != -1) {
+            if (seat == 0) {
+                controlUnit.setOperator(pPlayer);
+            }
+            weaponUnits.get(seat).setOperator(pPlayer);
+            passengerIdsBySeat.set(seat, pPlayer.getId());
+            level().players().stream()
+                    .filter(player -> player.distanceTo(this) < 128)
+                    .forEach(player ->
+                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerVehicleSeatsChange(this)));
+        }
+    }
+
+    public void onLeaveVehicle(LivingEntity pPassenger) {
+        int seat = passengerIdsBySeat.indexOf(pPassenger.getId());
+        if (seat != -1) {
+            if (seat == 0) {
+                controlUnit.setOperator(null);
+            }
+            weaponUnits.get(seat).setOperator(null);
+            passengerIdsBySeat.set(seat, null);
+            level().players().stream()
+                    .filter(player -> player.distanceTo(this) < 128)
+                    .forEach(player ->
+                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerVehicleSeatsChange(this)));
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void onServerVehicleSeatsChange(ServerVehicleSeatsChange message) {
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            List<Integer> passengerIdsBySeat = new ArrayList<>();
+            for (int id : message.passengerIdsBySeat) {
+                passengerIdsBySeat.add(id == -1 ? null : id);
+            }
+            vehicle.passengerIdsBySeat = passengerIdsBySeat;
+            for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
+                Entity entity = passengerIdsBySeat.get(index) == null ? null : level.getEntity(passengerIdsBySeat.get(index));
+                if (entity instanceof LivingEntity passenger) {
+                    if (index == 0) {
+                        vehicle.controlUnit.setOperator(passenger);
+                    }
+                    if (index < vehicle.weaponUnits.size()) {
+                        vehicle.weaponUnits.get(index).setOperator(passenger);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    protected boolean canAddPassenger(Entity pPassenger) {
+        return passengerIdsBySeat.stream().filter(Objects::nonNull).count() < seats;
+    }
+
+    @Override
+    public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+        if (!this.level().isClientSide) {
+            if (!pPlayer.startRiding(this)) {
+                return InteractionResult.PASS;
+            }
+            onEnterVehicle(pPlayer);
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.PASS;
+    }
+
+    @Override
+    public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
+        onLeaveVehicle(pPassenger);
+        return super.getDismountLocationForPassenger(pPassenger);
+    }
+
+    public LivingEntity getDriver() {
+        return controlUnit.operator;
+    }
+
+    public WeaponUnit getOwnWeaponUnit(LivingEntity pPassenger) {
+        int index = passengerIdsBySeat.indexOf(pPassenger.getId());
+        if (index != -1 && index < weaponUnits.size()) {
+            return weaponUnits.get(index);
+        }
+        return null;
     }
 
     public float getZRot() {
@@ -55,17 +197,6 @@ public abstract class AbstractVehicle extends Mob {
         Matrix3f axisRollMat = new Matrix3f();
         q.get(axisRollMat);
         Vector3f rotPos = axisRollMat.transform(new Vector3f((float) relPos.x, (float) relPos.y, (float) relPos.z));
-
-        //todo 测试
-//        Vec3 pos = this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
-//        Level level = this.level();
-//        if (level.isClientSide) {
-//            level.addParticle(new DustParticleOptions(new Vector3f(0.0F, 1.0F, 0.0F), 1.0F), true, pos.x, pos.y, pos.z, 0, 0, 0);
-//        } else {
-//            level = Minecraft.getInstance().level;
-//            level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 0.0F, 0.0F), 1.0F), true, pos.x, pos.y, pos.z, 0, 0, 0);
-//        }
-
         return this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
     }
 
@@ -83,20 +214,6 @@ public abstract class AbstractVehicle extends Mob {
         return new Vec3(d.x, d.y, d.z);
     }
 
-    public abstract Vec3 getCameraOffset();
-
-    public Entity getDriver() {
-        return getFirstPassenger();
-    }
-
-    public WeaponUnit getOwnWeaponUnit(LivingEntity pPassenger) {
-        int index = getPassengers().indexOf(pPassenger);
-        if (index != -1 && index < weaponUnits.size()) {
-            return weaponUnits.get(index);
-        }
-        return null;
-    }
-
     public abstract void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot);
 
     @Override
@@ -107,40 +224,21 @@ public abstract class AbstractVehicle extends Mob {
         return super.hurt(source, amount);
     }
 
-    @Override
-    public void load(CompoundTag pCompound) {
-        super.load(pCompound);
-        if (this.getDriver() != null) {
-            controlUnit.setOperator(this.getDriver());
-        }
-        for (int index = 0; index < getPassengers().size(); index++) {
-            if (index >= weaponUnits.size()) {
-                break;
-            }
-            if (getPassengers().get(index) instanceof LivingEntity livingEntity) {
-                weaponUnits.get(index).setOperator(livingEntity);
-            }
-        }
-    }
-
-    @Override
-    public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
-        int index = getPassengers().indexOf(pPassenger);
-        if (index != -1) {
-            if (index == 0) {
-                controlUnit.setOperator(null);
-            }
-            weaponUnits.get(index).setOperator(null);
-        }
-        return super.getDismountLocationForPassenger(pPassenger);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        this.zRotO = this.zRot;
-        this.terrainCompact(2.7f, 3.61f);
-    }
+//    @Override
+//    public void load(CompoundTag pCompound) {
+//        super.load(pCompound);
+//        if (this.getDriver() != null) {
+//            controlUnit.setOperator(this.getDriver());
+//        }
+//        for (int index = 0; index < getPassengers().size(); index++) {
+//            if (index >= weaponUnits.size()) {
+//                break;
+//            }
+//            if (getPassengers().get(index) instanceof LivingEntity livingEntity) {
+//                weaponUnits.get(index).setOperator(livingEntity);
+//            }
+//        }
+//    }
 
     public Matrix4f getVehicleYOffsetTransform(float ticks) {
         Matrix4f transform = new Matrix4f();
@@ -276,6 +374,16 @@ public abstract class AbstractVehicle extends Mob {
             setXRot(getXRot() * 0.9f);
             setZRot(zRot * 0.9f);
         }
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return true;
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double v) {
+        return false;
     }
 
 }

@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.vehicle;
 
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -10,13 +11,13 @@ import java.util.function.Supplier;
 
 public class ControlUnit {
 
-    public Entity operator;
+    public LivingEntity operator;
     public boolean forward;
     public boolean backward;
     public boolean left;
     public boolean right;
 
-    public void setOperator(Entity operator) {
+    public void setOperator(LivingEntity operator) {
         this.operator = operator;
     }
 

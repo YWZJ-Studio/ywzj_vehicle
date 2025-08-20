@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.mixin;
+package org.ywzj.vehicle.mixin.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;

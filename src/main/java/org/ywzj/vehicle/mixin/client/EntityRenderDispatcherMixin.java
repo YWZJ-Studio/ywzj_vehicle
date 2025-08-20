@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.mixin;
+package org.ywzj.vehicle.mixin.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -21,4 +21,5 @@ public class EntityRenderDispatcherMixin {
             OBBRenderer.INSTANCE.render(pEntity.position(), obbEntity.getOBBs(), pMatrixStack, pBuffer, 0, 1, 0, 1, pPartialTicks);
         }
     }
+
 }

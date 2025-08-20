@@ -8,9 +8,11 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 
 import java.util.Optional;
 
+import static net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT;
 import static net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER;
 
 public class Channel {
@@ -35,6 +37,11 @@ public class Channel {
                 ClientWeaponUnitControl::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
+        CHANNEL.registerMessage(PacketId.S_VEHICLE_SEATS_CHANGE.value(), ServerVehicleSeatsChange.class,
+                ServerVehicleSeatsChange::encode, ServerVehicleSeatsChange::decode,
+                ServerVehicleSeatsChange::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
     }
 
 }
@@ -42,7 +49,8 @@ public class Channel {
 enum PacketId {
 
     C_VEHICLE_CONTROL(100),
-    C_WEAPON_UNIT_CONTROL(101);
+    C_WEAPON_UNIT_CONTROL(101),
+    S_VEHICLE_SEATS_CHANGE(102);
 
     private final int id;
 

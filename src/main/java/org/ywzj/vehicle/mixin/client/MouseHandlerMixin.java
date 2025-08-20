@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.mixin;
+package org.ywzj.vehicle.mixin.client;
 
 import net.minecraft.client.MouseHandler;
 import net.minecraftforge.api.distmarker.Dist;
