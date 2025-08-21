@@ -9,6 +9,7 @@ import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
+import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
 
 import java.util.Optional;
 
@@ -42,6 +43,11 @@ public class Channel {
                 ServerVehicleSeatsChange::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
+        CHANNEL.registerMessage(PacketId.S_WEAPON_UNIT_ROT.value(), ServerWeaponUnitRot.class,
+                ServerWeaponUnitRot::encode, ServerWeaponUnitRot::decode,
+                ServerWeaponUnitRot::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
     }
 
 }
@@ -50,7 +56,8 @@ enum PacketId {
 
     C_VEHICLE_CONTROL(100),
     C_WEAPON_UNIT_CONTROL(101),
-    S_VEHICLE_SEATS_CHANGE(102);
+    S_VEHICLE_SEATS_CHANGE(102),
+    S_WEAPON_UNIT_ROT(103);
 
     private final int id;
 

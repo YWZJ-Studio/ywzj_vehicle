@@ -2,6 +2,7 @@ package org.ywzj.vehicle.util;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -16,6 +17,15 @@ import java.util.function.Predicate;
 public class EntityUtil {
 
     private static final Predicate<Entity> PROJECTILE_TARGETS = input -> input != null && input.isPickable() && !input.isSpectator();
+
+    public static boolean withinBroadcastRange(Entity entity, Player serverPlayer) {
+        Vec3 vec3 = serverPlayer.position().subtract(entity.position());
+//        double d0 = (double)Math.min(this.getEffectiveRange(), ChunkMap.this.viewDistance * 16);
+        double d0 = 128;
+        double d1 = vec3.x * vec3.x + vec3.z * vec3.z;
+        double d2 = d0 * d0;
+        return d1 <= d2;
+    }
 
     @Nullable
     public static EntityResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {

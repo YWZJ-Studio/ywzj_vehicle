@@ -5,6 +5,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
@@ -18,6 +19,7 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.vehicle.ControlUnit;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 @Mod.EventBusSubscriber(modid = Vehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -53,10 +55,26 @@ public class InputHandler {
             InputConstants.Type.MOUSE,
             GLFW.GLFW_MOUSE_BUTTON_LEFT,
             "key.category.ywzj_vehicle");
+    public static final KeyMapping SWITCH_VIEW_KEY = new KeyMapping("key.ywzj_vehicle.switch_view.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            "key.category.ywzj_vehicle");
     private static long lastFireTimeMillis;
 
     @SubscribeEvent
-    public static void tick(TickEvent.ClientTickEvent event) {
+    public static void onKey(InputEvent.Key event) {
+        if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) return;
+        if (event.getAction() == GLFW.GLFW_PRESS){
+            if (SWITCH_VIEW_KEY.matches(event.getKey(), event.getScanCode())) {
+                LocalVehiclePlayer.instance.switchViewType();
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void checkKey(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.START) return;
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -82,7 +100,7 @@ public class InputHandler {
                 int rpm = 400;
                 float interval = 60f / rpm * 1000;
                 if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                    sendShoot(vehicle, vehicle.weaponUnits.indexOf(weaponUnit), ammoSpawnPosition, rot.x, rot.y);
+                    sendShoot(vehicle, weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
                     lastFireTimeMillis = System.currentTimeMillis();
                 }
             }

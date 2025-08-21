@@ -19,6 +19,8 @@ public abstract class CameraMixin {
     @Shadow
     protected abstract void setPosition(double pX, double pY, double pZ);
 
+    @Shadow protected abstract void setRotation(float pYRot, float pXRot);
+
     @Inject(method = "setup", at = @At("TAIL"))
     public void superbWarfare$setup(BlockGetter pLevel, Entity pEntity, boolean pDetached, boolean pThirdPersonReverse, float pPartialTick, CallbackInfo ci) {
         if (pEntity instanceof Player player && player.getVehicle() instanceof AbstractVehicle) {
@@ -26,6 +28,10 @@ public abstract class CameraMixin {
             this.setPosition(Mth.lerp(pPartialTick, localVehiclePlayer.cameraXO, localVehiclePlayer.cameraX),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraYO, localVehiclePlayer.cameraY),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraZO, localVehiclePlayer.cameraZ));
+            if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                setRotation(Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY),
+                        Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotXO, localVehiclePlayer.cameraAimRotX));
+            }
         }
     }
 

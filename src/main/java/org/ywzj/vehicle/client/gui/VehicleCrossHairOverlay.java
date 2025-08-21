@@ -35,6 +35,9 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || !player.isAlive()) {

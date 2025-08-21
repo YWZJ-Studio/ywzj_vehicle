@@ -16,8 +16,8 @@ public class ClientWeaponUnitControl {
     public float ammoZ;
     public float ammoXRot;
     public float ammoYRot;
-    public float xRot;
-    public float yRot;
+    public float xAimRot;
+    public float yAimRot;
 
     public ClientWeaponUnitControl() {}
 
@@ -33,8 +33,8 @@ public class ClientWeaponUnitControl {
             control.ammoXRot = buf.readFloat();
             control.ammoYRot = buf.readFloat();
         } else {
-            control.xRot = buf.readFloat();
-            control.yRot = buf.readFloat();
+            control.xAimRot = buf.readFloat();
+            control.yAimRot = buf.readFloat();
         }
         return control;
     }
@@ -50,8 +50,8 @@ public class ClientWeaponUnitControl {
             buf.writeFloat(ammoXRot);
             buf.writeFloat(ammoYRot);
         } else {
-            buf.writeFloat(xRot);
-            buf.writeFloat(yRot);
+            buf.writeFloat(xAimRot);
+            buf.writeFloat(yAimRot);
         }
     }
 

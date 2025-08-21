@@ -13,7 +13,12 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector2f;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public abstract class WheeledVehicle extends AbstractVehicle {
 
@@ -60,6 +65,33 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     public void onLeaveVehicle(LivingEntity entity) {
         super.onLeaveVehicle(entity);
         level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.HOSTILE);
+    }
+
+    @Override
+    protected void tickAim() {
+        WeaponUnit weaponUnit = getOwnWeaponUnit(LocalVehiclePlayer.instance.player);
+        if (weaponUnit == null) {
+            return;
+        }
+        Vector2f rot = null;
+        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
+            rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
+        } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            rot = LocalVehiclePlayer.instance.scopeAimRot();
+        }
+        if (rot == null) {
+            return;
+        }
+        if (weaponUnit.xAimRot != rot.x || weaponUnit.yAimRot != rot.y) {
+            weaponUnit.xAimRot = rot.x;
+            weaponUnit.yAimRot = rot.y;
+            ClientWeaponUnitControl control = new ClientWeaponUnitControl();
+            control.vehicleEntityId = this.getId();
+            control.weaponIndex = weaponUnit.getIndex();
+            control.xAimRot = rot.x;
+            control.yAimRot = rot.y;
+            Channel.CHANNEL.sendToServer(control);
+        }
     }
 
     @Override

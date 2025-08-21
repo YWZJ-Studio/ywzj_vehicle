@@ -29,6 +29,8 @@ import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
+import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.ControlUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -81,7 +83,9 @@ public abstract class AbstractVehicle extends Mob {
 
     protected abstract void tickMove();
 
-    protected abstract void tickWeapon();
+    protected void tickWeapon() {
+        weaponUnits.forEach(WeaponUnit::tick);
+    }
 
     public abstract Vec3 getCameraOffset();
 
@@ -95,10 +99,12 @@ public abstract class AbstractVehicle extends Mob {
             if (seat == 0) {
                 controlUnit.setOperator(pPlayer);
             }
-            weaponUnits.get(seat).setOperator(pPlayer);
+            if (seat < weaponUnits.size() - 1) {
+                weaponUnits.get(seat).setOperator(pPlayer);
+            }
             passengerIdsBySeat.set(seat, pPlayer.getId());
             level().players().stream()
-                    .filter(player -> player.distanceTo(this) < 128)
+                    .filter(player -> EntityUtil.withinBroadcastRange(this, player))
                     .forEach(player ->
                             Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerVehicleSeatsChange(this)));
         }
@@ -110,10 +116,12 @@ public abstract class AbstractVehicle extends Mob {
             if (seat == 0) {
                 controlUnit.setOperator(null);
             }
-            weaponUnits.get(seat).setOperator(null);
+            if (seat < weaponUnits.size() - 1) {
+                weaponUnits.get(seat).setOperator(null);
+            }
             passengerIdsBySeat.set(seat, null);
             level().players().stream()
-                    .filter(player -> player.distanceTo(this) < 128)
+                    .filter(player -> EntityUtil.withinBroadcastRange(this, player))
                     .forEach(player ->
                             Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerVehicleSeatsChange(this)));
         }
@@ -140,6 +148,23 @@ public abstract class AbstractVehicle extends Mob {
                     if (index < vehicle.weaponUnits.size()) {
                         vehicle.weaponUnits.get(index).setOperator(passenger);
                     }
+                }
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void onServerWeaponUnitRot(ServerWeaponUnitRot message) {
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            if (message.weaponIndex < vehicle.weaponUnits.size() - 1) {
+                WeaponUnit weaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
+                if (weaponUnit != null) {
+                    weaponUnit.xRot = message.xRot;
+                    weaponUnit.yRot = message.yRot;
                 }
             }
         }

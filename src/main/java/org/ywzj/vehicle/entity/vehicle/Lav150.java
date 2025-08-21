@@ -1,11 +1,8 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import com.mojang.math.Axis;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -13,25 +10,18 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.joml.*;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.OBBEntity;
-import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.util.OBB;
-import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import java.util.List;
 
 public class Lav150 extends WheeledVehicle implements OBBEntity {
-
-    public static final EntityDataAccessor<Float> TURRET_X_ROT = SynchedEntityData.defineId(Lav150.class, EntityDataSerializers.FLOAT);
-    public static final EntityDataAccessor<Float> TURRET_Y_ROT = SynchedEntityData.defineId(Lav150.class, EntityDataSerializers.FLOAT);
-    public static float turretXRotSpeed = 3f;
-    public static float turretYRotSpeed = 3f;
-    public static float maxTurretXRot = 15;
-    public static float minTurretXRot = -30;
 
     private final OBB obb1 = new OBB(this.position().toVector3f(), new Vector3f(0.65f, 0.35f, 1f), new Quaternionf());
     private final OBB obb2 = new OBB(this.position().toVector3f(), new Vector3f(1.25f, 1f, 2.25f), new Quaternionf());
@@ -43,31 +33,12 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(TURRET_X_ROT, 0f);
-        this.entityData.define(TURRET_Y_ROT, 0f);
-    }
-
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
-        super.onSyncedDataUpdated(pKey);
-        if (TURRET_X_ROT.equals(pKey)) {
-            WeaponUnit machineGunTurret = weaponUnits.get(0);
-            machineGunTurret.xRot = entityData.get(TURRET_X_ROT);
-        } else if (TURRET_Y_ROT.equals(pKey)) {
-            WeaponUnit machineGunTurret = weaponUnits.get(0);
-            machineGunTurret.yRot = entityData.get(TURRET_Y_ROT);
-        }
-    }
-
-    @Override
     public void initWeaponUnits() {
-        WeaponUnit machineGunTurret = new WeaponUnit(this, new Vec3(0d, 2.5d, 0d), 2.7f);
-        machineGunTurret.xRotSpeed = turretXRotSpeed;
-        machineGunTurret.yRotSpeed = turretYRotSpeed;
-        machineGunTurret.xRotMax = maxTurretXRot;
-        machineGunTurret.xRotMin = minTurretXRot;
+        WeaponUnit machineGunTurret = new WeaponUnit(Component.translatable("lav150_main_gun_turret").getString(), 0, this, new Vec3(0d, 2.5d, 0d), 3.3f);
+        machineGunTurret.xRotSpeed = 3f;
+        machineGunTurret.yRotSpeed = 3f;
+        machineGunTurret.xRotMax = 15;
+        machineGunTurret.xRotMin = -30;
         this.weaponUnits.add(machineGunTurret);
     }
 
@@ -103,44 +74,12 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
     }
 
     @Override
-    protected void tickAim() {
-        if (!(getDriver() instanceof LocalPlayer)) {
-            return;
-        }
-        Vector2f rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
-        if (rot == null) {
-            return;
-        }
-        WeaponUnit machineGunTurret = weaponUnits.get(0);
-        if (machineGunTurret.xAimRot != rot.x || machineGunTurret.yAimRot != rot.y) {
-            machineGunTurret.xAimRot = rot.x;
-            machineGunTurret.yAimRot = rot.y;
-            ClientWeaponUnitControl control = new ClientWeaponUnitControl();
-            control.vehicleEntityId = this.getId();
-            control.weaponIndex = 0;
-            control.xRot = rot.x;
-            control.yRot = rot.y;
-            Channel.CHANNEL.sendToServer(control);
-        }
-    }
-
-    @Override
     protected void tickParticle() {
         if (!this.getPassengers().isEmpty() && tickCount % 10 == 0) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePos = this.position().add(this.getLookAngle().normalize().scale(-2f)).add(v2.scale(-1.2)).add(0, 2, 0);
             level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePos.x, engineSmokePos.y, engineSmokePos.z, 0, 0, 0);
-        }
-    }
-
-    @Override
-    protected void tickWeapon() {
-        WeaponUnit machineGunTurret = weaponUnits.get(0);
-        machineGunTurret.tick();
-        if (!level().isClientSide()) {
-            this.entityData.set(TURRET_X_ROT, machineGunTurret.xRot);
-            this.entityData.set(TURRET_Y_ROT, machineGunTurret.yRot);
         }
     }
 

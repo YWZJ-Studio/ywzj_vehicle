@@ -1,21 +1,28 @@
 package org.ywzj.vehicle.vehicle;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
 import org.joml.Vector2f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
+import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.function.Supplier;
 
 public class WeaponUnit {
 
+    private final String name;
+    private final int index;
     private final AbstractVehicle vehicle;
     private final Vec3 boltOffset;
     private final float barrelLength;
@@ -31,7 +38,9 @@ public class WeaponUnit {
     public float xRotMax;
     public float xRotMin;
 
-    public WeaponUnit(AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength) {
+    public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength) {
+        this.name = name;
+        this.index = index;
         this.vehicle = vehicle;
         this.boltOffset = boltOffset;
         this.barrelLength = barrelLength;
@@ -71,24 +80,31 @@ public class WeaponUnit {
     }
 
     public void tick() {
-        if (vehicle.level().isClientSide()) {
-            this.xRotO = this.xRot;
-            this.yRotO = this.yRot;
+        this.xRotO = this.xRot;
+        this.yRotO = this.yRot;
+
+        float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
+        float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
+
+        if (Math.abs(xDiff) > xRotSpeed) {
+            this.xRot += Math.signum(xDiff) * xRotSpeed;
         } else {
-            float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
-            float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
+            this.xRot = this.xAimRot;
+        }
+        this.xRot = Math.max(Math.min(this.xRot, xRotMax), xRotMin);
 
-            if (Math.abs(xDiff) > xRotSpeed) {
-                this.xRot += Math.signum(xDiff) * xRotSpeed;
-            } else {
-                this.xRot = this.xAimRot;
-            }
-            this.xRot = Math.max(Math.min(this.xRot, xRotMax), xRotMin);
+        if (Math.abs(yDiff) > yRotSpeed) {
+            this.yRot += Math.signum(yDiff) * yRotSpeed;
+        } else {
+            this.yRot = this.yAimRot;
+        }
 
-            if (Math.abs(yDiff) > yRotSpeed) {
-                this.yRot += Math.signum(yDiff) * yRotSpeed;
-            } else {
-                this.yRot = this.yAimRot;
+        if (!vehicle.level().isClientSide()) {
+            if (xDiff != 0 || yDiff != 0) {
+                vehicle.level().players().stream()
+                        .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && vehicle.getOwnWeaponUnit(player) != this)
+                        .forEach(player ->
+                                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerWeaponUnitRot(this)));
             }
         }
     }
@@ -103,12 +119,16 @@ public class WeaponUnit {
                         vehicle.shoot(message.weaponIndex, new Vec3(message.ammoX, message.ammoY, message.ammoZ), message.ammoXRot, message.ammoYRot);
                     } else {
                         WeaponUnit serverWeaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
-                        serverWeaponUnit.xAimRot = message.xRot;
-                        serverWeaponUnit.yAimRot = message.yRot % 360;
+                        serverWeaponUnit.xAimRot = message.xAimRot;
+                        serverWeaponUnit.yAimRot = message.yAimRot % 360;
                     }
                 }
             }
         }
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     public AbstractVehicle getVehicle() {
