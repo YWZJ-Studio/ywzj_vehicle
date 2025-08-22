@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.mixin.server;
+package org.ywzj.vehicle.mixin.common;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;

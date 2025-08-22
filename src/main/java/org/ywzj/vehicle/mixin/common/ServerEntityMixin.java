@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.mixin.server;
+package org.ywzj.vehicle.mixin.common;
 
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;

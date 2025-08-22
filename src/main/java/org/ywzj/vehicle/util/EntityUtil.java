@@ -9,6 +9,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.entity.OBBEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public class EntityUtil {
     }
 
     @Nullable
-    public static EntityResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
+    public static BulletHitResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
         Vec3 hitVec = null;
         Entity hitEntity = null;
         boolean headshot = false;
@@ -43,11 +44,11 @@ public class EntityUtil {
                 if (owner != null && entity.isPassengerOfSameVehicle(owner)) {
                     continue;
                 }
-                EntityResult result = getHitResult(bulletEntity, entity, startVec, endVec);
+                BulletHitResult result = getHitResult(bulletEntity, entity, startVec, endVec);
                 if (result == null) {
                     continue;
                 }
-                Vec3 hitPos = result.getHitPos();
+                Vec3 hitPos = result.getLocation();
                 double distanceToHit = startVec.distanceTo(hitPos);
                 if (entity.isAlive()) {
                     if (distanceToHit < closestDistance) {
@@ -59,12 +60,12 @@ public class EntityUtil {
                 }
             }
         }
-        return hitEntity != null ? new EntityResult(hitEntity, hitVec, headshot) : null;
+        return hitEntity != null ? new BulletHitResult(hitEntity, hitVec, headshot) : null;
     }
 
     @NotNull
-    public static List<EntityResult> findEntitiesOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
-        List<EntityResult> hitEntities = new ArrayList<>();
+    public static List<BulletHitResult> findEntitiesOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
+        List<BulletHitResult> hitEntities = new ArrayList<>();
         List<Entity> entities = bulletEntity.level().getEntities(bulletEntity, bulletEntity.getBoundingBox().expandTowards(bulletEntity.getDeltaMovement()).inflate(1.0), PROJECTILE_TARGETS);
         Entity owner = bulletEntity.getOwner();
         for (Entity entity : entities) {
@@ -72,7 +73,7 @@ public class EntityUtil {
                 if (owner != null && entity.equals(owner.getVehicle())) {
                     continue;
                 }
-                EntityResult result = getHitResult(bulletEntity, entity, startVec, endVec);
+                BulletHitResult result = getHitResult(bulletEntity, entity, startVec, endVec);
                 if (result == null) {
                     continue;
                 }
@@ -85,7 +86,18 @@ public class EntityUtil {
     }
 
     @Nullable
-    protected static EntityResult getHitResult(Projectile bulletEntity, Entity entity, Vec3 startVec, Vec3 endVec) {
+    protected static BulletHitResult getHitResult(Projectile bulletEntity, Entity entity, Vec3 startVec, Vec3 endVec) {
+        if (entity instanceof OBBEntity obbEntity) {
+            for (var obb : obbEntity.getOBBs()) {
+                // 计算射线与 OBB 的交点
+                var obbVec = obb.clip(startVec.toVector3f(), endVec.toVector3f()).orElse(null);
+                if (obbVec != null) {
+                    Vec3 hitPos = new Vec3(obbVec);
+                    return new BulletHitResult(entity, hitPos, false);
+                }
+            }
+        }
+
         AABB boundingBox = HitboxHelper.getFixedBoundingBox(entity, bulletEntity.getOwner());
         // 计算射线与实体 boundingBox 的交点
         Vec3 hitPos = boundingBox.clip(startVec, endVec).orElse(null);
@@ -102,36 +114,7 @@ public class EntityUtil {
         if ((eyeHeight - 0.25) < hitBoxPos.y && hitBoxPos.y < (eyeHeight + 0.25)) {
             headshot = true;
         }
-        return new EntityResult(entity, hitPos, headshot);
-    }
-
-    public static class EntityResult {
-
-        private final Entity entity;
-        private final Vec3 hitVec;
-        private final boolean headshot;
-
-        public EntityResult(Entity entity, Vec3 hitVec, boolean headshot) {
-            this.entity = entity;
-            this.hitVec = hitVec;
-            this.headshot = headshot;
-        }
-
-        // 子弹命中的实体
-        public Entity getEntity() {
-            return this.entity;
-        }
-
-        // 子弹命中的位置
-        public Vec3 getHitPos() {
-            return this.hitVec;
-        }
-
-        // 是否为爆头
-        public boolean isHeadshot() {
-            return this.headshot;
-        }
-
+        return new BulletHitResult(entity, hitPos, headshot);
     }
 
 }

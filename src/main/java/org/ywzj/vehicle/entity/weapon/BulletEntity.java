@@ -32,9 +32,9 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
-import org.ywzj.vehicle.util.EntityUtil.EntityResult;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -56,6 +56,7 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
     private float armorIgnore;
     private float headShot;
 
+    // 返回一个距离-伤害乘数
     private Function<Double, Float> distanceDamageFunction = (distance) -> 1.0f;
 
     public BulletEntity(EntityType<? extends Projectile> type, Level worldIn) {
@@ -150,10 +151,10 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
                 endVec = result.getLocation();
             }
 
-            List<EntityResult> hitEntities = null;
+            List<BulletHitResult> hitEntities = null;
             // 子弹的击中检测，穿透为 1 或者爆炸类弹药限制为一个实体穿透判定
             if (this.pierce <= 1) {
-                EntityResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
+                BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
                 // 将单个命中是实体创建为单个内容的 list
                 if (entityResult != null) {
                     hitEntities = Collections.singletonList(entityResult);
@@ -163,28 +164,18 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
             }
             // 当子弹击中实体时，进行被命中的实体读取
             if (hitEntities != null && !hitEntities.isEmpty()) {
-                EntityResult[] hitEntityResult = hitEntities.toArray(new EntityResult[0]);
-                // 对被命中的实体进行排序，按照距离子弹发射位置的距离进行升序排序
-                for (int i = 0; (i < this.pierce || i < 1) && i < (hitEntityResult.length - 1); i++) {
-                    int k = i;
-                    for (int j = i + 1; j < hitEntityResult.length; j++) {
-                        if (hitEntityResult[j].getHitPos().distanceTo(startVec) < hitEntityResult[k].getHitPos().distanceTo(startVec)) {
-                            k = j;
-                        }
-                    }
-                    EntityResult t = hitEntityResult[i];
-                    hitEntityResult[i] = hitEntityResult[k];
-                    hitEntityResult[k] = t;
-                }
-                for (EntityResult entityResult : hitEntityResult) {
-                    BulletHitResult r = new BulletHitResult(entityResult);
-                    this.onHitEntity(r, startVec, endVec);
-                    this.pierce--;
-                    if (this.pierce < 1) {
-                        // 子弹已经穿透所有实体，结束子弹的飞行
-                        this.discard();
-                        return;
-                    }
+                hitEntities.stream()
+                        .sorted(Comparator.comparingDouble(r -> r.getLocation().distanceToSqr(startVec)))
+                        .limit(pierce)
+                        .forEach(entityResult -> {
+                            // 处理子弹击中实体的逻辑
+                            this.onHitEntity(entityResult);
+                            this.pierce--;
+                        });
+                if (this.pierce < 1) {
+                    // 子弹已经穿透所有实体，结束子弹的飞行
+                    this.discard();
+                    return;
                 }
             }
             this.onHitBlock(result, startVec, endVec);
@@ -213,14 +204,7 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
         this.setDeltaMovement(this.getDeltaMovement().add(vec3.x, pShooter.onGround() ? 0.0D : vec3.y, vec3.z));
     }
 
-    /**
-     * 命中后效，子弹命中实体或方块后触发的事件
-     */
-    protected void onPostHit(HitResult hitResult, Entity core) {
-
-    }
-
-    protected void onHitEntity(BulletHitResult result, Vec3 startVec, Vec3 endVec) {
+    protected void onHitEntity(BulletHitResult result) {
         if (result.getEntity() instanceof ITargetEntity targetEntity) {
             DamageSource source = this.damageSources().thrown(this, this.getOwner());
             targetEntity.onProjectileHit(this, result, source, this.getDamage(result.getLocation()));
@@ -235,9 +219,6 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
         boolean headshot = result.isHeadshot();
         float damage = this.getDamage(result.getLocation());
         float headShotMultiplier = Math.max(this.headShot, 0);
-        if (entity == null) {
-            return;
-        }
         if (headshot) {
             // 默认爆头伤害是 1x
             damage *= headShotMultiplier;
@@ -252,16 +233,12 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
             KnockBackModifier modifier = KnockBackModifier.fromLivingEntity(livingCore);
             modifier.setKnockBackStrength(this.knockback);
             // 创建伤害
-            tacAttackEntity(entity, damage, sources);
+            performAttack(entity, damage, sources);
             // 恢复原位
             modifier.resetKnockBackStrength();
         } else {
             // 创建伤害
-            tacAttackEntity(entity, damage, sources);
-        }
-        // 只对 LivingEntity 执行击杀判定
-        if (entity instanceof LivingEntity livingCore) {
-
+            performAttack(entity, damage, sources);
         }
     }
 
@@ -290,7 +267,7 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
     }
 
 
-    private void tacAttackEntity(Entity parts, float damage, Pair<DamageSource, DamageSource> sources) {
+    private void performAttack(Entity parts, float damage, Pair<DamageSource, DamageSource> sources) {
         var source1 = sources.getLeft();
         var source2 = sources.getRight();
         // 穿甲伤害和普通伤害的比例计算
@@ -299,14 +276,16 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
 
         if (parts instanceof PartEntity<?> part) {
             part.getParent().invulnerableTime = 0;
+        } else {
+            parts.invulnerableTime = 0;
         }
-        parts.invulnerableTime = 0;
         parts.hurt(source1, damage * normalDamagePercent);
 
         if (parts instanceof PartEntity<?> part) {
             part.getParent().invulnerableTime = 0;
+        } else {
+            parts.invulnerableTime = 0;
         }
-        parts.invulnerableTime = 0;
         parts.hurt(source2, damage * armorDamagePercent);
     }
 

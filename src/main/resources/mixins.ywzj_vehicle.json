@@ -14,7 +14,9 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "server.ChunkMapMixin",
-    "server.ServerEntityMixin"
+    "common.ChunkMapMixin",
+    "common.ServerEntityMixin",
+    "tacz.EntityKineticBulletMixin",
+    "tacz.EntityUtilMixin"
   ]
 }
