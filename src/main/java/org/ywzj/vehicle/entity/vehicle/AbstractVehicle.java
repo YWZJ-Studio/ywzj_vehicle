@@ -89,7 +89,7 @@ public abstract class AbstractVehicle extends Mob {
 
     public abstract Vec3 getCameraOffset();
 
-    public void onEnterVehicle(Player pPlayer) {
+    public void onEnterVehicle(LivingEntity livingEntity) {
         int seat = passengerIdsBySeat.indexOf(null);
         if (seat == -1 && passengerIdsBySeat.size() < seats) {
             passengerIdsBySeat.add(null);
@@ -97,16 +97,15 @@ public abstract class AbstractVehicle extends Mob {
         }
         if (seat != -1) {
             if (seat == 0) {
-                controlUnit.setOperator(pPlayer);
+                controlUnit.setOperator(livingEntity);
             }
             if (seat < weaponUnits.size() - 1) {
-                weaponUnits.get(seat).setOperator(pPlayer);
+                weaponUnits.get(seat).setOperator(livingEntity);
             }
-            passengerIdsBySeat.set(seat, pPlayer.getId());
-            level().players().stream()
-                    .filter(player -> EntityUtil.withinBroadcastRange(this, player))
-                    .forEach(player ->
-                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerVehicleSeatsChange(this)));
+            passengerIdsBySeat.set(seat, livingEntity.getId());
+
+            var packet = new ServerVehicleSeatsChange(this);
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), packet);
         }
     }
 

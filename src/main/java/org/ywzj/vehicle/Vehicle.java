@@ -26,6 +26,7 @@ public class Vehicle {
         AllBlockEntities.register(modEventBus);
         AllSounds.register(modEventBus);
         AllTabs.register(modEventBus);
+        AllWeaponUnitType.register(modEventBus);
         modEventBus.register(Channel.class);
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

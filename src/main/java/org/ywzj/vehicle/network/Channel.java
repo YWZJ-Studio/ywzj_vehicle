@@ -6,10 +6,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.ywzj.vehicle.Vehicle;
-import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
-import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
-import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
-import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
+import org.ywzj.vehicle.network.message.*;
 
 import java.util.Optional;
 
@@ -48,6 +45,10 @@ public class Channel {
                 ServerWeaponUnitRot::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
+        CHANNEL.registerMessage(PacketId.S_SYNC_DATA.value(), ServerSyncData.class,
+                ServerSyncData::encode, ServerSyncData::decode,
+                ServerSyncData::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
     }
 
 }
@@ -57,7 +58,9 @@ enum PacketId {
     C_VEHICLE_CONTROL(100),
     C_WEAPON_UNIT_CONTROL(101),
     S_VEHICLE_SEATS_CHANGE(102),
-    S_WEAPON_UNIT_ROT(103);
+    S_WEAPON_UNIT_ROT(103),
+
+    S_SYNC_DATA(200);
 
     private final int id;
 

@@ -4,6 +4,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.AbstractTurretUnit;
 
 import java.util.function.Supplier;
 
@@ -17,6 +18,13 @@ public class ServerWeaponUnitRot {
     public ServerWeaponUnitRot() {}
 
     public ServerWeaponUnitRot(WeaponUnit weaponUnit) {
+        this.vehicleEntityId = weaponUnit.getVehicle().getId();
+        this.weaponIndex = weaponUnit.getIndex();
+        this.xRot = weaponUnit.xRot;
+        this.yRot = weaponUnit.yRot;
+    }
+
+    public ServerWeaponUnitRot(AbstractTurretUnit<?> weaponUnit) {
         this.vehicleEntityId = weaponUnit.getVehicle().getId();
         this.weaponIndex = weaponUnit.getIndex();
         this.xRot = weaponUnit.xRot;

@@ -10,7 +10,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector2f;
@@ -53,7 +52,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     }
 
     @Override
-    public void onEnterVehicle(Player pPlayer) {
+    public void onEnterVehicle(LivingEntity pPlayer) {
         super.onEnterVehicle(pPlayer);
         if (passengerIdsBySeat.size() == 1) {
             level().playSound(null, this.blockPosition(), getEngineStartSound(), SoundSource.HOSTILE);
