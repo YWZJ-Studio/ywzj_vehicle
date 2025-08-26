@@ -20,25 +20,31 @@ import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import java.util.List;
 
-public class Lav150 extends WheeledVehicle implements OBBEntity {
+public class Ztl11 extends WheeledVehicle implements OBBEntity {
 
     private final OBB obb1 = new OBB(this.position().toVector3f(), new Vector3f(0.65f, 0.35f, 1f), new Quaternionf());
     private final OBB obb2 = new OBB(this.position().toVector3f(), new Vector3f(1.25f, 1f, 2.25f), new Quaternionf());
 
-    public Lav150(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public Ztl11(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.wide = 2.7f;
-        this.length = 3.61f;
+        this.wide = 2.97f;
+        this.length = 6.25f;
     }
 
     @Override
     public void initWeaponUnits() {
-        WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null);
-        machineGunTurret.xRotSpeed = 3f;
-        machineGunTurret.yRotSpeed = 3f;
-        machineGunTurret.xRotMax = 15;
-        machineGunTurret.xRotMin = -30;
-        this.weaponUnits.add(machineGunTurret);
+        WeaponUnit turret = new WeaponUnit("ztl11_turret", 0, this, new Vec3(0d, 2.54d, -0.375d), 8f, null, null);
+        turret.xRotSpeed = 22.1f / 20;
+        turret.yRotSpeed = 15.5f / 20;
+        turret.xRotMax = 5f;
+        turret.xRotMin = -18f;
+        this.weaponUnits.add(turret);
+        WeaponUnit commanderMachineGun = new WeaponUnit("ztl11_commander_machine_gun", 1, this, new Vec3(-0.594d, 3.325d, 0.101d), 1f, new Vec3(0.5d, 0.5d, -1d), turret);
+        commanderMachineGun.xRotSpeed = 60f / 20;
+        commanderMachineGun.yRotSpeed = 60f / 20;
+        commanderMachineGun.xRotMax = 15f;
+        commanderMachineGun.xRotMin = -18f;
+        this.weaponUnits.add(commanderMachineGun);
     }
 
     @Override
@@ -77,7 +83,7 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
         if (!this.getPassengers().isEmpty() && tickCount % 10 == 0) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            Vec3 engineSmokePos = this.position().add(this.getLookAngle().normalize().scale(-2f)).add(v2.scale(-1.2)).add(0, 2, 0);
+            Vec3 engineSmokePos = this.position().add(this.getLookAngle().normalize().scale(-2f)).add(v2.scale(-1.6)).add(0, 2, 0);
             level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePos.x, engineSmokePos.y, engineSmokePos.z, 0, 0, 0);
         }
     }
@@ -117,8 +123,8 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
 
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (weaponIndex == 0) {
-            WeaponUnit machineGunTurret = weaponUnits.get(0);
+        if (weaponIndex < weaponUnits.size()) {
+            WeaponUnit machineGunTurret = weaponUnits.get(weaponIndex);
             machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
             this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
         }

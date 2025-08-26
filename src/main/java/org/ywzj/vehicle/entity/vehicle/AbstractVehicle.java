@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,26 +25,33 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
-import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.ControlUnit;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends Mob {
 
-    public List<Integer> passengerIdsBySeat = new ArrayList<>();
-    public int seats = 4;
-    public final ControlUnit controlUnit = new ControlUnit();
-    public final List<WeaponUnit> weaponUnits = new ArrayList<>();
+    public int seats;
+    public List<Integer> passengerIdsBySeat;
+    public final ControlUnit controlUnit;
+    public final List<WeaponUnit> weaponUnits;
+    public final SpotterUnit spotterUnit;
     public float wide;
     public float length;
     private float zRot;
@@ -51,6 +59,11 @@ public abstract class AbstractVehicle extends Mob {
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.seats = getSeats();
+        this.passengerIdsBySeat = new ArrayList<>(Collections.nCopies(seats, null));
+        this.controlUnit = new ControlUnit();
+        this.weaponUnits = new ArrayList<>();
+        this.spotterUnit = new SpotterUnit(this);
         this.setMaxUpStep(1.0f);
         this.initWeaponUnits();
     }
@@ -64,11 +77,14 @@ public abstract class AbstractVehicle extends Mob {
             tickAim();
             tickSound();
             tickParticle();
+            spotterUnit.tick();
         } else {
             tickMove();
         }
         tickWeapon();
     }
+
+    public abstract int getSeats();
 
     public abstract void initWeaponUnits();
 
@@ -99,13 +115,11 @@ public abstract class AbstractVehicle extends Mob {
             if (seat == 0) {
                 controlUnit.setOperator(livingEntity);
             }
-            if (seat < weaponUnits.size() - 1) {
+            if (seat < weaponUnits.size()) {
                 weaponUnits.get(seat).setOperator(livingEntity);
             }
             passengerIdsBySeat.set(seat, livingEntity.getId());
-
-            var packet = new ServerVehicleSeatsChange(this);
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), packet);
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
@@ -115,14 +129,41 @@ public abstract class AbstractVehicle extends Mob {
             if (seat == 0) {
                 controlUnit.setOperator(null);
             }
-            if (seat < weaponUnits.size() - 1) {
+            if (seat < weaponUnits.size()) {
                 weaponUnits.get(seat).setOperator(null);
             }
             passengerIdsBySeat.set(seat, null);
-            level().players().stream()
-                    .filter(player -> EntityUtil.withinBroadcastRange(this, player))
-                    .forEach(player ->
-                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerVehicleSeatsChange(this)));
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+        }
+    }
+
+    public static void onClientVehicleChangeSeat(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        ServerPlayer player = ctxSupplier.get().getSender();
+        if (player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            int toSeat = message.toSeat;
+            if (toSeat < vehicle.passengerIdsBySeat.size() && vehicle.passengerIdsBySeat.get(toSeat) == null) {
+                int origSeat = vehicle.passengerIdsBySeat.indexOf(player.getId());
+                if (origSeat == toSeat) {
+                    return;
+                }
+                if (origSeat != -1) {
+                    if (origSeat == 0) {
+                        vehicle.controlUnit.setOperator(null);
+                    }
+                    if (origSeat < vehicle.weaponUnits.size()) {
+                        vehicle.weaponUnits.get(origSeat).setOperator(null);
+                    }
+                    vehicle.passengerIdsBySeat.set(origSeat, null);
+                }
+                if (toSeat == 0) {
+                    vehicle.controlUnit.setOperator(player);
+                }
+                if (toSeat < vehicle.weaponUnits.size()) {
+                    vehicle.weaponUnits.get(toSeat).setOperator(player);
+                }
+                vehicle.passengerIdsBySeat.set(toSeat, player.getId());
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), new ServerVehicleSeatsChange(vehicle));
+            }
         }
     }
 
@@ -133,9 +174,13 @@ public abstract class AbstractVehicle extends Mob {
             return;
         }
         if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            Player player = LocalVehiclePlayer.instance.getPlayer();
             List<Integer> passengerIdsBySeat = new ArrayList<>();
             for (int id : message.passengerIdsBySeat) {
                 passengerIdsBySeat.add(id == -1 ? null : id);
+            }
+            if (vehicle.passengerIdsBySeat.contains(player.getId()) && !passengerIdsBySeat.contains(player.getId())) {
+                LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.DEFAULT);
             }
             vehicle.passengerIdsBySeat = passengerIdsBySeat;
             for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
@@ -159,9 +204,11 @@ public abstract class AbstractVehicle extends Mob {
             return;
         }
         if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-            if (message.weaponIndex < vehicle.weaponUnits.size() - 1) {
+            if (message.weaponIndex < vehicle.weaponUnits.size()) {
                 WeaponUnit weaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
                 if (weaponUnit != null) {
+                    weaponUnit.xAimRot = message.xRot;
+                    weaponUnit.yAimRot = message.yRot;
                     weaponUnit.xRot = message.xRot;
                     weaponUnit.yRot = message.yRot;
                 }
@@ -198,8 +245,12 @@ public abstract class AbstractVehicle extends Mob {
 
     public WeaponUnit getOwnWeaponUnit(LivingEntity pPassenger) {
         int index = passengerIdsBySeat.indexOf(pPassenger.getId());
-        if (index != -1 && index < weaponUnits.size()) {
-            return weaponUnits.get(index);
+        if (index != -1) {
+            if (index < weaponUnits.size()) {
+                return weaponUnits.get(index);
+            } else {
+                return pPassenger.level().isClientSide ? spotterUnit : null;
+            }
         }
         return null;
     }
@@ -246,6 +297,11 @@ public abstract class AbstractVehicle extends Mob {
             return false;
         }
         return super.hurt(source, amount);
+    }
+
+    @Override
+    protected SoundEvent getHurtSound(DamageSource pDamageSource) {
+        return AllSounds.BULLET_HIT_OUTSIDE.get();
     }
 
 //    @Override

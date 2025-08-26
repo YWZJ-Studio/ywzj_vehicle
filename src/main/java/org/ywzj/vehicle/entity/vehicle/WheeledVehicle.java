@@ -11,8 +11,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector2f;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
@@ -38,6 +38,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         super(pEntityType, pLevel);
     }
 
+    @Override
+    public int getSeats() {
+        return 3;
+    }
+
     public abstract SoundEvent getEngineStartSound();
 
     public abstract SoundEvent getEngineIdleSound();
@@ -54,7 +59,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     @Override
     public void onEnterVehicle(LivingEntity pPlayer) {
         super.onEnterVehicle(pPlayer);
-        if (passengerIdsBySeat.size() == 1) {
+        if (pPlayer.equals(controlUnit.operator)) {
             level().playSound(null, this.blockPosition(), getEngineStartSound(), SoundSource.HOSTILE);
         }
         level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.HOSTILE);
@@ -68,11 +73,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     @Override
     protected void tickAim() {
-        WeaponUnit weaponUnit = getOwnWeaponUnit(LocalVehiclePlayer.instance.player);
+        WeaponUnit weaponUnit = getOwnWeaponUnit(LocalVehiclePlayer.instance.getPlayer());
         if (weaponUnit == null) {
             return;
         }
-        Vector2f rot = null;
+        Vec2 rot = null;
         if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
             rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
         } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {

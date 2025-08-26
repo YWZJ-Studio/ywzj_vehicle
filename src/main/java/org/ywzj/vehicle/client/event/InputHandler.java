@@ -16,6 +16,7 @@ import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.vehicle.ControlUnit;
@@ -61,6 +62,30 @@ public class InputHandler {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_V,
             "key.category.ywzj_vehicle");
+    public static final KeyMapping CHANGE_SEAT_1_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_1.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_1,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping CHANGE_SEAT_2_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_2.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_2,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping CHANGE_SEAT_3_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_3.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_3,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping CHANGE_SEAT_4_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_4.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_4,
+            "key.category.ywzj_vehicle");
     private static long lastFireTimeMillis;
 
     @SubscribeEvent
@@ -68,7 +93,19 @@ public class InputHandler {
         if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) return;
         if (event.getAction() == GLFW.GLFW_PRESS){
             if (SWITCH_VIEW_KEY.matches(event.getKey(), event.getScanCode())) {
-                LocalVehiclePlayer.instance.switchViewType();
+                LocalVehiclePlayer.instance.switchViewType(null);
+            }
+            if (LocalVehiclePlayer.instance.onVehicle()) {
+                AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+                if (CHANGE_SEAT_1_KEY.matches(event.getKey(), event.getScanCode())) {
+                    sendChangeSeat(vehicle, 0);
+                } else if (CHANGE_SEAT_2_KEY.matches(event.getKey(), event.getScanCode())) {
+                    sendChangeSeat(vehicle, 1);
+                } else if (CHANGE_SEAT_3_KEY.matches(event.getKey(), event.getScanCode())) {
+                    sendChangeSeat(vehicle, 2);
+                } else if (CHANGE_SEAT_4_KEY.matches(event.getKey(), event.getScanCode())) {
+                    sendChangeSeat(vehicle, 3);
+                }
             }
         }
     }
@@ -95,6 +132,10 @@ public class InputHandler {
                 if (weaponUnit == null) {
                     return;
                 }
+                if (weaponUnit == vehicle.spotterUnit) {
+                    LocalVehiclePlayer.instance.sendMessage("tips.spotter");
+                    return;
+                }
                 Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
                 Vector2f rot = weaponUnit.worldRot();
                 int rpm = 400;
@@ -115,6 +156,13 @@ public class InputHandler {
         control.left = controlUnit.left;
         control.right = controlUnit.right;
         Channel.CHANNEL.sendToServer(control);
+    }
+
+    private static void sendChangeSeat(AbstractVehicle abstractVehicle, int toSeat) {
+        ClientVehicleChangeSeat changeSeat = new ClientVehicleChangeSeat();
+        changeSeat.vehicleEntityId = abstractVehicle.getId();
+        changeSeat.toSeat = toSeat;
+        Channel.CHANNEL.sendToServer(changeSeat);
     }
 
     private static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {

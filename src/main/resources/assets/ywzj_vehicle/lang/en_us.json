@@ -6,5 +6,15 @@
   "key.ywzj_vehicle.backward.desc": "后退",
   "key.ywzj_vehicle.left.desc": "左转",
   "key.ywzj_vehicle.right.desc": "右转",
-  "key.ywzj_vehicle.main_weapon_shoot.desc": "主武器射击"
+  "key.ywzj_vehicle.main_weapon_shoot.desc": "主武器射击",
+  "key.ywzj_vehicle.switch_view.desc": "切换视角",
+  "key.ywzj_vehicle.change_seat_1.desc": "1号座位",
+  "key.ywzj_vehicle.change_seat_2.desc": "2号座位",
+  "key.ywzj_vehicle.change_seat_3.desc": "3号座位",
+  "key.ywzj_vehicle.change_seat_4.desc": "4号座位",
+  "tips.spotter": "未装备武器",
+  "spotter": "乘员",
+  "lav150_main_gun_turret": "炮塔",
+  "ztl11_turret": "主炮",
+  "ztl11_commander_machine_gun": "车长机枪"
 }

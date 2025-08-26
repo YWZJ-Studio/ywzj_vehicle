@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.mixin.client;
 
 import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -24,6 +25,9 @@ public abstract class CameraMixin {
     @Inject(method = "setup", at = @At("TAIL"))
     public void superbWarfare$setup(BlockGetter pLevel, Entity pEntity, boolean pDetached, boolean pThirdPersonReverse, float pPartialTick, CallbackInfo ci) {
         if (pEntity instanceof Player player && player.getVehicle() instanceof AbstractVehicle) {
+            if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+                return;
+            }
             LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
             this.setPosition(Mth.lerp(pPartialTick, localVehiclePlayer.cameraXO, localVehiclePlayer.cameraX),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraYO, localVehiclePlayer.cameraY),
