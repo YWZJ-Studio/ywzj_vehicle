@@ -33,7 +33,7 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
 
     @Override
     public void initWeaponUnits() {
-        WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null);
+        WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null, null);
         machineGunTurret.xRotSpeed = 3f;
         machineGunTurret.yRotSpeed = 3f;
         machineGunTurret.xRotMax = 15;

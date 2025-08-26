@@ -10,7 +10,6 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
-import org.joml.Vector2f;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
@@ -30,6 +29,7 @@ public class WeaponUnit {
     private final Vec3 boltOffset;
     private final float barrelLength;
     private final Vec3 operatorOffset;
+    private Vec3 seatOffset;
     private final WeaponUnit baseWeaponUnit;
     private LivingEntity operator;
     public float xAimRot;
@@ -43,7 +43,7 @@ public class WeaponUnit {
     public float xRotMax;
     public float xRotMin;
 
-    public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength, Vec3 operatorOffset, WeaponUnit baseWeaponUnit) {
+    public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength, Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         this.name = Component.translatable(name);
         this.index = index;
         this.vehicle = vehicle;
@@ -51,8 +51,10 @@ public class WeaponUnit {
         this.boltOffset = boltOffset;
         // 炮管长度，为发射物生成位置与炮闩位置的距离
         this.barrelLength = barrelLength;
-        // 武器操作员偏移，为操作玩家的摄像机相对于炮闩的偏移
+        // 武器操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
         this.operatorOffset = operatorOffset;
+        // 武器操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
+        this.seatOffset = seatOffset;
         // 本武器所附着于的武器
         this.baseWeaponUnit = baseWeaponUnit;
     }
@@ -60,7 +62,7 @@ public class WeaponUnit {
     public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition);
         bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 1f);
-        bulletEntity.setDamage(25);
+        bulletEntity.setDamage(1);
         bulletEntity.setHeadShot(1.5f);
         vehicle.level().addFreshEntity(bulletEntity);
     }
@@ -72,7 +74,7 @@ public class WeaponUnit {
     }
 
     public Vec3 ammoSpawnPosition() {
-        Vector2f rot = worldRot();
+        Vec2 rot = worldRot();
         Vec3 barrelOffset = VectorUtil.calculateViewVector(rot.x, rot.y).normalize().scale(barrelLength);
         return worldBoltPosition().add(barrelOffset);
     }
@@ -84,24 +86,36 @@ public class WeaponUnit {
     }
 
     public Vec3 worldOperatorPosition() {
-        if (operatorOffset == null) {
+        return worldPosition(operatorOffset);
+    }
+
+    public Vec3 worldSeatPosition(Entity pPassenger) {
+        if (seatOffset == null) {
+            return worldBoltPosition().subtract(vehicle.getCameraOffset());
+        }
+        Vector4d offset = rotatedOffset(this, boltOffset.x + seatOffset.x, boltOffset.z + seatOffset.z);
+        return vehicle.relativeRotPos(vehicle.position().add(offset.z, boltOffset.y + seatOffset.y - pPassenger.getEyeHeight(), offset.w));
+    }
+
+    public Vec3 worldPosition(Vec3 offsetFromBolt) {
+        if (offsetFromBolt == null) {
             return worldBoltPosition().add(vehicle.getCameraOffset());
         }
-        Vector4d offset = rotatedOffset(this, boltOffset.x + operatorOffset.x, boltOffset.z + operatorOffset.z);
+        Vector4d offset = rotatedOffset(this, boltOffset.x + offsetFromBolt.x, boltOffset.z + offsetFromBolt.z);
         float rot = yRot;
         float cos = (float) Math.cos(Math.toRadians(rot));
         float sin = (float) Math.sin(Math.toRadians(rot));
         float dx = (float) (offset.z - offset.x);
         float dy = (float) (offset.w - offset.y);
-        Vec3 operatorPosition = vehicle.position().add(new Vec3(offset.x + dx * cos - dy * sin, boltOffset.y + operatorOffset.y, offset.y + dx * sin + dy * cos));
-        return vehicle.relativeRotPos(operatorPosition);
+        Vec3 pos = vehicle.position().add(new Vec3(offset.x + dx * cos - dy * sin, boltOffset.y + offsetFromBolt.y, offset.y + dx * sin + dy * cos));
+        return vehicle.relativeRotPos(pos);
     }
 
-    public Vector2f worldRot() {
+    public Vec2 worldRot() {
         Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, yRot + (baseWeaponUnit == null ? 0 : baseWeaponUnit.yRot)), false);
         float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.hypot(worldVec.x, worldVec.z)));
         float yaw = (float) Math.toDegrees(Math.atan2(worldVec.x, worldVec.z));
-        return new Vector2f(pitch, yaw);
+        return new Vec2(pitch, yaw);
     }
 
     public Vec2 vecToRot(Vec3 worldVec) {
@@ -199,6 +213,10 @@ public class WeaponUnit {
 
     public AbstractVehicle getVehicle() {
         return vehicle;
+    }
+
+    public void setSeatOffset(Vec3 seatOffset) {
+        this.seatOffset = seatOffset;
     }
 
 }

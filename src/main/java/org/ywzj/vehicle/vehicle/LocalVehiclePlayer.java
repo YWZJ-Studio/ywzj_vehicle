@@ -9,7 +9,6 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector2f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
@@ -59,7 +58,7 @@ public class LocalVehiclePlayer {
                 if (weaponUnit == null) {
                     return;
                 }
-                Vector2f barrelAimRot = weaponUnit.worldRot();
+                Vec2 barrelAimRot = weaponUnit.worldRot();
                 cameraAimRotXO = cameraAimRotX;
                 cameraAimRotYO = cameraAimRotY;
                 cameraAimRotX = barrelAimRot.x;
@@ -107,7 +106,7 @@ public class LocalVehiclePlayer {
             getPlayer().setXRot(Mth.wrapDegrees((float) (-(Mth.atan2(d1, d3) * (double)(180F / (float)Math.PI))) + 10f));
             getPlayer().setYRot(Mth.wrapDegrees((float) (Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F));
         } else if (toViewType == ViewType.SCOPE) {
-            Vector2f barrelAimRot = weaponUnit.worldRot();
+            Vec2 barrelAimRot = weaponUnit.worldRot();
             // 切换开镜后，若鼠标未移动，仍向开镜前第三人称预瞄的方向自动旋转
             mouseTurnedAfterScope = false;
             cameraAimRotX = barrelAimRot.x;
@@ -128,7 +127,7 @@ public class LocalVehiclePlayer {
         if (weaponUnit == null) {
             return;
         }
-        Vector2f barrelAimRot = weaponUnit.worldRot();
+        Vec2 barrelAimRot = weaponUnit.worldRot();
         if (lastWeaponUnit != weaponUnit) {
             lastWeaponUnit = weaponUnit;
             scopeAimRotX = barrelAimRot.x;

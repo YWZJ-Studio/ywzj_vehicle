@@ -137,33 +137,38 @@ public abstract class AbstractVehicle extends Mob {
         }
     }
 
+    public boolean changeSeat(LivingEntity pPassenger, int toSeat) {
+        if (toSeat < passengerIdsBySeat.size() && passengerIdsBySeat.get(toSeat) == null) {
+            int origSeat = passengerIdsBySeat.indexOf(pPassenger.getId());
+            if (origSeat == toSeat) {
+                return false;
+            }
+            if (origSeat != -1) {
+                if (origSeat == 0) {
+                    controlUnit.setOperator(null);
+                }
+                if (origSeat < weaponUnits.size()) {
+                    weaponUnits.get(origSeat).setOperator(null);
+                }
+                passengerIdsBySeat.set(origSeat, null);
+            }
+            if (toSeat == 0) {
+                controlUnit.setOperator(pPassenger);
+            }
+            if (toSeat < weaponUnits.size()) {
+                weaponUnits.get(toSeat).setOperator(pPassenger);
+            }
+            passengerIdsBySeat.set(toSeat, pPassenger.getId());
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+            return true;
+        }
+        return false;
+    }
+
     public static void onClientVehicleChangeSeat(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ServerPlayer player = ctxSupplier.get().getSender();
         if (player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-            int toSeat = message.toSeat;
-            if (toSeat < vehicle.passengerIdsBySeat.size() && vehicle.passengerIdsBySeat.get(toSeat) == null) {
-                int origSeat = vehicle.passengerIdsBySeat.indexOf(player.getId());
-                if (origSeat == toSeat) {
-                    return;
-                }
-                if (origSeat != -1) {
-                    if (origSeat == 0) {
-                        vehicle.controlUnit.setOperator(null);
-                    }
-                    if (origSeat < vehicle.weaponUnits.size()) {
-                        vehicle.weaponUnits.get(origSeat).setOperator(null);
-                    }
-                    vehicle.passengerIdsBySeat.set(origSeat, null);
-                }
-                if (toSeat == 0) {
-                    vehicle.controlUnit.setOperator(player);
-                }
-                if (toSeat < vehicle.weaponUnits.size()) {
-                    vehicle.weaponUnits.get(toSeat).setOperator(player);
-                }
-                vehicle.passengerIdsBySeat.set(toSeat, player.getId());
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), new ServerVehicleSeatsChange(vehicle));
-            }
+            vehicle.changeSeat(player, message.toSeat);
         }
     }
 
@@ -237,6 +242,20 @@ public abstract class AbstractVehicle extends Mob {
     public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
         onLeaveVehicle(pPassenger);
         return super.getDismountLocationForPassenger(pPassenger);
+    }
+
+    @Override
+    protected void positionRider(Entity pPassenger, Entity.MoveFunction pCallback) {
+        if (!(pPassenger instanceof LivingEntity)) {
+            super.positionRider(pPassenger, pCallback);
+        }
+        WeaponUnit weaponUnit = getOwnWeaponUnit((LivingEntity) pPassenger);
+        if (weaponUnit != null && weaponUnit != spotterUnit) {
+            Vec3 pos = weaponUnit.worldSeatPosition(pPassenger);
+            pCallback.accept(pPassenger, pos.x, pos.y, pos.z);
+        } else {
+            super.positionRider(pPassenger, pCallback);
+        }
     }
 
     public LivingEntity getDriver() {
