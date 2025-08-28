@@ -16,6 +16,7 @@ import org.joml.Vector4f;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.util.OBB;
+import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import java.util.List;
@@ -33,28 +34,37 @@ public class Ztl11 extends WheeledVehicle implements OBBEntity {
 
     @Override
     public void initWeaponUnits() {
-        WeaponUnit turret = new WeaponUnit("ztl11_turret", 0, this, new Vec3(0d, 2.54d, -0.375d), 8f, null, null, null);
+        WeaponUnit turret = new WeaponUnit("ztl11_turret",
+                0,
+                this,
+                new Vec3(0, 2.54d, -0.375d),
+                8f,
+                new Vec3(0, 1.5d, 0),
+                new Vec3(0, 0, 0),
+                null);
         turret.xRotSpeed = 22.1f / 20;
         turret.yRotSpeed = 15.5f / 20;
         turret.xRotMax = 5f;
         turret.xRotMin = -18f;
         this.weaponUnits.add(turret);
-        WeaponUnit commanderMachineGun = new WeaponUnit("ztl11_commander_machine_gun", 1, this, new Vec3(-0.594d, 3.325d, 0.101d), 1f, new Vec3(0.5d, 0.5d, -1d), new Vec3(0d, 0.3d, -0.4d), turret);
+        WeaponUnit commanderMachineGun = new WeaponUnit("ztl11_commander_machine_gun",
+                1,
+                this,
+                new Vec3(-0.594d, 3.325d, 0.101d),
+                1f,
+                new Vec3(0.5d, 0.5d, -1d),
+                new Vec3(0, 0.3d, -0.4d),
+                turret);
         commanderMachineGun.xRotSpeed = 60f / 20;
         commanderMachineGun.yRotSpeed = 60f / 20;
         commanderMachineGun.xRotMax = 15f;
         commanderMachineGun.xRotMin = -18f;
         this.weaponUnits.add(commanderMachineGun);
-    }
-
-    @Override
-    public double getPassengersRidingOffset() {
-        return 0.8f;
-    }
-
-    @Override
-    public Vec3 getCameraOffset() {
-        return new Vec3(0, 1.5, 0);
+        this.spotterUnit = new SpotterUnit(this,
+                new Vec3(0, 4.54d, -0.375d),
+                new Vec3(0, 1.5d, 0),
+                new Vec3(0, 0, 0),
+                null);
     }
 
     @Override

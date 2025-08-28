@@ -12,6 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.Vehicle;
 import org.ywzj.vehicle.entity.vehicle.Lav150;
+import org.ywzj.vehicle.entity.vehicle.Motorcycle;
 import org.ywzj.vehicle.entity.vehicle.Ztl11;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 
@@ -26,8 +27,13 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Ztl11>> ZTL11 = ENTITIES.register("ztl11",
             () -> EntityType.Builder.of(Ztl11::new, MobCategory.MISC).sized(2.5f, 2.5f)
-                    .clientTrackingRange(128)
+                    .clientTrackingRange(16)
                     .build("ztl11"));
+
+    public static final RegistryObject<EntityType<Motorcycle>> MOTORCYCLE = ENTITIES.register("motorcycle",
+            () -> EntityType.Builder.of(Motorcycle::new, MobCategory.MISC).sized(1f, 1f)
+                    .clientTrackingRange(16)
+                    .build("motorcycle"));
 
     public static final RegistryObject<EntityType<BulletEntity>> BULLET = ENTITIES.register("bullet",
             () -> EntityType.Builder.<BulletEntity>of(BulletEntity::new, MobCategory.MISC)
@@ -45,6 +51,7 @@ public class AllEntities {
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
         event.put(AllEntities.LAV150.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 100.0D).add(Attributes.MOVEMENT_SPEED, 0.4D).build());
         event.put(AllEntities.ZTL11.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 100.0D).add(Attributes.MOVEMENT_SPEED, 0.4D).build());
+        event.put(AllEntities.MOTORCYCLE.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 100.0D).add(Attributes.MOVEMENT_SPEED, 0.4D).build());
     }
 
     public static void register(IEventBus eventBus) {

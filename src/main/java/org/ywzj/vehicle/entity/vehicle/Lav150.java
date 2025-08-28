@@ -32,6 +32,11 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
     }
 
     @Override
+    public int getSeats() {
+        return 1;
+    }
+
+    @Override
     public void initWeaponUnits() {
         WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null, null);
         machineGunTurret.xRotSpeed = 3f;
@@ -44,11 +49,6 @@ public class Lav150 extends WheeledVehicle implements OBBEntity {
     @Override
     public double getPassengersRidingOffset() {
         return 0.8f;
-    }
-
-    @Override
-    public Vec3 getCameraOffset() {
-        return new Vec3(0, 1.5, 0);
     }
 
     @Override

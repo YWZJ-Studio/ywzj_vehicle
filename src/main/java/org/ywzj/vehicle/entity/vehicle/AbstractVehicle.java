@@ -32,6 +32,7 @@ import org.joml.Math;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
+import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
 import org.ywzj.vehicle.vehicle.ControlUnit;
@@ -51,7 +52,7 @@ public abstract class AbstractVehicle extends Mob {
     public List<Integer> passengerIdsBySeat;
     public final ControlUnit controlUnit;
     public final List<WeaponUnit> weaponUnits;
-    public final SpotterUnit spotterUnit;
+    public SpotterUnit spotterUnit;
     public float wide;
     public float length;
     private float zRot;
@@ -63,7 +64,7 @@ public abstract class AbstractVehicle extends Mob {
         this.passengerIdsBySeat = new ArrayList<>(Collections.nCopies(seats, null));
         this.controlUnit = new ControlUnit();
         this.weaponUnits = new ArrayList<>();
-        this.spotterUnit = new SpotterUnit(this);
+        this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
         this.setMaxUpStep(1.0f);
         this.initWeaponUnits();
     }
@@ -82,6 +83,7 @@ public abstract class AbstractVehicle extends Mob {
             tickMove();
         }
         tickWeapon();
+        getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
     }
 
     public abstract int getSeats();
@@ -102,8 +104,6 @@ public abstract class AbstractVehicle extends Mob {
     protected void tickWeapon() {
         weaponUnits.forEach(WeaponUnit::tick);
     }
-
-    public abstract Vec3 getCameraOffset();
 
     public void onEnterVehicle(LivingEntity livingEntity) {
         int seat = passengerIdsBySeat.indexOf(null);
@@ -250,8 +250,8 @@ public abstract class AbstractVehicle extends Mob {
             super.positionRider(pPassenger, pCallback);
         }
         WeaponUnit weaponUnit = getOwnWeaponUnit((LivingEntity) pPassenger);
-        if (weaponUnit != null && weaponUnit != spotterUnit) {
-            Vec3 pos = weaponUnit.worldSeatPosition(pPassenger);
+        if (weaponUnit != null) {
+            Vec3 pos = weaponUnit.worldSeatPosition();
             pCallback.accept(pPassenger, pos.x, pos.y, pos.z);
         } else {
             super.positionRider(pPassenger, pCallback);
@@ -272,6 +272,10 @@ public abstract class AbstractVehicle extends Mob {
             }
         }
         return null;
+    }
+
+    public void playVehicleSound(SoundEvent soundEvent, boolean on) {
+        Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), on));
     }
 
     public float getZRot() {

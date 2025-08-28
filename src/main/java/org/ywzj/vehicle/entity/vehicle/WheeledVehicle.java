@@ -5,7 +5,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,9 +23,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static float groundFrictionAcceleration = 0.005f;
+    public static float brakeAcceleration = 0.025f;
     public static float forwardAcceleration = 0.005f + groundFrictionAcceleration;
     public static float backwardAcceleration = 0.005f + groundFrictionAcceleration;
-    public static float maxSpeed = 0.5f;
+    public static float maxSpeedForward = 0.5f;
+    public static float maxSpeedBackward = 0.2f;
     public static float turnAcceleration = 0.1f;
     public static float maxTurn = 2f;
     public float wheelRotation;
@@ -60,15 +61,15 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     public void onEnterVehicle(LivingEntity pPlayer) {
         super.onEnterVehicle(pPlayer);
         if (pPlayer.equals(controlUnit.operator)) {
-            level().playSound(null, this.blockPosition(), getEngineStartSound(), SoundSource.HOSTILE);
+            playVehicleSound(getEngineStartSound(), true);
         }
-        level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.HOSTILE);
+        this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN);
     }
 
     @Override
     public void onLeaveVehicle(LivingEntity entity) {
         super.onLeaveVehicle(entity);
-        level().playSound(null, this.blockPosition(), SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.HOSTILE);
+        this.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE);
     }
 
     @Override
@@ -125,7 +126,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                     engineIdleSoundInstance.stop();
                     engineIdleSoundInstance = null;
                 }
-                float volume = Math.max(0.4f, vf / maxSpeed);
+                float volume = Math.max(0.4f, vf / maxSpeedForward);
                 if (engineRunSoundInstance == null) {
                     engineRunSoundInstance = new VehicleSound(getEngineRunSound(), volume, 1f, true, false, this.getId());
                     engineRunSoundInstance.play();
@@ -149,8 +150,20 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         }
         // 前后控制
         if (controlUnit.forward || controlUnit.backward) {
-            vf += controlUnit.forward ? forwardAcceleration : -backwardAcceleration;
-            vf = Mth.clamp(vf, -maxSpeed, maxSpeed);
+            if (controlUnit.forward) {
+                if (vf < 0) {
+                    vf += brakeAcceleration;
+                } else {
+                    vf += forwardAcceleration;
+                }
+            } else {
+                if (vf > 0) {
+                    vf -= brakeAcceleration;
+                } else {
+                    vf -= backwardAcceleration;
+                }
+            }
+            vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
         }
         // 地面摩擦力
         if (vf < 0) {

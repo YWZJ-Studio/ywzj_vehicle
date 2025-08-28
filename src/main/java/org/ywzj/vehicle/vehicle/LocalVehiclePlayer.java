@@ -43,11 +43,11 @@ public class LocalVehiclePlayer {
         if (onVehicle()) {
             AbstractVehicle vehicle = getVehicle();
             WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(getPlayer());
+            if (weaponUnit == null) {
+                return;
+            }
             if (viewType == ViewType.DEFAULT) {
-                Vec3 vehicleCameraPos = weaponUnit != null ? weaponUnit.worldOperatorPosition()
-                        : vehicle.relativeRotPos(getPlayer().position()
-                        .add(new Vec3(0, getPlayer().getEyeHeight(), 0))
-                        .add(vehicle.getCameraOffset()));
+                Vec3 vehicleCameraPos = weaponUnit.worldOperatorPosition();
                 cameraXO = cameraX;
                 cameraYO = cameraY;
                 cameraZO = cameraZ;
@@ -55,9 +55,6 @@ public class LocalVehiclePlayer {
                 cameraY = vehicleCameraPos.y;
                 cameraZ = vehicleCameraPos.z;
             } else if (viewType == ViewType.SCOPE) {
-                if (weaponUnit == null) {
-                    return;
-                }
                 Vec2 barrelAimRot = weaponUnit.worldRot();
                 cameraAimRotXO = cameraAimRotX;
                 cameraAimRotYO = cameraAimRotY;

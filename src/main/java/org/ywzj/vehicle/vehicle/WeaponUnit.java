@@ -30,6 +30,7 @@ public class WeaponUnit {
     private final float barrelLength;
     private final Vec3 operatorOffset;
     private Vec3 seatOffset;
+    public PassengerPose passengerPose;
     private final WeaponUnit baseWeaponUnit;
     private LivingEntity operator;
     public float xAimRot;
@@ -86,20 +87,26 @@ public class WeaponUnit {
     }
 
     public Vec3 worldOperatorPosition() {
+        if (operatorOffset == null) {
+            float eyeHeight = operator == null ? 2 : operator.getEyeHeight();
+            return worldPosition(boltOffset.add(new Vec3(0, eyeHeight, 0)));
+        }
         return worldPosition(operatorOffset);
     }
 
-    public Vec3 worldSeatPosition(Entity pPassenger) {
+    public Vec3 worldSeatPosition() {
+        float eyeHeight = operator == null ? 2 : operator.getEyeHeight();
+        Vec3 seatOffset = this.seatOffset;
         if (seatOffset == null) {
-            return worldBoltPosition().subtract(vehicle.getCameraOffset());
+            seatOffset = boltOffset.subtract(new Vec3(0, eyeHeight, 0));
         }
         Vector4d offset = rotatedOffset(this, boltOffset.x + seatOffset.x, boltOffset.z + seatOffset.z);
-        return vehicle.relativeRotPos(vehicle.position().add(offset.z, boltOffset.y + seatOffset.y - pPassenger.getEyeHeight(), offset.w));
+        return vehicle.relativeRotPos(vehicle.position().add(offset.z, boltOffset.y + seatOffset.y - eyeHeight, offset.w));
     }
 
     public Vec3 worldPosition(Vec3 offsetFromBolt) {
         if (offsetFromBolt == null) {
-            return worldBoltPosition().add(vehicle.getCameraOffset());
+            return vehicle.position();
         }
         Vector4d offset = rotatedOffset(this, boltOffset.x + offsetFromBolt.x, boltOffset.z + offsetFromBolt.z);
         float rot = yRot;

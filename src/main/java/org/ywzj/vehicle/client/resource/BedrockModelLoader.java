@@ -15,12 +15,14 @@ public class BedrockModelLoader {
     public static final ResourceLocation TEST_MODEL = Vehicle.modLoc("bedrock/block/test");
     public static final ResourceLocation LAV150 = Vehicle.modLoc("bedrock/entity/lav150");
     public static final ResourceLocation ZTL11 = Vehicle.modLoc("bedrock/entity/ztl11");
+    public static final ResourceLocation MOTORCYCLE = Vehicle.modLoc("bedrock/entity/motorcycle");
 
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(BedrockModelRegisterEvent event) {
         event.register(TEST_MODEL, BedrockModel::new);
         event.register(LAV150, BedrockModel::new);
         event.register(ZTL11, BedrockModel::new);
+        event.register(MOTORCYCLE, BedrockModel::new);
     }
 
     public static BedrockModel getModel(ResourceLocation location) {

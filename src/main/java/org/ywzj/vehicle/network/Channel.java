@@ -6,6 +6,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.audio.SoundManager;
 import org.ywzj.vehicle.network.message.*;
 
 import java.util.Optional;
@@ -54,6 +55,11 @@ public class Channel {
                 ServerSyncData::encode, ServerSyncData::decode,
                 ServerSyncData::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.S_SOUND_EVENT.value(), ServerSoundEvent.class,
+                ServerSoundEvent::encode, ServerSoundEvent::decode,
+                SoundManager::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
     }
 
 }
@@ -66,7 +72,8 @@ enum PacketId {
     S_WEAPON_UNIT_ROT(103),
     C_VEHICLE_CHANGE_SEAT(104),
 
-    S_SYNC_DATA(200);
+    S_SYNC_DATA(200),
+    S_SOUND_EVENT(201);
 
     private final int id;
 
