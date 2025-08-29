@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.manager;
+package org.ywzj.vehicle.bedrock.animation;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.animation.BedrockAnimation;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.pojo.BedrockAnimationFile;

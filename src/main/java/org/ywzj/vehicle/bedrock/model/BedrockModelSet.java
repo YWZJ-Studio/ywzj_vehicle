@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.manager;
+package org.ywzj.vehicle.bedrock.model;
 
 import com.github.mcmodderanchor.simplebedrockmodel.SimpleBedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class BedrockModelSet extends SimplePreparableReloadListener<Void> {
+
     private Map<ResourceLocation, BedrockModel> models = ImmutableMap.of();
     private Map<ResourceLocation, Function<BedrockModelPOJO, ? extends BedrockModel>> knowLocations = Maps.newHashMap();
 
@@ -57,4 +58,5 @@ public class BedrockModelSet extends SimplePreparableReloadListener<Void> {
     Map<ResourceLocation, BedrockModel> getModels() {
         return models;
     }
+
 }

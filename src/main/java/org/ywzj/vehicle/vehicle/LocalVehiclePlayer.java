@@ -2,16 +2,19 @@ package org.ywzj.vehicle.vehicle;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
+@OnlyIn(Dist.CLIENT)
 public class LocalVehiclePlayer {
 
     public static LocalVehiclePlayer instance;
@@ -34,7 +37,7 @@ public class LocalVehiclePlayer {
         instance = new LocalVehiclePlayer();
     }
 
-    public LocalPlayer getPlayer() {
+    public Player getPlayer() {
         return Minecraft.getInstance().player;
     }
 

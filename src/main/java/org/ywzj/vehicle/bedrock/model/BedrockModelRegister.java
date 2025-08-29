@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.manager;
+package org.ywzj.vehicle.bedrock.model;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
 import net.minecraft.client.Minecraft;
@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoader;
@@ -14,8 +15,9 @@ import org.ywzj.vehicle.YwzjVehicle;
 
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class BedrockModelRegister {
+
     public static BedrockModelRegister INSTANCE = null;
     private final BedrockModelSet modelSet;
 
@@ -23,6 +25,7 @@ public class BedrockModelRegister {
         this.modelSet = modelSet;
     }
 
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onRegisterClientReloadListenersEvent(RegisterClientReloadListenersEvent event) {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
@@ -43,4 +46,5 @@ public class BedrockModelRegister {
     public Set<ResourceLocation> getAllModelKeys() {
         return modelSet.getModels().keySet();
     }
+
 }

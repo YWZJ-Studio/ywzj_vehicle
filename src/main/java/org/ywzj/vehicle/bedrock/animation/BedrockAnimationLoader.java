@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.resource;
+package org.ywzj.vehicle.bedrock.animation;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.animation.Animations;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.animation.BedrockAnimation;
@@ -11,8 +11,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.client.manager.BedrockAnimationRegister;
-import org.ywzj.vehicle.client.manager.BedrockAnimationRegisterEvent;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 
 import java.util.List;
 import java.util.Map;

@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.client.resource.BedrockModelLoader;
+import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Lav150;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -37,9 +37,8 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
 
         pPoseStack.rotateAround(Axis.YP.rotationDegrees(180), (float) root.x, (float) root.y, (float) root.z);
 
-
-        BedrockModel model = BedrockModelLoader.getModel(BedrockModelLoader.LAV150);
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/lav150.png")));
+        BedrockModel model = BedrockModelLoader.getModel(AllVehicles.LAV150.getVisualBedrockModel());
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.LAV150.getVisualBedrockTexture()));
 
         BedrockBone wheel1 = model.getBoneMap().get("wheel1");
         BedrockBone wheel2 = model.getBoneMap().get("wheel2");

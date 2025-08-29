@@ -15,10 +15,10 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.inventory.InventoryMenu;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.bedrock.animation.SelfTransferState;
+import org.ywzj.vehicle.bedrock.animation.TestAnimationContext;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.blockentity.TestBlockEntity;
-import org.ywzj.vehicle.client.animation.SelfTransferState;
-import org.ywzj.vehicle.client.animation.TestAnimationContext;
-import org.ywzj.vehicle.client.resource.BedrockModelLoader;
 
 public class TestBlockEntityRenderer extends BedrockModelBlockEntityRenderer<TestBlockEntity> {
     private static final Material MATERIAL = new Material(InventoryMenu.BLOCK_ATLAS, YwzjVehicle.modLoc("block/test"));

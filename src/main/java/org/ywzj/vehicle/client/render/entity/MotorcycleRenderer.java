@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.client.resource.BedrockModelLoader;
+import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Motorcycle;
 
 public class MotorcycleRenderer extends EntityRenderer<Motorcycle> {
@@ -36,8 +36,8 @@ public class MotorcycleRenderer extends EntityRenderer<Motorcycle> {
 
         pPoseStack.rotateAround(Axis.YP.rotationDegrees(180), (float) root.x, (float) root.y, (float) root.z);
 
-        BedrockModel model = BedrockModelLoader.getModel(BedrockModelLoader.MOTORCYCLE);
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/motorcycle.png")));
+        BedrockModel model = BedrockModelLoader.getModel(AllVehicles.MOTORCYCLE.getVisualBedrockModel());
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.MOTORCYCLE.getVisualBedrockTexture()));
 
         BedrockBone wheelFront = model.getBoneMap().get("wheel_front");
         BedrockBone wheelBack = model.getBoneMap().get("wheel_back");

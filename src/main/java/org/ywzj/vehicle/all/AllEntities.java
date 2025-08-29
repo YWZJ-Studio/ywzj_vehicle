@@ -11,29 +11,11 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.entity.vehicle.Lav150;
-import org.ywzj.vehicle.entity.vehicle.Motorcycle;
-import org.ywzj.vehicle.entity.vehicle.Ztl11;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 
 public class AllEntities {
 
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, YwzjVehicle.MOD_ID);
-
-    public static final RegistryObject<EntityType<Lav150>> LAV150 = ENTITIES.register("lav150",
-            () -> EntityType.Builder.of(Lav150::new, MobCategory.MISC).sized(1.5f, 2.5f)
-                    .clientTrackingRange(16)
-                    .build("lav150"));
-
-    public static final RegistryObject<EntityType<Ztl11>> ZTL11 = ENTITIES.register("ztl11",
-            () -> EntityType.Builder.of(Ztl11::new, MobCategory.MISC).sized(2.5f, 2.5f)
-                    .clientTrackingRange(16)
-                    .build("ztl11"));
-
-    public static final RegistryObject<EntityType<Motorcycle>> MOTORCYCLE = ENTITIES.register("motorcycle",
-            () -> EntityType.Builder.of(Motorcycle::new, MobCategory.MISC).sized(1f, 1f)
-                    .clientTrackingRange(16)
-                    .build("motorcycle"));
 
     public static final RegistryObject<EntityType<BulletEntity>> BULLET = ENTITIES.register("bullet",
             () -> EntityType.Builder.<BulletEntity>of(BulletEntity::new, MobCategory.MISC)
@@ -49,12 +31,14 @@ public class AllEntities {
 
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
-        event.put(AllEntities.LAV150.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 100.0D).add(Attributes.MOVEMENT_SPEED, 0.4D).build());
-        event.put(AllEntities.ZTL11.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 100.0D).add(Attributes.MOVEMENT_SPEED, 0.4D).build());
-        event.put(AllEntities.MOTORCYCLE.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 100.0D).add(Attributes.MOVEMENT_SPEED, 0.4D).build());
+        AllVehicles.getVehicles().forEach(vehicle -> event.put(vehicle.getEntityType(),
+                Mob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, vehicle.getHealth())
+                .add(Attributes.MOVEMENT_SPEED, 0.4D).build()));
     }
 
     public static void register(IEventBus eventBus) {
+        AllVehicles.getVehicles().forEach(AllVehicles.Vehicle::registerEntity);
         ENTITIES.register(eventBus);
         eventBus.register(AllEntities.class);
     }

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.animation;
+package org.ywzj.vehicle.bedrock.animation;
 
 import com.maydaymemory.mae.basic.Animation;
 import com.maydaymemory.mae.basic.ArrayPoseBuilder;
@@ -11,7 +11,6 @@ import com.maydaymemory.mae.control.Tickable;
 import com.maydaymemory.mae.control.misc.AnimationVelocityEstimatorNode;
 import com.maydaymemory.mae.control.misc.RealtimeVelocityEstimatorNode;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
-import org.ywzj.vehicle.client.resource.BedrockAnimationLoader;
 
 public class TestAnimationContext implements Tickable {
     public static final CubicHermiteInterpolatorBlender blender = new CubicHermiteInterpolatorBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);

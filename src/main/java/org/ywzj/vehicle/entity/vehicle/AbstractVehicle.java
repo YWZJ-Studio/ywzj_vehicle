@@ -263,6 +263,9 @@ public abstract class AbstractVehicle extends Mob {
     }
 
     public WeaponUnit getOwnWeaponUnit(LivingEntity pPassenger) {
+        if (pPassenger == null) {
+            return null;
+        }
         int index = passengerIdsBySeat.indexOf(pPassenger.getId());
         if (index != -1) {
             if (index < weaponUnits.size()) {

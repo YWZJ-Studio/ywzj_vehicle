@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.client.resource.BedrockModelLoader;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 
 import java.util.Objects;
 import java.util.function.Function;

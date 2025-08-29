@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllBlockEntities;
-import org.ywzj.vehicle.client.animation.TestAnimationContext;
+import org.ywzj.vehicle.bedrock.animation.TestAnimationContext;
 
 public class TestBlockEntity extends BlockEntity {
     @OnlyIn(Dist.CLIENT)

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.manager;
+package org.ywzj.vehicle.bedrock.model;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.pojo.BedrockModelPOJO;
@@ -9,6 +9,7 @@ import net.minecraftforge.fml.event.IModBusEvent;
 import java.util.function.Function;
 
 public class BedrockModelRegisterEvent extends Event implements IModBusEvent {
+
     private final BedrockModelSet modelSet;
 
     public BedrockModelRegisterEvent(BedrockModelSet modelSet) {
@@ -23,4 +24,5 @@ public class BedrockModelRegisterEvent extends Event implements IModBusEvent {
     public boolean isCancelable() {
         return false;
     }
+
 }

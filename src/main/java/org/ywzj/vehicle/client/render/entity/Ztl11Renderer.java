@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.client.resource.BedrockModelLoader;
+import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Ztl11;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -35,8 +35,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        BedrockModel model = BedrockModelLoader.getModel(BedrockModelLoader.ZTL11);
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/ztl11.png")));
+        BedrockModel model = BedrockModelLoader.getModel(AllVehicles.ZTL11.getVisualBedrockModel());
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.ZTL11.getVisualBedrockTexture()));
 
         BedrockBone wheel1 = model.getBoneMap().get("wheel1");
         BedrockBone wheel2 = model.getBoneMap().get("wheel2");
