@@ -5,14 +5,14 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 
 import java.util.LinkedHashMap;
 import java.util.function.Supplier;
 
 public class AllItems {
 
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Vehicle.MOD_ID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, YwzjVehicle.MOD_ID);
     public static final LinkedHashMap<String, RegistryObject<Item>> ITEMS_LOOKUP = new LinkedHashMap<>();
 
     public static <T extends Item> RegistryObject<Item> registerItem(AllTabs.Category category, String name, Supplier<T> item, boolean withGeoModel) {

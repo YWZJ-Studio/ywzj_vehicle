@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -44,7 +44,7 @@ public class ResourceScanner {
                     throw new IllegalStateException("Duplicate data file ignored with ID " + resourcelocation1);
                 }
             } catch (IllegalArgumentException | IOException | JsonParseException jsonparseexception) {
-                Vehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
+                YwzjVehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
             }
         }
         return output;
@@ -70,7 +70,7 @@ public class ResourceScanner {
                     List<JsonElement> list = output.computeIfAbsent(resourcelocation1, k -> Lists.newArrayList());
                     list.add(jsonelement);
                 } catch (IllegalArgumentException | IOException | JsonParseException jsonparseexception) {
-                    Vehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
+                    YwzjVehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
                 }
             }
         }

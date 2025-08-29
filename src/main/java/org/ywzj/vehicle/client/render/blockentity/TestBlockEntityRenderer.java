@@ -14,14 +14,14 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.inventory.InventoryMenu;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.blockentity.TestBlockEntity;
 import org.ywzj.vehicle.client.animation.SelfTransferState;
 import org.ywzj.vehicle.client.animation.TestAnimationContext;
 import org.ywzj.vehicle.client.resource.BedrockModelLoader;
 
 public class TestBlockEntityRenderer extends BedrockModelBlockEntityRenderer<TestBlockEntity> {
-    private static final Material MATERIAL = new Material(InventoryMenu.BLOCK_ATLAS, Vehicle.modLoc("block/test"));
+    private static final Material MATERIAL = new Material(InventoryMenu.BLOCK_ATLAS, YwzjVehicle.modLoc("block/test"));
     private static final AdditiveBlender BLENDER = new SimpleAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
 
     public TestBlockEntityRenderer(BlockEntityRendererProvider.Context context) {

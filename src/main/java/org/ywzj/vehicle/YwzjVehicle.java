@@ -9,15 +9,15 @@ import org.apache.logging.log4j.Logger;
 import org.ywzj.vehicle.all.*;
 import org.ywzj.vehicle.network.Channel;
 
-@Mod(Vehicle.MOD_ID)
-public class Vehicle {
+@Mod(YwzjVehicle.MOD_ID)
+public class YwzjVehicle {
 
     public static final String MOD_ID = "ywzj_vehicle";
     public static final String PROTOCOL = "1.0";
     public static final String CHANNEL = "ywzj_vehicle_channel";
-    public static final Logger LOGGER = LogManager.getLogger(Vehicle.class);
+    public static final Logger LOGGER = LogManager.getLogger(YwzjVehicle.class);
 
-    public Vehicle() {
+    public YwzjVehicle() {
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         IEventBus modEventBus = context.getModEventBus();
         AllBlocks.register(modEventBus);

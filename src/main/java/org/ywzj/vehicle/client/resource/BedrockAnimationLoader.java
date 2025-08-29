@@ -10,7 +10,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.manager.BedrockAnimationRegister;
 import org.ywzj.vehicle.client.manager.BedrockAnimationRegisterEvent;
 
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @OnlyIn(Dist.CLIENT)
 public class BedrockAnimationLoader {
 
-    public static final ResourceLocation TEST_ANIMATION = Vehicle.modLoc("bedrock/test");
+    public static final ResourceLocation TEST_ANIMATION = YwzjVehicle.modLoc("bedrock/test");
 
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(BedrockAnimationRegisterEvent event) {

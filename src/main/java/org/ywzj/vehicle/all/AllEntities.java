@@ -10,7 +10,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.Lav150;
 import org.ywzj.vehicle.entity.vehicle.Motorcycle;
 import org.ywzj.vehicle.entity.vehicle.Ztl11;
@@ -18,7 +18,7 @@ import org.ywzj.vehicle.entity.weapon.BulletEntity;
 
 public class AllEntities {
 
-    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Vehicle.MOD_ID);
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<EntityType<Lav150>> LAV150 = ENTITIES.register("lav150",
             () -> EntityType.Builder.of(Lav150::new, MobCategory.MISC).sized(1.5f, 2.5f)

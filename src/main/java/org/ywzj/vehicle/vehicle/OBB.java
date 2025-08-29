@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.util;
+package org.ywzj.vehicle.vehicle;
 
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -348,4 +348,5 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         inverse.transform(relative);
         return relative;
     }
+
 }

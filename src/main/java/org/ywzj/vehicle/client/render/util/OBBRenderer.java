@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.util.OBB;
+import org.ywzj.vehicle.vehicle.OBB;
 
 import java.util.List;
 

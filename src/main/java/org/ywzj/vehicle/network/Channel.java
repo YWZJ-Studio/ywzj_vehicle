@@ -5,7 +5,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.audio.SoundManager;
 import org.ywzj.vehicle.network.message.*;
 
@@ -17,10 +17,10 @@ import static net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER;
 public class Channel {
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
-            .named(new ResourceLocation(Vehicle.MOD_ID, Vehicle.CHANNEL))
-            .networkProtocolVersion(() -> Vehicle.PROTOCOL)
-            .clientAcceptedVersions(Vehicle.PROTOCOL::equals)
-            .serverAcceptedVersions(Vehicle.PROTOCOL::equals)
+            .named(new ResourceLocation(YwzjVehicle.MOD_ID, YwzjVehicle.CHANNEL))
+            .networkProtocolVersion(() -> YwzjVehicle.PROTOCOL)
+            .clientAcceptedVersions(YwzjVehicle.PROTOCOL::equals)
+            .serverAcceptedVersions(YwzjVehicle.PROTOCOL::equals)
             .simpleChannel();
 
     @SubscribeEvent

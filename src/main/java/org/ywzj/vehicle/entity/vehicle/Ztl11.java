@@ -15,7 +15,7 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.OBBEntity;
-import org.ywzj.vehicle.util.OBB;
+import org.ywzj.vehicle.vehicle.OBB;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 

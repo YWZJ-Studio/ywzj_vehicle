@@ -14,7 +14,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.ModRegistries;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerSyncData;
@@ -61,10 +61,10 @@ public class WeaponUnitTypeManager extends SimplePreparableReloadListener<Map<Re
                     if (map.containsKey(id)) {
                         weaponUnitType.parseAndLoad(map.get(id));
                     } else {
-                        Vehicle.LOGGER.error("failed to load weapon unit type data: {}", id);
+                        YwzjVehicle.LOGGER.error("failed to load weapon unit type data: {}", id);
                     }
                 } catch (Exception e) {
-                    Vehicle.LOGGER.error("error loading weapon unit type data: {}", weaponUnitType.getId(), e);
+                    YwzjVehicle.LOGGER.error("error loading weapon unit type data: {}", weaponUnitType.getId(), e);
                 }
             });
         }
@@ -83,9 +83,9 @@ public class WeaponUnitTypeManager extends SimplePreparableReloadListener<Map<Re
                             return;
                         }
                     }
-                    Vehicle.LOGGER.error("failed to load weapon unit type data: {}", id);
+                    YwzjVehicle.LOGGER.error("failed to load weapon unit type data: {}", id);
                 } catch (Exception e) {
-                    Vehicle.LOGGER.error("error loading weapon unit type data: {}", weaponUnitType.getId(), e);
+                    YwzjVehicle.LOGGER.error("error loading weapon unit type data: {}", weaponUnitType.getId(), e);
                 }
             });
         }

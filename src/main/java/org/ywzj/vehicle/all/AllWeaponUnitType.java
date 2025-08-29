@@ -3,7 +3,7 @@ package org.ywzj.vehicle.all;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
-import org.ywzj.vehicle.Vehicle;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.WeaponUnitData;
 import org.ywzj.vehicle.custom.WeaponUnitType;
 import org.ywzj.vehicle.custom.WeaponUnitTypeManager;
@@ -11,7 +11,7 @@ import org.ywzj.vehicle.vehicle.weapon.AbstractWeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.CannonUnit;
 
 public class AllWeaponUnitType {
-    public static final DeferredRegister<WeaponUnitType<?, ?>> WEAPON_UNIT_TYPES = DeferredRegister.create(ModRegistries.WEAPON_UNIT_TYPE, Vehicle.MOD_ID);
+    public static final DeferredRegister<WeaponUnitType<?, ?>> WEAPON_UNIT_TYPES = DeferredRegister.create(ModRegistries.WEAPON_UNIT_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<WeaponUnitType<CannonUnit, WeaponUnitData>> CANNON = register(
             "cannon", json -> WeaponUnitTypeManager.GSON.fromJson(json, WeaponUnitData.class), CannonUnit::new
@@ -23,7 +23,7 @@ public class AllWeaponUnitType {
             WeaponUnitType.WeaponUnitFactory<T, D> factory
     ) {
         return WEAPON_UNIT_TYPES.register(name,
-                () -> WeaponUnitType.Builder.<T, D>of(Vehicle.modLoc(name))
+                () -> WeaponUnitType.Builder.<T, D>of(YwzjVehicle.modLoc(name))
                         .setDataSerializer(dataSerializer)
                         .setFactory(factory)
                         .build()
