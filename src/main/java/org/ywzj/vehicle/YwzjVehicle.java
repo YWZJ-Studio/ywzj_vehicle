@@ -17,6 +17,7 @@ public class YwzjVehicle {
     public static final String CHANNEL = "ywzj_vehicle_channel";
     public static final Logger LOGGER = LogManager.getLogger(YwzjVehicle.class);
 
+    @SuppressWarnings("removal")
     public YwzjVehicle() {
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         AllVehicles.register();
@@ -28,6 +29,7 @@ public class YwzjVehicle {
         AllSounds.register(modEventBus);
         AllTabs.register(modEventBus);
         AllWeaponUnitType.register(modEventBus);
+        AllParticleTypes.register(modEventBus);
         modEventBus.register(Channel.class);
 //        context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
