@@ -31,14 +31,14 @@ public class AllEntities {
 
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
-        AllVehicles.getVehicles().forEach(vehicle -> event.put(vehicle.getEntityType(),
+        AllVehicles.getVehicleTypes().forEach(vehicleType -> event.put(vehicleType.getEntityType(),
                 Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, vehicle.getHealth())
+                .add(Attributes.MAX_HEALTH, vehicleType.getHealth())
                 .add(Attributes.MOVEMENT_SPEED, 0.4D).build()));
     }
 
     public static void register(IEventBus eventBus) {
-        AllVehicles.getVehicles().forEach(AllVehicles.Vehicle::registerEntity);
+        AllVehicles.getVehicleTypes().forEach(AllVehicles.VehicleType::registerEntity);
         ENTITIES.register(eventBus);
         eventBus.register(AllEntities.class);
     }

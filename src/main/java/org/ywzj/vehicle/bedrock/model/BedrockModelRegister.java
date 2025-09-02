@@ -8,6 +8,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.common.Mod;
@@ -37,6 +38,17 @@ public class BedrockModelRegister {
             // 添加到最前面，避免实体读取模型时模型还没加载完成
             manager.listeners.add(0, INSTANCE.modelSet);
         }
+    }
+
+    @OnlyIn(Dist.DEDICATED_SERVER)
+    @SubscribeEvent
+    public static void onAddPackFindersEvent(AddPackFindersEvent event) {
+        INSTANCE = new BedrockModelRegister(new BedrockModelSet());
+        ModLoader.get().postEvent(new BedrockModelRegisterEvent(INSTANCE.modelSet));
+        // 将注册冻结
+        INSTANCE.modelSet.immutableKnowLocations();
+        // 服务端直接加载
+        INSTANCE.modelSet.prepareServer();
     }
 
     public BedrockModel getModel(ResourceLocation location) {

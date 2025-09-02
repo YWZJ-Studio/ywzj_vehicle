@@ -15,7 +15,7 @@ public class BedrockModelLoader {
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(BedrockModelRegisterEvent event) {
         event.register(TEST_MODEL, BedrockModel::new);
-        AllVehicles.getVehicles().forEach(vehicle -> {
+        AllVehicles.getVehicleTypes().forEach(vehicle -> {
             event.register(vehicle.getVisualBedrockModel(), BedrockModel::new);
             event.register(vehicle.getStructureBedrockModel(), BedrockModel::new);
         });

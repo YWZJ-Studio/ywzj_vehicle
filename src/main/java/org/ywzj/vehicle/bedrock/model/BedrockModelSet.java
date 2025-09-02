@@ -50,6 +50,27 @@ public class BedrockModelSet extends SimplePreparableReloadListener<Void> {
         return null;
     }
 
+    public void prepareServer() {
+        this.models = Maps.newHashMap();
+        this.knowLocations.keySet().forEach(location -> {
+            // 将 ID 转换成实际模型文件路径，默认是 <namespace>:models/<path>.json
+            ResourceLocation path = new ResourceLocation(location.getNamespace(), "models/" + location.getPath() + ".json");
+            Function<BedrockModelPOJO, ? extends BedrockModel> modelFunction = knowLocations.get(location);
+            ClassLoader classLoader = BedrockModelSet.class.getClassLoader();
+            SimpleBedrockModel.LOGGER.info("Loading bedrock model file: {}", path);
+            try (InputStream stream = classLoader.getResourceAsStream("assets/" + location.getNamespace() + "/" + path.getPath())) {
+                if (stream == null) {
+                    SimpleBedrockModel.LOGGER.error("Failed to load model file: {}", path);
+                    return;
+                }
+                BedrockModelPOJO pojo = GsonUtil.GSON.fromJson(new InputStreamReader(stream), BedrockModelPOJO.class);
+                this.models.put(location, modelFunction.apply(pojo));
+            } catch (IOException e) {
+                SimpleBedrockModel.LOGGER.error("Failed to load model file: {}", path, e);
+            }
+        });
+    }
+
     @Override
     protected void apply(Void unused, ResourceManager manager, ProfilerFiller filler) {
         this.models = ImmutableMap.copyOf(models);

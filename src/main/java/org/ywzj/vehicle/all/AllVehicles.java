@@ -18,26 +18,30 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AllVehicles {
 
-    private final static ConcurrentHashMap<String, Vehicle> ALL_VEHICLES = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<Class<? extends AbstractVehicle>, VehicleType> ALL_VEHICLES = new ConcurrentHashMap<>();
 
-    public static final Vehicle LAV150 = registerVehicle("lav150", Lav150.class);
-    public static final Vehicle ZTL11 = registerVehicle("ztl11", Ztl11.class);
-    public static final Vehicle MOTORCYCLE = registerVehicle("motorcycle", Motorcycle.class);
+    public static final VehicleType LAV150 = registerVehicle("lav150", Lav150.class);
+    public static final VehicleType ZTL11 = registerVehicle("ztl11", Ztl11.class);
+    public static final VehicleType MOTORCYCLE = registerVehicle("motorcycle", Motorcycle.class);
 
     public static void register() {}
 
-    public static Vehicle registerVehicle(String name, Class<? extends AbstractVehicle> entityClass) {
-        Vehicle vehicle = new Vehicle(name, entityClass);
-        ALL_VEHICLES.put(name, vehicle);
+    public static VehicleType registerVehicle(String name, Class<? extends AbstractVehicle> entityClass) {
+        VehicleType vehicleType = new VehicleType(name, entityClass);
+        ALL_VEHICLES.put(entityClass, vehicleType);
         YwzjVehicle.LOGGER.info("Vehicle {} registered", name);
-        return vehicle;
+        return vehicleType;
     }
 
-    public static List<Vehicle> getVehicles() {
+    public static VehicleType getVehicleType(Class<? extends AbstractVehicle> entityClass) {
+        return ALL_VEHICLES.get(entityClass);
+    }
+
+    public static List<VehicleType> getVehicleTypes() {
         return new ArrayList<>(ALL_VEHICLES.values());
     }
 
-    public static class Vehicle {
+    public static class VehicleType {
 
         private final String name;
         private final Class<? extends AbstractVehicle> entityClass;
@@ -46,7 +50,7 @@ public class AllVehicles {
         private final ResourceLocation visualBedrockTexture;
         private final ResourceLocation structureBedrockModel;
 
-        public Vehicle(String name, Class<? extends AbstractVehicle> entityClass) {
+        public VehicleType(String name, Class<? extends AbstractVehicle> entityClass) {
             this.name = name;
 
             //todo: 读取Data

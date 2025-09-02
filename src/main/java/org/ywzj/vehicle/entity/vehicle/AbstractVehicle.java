@@ -1,5 +1,8 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -30,15 +33,15 @@ import net.minecraftforge.network.PacketDistributor;
 import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
+import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
-import org.ywzj.vehicle.vehicle.ControlUnit;
-import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.SpotterUnit;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,8 +49,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public abstract class AbstractVehicle extends Mob {
+public abstract class AbstractVehicle extends Mob implements OBBEntity {
 
+    private final AllVehicles.VehicleType vehicleType;
     public int seats;
     public List<Integer> passengerIdsBySeat;
     public final ControlUnit controlUnit;
@@ -57,23 +61,27 @@ public abstract class AbstractVehicle extends Mob {
     public float length;
     private float zRot;
     public float zRotO;
+    private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.vehicleType = AllVehicles.getVehicleType(this.getClass());
         this.seats = getSeats();
         this.passengerIdsBySeat = new ArrayList<>(Collections.nCopies(seats, null));
         this.controlUnit = new ControlUnit();
         this.weaponUnits = new ArrayList<>();
         this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
+        this.vehicleBodyOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.initWeaponUnits();
+        this.initOBBs();
     }
 
     @Override
     public void tick() {
         super.tick();
         this.zRotO = this.zRot;
-        this.terrainCompact(wide, length);
+        terrainCompact(wide, length);
         if (level().isClientSide) {
             tickAim();
             tickSound();
@@ -83,6 +91,7 @@ public abstract class AbstractVehicle extends Mob {
             tickMove();
         }
         tickWeapon();
+        updateOBBs();
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
     }
 
@@ -103,6 +112,45 @@ public abstract class AbstractVehicle extends Mob {
 
     protected void tickWeapon() {
         weaponUnits.forEach(WeaponUnit::tick);
+    }
+
+    protected void initOBBs() {
+        BedrockModel model = BedrockModelLoader.getModel(vehicleType.getStructureBedrockModel());
+        BedrockBone bone = model.getBoneMap().get("vehicle_body");
+        // 约定取体积最大的块表达车体的长宽高
+        List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
+        cubes.sort((cube1, cube2) -> (int) (cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
+        this.wide = cubes.get(0).getDepth();
+        this.length = cubes.get(0).getWidth();
+        for (BedrockCubePerFace cube : cubes) {
+            vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, bone, cube));
+        }
+        for (BedrockBone child : bone.getChildren()) {
+            List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
+            for (BedrockCubePerFace cube : childCubes) {
+                vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, child, cube));
+            }
+        }
+    }
+
+    @Override
+    public List<OBB> getOBBs() {
+        List<OBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList());
+        for (WeaponUnit weaponUnit : weaponUnits) {
+            vehicleOBBs.addAll(weaponUnit.getOBBs());
+        }
+        return vehicleOBBs;
+    }
+
+    @Override
+    public void updateOBBs() {
+        for (VehicleBedrockCubeOBB vehicleBedrockCubeOBB : vehicleBodyOBBs) {
+            OBB obb = vehicleBedrockCubeOBB.obb();
+            Vec3 center = vehicleBedrockCubeOBB.center();
+            Quaternionf rot = vehicleBedrockCubeOBB.rot();
+            obb.setCenter(relativeRotPos(center).toVector3f());
+            obb.setRotation(rotYXZ().mul(rot));
+        }
     }
 
     public void onEnterVehicle(LivingEntity livingEntity) {
@@ -281,6 +329,10 @@ public abstract class AbstractVehicle extends Mob {
         Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), on));
     }
 
+    public AllVehicles.VehicleType getVehicleType() {
+        return vehicleType;
+    }
+
     public float getZRot() {
         return zRot;
     }
@@ -289,14 +341,18 @@ public abstract class AbstractVehicle extends Mob {
         zRot = rot;
     }
 
-    public Vec3 relativeRotPos(Vec3 worldPos) {
-        Vec3 relPos = worldPos.subtract(this.position());
+    public Quaternionf rotYXZ() {
         Quaternionf q = new Quaternionf();
         q.rotateY(Math.toRadians(-this.getYRot()))
                 .rotateX(Math.toRadians(this.getXRot()))
                 .rotateZ(Math.toRadians(this.getZRot()));
+        return q;
+    }
+
+    public Vec3 relativeRotPos(Vec3 worldPos) {
+        Vec3 relPos = worldPos.subtract(this.position());
         Matrix3f axisRollMat = new Matrix3f();
-        q.get(axisRollMat);
+        rotYXZ().get(axisRollMat);
         Vector3f rotPos = axisRollMat.transform(new Vector3f((float) relPos.x, (float) relPos.y, (float) relPos.z));
         return this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
     }
