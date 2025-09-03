@@ -43,10 +43,7 @@ import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
 import org.ywzj.vehicle.vehicle.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends Mob implements OBBEntity {
@@ -120,8 +117,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         // 约定取体积最大的块表达车体的长宽高
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
         cubes.sort((cube1, cube2) -> (int) (cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
-        this.wide = cubes.get(0).getDepth();
-        this.length = cubes.get(0).getWidth();
+        this.wide = cubes.get(0).getWidth();
+        this.length = cubes.get(0).getDepth();
         for (BedrockCubePerFace cube : cubes) {
             vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, bone, cube));
         }
@@ -402,26 +399,26 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
 //        }
 //    }
 
-    public Matrix4f getVehicleYOffsetTransform(float ticks) {
-        Matrix4f transform = new Matrix4f();
-        transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo + rotateYOffset(), getY() + rotateYOffset()), (float) Mth.lerp(ticks, zo, getZ()));
-        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(ticks, yRotO, getYRot())));
-        transform.rotate(Axis.XP.rotationDegrees(Mth.lerp(ticks, xRotO, getXRot())));
-        transform.rotate(Axis.ZP.rotationDegrees(Mth.lerp(ticks, zRotO, getZRot())));
-        return transform;
-    }
+//    public Matrix4f getVehicleYOffsetTransform(float ticks) {
+//        Matrix4f transform = new Matrix4f();
+//        transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo + rotateYOffset(), getY() + rotateYOffset()), (float) Mth.lerp(ticks, zo, getZ()));
+//        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(ticks, yRotO, getYRot())));
+//        transform.rotate(Axis.XP.rotationDegrees(Mth.lerp(ticks, xRotO, getXRot())));
+//        transform.rotate(Axis.ZP.rotationDegrees(Mth.lerp(ticks, zRotO, getZRot())));
+//        return transform;
+//    }
 
-    public Matrix4f getVehicleTransform(float ticks) {
-        Matrix4f transformV = getVehicleYOffsetTransform(ticks);
-        Matrix4f transform = new Matrix4f();
-        Vector4f worldPosition = transformPosition(transform, 0, -rotateYOffset(), 0);
-        transformV.translate(worldPosition.x, worldPosition.y, worldPosition.z);
-        return transformV;
-    }
+//    public Matrix4f getVehicleTransform(float ticks) {
+//        Matrix4f transformV = getVehicleYOffsetTransform(ticks);
+//        Matrix4f transform = new Matrix4f();
+//        Vector4f worldPosition = transformPosition(transform, 0, -rotateYOffset(), 0);
+//        transformV.translate(worldPosition.x, worldPosition.y, worldPosition.z);
+//        return transformV;
+//    }
 
-    public float rotateYOffset() {
-        return 0;
-    }
+//    public float rotateYOffset() {
+//        return 0;
+//    }
 
     public Matrix4f getWheelsTransform(float ticks) {
         Matrix4f transform = new Matrix4f();
@@ -454,9 +451,9 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         return pos.y + 0.5f * diffY;
     }
 
-    public static double getYRotFromVector(Vec3 vec3) {
-        return Mth.atan2(vec3.x, vec3.z) * (180F / Math.PI);
-    }
+//    public static double getYRotFromVector(Vec3 vec3) {
+//        return Mth.atan2(vec3.x, vec3.z) * (180F / Math.PI);
+//    }
 
     public static double getXRotFromVector(Vec3 vec3) {
         double d0 = vec3.horizontalDistance();
@@ -468,59 +465,61 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         if (onGround()) {
             Matrix4f transform = this.getWheelsTransform(1);
 
-            // 左前
-            Vector4f positionLF = transformPosition(transform, w / 2, 0, l / 2);
-            // 右前
-            Vector4f positionRF = transformPosition(transform, -w / 2, 0, l / 2);
-            // 左后
-            Vector4f positionLB = transformPosition(transform, w / 2, 0, -l / 2);
-            // 右后
-            Vector4f positionRB = transformPosition(transform, -w / 2, 0, -l / 2);
+            // 1格间距在底面采样可能的支撑点
+            PriorityQueue<Vec3> top4 = new PriorityQueue<>(Comparator.comparingDouble(v -> v.y));
+            for (float x = -w / 2; x <= w / 2; x += 1f) {
+                for (float y = -l / 2; y <= l / 2; y += 1f) {
+                    Vector4f position = transformPosition(transform, x, 0, y);
+                    Vec3 p = new Vec3(position.x, position.y, position.z);
+                    p = p.add(0, 8, 0);
+                    float py = (float) this.traceBlockY(p, 16);
+                    p = new Vec3(p.x, py, p.z);
+                    // 仅保留前4高
+                    top4.offer(p);
+                    if (top4.size() > 4) {
+                        top4.poll();
+                    }
+                }
+            }
+            List<Vec3> supportingBlockPos = new ArrayList<>(top4);
 
-            Vec3 p1 = new Vec3(positionLF.x, positionLF.y, positionLF.z);
-            Vec3 p2 = new Vec3(positionRF.x, positionRF.y, positionRF.z);
-            Vec3 p3 = new Vec3(positionLB.x, positionLB.y, positionLB.z);
-            Vec3 p4 = new Vec3(positionRB.x, positionRB.y, positionRB.z);
-
-//            if (mainSupportingBlockPos.isPresent()) {
-//                BlockPos blockpos = this.mainSupportingBlockPos.get();
+            // 调试用
+//            for (Vec3 p : supportingBlockPos) {
+//                DebugUtil.particle(this.level(), p);
 //            }
 
-            // 确定点位是否在墙里来调整点位高度
-            float p1y = (float) this.traceBlockY(p1, 3);
-            float p2y = (float) this.traceBlockY(p2, 3);
-            float p3y = (float) this.traceBlockY(p3, 3);
-            float p4y = (float) this.traceBlockY(p4, 3);
-
-            p1 = new Vec3(positionLF.x, p1y, positionLF.z);
-            p2 = new Vec3(positionRF.x, p2y, positionRF.z);
-            p3 = new Vec3(positionLB.x, p3y, positionLB.z);
-            p4 = new Vec3(positionRB.x, p4y, positionRB.z);
-
-            // 测试用粒子效果，用于确定点位位置
-
-//            List<Entity> entities = getPlayer(level());
-//            for (var e : entities) {
-//                if (e instanceof ServerPlayer player) {
-//                    if (player.level() instanceof ServerLevel serverLevel) {
-//                        sendParticle(serverLevel, ParticleTypes.END_ROD, p1.x, p1.y, p1.z, 1, 0, 0, 0, 0, true);
-//                        sendParticle(serverLevel, ParticleTypes.END_ROD, p2.x, p2.y, p2.z, 1, 0, 0, 0, 0, true);
-//                        sendParticle(serverLevel, ParticleTypes.END_ROD, p3.x, p3.y, p3.z, 1, 0, 0, 0, 0, true);
-//                        sendParticle(serverLevel, ParticleTypes.END_ROD, p4.x, p4.y, p4.z, 1, 0, 0, 0, 0, true);
-//                    }
-//                }
-//            }
-
-            // 通过点位位置获取角度
+            Vec3 positionLF = null, positionRF = null, positionLB = null, positionRB = null;
+            // 得到左前、右前、左后、右后
+            supportingBlockPos.sort(Comparator.comparingDouble(v -> -v.z));
+            List<Vec3> frontPoints = supportingBlockPos.subList(0, 2);
+            List<Vec3> backPoints = supportingBlockPos.subList(2, supportingBlockPos.size());
+            if (frontPoints.size() == 2) {
+                if (frontPoints.get(0).x >= frontPoints.get(1).x) {
+                    positionLF = frontPoints.get(0);
+                    positionRF = frontPoints.get(1);
+                } else {
+                    positionLF = frontPoints.get(1);
+                    positionRF = frontPoints.get(0);
+                }
+            }
+            if (backPoints.size() == 2) {
+                if (backPoints.get(0).x >= backPoints.get(1).x) {
+                    positionLB = backPoints.get(0);
+                    positionRB = backPoints.get(1);
+                } else {
+                    positionLB = backPoints.get(1);
+                    positionRB = backPoints.get(0);
+                }
+            }
 
             // 左后-左前
-            Vec3 v0 = p3.vectorTo(p1);
+            Vec3 v0 = positionLB.vectorTo(positionLF);
             // 右后-右前
-            Vec3 v1 = p4.vectorTo(p2);
+            Vec3 v1 = positionRB.vectorTo(positionRF);
             // 左前-右前
-            Vec3 v2 = p1.vectorTo(p2);
+            Vec3 v2 = positionLF.vectorTo(positionRF);
             // 左后-右后
-            Vec3 v3 = p3.vectorTo(p4);
+            Vec3 v3 = positionLB.vectorTo(positionRB);
 
             double x1 = getXRotFromVector(v0);
             double x2 = getXRotFromVector(v1);
