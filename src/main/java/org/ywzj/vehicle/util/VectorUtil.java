@@ -9,7 +9,12 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
@@ -56,6 +61,109 @@ public class VectorUtil {
         float f4 = Mth.cos(f);
         float f5 = Mth.sin(f);
         return new Vec3(f3 * f4, -f5, f2 * f4);
+    }
+
+    public static Vec3 project(Vec3 a, Vec3 b) {
+        double dot = a.dot(b); // 点积
+        double len2 = b.lengthSqr(); // |b|^2
+        if (len2 == 0) return Vec3.ZERO; // 防止除零
+        return b.scale(dot / len2);
+    }
+
+    public static Vec3 projectToPlane(Vec3 v, Vector3f[] axes, int axis1, int axis2) {
+        Vector3f a = axes[axis1];
+        Vector3f b = axes[axis2];
+
+        Vec3 va = new Vec3(a.x(), a.y(), a.z());
+        Vec3 vb = new Vec3(b.x(), b.y(), b.z());
+
+        // 投影到 a
+        double dotA = v.dot(va);
+        double lenA2 = va.lengthSqr();
+        Vec3 projA = va.scale(dotA / lenA2);
+
+        // 投影到 b
+        double dotB = v.dot(vb);
+        double lenB2 = vb.lengthSqr();
+        Vec3 projB = vb.scale(dotB / lenB2);
+
+        // 平面投影 = 两个方向的和
+        return projA.add(projB);
+    }
+
+    /**
+     * 从一系列点构建最大凸包
+     */
+    public static List<Vector2f> convexHull(List<Vector2f> points) {
+        if (points.size() <= 1) return new ArrayList<>(points);
+
+        // 按 x 排序（若相等则按 y）
+        List<Vector2f> sorted = new ArrayList<>(points);
+        sorted.sort((a, b) -> {
+            if (a.x == b.x) return Float.compare(a.y, b.y);
+            return Float.compare(a.x, b.x);
+        });
+
+        List<Vector2f> lower = new ArrayList<>();
+        for (Vector2f p : sorted) {
+            while (lower.size() >= 2 &&
+                    cross(lower.get(lower.size() - 2), lower.get(lower.size() - 1), p) <= 0) {
+                lower.remove(lower.size() - 1);
+            }
+            lower.add(p);
+        }
+
+        List<Vector2f> upper = new ArrayList<>();
+        for (int i = sorted.size() - 1; i >= 0; i--) {
+            Vector2f p = sorted.get(i);
+            while (upper.size() >= 2 &&
+                    cross(upper.get(upper.size() - 2), upper.get(upper.size() - 1), p) <= 0) {
+                upper.remove(upper.size() - 1);
+            }
+            upper.add(p);
+        }
+
+        // 拼接时去掉首尾重复点
+        lower.remove(lower.size() - 1);
+        upper.remove(upper.size() - 1);
+        lower.addAll(upper);
+
+        return lower;
+    }
+
+    /**
+     * 叉积 (p1 -> p2) × (p1 -> p3)
+     */
+    public static float cross(Vector2f p1, Vector2f p2, Vector2f p3) {
+        return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+    }
+
+    /**
+     * 点是否在闭包内
+     */
+    public static boolean isPointInPolygon(Vector2f p, List<Vector2f> polygon) {
+        boolean inside = false;
+        for (int i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
+            Vector2f vi = polygon.get(i);
+            Vector2f vj = polygon.get(j);
+            if (((vi.y > p.y) != (vj.y > p.y)) &&
+                    (p.x < (vj.x - vi.x) * (p.y - vi.y) / (vj.y - vi.y) + vi.x)) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
+
+    /**
+     * 点p到点a与点b构成的线段的距离
+     */
+    public static float pointToSegmentDist(Vector2f p, Vector2f a, Vector2f b) {
+        Vector2f ab = new Vector2f(b).sub(a);
+        Vector2f ap = new Vector2f(p).sub(a);
+        float t = ap.dot(ab) / ab.lengthSquared();
+        t = Math.max(0, Math.min(1, t));
+        Vector2f proj = new Vector2f(a).fma(t, ab);
+        return p.distance(proj);
     }
 
 }

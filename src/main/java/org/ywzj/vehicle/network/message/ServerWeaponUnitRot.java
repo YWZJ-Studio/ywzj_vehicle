@@ -3,8 +3,8 @@ package org.ywzj.vehicle.network.message;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.misc.weapon.AbstractTurretUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
-import org.ywzj.vehicle.vehicle.weapon.AbstractTurretUnit;
 
 import java.util.function.Supplier;
 

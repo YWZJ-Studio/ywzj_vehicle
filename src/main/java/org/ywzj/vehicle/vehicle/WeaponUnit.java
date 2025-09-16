@@ -326,6 +326,14 @@ public class WeaponUnit {
         return vehicle;
     }
 
+    public List<VehicleBedrockCubeOBB> getYTurnUnitOBBs() {
+        return yTurnUnitOBBs;
+    }
+
+    public List<VehicleBedrockCubeOBB> getXTurnUnitOBBs() {
+        return xTurnUnitOBBs;
+    }
+
     public void setSeatOffset(Vec3 seatOffset) {
         this.seatOffset = seatOffset;
     }

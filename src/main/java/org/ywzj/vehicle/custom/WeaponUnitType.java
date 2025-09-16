@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.weapon.AbstractWeaponUnit;
+import org.ywzj.vehicle.misc.weapon.AbstractWeaponUnit;
 
 import javax.annotation.Nullable;
 

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.weapon;
+package org.ywzj.vehicle.misc.weapon;
 
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.custom.WeaponUnitData;

@@ -7,8 +7,8 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.WeaponUnitData;
 import org.ywzj.vehicle.custom.WeaponUnitType;
 import org.ywzj.vehicle.custom.WeaponUnitTypeManager;
-import org.ywzj.vehicle.vehicle.weapon.AbstractWeaponUnit;
-import org.ywzj.vehicle.vehicle.weapon.CannonUnit;
+import org.ywzj.vehicle.misc.weapon.AbstractWeaponUnit;
+import org.ywzj.vehicle.misc.weapon.CannonUnit;
 
 public class AllWeaponUnitType {
     public static final DeferredRegister<WeaponUnitType<?, ?>> WEAPON_UNIT_TYPES = DeferredRegister.create(ModRegistries.WEAPON_UNIT_TYPE, YwzjVehicle.MOD_ID);

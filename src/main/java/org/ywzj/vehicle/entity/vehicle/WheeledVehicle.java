@@ -199,8 +199,6 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         // 前进速度应用于车身朝向
         Vec3 direction = getLookAngle();
         Vec3 motion = direction.normalize().scale(vf);
-        // 重力影响
-        motion = motion.add(0, -0.5f, 0);
         this.setDeltaMovement(motion);
     }
 

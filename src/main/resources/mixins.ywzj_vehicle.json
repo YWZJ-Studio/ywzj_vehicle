@@ -16,6 +16,7 @@
   },
   "mixins": [
     "common.ChunkMapMixin",
+    "common.EntityMixin",
     "common.ServerEntityMixin",
     "tacz.EntityKineticBulletMixin",
     "tacz.EntityUtilMixin"

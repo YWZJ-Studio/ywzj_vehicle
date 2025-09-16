@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.weapon;
+package org.ywzj.vehicle.misc.weapon;
 
 import net.minecraft.util.Mth;
 import net.minecraftforge.network.PacketDistributor;
