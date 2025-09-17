@@ -17,7 +17,7 @@ import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Lav150;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.PartUnit;
 
 public class Lav150Renderer extends EntityRenderer<Lav150> {
 
@@ -64,8 +64,8 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
         float machineGunYRot = 0;
         // 炮塔俯仰
         float machineGunXRot = 0;
-        if (!pEntity.weaponUnits.isEmpty()) {
-            WeaponUnit weaponUnit = pEntity.weaponUnits.get(0);
+        if (!pEntity.operatorUnits.isEmpty()) {
+            PartUnit weaponUnit = pEntity.operatorUnits.get(0);
             machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
             machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
         }

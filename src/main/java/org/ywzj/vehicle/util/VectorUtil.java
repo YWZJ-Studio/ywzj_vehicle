@@ -143,6 +143,24 @@ public class VectorUtil {
      */
     public static boolean isPointInPolygon(Vector2f p, List<Vector2f> polygon) {
         boolean inside = false;
+        // 特殊情况：只有两个点 -> 判断点是否在这条线段上
+        if (polygon.size() == 2) {
+            Vector2f a = polygon.get(0);
+            Vector2f b = polygon.get(1);
+            // 向量叉积是否接近0（共线）
+            float cross = (p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y);
+            if (Math.abs(cross) > 1e-6) { // 不共线
+                return false;
+            }
+            // 判断投影是否在 [a, b] 之间
+            float dot = (p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y);
+            if (dot < 0) {
+                return false;
+            }
+            float lenSq = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
+            return !(dot > lenSq);
+        }
+        // 常规情况：点在多边形内判定（射线法）
         for (int i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
             Vector2f vi = polygon.get(i);
             Vector2f vj = polygon.get(j);

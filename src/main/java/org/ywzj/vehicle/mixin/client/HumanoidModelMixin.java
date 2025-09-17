@@ -12,8 +12,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.PassengerPose;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 @Mixin(value = HumanoidModel.class)
 public class HumanoidModelMixin {
@@ -34,9 +34,9 @@ public class HumanoidModelMixin {
     private void setupAnim(LivingEntity livingEntity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         if (livingEntity.getVehicle() instanceof AbstractVehicle vehicle) {
             if (livingEntity instanceof Player) {
-                WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(livingEntity);
-                if (weaponUnit != null && weaponUnit.passengerPose != null) {
-                    setPose(weaponUnit.passengerPose);
+                PartUnit operatorUnit = vehicle.getOwnOperatorUnit(livingEntity);
+                if (operatorUnit != null && operatorUnit.operatorPose != null) {
+                    setPose(operatorUnit.operatorPose);
                 }
             }
         }

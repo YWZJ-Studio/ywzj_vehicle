@@ -17,7 +17,7 @@ import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Ztl11;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.PartUnit;
 
 public class Ztl11Renderer extends EntityRenderer<Ztl11> {
 
@@ -68,8 +68,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         float turretYRot = 0;
         // 炮塔俯仰
         float turretXRot = 0;
-        if (!pEntity.weaponUnits.isEmpty()) {
-            WeaponUnit weaponUnit = pEntity.weaponUnits.get(0);
+        if (!pEntity.operatorUnits.isEmpty()) {
+            PartUnit weaponUnit = pEntity.operatorUnits.get(0);
             turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
             turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
         }
@@ -78,8 +78,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         float machineGunYRot = 0;
         // 车长机枪俯仰
         float machineGunXRot = 0;
-        if (!pEntity.weaponUnits.isEmpty()) {
-            WeaponUnit weaponUnit = pEntity.weaponUnits.get(1);
+        if (!pEntity.operatorUnits.isEmpty()) {
+            PartUnit weaponUnit = pEntity.operatorUnits.get(1);
             machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
             machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
         }

@@ -41,9 +41,9 @@ public class Channel {
                 ServerVehicleSeatsChange::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
-        CHANNEL.registerMessage(PacketId.S_WEAPON_UNIT_ROT.value(), ServerWeaponUnitRot.class,
-                ServerWeaponUnitRot::encode, ServerWeaponUnitRot::decode,
-                ServerWeaponUnitRot::onServerMessageReceived,
+        CHANNEL.registerMessage(PacketId.S_WEAPON_UNIT_ROT.value(), ServerPartUnitRot.class,
+                ServerPartUnitRot::encode, ServerPartUnitRot::decode,
+                ServerPartUnitRot::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
         CHANNEL.registerMessage(PacketId.C_VEHICLE_CHANGE_SEAT.value(), ClientVehicleChangeSeat.class,

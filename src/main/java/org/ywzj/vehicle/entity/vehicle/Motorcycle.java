@@ -23,6 +23,7 @@ public class Motorcycle extends WheeledVehicle {
         maxSpeedBackward= 0.1f;
         turnAcceleration = 1f;
         maxTurn = 3f;
+        physicsEngine.lockZRot = true;
     }
 
     @Override
@@ -41,15 +42,15 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public void initWeaponUnits() {
+    public void initPartUnits() {
         this.spotterUnit = new SpotterUnit(this,
                 new Vec3(0, 2, 0),
                 new Vec3(0, -0.3f, 0),
                 new Vec3(0, 0, -0.3),
                 null);
-        this.spotterUnit.passengerPose = new PassengerPose();
-        this.spotterUnit.passengerPose.leftArmRotX = -1.5f;
-        this.spotterUnit.passengerPose.rightArmRotX= -1.5f;
+        this.spotterUnit.operatorPose = new PassengerPose();
+        this.spotterUnit.operatorPose.leftArmRotX = -1.5f;
+        this.spotterUnit.operatorPose.rightArmRotX= -1.5f;
     }
 
     @Override

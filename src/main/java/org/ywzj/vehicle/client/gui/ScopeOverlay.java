@@ -8,7 +8,7 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.PartUnit;
 
 public class ScopeOverlay implements IGuiOverlay {
 
@@ -37,16 +37,16 @@ public class ScopeOverlay implements IGuiOverlay {
         for (int index = 0; index < vehicle.seats; index++) {
             Integer playerId = vehicle.passengerIdsBySeat.get(index);
             Entity entity = null;
-            WeaponUnit weaponUnit = null;
+            PartUnit partUnit = null;
             if (playerId != null) {
                 entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
                 if (entity instanceof LivingEntity livingEntity) {
-                    weaponUnit = vehicle.getOwnWeaponUnit(livingEntity);
+                    partUnit = vehicle.getOwnOperatorUnit(livingEntity);
                 }
             }
             String info = "[]";
             if (entity != null) {
-                info = "[" + entity.getDisplayName().getString() + "] " + (weaponUnit == null ? "" : weaponUnit.getName().getString());
+                info = "[" + entity.getDisplayName().getString() + "] " + (partUnit == null ? "" : partUnit.getName().getString());
             }
             guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, color);
             y += 10;

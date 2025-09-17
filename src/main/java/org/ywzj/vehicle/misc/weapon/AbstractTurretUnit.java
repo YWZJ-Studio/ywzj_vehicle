@@ -4,7 +4,7 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.network.PacketDistributor;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
+import org.ywzj.vehicle.network.message.ServerPartUnitRot;
 
 public abstract class AbstractTurretUnit<T> extends AbstractWeaponUnit<T> {
     public float xAimRot;
@@ -44,7 +44,7 @@ public abstract class AbstractTurretUnit<T> extends AbstractWeaponUnit<T> {
 
         if (!this.getVehicle().level().isClientSide()) {
             if (xDiff != 0 || yDiff != 0) {
-                var packet = new ServerWeaponUnitRot(this);
+                var packet = new ServerPartUnitRot(this);
                 Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(this::getVehicle), packet);
             }
         }

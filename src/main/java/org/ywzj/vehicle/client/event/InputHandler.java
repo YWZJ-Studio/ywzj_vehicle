@@ -129,21 +129,19 @@ public class InputHandler {
                 sendControl(vehicle, controlUnit);
             }
             if (MAIN_WEAPON_SHOOT_KEY.isDown()) {
-                WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
-                if (weaponUnit == null) {
-                    return;
-                }
-                if (weaponUnit == vehicle.spotterUnit) {
-                    LocalVehiclePlayer.instance.sendMessage("tips.spotter");
-                    return;
-                }
-                Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
-                Vec2 rot = weaponUnit.worldRot();
-                int rpm = 400;
-                float interval = 60f / rpm * 1000;
-                if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                    sendShoot(vehicle, weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
-                    lastFireTimeMillis = System.currentTimeMillis();
+                if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+                    if (weaponUnit == vehicle.spotterUnit) {
+                        LocalVehiclePlayer.instance.sendMessage("tips.spotter");
+                        return;
+                    }
+                    Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
+                    Vec2 rot = weaponUnit.worldRot();
+                    int rpm = 400;
+                    float interval = 60f / rpm * 1000;
+                    if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
+                        sendShoot(vehicle, weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
+                        lastFireTimeMillis = System.currentTimeMillis();
+                    }
                 }
             }
         }

@@ -35,9 +35,9 @@ import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
+import org.ywzj.vehicle.network.message.ServerPartUnitRot;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
-import org.ywzj.vehicle.network.message.ServerWeaponUnitRot;
 import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
@@ -52,7 +52,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     public int seats;
     public List<Integer> passengerIdsBySeat;
     public final ControlUnit controlUnit;
-    public final List<WeaponUnit> weaponUnits;
+    protected final List<PartUnit> partUnits;
+    public final List<PartUnit> operatorUnits;
     public SpotterUnit spotterUnit;
     public float wide;
     public float length;
@@ -61,7 +62,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     public float zRotO;
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
-    private final PhysicsEngine physicsEngine = new PhysicsEngine(this);
+    private VehicleBedrockCubeOBB mainCubeOBB;
+    protected final PhysicsEngine physicsEngine;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -69,12 +71,14 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         this.seats = getSeats();
         this.passengerIdsBySeat = new ArrayList<>(Collections.nCopies(seats, null));
         this.controlUnit = new ControlUnit();
-        this.weaponUnits = new ArrayList<>();
+        this.partUnits = new ArrayList<>();
+        this.operatorUnits = new ArrayList<>();
         this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
         this.vehicleBodyOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
-        this.initWeaponUnits();
+        this.initPartUnits();
         this.initOBBs();
+        this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
         this.lookControl = new VehicleLookControl(this);
     }
 
@@ -96,7 +100,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     public void tick() {
         super.tick();
         this.zRotO = this.zRot;
-        tickWeapon();
+        tickParts();
         updateOBBs();
         if (level().isClientSide()) {
             tickAim();
@@ -113,11 +117,9 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     }
 
     private void tickCollide(Vec3 velocity) {
-        VehicleBedrockCubeOBB bodyCube = vehicleBodyOBBs.get(0);
-        physicsEngine.physicsCube = bodyCube;
-        Vector3f[] axes = bodyCube.obb().getAxes();
+        Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
-        List<VehicleBedrockCubeOBB.CubePoint> surfacePoints = bodyCube.cubePoints();
+        List<VehicleBedrockCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
         // 接触方块的采样点
         List<VehicleBedrockCubeOBB.CubePoint> touchPoints = new ArrayList<>();
 
@@ -165,7 +167,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
 
     public abstract int getSeats();
 
-    public abstract void initWeaponUnits();
+    public abstract void initPartUnits();
 
     @OnlyIn(Dist.CLIENT)
     protected abstract void tickAim();
@@ -178,8 +180,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
 
     protected abstract void tickMove();
 
-    protected void tickWeapon() {
-        weaponUnits.forEach(WeaponUnit::tick);
+    protected void tickParts() {
+        partUnits.forEach(PartUnit::tick);
     }
 
     protected void initOBBs() {
@@ -191,6 +193,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         this.wide = cubes.get(0).getWidth();
         this.length = cubes.get(0).getDepth();
         this.height = cubes.get(0).getHeight();
+        mainCubeOBB = VehicleBedrockCubeOBB.init(this, bone, cubes.remove(0));
+        vehicleBodyOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {
             vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, bone, cube));
         }
@@ -200,19 +204,13 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
                 vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, child, cube));
             }
         }
-        // 由武器单元拓展车体长宽
-        for (WeaponUnit weaponUnit : weaponUnits) {
-            for (VehicleBedrockCubeOBB yTurnUnitOBB : weaponUnit.getYTurnUnitOBBs()) {
-                Vec3 cubeOffset = yTurnUnitOBB.offset();
-                this.wide = (float) Math.max((Math.abs(cubeOffset.x) + yTurnUnitOBB.cube().getWidth() / 2) * 2, this.wide);
-                this.length = (float) Math.max((Math.abs(cubeOffset.z) + yTurnUnitOBB.cube().getDepth() / 2) * 2, this.length);
-                this.height = (float) Math.max(Math.abs(cubeOffset.y) + yTurnUnitOBB.cube().getHeight() / 2, this.height);
-            }
-            for (VehicleBedrockCubeOBB xTurnUnitOBB : weaponUnit.getXTurnUnitOBBs()) {
-                Vec3 cubeOffset = xTurnUnitOBB.offset();
-                this.wide = (float) Math.max((Math.abs(cubeOffset.x) + xTurnUnitOBB.cube().getWidth() / 2) * 2, this.wide);
-                this.length = (float) Math.max((Math.abs(cubeOffset.z) + xTurnUnitOBB.cube().getDepth() / 2) * 2, this.length);
-                this.height = (float) Math.max(Math.abs(cubeOffset.y) + xTurnUnitOBB.cube().getHeight() / 2, this.height);
+        // 由部件结构拓展车体长宽
+        for (PartUnit partUnit : partUnits) {
+            for (VehicleBedrockCubeOBB unitBedrockCubeOBB : partUnit.getUnitBedrockCubeOBBs()) {
+                Vec3 cubeOffset = unitBedrockCubeOBB.offset();
+                this.wide = (float) Math.max((Math.abs(cubeOffset.x) + unitBedrockCubeOBB.cube().getWidth() / 2) * 2, this.wide);
+                this.length = (float) Math.max((Math.abs(cubeOffset.z) + unitBedrockCubeOBB.cube().getDepth() / 2) * 2, this.length);
+                this.height = (float) Math.max(Math.abs(cubeOffset.y) + unitBedrockCubeOBB.cube().getHeight() / 2, this.height);
             }
         }
     }
@@ -220,8 +218,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     @Override
     public List<OBB> getOBBs() {
         List<OBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList());
-        for (WeaponUnit weaponUnit : weaponUnits) {
-            vehicleOBBs.addAll(weaponUnit.getOBBs());
+        for (PartUnit partUnit : partUnits) {
+            vehicleOBBs.addAll(partUnit.getOBBs());
         }
         return vehicleOBBs;
     }
@@ -231,7 +229,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         for (VehicleBedrockCubeOBB vehicleBedrockCubeOBB : vehicleBodyOBBs) {
             OBB obb = vehicleBedrockCubeOBB.obb();
             Vec3 center = vehicleBedrockCubeOBB.center();
-            Quaternionf rot = vehicleBedrockCubeOBB.rot();
+            Quaternionf rot = vehicleBedrockCubeOBB.selfRot();
             obb.setCenter(relativeRotPos(center).toVector3f());
             obb.setRotation(rotYXZ().mul(rot));
         }
@@ -277,8 +275,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
             if (seat == 0) {
                 controlUnit.setOperator(livingEntity);
             }
-            if (seat < weaponUnits.size()) {
-                weaponUnits.get(seat).setOperator(livingEntity);
+            if (seat < operatorUnits.size()) {
+                operatorUnits.get(seat).setOperator(livingEntity);
             }
             passengerIdsBySeat.set(seat, livingEntity.getId());
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
@@ -291,8 +289,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
             if (seat == 0) {
                 controlUnit.setOperator(null);
             }
-            if (seat < weaponUnits.size()) {
-                weaponUnits.get(seat).setOperator(null);
+            if (seat < operatorUnits.size()) {
+                operatorUnits.get(seat).setOperator(null);
             }
             passengerIdsBySeat.set(seat, null);
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
@@ -309,16 +307,16 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
                 if (origSeat == 0) {
                     controlUnit.setOperator(null);
                 }
-                if (origSeat < weaponUnits.size()) {
-                    weaponUnits.get(origSeat).setOperator(null);
+                if (origSeat < operatorUnits.size()) {
+                    operatorUnits.get(origSeat).setOperator(null);
                 }
                 passengerIdsBySeat.set(origSeat, null);
             }
             if (toSeat == 0) {
                 controlUnit.setOperator(pPassenger);
             }
-            if (toSeat < weaponUnits.size()) {
-                weaponUnits.get(toSeat).setOperator(pPassenger);
+            if (toSeat < operatorUnits.size()) {
+                operatorUnits.get(toSeat).setOperator(pPassenger);
             }
             passengerIdsBySeat.set(toSeat, pPassenger.getId());
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
@@ -356,8 +354,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
                     if (index == 0) {
                         vehicle.controlUnit.setOperator(passenger);
                     }
-                    if (index < vehicle.weaponUnits.size()) {
-                        vehicle.weaponUnits.get(index).setOperator(passenger);
+                    if (index < vehicle.operatorUnits.size()) {
+                        vehicle.operatorUnits.get(index).setOperator(passenger);
                     }
                 }
             }
@@ -365,19 +363,19 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void onServerWeaponUnitRot(ServerWeaponUnitRot message) {
+    public static void onServerPartUnitRot(ServerPartUnitRot message) {
         Level level = Minecraft.getInstance().level;
         if (level == null) {
             return;
         }
         if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-            if (message.weaponIndex < vehicle.weaponUnits.size()) {
-                WeaponUnit weaponUnit = vehicle.weaponUnits.get(message.weaponIndex);
-                if (weaponUnit != null) {
-                    weaponUnit.xAimRot = message.xRot;
-                    weaponUnit.yAimRot = message.yRot;
-                    weaponUnit.xRot = message.xRot;
-                    weaponUnit.yRot = message.yRot;
+            if (message.partUnitIndex < vehicle.partUnits.size()) {
+                PartUnit partUnit = vehicle.partUnits.get(message.partUnitIndex);
+                if (partUnit != null) {
+                    partUnit.xAimRot = message.xRot;
+                    partUnit.yAimRot = message.yRot;
+                    partUnit.xRot = message.xRot;
+                    partUnit.yRot = message.yRot;
                 }
             }
         }
@@ -411,8 +409,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         if (!(pPassenger instanceof LivingEntity)) {
             super.positionRider(pPassenger, pCallback);
         }
-        WeaponUnit weaponUnit = getOwnWeaponUnit((LivingEntity) pPassenger);
-        if (weaponUnit != null) {
+        if (getOwnOperatorUnit((LivingEntity) pPassenger) instanceof WeaponUnit weaponUnit) {
             Vec3 pos = weaponUnit.worldSeatPosition();
             pCallback.accept(pPassenger, pos.x, pos.y, pos.z);
         } else {
@@ -424,14 +421,14 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         return controlUnit.operator;
     }
 
-    public WeaponUnit getOwnWeaponUnit(LivingEntity pPassenger) {
+    public PartUnit getOwnOperatorUnit(LivingEntity pPassenger) {
         if (pPassenger == null) {
             return null;
         }
         int index = passengerIdsBySeat.indexOf(pPassenger.getId());
         if (index != -1) {
-            if (index < weaponUnits.size()) {
-                return weaponUnits.get(index);
+            if (index < operatorUnits.size()) {
+                return operatorUnits.get(index);
             }
         }
         return pPassenger.level().isClientSide() ? spotterUnit : null;

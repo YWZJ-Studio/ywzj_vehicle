@@ -74,28 +74,26 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     @Override
     protected void tickAim() {
-        WeaponUnit weaponUnit = getOwnWeaponUnit(LocalVehiclePlayer.instance.getPlayer());
-        if (weaponUnit == null) {
-            return;
-        }
-        Vec2 rot = null;
-        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
-            rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
-        } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-            rot = LocalVehiclePlayer.instance.scopeAimRot();
-        }
-        if (rot == null) {
-            return;
-        }
-        if (weaponUnit.xAimRot != rot.x || weaponUnit.yAimRot != rot.y) {
-            weaponUnit.xAimRot = rot.x;
-            weaponUnit.yAimRot = rot.y;
-            ClientWeaponUnitControl control = new ClientWeaponUnitControl();
-            control.vehicleEntityId = this.getId();
-            control.weaponIndex = weaponUnit.getIndex();
-            control.xAimRot = rot.x;
-            control.yAimRot = rot.y;
-            Channel.CHANNEL.sendToServer(control);
+        if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+            Vec2 rot = null;
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
+                rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
+            } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                rot = LocalVehiclePlayer.instance.scopeAimRot();
+            }
+            if (rot == null) {
+                return;
+            }
+            if (weaponUnit.xAimRot != rot.x || weaponUnit.yAimRot != rot.y) {
+                weaponUnit.xAimRot = rot.x;
+                weaponUnit.yAimRot = rot.y;
+                ClientWeaponUnitControl control = new ClientWeaponUnitControl();
+                control.vehicleEntityId = this.getId();
+                control.weaponIndex = weaponUnit.getIndex();
+                control.xAimRot = rot.x;
+                control.yAimRot = rot.y;
+                Channel.CHANNEL.sendToServer(control);
+            }
         }
     }
 

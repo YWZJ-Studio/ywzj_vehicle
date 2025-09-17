@@ -21,7 +21,7 @@ public class VehicleBedrockCubeOBB {
     private final OBB obb;
     private final BedrockBone bone;
     private final BedrockCubePerFace cube;
-    private final Quaternionf rot;
+    private final Quaternionf selfRot;
     private final List<CubePoint> cubePoints;
 
     public VehicleBedrockCubeOBB(AbstractVehicle vehicle, OBB obb, BedrockBone bone, BedrockCubePerFace cube) {
@@ -29,7 +29,7 @@ public class VehicleBedrockCubeOBB {
         this.obb = obb;
         this.bone = bone;
         this.cube = cube;
-        this.rot = new Quaternionf(bone.rotation);
+        this.selfRot = new Quaternionf(bone.rotation);
         this.cubePoints = new ArrayList<>();
         this.initCubePoints();
     }
@@ -96,8 +96,8 @@ public class VehicleBedrockCubeOBB {
         return bone;
     }
 
-    public Quaternionf rot() {
-        return rot;
+    public Quaternionf selfRot() {
+        return selfRot;
     }
 
     public List<CubePoint> cubePoints() {

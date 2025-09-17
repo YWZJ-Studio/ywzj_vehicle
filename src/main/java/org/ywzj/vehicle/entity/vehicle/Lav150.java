@@ -24,13 +24,14 @@ public class Lav150 extends WheeledVehicle {
     }
 
     @Override
-    public void initWeaponUnits() {
+    public void initPartUnits() {
         WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null, null);
         machineGunTurret.xRotSpeed = 3f;
         machineGunTurret.yRotSpeed = 3f;
         machineGunTurret.xRotMax = 15;
         machineGunTurret.xRotMin = -30;
-        this.weaponUnits.add(machineGunTurret);
+        this.partUnits.add(machineGunTurret);
+        this.operatorUnits.add(machineGunTurret);
     }
 
     @Override
@@ -66,9 +67,10 @@ public class Lav150 extends WheeledVehicle {
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         if (weaponIndex == 0) {
-            WeaponUnit machineGunTurret = weaponUnits.get(0);
-            machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-            this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+            if (operatorUnits.get(0) instanceof WeaponUnit machineGunTurret) {
+                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+                this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+            }
         }
     }
 

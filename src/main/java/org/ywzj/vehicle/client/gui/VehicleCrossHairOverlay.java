@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
@@ -45,8 +46,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
-            if (weaponUnit != null) {
+            PartUnit operatorUnit = vehicle.getOwnOperatorUnit(player);
+            if (operatorUnit != null) {
                 if (show) {
                     double x = Mth.lerp(partialTick, screenXO, screenX);
                     double y = Mth.lerp(partialTick, screenYO, screenY);
@@ -78,8 +79,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            WeaponUnit weaponUnit = vehicle.getOwnWeaponUnit(player);
-            if (weaponUnit != null) {
+            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                 // 瞄准位置
                 Vec3 aimScreenPos = getHitScreenPos(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(),
                         LocalVehiclePlayer.instance.cameraAimRotX,

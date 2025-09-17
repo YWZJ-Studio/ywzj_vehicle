@@ -18,7 +18,7 @@ public class Ztl11 extends WheeledVehicle {
     }
 
     @Override
-    public void initWeaponUnits() {
+    public void initPartUnits() {
         WeaponUnit turret = new WeaponUnit("ztl11_turret",
                 0,
                 this,
@@ -31,7 +31,8 @@ public class Ztl11 extends WheeledVehicle {
         turret.yRotSpeed = 15.5f / 20;
         turret.xRotMax = 5f;
         turret.xRotMin = -18f;
-        this.weaponUnits.add(turret);
+        this.partUnits.add(turret);
+        this.operatorUnits.add(turret);
         WeaponUnit commanderMachineGun = new WeaponUnit("ztl11_commander_machine_gun",
                 1,
                 this,
@@ -44,7 +45,8 @@ public class Ztl11 extends WheeledVehicle {
         commanderMachineGun.yRotSpeed = 60f / 20;
         commanderMachineGun.xRotMax = 15f;
         commanderMachineGun.xRotMin = -18f;
-        this.weaponUnits.add(commanderMachineGun);
+        this.partUnits.add(commanderMachineGun);
+        this.operatorUnits.add(commanderMachineGun);
         this.spotterUnit = new SpotterUnit(this,
                 new Vec3(0, 4.54d, -0.375d),
                 new Vec3(0, 1.5d, 0),
@@ -79,10 +81,11 @@ public class Ztl11 extends WheeledVehicle {
 
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (weaponIndex < weaponUnits.size()) {
-            WeaponUnit machineGunTurret = weaponUnits.get(weaponIndex);
-            machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-            this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+        if (weaponIndex < operatorUnits.size()) {
+            if (operatorUnits.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
+                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+                this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+            }
         }
     }
 

@@ -17,8 +17,8 @@ import java.util.List;
 
 public class PhysicsEngine {
 
-    public AbstractVehicle vehicle;
-    public VehicleBedrockCubeOBB physicsCube;
+    public final AbstractVehicle vehicle;
+    public final VehicleBedrockCubeOBB physicsCube;
     public float bounce = 0.02f;
     public float rotA = 0.01f;
     public float rotV = 0;
@@ -31,9 +31,11 @@ public class PhysicsEngine {
     public float gA = 1f / 20;
     public float gV = 0;
     public Quaternionf stepRot;
+    public boolean lockZRot;
 
-    public PhysicsEngine(AbstractVehicle vehicle) {
+    public PhysicsEngine(AbstractVehicle vehicle, VehicleBedrockCubeOBB physicsCube) {
         this.vehicle = vehicle;
+        this.physicsCube = physicsCube;
     }
 
     /**
@@ -112,7 +114,12 @@ public class PhysicsEngine {
                     }
                     return true;
                 })
-                .map(VehicleBedrockCubeOBB.CubePoint::obbLocalPos)
+                .map(touchPoint -> {
+                    if (lockZRot) {
+                        return new Vector3f(0, touchPoint.obbLocalPos().y, touchPoint.obbLocalPos().z);
+                    }
+                    return touchPoint.obbLocalPos();
+                })
                 .toList();
 
         // 重力方向在局部坐标系下的向量
@@ -259,7 +266,11 @@ public class PhysicsEngine {
         stepRot.getEulerAnglesYXZ(as);
         vehicle.setYRot((float) (vehicle.getYRot() + Math.toDegrees(as.y)));
         vehicle.setXRot((float) (vehicle.getXRot() + Math.toDegrees(as.x)));
-        vehicle.setZRot((float) (vehicle.getZRot() + Math.toDegrees(as.z)));
+        if (lockZRot) {
+            vehicle.setZRot(0);
+        } else {
+            vehicle.setZRot((float) (vehicle.getZRot() + Math.toDegrees(as.z)));
+        }
     }
 
     private Vector3f rotateAroundAxis(Vector3f point, Vector3f a, Vector3f b, float radians) {
