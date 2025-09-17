@@ -41,17 +41,17 @@ public class Lav150 extends WheeledVehicle {
 
     @Override
     public SoundEvent getEngineStartSound() {
-        return AllSounds.LAV_150_ENGINE_START.get();
+        return AllSounds.LAV150_ENGINE_START.get();
     }
 
     @Override
     public SoundEvent getEngineIdleSound() {
-        return AllSounds.LAV_150_ENGINE_IDLE.get();
+        return AllSounds.LAV150_ENGINE_IDLE.get();
     }
 
     @Override
     public SoundEvent getEngineRunSound() {
-        return AllSounds.LAV_150_ENGINE_RUN.get();
+        return AllSounds.LAV150_ENGINE_RUN.get();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class Lav150 extends WheeledVehicle {
         if (weaponIndex == 0) {
             if (operatorUnits.get(0) instanceof WeaponUnit machineGunTurret) {
                 machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-                this.level().playSound(null, this, AllSounds.LAV_150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+                this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }
         }
     }

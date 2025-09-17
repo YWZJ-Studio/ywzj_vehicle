@@ -43,7 +43,7 @@ public class VehicleBedrockCubeOBB {
 
     public void initCubePoints() {
         float spacing = 1f;
-        float gap = 0.5f;
+        float gap = 0.1f;
         float offset = 0.001f;
         float halfX = Math.round(obb.extents().x - gap);
         float halfY = Math.round(obb.extents().y - gap);

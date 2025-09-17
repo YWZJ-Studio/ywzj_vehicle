@@ -25,5 +25,17 @@
   "entity.lav150.shoot": {
     "sounds": ["ywzj_vehicle:lav150/shoot"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
+  },
+  "ztz99a_engine_start": {
+    "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_start"
+  },
+  "ztz99a_engine_idle": {
+    "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_idle"],
+    "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_idle"
+  },
+  "ztz99a_engine_run": {
+    "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_run"
   }
 }

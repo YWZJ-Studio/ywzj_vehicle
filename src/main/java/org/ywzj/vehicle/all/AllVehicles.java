@@ -6,10 +6,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.Lav150;
-import org.ywzj.vehicle.entity.vehicle.Motorcycle;
-import org.ywzj.vehicle.entity.vehicle.Ztl11;
+import org.ywzj.vehicle.entity.vehicle.*;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -22,6 +19,7 @@ public class AllVehicles {
 
     public static final VehicleType LAV150 = registerVehicle("lav150", Lav150.class);
     public static final VehicleType ZTL11 = registerVehicle("ztl11", Ztl11.class);
+    public static final VehicleType ZTZ99A = registerVehicle("ztz99a", Ztz99a.class);
     public static final VehicleType MOTORCYCLE = registerVehicle("motorcycle", Motorcycle.class);
 
     public static void register() {}

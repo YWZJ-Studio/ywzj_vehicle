@@ -12,6 +12,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -47,10 +48,10 @@ public class PhysicsEngine {
     public Vec3 impact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
-                velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
                 if (touchPoint.obbLocalPos().y < -physicsCube.cube().getHeight() / 2 + 1) {
                     continue;
                 }
+                velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
                 if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT) {
                     velocity = velocity.subtract(new Vec3(axes[0]).scale(bounce));
                 } else {
@@ -150,29 +151,23 @@ public class PhysicsEngine {
                         .orElse(0);
                 if (y < -physicsCube.cube().getHeight() / 2 + 1) {
                     if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(1 / physicsCube.cube().getDepth()))) {
-                        vehicle.setPos(vehicle.position().x,
-                                touchPoints.stream()
-                                        .mapToDouble(touchPoint -> {
-                                            if (touchPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                                                    || touchPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) {
-                                                return BlockPos.containing(new Vec3(touchPoint.cachedWorldPos())).getY() + 0.3f;
-                                            } else {
-                                                return BlockPos.containing(new Vec3(touchPoint.cachedWorldPos())).getY() + 1;
-                                            }
-                                        })
-                                        .max()
-                                        .orElse(vehicle.position().y),
-                                vehicle.position().z);
+                        touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+                        VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
+                        double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
+                                ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF) || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.3f : 1f);
+                        if (liftHeight > vehicle.position().y) {
+                            vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
+                        }
                     }
                 }
                 // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth()))) {
+                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth())) + 0.5) {
                     vehicle.setZRot(0);
                 }
-                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth()))) {
+                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth())) + 0.5) {
                     vehicle.setXRot(0);
+                    vehicle.hurtMarked = true;
                 }
-
                 return velocity;
             }
             float minDist = Float.MAX_VALUE;

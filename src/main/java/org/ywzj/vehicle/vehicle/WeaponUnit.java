@@ -29,10 +29,14 @@ public class WeaponUnit extends PartUnit {
 
     public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength, Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
-        // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
-        this.boltOffset = boltOffset;
-        // 炮管长度，为发射物生成位置与炮闩位置的距离
-        this.barrelLength = barrelLength;
+        if (this.boltOffset == null) {
+            // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
+            this.boltOffset = boltOffset;
+        }
+        if (this.barrelLength == 0) {
+            // 炮管长度，为发射物生成位置与炮闩位置的距离
+            this.barrelLength = barrelLength;
+        }
         // 武器操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
         this.operatorOffset = operatorOffset;
         // 武器操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
