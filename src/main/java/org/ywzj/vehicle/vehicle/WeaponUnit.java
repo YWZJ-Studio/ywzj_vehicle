@@ -146,7 +146,11 @@ public class WeaponUnit extends PartUnit {
     }
 
     public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition);
+        shoot(ammoSpawnPosition, ammoXRot, ammoYRot, false);
+    }
+
+    public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot, boolean explosion) {
+        BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition.x, ammoSpawnPosition.y, ammoSpawnPosition.z, explosion);
         bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 1f);
         bulletEntity.setDamage(1);
         bulletEntity.setHeadShot(1.5f);

@@ -7,11 +7,17 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Ztz99a extends TrackedVehicle {
+
+    private VehicleSound turretTurnYSoundInstance;
+    private VehicleSound turretTurnXSoundInstance;
 
     public Ztz99a(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -27,10 +33,10 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0, 1.5d, 0),
                 new Vec3(0, 0, 0),
                 null);
-        turret.xRotSpeed = 22.1f / 20;
-        turret.yRotSpeed = 15.5f / 20;
+        turret.xRotSpeed = 30f / 20;
+        turret.yRotSpeed = 15f / 20;
         turret.xRotMax = 5f;
-        turret.xRotMin = -18f;
+        turret.xRotMin = -13f;
         this.partUnits.add(turret);
         this.operatorUnits.add(turret);
         WeaponUnit commanderMachineGun = new WeaponUnit("ztz99a_commander_machine_gun",
@@ -85,11 +91,54 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
+    protected void tickSound() {
+        super.tickSound();
+        for (PartUnit operatorUnit : operatorUnits) {
+            if (operatorUnit.getName().getString().equals("ztz99a_turret")) {
+                if (operatorUnit.yAimRot != operatorUnit.yRot) {
+                    if (turretTurnYSoundInstance == null) {
+                        turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
+                        turretTurnYSoundInstance.play();
+                    }
+                } else {
+                    if (turretTurnYSoundInstance != null) {
+                        turretTurnYSoundInstance.stop();
+                        turretTurnYSoundInstance = null;
+                    }
+                }
+                if (operatorUnit.xAimRot != operatorUnit.xRot && operatorUnit.xRot < operatorUnit.xRotMax && operatorUnit.xRot > operatorUnit.xRotMin) {
+                    if (turretTurnXSoundInstance == null) {
+                        turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
+                        turretTurnXSoundInstance.play();
+                    }
+                } else {
+                    if (turretTurnXSoundInstance != null) {
+                        turretTurnXSoundInstance.stop();
+                        turretTurnXSoundInstance = null;
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         if (weaponIndex < operatorUnits.size()) {
-            if (operatorUnits.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
-                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-                this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+            //todo 武器配置
+            if (operatorUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+                if (weaponUnit.getName().getString().equals("ztz99a_turret")) {
+                    weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, true);
+                    this.level().playSound(null, this, AllSounds.CANNON_125_MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(500);
+                        } catch (Exception ex) {}
+                        ServerLifecycleHooks.getCurrentServer().execute(() -> this.level().playSound(null, this, AllSounds.CANNON_SHELL_DROP.get(), SoundSource.PLAYERS, 16f, 1f));
+                    }).start();
+                } else {
+                    weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+                    this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package org.ywzj.vehicle;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +21,7 @@ public class YwzjVehicle {
     @SuppressWarnings("removal")
     public YwzjVehicle() {
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
+        AllConfigs.register(ModLoadingContext.get());
         AllVehicles.register();
         IEventBus modEventBus = context.getModEventBus();
         AllBlocks.register(modEventBus);

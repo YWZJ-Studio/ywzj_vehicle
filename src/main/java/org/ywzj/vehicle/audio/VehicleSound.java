@@ -15,21 +15,24 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class VehicleSound extends SimpleSoundInstance implements TickableSoundInstance {
 
-    private final static Integer FADE_TICKS = 50;
+    private final Integer fadeTicks;
     private final Integer entityId;
     private Entity entity;
     private final double scale;
     private boolean isPlaying;
-    private boolean isFadeIn;
     private boolean isFadeOut;
+    private boolean fadeIn;
+    private boolean fadeOut;
     private Integer fadeInTick = 0;
 
-    public VehicleSound(SoundEvent event, float volume, float pitch, boolean loop, boolean isFadeIn, int entityId) {
+    public VehicleSound(SoundEvent event, float volume, float pitch, boolean loop, int fadeTicks, boolean fadeIn, boolean fadeOut, int entityId) {
         super(event, SoundSource.PLAYERS, volume, pitch, SoundInstance.createUnseededRandom(), 0, 0, 0);
         this.entityId = entityId;
         updateRelativePos();
-        this.volume = isFadeIn ? 0.0001f : volume;
-        this.isFadeIn = isFadeIn;
+        this.volume = fadeIn ? 0.0001f : volume;
+        this.fadeTicks = fadeTicks;
+        this.fadeIn = fadeIn;
+        this.fadeOut = fadeOut;
         this.scale = 1 / volume;
         this.looping = loop;
         this.isPlaying = true;
@@ -41,11 +44,10 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     }
 
     public void stop() {
-        if (looping) {
-            isFadeOut = true;
-        } else {
+        if (!looping || !fadeOut) {
             isPlaying = false;
         }
+        isFadeOut = true;
     }
 
     public void setVolume(float volume) {
@@ -62,15 +64,15 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         updateRelativePos();
         if (looping) {
             if (isFadeOut) {
-                volume = volume * (float) Math.pow(0.001f, 1 / (double) FADE_TICKS);
+                volume = volume * (float) Math.pow(0.001f, 1 / (double) fadeTicks);
                 if (volume <= 0.001f) {
                     isPlaying = false;
                 }
-            } else if (isFadeIn) {
-                volume = (float) Math.max(0.0001f, Math.log(fadeInTick + 1) / Math.log(FADE_TICKS + 1) * 1f);
+            } else if (fadeIn) {
+                volume = (float) Math.max(0.0001f, Math.log(fadeInTick + 1) / Math.log(fadeTicks + 1) * 1f);
                 fadeInTick += 1;
                 if (volume == 1f) {
-                    isFadeIn = false;
+                    fadeIn = false;
                 }
             }
         }

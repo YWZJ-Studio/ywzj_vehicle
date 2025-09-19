@@ -97,6 +97,7 @@ public class AllVehicles {
                         }
                     }, MobCategory.MISC)
                     .sized(1f, 1f)
+                    .updateInterval(1)
                     .clientTrackingRange(16)
                     .build(name));
             return entityTypeRegistryObject;

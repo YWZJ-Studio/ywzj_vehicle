@@ -12,39 +12,39 @@ public class ServerPartUnitRot {
 
     public int vehicleEntityId;
     public int partUnitIndex;
-    public float xRot;
-    public float yRot;
+    public float xAimRot;
+    public float yAimRot;
 
     public ServerPartUnitRot() {}
 
     public ServerPartUnitRot(PartUnit partUnit) {
         this.vehicleEntityId = partUnit.getVehicle().getId();
         this.partUnitIndex = partUnit.getIndex();
-        this.xRot = partUnit.xRot;
-        this.yRot = partUnit.yRot;
+        this.xAimRot = partUnit.xAimRot;
+        this.yAimRot = partUnit.yAimRot;
     }
 
     public ServerPartUnitRot(AbstractTurretUnit<?> partUnit) {
         this.vehicleEntityId = partUnit.getVehicle().getId();
         this.partUnitIndex = partUnit.getIndex();
-        this.xRot = partUnit.xRot;
-        this.yRot = partUnit.yRot;
+        this.xAimRot = partUnit.xAimRot;
+        this.yAimRot = partUnit.yAimRot;
     }
 
     public static ServerPartUnitRot decode(FriendlyByteBuf buf) {
         ServerPartUnitRot serverPartUnitRot = new ServerPartUnitRot();
         serverPartUnitRot.vehicleEntityId = buf.readInt();
         serverPartUnitRot.partUnitIndex = buf.readInt();
-        serverPartUnitRot.xRot = buf.readFloat();
-        serverPartUnitRot.yRot = buf.readFloat();
+        serverPartUnitRot.xAimRot = buf.readFloat();
+        serverPartUnitRot.yAimRot = buf.readFloat();
         return serverPartUnitRot;
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeInt(vehicleEntityId);
         buf.writeInt(partUnitIndex);
-        buf.writeFloat(xRot);
-        buf.writeFloat(yRot);
+        buf.writeFloat(xAimRot);
+        buf.writeFloat(yAimRot);
     }
 
     public static void onServerMessageReceived(ServerPartUnitRot message, Supplier<NetworkEvent.Context> ctxSupplier) {

@@ -27,18 +27,23 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
+    public int getSeats() {
+        return 1;
+    }
+
+    @Override
     public SoundEvent getEngineStartSound() {
-        return AllSounds.LAV150_ENGINE_START.get();
+        return AllSounds.MOTORCYCLE_ENGINE_START.get();
     }
 
     @Override
     public SoundEvent getEngineIdleSound() {
-        return AllSounds.LAV150_ENGINE_IDLE.get();
+        return AllSounds.MOTORCYCLE_ENGINE_IDLE.get();
     }
 
     @Override
     public SoundEvent getEngineRunSound() {
-        return AllSounds.LAV150_ENGINE_RUN.get();
+        return AllSounds.MOTORCYCLE_ENGINE_RUN.get();
     }
 
     @Override

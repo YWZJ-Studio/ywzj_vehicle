@@ -155,6 +155,12 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         this.setPos(this.getX() + pPos.x, this.getY() + pPos.y, this.getZ() + pPos.z);
     }
 
+    @Override
+    public void travel(Vec3 pTravelVector) {
+        this.moveRelative(0.02F, pTravelVector);
+        this.move(MoverType.SELF, this.getDeltaMovement());
+    }
+
     public void impact(Entity entity) {
         if (this.equals(entity.getVehicle())) {
             return;
@@ -372,10 +378,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
             if (message.partUnitIndex < vehicle.partUnits.size()) {
                 PartUnit partUnit = vehicle.partUnits.get(message.partUnitIndex);
                 if (partUnit != null) {
-                    partUnit.xAimRot = message.xRot;
-                    partUnit.yAimRot = message.yRot;
-                    partUnit.xRot = message.xRot;
-                    partUnit.yRot = message.yRot;
+                    partUnit.xAimRot = message.xAimRot;
+                    partUnit.yAimRot = message.yAimRot;
                 }
             }
         }
@@ -442,8 +446,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         return vehicleType;
     }
 
-    public List<VehicleBedrockCubeOBB> getVehicleBodyOBBs() {
-        return vehicleBodyOBBs;
+    public VehicleBedrockCubeOBB getMainCubeOBB() {
+        return mainCubeOBB;
     }
 
     public float getZRot() {
@@ -527,7 +531,50 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
     }
 
     @Override
+    public void push(Entity pEntity) {
+        if (!this.isPassengerOfSameVehicle(pEntity)) {
+            if (pEntity instanceof AbstractVehicle vehicle) {
+                VehicleBedrockCubeOBB bodyCube = vehicle.getMainCubeOBB();
+                if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
+                    return;
+                }
+            } else {
+                if (!getMainCubeOBB().obb().contains(pEntity.getEyePosition())) {
+                    return;
+                }
+            }
+            impact(pEntity);
+            if (!pEntity.noPhysics && !this.noPhysics) {
+                double d0 = pEntity.getX() - this.getX();
+                double d1 = pEntity.getZ() - this.getZ();
+                double d2 = Mth.absMax(d0, d1);
+                if (d2 >= (double)0.01F) {
+                    d2 = java.lang.Math.sqrt(d2);
+                    d0 /= d2;
+                    d1 /= d2;
+                    double d3 = 1.0D / d2;
+                    if (d3 > 1.0D) {
+                        d3 = 1.0D;
+                    }
+                    d0 *= d3;
+                    d1 *= d3;
+                    d0 *= 0.05F;
+                    d1 *= 0.05F;
+                    if (pEntity.isPushable()) {
+                        pEntity.push(d0, 0.0D, d1);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public boolean isPushable() {
+        return true;
+    }
+
+    @Override
+    public boolean isInWall() {
         return false;
     }
 

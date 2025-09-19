@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
@@ -49,6 +50,7 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
     private float gravity = 0;
     private float friction = 0.01F;
     private float knockback = 0;
+    private boolean explosion = false;
     // 穿透数
     private int pierce = 1;
     // 初始位置
@@ -64,12 +66,13 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
     }
 
     public BulletEntity(Level level, LivingEntity throwerIn, Vec3 startPos) {
-        this(level, throwerIn, startPos.x, startPos.y, startPos.z);
+        this(level, throwerIn, startPos.x, startPos.y, startPos.z, false);
     }
 
-    public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z) {
+    public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z, boolean explosion) {
         this(AllEntities.BULLET.get(), level);
         this.setOwner(throwerIn);
+        this.explosion = explosion;
         this.setPos(x, y, z);
         this.startPos = this.position();
     }
@@ -250,6 +253,13 @@ public class BulletEntity extends Projectile implements IEntityAdditionalSpawnDa
         Vec3 hitVec = result.getLocation();
 
         super.onHitBlock(result);
+
+        //todo自己实现爆炸
+        if (explosion) {
+            this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
+                    AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+        }
+
         // 弹孔与点燃特效
 //        if (this.level() instanceof ServerLevel serverLevel) {
 //            BulletHoleOption bulletHoleOption = new BulletHoleOption(result.getDirection(), result.getBlockPos(), this.ammoId.toString(), this.gunId.toString(), this.gunDisplayId.toString());

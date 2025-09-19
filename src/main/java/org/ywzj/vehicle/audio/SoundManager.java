@@ -38,6 +38,8 @@ public class SoundManager {
                 message.volume,
                 1f,
                 false,
+                50,
+                false,
                 false,
                 message.entityId);
         Minecraft.getInstance().execute(() -> Minecraft.getInstance().getSoundManager().play(instance));

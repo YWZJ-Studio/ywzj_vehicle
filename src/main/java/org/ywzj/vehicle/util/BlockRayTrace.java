@@ -2,7 +2,6 @@ package org.ywzj.vehicle.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -11,7 +10,6 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 import java.util.function.BiFunction;
@@ -26,14 +24,14 @@ public final class BlockRayTrace {
             BlockState blockState = level.getBlockState(blockPos);
             // 这里添加判断方块是否可以穿透，如果可以穿透则返回 null
 //            List<String> ids = AmmoConfig.PASS_THROUGH_BLOCKS.get();
-            ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(blockState.getBlock());
-            if (blockId != null) {
-                return null;
-            }
-            // tag
-            if (IGNORES.test(blockState)) {
-                return null;
-            }
+//            ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(blockState.getBlock());
+//            if (blockId != null) {
+//                return null;
+//            }
+//            // tag
+//            if (IGNORES.test(blockState)) {
+//                return null;
+//            }
             return getBlockHitResult(level, rayTraceContext, blockPos, blockState);
         }, (rayTraceContext) -> {
             Vec3 vec3 = rayTraceContext.getFrom().subtract(rayTraceContext.getTo());

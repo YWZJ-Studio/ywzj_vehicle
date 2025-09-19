@@ -16,6 +16,10 @@ public class AllSounds {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<SoundEvent> BULLET_HIT_OUTSIDE = registerSoundEvent("bullet_hit_outside", new ResourceLocation(YwzjVehicle.MOD_ID, "bullet_hit_outside"));
+    public static final RegistryObject<SoundEvent> CANNON_125_MM_SHOT = registerSoundEvent("cannon_125mm_shot", new ResourceLocation(YwzjVehicle.MOD_ID, "cannon_125mm_shot"));
+    public static final RegistryObject<SoundEvent> CANNON_SHELL_DROP = registerSoundEvent("cannon_shell_drop", new ResourceLocation(YwzjVehicle.MOD_ID, "cannon_shell_drop"));
+    public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_V = registerSoundEvent("turret_turn_servo_v", new ResourceLocation(YwzjVehicle.MOD_ID, "turret_turn_servo_v"));
+    public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_H = registerSoundEvent("turret_turn_servo_h", new ResourceLocation(YwzjVehicle.MOD_ID, "turret_turn_servo_h"));
 
     public static final RegistryObject<SoundEvent> LAV150_ENGINE_START = registerSoundEvent("lav150_engine_start", new ResourceLocation(YwzjVehicle.MOD_ID, "lav150_engine_start"));
     public static final RegistryObject<SoundEvent> LAV150_ENGINE_IDLE = registerSoundEvent("lav150_engine_idle", new ResourceLocation(YwzjVehicle.MOD_ID, "lav150_engine_idle"));
@@ -24,6 +28,9 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> ZTZ99A_ENGINE_START = registerSoundEvent("ztz99a_engine_start", new ResourceLocation(YwzjVehicle.MOD_ID, "ztz99a_engine_start"));
     public static final RegistryObject<SoundEvent> ZTZ99A_ENGINE_IDLE = registerSoundEvent("ztz99a_engine_idle", new ResourceLocation(YwzjVehicle.MOD_ID, "ztz99a_engine_idle"));
     public static final RegistryObject<SoundEvent> ZTZ99A_ENGINE_RUN = registerSoundEvent("ztz99a_engine_run", new ResourceLocation(YwzjVehicle.MOD_ID, "ztz99a_engine_run"));
+    public static final RegistryObject<SoundEvent> MOTORCYCLE_ENGINE_START = registerSoundEvent("motorcycle_engine_start", new ResourceLocation(YwzjVehicle.MOD_ID, "motorcycle_engine_start"));
+    public static final RegistryObject<SoundEvent> MOTORCYCLE_ENGINE_IDLE = registerSoundEvent("motorcycle_engine_idle", new ResourceLocation(YwzjVehicle.MOD_ID, "motorcycle_engine_idle"));
+    public static final RegistryObject<SoundEvent> MOTORCYCLE_ENGINE_RUN = registerSoundEvent("motorcycle_engine_run", new ResourceLocation(YwzjVehicle.MOD_ID, "motorcycle_engine_run"));
 
     private static RegistryObject<SoundEvent> registerSoundEvent(String name, ResourceLocation soundResourceLocation) {
         RegistryObject<SoundEvent> soundEventRegistryObject = SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(soundResourceLocation));

@@ -10,6 +10,38 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.bullet_hit_outside"
   },
+  "cannon_125mm_shot": {
+    "sounds": [
+      "ywzj_vehicle:misc/cannon_125mm_shot_01",
+      "ywzj_vehicle:misc/cannon_125mm_shot_02",
+      "ywzj_vehicle:misc/cannon_125mm_shot_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.cannon_125mm_shot"
+  },
+  "cannon_shell_drop": {
+    "sounds": [
+      "ywzj_vehicle:misc/cannon_shell_drop_01",
+      "ywzj_vehicle:misc/cannon_shell_drop_02",
+      "ywzj_vehicle:misc/cannon_shell_drop_03",
+      "ywzj_vehicle:misc/cannon_shell_drop_04",
+      "ywzj_vehicle:misc/cannon_shell_drop_05",
+      "ywzj_vehicle:misc/cannon_shell_drop_06",
+      "ywzj_vehicle:misc/cannon_shell_drop_07"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.cannon_shell_drop"
+  },
+  "turret_turn_servo_h": {
+    "sounds": [
+      "ywzj_vehicle:misc/turret_turn_servo_h"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_h"
+  },
+  "turret_turn_servo_v": {
+    "sounds": [
+      "ywzj_vehicle:misc/turret_turn_servo_v"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_v"
+  },
   "lav150_engine_start": {
     "sounds": ["ywzj_vehicle:lav150/lav150_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_start"
@@ -37,5 +69,17 @@
   "ztz99a_engine_run": {
     "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_run"
+  },
+  "motorcycle_engine_start": {
+    "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_start"
+  },
+  "motorcycle_engine_idle": {
+    "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_idle"],
+    "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_idle"
+  },
+  "motorcycle_engine_run": {
+    "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_run"
   }
 }
