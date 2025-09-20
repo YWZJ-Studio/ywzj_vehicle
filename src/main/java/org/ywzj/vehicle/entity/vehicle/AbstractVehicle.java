@@ -250,12 +250,9 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
         Vec3 p6 = relativeRotPos(position().add(-wide / 2, -height / 2, length / 2));
         Vec3 p7 = relativeRotPos(position().add(-wide / 2, height / 2, -length / 2));
         Vec3 p8 = relativeRotPos(position().add(-wide / 2, -height / 2, -length / 2));
-
         Vec3[] points = {p1, p2, p3, p4, p5, p6, p7, p8};
-
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-
         for (Vec3 p : points) {
             double x = p.x();
             double y = p.y();
@@ -267,7 +264,6 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity {
             if (y > maxY) maxY = y;
             if (z > maxZ) maxZ = z;
         }
-
         return new AABB(minX, minY + height / 2, minZ, maxX, maxY + height / 2, maxZ);
     }
 

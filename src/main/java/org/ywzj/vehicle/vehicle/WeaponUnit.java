@@ -123,13 +123,13 @@ public class WeaponUnit extends PartUnit {
         for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitOBBs) {
             OBB obb = unitBedrockCubeOBB.obb();
             Quaternionf rotSelf = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            rotSelf.rotateY(org.joml.Math.toRadians(-combineYRot()));
+            rotSelf.rotateY((float) Math.toRadians(-combineYRot()));
             if (isBarrel) {
                 Vec3 barrelCenterOffset = rotatedOffsetWithSelfRot(unitBedrockCubeOBB.offset());
                 Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitBedrockCubeOBB.bone().x / 16, unitBedrockCubeOBB.bone().y / 16, unitBedrockCubeOBB.bone().z / 16));
                 Vec3 rel = barrelCenterOffset.subtract(barrelPivotOffset);
                 double len = rel.length();
-                float xRotR = org.joml.Math.toRadians(xRot);
+                float xRotR = (float) Math.toRadians(xRot);
                 double cos = Math.cos(xRotR);
                 double sin = Math.sin(xRotR);
                 Vec3 v = rel.scale(cos);
@@ -137,7 +137,7 @@ public class WeaponUnit extends PartUnit {
                 double y = -len * sin;
                 double z = v.z;
                 obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(new Vec3(x, y, z).add(barrelPivotOffset))).toVector3f());
-                rotSelf.rotateX(org.joml.Math.toRadians(180 + xRot));
+                rotSelf.rotateX((float) Math.toRadians(180 + xRot));
             } else {
                 obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
             }
@@ -158,8 +158,8 @@ public class WeaponUnit extends PartUnit {
     }
 
     public Vec2 aim(Vec3 worldPos) {
-        Vec3 breechBoltWorldPos = worldBoltPosition();
-        Vec3 worldAim = new Vec3(worldPos.x - breechBoltWorldPos.x, worldPos.y - breechBoltWorldPos.y, worldPos.z - breechBoltWorldPos.z);
+        Vec3 boltWorldPos = worldBoltPosition();
+        Vec3 worldAim = new Vec3(worldPos.x - boltWorldPos.x, worldPos.y - boltWorldPos.y, worldPos.z - boltWorldPos.z);
         return vecToRot(worldAim);
     }
 
@@ -218,7 +218,7 @@ public class WeaponUnit extends PartUnit {
         return new Vec2(pitch, yaw);
     }
 
-    private float combineYRot() {
+    public float combineYRot() {
         if (baseWeaponUnit == null) {
             return yRot;
         }

@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.ywzj.vehicle.client.event.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -35,6 +36,7 @@ public abstract class CameraMixin {
             if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 setRotation(Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY),
                         Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotXO, localVehiclePlayer.cameraAimRotX));
+                FirstPersonHandler.zRot = Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ);
             }
         }
     }

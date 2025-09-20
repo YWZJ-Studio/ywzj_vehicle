@@ -11,6 +11,8 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
@@ -26,8 +28,10 @@ public class LocalVehiclePlayer {
     public double cameraZO;
     public float cameraAimRotX;
     public float cameraAimRotY;
+    public float cameraAimRotZ;
     public float cameraAimRotXO;
     public float cameraAimRotYO;
+    public float cameraAimRotZO;
     public float scopeAimRotX;
     public float scopeAimRotY;
     private WeaponUnit lastWeaponUnit;
@@ -58,8 +62,16 @@ public class LocalVehiclePlayer {
                     Vec2 barrelAimRot = weaponUnit.worldRot();
                     cameraAimRotXO = cameraAimRotX;
                     cameraAimRotYO = cameraAimRotY;
+                    cameraAimRotZO = cameraAimRotZ;
                     cameraAimRotX = barrelAimRot.x;
                     cameraAimRotY = barrelAimRot.y;
+                    Quaternionf rot = new Quaternionf();
+                    rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
+                    rot.rotateX((float) Math.toRadians(-weaponUnit.xRot));
+                    rot = vehicle.rotYXZ().mul(rot);
+                    Vector3f eulerAngles = new Vector3f();
+                    rot.getEulerAnglesYXZ(eulerAngles);
+                    cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
                     float yDiff = cameraAimRotY - cameraAimRotYO;
                     if (Math.abs(yDiff) > 90) {
                         cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
@@ -120,19 +132,21 @@ public class LocalVehiclePlayer {
         }
         AbstractVehicle vehicle = getVehicle();
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
+            float barrelAimRotX = weaponUnit.xRot;
+            float barrelAimRotY = weaponUnit.yRot;
             Vec2 barrelAimRot = weaponUnit.worldRot();
             if (lastWeaponUnit != weaponUnit) {
                 lastWeaponUnit = weaponUnit;
-                scopeAimRotX = barrelAimRot.x;
-                scopeAimRotY = barrelAimRot.y;
+                scopeAimRotX = barrelAimRotX;
+                scopeAimRotY = barrelAimRotY;
             }
             if (viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
-                scopeAimRotX = barrelAimRot.x;
-                scopeAimRotY = barrelAimRot.y;
+                scopeAimRotX = barrelAimRotX;
+                scopeAimRotY = barrelAimRotY;
             } else if (viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 if (!mouseTurnedAfterScope) {
-                    scopeAimRotX = barrelAimRot.x;
-                    scopeAimRotY = barrelAimRot.y;
+                    scopeAimRotX = barrelAimRotX;
+                    scopeAimRotY = barrelAimRotY;
                 }
                 if (Math.abs(pXRot) >= 0.5 || Math.abs(pYRot) >= 0.5) {
                     mouseTurnedAfterScope = true;
@@ -143,14 +157,14 @@ public class LocalVehiclePlayer {
                 pXRot *= 0.15f;
                 pYRot *= 0.15f;
                 scopeAimRotX = Mth.clamp(scopeAimRotX, weaponUnit.xRotMin, weaponUnit.xRotMax);
-                float t1 = Mth.abs(Mth.wrapDegrees(scopeAimRotX - barrelAimRot.x)) / weaponUnit.xRotSpeed;
+                float t1 = Mth.abs(Mth.wrapDegrees(scopeAimRotX - barrelAimRotX)) / weaponUnit.xRotSpeed;
                 float v1 = 1;
                 if (t1 > 5f) {
                     // 运动平滑
                     v1 = Math.max(0.001f, (70 - t1 * 10) / 100);
                 }
                 scopeAimRotX = Mth.wrapDegrees((float) (scopeAimRotX + pXRot * v1));
-                float t2 = Mth.abs(Mth.wrapDegrees(scopeAimRotY - barrelAimRot.y)) / weaponUnit.yRotSpeed;
+                float t2 = Mth.abs(Mth.wrapDegrees(scopeAimRotY - barrelAimRotY)) / weaponUnit.yRotSpeed;
                 float v2 = 1;
                 if (t2 > 5f) {
                     // 运动平滑
@@ -207,9 +221,8 @@ public class LocalVehiclePlayer {
         if (vehicle == null) {
             return null;
         }
-        if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
-            Vec3 worldAim = VectorUtil.calculateViewVector(scopeAimRotX, scopeAimRotY);
-            return weaponUnit.vecToRot(worldAim);
+        if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit) {
+            return new Vec2(scopeAimRotX, scopeAimRotY);
         }
         return null;
     }
