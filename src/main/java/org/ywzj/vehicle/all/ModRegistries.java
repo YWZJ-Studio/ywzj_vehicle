@@ -9,19 +9,19 @@ import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.NewRegistryEvent;
 import net.minecraftforge.registries.RegistryBuilder;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.custom.WeaponUnitType;
+import org.ywzj.vehicle.custom.VehicleWeaponType;
 
 import java.util.function.Supplier;
 
 @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModRegistries {
-    public static final ResourceKey<Registry<WeaponUnitType<?, ?>>> WEAPON_UNIT_TYPE = ResourceKey.createRegistryKey(
+    public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> WEAPON_UNIT_TYPE = ResourceKey.createRegistryKey(
             new ResourceLocation(YwzjVehicle.MOD_ID, "weapon_unit_type")
     );
-    public static Supplier<IForgeRegistry<WeaponUnitType<?, ?>>> WEAPON_UNIT_TYPE_SUPPLIER;
+    public static Supplier<IForgeRegistry<VehicleWeaponType<?, ?>>> WEAPON_UNIT_TYPE_SUPPLIER;
 
     @SubscribeEvent
     public static void registerRegistries(NewRegistryEvent event) {
-        WEAPON_UNIT_TYPE_SUPPLIER = event.create(new RegistryBuilder<WeaponUnitType<?, ?>>().setName(WEAPON_UNIT_TYPE.location()));
+        WEAPON_UNIT_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleWeaponType<?, ?>>().setName(WEAPON_UNIT_TYPE.location()));
     }
 }

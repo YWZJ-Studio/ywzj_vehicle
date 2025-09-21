@@ -1,4 +1,5 @@
 {
   "damage": 25,
-  "headshot_multiplier": 1.5
+  "headshot_multiplier": 1.5,
+  "shoot_interval": 500
 }

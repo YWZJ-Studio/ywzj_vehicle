@@ -138,34 +138,14 @@ public class InputHandler {
                     // todo 武器配置
                     Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
                     Vec2 rot = weaponUnit.worldRot();
-                    int rpm = 400;
-                    if (weaponUnit.getName().getString().contains("turret")) {
-                        rpm = 12;
-                    }
-                    float interval = 60f / rpm * 1000;
-                    if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                        sendShoot(vehicle, weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
 
-//                        if (weaponUnit.getName().getString().contains("turret")) {
-//                            Vec3 smokePos = weaponUnit.ammoSpawnPosition();
-//                            Vec3 speedDirection = smokePos.subtract(weaponUnit.worldBoltPosition()).normalize();
-//                            for (int i = 0; i < 64; i++) {
-//                                Vec3 v1 = speedDirection.scale((double) i / 128);
-//                                double k = v1.length();
-//                                double offsetX = (player.level().random.nextDouble() - 0.5) * k;
-//                                double offsetY = (player.level().random.nextDouble() - 0.5) * k;
-//                                double offsetZ = (player.level().random.nextDouble() - 0.5) * k;
-//                                player.level().addParticle(
-//                                        ParticleTypes.CLOUD,          // 粒子类型（白烟云）
-//                                        smokePos.x, smokePos.y, smokePos.z,    // 生成位置
-//                                        v1.x + offsetX, v1.y + offsetY, v1.z + offsetZ     // 速度（让烟雾扩散）
-//                                );
-//                            }
-//                        }
-
-                        lastFireTimeMillis = System.currentTimeMillis();
-                    }
-
+                    weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon->{
+                        long interval = vehicleWeapon.getShootInterval();
+                        if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
+                            sendShoot(vehicle, weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
+                            lastFireTimeMillis = System.currentTimeMillis();
+                        }
+                    });
                 }
             }
         }

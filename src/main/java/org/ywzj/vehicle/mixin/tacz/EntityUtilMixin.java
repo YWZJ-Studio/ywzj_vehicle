@@ -33,6 +33,8 @@ public class EntityUtilMixin {
             }
             if (closestHitPos != null) {
                 cir.setReturnValue(new EntityKineticBullet.EntityResult(entity, closestHitPos, false, HitBodyPartEvent.BodyPart.TORSO));
+            } else {
+                cir.setReturnValue(null);
             }
         }
     }

@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.misc.weapon.AbstractWeaponUnit;
+import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 
 import javax.annotation.Nullable;
 
@@ -13,14 +13,14 @@ import javax.annotation.Nullable;
  * @param <T> 武器单元类型
  * @param <D> 配置数据
  */
-public class WeaponUnitType<T extends AbstractWeaponUnit<D>, D> {
+public class VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D> {
     private final ResourceLocation id;
-    private final WeaponUnitType.DataSerializer<D> dataSerializer;
-    private final WeaponUnitType.WeaponUnitFactory<T, D> factory;
+    private final VehicleWeaponType.DataSerializer<D> dataSerializer;
+    private final VehicleWeaponType.WeaponUnitFactory<T, D> factory;
     @Nullable
     private D data; // 此字段由数据包自动填入
 
-    public WeaponUnitType(ResourceLocation id, DataSerializer<D> dataSerializer, WeaponUnitFactory<T, D> factory) {
+    public VehicleWeaponType(ResourceLocation id, DataSerializer<D> dataSerializer, WeaponUnitFactory<T, D> factory) {
         this.id = id;
         this.dataSerializer = dataSerializer;
         this.factory = factory;
@@ -30,7 +30,7 @@ public class WeaponUnitType<T extends AbstractWeaponUnit<D>, D> {
         this.data = dataSerializer.parse(json);
     }
 
-    public T create(AbstractVehicle vehicle, int index, D data) {
+    public T create(AbstractVehicle vehicle, int index) {
         return factory.create(vehicle, index, data);
     }
 
@@ -50,11 +50,11 @@ public class WeaponUnitType<T extends AbstractWeaponUnit<D>, D> {
     }
 
     @FunctionalInterface
-    public interface WeaponUnitFactory<T extends AbstractWeaponUnit<D>, D> {
+    public interface WeaponUnitFactory<T extends AbstractVehicleWeapon<D>, D> {
         T create(AbstractVehicle vehicle, int index, D data);
     }
 
-    public static class Builder<T extends AbstractWeaponUnit<D>, D> {
+    public static class Builder<T extends AbstractVehicleWeapon<D>, D> {
         private final ResourceLocation id;
         private DataSerializer<D> dataSerializer;
         private WeaponUnitFactory<T, D> factory;
@@ -63,7 +63,7 @@ public class WeaponUnitType<T extends AbstractWeaponUnit<D>, D> {
             this.id = id;
         }
 
-        public static <T extends AbstractWeaponUnit<D>, D> Builder<T, D> of(ResourceLocation id) {
+        public static <T extends AbstractVehicleWeapon<D>, D> Builder<T, D> of(ResourceLocation id) {
             return new Builder<>(id);
         }
 
@@ -77,8 +77,8 @@ public class WeaponUnitType<T extends AbstractWeaponUnit<D>, D> {
             return this;
         }
 
-        public WeaponUnitType<T, D> build() {
-            return new WeaponUnitType<>(id, dataSerializer, factory);
+        public VehicleWeaponType<T, D> build() {
+            return new VehicleWeaponType<>(id, dataSerializer, factory);
         }
     }
 }

@@ -30,7 +30,7 @@ public class YwzjVehicle {
         AllBlockEntities.register(modEventBus);
         AllSounds.register(modEventBus);
         AllTabs.register(modEventBus);
-        AllWeaponUnitType.register(modEventBus);
+        AllVehicleWeaponType.register(modEventBus);
         AllParticleTypes.register(modEventBus);
         modEventBus.register(Channel.class);
 //        context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

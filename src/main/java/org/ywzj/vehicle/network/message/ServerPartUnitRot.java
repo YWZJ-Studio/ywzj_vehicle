@@ -3,7 +3,6 @@ package org.ywzj.vehicle.network.message;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.misc.weapon.AbstractTurretUnit;
 import org.ywzj.vehicle.vehicle.PartUnit;
 
 import java.util.function.Supplier;
@@ -18,13 +17,6 @@ public class ServerPartUnitRot {
     public ServerPartUnitRot() {}
 
     public ServerPartUnitRot(PartUnit partUnit) {
-        this.vehicleEntityId = partUnit.getVehicle().getId();
-        this.partUnitIndex = partUnit.getIndex();
-        this.xAimRot = partUnit.xAimRot;
-        this.yAimRot = partUnit.yAimRot;
-    }
-
-    public ServerPartUnitRot(AbstractTurretUnit<?> partUnit) {
         this.vehicleEntityId = partUnit.getVehicle().getId();
         this.partUnitIndex = partUnit.getIndex();
         this.xAimRot = partUnit.xAimRot;

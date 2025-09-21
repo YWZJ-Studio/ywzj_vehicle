@@ -7,14 +7,20 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
+import org.ywzj.vehicle.all.AllVehicleWeaponType;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.weapon.BulletEntity;
+import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * 载具武器站，对应一个座位<br/>
+ * 不包含实际的武器实现
+ */
 public class WeaponUnit extends PartUnit {
 
     private BedrockBone yTurnBone;
@@ -27,7 +33,11 @@ public class WeaponUnit extends PartUnit {
     private Vec3 seatOffset;
     private final WeaponUnit baseWeaponUnit;
 
-    public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength, Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
+    private final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
+    private int currentWeaponIndex = -1;
+
+    public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength,
+                      Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
         if (this.boltOffset == null) {
             // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
@@ -37,17 +47,29 @@ public class WeaponUnit extends PartUnit {
             // 炮管长度，为发射物生成位置与炮闩位置的距离
             this.barrelLength = barrelLength;
         }
-        // 武器操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
+        // 该武器站操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
         this.operatorOffset = operatorOffset;
-        // 武器操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
+        // 武器站操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
         this.seatOffset = seatOffset;
-        // 本武器所附着于的武器
+        // 本武器站所附着于的武器站
         this.baseWeaponUnit = baseWeaponUnit;
+
+        var cannon = AllVehicleWeaponType.CANNON.get().create(vehicle, 0);
+        weapons.add(cannon);
+        currentWeaponIndex = 0;
+    }
+
+    public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {
+        if (currentWeaponIndex >= 0 && currentWeaponIndex < weapons.size()) {
+            return Optional.of(weapons.get(currentWeaponIndex));
+        }
+        return Optional.empty();
     }
 
     @Override
     public void tick() {
         super.tick();
+        this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
         updateOBBs(yTurnUnitOBBs, false);
         updateOBBs(xTurnUnitOBBs, true);
     }
@@ -150,11 +172,9 @@ public class WeaponUnit extends PartUnit {
     }
 
     public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot, boolean explosion) {
-        BulletEntity bulletEntity = new BulletEntity(vehicle.level(), operator, ammoSpawnPosition.x, ammoSpawnPosition.y, ammoSpawnPosition.z, explosion);
-        bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 1f);
-        bulletEntity.setDamage(1);
-        bulletEntity.setHeadShot(1.5f);
-        vehicle.level().addFreshEntity(bulletEntity);
+        this.getCurrentWeapon().ifPresent(weapon -> {
+            weapon.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, operator);
+        });
     }
 
     public Vec2 aim(Vec3 worldPos) {
