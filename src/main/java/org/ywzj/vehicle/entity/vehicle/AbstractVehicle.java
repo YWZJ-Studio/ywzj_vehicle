@@ -56,6 +56,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ServerPartUnitRot;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
+import org.ywzj.vehicle.util.DebugUtil;
 import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
@@ -162,6 +163,10 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
 
         // 调试
 //        touchPoints.forEach(p -> DebugUtil.particle(level(), new Vec3(p.worldPos(axes)), p.cubeFace()));
+//        touchPoints.forEach(p -> {
+//            BlockPos blockPos = p.cubePointContext.blockPos();
+//            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()), p.cubeFace());
+//        });
 
         // 碰撞
         velocity = physicsEngine.impact(touchPoints, axes, velocity);

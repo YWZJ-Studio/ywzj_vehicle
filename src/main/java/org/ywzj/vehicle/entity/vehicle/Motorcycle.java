@@ -21,8 +21,8 @@ public class Motorcycle extends WheeledVehicle {
         backwardAcceleration = 0.01f + groundFrictionAcceleration;
         maxSpeedForward = 0.8f;
         maxSpeedBackward= 0.1f;
-        turnAcceleration = 1f;
-        maxTurn = 3f;
+        turnAcceleration = 2f;
+        maxTurn = 4f;
         physicsEngine.lockZRot = true;
     }
 

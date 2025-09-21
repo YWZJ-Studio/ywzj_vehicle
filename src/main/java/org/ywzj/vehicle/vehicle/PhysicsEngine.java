@@ -11,10 +11,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class PhysicsEngine {
 
@@ -87,6 +84,7 @@ public class PhysicsEngine {
             gV += gA;
             return velocity.add(new Vec3(0, -gV, 0));
         }
+
         // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
         List<VehicleBedrockCubeOBB.CubeFace> faces = new ArrayList<>();
         Vector3f gWorldDirection = new Vector3f(0, -1, 0);
@@ -111,7 +109,7 @@ public class PhysicsEngine {
                     if (touchPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
                             || touchPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) {
                         Vector3f worldPos = touchPoint.cachedWorldPos();
-                        return worldPos.y < BlockPos.containing(new Vec3(worldPos)).getY() + 0.5f;
+                        return worldPos.y <= BlockPos.containing(new Vec3(worldPos)).getY() + 0.7f;
                     }
                     return true;
                 })
@@ -143,28 +141,26 @@ public class PhysicsEngine {
                 gV = 0;
                 rotV = 0;
                 velocity = new Vec3(velocity.x, Math.max(gV, velocity.y), velocity.z);
-
                 // 自动爬高
-                double y = touchPoints.stream()
+                DoubleSummaryStatistics stats = touchPoints.stream()
                         .mapToDouble(p -> p.obbLocalPos().y)
-                        .max()
-                        .orElse(0);
-                if (y < -physicsCube.cube().getHeight() / 2 + 1) {
-                    if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(1 / physicsCube.cube().getDepth()))) {
-                        touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
-                        VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
-                        double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
-                                ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF) || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.3f : 1f);
-                        if (liftHeight > vehicle.position().y) {
-                            vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
-                        }
+                        .summaryStatistics();
+                double yRange = stats.getMax() - stats.getMin();
+                if (yRange >= 1) {
+                    touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+                    VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
+                    double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
+                            ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                                    || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
+                    if (liftHeight > vehicle.position().y) {
+                        vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
                     }
                 }
                 // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth())) + 0.5) {
+                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth())) - 1) {
                     vehicle.setZRot(0);
                 }
-                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth())) + 0.5) {
+                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth())) - 1) {
                     vehicle.setXRot(0);
                     vehicle.hurtMarked = true;
                 }

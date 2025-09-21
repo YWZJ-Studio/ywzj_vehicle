@@ -95,7 +95,7 @@ public class Ztz99a extends TrackedVehicle {
         super.tickSound();
         for (PartUnit operatorUnit : operatorUnits) {
             if (operatorUnit.getName().getString().equals("ztz99a_turret")) {
-                if (operatorUnit.yAimRot != operatorUnit.yRot) {
+                if (Math.abs(operatorUnit.yAimRot - operatorUnit.yRot) > 1) {
                     if (turretTurnYSoundInstance == null) {
                         turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
                         turretTurnYSoundInstance.play();
@@ -106,7 +106,7 @@ public class Ztz99a extends TrackedVehicle {
                         turretTurnYSoundInstance = null;
                     }
                 }
-                if (operatorUnit.xAimRot != operatorUnit.xRot && operatorUnit.xRot < operatorUnit.xRotMax && operatorUnit.xRot > operatorUnit.xRotMin) {
+                if (Math.abs(operatorUnit.xAimRot - operatorUnit.xRot) > 1 && operatorUnit.xRot < operatorUnit.xRotMax && operatorUnit.xRot > operatorUnit.xRotMin) {
                     if (turretTurnXSoundInstance == null) {
                         turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
                         turretTurnXSoundInstance.play();
