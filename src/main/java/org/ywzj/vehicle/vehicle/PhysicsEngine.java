@@ -146,14 +146,16 @@ public class PhysicsEngine {
                         .mapToDouble(p -> p.obbLocalPos().y)
                         .summaryStatistics();
                 double yRange = stats.getMax() - stats.getMin();
-                if (yRange >= 1) {
-                    touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
-                    VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
-                    double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
-                            ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                                    || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
-                    if (liftHeight > vehicle.position().y) {
-                        vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
+                if (yRange < vehicle.maxUpStep() + 1) {
+                    if (yRange >= vehicle.maxUpStep() || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
+                        touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+                        VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
+                        double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
+                                ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                                        || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
+                        if (liftHeight > vehicle.position().y) {
+                            vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
+                        }
                     }
                 }
                 // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
