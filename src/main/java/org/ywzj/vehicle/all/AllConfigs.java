@@ -24,10 +24,13 @@ public class AllConfigs {
     public static class CommonConfig {
 
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionBreakBlocks;
+        public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
             explosionBreakBlocks = builder.comment("爆炸是否破坏方块")
                     .define("explosionBreakBlocks", true);
+            selfRighting = builder.comment("倾角过大时是否自动回正")
+                    .define("selfRighting", true);
         }
 
     }

@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
@@ -15,6 +16,7 @@ import java.util.*;
 
 public class PhysicsEngine {
 
+    public static final double MAGIC_NUMBER = .943;
     public final AbstractVehicle vehicle;
     public final VehicleBedrockCubeOBB physicsCube;
     public float bounce = 0.02f;
@@ -159,12 +161,18 @@ public class PhysicsEngine {
                     }
                 }
                 // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth())) - 1) {
+                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth())) - MAGIC_NUMBER) {
                     vehicle.setZRot(0);
                 }
-                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth())) - 1) {
+                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth())) - MAGIC_NUMBER) {
                     vehicle.setXRot(0);
                     vehicle.hurtMarked = true;
+                }
+                if (AllConfigs.common.selfRighting.get()) {
+                    if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
+                        vehicle.setXRot(0);
+                        vehicle.setZRot(0);
+                    }
                 }
                 return velocity;
             }

@@ -56,7 +56,6 @@ import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ServerPartUnitRot;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
-import org.ywzj.vehicle.util.DebugUtil;
 import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
@@ -675,7 +674,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
                 double d1 = pEntity.getZ() - this.getZ();
                 double d2 = Mth.absMax(d0, d1);
                 if (d2 >= (double)0.01F) {
-                    d2 = java.lang.Math.sqrt(d2);
+                    d2 = Math.sqrt(d2);
                     d0 /= d2;
                     d1 /= d2;
                     double d3 = 1.0D / d2;
@@ -688,6 +687,45 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
                     d1 *= 0.05F;
                     if (pEntity.isPushable()) {
                         pEntity.push(d0, 0.0D, d1);
+                    }
+                }
+            }
+        }
+    }
+
+    public void support(Entity pEntity) {
+        Vec3 feetPosition = pEntity.position().subtract(new Vec3(0, 0.1f, 0));
+        for (OBB obb : getOBBs()) {
+            if (obb.contains(feetPosition)) {
+                if (!pEntity.noPhysics && !this.noPhysics) {
+                    double onVehicleGravity = Math.max(0, pEntity.getDeltaMovement().y);
+                    if (onVehicleGravity == 0) {
+                        pEntity.setOnGround(true);
+                    }
+                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + obb.embeddingDepth(feetPosition), 0));
+                    continue;
+                }
+            }
+            if (!pEntity.noPhysics && !this.noPhysics) {
+                if (OBB.isColliding(obb, pEntity.getBoundingBox())) {
+                    double d0 = pEntity.getX() - obb.center().x;
+                    double d1 = pEntity.getZ() - obb.center().z;
+                    double d2 = Mth.absMax(d0, d1);
+                    if (d2 >= (double)0.01F) {
+                        d2 = Math.sqrt(d2);
+                        d0 /= d2;
+                        d1 /= d2;
+                        double d3 = 1.0D / d2;
+                        if (d3 > 1.0D) {
+                            d3 = 1.0D;
+                        }
+                        d0 *= d3;
+                        d1 *= d3;
+                        d0 *= 0.05F;
+                        d1 *= 0.05F;
+                        if (pEntity.isPushable()) {
+                            pEntity.push(d0, 0.0D, d1);
+                        }
                     }
                 }
             }

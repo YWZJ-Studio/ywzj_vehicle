@@ -56,7 +56,7 @@ public class Ztz99a extends TrackedVehicle {
         this.spotterUnit = new SpotterUnit(this,
                 new Vec3(0, 4.54d, -0.375d),
                 new Vec3(0, 1.5d, 0),
-                new Vec3(0, 0, 0),
+                new Vec3(0, -2.2d, -1.2d),
                 null);
     }
 

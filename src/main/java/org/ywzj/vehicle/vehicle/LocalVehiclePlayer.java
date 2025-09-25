@@ -134,7 +134,6 @@ public class LocalVehiclePlayer {
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
             float barrelAimRotX = weaponUnit.xRot;
             float barrelAimRotY = weaponUnit.yRot;
-            Vec2 barrelAimRot = weaponUnit.worldRot();
             if (lastWeaponUnit != weaponUnit) {
                 lastWeaponUnit = weaponUnit;
                 scopeAimRotX = barrelAimRotX;
