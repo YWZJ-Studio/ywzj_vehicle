@@ -702,7 +702,8 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
                     if (onVehicleGravity == 0) {
                         pEntity.setOnGround(true);
                     }
-                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + obb.embeddingDepth(feetPosition), 0));
+                    double d = obb.embeddingDepth(feetPosition);
+                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d, 0));
                     continue;
                 }
             }
