@@ -1,0 +1,30 @@
+{
+  "structure_model": "xxx:xxx",
+  "attributes": {
+    "max_health": 200
+    // ...
+  },
+  "part_units": {
+    "ztl11_turret": {
+      "type": "weapon",
+      "structure_bone": "xxx",
+      "name": "xxx.xxx",
+      "data": {
+        "x_rot_speed": 1.105,
+        "y_rot_speed": 1.105,
+        "x_rot_max": 5,
+        "x_rot_min": -18
+      },
+      "weapons": [
+        {
+          "type": "ywzj_vehicle:cannon"
+        }
+      ]
+    },
+    "ztl11_commander_machine_gun": {
+      "type": "weapon",
+      "parent": ""
+      // ...
+    }
+  }
+}

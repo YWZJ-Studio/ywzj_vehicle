@@ -3,12 +3,14 @@ package org.ywzj.vehicle.vehicle;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
-import org.ywzj.vehicle.all.AllVehicleWeaponType;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
+import org.ywzj.vehicle.custom.VehicleWeaponManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -54,8 +56,9 @@ public class WeaponUnit extends PartUnit {
         // 本武器站所附着于的武器站
         this.baseWeaponUnit = baseWeaponUnit;
 
-        var cannon = AllVehicleWeaponType.CANNON.get().create(vehicle, 0);
-        weapons.add(cannon);
+        VehicleWeaponManager.get().getIndex(new ResourceLocation(YwzjVehicle.MOD_ID, "cannon")).ifPresent(
+                i -> weapons.add(i.create(vehicle, 0))
+        );
         currentWeaponIndex = 0;
     }
 

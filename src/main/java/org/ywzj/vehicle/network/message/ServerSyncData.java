@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
-import org.ywzj.vehicle.custom.WeaponUnitTypeManager;
+import org.ywzj.vehicle.custom.VehicleWeaponManager;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -32,6 +32,6 @@ public record ServerSyncData(
 
     @OnlyIn(Dist.CLIENT)
     private static void handle(ServerSyncData message) {
-        WeaponUnitTypeManager.fromNetwork(message.weaponUnitTypes);
+        VehicleWeaponManager.fromNetwork(message.weaponUnitTypes);
     }
 }

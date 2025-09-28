@@ -9,7 +9,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.NewRegistryEvent;
 import net.minecraftforge.registries.RegistryBuilder;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.custom.VehicleWeaponType;
+import org.ywzj.vehicle.custom.weapon.VehicleWeaponType;
 
 import java.util.function.Supplier;
 

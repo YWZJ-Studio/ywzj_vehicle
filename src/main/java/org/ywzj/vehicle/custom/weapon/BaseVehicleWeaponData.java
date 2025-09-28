@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom;
+package org.ywzj.vehicle.custom.weapon;
 
 import com.google.gson.annotations.SerializedName;
 

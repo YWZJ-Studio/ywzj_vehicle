@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom;
+package org.ywzj.vehicle.custom.weapon;
 
 import com.google.gson.JsonElement;
 import net.minecraft.resources.ResourceLocation;
@@ -9,39 +9,35 @@ import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import javax.annotation.Nullable;
 
 /**
- * 用于创建实际的武器单元
- * @param <T> 武器单元类型
- * @param <D> 配置数据
+ * 载具武器类型类，用于定义某一类型载具武器的配置数据解析器和工厂
+ * @param <T> 载具武器的实际实现类
+ * @param <D> 配置数据类型
+ * @param id 载具武器类型id
+ * @param dataSerializer 配置数据解析器
+ * @param factory 武器单元工厂
  */
-public class VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D> {
-    private final ResourceLocation id;
-    private final VehicleWeaponType.DataSerializer<D> dataSerializer;
-    private final VehicleWeaponType.WeaponUnitFactory<T, D> factory;
+public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D>(
+        ResourceLocation id,
+        VehicleWeaponType.DataSerializer<D> dataSerializer,
+        VehicleWeaponType.WeaponUnitFactory<T, D> factory
+) {
     @Nullable
-    private D data; // 此字段由数据包自动填入
-
-    public VehicleWeaponType(ResourceLocation id, DataSerializer<D> dataSerializer, WeaponUnitFactory<T, D> factory) {
-        this.id = id;
-        this.dataSerializer = dataSerializer;
-        this.factory = factory;
-    }
-
-    public void parseAndLoad(JsonElement json) {
-        this.data = dataSerializer.parse(json);
-    }
-
-    public T create(AbstractVehicle vehicle, int index) {
+    public T create(AbstractVehicle vehicle, int index, D data) {
         return factory.create(vehicle, index, data);
+    }
+
+    @Nullable
+    public VehicleWeaponIndex<T, D> parseAndLoad(@NotNull ResourceLocation id, @NotNull JsonElement json) {
+        D data = dataSerializer.parse(json);
+        if (data == null) {
+            return null;
+        }
+        return new VehicleWeaponIndex<>(id, this, data);
     }
 
     @NotNull
     public ResourceLocation getId() {
         return id;
-    }
-
-    @Nullable
-    public D getData() {
-        return data;
     }
 
     @FunctionalInterface
