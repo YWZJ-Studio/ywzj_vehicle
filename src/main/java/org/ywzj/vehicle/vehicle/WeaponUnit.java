@@ -229,14 +229,14 @@ public class WeaponUnit extends PartUnit {
     public Vec2 worldRot() {
         Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, combineYRot()), false);
         float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.hypot(worldVec.x, worldVec.z)));
-        float yaw = (float) Math.toDegrees(Math.atan2(worldVec.x, worldVec.z));
+        float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
         return new Vec2(pitch, yaw);
     }
 
     public Vec2 vecToRot(Vec3 worldVec) {
         Vec3 vehicleVec = vehicle.relativeRotDirection(worldVec, true);
         float pitch = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.hypot(vehicleVec.x, vehicleVec.z)));
-        float yaw = (float) Math.toDegrees(Math.atan2(vehicleVec.x, vehicleVec.z));
+        float yaw = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
         yaw -= combineYRot() - yRot;
         return new Vec2(pitch, yaw);
     }

@@ -16,6 +16,8 @@ public class ControlUnit {
     public boolean backward;
     public boolean left;
     public boolean right;
+    public boolean up;
+    public boolean down;
 
     public void setOperator(LivingEntity operator) {
         this.operator = operator;
@@ -26,6 +28,8 @@ public class ControlUnit {
         backward = false;
         left = false;
         right = false;
+        up = false;
+        down = false;
     }
 
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -40,6 +44,8 @@ public class ControlUnit {
                 vehicle.controlUnit.backward = message.backward;
                 vehicle.controlUnit.left = message.left;
                 vehicle.controlUnit.right = message.right;
+                vehicle.controlUnit.up = message.up;
+                vehicle.controlUnit.down = message.down;
             }
         }
     }

@@ -70,6 +70,18 @@
     "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_run"
   },
+  "z10_engine_start": {
+    "sounds": ["ywzj_vehicle:z10/z10_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.z10_engine_start"
+  },
+  "z10_engine_stop": {
+    "sounds": ["ywzj_vehicle:z10/z10_engine_stop"],
+    "subtitle": "ywzj_vehicle.sounds.z10_engine_stop"
+  },
+  "z10_engine_run": {
+    "sounds": ["ywzj_vehicle:z10/z10_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.z10_engine_run"
+  },
   "motorcycle_engine_start": {
     "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_start"

@@ -16,9 +16,9 @@ public class Motorcycle extends WheeledVehicle {
 
     public Motorcycle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        groundFrictionAcceleration = 0.003f;
-        forwardAcceleration = 0.01f + groundFrictionAcceleration;
-        backwardAcceleration = 0.01f + groundFrictionAcceleration;
+        physicsEngine.friction = 0.003f;
+        forwardAcceleration = 0.013f;
+        backwardAcceleration = 0.013f;
         maxSpeedForward = 0.8f;
         maxSpeedBackward= 0.1f;
         turnAcceleration = 2f;

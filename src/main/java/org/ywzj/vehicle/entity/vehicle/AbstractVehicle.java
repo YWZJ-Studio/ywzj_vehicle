@@ -168,7 +168,9 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
 //        });
 
         // 碰撞
-        velocity = physicsEngine.impact(touchPoints, axes, velocity);
+        velocity = physicsEngine.motionByImpact(touchPoints, axes, velocity);
+        // 阻力
+        velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
         // 旋转
         velocity = physicsEngine.rotAndFallByGravity(touchPoints, new Vector3f(0, 0, 0), axes, velocity);
 
@@ -606,16 +608,13 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
     }
 
     public Vec3 relativeRotDirection(Vec3 worldDirection, boolean reverse) {
-        Quaternionf q = new Quaternionf();
-        q.rotateY(Math.toRadians(this.getYRot()))
-                .rotateX(Math.toRadians(this.getXRot()))
-                .rotateZ(Math.toRadians(-this.getZRot()));
+        Quaternionf q = rotYXZ();
         Matrix3f axisRollMat = new Matrix3f();
         q.get(axisRollMat);
         if (reverse) {
             axisRollMat = axisRollMat.transpose();
         }
-        Vector3f d = axisRollMat.transform(new Vector3f((float) -worldDirection.x(), (float) worldDirection.y(), (float) worldDirection.z()));
+        Vector3f d = axisRollMat.transform(new Vector3f((float) worldDirection.x(), (float) worldDirection.y(), (float) worldDirection.z()));
         return new Vec3(d.x, d.y, d.z);
     }
 

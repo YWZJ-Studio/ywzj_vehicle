@@ -28,6 +28,9 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> ZTZ99A_ENGINE_START = registerSoundEvent("ztz99a_engine_start", new ResourceLocation(YwzjVehicle.MOD_ID, "ztz99a_engine_start"));
     public static final RegistryObject<SoundEvent> ZTZ99A_ENGINE_IDLE = registerSoundEvent("ztz99a_engine_idle", new ResourceLocation(YwzjVehicle.MOD_ID, "ztz99a_engine_idle"));
     public static final RegistryObject<SoundEvent> ZTZ99A_ENGINE_RUN = registerSoundEvent("ztz99a_engine_run", new ResourceLocation(YwzjVehicle.MOD_ID, "ztz99a_engine_run"));
+    public static final RegistryObject<SoundEvent> Z10_ENGINE_START = registerSoundEvent("z10_engine_start", new ResourceLocation(YwzjVehicle.MOD_ID, "z10_engine_start"));
+    public static final RegistryObject<SoundEvent> Z10_ENGINE_STOP = registerSoundEvent("z10_engine_stop", new ResourceLocation(YwzjVehicle.MOD_ID, "z10_engine_stop"));
+    public static final RegistryObject<SoundEvent> Z10_ENGINE_RUN = registerSoundEvent("z10_engine_run", new ResourceLocation(YwzjVehicle.MOD_ID, "z10_engine_run"));
     public static final RegistryObject<SoundEvent> MOTORCYCLE_ENGINE_START = registerSoundEvent("motorcycle_engine_start", new ResourceLocation(YwzjVehicle.MOD_ID, "motorcycle_engine_start"));
     public static final RegistryObject<SoundEvent> MOTORCYCLE_ENGINE_IDLE = registerSoundEvent("motorcycle_engine_idle", new ResourceLocation(YwzjVehicle.MOD_ID, "motorcycle_engine_idle"));
     public static final RegistryObject<SoundEvent> MOTORCYCLE_ENGINE_RUN = registerSoundEvent("motorcycle_engine_run", new ResourceLocation(YwzjVehicle.MOD_ID, "motorcycle_engine_run"));

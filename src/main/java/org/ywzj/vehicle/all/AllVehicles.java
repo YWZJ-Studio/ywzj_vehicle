@@ -20,6 +20,7 @@ public class AllVehicles {
     public static final VehicleType LAV150 = registerVehicle("lav150", Lav150.class);
     public static final VehicleType ZTL11 = registerVehicle("ztl11", Ztl11.class);
     public static final VehicleType ZTZ99A = registerVehicle("ztz99a", Ztz99a.class);
+    public static final VehicleType Z10 = registerVehicle("z10", Z10.class);
     public static final VehicleType MOTORCYCLE = registerVehicle("motorcycle", Motorcycle.class);
 
     public static void register() {}

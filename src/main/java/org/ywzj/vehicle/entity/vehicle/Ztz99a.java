@@ -81,8 +81,8 @@ public class Ztz99a extends TrackedVehicle {
         if (!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-5f)).add(v2.scale(-0.6)).add(0, 2, 0);
-            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-5f)).add(v2.scale(0.6)).add(0, 2, 0);
+            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-3.7f)).add(v2.scale(-0.6)).add(0, 2, 0);
+            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-3.7f)).add(v2.scale(0.6)).add(0, 2, 0);
             for (int count = 0; count < velocity / 8 + 1; count++) {
                 level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z, 0, 0, 0);
                 level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z, 0, 0, 0);

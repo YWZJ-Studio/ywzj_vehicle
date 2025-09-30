@@ -62,18 +62,16 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     @Override
     public void tick() {
         updateRelativePos();
-        if (looping) {
-            if (isFadeOut) {
-                volume = volume * (float) Math.pow(0.001f, 1 / (double) fadeTicks);
-                if (volume <= 0.001f) {
-                    isPlaying = false;
-                }
-            } else if (fadeIn) {
-                volume = (float) Math.max(0.0001f, Math.log(fadeInTick + 1) / Math.log(fadeTicks + 1) * 1f);
-                fadeInTick += 1;
-                if (volume == 1f) {
-                    fadeIn = false;
-                }
+        if (isFadeOut) {
+            volume = volume * (float) Math.pow(0.001f, 1 / (double) fadeTicks);
+            if (volume <= 0.001f) {
+                isPlaying = false;
+            }
+        } else if (fadeIn) {
+            volume = (float) Math.max(0.0001f, Math.log(fadeInTick + 1) / Math.log(fadeTicks + 1) * 1f);
+            fadeInTick += 1;
+            if (volume == 1f) {
+                fadeIn = false;
             }
         }
     }

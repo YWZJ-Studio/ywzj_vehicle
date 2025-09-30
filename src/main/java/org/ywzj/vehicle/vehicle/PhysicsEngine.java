@@ -22,16 +22,19 @@ public class PhysicsEngine {
     public float bounce = 0.02f;
     public float rotA = 0.01f;
     public float rotV = 0;
+    public Quaternionf stepRot;
     public Vector3f localRotAxisStart;
     public Vector3f localRotAxisEnd;
     public Vector3f localRotAxisVec;
     public Vector3f planeSupport;
     public Vector3f planeU;
     public Vector3f planeV;
-    public float gA = 1f / 20;
-    public float gV = 0;
-    public Quaternionf stepRot;
+    public float friction = 0.005f;
+    public float gravityA = 1f / 20;
+    public float gravityVMax = 0.7f;
+    public Vector3f velocity = new Vector3f(0, 0, 0);
     public boolean lockZRot;
+    public boolean lockCenterRot;
 
     public PhysicsEngine(AbstractVehicle vehicle, VehicleBedrockCubeOBB physicsCube) {
         this.vehicle = vehicle;
@@ -44,34 +47,58 @@ public class PhysicsEngine {
      * 方块作用力将完全抵消载具速度在力反方向上的分速度
      * 若受力点在车身一格以上，则追加一个模拟撞击力导致的力方向上的微小速度
      */
-    public Vec3 impact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
+    public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
                 if (touchPoint.obbLocalPos().y < -physicsCube.cube().getHeight() / 2 + 1) {
                     continue;
                 }
-                velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
                 if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT) {
+                    if (velocity.dot(new Vec3(axes[0])) > 0) {
+                        velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
+                    }
                     velocity = velocity.subtract(new Vec3(axes[0]).scale(bounce));
                 } else {
+                    if (velocity.dot(new Vec3(axes[0])) < 0) {
+                        velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
+                    }
                     velocity = velocity.add(new Vec3(axes[0]).scale(bounce));
                 }
             } else if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK) {
                 if (touchPoint.obbLocalPos().y < -physicsCube.cube().getHeight() / 2 + 1) {
                     continue;
                 }
-                velocity = VectorUtil.projectToPlane(velocity, axes, 0, 1);
                 if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT) {
+                    if (velocity.dot(new Vec3(axes[2])) > 0) {
+                        velocity = VectorUtil.projectToPlane(velocity, axes, 0, 1);
+                    }
                     velocity = velocity.subtract(new Vec3(axes[2]).scale(bounce));
                 } else {
+                    if (velocity.dot(new Vec3(axes[2])) < 0) {
+                        velocity = VectorUtil.projectToPlane(velocity, axes, 0, 1);
+                    }
                     velocity = velocity.add(new Vec3(axes[2]).scale(bounce));
                 }
             } else if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.TOP || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BOTTOM) {
-                velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
                 if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.TOP) {
+                    if (velocity.dot(new Vec3(axes[1])) > 0) {
+                        velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
+                    }
                     velocity = velocity.subtract(new Vec3(axes[1]).scale(bounce));
+                } else {
+                    if (velocity.dot(new Vec3(axes[1])) < 0) {
+                        velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
+                    }
                 }
             }
+        }
+        this.velocity = velocity.toVector3f();
+        return velocity;
+    }
+
+    public Vec3 decelerationByFriction(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
+        if (!touchPoints.isEmpty()) {
+            return velocity.normalize().scale(velocity.length() - friction);
         }
         return velocity;
     }
@@ -79,12 +106,24 @@ public class PhysicsEngine {
     /**
      * 受重力影响下的自由落体与三轴滚动
      */
-    public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vec3 velocity) {
+    public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vec3 velocityAsForce) {
+        // 升力影响
+        velocity = velocityAsForce.toVector3f();
+        if (velocityAsForce.y >= gravityA) {
+            velocity.y -= gravityA;
+            return new Vec3(velocity);
+        }
+        float gA = this.gravityA;
+        if (velocityAsForce.y > 0) {
+            gA = (float) Math.max(0, this.gravityA - velocityAsForce.y);
+        }
+
         // 无任何接触，因转动惯量而继续转动，因重力而自由落体
         if (touchPoints.isEmpty()) {
             centerRot(gravityCenter, axes);
-            gV += gA;
-            return velocity.add(new Vec3(0, -gV, 0));
+            velocity.add(0, -gA, 0);
+            velocity.y = Math.max(velocity.y, -gravityVMax);
+            return new Vec3(velocity);
         }
 
         // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
@@ -140,9 +179,8 @@ public class PhysicsEngine {
             List<Vector2f> polygon = VectorUtil.convexHull(new ArrayList<>(points.keySet()));
             // 重心于支撑点闭包内，转动停止，自由落体停止
             if (VectorUtil.isPointInPolygon(gc, polygon)) {
-                gV = 0;
+                velocity.y = (float) Math.max(0, velocityAsForce.y);
                 rotV = 0;
-                velocity = new Vec3(velocity.x, Math.max(gV, velocity.y), velocity.z);
                 // 自动爬高
                 DoubleSummaryStatistics stats = touchPoints.stream()
                         .mapToDouble(p -> p.obbLocalPos().y)
@@ -155,7 +193,7 @@ public class PhysicsEngine {
                         double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
                                 ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
                                         || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
-                        if (liftHeight > vehicle.position().y) {
+                        if (liftHeight > vehicle.position().y && (liftHeight - vehicle.position().y) <= (vehicle.maxUpStep() + MAGIC_NUMBER / 10)) {
                             vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
                         }
                     }
@@ -174,7 +212,7 @@ public class PhysicsEngine {
                         vehicle.setZRot(0);
                     }
                 }
-                return velocity;
+                return new Vec3(velocity);
             }
             float minDist = Float.MAX_VALUE;
             int minIdx = -1;
@@ -187,7 +225,7 @@ public class PhysicsEngine {
                 }
             }
             if (minIdx == -1) {
-                return velocity;
+                return velocityAsForce;
             }
             localRotAxisStart = points.get(polygon.get(minIdx));
             localRotAxisEnd = points.get(polygon.get((minIdx + 1) % polygon.size()));
@@ -197,10 +235,9 @@ public class PhysicsEngine {
         } else if (localForcePoints.size() == 1) {
             Vector3f v = new Vector3f(gravityCenter).sub(localForcePoints.get(0));
             if (v.x == 0 && v.z == 0) {
-                gV = 0;
+                this.velocity.y = (float) Math.max(0, velocityAsForce.y);
                 rotV = 0;
-                velocity = new Vec3(velocity.x, Math.max(gV, velocity.y), velocity.z);
-                return velocity;
+                return new Vec3(this.velocity);
             }
             v = new Vector3f(v.z, 0, v.x).normalize();
             localRotAxisStart = new Vector3f(localForcePoints.get(0)).add(v);
@@ -208,8 +245,9 @@ public class PhysicsEngine {
         } else {
             // 重力在三轴方向上的分力所对应三面无接触点，则无支持力，因转动惯量而继续转动，因重力而自由落体
             centerRot(gravityCenter, axes);
-            gV += gA;
-            return velocity.add(new Vec3(0, -gV, 0));
+            velocity.add(0, -gA, 0);
+            velocity.y = Math.max(velocity.y, -gravityVMax);
+            return new Vec3(velocity);
         }
 
         // 右手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
@@ -217,9 +255,7 @@ public class PhysicsEngine {
         localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
         rotV = Math.min(rotV + rotA, 0.3f);
         rot(axes);
-        gV = 0;
-        velocity = new Vec3(velocity.x, Math.max(gV, velocity.y), velocity.z);
-        return velocity;
+        return velocityAsForce;
     }
 
     private void checkDirection(Vector2f rotToPoint) {
@@ -233,6 +269,9 @@ public class PhysicsEngine {
     }
 
     private void centerRot(Vector3f center, Vector3f[] axes) {
+        if (lockCenterRot) {
+            return;
+        }
         if (localRotAxisVec != null) {
             localRotAxisStart = new Vector3f(center).sub(localRotAxisVec);
             localRotAxisEnd = new Vector3f(center).add(localRotAxisVec);

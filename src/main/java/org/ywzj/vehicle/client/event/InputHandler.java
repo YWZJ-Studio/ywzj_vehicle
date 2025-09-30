@@ -16,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
@@ -51,60 +52,79 @@ public class InputHandler {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_D,
             "key.category.ywzj_vehicle");
-    public static final KeyMapping MAIN_WEAPON_SHOOT_KEY = new KeyMapping("key.ywzj_vehicle.main_weapon_shoot.desc",
+    public static final KeyMapping COLLECTIVE_PITCH_UP = new KeyMapping("key.ywzj_vehicle.collective_pitch_up.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_SPACE,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping COLLECTIVE_PITCH_DOWN = new KeyMapping("key.ywzj_vehicle.collective_pitch_down.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_SHIFT,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping MAIN_WEAPON_SHOOT = new KeyMapping("key.ywzj_vehicle.main_weapon_shoot.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.MOUSE,
             GLFW.GLFW_MOUSE_BUTTON_LEFT,
             "key.category.ywzj_vehicle");
-    public static final KeyMapping SWITCH_VIEW_KEY = new KeyMapping("key.ywzj_vehicle.switch_view.desc",
+    public static final KeyMapping SWITCH_VIEW = new KeyMapping("key.ywzj_vehicle.switch_view.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_V,
             "key.category.ywzj_vehicle");
-    public static final KeyMapping CHANGE_SEAT_1_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_1.desc",
+    public static final KeyMapping LEAVE_VEHICLE = new KeyMapping("key.ywzj_vehicle.leave_vehicle.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_ALT,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping CHANGE_SEAT_1 = new KeyMapping("key.ywzj_vehicle.change_seat_1.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_1,
             "key.category.ywzj_vehicle");
-    public static final KeyMapping CHANGE_SEAT_2_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_2.desc",
+    public static final KeyMapping CHANGE_SEAT_2 = new KeyMapping("key.ywzj_vehicle.change_seat_2.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_2,
             "key.category.ywzj_vehicle");
-    public static final KeyMapping CHANGE_SEAT_3_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_3.desc",
+    public static final KeyMapping CHANGE_SEAT_3 = new KeyMapping("key.ywzj_vehicle.change_seat_3.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_3,
             "key.category.ywzj_vehicle");
-    public static final KeyMapping CHANGE_SEAT_4_KEY = new KeyMapping("key.ywzj_vehicle.change_seat_4.desc",
+    public static final KeyMapping CHANGE_SEAT_4 = new KeyMapping("key.ywzj_vehicle.change_seat_4.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_4,
             "key.category.ywzj_vehicle");
     private static long lastFireTimeMillis;
+    public static boolean leaveVehicle;
 
     @SubscribeEvent
     public static void onKey(InputEvent.Key event) {
         if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) return;
         if (event.getAction() == GLFW.GLFW_PRESS){
-            if (SWITCH_VIEW_KEY.matches(event.getKey(), event.getScanCode())) {
+            if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
                 LocalVehiclePlayer.instance.switchViewType(null);
             }
             if (LocalVehiclePlayer.instance.onVehicle()) {
                 AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-                if (CHANGE_SEAT_1_KEY.matches(event.getKey(), event.getScanCode())) {
+                if (CHANGE_SEAT_1.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 0);
-                } else if (CHANGE_SEAT_2_KEY.matches(event.getKey(), event.getScanCode())) {
+                } else if (CHANGE_SEAT_2.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 1);
-                } else if (CHANGE_SEAT_3_KEY.matches(event.getKey(), event.getScanCode())) {
+                } else if (CHANGE_SEAT_3.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 2);
-                } else if (CHANGE_SEAT_4_KEY.matches(event.getKey(), event.getScanCode())) {
+                } else if (CHANGE_SEAT_4.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 3);
                 }
             }
@@ -119,6 +139,7 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null) {
             return;
         }
+        leaveVehicle = LEAVE_VEHICLE.isDown();
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (player.equals(vehicle.controlUnit.operator)) {
                 ControlUnit controlUnit = new ControlUnit();
@@ -126,9 +147,13 @@ public class InputHandler {
                 controlUnit.backward = BACKWARD.isDown();
                 controlUnit.left = LEFT.isDown();
                 controlUnit.right = RIGHT.isDown();
+                if (vehicle instanceof HelicopterVehicle) {
+                    controlUnit.up = COLLECTIVE_PITCH_UP.isDown();
+                    controlUnit.down = COLLECTIVE_PITCH_DOWN.isDown();
+                }
                 sendControl(vehicle, controlUnit);
             }
-            if (MAIN_WEAPON_SHOOT_KEY.isDown()) {
+            if (MAIN_WEAPON_SHOOT.isDown()) {
                 if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                     if (weaponUnit == vehicle.spotterUnit) {
                         LocalVehiclePlayer.instance.sendMessage("tips.spotter");
@@ -158,6 +183,8 @@ public class InputHandler {
         control.backward = controlUnit.backward;
         control.left = controlUnit.left;
         control.right = controlUnit.right;
+        control.up = controlUnit.up;
+        control.down = controlUnit.down;
         Channel.CHANNEL.sendToServer(control);
     }
 

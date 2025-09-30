@@ -2,12 +2,10 @@ package org.ywzj.vehicle.all;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.entity.OBBEntity;
 
 public class AllEvents {
 

@@ -9,7 +9,9 @@
     "client.EntityRenderDispatcherMixin",
     "client.HumanoidModelMixin",
     "client.LevelRendererMixin",
-    "client.MouseHandlerMixin"
+    "client.MouseHandlerMixin",
+    "client.PlayerMixin",
+    "client.ClientPacketListenerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

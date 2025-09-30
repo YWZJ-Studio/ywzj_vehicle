@@ -65,8 +65,8 @@ public class VehicleBedrockCubeOBB {
         // 上下
         for (float x = -halfX; x <= halfX; x += spacing) {
             for (float z = -halfZ; z <= halfZ; z += spacing) {
-                cubePoints.add(new CubePoint(this, new Vector3f(x, obb.extents().y  + offset, z), CubeFace.TOP));
-                cubePoints.add(new CubePoint(this, new Vector3f(x, -obb.extents().y  - offset, z), CubeFace.BOTTOM));
+                cubePoints.add(new CubePoint(this, new Vector3f(x, obb.extents().y + offset, z), CubeFace.TOP));
+                cubePoints.add(new CubePoint(this, new Vector3f(x, -obb.extents().y - offset, z), CubeFace.BOTTOM));
             }
         }
     }

@@ -13,6 +13,8 @@ public class ClientVehicleMoveControl {
     public boolean backward;
     public boolean left;
     public boolean right;
+    public boolean up;
+    public boolean down;
 
     public ClientVehicleMoveControl() {}
 
@@ -23,6 +25,8 @@ public class ClientVehicleMoveControl {
         control.backward = buf.readBoolean();
         control.left = buf.readBoolean();
         control.right = buf.readBoolean();
+        control.up = buf.readBoolean();
+        control.down = buf.readBoolean();
         return control;
     }
 
@@ -32,6 +36,8 @@ public class ClientVehicleMoveControl {
         buf.writeBoolean(backward);
         buf.writeBoolean(left);
         buf.writeBoolean(right);
+        buf.writeBoolean(up);
+        buf.writeBoolean(down);
     }
 
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {

@@ -22,10 +22,9 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
-    public static float groundFrictionAcceleration = 0.005f;
     public static float brakeAcceleration = 0.025f;
-    public static float forwardAcceleration = 0.005f + groundFrictionAcceleration;
-    public static float backwardAcceleration = 0.005f + groundFrictionAcceleration;
+    public static float forwardAcceleration = 0.01f;
+    public static float backwardAcceleration = 0.01f;
     public static float maxSpeedForward = 0.5f;
     public static float maxSpeedBackward = 0.2f;
     public static float turnAcceleration = 0.1f;
@@ -163,13 +162,10 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 }
             }
         }
-        // 地面摩擦力
-        if (vf < 0) {
-            vf += groundFrictionAcceleration;
-            vf = Math.min(vf, 0);
-        } else if (vf > 0) {
-            vf -= groundFrictionAcceleration;
-            vf = Math.max(vf, 0);
+        if (controlUnit.left || controlUnit.right) {
+            if (vf < 0 && !controlUnit.backward) {
+                vf += brakeAcceleration;
+            }
         }
         vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
         entityData.set(FORWARD_SPEED, vf);
@@ -190,7 +186,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         // 转向幅度应用于车身朝向
         // 轮式载具仅存在前进速度时可运动转向
         if (Math.abs(vf) > 0.03) {
-            if (vf < 0) {
+            if (controlUnit.backward) {
                 vt *= -1;
             }
             this.setYRot(this.getYRot() + vt);
