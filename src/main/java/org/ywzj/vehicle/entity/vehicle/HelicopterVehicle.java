@@ -39,6 +39,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     public HelicopterVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.physicsEngine.lockCenterRot = true;
+        this.physicsEngine.bounce = 0;
     }
 
     @Override
@@ -158,13 +159,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
         }
 
         // 螺旋桨方向的力产生加速度
-        double scale = (double) (getEngineSpeed() / 100 * getCollectivePitch()) / 100;
+        double scale = ((double) getEngineSpeed() / 100) * ((double) getCollectivePitch() / 100);
         Vec3 force = relativeRotDirection(new Vec3(0, 1, 0), false)
                 .scale(scale * (physicsEngine.gravityA + 0.01));
         airSpeed = getDeltaMovement();
         airSpeed = airSpeed.add(force);
-        if (airSpeed.length() > maxAirSpeed) {
-            airSpeed = airSpeed.scale(maxAirSpeed);
+        if (airSpeed.length() >= maxAirSpeed) {
+            airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }
         this.setDeltaMovement(airSpeed);
 

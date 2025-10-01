@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
@@ -33,50 +34,59 @@ public class HelicopterControlOverlay implements IGuiOverlay {
 
         // 速度矢量
         Vec3 v = vehicle.relativeRotDirection(helicopterVehicle.getDeltaMovement(), true);
-
-        // 归一化后放大（控制箭头长度）
-        double scale = 30.0; // 缩放因子
-        double vx = v.x * scale;
-        double vz = v.z * scale;
-
-        // 箭头起点 (屏幕中心)
-        float startX = centerX;
-        float startY = centerY;
-        // 箭头终点
-        float endX = (float) (centerX + vx);
-        float endY = (float) (centerY + vz);
+        float arrowLength = (float) (15.0f * v.length() / helicopterVehicle.maxAirSpeed);
+        float arrowSize = 4.0f;
 
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        {
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        Tesselator tess = Tesselator.getInstance();
-        BufferBuilder buf = tess.getBuilder();
+            pose.translate(centerX, centerY, 0);
+            pose.mulPose(Axis.ZP.rotation((float) Math.atan2(-v.x, v.z)));
 
-        // 主线段
-        buf.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
-        buf.vertex(pose.last().pose(), startX, startY, 0).color(0, 255, 0, 255).endVertex();
-        buf.vertex(pose.last().pose(), endX, endY, 0).color(0, 255, 0, 255).endVertex();
-        tess.end();
+            // 速度线主干
+            pose.pushPose();
+            {
+                pose.scale(0.5f, 1f, 0.5f);
+                guiGraphics.fill(-1, 0, 1, (int) -arrowLength, 0xFF00FF00);
+            }
+            pose.popPose();
 
-//        // 箭头三角
-        double arrowSize = 4.0;
-        double angle = Math.atan2(endY - startY, endX - startX);
-        double leftX = endX - arrowSize * Math.cos(angle - Math.PI / 6);
-        double leftY = endY - arrowSize * Math.sin(angle - Math.PI / 6);
-        double rightX = endX - arrowSize * Math.cos(angle + Math.PI / 6);
-        double rightY = endY - arrowSize * Math.sin(angle + Math.PI / 6);
+            // 速度线箭头
+            float endY = -arrowLength - 3;
+            BufferBuilder buf = Tesselator.getInstance().getBuilder();
+            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.vertex(pose.last().pose(), 0, endY, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(pose.last().pose(), -arrowSize / 2, endY + arrowSize, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(pose.last().pose(), arrowSize / 2, endY + arrowSize, 0).color(0, 255, 0, 255).endVertex();
+            Tesselator.getInstance().end();
 
-        buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        buf.vertex(pose.last().pose(), endX, endY, 0).color(0, 255, 0, 255).endVertex();
-        buf.vertex(pose.last().pose(), (float) leftX, (float) leftY, 0).color(0, 255, 0, 255).endVertex();
-        buf.vertex(pose.last().pose(), (float) rightX, (float) rightY, 0).color(0, 255, 0, 255).endVertex();
-        tess.end();
-
-        RenderSystem.disableBlend();
+            RenderSystem.disableBlend();
+        }
         pose.popPose();
+
+        // 滚转线
+        pose.pushPose();
+        {
+            pose.translate(centerX, centerY, 0);
+            pose.scale(1f, 0.6f, 1f);
+            guiGraphics.fill(-17, 0, -13, 1, 0xFF00FF00);
+            guiGraphics.fill(-12, 0, -8, 1, 0xFF00FF00);
+            guiGraphics.fill(-7, 0, -3, 1, 0xFF00FF00);
+            guiGraphics.fill(3, 0, 7, 1, 0xFF00FF00);
+            guiGraphics.fill(8, 0, 12, 1, 0xFF00FF00);
+            guiGraphics.fill(13, 0, 17, 1, 0xFF00FF00);
+            pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(helicopterVehicle.getZRot())));
+            guiGraphics.fill(-11, 0, -2, 1, 0xFF00FF00);
+            guiGraphics.fill(-3, 0, -2, 3, 0xFF00FF00);
+            guiGraphics.fill(2, 0, 3, 3, 0xFF00FF00);
+            guiGraphics.fill(2, 0, 11, 1, 0xFF00FF00);
+        }
+        pose.popPose();
+
     }
 
 }
