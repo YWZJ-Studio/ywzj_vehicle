@@ -76,11 +76,17 @@ public class InputHandler {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_V,
             "key.category.ywzj_vehicle");
+    public static final KeyMapping FREE_CAMERA = new KeyMapping("key.ywzj_vehicle.free_camera.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_C,
+            "key.category.ywzj_vehicle");
     public static final KeyMapping LEAVE_VEHICLE = new KeyMapping("key.ywzj_vehicle.leave_vehicle.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT_ALT,
+            GLFW.GLFW_KEY_J,
             "key.category.ywzj_vehicle");
     public static final KeyMapping CHANGE_SEAT_1 = new KeyMapping("key.ywzj_vehicle.change_seat_1.desc",
             KeyConflictContext.IN_GAME,
@@ -107,7 +113,10 @@ public class InputHandler {
             GLFW.GLFW_KEY_4,
             "key.category.ywzj_vehicle");
     private static long lastFireTimeMillis;
+    public static boolean freeCamera;
     public static boolean leaveVehicle;
+    public static float xRotO;
+    public static float yRotO;
 
     @SubscribeEvent
     public static void onKey(InputEvent.Key event) {
@@ -140,6 +149,7 @@ public class InputHandler {
             return;
         }
         leaveVehicle = LEAVE_VEHICLE.isDown();
+        freeCamera = FREE_CAMERA.isDown();
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (player.equals(vehicle.controlUnit.operator)) {
                 ControlUnit controlUnit = new ControlUnit();
@@ -150,6 +160,15 @@ public class InputHandler {
                 if (vehicle instanceof HelicopterVehicle) {
                     controlUnit.up = COLLECTIVE_PITCH_UP.isDown();
                     controlUnit.down = COLLECTIVE_PITCH_DOWN.isDown();
+                }
+                if (freeCamera) {
+                    controlUnit.xRot = xRotO;
+                    controlUnit.yRot = yRotO;
+                } else {
+                    controlUnit.xRot = player.getXRot();
+                    controlUnit.yRot = player.getYRot();
+                    xRotO = controlUnit.xRot;
+                    yRotO = controlUnit.yRot;
                 }
                 sendControl(vehicle, controlUnit);
             }
@@ -185,6 +204,8 @@ public class InputHandler {
         control.right = controlUnit.right;
         control.up = controlUnit.up;
         control.down = controlUnit.down;
+        control.xRot = controlUnit.xRot;
+        control.yRot = controlUnit.yRot;
         Channel.CHANNEL.sendToServer(control);
     }
 

@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.event.InputHandler;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -72,6 +73,9 @@ public abstract class TrackedVehicle extends AbstractVehicle {
 
     @Override
     protected void tickAim() {
+        if (InputHandler.freeCamera) {
+            return;
+        }
         if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             Vec2 rot = null;
             if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
@@ -135,7 +139,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     }
 
     @Override
-    protected void tickMove() {
+    protected Vec3 tickMove() {
         if (getDriver() == null) {
             controlUnit.reset();
         }
@@ -189,6 +193,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
         Vec3 motion = direction.normalize().scale(vf);
         motion = new Vec3(motion.x, physicsEngine.velocity.y, motion.z);
         this.setDeltaMovement(motion);
+        return new Vec3(0, 0, 0);
     }
 
 }

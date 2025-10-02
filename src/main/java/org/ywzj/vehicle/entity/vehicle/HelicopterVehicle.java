@@ -29,7 +29,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     public float yRotSpeed = 4;
     public float zRotSpeed = 4;
     public Vec3 airSpeed = new Vec3(0, 0, 0);
-    public float maxAirSpeed = 0.7f;
+    public float maxAirSpeed = 1f;
     public float propellerRotation;
     public long lastRenderTime;
     private VehicleSound engineStartSoundInstance;
@@ -135,7 +135,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     }
 
     @Override
-    protected void tickMove() {
+    protected Vec3 tickMove() {
         // 转速变化
         int engineSpeed = getEngineSpeed();
         if (getDriver() != null && engineSpeed < 100) {
@@ -160,8 +160,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
         // 螺旋桨方向的力产生加速度
         double scale = ((double) getEngineSpeed() / 100) * ((double) getCollectivePitch() / 100);
-        Vec3 force = relativeRotDirection(new Vec3(0, 1, 0), false)
-                .scale(scale * (physicsEngine.gravityA + 0.01));
+        Vec3 force = relativeRotDirection(new Vec3(0, 1, 0), false).scale(scale * (physicsEngine.gravityA + 0.01));
         airSpeed = getDeltaMovement();
         airSpeed = airSpeed.add(force);
         if (airSpeed.length() >= maxAirSpeed) {
@@ -169,25 +168,24 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
         }
         this.setDeltaMovement(airSpeed);
 
-        if (force.length() > physicsEngine.gravityA / 3) {
+        if (force.length() > physicsEngine.gravityA / 5) {
             float xRotSpeed = (float) (this.xRotSpeed * scale);
             float yRotSpeed = (float) (this.yRotSpeed * scale);
             float zRotSpeed = (float) (this.zRotSpeed * scale);
             if (getDriver() != null) {
-                LivingEntity driver = getDriver();
-                float yDiff = Mth.wrapDegrees(driver.getYRot() - this.getYRot());
+                float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
                 if (Math.abs(yDiff) > yRotSpeed) {
                     this.setYRot(this.getYRot() + Math.signum(yDiff) * yRotSpeed);
                 } else {
-                    this.setYRot(driver.getYRot());
+                    this.setYRot(controlUnit.yRot);
                 }
 
                 if (!(controlUnit.forward || controlUnit.backward)) {
-                    float xDiff = Mth.wrapDegrees(driver.getXRot() - this.getXRot());
+                    float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
                     if (Math.abs(xDiff) > xRotSpeed) {
                         this.setXRot(this.getXRot() + Math.signum(xDiff) * xRotSpeed);
                     } else {
-                        this.setXRot(driver.getXRot());
+                        this.setXRot(controlUnit.xRot);
                     }
                 } else {
                     if (controlUnit.forward) {
@@ -215,6 +213,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 }
             }
         }
+        return force;
     }
 
     @Override

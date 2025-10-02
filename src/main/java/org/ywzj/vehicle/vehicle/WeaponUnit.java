@@ -6,6 +6,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.Bedr
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -49,7 +50,7 @@ public class WeaponUnit extends PartUnit {
             // 炮管长度，为发射物生成位置与炮闩位置的距离
             this.barrelLength = barrelLength;
         }
-        // 该武器站操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
+        // 武器站操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
         this.operatorOffset = operatorOffset;
         // 武器站操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
         this.seatOffset = seatOffset;
@@ -148,13 +149,13 @@ public class WeaponUnit extends PartUnit {
         for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitOBBs) {
             OBB obb = unitBedrockCubeOBB.obb();
             Quaternionf rotSelf = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            rotSelf.rotateY((float) Math.toRadians(-combineYRot()));
+            rotSelf.rotateY(Math.toRadians(-combineYRot()));
             if (isBarrel) {
                 Vec3 barrelCenterOffset = rotatedOffsetWithSelfRot(unitBedrockCubeOBB.offset());
                 Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitBedrockCubeOBB.bone().x / 16, unitBedrockCubeOBB.bone().y / 16, unitBedrockCubeOBB.bone().z / 16));
                 Vec3 rel = barrelCenterOffset.subtract(barrelPivotOffset);
                 double len = rel.length();
-                float xRotR = (float) Math.toRadians(xRot);
+                float xRotR = Math.toRadians(xRot);
                 double cos = Math.cos(xRotR);
                 double sin = Math.sin(xRotR);
                 Vec3 v = rel.scale(cos);
@@ -162,7 +163,7 @@ public class WeaponUnit extends PartUnit {
                 double y = -len * sin;
                 double z = v.z;
                 obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(new Vec3(x, y, z).add(barrelPivotOffset))).toVector3f());
-                rotSelf.rotateX((float) Math.toRadians(180 + xRot));
+                rotSelf.rotateX(Math.toRadians(180 + xRot));
             } else {
                 obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
             }
@@ -228,14 +229,14 @@ public class WeaponUnit extends PartUnit {
 
     public Vec2 worldRot() {
         Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, combineYRot()), false);
-        float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.hypot(worldVec.x, worldVec.z)));
+        float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
         return new Vec2(pitch, yaw);
     }
 
     public Vec2 vecToRot(Vec3 worldVec) {
         Vec3 vehicleVec = vehicle.relativeRotDirection(worldVec, true);
-        float pitch = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.hypot(vehicleVec.x, vehicleVec.z)));
+        float pitch = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         float yaw = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
         yaw -= combineYRot() - yRot;
         return new Vec2(pitch, yaw);
@@ -261,8 +262,8 @@ public class WeaponUnit extends PartUnit {
         }
         Vector4d pivotAndTargetOffset = rotatedOffsetWithBaseRot(weaponUnit.baseWeaponUnit, offsetX, offsetZ);
         float rot = weaponUnit.baseWeaponUnit.yRot;
-        float cos = (float) Math.cos(Math.toRadians(rot));
-        float sin = (float) Math.sin(Math.toRadians(rot));
+        float cos = Math.cos(Math.toRadians(rot));
+        float sin = Math.sin(Math.toRadians(rot));
         float dx1 = (float) (weaponUnit.boltOffset.x - pivotAndTargetOffset.x);
         float dy1 = (float) (weaponUnit.boltOffset.z - pivotAndTargetOffset.y);
         float dx2 = (float) (pivotAndTargetOffset.z - pivotAndTargetOffset.x);
@@ -276,8 +277,8 @@ public class WeaponUnit extends PartUnit {
     private Vec3 rotatedOffsetWithSelfRot(Vec3 offsetFromVehicle) {
         Vector4d offset = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
         float rot = yRot;
-        float cos = (float) Math.cos(Math.toRadians(rot));
-        float sin = (float) Math.sin(Math.toRadians(rot));
+        float cos = Math.cos(Math.toRadians(rot));
+        float sin = Math.sin(Math.toRadians(rot));
         float dx = (float) (offset.z - offset.x);
         float dy = (float) (offset.w - offset.y);
         return new Vec3(offset.x + dx * cos - dy * sin, offsetFromVehicle.y, offset.y + dx * sin + dy * cos);

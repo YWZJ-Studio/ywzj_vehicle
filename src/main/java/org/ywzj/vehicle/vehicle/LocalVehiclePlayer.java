@@ -14,6 +14,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 
 @OnlyIn(Dist.CLIENT)
@@ -51,7 +52,12 @@ public class LocalVehiclePlayer {
             AbstractVehicle vehicle = getVehicle();
             if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
                 if (viewType == ViewType.DEFAULT) {
-                    Vec3 vehicleCameraPos = weaponUnit.worldOperatorPosition();
+                    Vec3 vehicleCameraPos;
+                    if (vehicle instanceof HelicopterVehicle) {
+                        vehicleCameraPos = vehicle.thirdPersonPosition(getPlayer());
+                    } else {
+                        vehicleCameraPos = weaponUnit.worldOperatorPosition();
+                    }
                     cameraXO = cameraX;
                     cameraYO = cameraY;
                     cameraZO = cameraZ;

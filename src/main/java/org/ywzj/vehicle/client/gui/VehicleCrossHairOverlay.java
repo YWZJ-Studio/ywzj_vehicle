@@ -167,39 +167,47 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         int right = x + half;
         int top = y - half;
         int bottom = y + half;
-        for (int i = left; i <= right; i++) {
-            guiGraphics.fill(i, top, i + 1, top + 1, color);
-            guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.scale(0.7f, 0.7f, 0.7f);
+            for (int i = left; i <= right; i++) {
+                guiGraphics.fill(i, top, i + 1, top + 1, color);
+                guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
+            }
+            for (int j = top; j <= bottom; j++) {
+                guiGraphics.fill(left, j, left + 1, j + 1, color);
+                guiGraphics.fill(right, j, right + 1, j + 1, color);
+            }
         }
-        for (int j = top; j <= bottom; j++) {
-            guiGraphics.fill(left, j, left + 1, j + 1, color);
-            guiGraphics.fill(right, j, right + 1, j + 1, color);
-        }
+        poseStack.popPose();
     }
 
     private static void drawReticle(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
-        poseStack.scale(0.5f, 0.5f, 0.5f);
-        if (thickness < 1) thickness = 1;
-        int top = y;
-        int bottom = y + size;
-        // 竖线
-        int vHalf = thickness / 2;
-        int vLeft = x - vHalf;
-        int vRight = vLeft + thickness;
-        guiGraphics.fill(vLeft, top, vRight, bottom, color);
-        // 横线
-        int halfLen = Math.max(1, (int)(size * 0.45));
-        int segments = 4;
-        int gap = size / segments; // 每段间距
-        int hHalf = thickness / 2;
-        for (int i = 0; i <= segments; i++) {
-            int yPos = top + gap * i;
-            int left = x - halfLen;
-            int right = x + halfLen;
-            guiGraphics.fill(left + 1, yPos - hHalf, right, yPos + (thickness - hHalf), color);
-            halfLen -= 1;
+        {
+            poseStack.scale(0.5f, 0.5f, 0.5f);
+            if (thickness < 1) thickness = 1;
+            int top = y;
+            int bottom = y + size;
+            // 竖线
+            int vHalf = thickness / 2;
+            int vLeft = x - vHalf;
+            int vRight = vLeft + thickness;
+            guiGraphics.fill(vLeft, top, vRight, bottom, color);
+            // 横线
+            int halfLen = Math.max(1, (int)(size * 0.45));
+            int segments = 4;
+            int gap = size / segments; // 每段间距
+            int hHalf = thickness / 2;
+            for (int i = 0; i <= segments; i++) {
+                int yPos = top + gap * i;
+                int left = x - halfLen;
+                int right = x + halfLen;
+                guiGraphics.fill(left + 1, yPos - hHalf, right, yPos + (thickness - hHalf), color);
+                halfLen -= 1;
+            }
         }
         poseStack.popPose();
     }

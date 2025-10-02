@@ -27,17 +27,52 @@ public class HelicopterControlOverlay implements IGuiOverlay {
         // 屏幕中心点
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
-        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " + helicopterVehicle.getCollectivePitch(), centerX - 100, centerY, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " + helicopterVehicle.getEngineSpeed(), centerX - 100, centerY + 10, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " + (int) (helicopterVehicle.getDeltaMovement().length() * 20), centerX - 100, centerY + 20, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(), centerX - 100, centerY + 30, 0x00FF00);
+
+        int leftX = centerX - 120;
+        int leftY = centerY - 21;
+        // 信息
+        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " + helicopterVehicle.getEngineSpeed(), leftX, leftY, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " + helicopterVehicle.getCollectivePitch(), leftX, leftY + 12, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " + (int) (new Vec3(helicopterVehicle.getDeltaMovement().x, 0, helicopterVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000), leftX, leftY + 24, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(), centerX + 62, leftY + 24, 0x00FF00);
+
+        // 高度变化
+        int heightY = centerY - 21;
+        int heightX = centerX + 110;
+        for (int step = 0; step < 17; step++) {
+            boolean flag = step % 4 == 0;
+            guiGraphics.fill((flag ? heightX : heightX + 5), heightY, heightX + 10, heightY + 1, 0xFF00FF00);
+            heightY += 3;
+        }
+        // 高度变化箭头
+        PoseStack pose = guiGraphics.pose();
+        pose.pushPose();
+        {
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+            heightY = (int) (centerY + 3 + (24 * -helicopterVehicle.getDeltaMovement().y));
+            heightX = centerX + 123;
+            pose.translate(heightX, heightY, 0);
+            BufferBuilder buf = Tesselator.getInstance().getBuilder();
+            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.vertex(pose.last().pose(), 0, 0, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(pose.last().pose(), 6, 3, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(pose.last().pose(), 6, -3, 0).color(0, 255, 0, 255).endVertex();
+            Tesselator.getInstance().end();
+            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (helicopterVehicle.getDeltaMovement().y * 20)), 12, -4, 0x00FF00);
+
+            RenderSystem.disableBlend();
+        }
+        pose.popPose();
 
         // 速度矢量
         Vec3 v = vehicle.relativeRotDirection(helicopterVehicle.getDeltaMovement(), true);
         float arrowLength = (float) (15.0f * v.length() / helicopterVehicle.maxAirSpeed);
         float arrowSize = 4.0f;
 
-        PoseStack pose = guiGraphics.pose();
+        pose = guiGraphics.pose();
         pose.pushPose();
         {
             RenderSystem.enableBlend();
@@ -72,7 +107,6 @@ public class HelicopterControlOverlay implements IGuiOverlay {
         pose.pushPose();
         {
             pose.translate(centerX, centerY, 0);
-            pose.scale(1f, 0.6f, 1f);
             guiGraphics.fill(-17, 0, -13, 1, 0xFF00FF00);
             guiGraphics.fill(-12, 0, -8, 1, 0xFF00FF00);
             guiGraphics.fill(-7, 0, -3, 1, 0xFF00FF00);
@@ -80,6 +114,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
             guiGraphics.fill(8, 0, 12, 1, 0xFF00FF00);
             guiGraphics.fill(13, 0, 17, 1, 0xFF00FF00);
             pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(helicopterVehicle.getZRot())));
+            pose.scale(1f, 0.6f, 1f);
             guiGraphics.fill(-11, 0, -2, 1, 0xFF00FF00);
             guiGraphics.fill(-3, 0, -2, 3, 0xFF00FF00);
             guiGraphics.fill(2, 0, 3, 3, 0xFF00FF00);

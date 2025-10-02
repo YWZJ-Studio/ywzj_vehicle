@@ -20,6 +20,7 @@ import com.tacz.guns.resource.pojo.data.gun.GunData;
 import com.tacz.guns.sound.SoundManager;
 import com.tacz.guns.util.CycleTaskHelper;
 import it.unimi.dsi.fastutil.Pair;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
@@ -45,6 +46,7 @@ public class Z10 extends HelicopterVehicle {
 
     public Z10(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.thirdPersonOffset = new Vec3(0, 6, -9);
     }
 
     @Override
@@ -85,6 +87,18 @@ public class Z10 extends HelicopterVehicle {
                 null);
     }
 
+    @Override
+    protected void tickParticle() {
+        int engineSpeed = getEngineSpeed();
+        if (!this.getPassengers().isEmpty() && engineSpeed > 0 && tickCount % 3 == 0) {
+            Vec3 v1 = this.getLookAngle();
+            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
+            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-1f)).add(v2.scale(-0.6)).add(0, 2, 0);
+            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-1f)).add(v2.scale(0.6)).add(0, 2, 0);
+            level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z, 0, 0, 0);
+            level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z, 0, 0, 0);
+        }
+    }
 
     private final ItemStack gunRPG = GunItemBuilder.create()
             .setId(new ResourceLocation("tacz:rpg7"))

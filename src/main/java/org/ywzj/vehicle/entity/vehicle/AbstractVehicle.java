@@ -6,50 +6,33 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.Bedr
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.control.LookControl;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.ContainerEntity;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.wrapper.InvWrapper;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
+import org.ywzj.vehicle.entity.ContainerMob;
 import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
@@ -64,7 +47,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCustomInventoryScreen, ContainerEntity {
+public abstract class AbstractVehicle extends ContainerMob implements OBBEntity {
 
     private final AllVehicles.VehicleType vehicleType;
     public int seats;
@@ -73,6 +56,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
     protected final List<PartUnit> partUnits;
     public final List<PartUnit> operatorUnits;
     public SpotterUnit spotterUnit;
+    public Vec3 thirdPersonOffset;
     public float wide;
     public float length;
     public float height;
@@ -83,9 +67,6 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
     private VehicleBedrockCubeOBB mainCubeOBB;
     protected final PhysicsEngine physicsEngine;
 
-    private LazyOptional<?> itemHandler = LazyOptional.of(() -> new InvWrapper(this));
-    protected final NonNullList<ItemStack> items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.vehicleType = AllVehicles.getVehicleType(this.getClass());
@@ -95,6 +76,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
         this.partUnits = new ArrayList<>();
         this.operatorUnits = new ArrayList<>();
         this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
+        this.thirdPersonOffset = Vec3.ZERO;
         this.vehicleBodyOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.initPartUnits();
@@ -129,15 +111,15 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
             tickParticle();
             spotterUnit.tick();
         } else {
-            tickMove();
+            Vec3 force = tickMove();
 //            DebugUtil.timer(null);
-            tickCollide(getDeltaMovement());
+            tickCollide(force);
 //            DebugUtil.timer("物理计算耗时(纳秒)");
         }
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
     }
 
-    private void tickCollide(Vec3 velocity) {
+    private void tickCollide(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
         List<VehicleBedrockCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
@@ -168,11 +150,11 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
 //        });
 
         // 碰撞
-        velocity = physicsEngine.motionByImpact(touchPoints, axes, velocity);
+        Vec3 velocity = physicsEngine.motionByImpact(touchPoints, axes, getDeltaMovement());
         // 阻力
         velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
-        // 旋转
-        velocity = physicsEngine.rotAndFallByGravity(touchPoints, new Vector3f(0, 0, 0), axes, velocity);
+        // 重力与旋转
+        velocity = physicsEngine.rotAndFallByGravity(touchPoints, new Vector3f(0, 0, 0), axes, force.toVector3f(), velocity.toVector3f());
 
         setDeltaMovement(velocity);
     }
@@ -211,111 +193,7 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
     @OnlyIn(Dist.CLIENT)
     protected abstract void tickParticle();
 
-    protected abstract void tickMove();
-
-    @Override
-    public void openCustomInventoryScreen(Player pPlayer) {
-        pPlayer.openMenu(this);
-        if (!pPlayer.level().isClientSide()) {
-            this.gameEvent(GameEvent.CONTAINER_OPEN, pPlayer);
-        }
-    }
-
-    @Override
-    public void setLootTable(@Nullable ResourceLocation pLootTable) {
-    }
-
-    @Override
-    public void setLootTableSeed(long pLootTableSeed) {
-    }
-
-    @Override
-    public NonNullList<ItemStack> getItemStacks() {
-        return this.items;
-    }
-
-    @Override
-    public void clearItemStacks() {
-        this.items.clear();
-    }
-
-    @Override
-    public int getContainerSize() {
-        return 54;
-    }
-
-    @NotNull
-    @Override
-    public ItemStack getItem(int slot) {
-        if (!this.hasContainer() || slot >= this.getContainerSize() || slot < 0) {
-            return ItemStack.EMPTY;
-        }
-        return this.items.get(slot);
-    }
-
-    @NotNull
-    @Override
-    public ItemStack removeItem(int slot, int pAmount) {
-        if (!this.hasContainer() || slot >= this.getContainerSize() || slot < 0) {
-            return ItemStack.EMPTY;
-        }
-        return ContainerHelper.removeItem(this.items, slot, pAmount);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItemNoUpdate(int slot) {
-        if (!this.hasContainer() || slot >= this.getContainerSize() || slot < 0) {
-            return ItemStack.EMPTY;
-        }
-
-        ItemStack itemstack = this.items.get(slot);
-        if (itemstack.isEmpty()) {
-            return ItemStack.EMPTY;
-        } else {
-            this.items.set(slot, ItemStack.EMPTY);
-            return itemstack;
-        }
-    }
-
-    @Override
-    public void setItem(int slot, ItemStack pStack) {
-        if (!this.hasContainer() || slot >= this.getContainerSize() || slot < 0) {
-            return;
-        }
-
-        var limit = Math.min(this.getMaxStackSize(), pStack.getMaxStackSize());
-        if (!pStack.isEmpty() && pStack.getCount() > limit) {
-            YwzjVehicle.LOGGER.warn("try inserting ItemStack {} exceeding the maximum stack size: {}, clamped to {}", pStack.getItem(), limit, limit);
-            pStack.setCount(limit);
-        }
-        this.items.set(slot, pStack);
-    }
-
-    @Override
-    public void setChanged() {
-    }
-
-    @Override
-    public boolean stillValid(Player pPlayer) {
-        return this.hasContainer() && !this.isRemoved() && this.position().closerThan(pPlayer.position(), 8.0D);
-    }
-
-    @Override
-    public void clearContent() {
-        this.items.clear();
-    }
-
-    public boolean hasContainer() {
-        return this.getContainerSize() > 0;
-    }
-
-    @Override
-    public @Nullable AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
-        if (!pPlayer.isSpectator()) {
-            return ChestMenu.sixRows(pContainerId, pPlayerInventory, this);
-        }
-        return null;
-    }
+    protected abstract Vec3 tickMove();
 
     protected void tickParts() {
         partUnits.forEach(PartUnit::tick);
@@ -529,6 +407,20 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
         return InteractionResult.PASS;
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public Vec3 thirdPersonPosition(LivingEntity pPassenger) {
+        if (pPassenger != null) {
+            Matrix3f axisRollMat = new Matrix3f();
+            Quaternionf q = new Quaternionf();
+            q.rotateY(Math.toRadians(-pPassenger.getYRot()));
+            q.rotateX(Math.toRadians(pPassenger.getXRot()));
+            q.get(axisRollMat);
+            Vector3f rotOffset = axisRollMat.transform(thirdPersonOffset.toVector3f());
+            return position().add(rotOffset.x, rotOffset.y, rotOffset.z);
+        }
+        return position().add(thirdPersonOffset);
+    }
+
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
         onLeaveVehicle(pPassenger);
@@ -740,42 +632,6 @@ public abstract class AbstractVehicle extends Mob implements OBBEntity, HasCusto
     @Override
     public boolean isInWall() {
         return false;
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER && this.hasContainer()) {
-            return itemHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        if (this.hasContainer()) {
-            itemHandler.invalidate();
-        }
-    }
-
-    @Override
-    public void reviveCaps() {
-        super.reviveCaps();
-        if (this.hasContainer()) {
-            itemHandler = LazyOptional.of(() -> new InvWrapper(this));
-        }
-    }
-
-    @Override
-    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        ContainerHelper.saveAllItems(compound, this.getItemStacks());
-    }
-
-    @Override
-    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        ContainerHelper.loadAllItems(compound, this.getItemStacks());
     }
 
 }

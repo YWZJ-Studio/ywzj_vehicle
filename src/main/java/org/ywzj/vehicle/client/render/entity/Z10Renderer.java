@@ -92,8 +92,9 @@ public class Z10Renderer extends EntityRenderer<Z10> {
 //        wheel6.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
 //        wheel7.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
 //        wheel8.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+
         propeller.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-        propeller2.rotation.mul(Axis.XN.rotationDegrees(pEntity.propellerRotation));
+        propeller2.rotation.mul(Axis.XN.rotationDegrees(pEntity.propellerRotation * 5));
 
         pEntity.lastRenderTime = System.currentTimeMillis();
         model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);

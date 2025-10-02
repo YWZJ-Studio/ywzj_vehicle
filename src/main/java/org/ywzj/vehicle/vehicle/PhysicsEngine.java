@@ -5,6 +5,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -96,166 +97,178 @@ public class PhysicsEngine {
         return velocity;
     }
 
+    /**
+     * 阻力影响
+     */
     public Vec3 decelerationByFriction(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
         if (!touchPoints.isEmpty()) {
-            return velocity.normalize().scale(velocity.length() - friction);
+            // 接触摩擦力
+            velocity = velocity.normalize().scale(velocity.length() - friction);
+        } else {
+            // 空气阻力
+            velocity = velocity.normalize().scale(velocity.length() - velocity.length() * friction);
         }
+        this.velocity = velocity.toVector3f();
         return velocity;
     }
 
     /**
      * 受重力影响下的自由落体与三轴滚动
      */
-    public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vec3 velocityAsForce) {
-        // 升力影响
-        velocity = velocityAsForce.toVector3f();
-        if (velocityAsForce.y >= gravityA) {
-            velocity.y -= gravityA;
-            return new Vec3(velocity);
-        }
-        float gA = this.gravityA;
-        if (velocityAsForce.y > 0) {
-            gA = (float) Math.max(0, this.gravityA - velocityAsForce.y);
-        }
-
-        // 无任何接触，因转动惯量而继续转动，因重力而自由落体
-        if (touchPoints.isEmpty()) {
-            centerRot(gravityCenter, axes);
-            velocity.add(0, -gA, 0);
-            velocity.y = Math.max(velocity.y, -gravityVMax);
-            return new Vec3(velocity);
-        }
-
-        // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
-        List<VehicleBedrockCubeOBB.CubeFace> faces = new ArrayList<>();
-        Vector3f gWorldDirection = new Vector3f(0, -1, 0);
-        if (gWorldDirection.dot(axes[0]) > 0) {
-            faces.add(VehicleBedrockCubeOBB.CubeFace.LEFT);
-        } else if (gWorldDirection.dot(axes[0]) < 0) {
-            faces.add(VehicleBedrockCubeOBB.CubeFace.RIGHT);
-        }
-        if (gWorldDirection.dot(axes[1]) > 0) {
-            faces.add(VehicleBedrockCubeOBB.CubeFace.TOP);
-        }  else if (gWorldDirection.dot(axes[1]) < 0) {
-            faces.add(VehicleBedrockCubeOBB.CubeFace.BOTTOM);
-        }
-        if (gWorldDirection.dot(axes[2]) > 0) {
-            faces.add(VehicleBedrockCubeOBB.CubeFace.FRONT);
-        }  else if (gWorldDirection.dot(axes[2]) < 0) {
-            faces.add(VehicleBedrockCubeOBB.CubeFace.BACK);
-        }
-        List<Vector3f> localForcePoints = touchPoints.stream()
-                .filter(touchPoint -> faces.contains(touchPoint.cubeFace()))
-                .filter(touchPoint -> {
-                    if (touchPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                            || touchPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) {
-                        Vector3f worldPos = touchPoint.cachedWorldPos();
-                        return worldPos.y <= BlockPos.containing(new Vec3(worldPos)).getY() + 0.7f;
-                    }
-                    return true;
-                })
-                .map(touchPoint -> {
-                    if (lockZRot) {
-                        return new Vector3f(0, touchPoint.obbLocalPos().y, touchPoint.obbLocalPos().z);
-                    }
-                    return touchPoint.obbLocalPos();
-                })
-                .toList();
-
-        // 重力方向在局部坐标系下的向量
-        float gx = gWorldDirection.dot(axes[0]);
-        float gy = gWorldDirection.dot(axes[1]);
-        float gz = gWorldDirection.dot(axes[2]);
-        Vector3f gLocalDirection = new Vector3f(gx, gy, gz);
-
-        // 重力、受力点投影到重力为法向量的平面上
-        Vector2f gc = getPlaneXY(gLocalDirection, gravityCenter);
-        HashMap<Vector2f, Vector3f> points = new HashMap<>();
-        for (Vector3f forcePoint : localForcePoints) {
-            points.put(getPlaneXY(null, forcePoint), forcePoint);
-        }
-
-        if (localForcePoints.size() > 2) {
-            List<Vector2f> polygon = VectorUtil.convexHull(new ArrayList<>(points.keySet()));
-            // 重心于支撑点闭包内，转动停止，自由落体停止
-            if (VectorUtil.isPointInPolygon(gc, polygon)) {
-                velocity.y = (float) Math.max(0, velocityAsForce.y);
-                rotV = 0;
-                // 自动爬高
-                DoubleSummaryStatistics stats = touchPoints.stream()
-                        .mapToDouble(p -> p.obbLocalPos().y)
-                        .summaryStatistics();
-                double yRange = stats.getMax() - stats.getMin();
-                if (yRange < vehicle.maxUpStep() + 1) {
-                    if (yRange >= vehicle.maxUpStep() || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
-                        touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
-                        VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
-                        double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
-                                ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                                        || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
-                        if (liftHeight > vehicle.position().y && (liftHeight - vehicle.position().y) <= (vehicle.maxUpStep() + MAGIC_NUMBER / 10)) {
-                            vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
-                        }
-                    }
-                }
-                // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                if (Mth.abs(vehicle.getZRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getWidth())) - MAGIC_NUMBER) {
-                    vehicle.setZRot(0);
-                }
-                if (Mth.abs(vehicle.getXRot()) < Math.toDegrees(Math.atan(0.5 / physicsCube.cube().getDepth())) - MAGIC_NUMBER) {
-                    vehicle.setXRot(0);
-                    vehicle.hurtMarked = true;
-                }
-                if (AllConfigs.common.selfRighting.get()) {
-                    if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
-                        vehicle.setXRot(0);
-                        vehicle.setZRot(0);
-                    }
-                }
+    public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vector3f force, Vector3f velocity) {
+        try {
+            // 升力影响
+            if (force.y >= gravityA) {
+                velocity.y -= gravityA;
                 return new Vec3(velocity);
             }
-            float minDist = Float.MAX_VALUE;
-            int minIdx = -1;
-            for (int i = 0; i < polygon.size(); i++) {
-                int j = (i + 1) % polygon.size();
-                float d = VectorUtil.pointToSegmentDist(gc, polygon.get(i), polygon.get(j));
-                if (d < minDist) {
-                    minDist = d;
-                    minIdx = i;
-                }
-            }
-            if (minIdx == -1) {
-                return velocityAsForce;
-            }
-            localRotAxisStart = points.get(polygon.get(minIdx));
-            localRotAxisEnd = points.get(polygon.get((minIdx + 1) % polygon.size()));
-        } else if (localForcePoints.size() == 2) {
-            localRotAxisStart = localForcePoints.get(0);
-            localRotAxisEnd = localForcePoints.get(1);
-        } else if (localForcePoints.size() == 1) {
-            Vector3f v = new Vector3f(gravityCenter).sub(localForcePoints.get(0));
-            if (v.x == 0 && v.z == 0) {
-                this.velocity.y = (float) Math.max(0, velocityAsForce.y);
-                rotV = 0;
-                return new Vec3(this.velocity);
-            }
-            v = new Vector3f(v.z, 0, v.x).normalize();
-            localRotAxisStart = new Vector3f(localForcePoints.get(0)).add(v);
-            localRotAxisEnd = localForcePoints.get(0);
-        } else {
-            // 重力在三轴方向上的分力所对应三面无接触点，则无支持力，因转动惯量而继续转动，因重力而自由落体
-            centerRot(gravityCenter, axes);
-            velocity.add(0, -gA, 0);
-            velocity.y = Math.max(velocity.y, -gravityVMax);
-            return new Vec3(velocity);
-        }
 
-        // 右手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
-        checkDirection(gc);
-        localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
-        rotV = Math.min(rotV + rotA, 0.3f);
-        rot(axes);
-        return velocityAsForce;
+            // 无任何接触，因转动惯量而继续转动，因重力而自由落体
+            if (touchPoints.isEmpty()) {
+                centerRot(gravityCenter, axes);
+                velocity.y -= gravityA;
+                velocity.y = Math.max(velocity.y, -gravityVMax);
+                return new Vec3(velocity);
+            }
+
+            // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
+            List<VehicleBedrockCubeOBB.CubeFace> faces = new ArrayList<>();
+            Vector3f gWorldDirection = new Vector3f(0, -1, 0);
+            if (gWorldDirection.dot(axes[0]) > 0) {
+                faces.add(VehicleBedrockCubeOBB.CubeFace.LEFT);
+            } else if (gWorldDirection.dot(axes[0]) < 0) {
+                faces.add(VehicleBedrockCubeOBB.CubeFace.RIGHT);
+            }
+            if (gWorldDirection.dot(axes[1]) > 0) {
+                faces.add(VehicleBedrockCubeOBB.CubeFace.TOP);
+            }  else if (gWorldDirection.dot(axes[1]) < 0) {
+                faces.add(VehicleBedrockCubeOBB.CubeFace.BOTTOM);
+            }
+            if (gWorldDirection.dot(axes[2]) > 0) {
+                faces.add(VehicleBedrockCubeOBB.CubeFace.FRONT);
+            }  else if (gWorldDirection.dot(axes[2]) < 0) {
+                faces.add(VehicleBedrockCubeOBB.CubeFace.BACK);
+            }
+            List<Vector3f> localForcePoints = touchPoints.stream()
+                    .filter(touchPoint -> faces.contains(touchPoint.cubeFace()))
+                    .filter(touchPoint -> {
+                        if (touchPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                                || touchPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) {
+                            Vector3f worldPos = touchPoint.cachedWorldPos();
+                            return worldPos.y <= BlockPos.containing(new Vec3(worldPos)).getY() + 0.7f;
+                        }
+                        return true;
+                    })
+                    .map(touchPoint -> {
+                        if (lockZRot) {
+                            return new Vector3f(0, touchPoint.obbLocalPos().y, touchPoint.obbLocalPos().z);
+                        }
+                        return touchPoint.obbLocalPos();
+                    })
+                    .toList();
+
+            // 重力方向在局部坐标系下的向量
+            float gx = gWorldDirection.dot(axes[0]);
+            float gy = gWorldDirection.dot(axes[1]);
+            float gz = gWorldDirection.dot(axes[2]);
+            Vector3f gLocalDirection = new Vector3f(gx, gy, gz);
+
+            // 重力、受力点投影到重力为法向量的平面上
+            Vector2f gc = getPlaneXY(gLocalDirection, gravityCenter);
+            HashMap<Vector2f, Vector3f> points = new HashMap<>();
+            for (Vector3f forcePoint : localForcePoints) {
+                points.put(getPlaneXY(null, forcePoint), forcePoint);
+            }
+
+            if (localForcePoints.size() > 2) {
+                List<Vector2f> polygon = VectorUtil.convexHull(new ArrayList<>(points.keySet()));
+                // 重心于支撑点闭包内，转动停止，自由落体停止
+                if (VectorUtil.isPointInPolygon(gc, polygon)) {
+                    velocity.y = Math.max(0, force.y);
+                    rotV = 0;
+                    // 自动爬高
+                    DoubleSummaryStatistics stats = touchPoints.stream()
+                            .mapToDouble(p -> p.obbLocalPos().y)
+                            .summaryStatistics();
+                    double yRange = stats.getMax() - stats.getMin();
+                    if (yRange < vehicle.maxUpStep() + 1) {
+                        if (yRange >= vehicle.maxUpStep() || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
+                            touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+                            VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
+                            double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
+                                    ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                                            || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
+                            if (liftHeight > vehicle.position().y && (liftHeight - vehicle.position().y) <= (vehicle.maxUpStep() + MAGIC_NUMBER / 10)) {
+                                vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
+                            }
+                        }
+                    }
+                    // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
+                    double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.cube().getWidth()));
+                    double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.cube().getDepth()));
+                    if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER) {
+                        vehicle.setZRot(0);
+                    }
+                    if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER) {
+                        vehicle.setXRot(0);
+                        vehicle.hurtMarked = true;
+                    }
+                    if (AllConfigs.common.selfRighting.get()) {
+                        if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
+                            vehicle.setXRot(0);
+                            vehicle.setZRot(0);
+                        }
+                    }
+                    return new Vec3(velocity);
+                }
+                float minDist = Float.MAX_VALUE;
+                int minIdx = -1;
+                for (int i = 0; i < polygon.size(); i++) {
+                    int j = (i + 1) % polygon.size();
+                    float d = VectorUtil.pointToSegmentDist(gc, polygon.get(i), polygon.get(j));
+                    if (d < minDist) {
+                        minDist = d;
+                        minIdx = i;
+                    }
+                }
+                if (minIdx == -1) {
+                    return new Vec3(velocity);
+                }
+                localRotAxisStart = points.get(polygon.get(minIdx));
+                localRotAxisEnd = points.get(polygon.get((minIdx + 1) % polygon.size()));
+            } else if (localForcePoints.size() == 2) {
+                localRotAxisStart = localForcePoints.get(0);
+                localRotAxisEnd = localForcePoints.get(1);
+            } else if (localForcePoints.size() == 1) {
+                Vector3f v = new Vector3f(gravityCenter).sub(localForcePoints.get(0));
+                if (v.x == 0 && v.z == 0) {
+                    this.velocity.y = Math.max(0, force.y);
+                    rotV = 0;
+                    return new Vec3(velocity);
+                }
+                v = new Vector3f(v.z, 0, v.x).normalize();
+                localRotAxisStart = new Vector3f(localForcePoints.get(0)).add(v);
+                localRotAxisEnd = localForcePoints.get(0);
+            } else {
+                // 重力在三轴方向上的分力所对应三面无接触点，则无支持力，因转动惯量而继续转动，因重力而自由落体
+                centerRot(gravityCenter, axes);
+                velocity.y -= gravityA;
+                velocity.y = Math.max(velocity.y, -gravityVMax);
+                return new Vec3(velocity);
+            }
+
+            // 右手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
+            checkDirection(gc);
+            localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
+            rotV = Math.min(rotV + rotA, 0.3f);
+            rot(axes);
+            return new Vec3(velocity);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        } finally {
+            this.velocity = velocity;
+        }
+        return new Vec3(velocity);
     }
 
     private void checkDirection(Vector2f rotToPoint) {

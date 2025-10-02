@@ -10,6 +10,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
  * @param <T> 配置数据结构
  */
 public abstract class AbstractVehicleWeapon<T> {
+
     private final AbstractVehicle vehicle;
     private final int index;
     private final T data;
@@ -121,4 +122,5 @@ public abstract class AbstractVehicleWeapon<T> {
     public Component getName() {
         return name;
     }
+
 }
