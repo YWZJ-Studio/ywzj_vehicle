@@ -26,7 +26,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Integer> ENGINE_SPEED = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
-    public float mainRotorForce = 1.3f * physicsEngine.gravityA;
+    public float mainRotorForce = 1.3f * physicsEngine.gravityA * physicsEngine.mass;
     public float xRotSpeed;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;

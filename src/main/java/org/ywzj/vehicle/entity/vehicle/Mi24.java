@@ -17,10 +17,15 @@ import org.ywzj.vehicle.util.TaczHelper;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
-public class Z10 extends HelicopterVehicle {
+public class Mi24 extends HelicopterVehicle {
 
-    public Z10(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public Mi24(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.physicsEngine.mass = 1.5f;
+        this.mainRotorForce = 1.2f * physicsEngine.gravityA * physicsEngine.mass;
+        this.xRotSpeedMax = 2f;
+        this.yRotSpeedMax = 2f;
+        this.zRotSpeedMax = 2f;
         this.thirdPersonOffset = new Vec3(0, 6, -9);
     }
 
@@ -41,7 +46,7 @@ public class Z10 extends HelicopterVehicle {
 
     @Override
     public void initPartUnits() {
-        WeaponUnit turret = new WeaponUnit("z10",
+        WeaponUnit turret = new WeaponUnit("mi24",
                 0,
                 this,
                 new Vec3(0, 4.54d, -0.375d),
@@ -53,8 +58,8 @@ public class Z10 extends HelicopterVehicle {
         turret.yRotSpeed = 60f / 20;
         turret.xRotMax = 45f;
         turret.xRotMin = -13f;
-        turret.yRotMax = 90f;
-        turret.yRotMin = -90f;
+        turret.yRotMax = 45f;
+        turret.yRotMin = -45f;
         this.partUnits.add(turret);
         this.operatorUnits.add(turret);
         this.spotterUnit = new SpotterUnit(this,
@@ -72,8 +77,8 @@ public class Z10 extends HelicopterVehicle {
         if (!this.getPassengers().isEmpty() && engineSpeed > 0 && tickCount % Mth.clamp(10 - collectivePitch / 10, 3, 10) == 0) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-1f)).add(v2.scale(-0.9)).add(0, 2.5, 0);
-            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-1f)).add(v2.scale(0.9)).add(0, 2.5, 0);
+            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(3f)).add(v2.scale(-1)).add(0, 2.5, 0);
+            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(3f)).add(v2.scale(1)).add(0, 2.5, 0);
             Vec3 vSmoke = v1.scale(-0.3);
             level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z, vSmoke.x, vSmoke.y, vSmoke.z);
             level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z, vSmoke.x, vSmoke.y, vSmoke.z);
