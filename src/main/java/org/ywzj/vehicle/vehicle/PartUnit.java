@@ -39,8 +39,10 @@ public class PartUnit {
     public float yRotO;
     public float xRotSpeed;
     public float yRotSpeed;
-    public float xRotMax;
-    public float xRotMin;
+    public float xRotMax = 90;
+    public float xRotMin = -90;
+    public float yRotMax = Float.MAX_VALUE;
+    public float yRotMin = -Float.MAX_VALUE;
     public float xAimRot;
     public float yAimRot;
 
@@ -114,6 +116,7 @@ public class PartUnit {
         } else {
             this.yRot = this.yAimRot;
         }
+        this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
         if (!vehicle.level().isClientSide()) {
             if (xDiff != 0 || yDiff != 0) {
                 vehicle.level().players().stream()

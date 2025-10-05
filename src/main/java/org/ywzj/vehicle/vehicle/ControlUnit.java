@@ -18,6 +18,8 @@ public class ControlUnit {
     public boolean right;
     public boolean up;
     public boolean down;
+    public boolean leftYaw;
+    public boolean rightYaw;
     public float xRot;
     public float yRot;
 
@@ -32,6 +34,8 @@ public class ControlUnit {
         right = false;
         up = false;
         down = false;
+        leftYaw = false;
+        rightYaw = false;
         xRot = 0;
         yRot = 0;
     }
@@ -50,6 +54,8 @@ public class ControlUnit {
                 vehicle.controlUnit.right = message.right;
                 vehicle.controlUnit.up = message.up;
                 vehicle.controlUnit.down = message.down;
+                vehicle.controlUnit.leftYaw = message.leftYaw;
+                vehicle.controlUnit.rightYaw = message.rightYaw;
                 vehicle.controlUnit.xRot = message.xRot;
                 vehicle.controlUnit.yRot = message.yRot;
             }

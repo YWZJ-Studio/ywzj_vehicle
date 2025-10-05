@@ -119,7 +119,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                     engineRunSoundInstance = null;
                 }
                 if (engineIdleSoundInstance == null) {
-                    engineIdleSoundInstance = new VehicleSound(getEngineIdleSound(), 1f, 1f, true, 50, true, true, this.getId());
+                    engineIdleSoundInstance = new VehicleSound(getEngineIdleSound(), soundDistance, 1f, true, 50, true, true, this.getId());
                     engineIdleSoundInstance.play();
                 }
             } else {
@@ -129,7 +129,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                 }
                 float volume = Math.max(0.4f, vf != 0 ? Math.abs(vf) / maxSpeedForward : 0.7f);
                 if (engineRunSoundInstance == null) {
-                    engineRunSoundInstance = new VehicleSound(getEngineRunSound(), volume, 1f, true, 50, false, true, this.getId());
+                    engineRunSoundInstance = new VehicleSound(getEngineRunSound(), volume * soundDistance, 1f, true, 50, false, true, this.getId());
                     engineRunSoundInstance.play();
                 } else {
                     engineRunSoundInstance.setVolume(volume);
@@ -144,8 +144,9 @@ public abstract class TrackedVehicle extends AbstractVehicle {
             controlUnit.reset();
         }
         float vt = entityData.get(TURN_SPEED);
-        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1));
-        vf = Math.min(vf, entityData.get(FORWARD_SPEED));
+        int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
+        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
+        vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
         // 前后控制
         if (controlUnit.forward || controlUnit.backward) {
             if (controlUnit.forward) {

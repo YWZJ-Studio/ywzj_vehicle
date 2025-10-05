@@ -52,6 +52,18 @@ public class InputHandler {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_D,
             "key.category.ywzj_vehicle");
+    public static final KeyMapping LEFT_YAW = new KeyMapping("key.ywzj_vehicle.left_yaw.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Q,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping RIGHT_YAW = new KeyMapping("key.ywzj_vehicle.right_yaw.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_E,
+            "key.category.ywzj_vehicle");
     public static final KeyMapping COLLECTIVE_PITCH_UP = new KeyMapping("key.ywzj_vehicle.collective_pitch_up.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
@@ -81,6 +93,12 @@ public class InputHandler {
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_C,
+            "key.category.ywzj_vehicle");
+    public static final KeyMapping OPEN_INVENTORY = new KeyMapping("key.ywzj_vehicle.open_inventory.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_B,
             "key.category.ywzj_vehicle");
     public static final KeyMapping LEAVE_VEHICLE = new KeyMapping("key.ywzj_vehicle.leave_vehicle.desc",
             KeyConflictContext.IN_GAME,
@@ -122,12 +140,13 @@ public class InputHandler {
     public static void onKey(InputEvent.Key event) {
         if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) return;
         if (event.getAction() == GLFW.GLFW_PRESS){
-            if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
-                LocalVehiclePlayer.instance.switchViewType(null);
-            }
             if (LocalVehiclePlayer.instance.onVehicle()) {
                 AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-                if (CHANGE_SEAT_1.matches(event.getKey(), event.getScanCode())) {
+                if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
+                    LocalVehiclePlayer.instance.switchViewType(null);
+                } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
+                    Minecraft.getInstance().player.sendOpenInventory();
+                } else if (CHANGE_SEAT_1.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 0);
                 } else if (CHANGE_SEAT_2.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 1);
@@ -157,6 +176,8 @@ public class InputHandler {
                 controlUnit.backward = BACKWARD.isDown();
                 controlUnit.left = LEFT.isDown();
                 controlUnit.right = RIGHT.isDown();
+                controlUnit.leftYaw = LEFT_YAW.isDown();
+                controlUnit.rightYaw = RIGHT_YAW.isDown();
                 if (vehicle instanceof HelicopterVehicle) {
                     controlUnit.up = COLLECTIVE_PITCH_UP.isDown();
                     controlUnit.down = COLLECTIVE_PITCH_DOWN.isDown();
@@ -204,6 +225,8 @@ public class InputHandler {
         control.right = controlUnit.right;
         control.up = controlUnit.up;
         control.down = controlUnit.down;
+        control.leftYaw = controlUnit.leftYaw;
+        control.rightYaw = controlUnit.rightYaw;
         control.xRot = controlUnit.xRot;
         control.yRot = controlUnit.yRot;
         Channel.CHANNEL.sendToServer(control);

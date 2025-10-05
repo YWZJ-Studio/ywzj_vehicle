@@ -11,8 +11,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 @Mixin(Player.class)
 public class PlayerMixin {
 
-    @Inject(
-            method = "wantsToStopRiding",
+    @Inject(method = "wantsToStopRiding",
             at = @At("HEAD"),
             cancellable = true)
     public void wantsToStopRiding(CallbackInfoReturnable<Boolean> cir) {

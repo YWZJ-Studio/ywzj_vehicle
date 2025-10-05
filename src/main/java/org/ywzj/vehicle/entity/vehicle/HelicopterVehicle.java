@@ -18,6 +18,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -25,9 +26,16 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Integer> ENGINE_SPEED = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
-    public float xRotSpeed = 4;
-    public float yRotSpeed = 4;
-    public float zRotSpeed = 4;
+    public float mainRotorForce = 1.3f * physicsEngine.gravityA;
+    public float xRotSpeed;
+    public float xRotSpeedAcceleration = 1f;
+    public float xRotSpeedMax = 4;
+    public float yRotSpeed;
+    public float yRotSpeedAcceleration = 1;
+    public float yRotSpeedMax = 4;
+    public float zRotSpeed;
+    public float zRotSpeedAcceleration = 1;
+    public float zRotSpeedMax = 4;
     public Vec3 airSpeed = new Vec3(0, 0, 0);
     public float maxAirSpeed = 1f;
     public float propellerRotation;
@@ -38,8 +46,8 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
     public HelicopterVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.soundDistance = 8;
         this.physicsEngine.lockCenterRot = true;
-        this.physicsEngine.bounce = 0;
     }
 
     @Override
@@ -101,10 +109,10 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     protected void tickSound() {
         int engineSpeed = getEngineSpeed();
         if (engineSpeed < 80 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
-            engineStopSoundInstance = new VehicleSound(getEngineStopSound(), 1f, 1f, false, 50, true, true, this.getId());
+            engineStopSoundInstance = new VehicleSound(getEngineStopSound(), soundDistance, 1f, false, 50, true, true, this.getId());
             engineStopSoundInstance.play();
             if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.setVolume((float) engineSpeed / 100);
+                engineStartSoundInstance.setVolume((float) engineSpeed / 100 * soundDistance);
             }
         }
         if (engineSpeed == 0 && engineStartSoundInstance != null) {
@@ -121,15 +129,15 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 engineStopSoundInstance = null;
             }
             if (engineStartSoundInstance == null) {
-                engineStartSoundInstance = new VehicleSound(getEngineStartSound(), 1f, 1f, false, 0, false, false, this.getId());
+                engineStartSoundInstance = new VehicleSound(getEngineStartSound(), soundDistance, 1f, false, 0, false, false, this.getId());
                 engineStartSoundInstance.play();
             }
             if (engineSpeed > 80 && engineRunSoundInstance == null) {
-                engineRunSoundInstance = new VehicleSound(getEngineRunSound(), 1f, 1f, true, 50, true, true, this.getId());
+                engineRunSoundInstance = new VehicleSound(getEngineRunSound(), soundDistance, 1f, true, 50, true, true, this.getId());
                 engineRunSoundInstance.play();
             }
             if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setVolume(Math.max(0.2f, (float) engineSpeed / 100));
+                engineRunSoundInstance.setVolume(Math.max(0.2f * soundDistance, (float) engineSpeed / 100 * soundDistance));
             }
         }
     }
@@ -158,60 +166,105 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
             controlUnit.reset();
         }
 
-        // 螺旋桨方向的力产生加速度
-        double scale = ((double) getEngineSpeed() / 100) * ((double) getCollectivePitch() / 100);
-        Vec3 force = relativeRotDirection(new Vec3(0, 1, 0), false).scale(scale * (physicsEngine.gravityA + 0.01));
         airSpeed = getDeltaMovement();
+        // 引擎转速与浆距得出力系数，该值越高，桨叶效率越高，则出力越高
+        double scale = ((double) getEngineSpeed() / 100) * ((double) getCollectivePitch() / 100);
+        // 桨叶出力方向的当前载具速度分量，该值越高，桨叶效率越低，则出力越低
+        Vec3 vP = relativeRotDirection(new Vec3(0, 1, 0), false);
+        double dVV = VectorUtil.project(airSpeed, vP).length() * Math.signum(airSpeed.dot(vP));
+        if (dVV > 0) {
+            scale *= Math.min(1, 8 / (dVV * 20));
+        } else if (dVV < 0) {
+            scale *= Math.min(2, Math.max(1, -dVV / 0.05));
+        }
+        // 高度越高，空气越稀薄，发动机出力与桨叶效率都会降低，约定在64格高的海平面以下才可达到满效率
+        double scaleAir = position().y < 64 ? 1 : Math.pow(255 - position().y, 0.2) / Math.pow(191, 0.2);
+        // 螺旋桨方向的力
+        Vec3 force = vP.scale(scale * scaleAir * mainRotorForce);
+        // 桨叶水平方向的空速带来升力
+        double dVH = Math.sqrt(Math.pow(airSpeed.length(), 2) - Math.pow(dVV, 2));
+        force.add(vP.scale(dVH * scaleAir * 0.005f));
         airSpeed = airSpeed.add(force);
         if (airSpeed.length() >= maxAirSpeed) {
             airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }
         this.setDeltaMovement(airSpeed);
 
-        if (force.length() > physicsEngine.gravityA / 5) {
-            float xRotSpeed = (float) (this.xRotSpeed * scale);
-            float yRotSpeed = (float) (this.yRotSpeed * scale);
-            float zRotSpeed = (float) (this.zRotSpeed * scale);
-            if (getDriver() != null) {
+        float xRotSpeedAcceleration = (float) (this.xRotSpeedAcceleration * scale);
+        float yRotSpeedAcceleration = (float) (this.yRotSpeedAcceleration * scale);
+        float zRotSpeedAcceleration = (float) (this.zRotSpeedAcceleration * scale);
+        if (getDriver() != null) {
+            if (!(controlUnit.leftYaw || controlUnit.rightYaw)) {
                 float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
+                if (yDiff > 0) {
+                    yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration);
+                } else if (yDiff < 0) {
+                    yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
+                }
                 if (Math.abs(yDiff) > yRotSpeed) {
-                    this.setYRot(this.getYRot() + Math.signum(yDiff) * yRotSpeed);
+                    this.setYRot(this.getYRot() + yRotSpeed);
                 } else {
+                    yRotSpeed = Math.signum(yRotSpeed) * (Math.max(0, Math.abs(yRotSpeed) - 1));
                     this.setYRot(controlUnit.yRot);
                 }
-
-                if (!(controlUnit.forward || controlUnit.backward)) {
-                    float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
-                    if (Math.abs(xDiff) > xRotSpeed) {
-                        this.setXRot(this.getXRot() + Math.signum(xDiff) * xRotSpeed);
-                    } else {
-                        this.setXRot(controlUnit.xRot);
-                    }
-                } else {
-                    if (controlUnit.forward) {
-                        this.setXRot(this.getXRot() + xRotSpeed);
-                    }
-                    if (controlUnit.backward) {
-                        this.setXRot(this.getXRot() - xRotSpeed);
-                    }
+            } else {
+                if (controlUnit.rightYaw) {
+                    yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration);
                 }
-
-                if (!(controlUnit.left || controlUnit.right)) {
-                    float zDiff = Mth.wrapDegrees(-this.getZRot());
-                    if (Math.abs(zDiff) > zRotSpeed) {
-                        this.setZRot(this.getZRot() + Math.signum(zDiff) * zRotSpeed);
-                    } else {
-                        this.setZRot(0);
-                    }
-                } else {
-                    if (controlUnit.left) {
-                        this.setZRot(this.getZRot() - zRotSpeed);
-                    }
-                    if (controlUnit.right) {
-                        this.setZRot(this.getZRot() + zRotSpeed);
-                    }
+                if (controlUnit.leftYaw) {
+                    yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
                 }
+                this.setYRot(this.getYRot() + yRotSpeed);
             }
+
+            if (!(controlUnit.forward || controlUnit.backward)) {
+                float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
+                if (xDiff > 0) {
+                    xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration);
+                } else if (xDiff < 0) {
+                    xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
+                }
+                if (Math.abs(xDiff) > xRotSpeed) {
+                    this.setXRot(this.getXRot() + xRotSpeed);
+                } else {
+                    xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 1));
+                    this.setXRot(controlUnit.xRot);
+                }
+            } else {
+                if (controlUnit.forward) {
+                    xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration);
+                }
+                if (controlUnit.backward) {
+                    xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
+                }
+                this.setXRot(this.getXRot() + xRotSpeed);
+            }
+
+            if (!(controlUnit.left || controlUnit.right)) {
+                float zDiff = Mth.wrapDegrees(-this.getZRot());
+                if (zDiff > 0) {
+                    zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration);
+                } else if (zDiff < 0) {
+                    zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
+                }
+                if (Math.abs(zDiff) > zRotSpeed) {
+                    this.setZRot(this.getZRot() + zRotSpeed);
+                } else {
+                    zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 1));
+                    this.setZRot(0);
+                }
+            } else {
+                if (controlUnit.right) {
+                    zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration);
+                }
+                if (controlUnit.left) {
+                    zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
+                }
+                this.setZRot(this.getZRot() + zRotSpeed);
+            }
+            yRotSpeed = Math.signum(yRotSpeed) * (Math.max(0, Math.abs(yRotSpeed) - 0.1f));
+            xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 0.1f));
+            zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 0.1f));
         }
         return force;
     }

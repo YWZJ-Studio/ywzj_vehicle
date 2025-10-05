@@ -16,6 +16,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
@@ -63,6 +64,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     private float zRot;
     public float zRotO;
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public int soundDistance;
     private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
     private VehicleBedrockCubeOBB mainCubeOBB;
     protected final PhysicsEngine physicsEngine;
@@ -77,6 +79,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.operatorUnits = new ArrayList<>();
         this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
         this.thirdPersonOffset = Vec3.ZERO;
+        this.soundDistance = 3;
         this.vehicleBodyOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.initPartUnits();
@@ -424,7 +427,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
         onLeaveVehicle(pPassenger);
-        return super.getDismountLocationForPassenger(pPassenger);
+        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 1, 0));
     }
 
     @Override
@@ -621,6 +624,100 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void aiStep() {
+        if (this.lerpSteps > 0) {
+            double d0 = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
+            double d2 = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
+            double d4 = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
+            this.setYRot((float) this.lerpYRot);
+            this.setXRot((float) this.lerpXRot);
+            --this.lerpSteps;
+            this.setPos(d0, d2, d4);
+        }
+
+        if (this.lerpHeadSteps > 0) {
+            this.yHeadRot += (float)Mth.wrapDegrees(this.lyHeadRot - (double)this.yHeadRot) / (float)this.lerpHeadSteps;
+            --this.lerpHeadSteps;
+        }
+
+        Vec3 vec31 = this.getDeltaMovement();
+        double d1 = vec31.x;
+        double d3 = vec31.y;
+        double d5 = vec31.z;
+        if (java.lang.Math.abs(vec31.x) < 0.003D) {
+            d1 = 0.0D;
+        }
+        if (java.lang.Math.abs(vec31.y) < 0.003D) {
+            d3 = 0.0D;
+        }
+        if (java.lang.Math.abs(vec31.z) < 0.003D) {
+            d5 = 0.0D;
+        }
+        this.setDeltaMovement(d1, d3, d5);
+
+        this.level().getProfiler().push("ai");
+        {
+            if (this.isImmobile()) {
+                this.jumping = false;
+                this.xxa = 0.0F;
+                this.zza = 0.0F;
+            } else if (this.isEffectiveAi()) {
+                this.level().getProfiler().push("newAi");
+                {
+                    this.serverAiStep();
+                }
+                this.level().getProfiler().pop();
+            }
+        }
+        this.level().getProfiler().pop();
+
+        this.level().getProfiler().push("travel");
+        AABB aabb = this.getBoundingBox();
+        {
+            this.xxa *= 0.98F;
+            this.zza *= 0.98F;
+            Vec3 vec3 = new Vec3(this.xxa, this.yya, this.zza);
+            if (this.hasEffect(MobEffects.SLOW_FALLING) || this.hasEffect(MobEffects.LEVITATION)) {
+                this.resetFallDistance();
+            }
+            this.travel(vec3);
+        }
+        this.level().getProfiler().pop();
+
+        this.level().getProfiler().push("freezing");
+        {
+            if (!this.level().isClientSide && !this.isDeadOrDying()) {
+                int i = this.getTicksFrozen();
+                if (this.isInPowderSnow && this.canFreeze()) {
+                    this.setTicksFrozen(java.lang.Math.min(this.getTicksRequiredToFreeze(), i + 1));
+                } else {
+                    this.setTicksFrozen(java.lang.Math.max(0, i - 2));
+                }
+            }
+            this.removeFrost();
+            this.tryAddFrost();
+            if (!this.level().isClientSide && this.tickCount % 40 == 0 && this.isFullyFrozen() && this.canFreeze()) {
+                this.hurt(this.damageSources().freeze(), 1.0F);
+            }
+        }
+        this.level().getProfiler().pop();
+
+        this.level().getProfiler().push("push");
+        {
+            if (this.autoSpinAttackTicks > 0) {
+                --this.autoSpinAttackTicks;
+                this.checkAutoSpinAttack(aabb, this.getBoundingBox());
+            }
+            this.pushEntities();
+        }
+        this.level().getProfiler().pop();
+
+        if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
+            this.hurt(this.damageSources().drown(), 1.0F);
         }
     }
 

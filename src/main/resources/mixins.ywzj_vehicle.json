@@ -11,7 +11,8 @@
     "client.LevelRendererMixin",
     "client.MouseHandlerMixin",
     "client.PlayerMixin",
-    "client.ClientPacketListenerMixin"
+    "client.ClientPacketListenerMixin",
+    "client.MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1
