@@ -52,7 +52,7 @@ public class PhysicsEngine {
     public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
-                if (touchPoint.obbLocalPos().y < -physicsCube.cube().getHeight() / 2 + vehicle.maxUpStep()) {
+                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.maxUpStep()) {
                     continue;
                 }
                 Vec3 axesX = new Vec3(axes[0]).normalize();
@@ -71,7 +71,7 @@ public class PhysicsEngine {
                     }
                 }
             } else if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK) {
-                if (touchPoint.obbLocalPos().y < -physicsCube.cube().getHeight() / 2 + vehicle.maxUpStep()) {
+                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.maxUpStep()) {
                     continue;
                 }
                 Vec3 axesZ = new Vec3(axes[2]).normalize();
@@ -216,8 +216,8 @@ public class PhysicsEngine {
                         }
                     }
                     // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                    double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.cube().getWidth()));
-                    double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.cube().getDepth()));
+                    double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
+                    double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
                     if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER) {
                         vehicle.setZRot(0);
                     }
@@ -320,7 +320,7 @@ public class PhysicsEngine {
         if (localRotAxisStart == null || localRotAxisEnd == null || rotV == 0) {
             return;
         }
-        Vec3 localVehiclePos = vehicle.position().subtract(physicsCube.center());
+        Vec3 localVehiclePos = vehicle.position().subtract(physicsCube.center(this.vehicle));
         Vector3f p1 = rotateAroundAxis(localVehiclePos.toVector3f(), localRotAxisStart, localRotAxisEnd, rotV);
         Vector3f p2 = physicsCube.obb().localToWorld(p1, axes);
         vehicle.setPos(new Vec3(p2));

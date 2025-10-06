@@ -33,10 +33,10 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0, 1.5d, 0),
                 new Vec3(0, 0, 0),
                 null);
-        turret.xRotSpeed = 30f / 20;
-        turret.yRotSpeed = 15f / 20;
-        turret.xRotMax = 5f;
-        turret.xRotMin = -13f;
+        turret.setXRotSpeed(30f / 20);
+        turret.setYRotSpeed(15f / 20);
+        turret.setXRotMax(5f);
+        turret.setXRotMin(-13f);
         this.partUnits.add(turret);
         this.operatorUnits.add(turret);
         WeaponUnit commanderMachineGun = new WeaponUnit("ztz99a_commander_machine_gun",
@@ -47,10 +47,10 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0.5d, 0.5d, -1d),
                 new Vec3(0, -1d, 1.2d),
                 turret);
-        commanderMachineGun.xRotSpeed = 60f / 20;
-        commanderMachineGun.yRotSpeed = 60f / 20;
-        commanderMachineGun.xRotMax = 15f;
-        commanderMachineGun.xRotMin = -18f;
+        commanderMachineGun.setXRotSpeed(60f / 20);
+        commanderMachineGun.setYRotSpeed(60f / 20);
+        commanderMachineGun.setXRotMax(15f);
+        commanderMachineGun.setXRotMin(-18f);
         this.partUnits.add(commanderMachineGun);
         this.operatorUnits.add(commanderMachineGun);
         this.spotterUnit = new SpotterUnit(this,

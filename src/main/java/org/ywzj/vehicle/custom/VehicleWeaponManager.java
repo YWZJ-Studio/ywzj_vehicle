@@ -10,6 +10,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -24,6 +25,7 @@ import org.ywzj.vehicle.all.ModRegistries;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerSyncData;
+import org.ywzj.vehicle.resource.Vec3Serializer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
 
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
+            .registerTypeAdapter(Vec3.class, new Vec3Serializer())
             .create();
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");
@@ -108,9 +111,13 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
         return Optional.ofNullable(indexes.get(id));
     }
 
+    protected static void clear() {
+        INSTANCE = null;
+    }
+
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
-        INSTANCE = null;
+        clear();
     }
 
     @SubscribeEvent

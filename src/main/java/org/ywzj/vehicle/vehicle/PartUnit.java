@@ -55,6 +55,13 @@ public class PartUnit {
         this.initOBBs();
     }
 
+    public PartUnit(Component name, int index, AbstractVehicle vehicle) {
+        this.index = index;
+        this.vehicle = vehicle;
+        this.name = name;
+        this.unitBedrockCubeOBBs = new ArrayList<>();
+    }
+
     public void tick() {
         if (vehicle.hasPower()) {
             tickRot();
@@ -76,12 +83,12 @@ public class PartUnit {
         if (unitBone != null) {
             List<BedrockCubePerFace> cubes = new ArrayList<>(unitBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
             for (BedrockCubePerFace cube : cubes) {
-                unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(vehicle, unitBone, cube));
+                unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(unitBone, cube));
             }
             for (BedrockBone child : unitBone.getChildren()) {
                 List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
                 for (BedrockCubePerFace cube : childCubes) {
-                    unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(vehicle, child, cube));
+                    unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
                 }
             }
         }
@@ -98,7 +105,7 @@ public class PartUnit {
     public void updateOBBs() {
         for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitBedrockCubeOBBs) {
             OBB obb = unitBedrockCubeOBB.obb();
-            Vec3 center = unitBedrockCubeOBB.center();
+            Vec3 center = unitBedrockCubeOBB.center(this.vehicle);
             Quaternionf selfRot = new Quaternionf(unitBedrockCubeOBB.selfRot());
             obb.setCenter(vehicle.relativeRotPos(center).toVector3f());
             obb.setRotation(vehicle.rotYXZ().mul(selfRot));
@@ -110,14 +117,14 @@ public class PartUnit {
         this.yRotO = this.yRot;
         float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
         float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
-        if (Math.abs(xDiff) > xRotSpeed) {
-            this.xRot += Math.signum(xDiff) * xRotSpeed;
+        if (Math.abs(xDiff) > getXRotSpeed()) {
+            this.xRot += Math.signum(xDiff) * getXRotSpeed();
         } else {
             this.xRot = this.xAimRot;
         }
-        this.xRot = Math.max(Math.min(this.xRot, xRotMax), xRotMin);
-        if (Math.abs(yDiff) > yRotSpeed) {
-            this.yRot += Math.signum(yDiff) * yRotSpeed;
+        this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
+        if (Math.abs(yDiff) > getYRotSpeed()) {
+            this.yRot += Math.signum(yDiff) * getYRotSpeed();
         } else {
             this.yRot = this.yAimRot;
         }
@@ -167,4 +174,35 @@ public class PartUnit {
         this.operator = operator;
     }
 
+    public float getXRotSpeed() {
+        return xRotSpeed;
+    }
+
+    public void setXRotSpeed(float xRotSpeed) {
+        this.xRotSpeed = xRotSpeed;
+    }
+
+    public float getYRotSpeed() {
+        return yRotSpeed;
+    }
+
+    public void setYRotSpeed(float yRotSpeed) {
+        this.yRotSpeed = yRotSpeed;
+    }
+
+    public float getXRotMax() {
+        return xRotMax;
+    }
+
+    public void setXRotMax(float xRotMax) {
+        this.xRotMax = xRotMax;
+    }
+
+    public float getXRotMin() {
+        return xRotMin;
+    }
+
+    public void setXRotMin(float xRotMin) {
+        this.xRotMin = xRotMin;
+    }
 }

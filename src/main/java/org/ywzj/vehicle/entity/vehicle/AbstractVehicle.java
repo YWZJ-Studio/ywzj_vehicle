@@ -60,7 +60,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public final List<PartUnit> operatorUnits;
     public SpotterUnit spotterUnit;
     public Vec3 thirdPersonOffset;
-    public float wide;
+    public float width;
     public float length;
     public float height;
     public float curbWeight;
@@ -72,8 +72,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public int soundDistance;
-    private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
-    private VehicleBedrockCubeOBB mainCubeOBB;
+    protected List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
+    protected VehicleBedrockCubeOBB mainCubeOBB;
     public final PhysicsEngine physicsEngine;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -91,11 +91,15 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.fuelConsumptionPerTick = 0.00001f;
         this.soundDistance = 3;
         this.vehicleBodyOBBs = new ArrayList<>();
-        this.setMaxUpStep(1.0f);
-        this.initPartUnits();
-        this.initOBBs();
+        this.initData();
         this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
         this.lookControl = new VehicleLookControl(this);
+    }
+
+    public void initData() {
+        this.setMaxUpStep(1.0f);
+        initPartUnits();
+        initOBBs();
     }
 
     @Override
@@ -208,7 +212,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     public abstract int getSeats();
 
-    public abstract void initPartUnits();
+    public void initPartUnits() {};
 
     @OnlyIn(Dist.CLIENT)
     protected abstract void tickAim();
@@ -231,27 +235,27 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         // 约定取体积最大的块表达车体的长宽高
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
         cubes.sort((cube1, cube2) -> (int) (cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
-        this.wide = cubes.get(0).getWidth();
+        this.width = cubes.get(0).getWidth();
         this.length = cubes.get(0).getDepth();
         this.height = cubes.get(0).getHeight();
-        mainCubeOBB = VehicleBedrockCubeOBB.init(this, bone, cubes.remove(0));
+        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleBodyOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {
-            vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, bone, cube));
+            vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
         }
         for (BedrockBone child : bone.getChildren()) {
             List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
             for (BedrockCubePerFace cube : childCubes) {
-                vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(this, child, cube));
+                vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
             }
         }
         // 由部件结构拓展车体长宽
         for (PartUnit partUnit : partUnits) {
             for (VehicleBedrockCubeOBB unitBedrockCubeOBB : partUnit.getUnitBedrockCubeOBBs()) {
                 Vec3 cubeOffset = unitBedrockCubeOBB.offset();
-                this.wide = (float) Math.max((Math.abs(cubeOffset.x) + unitBedrockCubeOBB.cube().getWidth() / 2) * 2, this.wide);
-                this.length = (float) Math.max((Math.abs(cubeOffset.z) + unitBedrockCubeOBB.cube().getDepth() / 2) * 2, this.length);
-                this.height = (float) Math.max(Math.abs(cubeOffset.y) + unitBedrockCubeOBB.cube().getHeight() / 2, this.height);
+                this.width = (float) Math.max((Math.abs(cubeOffset.x) + unitBedrockCubeOBB.getWidth() / 2) * 2, this.width);
+                this.length = (float) Math.max((Math.abs(cubeOffset.z) + unitBedrockCubeOBB.getDepth() / 2) * 2, this.length);
+                this.height = (float) Math.max(Math.abs(cubeOffset.y) + unitBedrockCubeOBB.getHeight() / 2, this.height);
             }
         }
     }
@@ -269,7 +273,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public void updateOBBs() {
         for (VehicleBedrockCubeOBB vehicleBedrockCubeOBB : vehicleBodyOBBs) {
             OBB obb = vehicleBedrockCubeOBB.obb();
-            Vec3 center = vehicleBedrockCubeOBB.center();
+            Vec3 center = vehicleBedrockCubeOBB.center(this);
             Quaternionf rot = vehicleBedrockCubeOBB.selfRot();
             obb.setCenter(relativeRotPos(center).toVector3f());
             obb.setRotation(rotYXZ().mul(rot));
@@ -277,14 +281,14 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     public AABB getAABB() {
-        Vec3 p1 = relativeRotPos(position().add(wide / 2, height / 2, length / 2));
-        Vec3 p2 = relativeRotPos(position().add(wide / 2, -height / 2, length / 2));
-        Vec3 p3 = relativeRotPos(position().add(wide / 2, height / 2, -length / 2));
-        Vec3 p4 = relativeRotPos(position().add(wide / 2, -height / 2, -length / 2));
-        Vec3 p5 = relativeRotPos(position().add(-wide / 2, height / 2, length / 2));
-        Vec3 p6 = relativeRotPos(position().add(-wide / 2, -height / 2, length / 2));
-        Vec3 p7 = relativeRotPos(position().add(-wide / 2, height / 2, -length / 2));
-        Vec3 p8 = relativeRotPos(position().add(-wide / 2, -height / 2, -length / 2));
+        Vec3 p1 = relativeRotPos(position().add(width / 2, height / 2, length / 2));
+        Vec3 p2 = relativeRotPos(position().add(width / 2, -height / 2, length / 2));
+        Vec3 p3 = relativeRotPos(position().add(width / 2, height / 2, -length / 2));
+        Vec3 p4 = relativeRotPos(position().add(width / 2, -height / 2, -length / 2));
+        Vec3 p5 = relativeRotPos(position().add(-width / 2, height / 2, length / 2));
+        Vec3 p6 = relativeRotPos(position().add(-width / 2, -height / 2, length / 2));
+        Vec3 p7 = relativeRotPos(position().add(-width / 2, height / 2, -length / 2));
+        Vec3 p8 = relativeRotPos(position().add(-width / 2, -height / 2, -length / 2));
         Vec3[] points = {p1, p2, p3, p4, p5, p6, p7, p8};
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;

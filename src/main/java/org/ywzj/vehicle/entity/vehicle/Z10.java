@@ -49,10 +49,10 @@ public class Z10 extends HelicopterVehicle {
                 new Vec3(0, 0d, -6d),
                 new Vec3(0, -2.2d, -1.2d),
                 null);
-        turret.xRotSpeed = 60f / 20;
-        turret.yRotSpeed = 60f / 20;
-        turret.xRotMax = 45f;
-        turret.xRotMin = -13f;
+        turret.setXRotSpeed(60f / 20);
+        turret.setYRotSpeed(60f / 20);
+        turret.setXRotMax(45f);
+        turret.setXRotMin(-13f);
         turret.yRotMax = 90f;
         turret.yRotMin = -90f;
         this.partUnits.add(turret);

@@ -7,7 +7,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.custom.VehicleDataManager;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -18,40 +20,24 @@ public class Ztl11 extends WheeledVehicle {
     }
 
     @Override
-    public void initPartUnits() {
-        WeaponUnit turret = new WeaponUnit("ztl11_turret",
-                0,
-                this,
-                new Vec3(0, 2.54d, -0.375d),
-                8f,
-                new Vec3(0, 1.5d, 0),
-                new Vec3(0, 0, 0),
-                null);
-        turret.xRotSpeed = 22.1f / 20;
-        turret.yRotSpeed = 15.5f / 20;
-        turret.xRotMax = 5f;
-        turret.xRotMin = -18f;
-        this.partUnits.add(turret);
-        this.operatorUnits.add(turret);
-        WeaponUnit commanderMachineGun = new WeaponUnit("ztl11_commander_machine_gun",
-                1,
-                this,
-                new Vec3(-0.594d, 3.325d, 0.101d),
-                1f,
-                new Vec3(0.5d, 0.5d, -1d),
-                new Vec3(0, 0.3d, -0.4d),
-                turret);
-        commanderMachineGun.xRotSpeed = 60f / 20;
-        commanderMachineGun.yRotSpeed = 60f / 20;
-        commanderMachineGun.xRotMax = 15f;
-        commanderMachineGun.xRotMin = -18f;
-        this.partUnits.add(commanderMachineGun);
-        this.operatorUnits.add(commanderMachineGun);
+    public void initData() {
+        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
+            this.height = data.getHeight();
+            this.width = data.getWidth();
+            this.length = data.getLength();
+            var struct = data.getVehicleStructObbs();
+            this.mainCubeOBB = struct.mainCubeOBB();
+            this.vehicleBodyOBBs = struct.obbs();
+            var weapons = data.createPartUnits(this);
+            this.operatorUnits.addAll(weapons.values());
+            this.partUnits.addAll(weapons.values());
+        });
         this.spotterUnit = new SpotterUnit(this,
                 new Vec3(0, 4.54d, -0.375d),
                 new Vec3(0, 1.5d, 0),
                 new Vec3(0, 0, 0),
                 null);
+
     }
 
     @Override

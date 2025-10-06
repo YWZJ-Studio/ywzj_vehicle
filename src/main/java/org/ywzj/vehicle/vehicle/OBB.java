@@ -366,4 +366,11 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         return relative;
     }
 
+    public OBB copy() {
+        return new OBB(
+                new Vector3f(center),
+                new Vector3f(extents),
+                new Quaternionf(rotation)
+        );
+    }
 }

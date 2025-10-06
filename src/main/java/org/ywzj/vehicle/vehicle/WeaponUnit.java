@@ -1,8 +1,6 @@
 package org.ywzj.vehicle.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -10,8 +8,8 @@ import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.custom.VehicleWeaponManager;
+import org.ywzj.vehicle.custom.vehicle.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -26,19 +24,43 @@ import java.util.Optional;
  */
 public class WeaponUnit extends PartUnit {
 
-    private BedrockBone yTurnBone;
-    private BedrockBone xTurnBone;
-    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs;
-    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs;
+    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
+    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
     private Vec3 boltOffset;
     private float barrelLength;
     private final Vec3 operatorOffset;
     private Vec3 seatOffset;
-    private final WeaponUnit baseWeaponUnit;
+    private WeaponUnit baseWeaponUnit;
 
     private final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     private int currentWeaponIndex = -1;
 
+    public WeaponUnit(WeaponUnitData data, int index, AbstractVehicle vehicle) {
+        super(Component.translatable(data.getName()), index, vehicle);
+        this.boltOffset = data.getBoltOffset();
+        this.barrelLength = data.getBarrelLength();
+        this.operatorOffset = data.getOperatorOffset();
+        this.seatOffset = data.getSeatOffset();
+        this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
+        this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
+        var rotInfo = data.getRotInfo();
+        this.xRotSpeed = rotInfo.getXRotSpeed();
+        this.yRotSpeed = rotInfo.getYRotSpeed();
+        this.xRotMax = rotInfo.getXRotMax();
+        this.xRotMin = rotInfo.getXRotMin();
+
+        int cnt = 0;
+        for (var weaponRes : data.getWeapons()) {
+            VehicleWeaponManager.get().getIndex(weaponRes).ifPresent(
+                    i -> weapons.add(i.create(vehicle, cnt))
+            );
+        }
+        if (!weapons.isEmpty()) {
+            currentWeaponIndex = Math.min(cnt, weapons.size() - 1);
+        }
+    }
+
+    @Deprecated
     public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength,
                       Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
@@ -70,63 +92,16 @@ public class WeaponUnit extends PartUnit {
         return Optional.empty();
     }
 
+    public void setBaseWeaponUnit(WeaponUnit baseWeaponUnit) {
+        this.baseWeaponUnit = baseWeaponUnit;
+    }
+
     @Override
     public void tick() {
         super.tick();
         this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
         updateOBBs(yTurnUnitOBBs, false);
         updateOBBs(xTurnUnitOBBs, true);
-    }
-
-    @Override
-    protected void initStructureModel(String name) {
-        BedrockModel model = BedrockModelLoader.getModel(vehicle.getVehicleType().getStructureBedrockModel());
-        if (model != null) {
-            this.yTurnBone = model.getBoneMap().get(name);
-            this.xTurnBone = model.getBoneMap().get(name + "_barrel");
-            if (yTurnBone != null && xTurnBone != null) {
-                // 根据武器的基岩模型结构得到炮闩、炮管数据
-                this.boltOffset = new Vec3(yTurnBone.x / 16, xTurnBone.y / 16, yTurnBone.z / 16);
-                // 约定取体积最大的块表达炮管
-                List<BedrockCubePerFace> cubes = new ArrayList<>(xTurnBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-                cubes.sort((cube1, cube2) -> (int) (cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
-                BedrockCubePerFace barrelCube = cubes.get(0);
-                double barrelHalfLength = new Vec3(xTurnBone.x / 16 - yTurnBone.x / 16 + barrelCube.getX() + barrelCube.getWidth() / 2,
-                        barrelCube.getY() + barrelCube.getHeight() / 2,
-                        xTurnBone.z / 16 - yTurnBone.z / 16 + barrelCube.getZ() + barrelCube.getDepth() / 2).length();
-                this.barrelLength = (float) (barrelHalfLength * 2);
-            }
-        }
-    }
-
-    @Override
-    protected void initOBBs() {
-        yTurnUnitOBBs = new ArrayList<>();
-        xTurnUnitOBBs = new ArrayList<>();
-        if (yTurnBone != null) {
-            List<BedrockCubePerFace> cubes = new ArrayList<>(yTurnBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-            for (BedrockCubePerFace cube : cubes) {
-                 yTurnUnitOBBs.add(VehicleBedrockCubeOBB.init(vehicle, yTurnBone, cube));
-            }
-            for (BedrockBone child : yTurnBone.getChildren()) {
-                List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-                for (BedrockCubePerFace cube : childCubes) {
-                    yTurnUnitOBBs.add(VehicleBedrockCubeOBB.init(vehicle, child, cube));
-                }
-            }
-        }
-        if (xTurnBone != null) {
-            List<BedrockCubePerFace> cubes = new ArrayList<>(xTurnBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-            for (BedrockCubePerFace cube : cubes) {
-                xTurnUnitOBBs.add(VehicleBedrockCubeOBB.init(vehicle, xTurnBone, cube));
-            }
-            for (BedrockBone child : xTurnBone.getChildren()) {
-                List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-                for (BedrockCubePerFace cube : childCubes) {
-                    xTurnUnitOBBs.add(VehicleBedrockCubeOBB.init(vehicle, child, cube));
-                }
-            }
-        }
     }
 
     @Override
@@ -152,7 +127,7 @@ public class WeaponUnit extends PartUnit {
             rotSelf.rotateY(Math.toRadians(-combineYRot()));
             if (isBarrel) {
                 Vec3 barrelCenterOffset = rotatedOffsetWithSelfRot(unitBedrockCubeOBB.offset());
-                Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitBedrockCubeOBB.bone().x / 16, unitBedrockCubeOBB.bone().y / 16, unitBedrockCubeOBB.bone().z / 16));
+                Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitBedrockCubeOBB.boneX / 16, unitBedrockCubeOBB.boneY / 16, unitBedrockCubeOBB.boneZ / 16));
                 Vec3 rel = barrelCenterOffset.subtract(barrelPivotOffset);
                 double len = rel.length();
                 float xRotR = Math.toRadians(xRot);

@@ -161,15 +161,15 @@ public class LocalVehiclePlayer {
                 }
                 pXRot *= 0.15f;
                 pYRot *= 0.15f;
-                scopeAimRotX = Mth.clamp(scopeAimRotX, weaponUnit.xRotMin, weaponUnit.xRotMax);
-                float t1 = Mth.abs(Mth.wrapDegrees(scopeAimRotX - barrelAimRotX)) / weaponUnit.xRotSpeed;
+                scopeAimRotX = Mth.clamp(scopeAimRotX, weaponUnit.getXRotMin(), weaponUnit.getXRotMax());
+                float t1 = Mth.abs(Mth.wrapDegrees(scopeAimRotX - barrelAimRotX)) / weaponUnit.getXRotSpeed();
                 float v1 = 1;
                 if (t1 > 5f) {
                     // 运动平滑
                     v1 = Math.max(0.001f, (70 - t1 * 10) / 100);
                 }
                 scopeAimRotX = Mth.wrapDegrees((float) (scopeAimRotX + pXRot * v1));
-                float t2 = Mth.abs(Mth.wrapDegrees(scopeAimRotY - barrelAimRotY)) / weaponUnit.yRotSpeed;
+                float t2 = Mth.abs(Mth.wrapDegrees(scopeAimRotY - barrelAimRotY)) / weaponUnit.getYRotSpeed();
                 float v2 = 1;
                 if (t2 > 5f) {
                     // 运动平滑

@@ -22,4 +22,6 @@ public class VehicleType<E extends AbstractVehicle, D extends BaseVehicleData> {
         // 由数据构建部件单元
         return List.of();
     }
+
+
 }

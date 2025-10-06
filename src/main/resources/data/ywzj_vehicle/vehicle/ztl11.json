@@ -1,30 +1,43 @@
 {
-  "structure_model": "xxx:xxx",
+  "structure_model": "ywzj_vehicle:bedrock/entity/ztl11_structure",
   "attributes": {
     "max_health": 200
     // ...
   },
-  "part_units": {
-    "ztl11_turret": {
+  "weapon_units": [
+    {
+      "id": "ztl11_turret",
       "type": "weapon",
-      "structure_bone": "xxx",
+      "structure_bone": "ztl11_turret",
       "name": "xxx.xxx",
-      "data": {
+      "rot_info": {
         "x_rot_speed": 1.105,
         "y_rot_speed": 1.105,
         "x_rot_max": 5,
         "x_rot_min": -18
       },
+      "operator_offset": [0, 1.5, 0],
+      "seat_offset": [0, 0, 0],
       "weapons": [
-        {
-          "type": "ywzj_vehicle:cannon"
-        }
+        "ywzj_vehicle:cannon"
       ]
     },
-    "ztl11_commander_machine_gun": {
+    {
+      "id": "ztl11_commander_machine_gun",
       "type": "weapon",
-      "parent": ""
-      // ...
+      "structure_bone": "ztl11_commander_machine_gun",
+      "parent": "ztl11_turret",
+      "rot_info": {
+        "x_rot_speed": 3,
+        "y_rot_speed": 3,
+        "x_rot_max": 15,
+        "x_rot_min": -18
+      },
+      "operator_offset": [0.5, 0.5, -1],
+      "seat_offset": [0, 0.3, -0.4],
+      "weapons": [
+        "ywzj_vehicle:cannon"
+      ]
     }
-  }
+  ]
 }

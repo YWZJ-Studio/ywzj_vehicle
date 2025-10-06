@@ -14,7 +14,7 @@ public class Lav150 extends WheeledVehicle {
 
     public Lav150(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.wide = 2.7f;
+        this.width = 2.7f;
         this.length = 3.61f;
     }
 
@@ -26,10 +26,10 @@ public class Lav150 extends WheeledVehicle {
     @Override
     public void initPartUnits() {
         WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null, null);
-        machineGunTurret.xRotSpeed = 3f;
-        machineGunTurret.yRotSpeed = 3f;
-        machineGunTurret.xRotMax = 15;
-        machineGunTurret.xRotMin = -30;
+        machineGunTurret.setXRotSpeed(3f);
+        machineGunTurret.setYRotSpeed(3f);
+        machineGunTurret.setXRotMax(15);
+        machineGunTurret.setXRotMin(-30);
         this.partUnits.add(machineGunTurret);
         this.operatorUnits.add(machineGunTurret);
     }
