@@ -42,7 +42,7 @@ public class Z10Renderer extends EntityRenderer<Z10> {
         BedrockBone propeller2 = model.getBoneMap().get("z10w_tail");
         BedrockBone camera = model.getBoneMap().get("z10w_camera");
         BedrockBone cannon = model.getBoneMap().get("z10w_canno");
-        pEntity.propellerRotation += (float) pEntity.getEngineSpeed() / 5;
+        pEntity.propellerRotation += pEntity.getPower() / 5;
         pEntity.propellerRotation %= 360;
 
         // 炮塔旋转

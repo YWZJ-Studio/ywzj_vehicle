@@ -41,7 +41,7 @@ public class Mi24Renderer extends EntityRenderer<Mi24> {
         BedrockBone propeller = model.getBoneMap().get("rotate");
         BedrockBone propeller2 = model.getBoneMap().get("tail");
         BedrockBone cannon = model.getBoneMap().get("canno");
-        pEntity.propellerRotation += (float) pEntity.getEngineSpeed() / 5;
+        pEntity.propellerRotation += pEntity.getPower() / 5;
         pEntity.propellerRotation %= 360;
 
         // 炮塔旋转

@@ -59,9 +59,6 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     @Override
     public void onEnterVehicle(LivingEntity pPlayer) {
         super.onEnterVehicle(pPlayer);
-        if (pPlayer.equals(controlUnit.operator)) {
-            playVehicleSound(getEngineStartSound(), true);
-        }
         this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN);
     }
 
@@ -118,7 +115,12 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                     engineRunSoundInstance.stop();
                     engineRunSoundInstance = null;
                 }
-                if (engineIdleSoundInstance == null) {
+                if (!hasPower()) {
+                    if (engineIdleSoundInstance != null) {
+                        engineIdleSoundInstance.stop();
+                        engineIdleSoundInstance = null;
+                    }
+                } else if (engineIdleSoundInstance == null) {
                     engineIdleSoundInstance = new VehicleSound(getEngineIdleSound(), soundDistance, 1f, true, 50, true, true, this.getId());
                     engineIdleSoundInstance.play();
                 }
@@ -142,11 +144,26 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     protected Vec3 tickMove() {
         if (getDriver() == null) {
             controlUnit.reset();
+        } else {
+            float power = getPower();
+            if (getFuel() == 0) {
+                setPower(0);
+            } else if (power < 100) {
+                if (power == 0) {
+                    playVehicleSound(getEngineStartSound(), true);
+                }
+                setPower(power + 1);
+            }
         }
         float vt = entityData.get(TURN_SPEED);
         int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
         float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
         vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
+        if (!hasPower()) {
+            entityData.set(FORWARD_SPEED, vf);
+            entityData.set(TURN_SPEED, 0f);
+            return new Vec3(0, 0, 0);
+        }
         // 前后控制
         if (controlUnit.forward || controlUnit.backward) {
             if (controlUnit.forward) {

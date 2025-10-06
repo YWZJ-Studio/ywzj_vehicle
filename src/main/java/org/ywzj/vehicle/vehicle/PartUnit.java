@@ -56,8 +56,13 @@ public class PartUnit {
     }
 
     public void tick() {
-        tickRot();
-        updateOBBs();
+        if (vehicle.hasPower()) {
+            tickRot();
+            updateOBBs();
+        } else {
+            this.xRotO = this.xRot;
+            this.yRotO = this.yRot;
+        }
     }
 
     protected void initStructureModel(String name) {

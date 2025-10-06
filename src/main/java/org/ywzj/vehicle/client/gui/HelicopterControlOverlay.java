@@ -31,10 +31,20 @@ public class HelicopterControlOverlay implements IGuiOverlay {
         int leftX = centerX - 120;
         int leftY = centerY - 21;
         // 信息
-        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " + helicopterVehicle.getEngineSpeed(), leftX, leftY, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " + helicopterVehicle.getCollectivePitch(), leftX, leftY + 12, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " + (int) (new Vec3(helicopterVehicle.getDeltaMovement().x, 0, helicopterVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000), leftX, leftY + 24, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(), centerX + 62, leftY + 24, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " +
+                (int) helicopterVehicle.getPower(),
+                leftX, leftY, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " +
+                helicopterVehicle.getCollectivePitch(),
+                leftX, leftY + 12, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " +
+                (int) (new Vec3(helicopterVehicle.getDeltaMovement().x, 0, helicopterVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
+                leftX, leftY + 24, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "燃油: " +
+                secondsToHms(helicopterVehicle.getFuel() / helicopterVehicle.fuelConsumptionPerTick / 20),
+                leftX, leftY + 36, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(),
+                centerX + 62, leftY + 24, 0x00FF00);
 
         // 高度变化
         int heightY = centerY - 21;
@@ -122,6 +132,16 @@ public class HelicopterControlOverlay implements IGuiOverlay {
         }
         pose.popPose();
 
+    }
+
+    public static String secondsToHms(float seconds) {
+        boolean neg = seconds < 0;
+        float abs = Math.abs(seconds);
+        long whole = (long) abs;
+        long hh = whole / 3600;
+        long mm = (whole % 3600) / 60;
+        long ss = whole % 60;
+        return String.format("%s%02d:%02d:%02d", neg ? "-" : "", hh, mm, ss);
     }
 
 }

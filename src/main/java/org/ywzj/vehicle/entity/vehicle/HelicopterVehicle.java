@@ -24,9 +24,8 @@ import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public abstract class HelicopterVehicle extends AbstractVehicle {
 
-    public static final EntityDataAccessor<Integer> ENGINE_SPEED = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
-    public float mainRotorForce = 1.3f * physicsEngine.gravityA * physicsEngine.mass;
+    public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
     public float xRotSpeed;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -47,6 +46,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     public HelicopterVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.soundDistance = 8;
+        this.fuelCapacity = 0.25f;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -64,7 +64,6 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(ENGINE_SPEED, 0);
         this.entityData.define(COLLECTIVE_PITCH, 0);
     }
 
@@ -107,12 +106,12 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
     @Override
     protected void tickSound() {
-        int engineSpeed = getEngineSpeed();
+        float engineSpeed = getPower();
         if (engineSpeed < 80 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
             engineStopSoundInstance = new VehicleSound(getEngineStopSound(), soundDistance, 1f, false, 50, true, true, this.getId());
             engineStopSoundInstance.play();
             if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.setVolume((float) engineSpeed / 100 * soundDistance);
+                engineStartSoundInstance.setVolume(engineSpeed / 100 * soundDistance);
             }
         }
         if (engineSpeed == 0 && engineStartSoundInstance != null) {
@@ -137,21 +136,26 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 engineRunSoundInstance.play();
             }
             if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setVolume(Math.max(0.2f * soundDistance, (float) engineSpeed / 100 * soundDistance));
+                engineRunSoundInstance.setVolume(Math.max(0.2f * soundDistance, engineSpeed / 100 * soundDistance));
             }
         }
     }
 
     @Override
     protected Vec3 tickMove() {
-        // 转速变化
-        int engineSpeed = getEngineSpeed();
-        if (getDriver() != null && engineSpeed < 100) {
-            engineSpeed += 1;
-        } else if (getDriver() == null && engineSpeed > 0) {
-            engineSpeed -= 1;
+        float power = getPower();
+        if (getDriver() == null) {
+            controlUnit.reset();
+            if (power > 0) {
+                setPower(power - 1);
+            }
+        } else {
+            if (getFuel() == 0) {
+                setPower(0);
+            } else if (power < 100) {
+                setPower(power + 1);
+            }
         }
-        entityData.set(ENGINE_SPEED, engineSpeed);
 
         // 总距控制
         int collectivePitch = getCollectivePitch();
@@ -162,13 +166,9 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
         }
         entityData.set(COLLECTIVE_PITCH, Mth.clamp(collectivePitch, 0, 100));
 
-        if (getDriver() == null) {
-            controlUnit.reset();
-        }
-
         airSpeed = getDeltaMovement();
         // 引擎转速与浆距得出力系数，该值越高，桨叶效率越高，则出力越高
-        double scale = ((double) getEngineSpeed() / 100) * ((double) getCollectivePitch() / 100);
+        double scale = ((double) getPower() / 100) * ((double) getCollectivePitch() / 100);
         // 桨叶出力方向的当前载具速度分量，该值越高，桨叶效率越低，则出力越低
         Vec3 vP = relativeRotDirection(new Vec3(0, 1, 0), false);
         double dVV = VectorUtil.project(airSpeed, vP).length() * Math.signum(airSpeed.dot(vP));
@@ -272,7 +272,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     @Override
     protected void tickParticle() {
         // 飞行扬尘效果
-        if (getEngineSpeed() > 30 && tickCount % 2 == 0) {
+        if (getPower() > 30 && tickCount % 2 == 0) {
             // 获取当前位置并从下方开始查找第一个实心方块
             BlockPos basePos = null;
             for (int y = 1; y <= 32; y++) {
@@ -293,17 +293,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                             double angle = (i * 2 * Math.PI) / pointCount;
                             double xOffset = radius * Math.cos(angle + bias) + random.nextDouble() * 0.5;
                             double zOffset = radius * Math.sin(angle + bias) + random.nextDouble() * 0.5;
-                            Vec3 particlePos = new Vec3(basePos.getX() + xOffset, basePos.getY() + 2 + random.nextDouble() * 1, basePos.getZ() + zOffset);
+                            Vec3 particlePos = new Vec3(basePos.getX() + xOffset, basePos.getY() + 1 + random.nextDouble() * 1, basePos.getZ() + zOffset);
                             level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 3.0F), true, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
                         }
                     }
                 }
             }
         }
-    }
-
-    public int getEngineSpeed() {
-        return entityData.get(ENGINE_SPEED);
     }
 
     public int getCollectivePitch() {

@@ -20,6 +20,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -30,6 +31,7 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
@@ -61,13 +63,18 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public float wide;
     public float length;
     public float height;
+    public float curbWeight;
+    public float fuelCapacity;
+    public float fuelConsumptionPerTick;
     private float zRot;
     public float zRotO;
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public int soundDistance;
     private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
     private VehicleBedrockCubeOBB mainCubeOBB;
-    protected final PhysicsEngine physicsEngine;
+    public final PhysicsEngine physicsEngine;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -79,6 +86,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.operatorUnits = new ArrayList<>();
         this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
         this.thirdPersonOffset = Vec3.ZERO;
+        this.curbWeight = 1;
+        this.fuelCapacity = 1;
+        this.fuelConsumptionPerTick = 0.00001f;
         this.soundDistance = 3;
         this.vehicleBodyOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
@@ -92,6 +102,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(Z_ROT, 0f);
+        this.entityData.define(FUEL, 0f);
+        this.entityData.define(POWER, 0f);
     }
 
     @Override
@@ -114,6 +126,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             tickParticle();
             spotterUnit.tick();
         } else {
+            tickFuel();
             Vec3 force = tickMove();
 //            DebugUtil.timer(null);
             tickCollide(force);
@@ -122,7 +135,17 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
     }
 
-    private void tickCollide(Vec3 force) {
+    protected void tickFuel() {
+        getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
+            float fuel = cap.getFuel();
+            fuel = Math.max(0, fuel - fuelConsumptionPerTick * getPower() / 100);
+            physicsEngine.mass = curbWeight + fuel;
+            entityData.set(FUEL, fuel);
+            setFuel(fuel);
+        });
+    }
+
+    protected void tickCollide(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
         List<VehicleBedrockCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
@@ -401,6 +424,13 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
         if (!this.level().isClientSide()) {
+            if (pPlayer.getItemInHand(InteractionHand.MAIN_HAND).getItem().equals(AllItems.FUEL_TANK.get())) {
+                ItemStack fuelTank = pPlayer.getItemInHand(pHand);
+                int durability = fuelTank.getMaxDamage() - fuelTank.getDamageValue();
+                durability = (int) (addFuel((float) durability / 1000) * 1000);
+                fuelTank.setDamageValue(fuelTank.getMaxDamage() - durability);
+                return InteractionResult.PASS;
+            }
             if (!pPlayer.startRiding(this)) {
                 return InteractionResult.PASS;
             }
@@ -528,6 +558,42 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return AllSounds.BULLET_HIT_OUTSIDE.get();
     }
 
+    public float getFuel() {
+        return entityData.get(FUEL);
+    }
+
+    public void setFuel(float amount) {
+        getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
+            cap.setFuel(amount);
+            entityData.set(FUEL, amount);
+            physicsEngine.mass = curbWeight + amount;
+        });
+    }
+
+    public float addFuel(float amount) {
+        float fuel = getFuel();
+        float space = fuelCapacity - fuel;
+        if (space > amount) {
+            setFuel(fuel + amount);
+            return 0;
+        } else {
+            setFuel(fuelCapacity);
+            return amount - space;
+        }
+    }
+
+    public float getPower() {
+        return entityData.get(POWER);
+    }
+
+    public void setPower(float power) {
+        entityData.set(POWER, Mth.clamp(power, 0, 100));
+    }
+
+    public boolean hasPower() {
+        return getPower() > 20;
+    }
+
     public Matrix4f getWheelsTransform(float ticks) {
         Matrix4f transform = new Matrix4f();
         transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo, getY()), (float) Mth.lerp(ticks, zo, getZ()));
@@ -537,16 +603,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     public Vector4f transformPosition(Matrix4f transform, float x, float y, float z) {
         return transform.transform(new Vector4f(x, y, z, 1));
-    }
-
-    @Override
-    public boolean shouldBeSaved() {
-        return true;
-    }
-
-    @Override
-    public boolean removeWhenFarAway(double v) {
-        return false;
     }
 
     @Override
@@ -633,10 +689,12 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             double d0 = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
             double d2 = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
             double d4 = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-            this.setYRot((float) this.lerpYRot);
+            double d6 = Mth.wrapDegrees(this.lerpYRot - (double)this.getYRot());
+            this.setYRot(this.getYRot() + (float)d6 / (float)this.lerpSteps);
             this.setXRot((float) this.lerpXRot);
             --this.lerpSteps;
             this.setPos(d0, d2, d4);
+            this.setRot(this.getYRot(), this.getXRot());
         }
 
         if (this.lerpHeadSteps > 0) {
@@ -719,6 +777,16 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
             this.hurt(this.damageSources().drown(), 1.0F);
         }
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return true;
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double v) {
+        return false;
     }
 
     @Override

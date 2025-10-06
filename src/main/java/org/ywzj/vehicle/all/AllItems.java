@@ -6,6 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.item.FuelTankItem;
 
 import java.util.LinkedHashMap;
 import java.util.function.Supplier;
@@ -15,11 +16,9 @@ public class AllItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, YwzjVehicle.MOD_ID);
     public static final LinkedHashMap<String, RegistryObject<Item>> ITEMS_LOOKUP = new LinkedHashMap<>();
 
-    public static <T extends Item> RegistryObject<Item> registerItem(AllTabs.Category category, String name, Supplier<T> item, boolean withGeoModel) {
-        return registerItem(category, name, item, withGeoModel, false);
-    }
+    public static final RegistryObject<Item> FUEL_TANK = registerItem(AllTabs.Category.MISC, "fuel_tank", () -> new FuelTankItem(new Item.Properties().durability(125)));
 
-    public static <T extends Item> RegistryObject<Item> registerItem(AllTabs.Category category, String name, Supplier<T> item, boolean withGeoModel, boolean isArmor) {
+    public static <T extends Item> RegistryObject<Item> registerItem(AllTabs.Category category, String name, Supplier<T> item) {
         RegistryObject<Item> registryObject = ITEMS.register(name, item);
 //        if (AllTabs.Category.MATERIAL.equals(category)) {
 //            AllTabs.MATERIAL_ITEMS.add(registryObject);

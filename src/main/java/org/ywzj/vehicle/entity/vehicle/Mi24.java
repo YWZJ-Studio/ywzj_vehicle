@@ -22,7 +22,7 @@ public class Mi24 extends HelicopterVehicle {
     public Mi24(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.physicsEngine.mass = 1.5f;
-        this.mainRotorForce = 1.2f * physicsEngine.gravityA * physicsEngine.mass;
+        this.mainRotorForce = 1.1f * physicsEngine.gravityA * physicsEngine.mass;
         this.xRotSpeedMax = 2f;
         this.yRotSpeedMax = 2f;
         this.zRotSpeedMax = 2f;
@@ -72,9 +72,9 @@ public class Mi24 extends HelicopterVehicle {
     @Override
     protected void tickParticle() {
         super.tickParticle();
-        int engineSpeed = getEngineSpeed();
+        float engineSpeed = getPower();
         int collectivePitch = getCollectivePitch();
-        if (!this.getPassengers().isEmpty() && engineSpeed > 0 && tickCount % Mth.clamp(10 - collectivePitch / 10, 3, 10) == 0) {
+        if ((!this.getPassengers().isEmpty() && engineSpeed > 0 && tickCount % Mth.clamp(10 - collectivePitch / 10, 3, 10) == 0) && hasPower()) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(3f)).add(v2.scale(-1)).add(0, 2.5, 0);

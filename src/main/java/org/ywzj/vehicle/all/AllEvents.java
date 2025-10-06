@@ -1,11 +1,16 @@
 package org.ywzj.vehicle.all;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.VehicleCapabilityProvider;
 
 public class AllEvents {
 
@@ -25,6 +30,13 @@ public class AllEvents {
                 if (player.isPassenger()) {
                     player.stopRiding();
                 }
+            }
+        }
+
+        @SubscribeEvent
+        public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
+            if (event.getObject() instanceof AbstractVehicle) {
+                event.addCapability(new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_capability"), new VehicleCapabilityProvider());
             }
         }
 

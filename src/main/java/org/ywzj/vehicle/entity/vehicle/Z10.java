@@ -67,9 +67,9 @@ public class Z10 extends HelicopterVehicle {
     @Override
     protected void tickParticle() {
         super.tickParticle();
-        int engineSpeed = getEngineSpeed();
+        float engineSpeed = getPower();
         int collectivePitch = getCollectivePitch();
-        if (!this.getPassengers().isEmpty() && engineSpeed > 0 && tickCount % Mth.clamp(10 - collectivePitch / 10, 3, 10) == 0) {
+        if ((!this.getPassengers().isEmpty() && engineSpeed > 0 && tickCount % Mth.clamp(10 - collectivePitch / 10, 3, 10) == 0) && hasPower()) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-1f)).add(v2.scale(-0.9)).add(0, 2.5, 0);

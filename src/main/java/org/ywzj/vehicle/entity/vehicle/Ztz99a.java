@@ -78,7 +78,7 @@ public class Ztz99a extends TrackedVehicle {
     @Override
     protected void tickParticle() {
         double velocity = Math.abs(entityData.get(FORWARD_SPEED)) * 20 + Math.abs(entityData.get(TURN_SPEED)) * 5;
-        if (!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) {
+        if ((!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) && hasPower()) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-3.7f)).add(v2.scale(-0.6)).add(0, 2, 0);
@@ -93,30 +93,41 @@ public class Ztz99a extends TrackedVehicle {
     @Override
     protected void tickSound() {
         super.tickSound();
-        for (PartUnit operatorUnit : operatorUnits) {
-            if (operatorUnit.getName().getString().equals("ztz99a_turret")) {
-                if (Math.abs(operatorUnit.yAimRot - operatorUnit.yRot) > 1) {
-                    if (turretTurnYSoundInstance == null) {
-                        turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
-                        turretTurnYSoundInstance.play();
+        if (hasPower()) {
+            for (PartUnit operatorUnit : operatorUnits) {
+                if (operatorUnit.getName().getString().equals("ztz99a_turret")) {
+                    if (Math.abs(operatorUnit.yAimRot - operatorUnit.yRot) > 1) {
+                        if (turretTurnYSoundInstance == null) {
+                            turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
+                            turretTurnYSoundInstance.play();
+                        }
+                    } else {
+                        if (turretTurnYSoundInstance != null) {
+                            turretTurnYSoundInstance.stop();
+                            turretTurnYSoundInstance = null;
+                        }
                     }
-                } else {
-                    if (turretTurnYSoundInstance != null) {
-                        turretTurnYSoundInstance.stop();
-                        turretTurnYSoundInstance = null;
+                    if (Math.abs(operatorUnit.xAimRot - operatorUnit.xRot) > 1 && operatorUnit.xRot < operatorUnit.xRotMax && operatorUnit.xRot > operatorUnit.xRotMin) {
+                        if (turretTurnXSoundInstance == null) {
+                            turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
+                            turretTurnXSoundInstance.play();
+                        }
+                    } else {
+                        if (turretTurnXSoundInstance != null) {
+                            turretTurnXSoundInstance.stop();
+                            turretTurnXSoundInstance = null;
+                        }
                     }
                 }
-                if (Math.abs(operatorUnit.xAimRot - operatorUnit.xRot) > 1 && operatorUnit.xRot < operatorUnit.xRotMax && operatorUnit.xRot > operatorUnit.xRotMin) {
-                    if (turretTurnXSoundInstance == null) {
-                        turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
-                        turretTurnXSoundInstance.play();
-                    }
-                } else {
-                    if (turretTurnXSoundInstance != null) {
-                        turretTurnXSoundInstance.stop();
-                        turretTurnXSoundInstance = null;
-                    }
-                }
+            }
+        } else {
+            if (turretTurnXSoundInstance != null) {
+                turretTurnXSoundInstance.stop();
+                turretTurnXSoundInstance = null;
+            }
+            if (turretTurnYSoundInstance != null) {
+                turretTurnYSoundInstance.stop();
+                turretTurnYSoundInstance = null;
             }
         }
     }

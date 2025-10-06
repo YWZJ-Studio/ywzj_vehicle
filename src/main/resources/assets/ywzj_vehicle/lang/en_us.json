@@ -1,4 +1,6 @@
 {
+  "tab.misc": "永无止境: 载具 - 杂项",
+  "item.ywzj_vehicle.fuel_tank": "燃油",
   "item_group.ywzj_vehicle.name": "Example",
   "block.ywzj_vehicle.test_block": "Example Block",
   "key.category.ywzj_vehicle": "永无止境：载具",
