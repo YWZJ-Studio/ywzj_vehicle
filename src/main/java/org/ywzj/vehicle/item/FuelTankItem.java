@@ -3,6 +3,7 @@ package org.ywzj.vehicle.item;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
@@ -12,16 +13,13 @@ import org.ywzj.vehicle.all.AllConfigs;
 
 public class FuelTankItem extends Item {
 
-    private final int capacity; // 最大燃油容量（mB）
-
-    public FuelTankItem(Properties properties, int capacity) {
+    public FuelTankItem(Properties properties) {
         super(properties);
-        this.capacity = capacity;
     }
 
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new FluidHandler(stack, capacity);
+        return new FluidHandler(stack, stack.getMaxDamage(), stack.getMaxDamage() - stack.getDamageValue());
     }
 
     public void remain(ItemStack stack, int amount) {
@@ -38,21 +36,16 @@ public class FuelTankItem extends Item {
 
         private final int capacity;
 
-        public FluidHandler(ItemStack container, int capacity) {
+        public FluidHandler(ItemStack container, int capacity, int amount) {
             super(container, capacity);
             this.capacity = capacity;
+            this.setFluid(new FluidStack(Fluids.WATER.getSource(), amount));
         }
 
         @Override
         public boolean canFillFluidType(FluidStack fluid) {
             String name = fluid.getFluid().getFluidType().toString();
             return AllConfigs.common.fuelNameWhiteList.get().stream().anyMatch(name::contains);
-        }
-
-        @Override
-        protected void setFluid(FluidStack fluid) {
-            super.setFluid(fluid);
-            syncDamageWithFluid();
         }
 
         @Override
