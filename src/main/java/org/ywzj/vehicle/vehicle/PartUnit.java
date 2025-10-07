@@ -16,7 +16,7 @@ import org.joml.Quaternionf;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerPartUnitRot;
 import org.ywzj.vehicle.util.EntityUtil;
 
@@ -139,7 +139,7 @@ public class PartUnit {
         }
     }
 
-    public static void onClientMessageReceived(ClientWeaponUnitControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         if (ctxSupplier.get().getSender() != null) {
             Level level = ctxSupplier.get().getSender().level();
             Entity entity = level.getEntity(message.vehicleEntityId);

@@ -19,7 +19,7 @@ public class AllEvents {
 
         @SubscribeEvent
         public static void onPlayerQuit(PlayerEvent.PlayerLoggedOutEvent event) {
-            if (event.getEntity().isPassenger()) {
+            if (event.getEntity().isPassenger() && event.getEntity().getVehicle() instanceof AbstractVehicle) {
                 event.getEntity().stopRiding();
             }
         }
@@ -27,7 +27,7 @@ public class AllEvents {
         @SubscribeEvent
         public void onPlayerTeleport(EntityTeleportEvent event) {
             if (event.getEntity() instanceof Player player) {
-                if (player.isPassenger()) {
+                if (player.isPassenger() && player.getVehicle() instanceof AbstractVehicle) {
                     player.stopRiding();
                 }
             }

@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.event.InputHandler;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -86,7 +86,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
             if (weaponUnit.xAimRot != rot.x || weaponUnit.yAimRot != rot.y) {
                 weaponUnit.xAimRot = rot.x;
                 weaponUnit.yAimRot = rot.y;
-                ClientWeaponUnitControl control = new ClientWeaponUnitControl();
+                ClientVehicleAction control = new ClientVehicleAction();
                 control.vehicleEntityId = this.getId();
                 control.weaponIndex = weaponUnit.getIndex();
                 control.xAimRot = rot.x;

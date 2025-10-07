@@ -21,14 +21,14 @@ public class VehicleCapability implements INBTSerializable<CompoundTag> {
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
-        tag.putFloat("fuel", fuel);
+        tag.putFloat("Fuel", fuel);
         return tag;
     }
 
     @Override
     public void deserializeNBT(CompoundTag tag) {
-        if (tag.contains("fuel", Tag.TAG_FLOAT)) {
-            fuel = tag.getFloat("fuel");
+        if (tag.contains("Fuel", Tag.TAG_FLOAT)) {
+            fuel = tag.getFloat("Fuel");
         }
     }
 

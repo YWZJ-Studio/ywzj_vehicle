@@ -21,6 +21,7 @@
   "key.ywzj_vehicle.change_seat_2.desc": "2号座位",
   "key.ywzj_vehicle.change_seat_3.desc": "3号座位",
   "key.ywzj_vehicle.change_seat_4.desc": "4号座位",
+  "key.ywzj_vehicle.debug_gui.desc": "调试信息",
   "tips.spotter": "未装备武器",
   "spotter": "乘员",
   "lav150_main_gun_turret": "炮塔",

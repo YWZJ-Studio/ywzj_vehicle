@@ -31,9 +31,9 @@ public class Channel {
                 ClientVehicleMoveControl::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
-        CHANNEL.registerMessage(PacketId.C_WEAPON_UNIT_CONTROL.value(), ClientWeaponUnitControl.class,
-                ClientWeaponUnitControl::encode, ClientWeaponUnitControl::decode,
-                ClientWeaponUnitControl::onClientMessageReceived,
+        CHANNEL.registerMessage(PacketId.C_WEAPON_UNIT_CONTROL.value(), ClientVehicleAction.class,
+                ClientVehicleAction::encode, ClientVehicleAction::decode,
+                ClientVehicleAction::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
         CHANNEL.registerMessage(PacketId.S_VEHICLE_SEATS_CHANGE.value(), ServerVehicleSeatsChange.class,

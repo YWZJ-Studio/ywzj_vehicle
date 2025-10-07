@@ -31,17 +31,16 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.ContainerMob;
 import org.ywzj.vehicle.entity.OBBEntity;
+import org.ywzj.vehicle.item.FuelTankItem;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
-import org.ywzj.vehicle.network.message.ServerPartUnitRot;
-import org.ywzj.vehicle.network.message.ServerSoundEvent;
-import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
+import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
@@ -52,6 +51,9 @@ import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends ContainerMob implements OBBEntity {
 
+    public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     private final AllVehicles.VehicleType vehicleType;
     public int seats;
     public List<Integer> passengerIdsBySeat;
@@ -68,9 +70,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public float fuelConsumptionPerTick;
     private float zRot;
     public float zRotO;
-    public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
-    public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
-    public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public int soundDistance;
     protected List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
@@ -130,6 +129,11 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             tickParticle();
             spotterUnit.tick();
         } else {
+            if (tickCount == 1) {
+                for (Entity passenger : new ArrayList<>(getPassengers())) {
+                    passenger.stopRiding();
+                }
+            }
             tickFuel();
             Vec3 force = tickMove();
 //            DebugUtil.timer(null);
@@ -373,6 +377,13 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
     }
 
+    public static void onClientVehicleAction(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        ServerPlayer player = ctxSupplier.get().getSender();
+        if (player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle) {
+            player.stopRiding();
+        }
+    }
+
     @OnlyIn(Dist.CLIENT)
     public static void onServerVehicleSeatsChange(ServerVehicleSeatsChange message) {
         Level level = Minecraft.getInstance().level;
@@ -428,17 +439,19 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
         if (!this.level().isClientSide()) {
-            if (pPlayer.getItemInHand(InteractionHand.MAIN_HAND).getItem().equals(AllItems.FUEL_TANK.get())) {
-                ItemStack fuelTank = pPlayer.getItemInHand(pHand);
-                int durability = fuelTank.getMaxDamage() - fuelTank.getDamageValue();
-                durability = (int) (addFuel((float) durability / 1000) * 1000);
-                fuelTank.setDamageValue(fuelTank.getMaxDamage() - durability);
-                return InteractionResult.PASS;
+            if (pHand == InteractionHand.MAIN_HAND) {
+                ItemStack itemStack = pPlayer.getItemInHand(pHand);
+                if (itemStack.getItem().equals(AllItems.FUEL_TANK.get())) {
+                    int amount = itemStack.getMaxDamage() - itemStack.getDamageValue();
+                    amount = (int) (addFuel((float) amount / 1000) * 1000);
+                    ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(itemStack, amount);
+                    return InteractionResult.SUCCESS;
+                }
+                if (!pPlayer.startRiding(this)) {
+                    return InteractionResult.PASS;
+                }
+                onEnterVehicle(pPlayer);
             }
-            if (!pPlayer.startRiding(this)) {
-                return InteractionResult.PASS;
-            }
-            onEnterVehicle(pPlayer);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
@@ -536,6 +549,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
     }
 
+    /**
+     * 某世界坐标系下的向量随载具三轴旋转后或前的向量
+     */
     public Vec3 relativeRotDirection(Vec3 worldDirection, boolean reverse) {
         Quaternionf q = rotYXZ();
         Matrix3f axisRollMat = new Matrix3f();
@@ -563,7 +579,11 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     public float getFuel() {
-        return entityData.get(FUEL);
+        float amount = entityData.get(FUEL);
+        if (amount == 0 && AllConfigs.common.infiniteFuel.get()) {
+            amount = Float.MIN_VALUE;
+        }
+        return amount;
     }
 
     public void setFuel(float amount) {

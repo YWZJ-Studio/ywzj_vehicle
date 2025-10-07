@@ -10,7 +10,6 @@
     "client.HumanoidModelMixin",
     "client.LevelRendererMixin",
     "client.MouseHandlerMixin",
-    "client.PlayerMixin",
     "client.ClientPacketListenerMixin",
     "client.MinecraftMixin"
   ],
@@ -21,6 +20,7 @@
     "common.ChunkMapMixin",
     "common.EntityMixin",
     "common.ServerEntityMixin",
+    "common.PlayerMixin",
     "tacz.EntityKineticBulletMixin",
     "tacz.EntityUtilMixin"
   ]

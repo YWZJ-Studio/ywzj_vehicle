@@ -2,13 +2,15 @@ package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.PartUnit;
 
 import java.util.function.Supplier;
 
-public class ClientWeaponUnitControl {
+public class ClientVehicleAction {
 
     public int vehicleEntityId;
+    public boolean leaveVehicle;
     public int weaponIndex;
     public boolean shoot;
     public float ammoX;
@@ -19,11 +21,15 @@ public class ClientWeaponUnitControl {
     public float xAimRot;
     public float yAimRot;
 
-    public ClientWeaponUnitControl() {}
+    public ClientVehicleAction() {}
 
-    public static ClientWeaponUnitControl decode(FriendlyByteBuf buf) {
-        ClientWeaponUnitControl control = new ClientWeaponUnitControl();
+    public static ClientVehicleAction decode(FriendlyByteBuf buf) {
+        ClientVehicleAction control = new ClientVehicleAction();
         control.vehicleEntityId = buf.readInt();
+        control.leaveVehicle = buf.readBoolean();
+        if (control.leaveVehicle) {
+            return control;
+        }
         control.weaponIndex =  buf.readInt();
         control.shoot = buf.readBoolean();
         if (control.shoot) {
@@ -41,6 +47,10 @@ public class ClientWeaponUnitControl {
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeInt(vehicleEntityId);
+        buf.writeBoolean(leaveVehicle);
+        if (leaveVehicle) {
+            return;
+        }
         buf.writeInt(weaponIndex);
         buf.writeBoolean(shoot);
         if (shoot) {
@@ -55,8 +65,14 @@ public class ClientWeaponUnitControl {
         }
     }
 
-    public static void onClientMessageReceived(ClientWeaponUnitControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ctxSupplier.get().enqueueWork(() -> WeaponUnit.onClientMessageReceived(message, ctxSupplier));
+    public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        ctxSupplier.get().enqueueWork(() -> {
+            if (message.leaveVehicle) {
+                AbstractVehicle.onClientVehicleAction(message, ctxSupplier);
+            } else {
+                PartUnit.onClientMessageReceived(message, ctxSupplier);
+            }
+        });
     }
 
 }

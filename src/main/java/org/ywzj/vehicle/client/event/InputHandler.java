@@ -18,9 +18,9 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
-import org.ywzj.vehicle.network.message.ClientWeaponUnitControl;
 import org.ywzj.vehicle.vehicle.ControlUnit;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
@@ -130,9 +130,15 @@ public class InputHandler {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_4,
             "key.category.ywzj_vehicle");
+    public static final KeyMapping DEBUG_GUI = new KeyMapping("key.ywzj_vehicle.debug_gui.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_SLASH,
+            "key.category.ywzj_vehicle");
     private static long lastFireTimeMillis;
     public static boolean freeCamera;
-    public static boolean leaveVehicle;
+    public static boolean debugGui;
     public static float xRotO;
     public static float yRotO;
 
@@ -154,6 +160,8 @@ public class InputHandler {
                     sendChangeSeat(vehicle, 2);
                 } else if (CHANGE_SEAT_4.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 3);
+                } else if (DEBUG_GUI.matches(event.getKey(), event.getScanCode())) {
+                    debugGui = !debugGui;
                 }
             }
         }
@@ -167,10 +175,13 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null) {
             return;
         }
-        leaveVehicle = LEAVE_VEHICLE.isDown();
         freeCamera = FREE_CAMERA.isDown();
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (player.equals(vehicle.controlUnit.operator)) {
+                if (LEAVE_VEHICLE.isDown()) {
+                    sendLeaveVehicle(vehicle);
+                    return;
+                }
                 ControlUnit controlUnit = new ControlUnit();
                 controlUnit.forward = FORWARD.isDown();
                 controlUnit.backward = BACKWARD.isDown();
@@ -240,16 +251,23 @@ public class InputHandler {
     }
 
     private static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        ClientWeaponUnitControl control = new ClientWeaponUnitControl();
-        control.vehicleEntityId = abstractVehicle.getId();
-        control.weaponIndex = weaponIndex;
-        control.shoot = true;
-        control.ammoX = (float) ammoSpawnPosition.x;
-        control.ammoY = (float) ammoSpawnPosition.y;
-        control.ammoZ = (float) ammoSpawnPosition.z;
-        control.ammoXRot = ammoXRot;
-        control.ammoYRot = ammoYRot;
-        Channel.CHANNEL.sendToServer(control);
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = abstractVehicle.getId();
+        action.weaponIndex = weaponIndex;
+        action.shoot = true;
+        action.ammoX = (float) ammoSpawnPosition.x;
+        action.ammoY = (float) ammoSpawnPosition.y;
+        action.ammoZ = (float) ammoSpawnPosition.z;
+        action.ammoXRot = ammoXRot;
+        action.ammoYRot = ammoYRot;
+        Channel.CHANNEL.sendToServer(action);
+    }
+
+    private static void sendLeaveVehicle(AbstractVehicle abstractVehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = abstractVehicle.getId();
+        action.leaveVehicle = true;
+        Channel.CHANNEL.sendToServer(action);
     }
 
 }
