@@ -201,10 +201,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 } else if (yDiff < 0) {
                     yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
                 }
-                if (Math.abs(yDiff) > yRotSpeed) {
+                if (Math.abs(yDiff) > 0.5) {
+                    if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
+                        yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
+                    }
                     this.setYRot(this.getYRot() + yRotSpeed);
                 } else {
-                    yRotSpeed = Math.signum(yRotSpeed) * (Math.max(0, Math.abs(yRotSpeed) - 1));
+                    yRotSpeed = 0;
                     this.setYRot(controlUnit.yRot);
                 }
             } else {
@@ -224,10 +227,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 } else if (xDiff < 0) {
                     xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
                 }
-                if (Math.abs(xDiff) > xRotSpeed) {
+                if (Math.abs(xDiff) > 0.5) {
+                    if (Math.abs(xDiff) <= Math.abs(xRotSpeed)) {
+                        xRotSpeed = (float) Mth.lerp(0.3, xRotSpeed, xDiff);
+                    }
                     this.setXRot(this.getXRot() + xRotSpeed);
                 } else {
-                    xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 1));
+                    xRotSpeed = 0;
                     this.setXRot(controlUnit.xRot);
                 }
             } else {
@@ -247,10 +253,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 } else if (zDiff < 0) {
                     zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
                 }
-                if (Math.abs(zDiff) > zRotSpeed) {
+                if (Math.abs(zDiff) > 0.5) {
+                    if (Math.abs(zDiff) <= Math.abs(zRotSpeed)) {
+                        zRotSpeed = (float) Mth.lerp(0.3, zRotSpeed, zDiff);
+                    }
                     this.setZRot(this.getZRot() + zRotSpeed);
                 } else {
-                    zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 1));
+                    zRotSpeed = 0;
                     this.setZRot(0);
                 }
             } else {

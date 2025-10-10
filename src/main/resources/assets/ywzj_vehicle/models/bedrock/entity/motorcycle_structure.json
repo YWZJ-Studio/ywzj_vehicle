@@ -6,7 +6,7 @@
 				"identifier": "geometry.unknown",
 				"texture_width": 128,
 				"texture_height": 128,
-				"visible_bounds_width": 4,
+				"visible_bounds_width": 5,
 				"visible_bounds_height": 2.5,
 				"visible_bounds_offset": [0, 0.75, 0]
 			},
@@ -16,8 +16,8 @@
 					"pivot": [0, 0, 0],
 					"cubes": [
 						{
-							"origin": [-7.3, 0, -19.55],
-							"size": [14.35, 23.15, 37.9],
+							"origin": [-7.225, 0, -19.35],
+							"size": [14.275, 23.15, 37.525],
 							"uv": {
 								"north": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
 								"east": {"uv": [0, 0], "uv_size": [37.9, 23.15]},

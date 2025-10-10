@@ -16,6 +16,7 @@ import java.util.List;
  * 使用基岩模型描述的载具结构块
  */
 public class VehicleBedrockCubeOBB {
+
     private final OBB obb;
     private final Quaternionf selfRot;
     private final List<CubePoint> cubePoints;
@@ -197,4 +198,5 @@ public class VehicleBedrockCubeOBB {
     public enum CubeFace {
         FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM
     }
+
 }

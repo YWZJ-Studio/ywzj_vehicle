@@ -131,15 +131,14 @@ public class PhysicsEngine {
         try {
             // 升力影响
             if (force.y >= gravityA * mass) {
-                velocity.y -= gravityA * mass;
+                velocity.y -= gravityA;
                 return new Vec3(velocity);
             }
 
             // 无任何接触，因转动惯量而继续转动，因重力而自由落体
             if (touchPoints.isEmpty()) {
                 centerRot(gravityCenter, axes);
-                velocity.y -= gravityA * mass;
-                velocity.y = Math.max(velocity.y, -gravityVMax);
+                velocity.y -= gravityA;
                 return new Vec3(velocity);
             }
 
@@ -198,30 +197,14 @@ public class PhysicsEngine {
                 if (VectorUtil.isPointInPolygon(gc, polygon)) {
                     velocity.y = Math.max(0, force.y);
                     rotV = 0;
-                    // 自动爬高
-                    DoubleSummaryStatistics stats = touchPoints.stream()
-                            .mapToDouble(p -> p.obbLocalPos().y)
-                            .summaryStatistics();
-                    double yRange = stats.getMax() - stats.getMin();
-                    if (yRange < vehicle.maxUpStep() + 1) {
-                        if (yRange >= vehicle.maxUpStep() || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
-                            touchPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
-                            VehicleBedrockCubeOBB.CubePoint liftPoint = touchPoints.get(0);
-                            double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
-                                    ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                                            || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
-                            if (liftHeight > vehicle.position().y && (liftHeight - vehicle.position().y) <= (vehicle.maxUpStep() + MAGIC_NUMBER / 10)) {
-                                vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
-                            }
-                        }
-                    }
+                    climb(touchPoints);
                     // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                    double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
-                    double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
-                    if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER) {
+                    double angleWidth = Math.toDegrees(Math.atan2(0.55, physicsCube.getWidth()));
+                    double angleDepth = Math.toDegrees(Math.atan2(0.55, physicsCube.getDepth()));
+                    if (Mth.abs(vehicle.getZRot()) < angleWidth + MAGIC_NUMBER) {
                         vehicle.setZRot(0);
                     }
-                    if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER) {
+                    if (Mth.abs(vehicle.getXRot()) < angleDepth + MAGIC_NUMBER) {
                         vehicle.setXRot(0);
                         vehicle.hurtMarked = true;
                     }
@@ -254,7 +237,6 @@ public class PhysicsEngine {
             } else if (localForcePoints.size() == 1) {
                 Vector3f v = new Vector3f(gravityCenter).sub(localForcePoints.get(0));
                 if (v.x == 0 && v.z == 0) {
-                    this.velocity.y = Math.max(0, force.y);
                     rotV = 0;
                     return new Vec3(velocity);
                 }
@@ -264,8 +246,7 @@ public class PhysicsEngine {
             } else {
                 // 重力在三轴方向上的分力所对应三面无接触点，则无支持力，因转动惯量而继续转动，因重力而自由落体
                 centerRot(gravityCenter, axes);
-                velocity.y -= gravityA * mass;
-                velocity.y = Math.max(velocity.y, -gravityVMax);
+                velocity.y -= gravityA;
                 return new Vec3(velocity);
             }
 
@@ -281,6 +262,32 @@ public class PhysicsEngine {
             this.velocity = velocity;
         }
         return new Vec3(velocity);
+    }
+
+    public void climb(List<VehicleBedrockCubeOBB.CubePoint> touchPoints) {
+        List<VehicleBedrockCubeOBB.CubePoint> climbPoints = new ArrayList<>(touchPoints.stream().filter(p ->
+                        p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT
+                                || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BOTTOM
+                                || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK)
+                .toList());
+        // 自动爬高
+        DoubleSummaryStatistics stats = climbPoints.stream()
+                .mapToDouble(p -> p.obbLocalPos().y)
+                .summaryStatistics();
+        double yRange = stats.getMax() - stats.getMin();
+        double liftLimit = vehicle.maxUpStep() + 1;
+        if (yRange < liftLimit) {
+            if (yRange >= vehicle.maxUpStep() || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
+                climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+                VehicleBedrockCubeOBB.CubePoint liftPoint = climbPoints.get(0);
+                double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
+                        ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                                || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
+                if (liftHeight > vehicle.position().y) {
+                    vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
+                }
+            }
+        }
     }
 
     private void checkDirection(Vector2f rotToPoint) {

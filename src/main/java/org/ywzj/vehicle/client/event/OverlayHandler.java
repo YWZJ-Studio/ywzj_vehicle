@@ -25,6 +25,9 @@ public class OverlayHandler {
             if (event.getOverlay().id().equals(VanillaGuiOverlay.CROSSHAIR.id())) {
                 event.setCanceled(true);
             }
+            if (event.getOverlay().id().equals(VanillaGuiOverlay.MOUNT_HEALTH.id())) {
+                event.setCanceled(true);
+            }
         }
     }
 

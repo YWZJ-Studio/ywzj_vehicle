@@ -70,6 +70,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public float fuelConsumptionPerTick;
     private float zRot;
     public float zRotO;
+    public float lerpZRot;
     public int soundDistance;
     protected List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
@@ -113,7 +114,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
         super.onSyncedDataUpdated(pKey);
         if (Z_ROT.equals(pKey)) {
-            zRot = this.entityData.get(Z_ROT);
+            this.lerpZRot = this.entityData.get(Z_ROT);
         }
     }
 
@@ -710,14 +711,16 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public void aiStep() {
         if (this.lerpSteps > 0) {
-            double d0 = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
-            double d2 = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
-            double d4 = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-            double d6 = Mth.wrapDegrees(this.lerpYRot - (double)this.getYRot());
-            this.setYRot(this.getYRot() + (float)d6 / (float)this.lerpSteps);
+            double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
+            double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
+            double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
+            double dYRot = Mth.wrapDegrees(this.lerpYRot - (double)this.getYRot());
+            double dZRot = Mth.wrapDegrees(this.lerpZRot - (double)this.getZRot());
+            this.setYRot(this.getYRot() + (float)dYRot / (float)this.lerpSteps);
+            this.setZRot((this.getZRot() + (float)dZRot / (float)this.lerpSteps) % 360.0F);
             this.setXRot((float) this.lerpXRot);
             --this.lerpSteps;
-            this.setPos(d0, d2, d4);
+            this.setPos(dX, dY, dZ);
             this.setRot(this.getYRot(), this.getXRot());
         }
 
@@ -730,13 +733,13 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         double d1 = vec31.x;
         double d3 = vec31.y;
         double d5 = vec31.z;
-        if (java.lang.Math.abs(vec31.x) < 0.003D) {
+        if (Math.abs(vec31.x) < 0.003D) {
             d1 = 0.0D;
         }
-        if (java.lang.Math.abs(vec31.y) < 0.003D) {
+        if (Math.abs(vec31.y) < 0.003D) {
             d3 = 0.0D;
         }
-        if (java.lang.Math.abs(vec31.z) < 0.003D) {
+        if (Math.abs(vec31.z) < 0.003D) {
             d5 = 0.0D;
         }
         this.setDeltaMovement(d1, d3, d5);
@@ -775,9 +778,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             if (!this.level().isClientSide && !this.isDeadOrDying()) {
                 int i = this.getTicksFrozen();
                 if (this.isInPowderSnow && this.canFreeze()) {
-                    this.setTicksFrozen(java.lang.Math.min(this.getTicksRequiredToFreeze(), i + 1));
+                    this.setTicksFrozen(Math.min(this.getTicksRequiredToFreeze(), i + 1));
                 } else {
-                    this.setTicksFrozen(java.lang.Math.max(0, i - 2));
+                    this.setTicksFrozen(Math.max(0, i - 2));
                 }
             }
             this.removeFrost();

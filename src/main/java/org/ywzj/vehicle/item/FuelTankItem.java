@@ -1,13 +1,16 @@
 package org.ywzj.vehicle.item;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllConfigs;
 
@@ -19,7 +22,17 @@ public class FuelTankItem extends Item {
 
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new FluidHandler(stack, stack.getMaxDamage(), stack.getMaxDamage() - stack.getDamageValue());
+        Fluid fluid = Fluids.WATER;
+        if (stack.hasTag() && stack.getTag().contains("Fluid")) {
+            ResourceLocation fluidId = new ResourceLocation(stack.getTag().getCompound("Fluid").getString("FluidName"));
+            fluid = ForgeRegistries.FLUIDS.getValue(fluidId);
+            if (fluid == null) {
+                fluid = Fluids.WATER;
+            }
+        }
+        int capacity = stack.getMaxDamage();
+        int amount = capacity - stack.getDamageValue();
+        return new FluidHandler(stack, capacity, amount, fluid);
     }
 
     public void remain(ItemStack stack, int amount) {
@@ -36,10 +49,10 @@ public class FuelTankItem extends Item {
 
         private final int capacity;
 
-        public FluidHandler(ItemStack container, int capacity, int amount) {
+        public FluidHandler(ItemStack container, int capacity, int amount, Fluid fluid) {
             super(container, capacity);
             this.capacity = capacity;
-            this.setFluid(new FluidStack(Fluids.WATER.getSource(), amount));
+            this.setFluid(new FluidStack(fluid, amount));
         }
 
         @Override
