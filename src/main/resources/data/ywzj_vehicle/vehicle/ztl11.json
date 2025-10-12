@@ -4,6 +4,17 @@
     "max_health": 200
     // ...
   },
+  "movement": {
+
+  },
+  "engine": {
+    "max_capacity": 100.0,
+    "consumption_per_tick": 0.1,
+    "type": "liquid",
+    "fuel_types": [
+      "minecraft:lava"
+    ]
+  },
   "weapon_units": [
     {
       "id": "ztl11_turret",

@@ -97,6 +97,8 @@ dependencies {
         jarJar.ranged(it, "[0.3.6,)")
     }
 
+    runtimeOnly(fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4-1.20.1-alpha'))
+
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 

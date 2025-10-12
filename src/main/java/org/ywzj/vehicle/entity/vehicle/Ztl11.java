@@ -21,6 +21,7 @@ public class Ztl11 extends WheeledVehicle {
 
     @Override
     public void initData() {
+        this.setMaxUpStep(1.1f);
         VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
             this.height = data.getHeight();
             this.width = data.getWidth();
