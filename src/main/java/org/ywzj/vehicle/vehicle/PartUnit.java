@@ -170,6 +170,10 @@ public class PartUnit {
         return vehicle;
     }
 
+    public LivingEntity getOperator() {
+        return operator;
+    }
+
     public void setOperator(LivingEntity operator) {
         this.operator = operator;
     }
@@ -205,4 +209,21 @@ public class PartUnit {
     public void setXRotMin(float xRotMin) {
         this.xRotMin = xRotMin;
     }
+
+    public float getYRotMax() {
+        return yRotMax;
+    }
+
+    public void setYRotMax(float yRotMax) {
+        this.yRotMax = yRotMax;
+    }
+
+    public float getYRotMin() {
+        return yRotMin;
+    }
+
+    public void setYRotMin(float yRotMin) {
+        this.yRotMin = yRotMin;
+    }
+
 }

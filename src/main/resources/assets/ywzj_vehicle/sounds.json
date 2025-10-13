@@ -10,6 +10,20 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.bullet_hit_outside"
   },
+  "missile_launch": {
+    "sounds": [
+      "ywzj_vehicle:misc/missile_start_light_001",
+      "ywzj_vehicle:misc/missile_start_light_002",
+      "ywzj_vehicle:misc/missile_start_light_003"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.missile_launch"
+  },
+  "rocket_flying": {
+    "sounds": [
+      "ywzj_vehicle:misc/rocket_loop_very_close"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.rocket_flying"
+  },
   "cannon_125mm_shot": {
     "sounds": [
       "ywzj_vehicle:misc/cannon_125mm_shot_01",

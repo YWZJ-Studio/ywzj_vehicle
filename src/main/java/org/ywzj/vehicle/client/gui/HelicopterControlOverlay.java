@@ -28,61 +28,18 @@ public class HelicopterControlOverlay implements IGuiOverlay {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
 
-        int leftX = centerX - 120;
-        int leftY = centerY - 21;
-        // 信息
-        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " +
-                (int) helicopterVehicle.getPower(),
-                leftX, leftY, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " +
-                helicopterVehicle.getCollectivePitch(),
-                leftX, leftY + 12, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " +
-                (int) (new Vec3(helicopterVehicle.getDeltaMovement().x, 0, helicopterVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
-                leftX, leftY + 24, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "燃油: " +
-                secondsToHms(helicopterVehicle.getFuel() / helicopterVehicle.fuelConsumptionPerTick / 20),
-                leftX, leftY + 36, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(),
-                centerX + 62, leftY + 24, 0x00FF00);
+        // 主信息
+        renderMainInfo(guiGraphics, centerX, centerY, helicopterVehicle);
 
-        // 高度变化
-        int heightY = centerY - 21;
-        int heightX = centerX + 110;
-        for (int step = 0; step < 17; step++) {
-            boolean flag = step % 4 == 0;
-            guiGraphics.fill((flag ? heightX : heightX + 5), heightY, heightX + 10, heightY + 1, 0xFF00FF00);
-            heightY += 3;
-        }
-        // 高度变化箭头
-        PoseStack pose = guiGraphics.pose();
-        pose.pushPose();
-        {
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-            heightY = (int) (centerY + 3 + (24 * -helicopterVehicle.getDeltaMovement().y));
-            heightX = centerX + 123;
-            pose.translate(heightX, heightY, 0);
-            BufferBuilder buf = Tesselator.getInstance().getBuilder();
-            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            buf.vertex(pose.last().pose(), 0, 0, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(pose.last().pose(), 6, 3, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(pose.last().pose(), 6, -3, 0).color(0, 255, 0, 255).endVertex();
-            Tesselator.getInstance().end();
-            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (helicopterVehicle.getDeltaMovement().y * 20)), 12, -4, 0x00FF00);
-
-            RenderSystem.disableBlend();
-        }
-        pose.popPose();
+        // 高度信息
+        renderHeightInfo(guiGraphics, centerX, centerY, helicopterVehicle);
 
         // 速度矢量
         Vec3 v = vehicle.relativeRotDirection(helicopterVehicle.getDeltaMovement(), true);
         float arrowLength = (float) (15.0f * v.length() / helicopterVehicle.maxAirSpeed);
         float arrowSize = 4.0f;
 
-        pose = guiGraphics.pose();
+        PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         {
             RenderSystem.enableBlend();
@@ -132,6 +89,59 @@ public class HelicopterControlOverlay implements IGuiOverlay {
         }
         pose.popPose();
 
+    }
+
+    public static void renderMainInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle) {
+        int leftX = centerX - 120;
+        int leftY = centerY - 21;
+        // 信息
+        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " +
+                        (int) helicopterVehicle.getPower(),
+                leftX, leftY, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " +
+                        helicopterVehicle.getCollectivePitch(),
+                leftX, leftY + 12, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " +
+                        (int) (new Vec3(helicopterVehicle.getDeltaMovement().x, 0, helicopterVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
+                leftX, leftY + 24, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "燃油: " +
+                        secondsToHms(helicopterVehicle.getFuel() / helicopterVehicle.fuelConsumptionPerTick / 20),
+                leftX, leftY + 36, 0x00FF00);
+        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(),
+                centerX + 62, leftY + 24, 0x00FF00);
+    }
+
+    public static void renderHeightInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle) {
+        // 高度变化
+        int heightY = centerY - 21;
+        int heightX = centerX + 110;
+        for (int step = 0; step < 17; step++) {
+            boolean flag = step % 4 == 0;
+            guiGraphics.fill((flag ? heightX : heightX + 5), heightY, heightX + 10, heightY + 1, 0xFF00FF00);
+            heightY += 3;
+        }
+        // 高度变化箭头
+        PoseStack pose = guiGraphics.pose();
+        pose.pushPose();
+        {
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+            heightY = (int) (centerY + 3 + (24 * -helicopterVehicle.getDeltaMovement().y));
+            heightX = centerX + 123;
+            pose.translate(heightX, heightY, 0);
+            BufferBuilder buf = Tesselator.getInstance().getBuilder();
+            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.vertex(pose.last().pose(), 0, 0, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(pose.last().pose(), 6, 3, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(pose.last().pose(), 6, -3, 0).color(0, 255, 0, 255).endVertex();
+            Tesselator.getInstance().end();
+            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (helicopterVehicle.getDeltaMovement().y * 20)), 12, -4, 0x00FF00);
+
+            RenderSystem.disableBlend();
+        }
+        pose.popPose();
     }
 
     public static String secondsToHms(float seconds) {

@@ -2,5 +2,5 @@
   "type": "ywzj_vehicle:cannon",
   "damage": 25,
   "headshot_multiplier": 1.5,
-  "shoot_interval": 50
+  "shoot_interval": 500
 }

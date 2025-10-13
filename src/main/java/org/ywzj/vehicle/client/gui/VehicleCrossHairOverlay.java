@@ -152,7 +152,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         return VectorUtil.worldToScreen(hitPos);
     }
 
-    private static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
+    public static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
         float c = 2 * 3.1415f / 32;
         for (int i = 0; i < 32; i += 1) {
             float rx = Mth.cos(c * i) * r;
@@ -161,7 +161,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         }
     }
 
-    private static void drawSquare(GuiGraphics guiGraphics, int x, int y, int size, int color) {
+    public static void drawSquare(GuiGraphics guiGraphics, int x, int y, int size, int color) {
         int half = size / 2;
         int left = x - half;
         int right = x + half;
@@ -183,7 +183,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         poseStack.popPose();
     }
 
-    private static void drawReticle(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {
+    public static void drawReticle(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {

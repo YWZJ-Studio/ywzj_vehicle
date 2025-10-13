@@ -15,6 +15,10 @@ public class BedrockModelLoader {
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(BedrockModelRegisterEvent event) {
         event.register(TEST_MODEL, BedrockModel::new);
+
+        //todo: 统一武器注册
+        event.register(YwzjVehicle.modLoc("bedrock/entity/missile_akd10"), BedrockModel::new);
+
         AllVehicles.getVehicleTypes().forEach(vehicle -> {
             event.register(vehicle.getVisualBedrockModel(), BedrockModel::new);
             event.register(vehicle.getStructureBedrockModel(), BedrockModel::new);

@@ -26,6 +26,8 @@ public class WeaponUnit extends PartUnit {
 
     private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
     private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
+    private float zoomMax;
+    private float zoom;
     private Vec3 boltOffset;
     private float barrelLength;
     private final Vec3 operatorOffset;
@@ -64,6 +66,10 @@ public class WeaponUnit extends PartUnit {
     public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength,
                       Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
+
+        this.zoomMax = 2;
+        this.zoom = 1;
+
         if (this.boltOffset == null) {
             // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
             this.boltOffset = boltOffset;
@@ -203,7 +209,11 @@ public class WeaponUnit extends PartUnit {
     }
 
     public Vec2 worldRot() {
-        Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, combineYRot()), false);
+        return worldRot(xRot, baseWeaponUnit != null ? baseWeaponUnit.combineYRot() : 0 + yRot);
+    }
+
+    public Vec2 worldRot(float xRot, float yRot) {
+        Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, baseWeaponUnit != null ? baseWeaponUnit.combineYRot() : 0 + yRot), false);
         float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
         return new Vec2(pitch, yaw);
@@ -257,6 +267,18 @@ public class WeaponUnit extends PartUnit {
         float dx = (float) (offset.z - offset.x);
         float dy = (float) (offset.w - offset.y);
         return new Vec3(offset.x + dx * cos - dy * sin, offsetFromVehicle.y, offset.y + dx * sin + dy * cos);
+    }
+
+    public float getZoom() {
+        return zoom;
+    }
+
+    public void switchZoom() {
+        if (zoom == zoomMax) {
+            zoom = 1;
+        } else {
+            zoom = zoomMax;
+        }
     }
 
     public void setSeatOffset(Vec3 seatOffset) {

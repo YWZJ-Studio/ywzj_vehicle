@@ -12,6 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
+import org.ywzj.vehicle.entity.weapon.MissileEntity;
 
 public class AllEntities {
 
@@ -28,6 +29,18 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .setCustomClientFactory(BulletEntity::new)
                     .build("bullet"));
+
+    public static final RegistryObject<EntityType<MissileEntity>> MISSILE = ENTITIES.register("missile",
+            () -> EntityType.Builder.<MissileEntity>of(MissileEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(0.0625F, 0.0625F)
+                    .clientTrackingRange(16)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .setCustomClientFactory(MissileEntity::new)
+                    .build("missile"));
 
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {

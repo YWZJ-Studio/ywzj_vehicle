@@ -1,19 +1,20 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.item.builder.GunItemBuilder;
 import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.util.TaczHelper;
+import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -44,17 +45,17 @@ public class Z10 extends HelicopterVehicle {
         WeaponUnit turret = new WeaponUnit("z10",
                 0,
                 this,
-                new Vec3(0, 4.54d, -0.375d),
+                new Vec3(0, 0.5d, 5d),
                 1f,
-                new Vec3(0, 0d, -6d),
-                new Vec3(0, -2.2d, -1.2d),
+                new Vec3(0, 0.5d, 0d),
+                new Vec3(0, 2d, 0d),
                 null);
         turret.setXRotSpeed(60f / 20);
         turret.setYRotSpeed(60f / 20);
         turret.setXRotMax(45f);
         turret.setXRotMin(-13f);
-        turret.yRotMax = 90f;
-        turret.yRotMin = -90f;
+        turret.setYRotMax(90f);
+        turret.setYRotMin(-90f);
         this.partUnits.add(turret);
         this.operatorUnits.add(turret);
         this.spotterUnit = new SpotterUnit(this,
@@ -86,6 +87,7 @@ public class Z10 extends HelicopterVehicle {
             .setAmmoCount(1)
             .setAmmoInBarrel(true)
             .build();
+    private int count;
 
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
@@ -93,11 +95,24 @@ public class Z10 extends HelicopterVehicle {
 //            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
 //            this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
 
-            IGunOperator.fromLivingEntity(this).draw(() -> gunRPG);
+//            IGunOperator.fromLivingEntity(this).draw(() -> gunRPG);
+//            Vec3 v1 = this.getLookAngle();
+//            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
+//            TaczHelper.shoot(this.position().add(v2.scale(2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
+//            TaczHelper.shoot(this.position().add(v2.scale(-2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
+
+            //todo: 测试导弹
+            this.level().playSound(null, this, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
+            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), level());
+            missileEntity.shooter = weaponUnit.getOperator();
+            missileEntity.vehicle = this;
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            TaczHelper.shoot(this.position().add(v2.scale(2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-            TaczHelper.shoot(this.position().add(v2.scale(-2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
+            Vec3 missilePosLeft = this.position().add(v2.scale(2));
+            Vec3 missilePosRight = this.position().add(v2.scale(-2));
+            missileEntity.setPos(count % 2 == 0 ? missilePosLeft : missilePosRight);
+            count += 1;
+            level().addFreshEntity(missileEntity);
 
         }
     }
