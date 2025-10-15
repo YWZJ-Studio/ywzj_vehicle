@@ -76,7 +76,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         }
         if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             Vec2 rot = null;
-            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
             } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 rot = LocalVehiclePlayer.instance.scopeAimRot();

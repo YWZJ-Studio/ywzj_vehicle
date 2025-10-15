@@ -8,6 +8,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
+import org.ywzj.vehicle.client.gui.ScopeOverlay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
@@ -36,7 +37,8 @@ public class LocalVehiclePlayerEvent {
             if (entity.getVehicle() instanceof AbstractVehicle vehicle
                     && vehicle.getOwnOperatorUnit(livingEntity) instanceof WeaponUnit weaponUnit
                     && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                event.setFOV(magnificationToFov(1 + (weaponUnit.getZoom() - 1), event.getFOV()));
+                ScopeOverlay.fov = (float) magnificationToFov(1 + (weaponUnit.getZoom() - 1), event.getFOV());
+                event.setFOV(ScopeOverlay.fov);
             }
         }
     }

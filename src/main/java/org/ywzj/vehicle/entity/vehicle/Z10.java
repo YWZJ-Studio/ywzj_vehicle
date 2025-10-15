@@ -47,7 +47,8 @@ public class Z10 extends HelicopterVehicle {
                 this,
                 new Vec3(0, 0.5d, 5d),
                 1f,
-                new Vec3(0, 0.5d, 0d),
+                null,
+                new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
         turret.setXRotSpeed(60f / 20);
@@ -102,19 +103,19 @@ public class Z10 extends HelicopterVehicle {
 //            TaczHelper.shoot(this.position().add(v2.scale(-2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
 
             //todo: 测试导弹
-            this.level().playSound(null, this, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
-            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), level());
-            missileEntity.shooter = weaponUnit.getOperator();
-            missileEntity.vehicle = this;
+            //todo: 导弹name从武器站当前武器的配置名取
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 missilePosLeft = this.position().add(v2.scale(2));
             Vec3 missilePosRight = this.position().add(v2.scale(-2));
-            missileEntity.setPos(count % 2 == 0 ? missilePosLeft : missilePosRight);
             count += 1;
-            level().addFreshEntity(missileEntity);
+            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), level());
+            missileEntity.shoot(this, "akd10", count % 2 == 0 ? missilePosLeft : missilePosRight, weaponUnit.getOperator());
+            this.level().playSound(null, this, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
+            this.level().addFreshEntity(missileEntity);
 
         }
+
     }
 
 }

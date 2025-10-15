@@ -30,6 +30,7 @@ public class WeaponUnit extends PartUnit {
     private float zoom;
     private Vec3 boltOffset;
     private float barrelLength;
+    private Vec3 opticalSightOffset;
     private final Vec3 operatorOffset;
     private Vec3 seatOffset;
     private WeaponUnit baseWeaponUnit;
@@ -39,8 +40,11 @@ public class WeaponUnit extends PartUnit {
 
     public WeaponUnit(WeaponUnitData data, int index, AbstractVehicle vehicle) {
         super(Component.translatable(data.getName()), index, vehicle);
+        this.zoomMax = 8;
+        this.zoom = 1;
         this.boltOffset = data.getBoltOffset();
         this.barrelLength = data.getBarrelLength();
+        this.opticalSightOffset = data.getOpticalSightOffset();
         this.operatorOffset = data.getOperatorOffset();
         this.seatOffset = data.getSeatOffset();
         this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
@@ -63,11 +67,12 @@ public class WeaponUnit extends PartUnit {
     }
 
     @Deprecated
-    public WeaponUnit(String name, int index, AbstractVehicle vehicle, Vec3 boltOffset, float barrelLength,
-                      Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
+    public WeaponUnit(String name, int index, AbstractVehicle vehicle,
+                      Vec3 boltOffset, float barrelLength,
+                      Vec3 opticalSightOffset, Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
 
-        this.zoomMax = 2;
+        this.zoomMax = 8;
         this.zoom = 1;
 
         if (this.boltOffset == null) {
@@ -78,7 +83,9 @@ public class WeaponUnit extends PartUnit {
             // 炮管长度，为发射物生成位置与炮闩位置的距离
             this.barrelLength = barrelLength;
         }
-        // 武器站操作员镜头偏移，为操作玩家的摄像机相对于炮闩的偏移
+        // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于炮闩的偏移
+        this.opticalSightOffset = opticalSightOffset;
+        // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于炮闩的偏移
         this.operatorOffset = operatorOffset;
         // 武器站操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
         this.seatOffset = seatOffset;
@@ -180,12 +187,19 @@ public class WeaponUnit extends PartUnit {
         return vehicle.relativeRotPos(boltPosition);
     }
 
+    public Vec3 worldOpticalSightPosition() {
+        if (opticalSightOffset == null) {
+            return worldOperatorPosition();
+        }
+        return worldPosition(boltOffset.add(opticalSightOffset));
+    }
+
     public Vec3 worldOperatorPosition() {
         if (operatorOffset == null) {
             float eyeHeight = operator == null ? 2 : operator.getEyeHeight();
             return worldPosition(boltOffset.add(new Vec3(0, eyeHeight, 0)));
         }
-        return worldPosition(operatorOffset.add(boltOffset));
+        return worldPosition(boltOffset.add(operatorOffset));
     }
 
     public Vec3 worldSeatPosition() {
@@ -279,6 +293,14 @@ public class WeaponUnit extends PartUnit {
         } else {
             zoom = zoomMax;
         }
+    }
+
+    public Vec3 getBoltOffset() {
+        return boltOffset;
+    }
+
+    public WeaponUnit getBaseWeaponUnit() {
+        return baseWeaponUnit;
     }
 
     public void setSeatOffset(Vec3 seatOffset) {

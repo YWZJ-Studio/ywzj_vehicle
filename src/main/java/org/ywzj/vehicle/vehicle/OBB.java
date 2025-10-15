@@ -193,7 +193,7 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
     }
 
     // 世界坐标转局部坐标
-    private Vector3f worldToLocal(Vector3f worldPoint, Vector3f[] axes) {
+    public Vector3f worldToLocal(Vector3f worldPoint, Vector3f[] axes) {
         Vector3f rel = new Vector3f(worldPoint).sub(center);
         return new Vector3f(
                 rel.dot(axes[0]),

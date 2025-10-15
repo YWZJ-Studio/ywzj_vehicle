@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.YwzjVehicle;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class AllKeys {
 
     public static final KeyMapping FORWARD = new KeyMapping("key.ywzj_vehicle.forward.desc",

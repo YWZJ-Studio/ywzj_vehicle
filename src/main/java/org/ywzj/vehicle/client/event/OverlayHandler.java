@@ -24,8 +24,9 @@ public class OverlayHandler {
                 && player.getVehicle() instanceof AbstractVehicle) {
             if (event.getOverlay().id().equals(VanillaGuiOverlay.CROSSHAIR.id())) {
                 event.setCanceled(true);
-            }
-            if (event.getOverlay().id().equals(VanillaGuiOverlay.MOUNT_HEALTH.id())) {
+            } else if (event.getOverlay().id().equals(VanillaGuiOverlay.MOUNT_HEALTH.id())) {
+                event.setCanceled(true);
+            } else if (event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) {
                 event.setCanceled(true);
             }
         }

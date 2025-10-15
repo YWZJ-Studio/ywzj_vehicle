@@ -14,8 +14,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
+
+import java.util.HashSet;
 
 @OnlyIn(Dist.CLIENT)
 public class LocalVehiclePlayer {
@@ -36,9 +37,10 @@ public class LocalVehiclePlayer {
     public float scopeAimRotX;
     public float scopeAimRotY;
     public double aimLocationDistance;
+    public HashSet<Integer> controllingMissileIds = new HashSet<>();
     private WeaponUnit lastWeaponUnit;
     private boolean mouseTurnedAfterScope;
-    public ViewType viewType = ViewType.DEFAULT;
+    public ViewType viewType = ViewType.THIRD_PERSON;
     static {
         instance = new LocalVehiclePlayer();
     }
@@ -52,13 +54,9 @@ public class LocalVehiclePlayer {
         if (onVehicle()) {
             AbstractVehicle vehicle = getVehicle();
             if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
-                if (viewType == ViewType.DEFAULT) {
-                    Vec3 vehicleCameraPos;
-                    if (vehicle instanceof HelicopterVehicle) {
-                        vehicleCameraPos = vehicle.thirdPersonPosition(getPlayer());
-                    } else {
-                        vehicleCameraPos = weaponUnit.worldOperatorPosition();
-                    }
+                if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
+                    Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
+                            vehicle.thirdPersonPosition(getPlayer()) : weaponUnit.worldOperatorPosition();
                     cameraXO = cameraX;
                     cameraYO = cameraY;
                     cameraZO = cameraZ;
@@ -91,13 +89,13 @@ public class LocalVehiclePlayer {
                     if (Math.abs(yDiff) > 90) {
                         cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
                     }
-                    Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
+                    Vec3 worldOpticalSightPosition = weaponUnit.worldOpticalSightPosition();
                     cameraXO = cameraX;
                     cameraYO = cameraY;
                     cameraZO = cameraZ;
-                    cameraX = ammoSpawnPosition.x;
-                    cameraY = ammoSpawnPosition.y;
-                    cameraZ = ammoSpawnPosition.z;
+                    cameraX = worldOpticalSightPosition.x;
+                    cameraY = worldOpticalSightPosition.y;
+                    cameraZ = worldOpticalSightPosition.z;
                 }
             }
         }
@@ -109,13 +107,13 @@ public class LocalVehiclePlayer {
         }
         if (getVehicle().getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
             if (toViewType == null) {
-                if (viewType == ViewType.DEFAULT) {
+                if (viewType == ViewType.THIRD_PERSON) {
                     toViewType = ViewType.SCOPE;
                 } else if (viewType == ViewType.SCOPE) {
-                    toViewType = ViewType.DEFAULT;
+                    toViewType = ViewType.THIRD_PERSON;
                 }
             }
-            if (toViewType == ViewType.DEFAULT) {
+            if (toViewType == ViewType.THIRD_PERSON) {
                 Vec3 start = weaponUnit.ammoSpawnPosition();
                 Vec3 end = start.add(VectorUtil.calculateViewVector(cameraAimRotX, cameraAimRotY).normalize().scale(128));
                 BlockHitResult result = getPlayer().level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, getPlayer()));
@@ -154,7 +152,7 @@ public class LocalVehiclePlayer {
                 scopeAimRotX = weaponUnit.xRot;
                 scopeAimRotY = weaponUnit.yRot;
             }
-            if (viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
+            if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 scopeAimRotX = weaponUnit.xRot;
                 scopeAimRotY = weaponUnit.yRot;
             } else if (viewType == LocalVehiclePlayer.ViewType.SCOPE) {
@@ -170,14 +168,14 @@ public class LocalVehiclePlayer {
                 float v1 = 1;
                 if (t1 > 5f) {
                     // 运动平滑
-                    v1 = Math.max(0.001f, (70 - t1 * 10) / 100);
+                    v1 = Math.max(0.00001f, (70 - t1 * 10) / 100);
                 }
                 scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
                 float t2 = Mth.abs(scopeAimRotY -  weaponUnit.yRot) / weaponUnit.getYRotSpeed();
                 float v2 = 1;
                 if (t2 > 5f) {
                     // 运动平滑
-                    v2 = Math.max(0.001f, (70 - t2 * 10) / 100);
+                    v2 = Math.max(0.00001f, (70 - t2 * 10) / 100);
                 }
                 scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);
                 scopeAimRotX = Mth.clamp(scopeAimRotX, weaponUnit.getXRotMin(), weaponUnit.getXRotMax());
@@ -250,7 +248,7 @@ public class LocalVehiclePlayer {
     }
 
     public enum ViewType {
-        DEFAULT, SCOPE
+        THIRD_PERSON, SCOPE, OPERATOR
     }
 
 }

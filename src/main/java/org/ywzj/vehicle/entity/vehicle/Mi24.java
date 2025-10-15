@@ -51,6 +51,7 @@ public class Mi24 extends HelicopterVehicle {
                 this,
                 new Vec3(0, 4.54d, -0.375d),
                 1f,
+                null,
                 new Vec3(0, 0d, -6d),
                 new Vec3(0, -2.2d, -1.2d),
                 null);

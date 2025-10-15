@@ -58,6 +58,9 @@ public class WeaponUnitPojo {
     @SerializedName("parent")
     public String parent = null;
 
+    @SerializedName("optical_sight_offset")
+    public Vec3 opticalSightOffset = Vec3.ZERO;
+
     @SerializedName("operator_offset")
     public Vec3 operatorOffset = Vec3.ZERO;
 

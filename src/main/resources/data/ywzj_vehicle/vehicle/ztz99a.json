@@ -1,0 +1,55 @@
+{
+  "structure_model": "ywzj_vehicle:bedrock/entity/ztz99a_structure",
+  "attributes": {
+    "max_health": 200
+    // ...
+  },
+  "movement": {
+
+  },
+  "engine": {
+    "max_capacity": 100.0,
+    "consumption_per_tick": 0.1,
+    "type": "liquid",
+    "fuel_types": [
+      "minecraft:lava"
+    ]
+  },
+  "weapon_units": [
+    {
+      "id": "ztz99a_turret",
+      "type": "weapon",
+      "structure_bone": "ztz99a_turret",
+      "name": "ztz99a_turret",
+      "rot_info": {
+        "x_rot_speed": 0.75,
+        "y_rot_speed": 1.5,
+        "x_rot_max": 5,
+        "x_rot_min": -13
+      },
+      "optical_sight_offset": [0.75, 0.5, 0.5],
+      "operator_offset": [0, 1.5, 0],
+      "seat_offset": [0, 0, 0],
+      "weapons": [
+        "ywzj_vehicle:cannon"
+      ]
+    },
+    {
+      "id": "ztz99a_commander_machine_gun",
+      "type": "weapon",
+      "structure_bone": "ztz99a_commander_machine_gun",
+      "parent": "ztz99a_turret",
+      "rot_info": {
+        "x_rot_speed": 3,
+        "y_rot_speed": 3,
+        "x_rot_max": 15,
+        "x_rot_min": -18
+      },
+      "operator_offset": [0.5, 0.5, -1],
+      "seat_offset": [0, 0.3, -0.4],
+      "weapons": [
+        "ywzj_vehicle:cannon"
+      ]
+    }
+  ]
+}

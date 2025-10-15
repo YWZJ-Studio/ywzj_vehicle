@@ -18,7 +18,13 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
+import static org.ywzj.vehicle.util.RenderHelper.drawRect;
+import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
+
 public class ScopeOverlay implements IGuiOverlay {
+
+    public static float fov;
+    public static int color = 0xFF00FF00;
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -33,9 +39,24 @@ public class ScopeOverlay implements IGuiOverlay {
         }
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
+        // 准心
+        guiGraphics.pose().pushPose();
+        {
+            guiGraphics.pose().translate(centerX, centerY, 0);
+            drawSquare(guiGraphics, 0, 0, 5, color);
+            guiGraphics.fill(0, -32, 1, -8, color);
+            guiGraphics.fill(0, 8, 1, 32, color);
+            guiGraphics.fill(-32, 0, -8, 1, color);
+            guiGraphics.fill(32, 0, 8, 1, color);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
+            if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
+            }
+        }
+        guiGraphics.pose().popPose();
         // 成员组
-        int x = centerX - guiGraphics.guiWidth() / 3;
-        int y = centerY + guiGraphics.guiHeight() / 8;
+        int x = centerX - 140;
+        int y = centerY + guiGraphics.guiHeight() / 5;
         for (int index = 0; index < vehicle.seats; index++) {
             Integer playerId = vehicle.passengerIdsBySeat.get(index);
             Entity entity = null;
@@ -50,23 +71,15 @@ public class ScopeOverlay implements IGuiOverlay {
             if (entity != null) {
                 info = "[" + entity.getDisplayName().getString() + "] " + (partUnit == null ? "" : partUnit.getName().getString());
             }
-            guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, 0xFF00FF00);
+            guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, color);
             y += 10;
         }
+        // 罗盘
+        renderCompassBar(guiGraphics, screenWidth, vehicle);
     }
 
     public void renderGroundVehicle(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        // 屏幕中心点
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
-        // 十字线长度
-        int size = 18;
-        // 颜色 (ARGB) 红色不透明
-        int color = 0xFFFF0000;
-        // 画水平线
-        guiGraphics.fill(centerX - size, centerY, centerX + size + 1, centerY + 1, color);
-        // 画垂直线
-        guiGraphics.fill(centerX, centerY - size, centerX + 1, centerY + size + 1, color);
+
     }
 
     public void renderHelicopter(GuiGraphics guiGraphics, int screenWidth, int screenHeight, HelicopterVehicle vehicle) {
@@ -77,19 +90,38 @@ public class ScopeOverlay implements IGuiOverlay {
         guiGraphics.pose().pushPose();
         {
             guiGraphics.pose().translate(centerX, centerY, 0);
-            VehicleCrossHairOverlay.drawSquare(guiGraphics, 0, 0, 5, 0xFF00FF00);
-            guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
-            guiGraphics.fill(0, -32, 1, -8, 0xFF00FF00);
-            guiGraphics.fill(0, 8, 1, 32, 0xFF00FF00);
-            guiGraphics.fill(-32, 0, -8, 1, 0xFF00FF00);
-            guiGraphics.fill(32, 0, 8, 1, 0xFF00FF00);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, 0xFF00FF00);
+            if (!LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font, "激光制导中", 0, -45, color);
+            }
+            if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+                //todo 导弹配置里有射界，暂时写死
+                if (LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
+                    if (Math.abs(weaponUnit.yRot) > 15 || weaponUnit.xRot < -11.5 || weaponUnit.xRot > 33.5) {
+                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, "超出导弹射界", 0, -45, color);
+                    }
+                }
+                guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
+                int baseX = 0;
+                int baseY = 140;
+                float xRotRange = weaponUnit.getXRotMax() - weaponUnit.getXRotMin();
+                float yRotRange = weaponUnit.getYRotMax() - weaponUnit.getYRotMin();
+                drawRect(guiGraphics, baseX, baseY, (int) yRotRange, (int) xRotRange, color, 1f);
+                //todo 导弹配置里有射界，暂时写死
+                drawRect(guiGraphics, baseX, baseY - 5, 30, 45, color, 1f);
+                int x = (int) (weaponUnit.yRot - weaponUnit.getYRotMin());
+                int y = (int) (weaponUnit.xRot - weaponUnit.getXRotMin());
+                baseX -= (int) (yRotRange / 2);
+                baseY -= (int) (xRotRange / 2);
+                guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
+                guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
+                guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
+                guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
+            }
         }
         guiGraphics.pose().popPose();
-        renderCompassBar(guiGraphics, screenWidth, vehicle);
     }
 
-    private void renderCompassBar(GuiGraphics guiGraphics, int screenWidth, HelicopterVehicle vehicle) {
+    private void renderCompassBar(GuiGraphics guiGraphics, int screenWidth, AbstractVehicle vehicle) {
         PartUnit partUnit = vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer());
         if (partUnit instanceof WeaponUnit weaponUnit) {
             float yaw = weaponUnit.worldRot().y;
@@ -99,8 +131,7 @@ public class ScopeOverlay implements IGuiOverlay {
             {
                 RenderSystem.enableBlend();
                 float centerX = screenWidth / 2f;
-                poseStack.translate(centerX - 0.5f, 0, 0);
-
+                poseStack.translate(centerX - 0.5f, 12, 0);
                 poseStack.pushPose();
                 {
                     guiGraphics.enableScissor((int) (centerX - 120), 0, (int) (centerX + 120), 40);
@@ -120,7 +151,7 @@ public class ScopeOverlay implements IGuiOverlay {
                                     int s = x > 180 ? x - 360 : (x < -180 ? x + 360 : x);
                                     renderDirection(guiGraphics, poseStack, font, x, s + "");
                                 } else {
-                                    guiGraphics.vLine(x * 4, 0, 6, 0xFF00FF00);
+                                    guiGraphics.vLine(x * 4, 0, 6, color);
                                 }
                             }
                         }
@@ -143,9 +174,9 @@ public class ScopeOverlay implements IGuiOverlay {
     }
 
     private void renderDirection(GuiGraphics graphics, PoseStack poseStack, Font font, int x, String s) {
-        graphics.vLine(x * 4, 0, 8, 0xFF00FF00);
+        graphics.vLine(x * 4, 0, 8, color);
         poseStack.translate(1f, 0, 0);
-        graphics.drawCenteredString(font, s, x * 4, 12, 0xFF00FF00);
+        graphics.drawCenteredString(font, s, x * 4, 12, color);
         poseStack.translate(-1f, 0, 0);
     }
 

@@ -36,6 +36,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
 
     public TrackedVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.thirdPersonOffset = new Vec3(0, 4, -5);
     }
 
     @Override
@@ -75,7 +76,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
         }
         if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             Vec2 rot = null;
-            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.DEFAULT) {
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
             } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 rot = LocalVehiclePlayer.instance.scopeAimRot();

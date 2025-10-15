@@ -17,7 +17,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (!LocalVehiclePlayer.instance.onVehicle() || LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.DEFAULT) {
+        if (!LocalVehiclePlayer.instance.onVehicle() || LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             return;
         }
         AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();

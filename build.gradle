@@ -40,6 +40,7 @@ minecraft {
             // 如果你使用别的 JDK，那么可以删除这一行
             workingDirectory project.file('run/client_1')
             jvmArgs "-XX:+AllowEnhancedClassRedefinition"
+            jvmArgs "-Xmx4g"
             property 'forge.enabledGameTestNamespaces', mod_id
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"

@@ -29,15 +29,17 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class MissileEntity extends Projectile implements IEntityAdditionalSpawnData {
 
     public AbstractVehicle vehicle;
+    public String name;
+    public float speed = 5f;
     public Entity targetEntity;
     public Vec3 targetPos;
-    public LivingEntity shooter;
-    public String name;
+    public int operatorId;
     private VehicleSound sound;
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level) {
@@ -48,25 +50,39 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
         super(AllEntities.MISSILE.get(), level);
     }
 
+    public void shoot(AbstractVehicle vehicle, String name, Vec3 spawnPos, LivingEntity shooter) {
+        this.vehicle = vehicle;
+        this.name = name;
+        this.setPos(spawnPos);
+        this.setOwner(shooter);
+    }
+
     @Override
     public void tick() {
         super.tick();
         if (level().isClientSide()) {
             tickParticle();
             tickSound();
+        } else {
+            tickGuidance();
+            tickMove();
+            tickHit();
         }
+    }
+
+    private void tickGuidance() {
         if (targetEntity != null) {
             this.lookAt(EntityAnchorArgument.Anchor.EYES, targetEntity.position());
         } else if (targetPos != null) {
             this.lookAt(EntityAnchorArgument.Anchor.EYES, targetPos);
-        } else if (shooter != null) {
+        } else if (getOwner() != null) {
             if (vehicle != null) {
-                if (vehicle.getOwnOperatorUnit(shooter) instanceof WeaponUnit weaponUnit) {
+                if (vehicle.getOwnOperatorUnit((LivingEntity) getOwner()) instanceof WeaponUnit weaponUnit) {
                     Vec2 rot = weaponUnit.worldRot();
                     Vec3 start = weaponUnit.worldBoltPosition();
                     Vec3 dir = VectorUtil.calculateViewVector(rot.x, rot.y).normalize();
                     Vec3 pos = this.position();
-                    // 计算实体在射线上的投影点
+                    // 计算实体在驾束射线上的投影点
                     Vec3 startToPos = pos.subtract(start);
                     double t = startToPos.dot(dir); // 投影系数（沿射线方向的距离）
                     if (t < 0) t = 0; // 限制在射线范围内
@@ -78,14 +94,24 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
                     if (dist > speed) {
                         delta = delta.normalize().scale(speed);
                     }
-                    // 更新实体位置
                     this.setPos(pos.add(delta));
-                    // 朝向与射线方向一致（可选）
                     this.setRot(rot.y, rot.x);
                 }
             }
         }
+    }
 
+    private void tickMove() {
+        Vec3 vec3 = this.getDeltaMovement();
+        double d0 = this.getX() + vec3.x;
+        double d1 = this.getY() + vec3.y;
+        double d2 = this.getZ() + vec3.z;
+        this.setPos(d0, d1, d2);
+        Vec3 v = this.getLookAngle().normalize();
+        this.setDeltaMovement(v.scale(speed));
+    }
+
+    private void tickHit() {
         //todo: 细化
         if (!level().isClientSide()) {
             // 子弹在 tick 起始的位置
@@ -114,14 +140,14 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
                 return;
             }
         }
+    }
 
-        Vec3 vec3 = this.getDeltaMovement();
-        double d0 = this.getX() + vec3.x;
-        double d1 = this.getY() + vec3.y;
-        double d2 = this.getZ() + vec3.z;
-        this.setPos(d0, d1, d2);
-        Vec3 v = this.getLookAngle().normalize();
-        this.setDeltaMovement(v.scale(5));
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+        if (level().isClientSide()) {
+            localRemoveMissile();
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -142,6 +168,20 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public void localAddMissile() {
+        if (operatorId == LocalVehiclePlayer.instance.getPlayer().getId()) {
+            LocalVehiclePlayer.instance.controllingMissileIds.add(this.getId());
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void localRemoveMissile() {
+        if (operatorId == LocalVehiclePlayer.instance.getPlayer().getId()) {
+            LocalVehiclePlayer.instance.controllingMissileIds.remove(this.getId());
+        }
+    }
+
     @Override
     protected void defineSynchedData() {}
 
@@ -152,12 +192,17 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
 
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeUtf("akd10");
+        buffer.writeUtf(name);
+        buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
     }
 
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
         name = additionalData.readUtf();
+        operatorId = additionalData.readInt();
+        if (level().isClientSide()) {
+            localAddMissile();
+        }
     }
 
 }

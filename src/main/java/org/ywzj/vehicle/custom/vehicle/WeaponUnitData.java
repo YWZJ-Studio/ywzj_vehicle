@@ -22,6 +22,7 @@ public class WeaponUnitData {
     private String name = "part.ywzj_vehicle.default_name";
     private String structureBone = null;
     private String parent = null;
+    private Vec3 opticalSightOffset = Vec3.ZERO;
     private Vec3 operatorOffset = Vec3.ZERO;
     private Vec3 seatOffset = Vec3.ZERO;
     private List<ResourceLocation> weapons = List.of();
@@ -38,6 +39,7 @@ public class WeaponUnitData {
         data.name = pojo.name;
         data.structureBone = pojo.structureBone;
         data.parent = pojo.parent;
+        if (pojo.opticalSightOffset != null) data.opticalSightOffset = new Vec3(pojo.opticalSightOffset.x, pojo.opticalSightOffset.y, pojo.opticalSightOffset.z);
         if (pojo.operatorOffset != null) data.operatorOffset = new Vec3(pojo.operatorOffset.x, pojo.operatorOffset.y, pojo.operatorOffset.z);
         if (pojo.seatOffset != null) data.seatOffset = new Vec3(pojo.seatOffset.x, pojo.seatOffset.y, pojo.seatOffset.z);
         if (pojo.weapons != null) data.weapons = pojo.weapons;
@@ -68,6 +70,10 @@ public class WeaponUnitData {
 
     public String getParent() {
         return parent;
+    }
+
+    public Vec3 getOpticalSightOffset() {
+        return opticalSightOffset;
     }
 
     public Vec3 getOperatorOffset() {

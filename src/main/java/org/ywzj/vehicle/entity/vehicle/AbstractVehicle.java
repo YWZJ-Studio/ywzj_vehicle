@@ -62,9 +62,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public final List<PartUnit> operatorUnits;
     public SpotterUnit spotterUnit;
     public Vec3 thirdPersonOffset;
-    public float width;
-    public float length;
-    public float height;
     public float curbWeight;
     public float fuelCapacity;
     public float fuelConsumptionPerTick;
@@ -237,12 +234,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     protected void initOBBs() {
         BedrockModel model = BedrockModelLoader.getModel(vehicleType.getStructureBedrockModel());
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
-        // 约定取体积最大的块表达车体的长宽高
+        // 约定取体积最大的块计算物理
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
         cubes.sort((cube1, cube2) -> (int) (cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
-        this.width = cubes.get(0).getWidth();
-        this.length = cubes.get(0).getDepth();
-        this.height = cubes.get(0).getHeight();
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleBodyOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {
@@ -252,15 +246,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
             for (BedrockCubePerFace cube : childCubes) {
                 vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
-            }
-        }
-        // 由部件结构拓展车体长宽
-        for (PartUnit partUnit : partUnits) {
-            for (VehicleBedrockCubeOBB unitBedrockCubeOBB : partUnit.getUnitBedrockCubeOBBs()) {
-                Vec3 cubeOffset = unitBedrockCubeOBB.offset();
-                this.width = (float) Math.max((Math.abs(cubeOffset.x) + unitBedrockCubeOBB.getWidth() / 2) * 2, this.width);
-                this.length = (float) Math.max((Math.abs(cubeOffset.z) + unitBedrockCubeOBB.getDepth() / 2) * 2, this.length);
-                this.height = (float) Math.max(Math.abs(cubeOffset.y) + unitBedrockCubeOBB.getHeight() / 2, this.height);
             }
         }
     }
@@ -286,29 +271,20 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     public AABB getAABB() {
-        Vec3 p1 = relativeRotPos(position().add(width / 2, height / 2, length / 2));
-        Vec3 p2 = relativeRotPos(position().add(width / 2, -height / 2, length / 2));
-        Vec3 p3 = relativeRotPos(position().add(width / 2, height / 2, -length / 2));
-        Vec3 p4 = relativeRotPos(position().add(width / 2, -height / 2, -length / 2));
-        Vec3 p5 = relativeRotPos(position().add(-width / 2, height / 2, length / 2));
-        Vec3 p6 = relativeRotPos(position().add(-width / 2, -height / 2, length / 2));
-        Vec3 p7 = relativeRotPos(position().add(-width / 2, height / 2, -length / 2));
-        Vec3 p8 = relativeRotPos(position().add(-width / 2, -height / 2, -length / 2));
-        Vec3[] points = {p1, p2, p3, p4, p5, p6, p7, p8};
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        for (Vec3 p : points) {
-            double x = p.x();
-            double y = p.y();
-            double z = p.z();
-            if (x < minX) minX = x;
-            if (y < minY) minY = y;
-            if (z < minZ) minZ = z;
-            if (x > maxX) maxX = x;
-            if (y > maxY) maxY = y;
-            if (z > maxZ) maxZ = z;
+        for (OBB obb : getOBBs()) {
+            Vector3f[] vertices = obb.getVertices();
+            for (Vector3f v : vertices) {
+                if (v.x < minX) minX = v.x;
+                if (v.y < minY) minY = v.y;
+                if (v.z < minZ) minZ = v.z;
+                if (v.x > maxX) maxX = v.x;
+                if (v.y > maxY) maxY = v.y;
+                if (v.z > maxZ) maxZ = v.z;
+            }
         }
-        return new AABB(minX, minY + height / 2, minZ, maxX, maxY + height / 2, maxZ);
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public void onEnterVehicle(LivingEntity livingEntity) {
@@ -398,7 +374,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                 passengerIdsBySeat.add(id == -1 ? null : id);
             }
             if (vehicle.passengerIdsBySeat.contains(player.getId()) && !passengerIdsBySeat.contains(player.getId())) {
-                LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.DEFAULT);
+                LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
             }
             vehicle.passengerIdsBySeat = passengerIdsBySeat;
             for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {

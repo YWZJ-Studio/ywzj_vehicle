@@ -23,9 +23,6 @@ public class Ztl11 extends WheeledVehicle {
     public void initData() {
         this.setMaxUpStep(1.1f);
         VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
-            this.height = data.getHeight();
-            this.width = data.getWidth();
-            this.length = data.getLength();
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleBodyOBBs = struct.obbs();

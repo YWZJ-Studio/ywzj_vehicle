@@ -6,12 +6,13 @@
   "refmap": "ywzj_vehicle.refmap.json",
   "client": [
     "client.CameraMixin",
+    "client.ClientPacketListenerMixin",
     "client.EntityRenderDispatcherMixin",
     "client.HumanoidModelMixin",
     "client.LevelRendererMixin",
+    "client.MinecraftMixin",
     "client.MouseHandlerMixin",
-    "client.ClientPacketListenerMixin",
-    "client.MinecraftMixin"
+    "client.PostChainMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -19,8 +20,8 @@
   "mixins": [
     "common.ChunkMapMixin",
     "common.EntityMixin",
-    "common.ServerEntityMixin",
     "common.PlayerMixin",
+    "common.ServerEntityMixin",
     "tacz.EntityKineticBulletMixin",
     "tacz.EntityUtilMixin"
   ]

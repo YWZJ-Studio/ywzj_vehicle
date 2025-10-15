@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.client.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -21,6 +20,8 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
+
+import static org.ywzj.vehicle.util.RenderHelper.*;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleCrossHairOverlay implements IGuiOverlay {
@@ -150,66 +151,6 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         var result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 hitPos = result.getLocation();
         return VectorUtil.worldToScreen(hitPos);
-    }
-
-    public static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
-        float c = 2 * 3.1415f / 32;
-        for (int i = 0; i < 32; i += 1) {
-            float rx = Mth.cos(c * i) * r;
-            float ry = Mth.sin(c * i) * r;
-            guiGraphics.fill((int) (x + rx), (int) (y + ry), (int) (x + rx) + 1, (int) (y + ry) + 1, color);
-        }
-    }
-
-    public static void drawSquare(GuiGraphics guiGraphics, int x, int y, int size, int color) {
-        int half = size / 2;
-        int left = x - half;
-        int right = x + half;
-        int top = y - half;
-        int bottom = y + half;
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(0.7f, 0.7f, 0.7f);
-            for (int i = left; i <= right; i++) {
-                guiGraphics.fill(i, top, i + 1, top + 1, color);
-                guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
-            }
-            for (int j = top; j <= bottom; j++) {
-                guiGraphics.fill(left, j, left + 1, j + 1, color);
-                guiGraphics.fill(right, j, right + 1, j + 1, color);
-            }
-        }
-        poseStack.popPose();
-    }
-
-    public static void drawReticle(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(0.5f, 0.5f, 0.5f);
-            if (thickness < 1) thickness = 1;
-            int top = y;
-            int bottom = y + size;
-            // 竖线
-            int vHalf = thickness / 2;
-            int vLeft = x - vHalf;
-            int vRight = vLeft + thickness;
-            guiGraphics.fill(vLeft, top, vRight, bottom, color);
-            // 横线
-            int halfLen = Math.max(1, (int)(size * 0.45));
-            int segments = 4;
-            int gap = size / segments; // 每段间距
-            int hHalf = thickness / 2;
-            for (int i = 0; i <= segments; i++) {
-                int yPos = top + gap * i;
-                int left = x - halfLen;
-                int right = x + halfLen;
-                guiGraphics.fill(left + 1, yPos - hHalf, right, yPos + (thickness - hHalf), color);
-                halfLen -= 1;
-            }
-        }
-        poseStack.popPose();
     }
 
 }

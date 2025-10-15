@@ -8,8 +8,10 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.custom.VehicleDataManager;
 import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
@@ -24,12 +26,32 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
+    public void initData() {
+        this.setMaxUpStep(1.1f);
+        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztz99a")).ifPresent(data -> {
+            var struct = data.getVehicleStructObbs();
+            this.mainCubeOBB = struct.mainCubeOBB();
+            this.vehicleBodyOBBs = struct.obbs();
+            var weapons = data.createPartUnits(this);
+            this.operatorUnits.addAll(weapons.values());
+            this.partUnits.addAll(weapons.values());
+        });
+        this.spotterUnit = new SpotterUnit(this,
+                new Vec3(0, 4.54d, -0.375d),
+                new Vec3(0, 1.5d, 0),
+                new Vec3(0, 0, 0),
+                null);
+    }
+
+    @Deprecated
+    @Override
     public void initPartUnits() {
         WeaponUnit turret = new WeaponUnit("ztz99a_turret",
                 0,
                 this,
                 new Vec3(0, 2.54d, -0.375d),
                 8f,
+                new Vec3(1, 0, 1),
                 new Vec3(0, 1.5d, 0),
                 new Vec3(0, 0, 0),
                 null);
@@ -44,6 +66,7 @@ public class Ztz99a extends TrackedVehicle {
                 this,
                 new Vec3(-0.594d, 3.325d, 0.101d),
                 1f,
+                null,
                 new Vec3(0.5d, 0.5d, -1d),
                 new Vec3(0, -1d, 1.2d),
                 turret);
@@ -138,6 +161,8 @@ public class Ztz99a extends TrackedVehicle {
             //todo 武器配置
             if (operatorUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
                 if (weaponUnit.getName().getString().equals("ztz99a_turret")) {
+
+                    // 测试主炮
                     weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, true);
                     this.level().playSound(null, this, AllSounds.CANNON_125_MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
                     new Thread(() -> {
@@ -146,6 +171,10 @@ public class Ztz99a extends TrackedVehicle {
                         } catch (Exception ex) {}
                         ServerLifecycleHooks.getCurrentServer().execute(() -> this.level().playSound(null, this, AllSounds.CANNON_SHELL_DROP.get(), SoundSource.PLAYERS, 16f, 1f));
                     }).start();
+                    // 后坐
+                    physicsEngine.recoil(weaponUnit);
+
+
                 } else {
                     weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
                     this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);

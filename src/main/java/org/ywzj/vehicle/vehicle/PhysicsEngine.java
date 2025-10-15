@@ -203,6 +203,7 @@ public class PhysicsEngine {
                     double angleDepth = Math.toDegrees(Math.atan2(0.55, physicsCube.getDepth()));
                     if (Mth.abs(vehicle.getZRot()) < angleWidth + MAGIC_NUMBER) {
                         vehicle.setZRot(0);
+                        vehicle.hurtMarked = true;
                     }
                     if (Mth.abs(vehicle.getXRot()) < angleDepth + MAGIC_NUMBER) {
                         vehicle.setXRot(0);
@@ -212,6 +213,7 @@ public class PhysicsEngine {
                         if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
                             vehicle.setXRot(0);
                             vehicle.setZRot(0);
+                            vehicle.hurtMarked = true;
                         }
                     }
                     return new Vec3(velocity);
@@ -262,6 +264,31 @@ public class PhysicsEngine {
             this.velocity = velocity;
         }
         return new Vec3(velocity);
+    }
+
+    /**
+     * 后坐力影响
+     */
+    public void recoil(WeaponUnit weaponUnit) {
+        Vec3 aimDirection = VectorUtil.calculateViewVector(weaponUnit.xRot,
+                weaponUnit.getBaseWeaponUnit() != null ? weaponUnit.getBaseWeaponUnit().combineYRot() : 0 + weaponUnit.yRot);
+        Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
+        Vector3f forceStartLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldBoltPosition().add(aimDirection.scale(5)).toVector3f(), axes);
+        Vector3f forcePointLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldBoltPosition().toVector3f(), axes);
+        // 后坐力方向在局部坐标系下的矢量
+        Vector3f force = forcePointLocal.sub(forceStartLocal);
+        Vector2f fc = getPlaneXY(force, forcePointLocal);
+        // 简化旋转为都从(0, 0, 0)产生转轴，该转轴平行于底面
+        Vec3 axis = new Vec3(-force.z, 0, force.x);
+        localRotAxisStart = axis.normalize().scale(5).toVector3f();
+        localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
+        checkDirection(fc);
+        rotV = 0.05f;
+        rot(axes);
+        // 后坐力产生推移
+        force = force.normalize();
+        double motion = force.dot(new Vector3f(0, 0, 1)) * 0.1;
+        vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
     }
 
     public void climb(List<VehicleBedrockCubeOBB.CubePoint> touchPoints) {
