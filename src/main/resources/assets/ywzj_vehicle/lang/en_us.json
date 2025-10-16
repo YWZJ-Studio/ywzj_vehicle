@@ -1,6 +1,10 @@
 {
   "tab.misc": "永无止境: 载具 - 杂项",
-  "item.ywzj_vehicle.fuel_tank": "燃油",
+  "item.ywzj_vehicle.fuel_tank": "燃油桶",
+  "item.ywzj_vehicle.ammo_machine_gun": "机枪弹药",
+  "item.ywzj_vehicle.ammo_auto_cannon": "机炮弹药",
+  "item.ywzj_vehicle.ammo_artillery": "火炮弹药",
+  "item.ywzj_vehicle.ammo_missile": "导弹弹药",
   "item_group.ywzj_vehicle.name": "Example",
   "block.ywzj_vehicle.test_block": "Example Block",
   "key.category.ywzj_vehicle": "永无止境：载具",

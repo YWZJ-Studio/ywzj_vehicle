@@ -48,7 +48,9 @@ public class ScopeOverlay implements IGuiOverlay {
             guiGraphics.fill(0, 8, 1, 32, color);
             guiGraphics.fill(-32, 0, -8, 1, color);
             guiGraphics.fill(32, 0, 8, 1, color);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font,
+                    (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
+                            + (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
             }

@@ -7,6 +7,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,12 +38,17 @@ public class LocalVehiclePlayer {
     public float scopeAimRotX;
     public float scopeAimRotY;
     public double aimLocationDistance;
+    public boolean outOfRangeFinding;
     public HashSet<Integer> controllingMissileIds = new HashSet<>();
     private WeaponUnit lastWeaponUnit;
     private boolean mouseTurnedAfterScope;
     public ViewType viewType = ViewType.THIRD_PERSON;
     static {
         instance = new LocalVehiclePlayer();
+    }
+
+    public enum ViewType {
+        THIRD_PERSON, SCOPE, OPERATOR
     }
 
     public Player getPlayer() {
@@ -89,7 +95,8 @@ public class LocalVehiclePlayer {
                     if (Math.abs(yDiff) > 90) {
                         cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
                     }
-                    Vec3 worldOpticalSightPosition = weaponUnit.worldOpticalSightPosition();
+                    Vec3 worldOpticalSightPosition = weaponUnit.getOpticalSightType() != WeaponUnit.OpticalSightType.OPERATOR ?
+                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOperatorPosition();
                     cameraXO = cameraX;
                     cameraYO = cameraY;
                     cameraZO = cameraZ;
@@ -108,6 +115,9 @@ public class LocalVehiclePlayer {
         if (getVehicle().getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
             if (toViewType == null) {
                 if (viewType == ViewType.THIRD_PERSON) {
+                    if (weaponUnit.getOpticalSightType() == WeaponUnit.OpticalSightType.NONE) {
+                        return;
+                    }
                     toViewType = ViewType.SCOPE;
                 } else if (viewType == ViewType.SCOPE) {
                     toViewType = ViewType.THIRD_PERSON;
@@ -208,7 +218,8 @@ public class LocalVehiclePlayer {
         cameraAimRotX = camera.getXRot() - 10;
         cameraAimRotY = camera.getYRot();
         Vec3 start = camera.getPosition();
-        Vec3 end = start.add(VectorUtil.calculateViewVector(cameraAimRotX, cameraAimRotY).normalize().scale(128));
+        Vec3 end = start.add(VectorUtil.calculateViewVector(camera.getXRot(),
+                camera.getYRot()).normalize().scale(Minecraft.getInstance().options.renderDistance().get() * 16));
         BlockHitResult result = getPlayer().level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, getPlayer()));
         Vec3 hitPos = result.getLocation();
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
@@ -232,10 +243,12 @@ public class LocalVehiclePlayer {
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit) {
             Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
             Vec3 start = camera.getPosition();
-            Vec3 end = start.add(VectorUtil.calculateViewVector(camera.getXRot(), camera.getYRot()).normalize().scale(4096));
+            Vec3 end = start.add(VectorUtil.calculateViewVector(camera.getXRot(),
+                    camera.getYRot()).normalize().scale(Minecraft.getInstance().options.renderDistance().get() * 16));
             BlockHitResult result = getPlayer().level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, getPlayer()));
             Vec3 hitPos = result.getLocation();
             aimLocationDistance = getPlayer().position().distanceTo(hitPos);
+            outOfRangeFinding = result.getType() == HitResult.Type.MISS;
             if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
                 return weaponUnit.aim(hitPos);
             }
@@ -243,12 +256,17 @@ public class LocalVehiclePlayer {
         return null;
     }
 
-    public void sendMessage(String message) {
-        getPlayer().displayClientMessage(Component.translatable(message), true);
+    public WeaponUnit getWeaponUnit() {
+        if (getPlayer().getVehicle() instanceof AbstractVehicle vehicle) {
+            if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
+                return weaponUnit;
+            }
+        }
+        return null;
     }
 
-    public enum ViewType {
-        THIRD_PERSON, SCOPE, OPERATOR
+    public void sendMessage(String message) {
+        getPlayer().displayClientMessage(Component.translatable(message), true);
     }
 
 }

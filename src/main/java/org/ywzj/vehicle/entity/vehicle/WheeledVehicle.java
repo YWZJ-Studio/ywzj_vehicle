@@ -37,6 +37,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     public WheeledVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.thirdPersonOffset = new Vec3(0, 4, -5);
     }
 
     @Override

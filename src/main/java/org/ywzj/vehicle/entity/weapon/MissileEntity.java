@@ -90,8 +90,7 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
                     // 当前点逐渐靠近射线（朝投影点移动）
                     double speed = 0.2; // 每 tick 靠近速度
                     Vec3 delta = proj.subtract(pos);
-                    double dist = delta.length();
-                    if (dist > speed) {
+                    if (delta.length() > speed) {
                         delta = delta.normalize().scale(speed);
                     }
                     this.setPos(pos.add(delta));
@@ -154,7 +153,7 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
     public void tickParticle() {
         Vec3 pos = this.position();
         level().addParticle(
-                ParticleTypes.CAMPFIRE_SIGNAL_SMOKE,
+                ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
                 pos.x, pos.y, pos.z,
                 0.0D, 0.0D, 0.0D
         );

@@ -27,7 +27,6 @@ public class Ztz99a extends TrackedVehicle {
 
     @Override
     public void initData() {
-        this.setMaxUpStep(1.1f);
         VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztz99a")).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();

@@ -203,17 +203,14 @@ public class PhysicsEngine {
                     double angleDepth = Math.toDegrees(Math.atan2(0.55, physicsCube.getDepth()));
                     if (Mth.abs(vehicle.getZRot()) < angleWidth + MAGIC_NUMBER) {
                         vehicle.setZRot(0);
-                        vehicle.hurtMarked = true;
                     }
                     if (Mth.abs(vehicle.getXRot()) < angleDepth + MAGIC_NUMBER) {
                         vehicle.setXRot(0);
-                        vehicle.hurtMarked = true;
                     }
                     if (AllConfigs.common.selfRighting.get()) {
                         if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
                             vehicle.setXRot(0);
                             vehicle.setZRot(0);
-                            vehicle.hurtMarked = true;
                         }
                     }
                     return new Vec3(velocity);
@@ -252,7 +249,6 @@ public class PhysicsEngine {
                 return new Vec3(velocity);
             }
 
-            // 左手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
             checkDirection(gc);
             localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
             rotV = Math.min(rotV + rotA, 0.3f);
@@ -261,6 +257,7 @@ public class PhysicsEngine {
         } catch (Exception exception) {
             exception.printStackTrace();
         } finally {
+            velocity.y = Math.max(velocity.y, -gravityVMax);
             this.velocity = velocity;
         }
         return new Vec3(velocity);
@@ -276,10 +273,10 @@ public class PhysicsEngine {
         Vector3f forceStartLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldBoltPosition().add(aimDirection.scale(5)).toVector3f(), axes);
         Vector3f forcePointLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldBoltPosition().toVector3f(), axes);
         // 后坐力方向在局部坐标系下的矢量
-        Vector3f force = forcePointLocal.sub(forceStartLocal);
+        Vector3f force = new Vector3f(forcePointLocal).sub(forceStartLocal);
         Vector2f fc = getPlaneXY(force, forcePointLocal);
-        // 简化旋转为都从(0, 0, 0)产生转轴，该转轴平行于底面
-        Vec3 axis = new Vec3(-force.z, 0, force.x);
+        // 简化旋转为都从炮闩下的载具中心处产生转轴，该转轴平行于底面
+        Vec3 axis = new Vec3(-force.z, 0, force.x).add(forcePointLocal.x, 0, forcePointLocal.z);
         localRotAxisStart = axis.normalize().scale(5).toVector3f();
         localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
         checkDirection(fc);
@@ -287,7 +284,7 @@ public class PhysicsEngine {
         rot(axes);
         // 后坐力产生推移
         force = force.normalize();
-        double motion = force.dot(new Vector3f(0, 0, 1)) * 0.1;
+        double motion = force.dot(new Vector3f(0, 0, 1)) * 0.01;
         vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
     }
 
@@ -318,6 +315,7 @@ public class PhysicsEngine {
     }
 
     private void checkDirection(Vector2f rotToPoint) {
+        // 左手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
         Vector2f v1 = getPlaneXY(null, localRotAxisStart);
         Vector2f v2 = getPlaneXY(null, localRotAxisEnd);
         if ((v2.x - v1.x) * (rotToPoint.y - v1.y) - (v2.y - v1.y) * (rotToPoint.x - v1.x) < 0) {

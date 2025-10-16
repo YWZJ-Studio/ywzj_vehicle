@@ -3,7 +3,6 @@ package org.ywzj.vehicle.all;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -24,8 +23,7 @@ public class AllTabs {
             CreativeModeTab
                     .builder()
                     .title(Component.translatable("tab.misc"))
-//                    .icon(AllItems.ITEMS_LOOKUP.get("pelican").get()::getDefaultInstance)
-                    .icon(Items.BOOK::getDefaultInstance)
+                    .icon(AllItems.FUEL_TANK.get()::getDefaultInstance)
                     .displayItems((displayParams, output) -> MISC_ITEMS.forEach(itemLike -> output.accept(itemLike.get())))
                     .build());
 

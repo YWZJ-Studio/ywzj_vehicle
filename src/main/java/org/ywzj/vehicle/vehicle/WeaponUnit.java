@@ -19,34 +19,55 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 载具武器站，对应一个座位<br/>
- * 不包含实际的武器实现
+ * 武器站是一种有方向机与高低机，可发射多类武器的载具可动部件
+ * 其中方向机与高低机的结构模型可相互独立运动
+ * 多个武器站可以纵向堆叠，并在方向机上联动旋转
  */
 public class WeaponUnit extends PartUnit {
 
-    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
-    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
-    private float zoomMax;
-    private float zoom;
-    private Vec3 boltOffset;
-    private float barrelLength;
-    private Vec3 opticalSightOffset;
+    // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
+    private final Vec3 boltOffset;
+    // 炮管长度，为发射物生成位置与炮闩位置的距离
+    private final float barrelLength;
+    // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于炮闩的偏移
+    private final Vec3 opticalSightOffset;
+    // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于炮闩的偏移
     private final Vec3 operatorOffset;
+    // 武器站操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
     private Vec3 seatOffset;
+    // 开镜类型
+    private final OpticalSightType opticalSightType;
+    // 最大开镜缩放倍率
+    private final float zoomMax;
+    // 当前开镜缩放倍率
+    private float zoom;
+    // 本武器站所附着于的武器站
     private WeaponUnit baseWeaponUnit;
 
+    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
+    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
     private final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     private int currentWeaponIndex = -1;
 
+    public enum OpticalSightType {
+        // 不能开镜
+        NONE,
+        // 以操作员视角开镜
+        OPERATOR,
+        // 以观瞄视角开镜（光学瞄具）
+        OPTICAL_SCOPE,
+        // 以观瞄视角开镜（模拟电视）
+        CRT
+    }
+
     public WeaponUnit(WeaponUnitData data, int index, AbstractVehicle vehicle) {
         super(Component.translatable(data.getName()), index, vehicle);
-        this.zoomMax = 8;
-        this.zoom = 1;
         this.boltOffset = data.getBoltOffset();
         this.barrelLength = data.getBarrelLength();
         this.opticalSightOffset = data.getOpticalSightOffset();
         this.operatorOffset = data.getOperatorOffset();
         this.seatOffset = data.getSeatOffset();
+
         this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
         this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
         var rotInfo = data.getRotInfo();
@@ -54,6 +75,12 @@ public class WeaponUnit extends PartUnit {
         this.yRotSpeed = rotInfo.getYRotSpeed();
         this.xRotMax = rotInfo.getXRotMax();
         this.xRotMin = rotInfo.getXRotMin();
+
+        this.zoomMax = 8;
+        this.zoom = 1;
+//        this.yRotMin = 0;
+//        this.yRotMax = 0;
+        this.opticalSightType = OpticalSightType.CRT;
 
         int cnt = 0;
         for (var weaponRes : data.getWeapons()) {
@@ -75,22 +102,14 @@ public class WeaponUnit extends PartUnit {
         this.zoomMax = 8;
         this.zoom = 1;
 
-        if (this.boltOffset == null) {
-            // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
-            this.boltOffset = boltOffset;
-        }
-        if (this.barrelLength == 0) {
-            // 炮管长度，为发射物生成位置与炮闩位置的距离
-            this.barrelLength = barrelLength;
-        }
-        // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于炮闩的偏移
+        this.boltOffset = boltOffset;
+        this.barrelLength = barrelLength;
         this.opticalSightOffset = opticalSightOffset;
-        // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于炮闩的偏移
         this.operatorOffset = operatorOffset;
-        // 武器站操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
         this.seatOffset = seatOffset;
-        // 本武器站所附着于的武器站
         this.baseWeaponUnit = baseWeaponUnit;
+
+        this.opticalSightType = OpticalSightType.CRT;
 
         VehicleWeaponManager.get().getIndex(new ResourceLocation(YwzjVehicle.MOD_ID, "cannon")).ifPresent(
                 i -> weapons.add(i.create(vehicle, 0))
@@ -295,8 +314,8 @@ public class WeaponUnit extends PartUnit {
         }
     }
 
-    public Vec3 getBoltOffset() {
-        return boltOffset;
+    public OpticalSightType getOpticalSightType() {
+        return opticalSightType;
     }
 
     public WeaponUnit getBaseWeaponUnit() {

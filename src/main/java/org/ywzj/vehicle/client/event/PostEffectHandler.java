@@ -11,21 +11,31 @@ import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.util.PostPassesGetter;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CRTEffectHandler {
+public class PostEffectHandler {
 
-    public static final ResourceLocation SHADER_LOCATION = new ResourceLocation("ywzj_vehicle:shaders/post/crt.json");
+    private static final String crtEffectPath = "ywzj_vehicle:shaders/post/crt.json";
+    public static final ResourceLocation SHADER_LOCATION = new ResourceLocation(crtEffectPath);
 
     @SubscribeEvent
     public static void onTick(TickEvent.PlayerTickEvent event) {
         if (event.player.level().isClientSide()) {
             PostChain effect = Minecraft.getInstance().gameRenderer.currentEffect();
-            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                if (effect == null || !effect.getName().equals("ywzj_vehicle:shaders/post/crt.json")) {
+            WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
+            if (weaponUnit == null) {
+                if (effect != null && effect.getName().equals(crtEffectPath)) {
+                    Minecraft.getInstance().gameRenderer.shutdownEffect();
+                }
+                return;
+            }
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE 
+                    && weaponUnit.getOpticalSightType() == WeaponUnit.OpticalSightType.CRT) {
+                if (effect == null || !effect.getName().equals(crtEffectPath)) {
                     Minecraft.getInstance().gameRenderer.loadEffect(SHADER_LOCATION);
                 }
-            } else if (effect != null && effect.getName().equals("ywzj_vehicle:shaders/post/crt.json")) {
+            } else if (effect != null && effect.getName().equals(crtEffectPath)) {
                 Minecraft.getInstance().gameRenderer.shutdownEffect();
             }
         }
@@ -35,7 +45,7 @@ public class CRTEffectHandler {
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             PostChain effect = Minecraft.getInstance().gameRenderer.currentEffect();
-            if (effect != null && effect.getName().equals("ywzj_vehicle:shaders/post/crt.json")) {
+            if (effect != null && effect.getName().equals(crtEffectPath)) {
                 if (effect instanceof PostPassesGetter getter) {
                     Minecraft mc = Minecraft.getInstance();
                     for (PostPass pass : getter.getPasses()) {
