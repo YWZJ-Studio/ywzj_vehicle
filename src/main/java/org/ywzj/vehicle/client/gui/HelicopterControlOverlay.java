@@ -88,7 +88,6 @@ public class HelicopterControlOverlay implements IGuiOverlay {
             guiGraphics.fill(2, 0, 11, 1, 0xFF00FF00);
         }
         pose.popPose();
-
     }
 
     public static void renderMainInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle) {

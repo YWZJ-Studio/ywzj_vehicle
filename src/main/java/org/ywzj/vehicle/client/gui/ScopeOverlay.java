@@ -8,12 +8,16 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
+import org.ywzj.vehicle.util.RenderHelper;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
@@ -53,6 +57,7 @@ public class ScopeOverlay implements IGuiOverlay {
                             + (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.isStabilizerOn() ? "稳定器开" : "", 36, 28, color);
             }
         }
         guiGraphics.pose().popPose();
@@ -76,6 +81,8 @@ public class ScopeOverlay implements IGuiOverlay {
             guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, color);
             y += 10;
         }
+        // 稳定器锁定的位置
+        renderAimLockTarget(guiGraphics);
         // 罗盘
         renderCompassBar(guiGraphics, screenWidth, vehicle);
     }
@@ -87,7 +94,9 @@ public class ScopeOverlay implements IGuiOverlay {
     public void renderHelicopter(GuiGraphics guiGraphics, int screenWidth, int screenHeight, HelicopterVehicle vehicle) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
+        // 主信息
         HelicopterControlOverlay.renderMainInfo(guiGraphics, centerX, centerY, vehicle);
+        // 高度信息
         HelicopterControlOverlay.renderHeightInfo(guiGraphics, centerX, centerY, vehicle);
         guiGraphics.pose().pushPose();
         {
@@ -121,6 +130,31 @@ public class ScopeOverlay implements IGuiOverlay {
             }
         }
         guiGraphics.pose().popPose();
+    }
+
+    public static void renderAimLockTarget(GuiGraphics guiGraphics) {
+        WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
+        if (weaponUnit != null && weaponUnit.isStabilizerOn()) {
+            if (weaponUnit.getAimLockEntity() != null) {
+                Entity entity = weaponUnit.getAimLockEntity();
+                AABB aabb = entity.getBoundingBox();
+                Vec3 screenPos = VectorUtil.worldToScreen(aabb.getCenter());
+                guiGraphics.pose().pushPose();
+                {
+                    guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
+                    RenderHelper.drawSquare(guiGraphics, 0, 0, 15, 0xFF00FF00);
+                }
+                guiGraphics.pose().popPose();
+            }
+            Vec3 pos = weaponUnit.getAimLockPosition();
+            Vec3 screenPos = VectorUtil.worldToScreen(pos);
+            guiGraphics.pose().pushPose();
+            {
+                guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
+                RenderHelper.drawCross(guiGraphics, 0, 0, 10, 0xFF00FF00);
+            }
+            guiGraphics.pose().popPose();
+        }
     }
 
     private void renderCompassBar(GuiGraphics guiGraphics, int screenWidth, AbstractVehicle vehicle) {

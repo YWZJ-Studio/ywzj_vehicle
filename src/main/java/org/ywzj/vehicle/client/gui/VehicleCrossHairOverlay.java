@@ -87,6 +87,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     drawReticle(guiGraphics, 0 ,0, 15, 1, color);
                     guiGraphics.pose().popPose();
                 }
+                // 稳定器锁定的位置
+                ScopeOverlay.renderAimLockTarget(guiGraphics);
             }
         }
     }

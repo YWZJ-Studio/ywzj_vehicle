@@ -84,11 +84,14 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
         if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             Vec2 rot = null;
             if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                rot = LocalVehiclePlayer.instance.cameraToWeaponRot();
+                rot = LocalVehiclePlayer.instance.thirdPersonAimRot();
             } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 rot = LocalVehiclePlayer.instance.scopeAimRot();
             }
             if (rot == null) {
+                return;
+            }
+            if (weaponUnit.isStabilizerOn()) {
                 return;
             }
             if (weaponUnit.xAimRot != rot.x || weaponUnit.yAimRot != rot.y) {

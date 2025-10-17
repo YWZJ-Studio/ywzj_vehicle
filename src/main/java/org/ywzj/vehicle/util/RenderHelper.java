@@ -15,6 +15,24 @@ public class RenderHelper {
         }
     }
 
+    public static void drawCross(GuiGraphics guiGraphics, int x, int y, int size, int color) {
+        int half = size / 2;
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.scale(0.7f, 0.7f, 0.7f);
+            // 横线
+            for (int i = x - half; i <= x + half; i++) {
+                guiGraphics.fill(i, y, i + 1, y + 1, color);
+            }
+            // 竖线
+            for (int j = y - half; j <= y + half; j++) {
+                guiGraphics.fill(x, j, x + 1, j + 1, color);
+            }
+        }
+        poseStack.popPose();
+    }
+
     public static void drawSquare(GuiGraphics guiGraphics, int x, int y, int size, int color) {
         int half = size / 2;
         int left = x - half;

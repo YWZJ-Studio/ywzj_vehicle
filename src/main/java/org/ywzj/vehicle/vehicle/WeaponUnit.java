@@ -1,9 +1,14 @@
 package org.ywzj.vehicle.vehicle;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec2;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.*;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
@@ -12,6 +17,8 @@ import org.ywzj.vehicle.custom.VehicleWeaponManager;
 import org.ywzj.vehicle.custom.vehicle.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.ArrayList;
@@ -43,6 +50,10 @@ public class WeaponUnit extends PartUnit {
     private float zoom;
     // 本武器站所附着于的武器站
     private WeaponUnit baseWeaponUnit;
+
+    private boolean stabilizer;
+    private Vec3 aimLockPosition;
+    private Entity aimLockEntity;
 
     private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
     private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
@@ -117,23 +128,45 @@ public class WeaponUnit extends PartUnit {
         currentWeaponIndex = 0;
     }
 
-    public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {
-        if (currentWeaponIndex >= 0 && currentWeaponIndex < weapons.size()) {
-            return Optional.of(weapons.get(currentWeaponIndex));
-        }
-        return Optional.empty();
-    }
-
-    public void setBaseWeaponUnit(WeaponUnit baseWeaponUnit) {
-        this.baseWeaponUnit = baseWeaponUnit;
-    }
-
     @Override
     public void tick() {
+        if (vehicle.level().isClientSide) {
+            tickStabilizer();
+        }
         super.tick();
         this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
         updateOBBs(yTurnUnitOBBs, false);
         updateOBBs(xTurnUnitOBBs, true);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void tickStabilizer() {
+        if (stabilizer && aimLockPosition != null) {
+            BlockHitResult result = vehicle.level().clip(new ClipContext(worldBoltPosition(), aimLockPosition, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
+            if (result.getType() != HitResult.Type.MISS) {
+                aimLockEntity = null;
+            }
+            if (aimLockEntity != null) {
+                if (!aimLockEntity.isAlive()) {
+                    aimLockEntity = null;
+                    stabilizer = false;
+                    return;
+                }
+                AABB aabb = aimLockEntity.getBoundingBox();
+                aimLockPosition = aabb.getCenter();
+            }
+            Vec2 rot = aim(aimLockPosition);
+            if (xAimRot != rot.x || yAimRot != rot.y) {
+                xAimRot = rot.x;
+                yAimRot = rot.y;
+                ClientVehicleAction control = new ClientVehicleAction();
+                control.vehicleEntityId = vehicle.getId();
+                control.weaponIndex = getIndex();
+                control.xAimRot = rot.x;
+                control.yAimRot = rot.y;
+                Channel.CHANNEL.sendToServer(control);
+            }
+        }
     }
 
     @Override
@@ -194,9 +227,14 @@ public class WeaponUnit extends PartUnit {
         return vecToRot(worldAim);
     }
 
+    public Vec3 aimHitPosition() {
+        Vec3 start = worldBoltPosition();
+        Vec3 end = start.add(worldVec().normalize().scale(256));
+        return vehicle.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle)).getLocation();
+    }
+
     public Vec3 ammoSpawnPosition() {
-        Vec2 rot = worldRot();
-        Vec3 barrelOffset = VectorUtil.calculateViewVector(rot.x, rot.y).normalize().scale(barrelLength);
+        Vec3 barrelOffset = worldVec().normalize().scale(barrelLength);
         return worldBoltPosition().add(barrelOffset);
     }
 
@@ -250,6 +288,11 @@ public class WeaponUnit extends PartUnit {
         float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
         return new Vec2(pitch, yaw);
+    }
+
+    public Vec3 worldVec() {
+        Vec2 rot = worldRot();
+        return VectorUtil.calculateViewVector(rot.x, rot.y);
     }
 
     public Vec2 vecToRot(Vec3 worldVec) {
@@ -318,8 +361,71 @@ public class WeaponUnit extends PartUnit {
         return opticalSightType;
     }
 
+    public boolean isStabilizerOn() {
+        return stabilizer;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void switchStabilizer() {
+        stabilizer = !stabilizer;
+        if (stabilizer) {
+            fireControlLock();
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void fireControlLock() {
+        if (aimLockEntity != null) {
+            aimLockEntity = null;
+            stabilizer = false;
+            return;
+        }
+        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(-10, 0).getLocation();
+        } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0).getLocation();
+        }
+        Vec3 worldBoltPosition = worldBoltPosition();
+        Vec3 aimDirection = aimLockPosition.subtract(worldBoltPosition);
+        AABB aabb = vehicle.getBoundingBox()
+                .expandTowards(aimDirection)
+                .inflate(1.0D, 1.0D, 1.0D);
+        EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(vehicle, worldBoltPosition, aimLockPosition, aabb,
+                entity -> !entity.isSpectator() && !vehicle.getPassengers().contains(entity),
+                java.lang.Math.pow(Minecraft.getInstance().options.renderDistance().get() * 16, 2));
+        if (entityHitResult != null) {
+            aimLockEntity = entityHitResult.getEntity();
+            stabilizer = true;
+        } else {
+            aimLockEntity = null;
+        }
+    }
+
+    public Vec3 getAimLockPosition() {
+        return aimLockPosition;
+    }
+
+    public void setAimLockPosition(Vec3 aimLockPosition) {
+        this.aimLockPosition = aimLockPosition;
+    }
+
+    public Entity getAimLockEntity() {
+        return aimLockEntity;
+    }
+
     public WeaponUnit getBaseWeaponUnit() {
         return baseWeaponUnit;
+    }
+
+    public void setBaseWeaponUnit(WeaponUnit baseWeaponUnit) {
+        this.baseWeaponUnit = baseWeaponUnit;
+    }
+
+    public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {
+        if (currentWeaponIndex >= 0 && currentWeaponIndex < weapons.size()) {
+            return Optional.of(weapons.get(currentWeaponIndex));
+        }
+        return Optional.empty();
     }
 
     public void setSeatOffset(Vec3 seatOffset) {

@@ -70,6 +70,20 @@ public class AllKeys {
             GLFW.GLFW_KEY_LEFT_SHIFT,
             "key.category.ywzj_vehicle");
 
+    public static final KeyMapping FIRE_CONTROL_STABILIZER = new KeyMapping("key.ywzj_vehicle.fire_control_stabilizer.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F,
+            "key.category.ywzj_vehicle");
+
+    public static final KeyMapping FIRE_CONTROL_LOCK = new KeyMapping("key.ywzj_vehicle.fire_control_lock.desc",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_R,
+            "key.category.ywzj_vehicle");
+
     public static final KeyMapping MAIN_WEAPON_SHOOT = new KeyMapping("key.ywzj_vehicle.main_weapon_shoot.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
@@ -155,6 +169,8 @@ public class AllKeys {
         event.register(RIGHT);
         event.register(COLLECTIVE_PITCH_UP);
         event.register(COLLECTIVE_PITCH_DOWN);
+        event.register(FIRE_CONTROL_STABILIZER);
+        event.register(FIRE_CONTROL_LOCK);
         event.register(MAIN_WEAPON_SHOOT);
         event.register(MAGNIFICATION_CHANGE);
         event.register(SWITCH_VIEW);

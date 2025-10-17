@@ -40,6 +40,7 @@ public class InputHandler {
         if (event.getAction() == GLFW.GLFW_PRESS){
             if (LocalVehiclePlayer.instance.onVehicle()) {
                 AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+                WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
                 if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
                     LocalVehiclePlayer.instance.switchViewType(null);
                 } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
@@ -52,6 +53,14 @@ public class InputHandler {
                     sendChangeSeat(vehicle, 2);
                 } else if (CHANGE_SEAT_4.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 3);
+                } else if (FIRE_CONTROL_STABILIZER.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        weaponUnit.switchStabilizer();
+                    }
+                } else if (FIRE_CONTROL_LOCK.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        weaponUnit.fireControlLock();
+                    }
                 } else if (DEBUG_GUI.matches(event.getKey(), event.getScanCode())) {
                     debugGui = !debugGui;
                 }
@@ -66,10 +75,13 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null) {
             return;
         }
-        if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                if (event.getAction() == 0 && MAGNIFICATION_CHANGE.isDown()) {
-                    weaponUnit.switchZoom();
+        if (event.getAction() == 0) {
+            if (LocalVehiclePlayer.instance.onVehicle()) {
+                AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+                if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+                    if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                        weaponUnit.switchZoom();
+                    }
                 }
             }
         }

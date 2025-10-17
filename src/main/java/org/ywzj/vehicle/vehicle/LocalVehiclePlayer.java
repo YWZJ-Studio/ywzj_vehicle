@@ -70,10 +70,24 @@ public class LocalVehiclePlayer {
                     cameraY = vehicleCameraPos.y;
                     cameraZ = vehicleCameraPos.z;
                 } else if (viewType == ViewType.SCOPE) {
+                    Vec3 worldOpticalSightPosition = weaponUnit.getOpticalSightType() != WeaponUnit.OpticalSightType.OPERATOR ?
+                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOperatorPosition();
+                    cameraXO = cameraX;
+                    cameraYO = cameraY;
+                    cameraZO = cameraZ;
+                    cameraX = worldOpticalSightPosition.x;
+                    cameraY = worldOpticalSightPosition.y;
+                    cameraZ = worldOpticalSightPosition.z;
                     cameraAimRotXO = cameraAimRotX;
                     cameraAimRotYO = cameraAimRotY;
                     cameraAimRotZO = cameraAimRotZ;
-                    if (!mouseTurnedAfterScope) {
+                    if (weaponUnit.isStabilizerOn()) {
+                        Vec3 pos = weaponUnit.aimHitPosition();
+                        Vec2 scopeAimRot = cameraAim(pos, vehicle);
+                        scopeAimRotX = scopeAimRot.x;
+                        scopeAimRotY = scopeAimRot.y;
+                        cameraAimAt(pos);
+                    } else if (!mouseTurnedAfterScope) {
                         scopeAimRotX = weaponUnit.xRot;
                         scopeAimRotY = weaponUnit.yRot;
                         Vec2 barrelAimRot = weaponUnit.worldRot();
@@ -95,14 +109,6 @@ public class LocalVehiclePlayer {
                     if (Math.abs(yDiff) > 90) {
                         cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
                     }
-                    Vec3 worldOpticalSightPosition = weaponUnit.getOpticalSightType() != WeaponUnit.OpticalSightType.OPERATOR ?
-                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOperatorPosition();
-                    cameraXO = cameraX;
-                    cameraYO = cameraY;
-                    cameraZO = cameraZ;
-                    cameraX = worldOpticalSightPosition.x;
-                    cameraY = worldOpticalSightPosition.y;
-                    cameraZ = worldOpticalSightPosition.z;
                 }
             }
         }
@@ -174,22 +180,27 @@ public class LocalVehiclePlayer {
                 }
                 pXRot *= 0.15f;
                 pYRot *= 0.15f;
-                float t1 = Mth.abs(scopeAimRotX - weaponUnit.xRot) / weaponUnit.getXRotSpeed();
-                float v1 = 1;
-                if (t1 > 5f) {
-                    // 运动平滑
-                    v1 = Math.max(0.00001f, (70 - t1 * 10) / 100);
+                if (weaponUnit.isStabilizerOn()) {
+                    Vec3 pos = cameraAimHit((float) pXRot, (float) pYRot).getLocation();
+                    weaponUnit.setAimLockPosition(pos);
+                } else {
+                    float t1 = Mth.abs(scopeAimRotX - weaponUnit.xRot) / weaponUnit.getXRotSpeed();
+                    float v1 = 1;
+                    if (t1 > 5f) {
+                        // 运动平滑
+                        v1 = Math.max(0.00001f, (70 - t1 * 10) / 100);
+                    }
+                    scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
+                    float t2 = Mth.abs(scopeAimRotY -  weaponUnit.yRot) / weaponUnit.getYRotSpeed();
+                    float v2 = 1;
+                    if (t2 > 5f) {
+                        // 运动平滑
+                        v2 = Math.max(0.00001f, (70 - t2 * 10) / 100);
+                    }
+                    scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);
+                    scopeAimRotX = Mth.clamp(scopeAimRotX, weaponUnit.getXRotMin(), weaponUnit.getXRotMax());
+                    scopeAimRotY = Mth.clamp(scopeAimRotY, weaponUnit.getYRotMin(), weaponUnit.getYRotMax());
                 }
-                scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
-                float t2 = Mth.abs(scopeAimRotY -  weaponUnit.yRot) / weaponUnit.getYRotSpeed();
-                float v2 = 1;
-                if (t2 > 5f) {
-                    // 运动平滑
-                    v2 = Math.max(0.00001f, (70 - t2 * 10) / 100);
-                }
-                scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);
-                scopeAimRotX = Mth.clamp(scopeAimRotX, weaponUnit.getXRotMin(), weaponUnit.getXRotMax());
-                scopeAimRotY = Mth.clamp(scopeAimRotY, weaponUnit.getYRotMin(), weaponUnit.getYRotMax());
             }
         }
     }
@@ -205,25 +216,47 @@ public class LocalVehiclePlayer {
         return null;
     }
 
+    public Vec2 cameraAim(Vec3 worldPos, AbstractVehicle vehicle) {
+        Vec3 worldAim = new Vec3(worldPos.x - cameraX, worldPos.y - cameraY, worldPos.z - cameraZ);
+        Vec3 vehicleVec = vehicle.relativeRotDirection(worldAim, true);
+        float pitch = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.sqrt(worldAim.x * worldAim.x + worldAim.z * worldAim.z)));
+        float yaw = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
+        return new Vec2(pitch, yaw);
+    }
+
+    public void cameraAimAt(Vec3 worldPos) {
+        if (worldPos != null) {
+            double dx = worldPos.x - cameraX;
+            double dy = worldPos.y - cameraY;
+            double dz = worldPos.z - cameraZ;
+            double d = Math.sqrt(dx * dx + dz * dz);
+            cameraAimRotX = Mth.wrapDegrees((float)(-(Mth.atan2(dy, d) * (double)(180F / (float)Math.PI))));
+            cameraAimRotY = Mth.wrapDegrees((float)(Mth.atan2(dz, dx) * (double)(180F / (float)Math.PI)) - 90.0F);
+        }
+    }
+
+    public BlockHitResult cameraAimHit(float xRot, float yRot) {
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vec3 start = camera.getPosition();
+        Vec3 end = start.add(VectorUtil.calculateViewVector(camera.getXRot() + xRot, camera.getYRot() + yRot)
+                .normalize().scale(Minecraft.getInstance().options.renderDistance().get() * 16));
+        return getPlayer().level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, getPlayer()));
+    }
+
     /**
      * 第三人称瞄准方法
      * 摄像头自由预瞄某落点，返回让炮塔旋转去瞄准该落点的XY转向
      */
-    public Vec2 cameraToWeaponRot() {
+    public Vec2 thirdPersonAimRot() {
         AbstractVehicle vehicle = getVehicle();
         if (vehicle == null) {
             return null;
         }
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        cameraAimRotX = camera.getXRot() - 10;
-        cameraAimRotY = camera.getYRot();
-        Vec3 start = camera.getPosition();
-        Vec3 end = start.add(VectorUtil.calculateViewVector(camera.getXRot(),
-                camera.getYRot()).normalize().scale(Minecraft.getInstance().options.renderDistance().get() * 16));
-        BlockHitResult result = getPlayer().level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, getPlayer()));
-        Vec3 hitPos = result.getLocation();
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
-            return weaponUnit.aim(hitPos);
+            Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+            cameraAimRotX = camera.getXRot() - 10;
+            cameraAimRotY = camera.getYRot();
+            return weaponUnit.aim(cameraAimHit(-10, 0).getLocation());
         }
         return null;
     }
@@ -241,11 +274,7 @@ public class LocalVehiclePlayer {
             return null;
         }
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit) {
-            Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-            Vec3 start = camera.getPosition();
-            Vec3 end = start.add(VectorUtil.calculateViewVector(camera.getXRot(),
-                    camera.getYRot()).normalize().scale(Minecraft.getInstance().options.renderDistance().get() * 16));
-            BlockHitResult result = getPlayer().level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, getPlayer()));
+            BlockHitResult result = cameraAimHit(0, 0);
             Vec3 hitPos = result.getLocation();
             aimLocationDistance = getPlayer().position().distanceTo(hitPos);
             outOfRangeFinding = result.getType() == HitResult.Type.MISS;
