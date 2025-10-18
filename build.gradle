@@ -82,6 +82,12 @@ repositories {
     flatDir {
         dir 'libs'
     }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 dependencies {
@@ -98,7 +104,9 @@ dependencies {
         jarJar.ranged(it, "[0.3.6,)")
     }
 
-    runtimeOnly(fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4-1.20.1-alpha'))
+    runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
+    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4.3-1.20.1-alpha')
+    runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

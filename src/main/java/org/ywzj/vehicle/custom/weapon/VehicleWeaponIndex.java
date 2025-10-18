@@ -3,6 +3,7 @@ package org.ywzj.vehicle.custom.weapon;
 import net.minecraft.resources.ResourceLocation;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 /**
  * 代表了一个具体的包含参数配置的武器索引<br/>
@@ -17,7 +18,7 @@ public record VehicleWeaponIndex<T extends AbstractVehicleWeapon<D>, D>(
         VehicleWeaponType<T, D> type,
         D data
 ) {
-    public T create(AbstractVehicle vehicle, int index) {
-        return type.create(vehicle, index, data);
+    public T create(AbstractVehicle vehicle, WeaponUnit unit, int index) {
+        return type.create(vehicle, unit, index, data);
     }
 }

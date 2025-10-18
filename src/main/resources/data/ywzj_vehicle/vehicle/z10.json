@@ -1,0 +1,39 @@
+{
+  "structure_model": "ywzj_vehicle:bedrock/entity/z10_structure",
+  "attributes": {
+    "max_health": 200
+    // ...
+  },
+  "movement": {
+
+  },
+  "engine": {
+    "max_capacity": 100.0,
+    "consumption_per_tick": 0.1,
+    "type": "liquid",
+    "fuel_types": [
+      "minecraft:lava"
+    ]
+  },
+  "weapon_units": [
+    {
+      "id": "z10",
+      "type": "weapon",
+      "structure_bone": "z10",
+      "name": "xxx.xxx",
+      "rot_info": {
+        "x_rot_speed": 3.0,
+        "y_rot_speed": 3.0,
+        "x_rot_max": 45,
+        "x_rot_min": -13,
+        "y_rot_max": 90,
+        "y_rot_min": -90
+      },
+      "operator_offset": [0, 0.6, 1.2],
+      "seat_offset": [0, 2, 0],
+      "weapons": [
+        "ywzj_vehicle:missile"
+      ]
+    }
+  ]
+}

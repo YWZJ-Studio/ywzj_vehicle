@@ -2,8 +2,6 @@ package org.ywzj.vehicle.client.event;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.phys.Vec2;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
@@ -13,6 +11,7 @@ import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
+import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
@@ -128,25 +127,20 @@ public class InputHandler {
                 }
                 sendControl(vehicle, controlUnit);
             }
-            if (MAIN_WEAPON_SHOOT.isDown()) {
-                if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                    if (weaponUnit == vehicle.spotterUnit) {
-                        LocalVehiclePlayer.instance.sendMessage("tips.spotter");
-                        return;
-                    }
 
-                    // todo 武器配置
-                    Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
-                    Vec2 rot = weaponUnit.worldRot();
+            handleShoot(vehicle, player);
+        }
+    }
 
-                    weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon->{
-                        long interval = vehicleWeapon.getShootInterval();
-                        if (System.currentTimeMillis() - lastFireTimeMillis > interval) {
-                            sendShoot(vehicle, weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
-                            lastFireTimeMillis = System.currentTimeMillis();
-                        }
-                    });
+    private static void handleShoot(AbstractVehicle vehicle, LocalPlayer player) {
+        if (MAIN_WEAPON_SHOOT.isDown()) {
+            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+                if (weaponUnit == vehicle.spotterUnit) {
+                    LocalVehiclePlayer.instance.sendMessage("tips.spotter");
+                    return;
                 }
+
+                weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
             }
         }
     }
@@ -172,19 +166,6 @@ public class InputHandler {
         changeSeat.vehicleEntityId = abstractVehicle.getId();
         changeSeat.toSeat = toSeat;
         Channel.CHANNEL.sendToServer(changeSeat);
-    }
-
-    private static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        ClientVehicleAction action = new ClientVehicleAction();
-        action.vehicleEntityId = abstractVehicle.getId();
-        action.weaponIndex = weaponIndex;
-        action.shoot = true;
-        action.ammoX = (float) ammoSpawnPosition.x;
-        action.ammoY = (float) ammoSpawnPosition.y;
-        action.ammoZ = (float) ammoSpawnPosition.z;
-        action.ammoXRot = ammoXRot;
-        action.ammoYRot = ammoYRot;
-        Channel.CHANNEL.sendToServer(action);
     }
 
     private static void sendLeaveVehicle(AbstractVehicle abstractVehicle) {

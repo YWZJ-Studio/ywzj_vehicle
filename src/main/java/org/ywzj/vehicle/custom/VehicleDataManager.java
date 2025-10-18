@@ -37,7 +37,7 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
             .registerTypeAdapter(Vec3.class, new Vec3Serializer())
             .create();
 
-    public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");
+    public static final Marker MARKER = MarkerManager.getMarker("VehicleDataManager");
 
     private static VehicleDataManager INSTANCE;
 

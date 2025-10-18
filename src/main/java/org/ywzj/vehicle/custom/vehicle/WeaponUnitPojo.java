@@ -16,28 +16,17 @@ public class WeaponUnitPojo {
 
     public static class RotInfo {
         @SerializedName("x_rot_speed")
-        private float xRotSpeed = 1.0f;
+        public float xRotSpeed = 1.0f;
         @SerializedName("y_rot_speed")
-        private float yRotSpeed = 1.0f;
+        public float yRotSpeed = 1.0f;
         @SerializedName("x_rot_max")
-        private float xRotMax = 18;
+        public float xRotMax = 18;
         @SerializedName("x_rot_min")
-        private float xRotMin = -18;
-
-        public float getXRotSpeed() {
-            return xRotSpeed;
-        }
-        public float getYRotSpeed() {
-            return yRotSpeed;
-        }
-
-        public float getXRotMax() {
-            return xRotMax;
-        }
-
-        public float getXRotMin() {
-            return xRotMin;
-        }
+        public float xRotMin = -18;
+        @SerializedName("y_rot_max")
+        public float yRotMax = Float.MAX_VALUE;
+        @SerializedName("y_rot_min")
+        public float yRotMin = -Float.MAX_VALUE;
     }
 
     @SerializedName("rot_info")

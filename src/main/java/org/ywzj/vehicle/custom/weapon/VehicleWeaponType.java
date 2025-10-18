@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 import javax.annotation.Nullable;
 
@@ -22,8 +23,8 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D>(
         VehicleWeaponType.WeaponUnitFactory<T, D> factory
 ) {
     @Nullable
-    public T create(AbstractVehicle vehicle, int index, D data) {
-        return factory.create(vehicle, index, data);
+    public T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data) {
+        return factory.create(vehicle, unit, index, data);
     }
 
     @Nullable
@@ -47,7 +48,7 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D>(
 
     @FunctionalInterface
     public interface WeaponUnitFactory<T extends AbstractVehicleWeapon<D>, D> {
-        T create(AbstractVehicle vehicle, int index, D data);
+        T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data);
     }
 
     public static class Builder<T extends AbstractVehicleWeapon<D>, D> {

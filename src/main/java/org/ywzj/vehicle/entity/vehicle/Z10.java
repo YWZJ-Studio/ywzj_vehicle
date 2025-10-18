@@ -5,16 +5,15 @@ import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.entity.weapon.MissileEntity;
+import org.ywzj.vehicle.custom.VehicleDataManager;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -67,6 +66,24 @@ public class Z10 extends HelicopterVehicle {
     }
 
     @Override
+    public void initData() {
+        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("z10")).ifPresent(data -> {
+            var struct = data.getVehicleStructObbs();
+            this.mainCubeOBB = struct.mainCubeOBB();
+            this.vehicleBodyOBBs = struct.obbs();
+            var weapons = data.createPartUnits(this);
+            this.operatorUnits.addAll(weapons.values());
+            this.partUnits.addAll(weapons.values());
+        });
+        this.spotterUnit = new SpotterUnit(this,
+                new Vec3(0, 4.54d, -0.375d),
+                new Vec3(0, 0d, -6d),
+                new Vec3(0, -2.2d, -1.2d),
+                null);
+
+    }
+
+    @Override
     protected void tickParticle() {
         super.tickParticle();
         float engineSpeed = getPower();
@@ -109,10 +126,7 @@ public class Z10 extends HelicopterVehicle {
             Vec3 missilePosLeft = this.position().add(v2.scale(2));
             Vec3 missilePosRight = this.position().add(v2.scale(-2));
             count += 1;
-            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), level());
-            missileEntity.shoot(this, "akd10", count % 2 == 0 ? missilePosLeft : missilePosRight, weaponUnit.getOwner());
-            this.level().playSound(null, this, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
-            this.level().addFreshEntity(missileEntity);
+            weaponUnit.shoot(count % 2 ==0 ? missilePosLeft : missilePosRight, ammoXRot, ammoYRot);
 
         }
 

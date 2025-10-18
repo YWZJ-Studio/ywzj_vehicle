@@ -60,6 +60,11 @@ public class Channel {
                 ServerSoundEvent::encode, ServerSoundEvent::decode,
                 SoundManager::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.S_VEHICLE_WEAPON_SYNC_DATA.value(), ServerVehicleWeaponSync.class,
+                ServerVehicleWeaponSync::encode, ServerVehicleWeaponSync::decode,
+                ServerVehicleWeaponSync::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
     }
 
 }
@@ -71,6 +76,7 @@ enum PacketId {
     S_VEHICLE_SEATS_CHANGE(102),
     S_ROTATABLE_UNIT_ROT(103),
     C_VEHICLE_CHANGE_SEAT(104),
+    S_VEHICLE_WEAPON_SYNC_DATA(105),
 
     S_SYNC_DATA(200),
     S_SOUND_EVENT(201);

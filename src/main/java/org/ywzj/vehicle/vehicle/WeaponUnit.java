@@ -3,12 +3,14 @@ package org.ywzj.vehicle.vehicle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.PacketDistributor;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
@@ -19,6 +21,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.network.message.ServerVehicleWeaponSync;
 import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.ArrayList;
@@ -82,21 +85,21 @@ public class WeaponUnit extends RotatableUnit {
         this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
         this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
         var rotInfo = data.getRotInfo();
-        this.xRotSpeed = rotInfo.getXRotSpeed();
-        this.yRotSpeed = rotInfo.getYRotSpeed();
-        this.xRotMax = rotInfo.getXRotMax();
-        this.xRotMin = rotInfo.getXRotMin();
+        this.xRotSpeed = rotInfo.xRotSpeed;
+        this.yRotSpeed = rotInfo.yRotSpeed;
+        this.xRotMax = rotInfo.xRotMax;
+        this.xRotMin = rotInfo.xRotMin;
+        this.yRotMax = rotInfo.yRotMax;
+        this.yRotMin = rotInfo.yRotMin;
 
         this.zoomMax = 8;
         this.zoom = 1;
-//        this.yRotMin = 0;
-//        this.yRotMax = 0;
         this.opticalSightType = OpticalSightType.CRT;
 
         int cnt = 0;
         for (var weaponRes : data.getWeapons()) {
             VehicleWeaponManager.get().getIndex(weaponRes).ifPresent(
-                    i -> weapons.add(i.create(vehicle, cnt))
+                    i -> weapons.add(i.create(vehicle, this, cnt))
             );
         }
         if (!weapons.isEmpty()) {
@@ -123,20 +126,53 @@ public class WeaponUnit extends RotatableUnit {
         this.opticalSightType = OpticalSightType.CRT;
 
         VehicleWeaponManager.get().getIndex(new ResourceLocation(YwzjVehicle.MOD_ID, "cannon")).ifPresent(
-                i -> weapons.add(i.create(vehicle, 0))
+                i -> weapons.add(i.create(vehicle, this, 0))
         );
         currentWeaponIndex = 0;
     }
 
     @Override
     public void tick() {
-        if (vehicle.level().isClientSide) {
+        if (vehicle.level().isClientSide()) {
             tickStabilizer();
+        } else {
+            tickSync();
         }
         super.tick();
         this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
         updateOBBs(yTurnUnitOBBs, false);
         updateOBBs(xTurnUnitOBBs, true);
+    }
+
+    protected void tickSync() {
+        for (AbstractVehicleWeapon<?> weapon : weapons) {
+            if (!weapon.hasSyncData()) {
+                continue;
+            }
+            var packet = new ServerVehicleWeaponSync(this, weapon);
+            for (var entity : vehicle.getPassengers()) {
+                if (entity instanceof ServerPlayer player) {
+                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+                }
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void onSyncData(ServerVehicleWeaponSync message) {
+        var level = Minecraft.getInstance().level;
+        if (level == null) return;
+        var entity = level.getEntity(message.vehicleEntityId);
+        if (entity instanceof AbstractVehicle vehicle) {
+            var partUnits = vehicle.getPartUnits();
+            if (partUnits.size() > message.vehiclePartUnitId) {
+                var partUnit = partUnits.get(message.vehiclePartUnitId);
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    AbstractVehicleWeapon<?> vehicleWeapon = weaponUnit.weapons.get(message.weaponIndex);
+                    vehicleWeapon.readSyncData(message.buf);
+                }
+            }
+        }
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -4,6 +4,7 @@ import com.tacz.guns.util.block.BlockRayTrace;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.world.entity.Entity;
@@ -35,7 +36,7 @@ import org.ywzj.vehicle.vehicle.WeaponUnit;
 public class MissileEntity extends Projectile implements IEntityAdditionalSpawnData {
 
     public AbstractVehicle vehicle;
-    public String name;
+    public Component name;
     public float speed = 5f;
     public Entity targetEntity;
     public Vec3 targetPos;
@@ -50,7 +51,7 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
         super(AllEntities.MISSILE.get(), level);
     }
 
-    public void shoot(AbstractVehicle vehicle, String name, Vec3 spawnPos, LivingEntity shooter) {
+    public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, LivingEntity shooter) {
         this.vehicle = vehicle;
         this.name = name;
         this.setPos(spawnPos);
@@ -191,13 +192,13 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
 
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeUtf(name);
+        buffer.writeComponent(name);
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
     }
 
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
-        name = additionalData.readUtf();
+        name = additionalData.readComponent();
         operatorId = additionalData.readInt();
         if (level().isClientSide()) {
             localAddMissile();

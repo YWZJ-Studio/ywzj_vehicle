@@ -9,12 +9,17 @@ import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponType;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.misc.weapon.VehicleCannon;
+import org.ywzj.vehicle.misc.weapon.VehicleMissile;
 
 public class AllVehicleWeaponType {
     public static final DeferredRegister<VehicleWeaponType<?, ?>> WEAPON_TYPES = DeferredRegister.create(ModRegistries.WEAPON_UNIT_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<VehicleWeaponType<VehicleCannon, BaseVehicleWeaponData>> CANNON = register(
             "cannon", json -> VehicleWeaponManager.GSON.fromJson(json, BaseVehicleWeaponData.class), VehicleCannon::new
+    );
+
+    public static final RegistryObject<VehicleWeaponType<VehicleMissile, BaseVehicleWeaponData>> MISSILE = register(
+            "missile", json -> VehicleWeaponManager.GSON.fromJson(json, BaseVehicleWeaponData.class), VehicleMissile::new
     );
 
     private static <T extends AbstractVehicleWeapon<D>, D> RegistryObject<VehicleWeaponType<T, D>> register(

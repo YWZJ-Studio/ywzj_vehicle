@@ -115,6 +115,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
     }
 
+    public List<PartUnit> getPartUnits() {
+        return partUnits;
+    }
+
     @Override
     public void tick() {
         super.tick();
