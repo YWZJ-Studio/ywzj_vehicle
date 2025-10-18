@@ -4,47 +4,35 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.Bedr
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.network.message.ServerPartUnitRot;
-import org.ywzj.vehicle.util.EntityUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * 具有结构模型的载具部件
+ * 任何乘位都应关联于一个载具部件，以计算座位与镜头位置
+ */
 public class PartUnit {
 
     protected final Component name;
     protected final int index;
     protected final AbstractVehicle vehicle;
-    protected LivingEntity operator;
+    protected LivingEntity owner;
+    public Vec3 ownerViewOffset;
+    public Vec3 seatOffset;
     public PassengerPose operatorPose;
     private BedrockBone unitBone;
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
-    public float xRot;
-    public float yRot;
-    public float xRotO;
-    public float yRotO;
-    public float xRotSpeed;
-    public float yRotSpeed;
-    public float xRotMax = 90;
-    public float xRotMin = -90;
-    public float yRotMax = Float.MAX_VALUE;
-    public float yRotMin = -Float.MAX_VALUE;
-    public float xAimRot;
-    public float yAimRot;
 
     public PartUnit(String name, int index, AbstractVehicle vehicle) {
         this.name = Component.translatable(name);
@@ -63,13 +51,7 @@ public class PartUnit {
     }
 
     public void tick() {
-        if (vehicle.hasPower()) {
-            tickRot();
-            updateOBBs();
-        } else {
-            this.xRotO = this.xRot;
-            this.yRotO = this.yRot;
-        }
+        updateOBBs();
     }
 
     protected void initStructureModel(String name) {
@@ -112,33 +94,6 @@ public class PartUnit {
         }
     }
 
-    protected void tickRot() {
-        this.xRotO = this.xRot;
-        this.yRotO = this.yRot;
-        float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
-        float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
-        if (Math.abs(xDiff) > getXRotSpeed()) {
-            this.xRot += Math.signum(xDiff) * getXRotSpeed();
-        } else {
-            this.xRot = this.xAimRot;
-        }
-        this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
-        if (Math.abs(yDiff) > getYRotSpeed()) {
-            this.yRot += Math.signum(yDiff) * getYRotSpeed();
-        } else {
-            this.yRot = this.yAimRot;
-        }
-        this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
-        if (!vehicle.level().isClientSide()) {
-            if (xDiff != 0 || yDiff != 0) {
-                vehicle.level().players().stream()
-                        .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && vehicle.getOwnOperatorUnit(player) != this)
-                        .forEach(player ->
-                                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerPartUnitRot(this)));
-            }
-        }
-    }
-
     public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         if (ctxSupplier.get().getSender() != null) {
             Level level = ctxSupplier.get().getSender().level();
@@ -148,14 +103,41 @@ public class PartUnit {
                     if (message.shoot) {
                         vehicle.shoot(message.weaponIndex, new Vec3(message.ammoX, message.ammoY, message.ammoZ), message.ammoXRot, message.ammoYRot);
                     } else {
-                        if (vehicle.operatorUnits.get(message.weaponIndex) instanceof WeaponUnit serverWeaponUnit) {
-                            serverWeaponUnit.xAimRot = message.xAimRot;
-                            serverWeaponUnit.yAimRot = message.yAimRot % 360;
+                        if (vehicle.operatorUnits.get(message.weaponIndex) instanceof RotatableUnit rotatableUnit) {
+                            rotatableUnit.xAimRot = message.xAimRot;
+                            rotatableUnit.yAimRot = message.yAimRot % 360;
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * 计算车身未旋转时某相对于载具枢轴的偏移xyz在经由车身旋转后的实际世界坐标
+     */
+    public Vec3 worldPosition(Vec3 offsetFromVehicle) {
+        if (offsetFromVehicle == null) {
+            return vehicle.position();
+        }
+        return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle));
+    }
+
+    public Vec3 worldOwnerViewPosition() {
+        float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+        if (ownerViewOffset == null) {
+            return worldPosition(new Vec3(0, eyeHeight, 0));
+        }
+        return worldPosition(ownerViewOffset).add(new Vec3(0, eyeHeight, 0));
+    }
+
+    public Vec3 worldSeatPosition() {
+        float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+        Vec3 seatOffset = this.seatOffset;
+        if (seatOffset == null) {
+            seatOffset = new Vec3(0, eyeHeight, 0);
+        }
+        return vehicle.relativeRotPos(vehicle.position().add(seatOffset));
     }
 
     public Component getName() {
@@ -170,60 +152,12 @@ public class PartUnit {
         return vehicle;
     }
 
-    public LivingEntity getOperator() {
-        return operator;
+    public LivingEntity getOwner() {
+        return owner;
     }
 
-    public void setOperator(LivingEntity operator) {
-        this.operator = operator;
-    }
-
-    public float getXRotSpeed() {
-        return xRotSpeed;
-    }
-
-    public void setXRotSpeed(float xRotSpeed) {
-        this.xRotSpeed = xRotSpeed;
-    }
-
-    public float getYRotSpeed() {
-        return yRotSpeed;
-    }
-
-    public void setYRotSpeed(float yRotSpeed) {
-        this.yRotSpeed = yRotSpeed;
-    }
-
-    public float getXRotMax() {
-        return xRotMax;
-    }
-
-    public void setXRotMax(float xRotMax) {
-        this.xRotMax = xRotMax;
-    }
-
-    public float getXRotMin() {
-        return xRotMin;
-    }
-
-    public void setXRotMin(float xRotMin) {
-        this.xRotMin = xRotMin;
-    }
-
-    public float getYRotMax() {
-        return yRotMax;
-    }
-
-    public void setYRotMax(float yRotMax) {
-        this.yRotMax = yRotMax;
-    }
-
-    public float getYRotMin() {
-        return yRotMin;
-    }
-
-    public void setYRotMin(float yRotMin) {
-        this.yRotMin = yRotMin;
+    public void setOwner(LivingEntity owner) {
+        this.owner = owner;
     }
 
 }

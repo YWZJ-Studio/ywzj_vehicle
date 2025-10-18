@@ -18,6 +18,7 @@ import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Mi24;
 import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Mi24Renderer extends EntityRenderer<Mi24> {
 
@@ -49,9 +50,11 @@ public class Mi24Renderer extends EntityRenderer<Mi24> {
         // 炮塔俯仰
         float turretXRot = 0;
         if (!pEntity.operatorUnits.isEmpty()) {
-            PartUnit weaponUnit = pEntity.operatorUnits.get(0);
-            turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-            turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
+            PartUnit partUnit = pEntity.operatorUnits.get(0);
+            if (partUnit instanceof WeaponUnit weaponUnit) {
+                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
+                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
+            }
         }
 
         propeller.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));

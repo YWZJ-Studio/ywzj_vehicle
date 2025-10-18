@@ -245,7 +245,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
         // 约定取体积最大的块计算物理
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-        cubes.sort((cube1, cube2) -> (int) (cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
+        cubes.sort((cube1, cube2) -> (int) -(cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleBodyOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {
@@ -307,7 +307,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                 controlUnit.setOperator(livingEntity);
             }
             if (seat < operatorUnits.size()) {
-                operatorUnits.get(seat).setOperator(livingEntity);
+                operatorUnits.get(seat).setOwner(livingEntity);
             }
             passengerIdsBySeat.set(seat, livingEntity.getId());
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
@@ -321,7 +321,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                 controlUnit.setOperator(null);
             }
             if (seat < operatorUnits.size()) {
-                operatorUnits.get(seat).setOperator(null);
+                operatorUnits.get(seat).setOwner(null);
             }
             passengerIdsBySeat.set(seat, null);
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
@@ -339,7 +339,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                     controlUnit.setOperator(null);
                 }
                 if (origSeat < operatorUnits.size()) {
-                    operatorUnits.get(origSeat).setOperator(null);
+                    operatorUnits.get(origSeat).setOwner(null);
                 }
                 passengerIdsBySeat.set(origSeat, null);
             }
@@ -347,7 +347,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                 controlUnit.setOperator(pPassenger);
             }
             if (toSeat < operatorUnits.size()) {
-                operatorUnits.get(toSeat).setOperator(pPassenger);
+                operatorUnits.get(toSeat).setOwner(pPassenger);
             }
             passengerIdsBySeat.set(toSeat, pPassenger.getId());
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
@@ -393,7 +393,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                         vehicle.controlUnit.setOperator(passenger);
                     }
                     if (index < vehicle.operatorUnits.size()) {
-                        vehicle.operatorUnits.get(index).setOperator(passenger);
+                        vehicle.operatorUnits.get(index).setOwner(passenger);
                     }
                 }
             }
@@ -401,7 +401,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void onServerPartUnitRot(ServerPartUnitRot message) {
+    public static void onServerRotatableUnitRot(ServerRotatableUnitRot message) {
         Level level = Minecraft.getInstance().level;
         if (level == null) {
             return;
@@ -409,9 +409,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
             if (message.partUnitIndex < vehicle.partUnits.size()) {
                 PartUnit partUnit = vehicle.partUnits.get(message.partUnitIndex);
-                if (partUnit != null) {
-                    partUnit.xAimRot = message.xAimRot;
-                    partUnit.yAimRot = message.yAimRot;
+                if (partUnit instanceof RotatableUnit rotatableUnit) {
+                    rotatableUnit.xAimRot = message.xAimRot;
+                    rotatableUnit.yAimRot = message.yAimRot;
                 }
             }
         }
@@ -468,8 +468,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         if (!(pPassenger instanceof LivingEntity)) {
             super.positionRider(pPassenger, pCallback);
         }
-        if (getOwnOperatorUnit((LivingEntity) pPassenger) instanceof WeaponUnit weaponUnit) {
-            Vec3 pos = weaponUnit.worldSeatPosition();
+        PartUnit partUnit = getOwnOperatorUnit((LivingEntity) pPassenger);
+        if (partUnit != null) {
+            Vec3 pos = partUnit.worldSeatPosition();
             pCallback.accept(pPassenger, pos.x, pos.y, pos.z);
         } else {
             super.positionRider(pPassenger, pCallback);

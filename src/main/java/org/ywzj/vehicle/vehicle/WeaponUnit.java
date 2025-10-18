@@ -30,7 +30,7 @@ import java.util.Optional;
  * 其中方向机与高低机的结构模型可相互独立运动
  * 多个武器站可以纵向堆叠，并在方向机上联动旋转
  */
-public class WeaponUnit extends PartUnit {
+public class WeaponUnit extends RotatableUnit {
 
     // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
     private final Vec3 boltOffset;
@@ -217,7 +217,7 @@ public class WeaponUnit extends PartUnit {
 
     public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot, boolean explosion) {
         this.getCurrentWeapon().ifPresent(weapon -> {
-            weapon.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, operator);
+            weapon.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, owner);
         });
     }
 
@@ -246,21 +246,23 @@ public class WeaponUnit extends PartUnit {
 
     public Vec3 worldOpticalSightPosition() {
         if (opticalSightOffset == null) {
-            return worldOperatorPosition();
+            return worldOwnerViewPosition();
         }
         return worldPosition(boltOffset.add(opticalSightOffset));
     }
 
-    public Vec3 worldOperatorPosition() {
+    @Override
+    public Vec3 worldOwnerViewPosition() {
         if (operatorOffset == null) {
-            float eyeHeight = operator == null ? 2 : operator.getEyeHeight();
+            float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
             return worldPosition(boltOffset.add(new Vec3(0, eyeHeight, 0)));
         }
         return worldPosition(boltOffset.add(operatorOffset));
     }
 
+    @Override
     public Vec3 worldSeatPosition() {
-        float eyeHeight = operator == null ? 2 : operator.getEyeHeight();
+        float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
         Vec3 seatOffset = this.seatOffset;
         if (seatOffset == null) {
             seatOffset = boltOffset.subtract(new Vec3(0, eyeHeight, 0));
@@ -272,6 +274,7 @@ public class WeaponUnit extends PartUnit {
     /**
      * 计算车身、武器、附着武器都未旋转时某相对于载具枢轴的偏移xyz在经由车身、武器、附着武器旋转后的实际世界坐标
      */
+    @Override
     public Vec3 worldPosition(Vec3 offsetFromVehicle) {
         if (offsetFromVehicle == null) {
             return vehicle.position();
@@ -280,11 +283,13 @@ public class WeaponUnit extends PartUnit {
     }
 
     public Vec2 worldRot() {
-        return worldRot(xRot, baseWeaponUnit != null ? baseWeaponUnit.combineYRot() : 0 + yRot);
+        return worldRot(xRot, yRot);
     }
 
     public Vec2 worldRot(float xRot, float yRot) {
-        Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, baseWeaponUnit != null ? baseWeaponUnit.combineYRot() : 0 + yRot), false);
+        Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot,
+                (baseWeaponUnit != null ? baseWeaponUnit.combineYRot() : 0) + yRot),
+                false);
         float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
         return new Vec2(pitch, yaw);

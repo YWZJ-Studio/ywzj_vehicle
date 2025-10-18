@@ -110,7 +110,7 @@ public class Z10 extends HelicopterVehicle {
             Vec3 missilePosRight = this.position().add(v2.scale(-2));
             count += 1;
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), level());
-            missileEntity.shoot(this, "akd10", count % 2 == 0 ? missilePosLeft : missilePosRight, weaponUnit.getOperator());
+            missileEntity.shoot(this, "akd10", count % 2 == 0 ? missilePosLeft : missilePosRight, weaponUnit.getOwner());
             this.level().playSound(null, this, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             this.level().addFreshEntity(missileEntity);
 

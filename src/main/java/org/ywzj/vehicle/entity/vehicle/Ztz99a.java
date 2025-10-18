@@ -118,26 +118,28 @@ public class Ztz99a extends TrackedVehicle {
         if (hasPower()) {
             for (PartUnit operatorUnit : operatorUnits) {
                 if (operatorUnit.getName().getString().equals("ztz99a_turret")) {
-                    if (Math.abs(operatorUnit.yAimRot - operatorUnit.yRot) > 1) {
-                        if (turretTurnYSoundInstance == null) {
-                            turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
-                            turretTurnYSoundInstance.play();
+                    if (operatorUnit instanceof WeaponUnit weaponUnit) {
+                        if (Math.abs(weaponUnit.yAimRot - weaponUnit.yRot) > 1) {
+                            if (turretTurnYSoundInstance == null) {
+                                turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
+                                turretTurnYSoundInstance.play();
+                            }
+                        } else {
+                            if (turretTurnYSoundInstance != null) {
+                                turretTurnYSoundInstance.stop();
+                                turretTurnYSoundInstance = null;
+                            }
                         }
-                    } else {
-                        if (turretTurnYSoundInstance != null) {
-                            turretTurnYSoundInstance.stop();
-                            turretTurnYSoundInstance = null;
-                        }
-                    }
-                    if (Math.abs(operatorUnit.xAimRot - operatorUnit.xRot) > 1 && operatorUnit.xRot < operatorUnit.xRotMax && operatorUnit.xRot > operatorUnit.xRotMin) {
-                        if (turretTurnXSoundInstance == null) {
-                            turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
-                            turretTurnXSoundInstance.play();
-                        }
-                    } else {
-                        if (turretTurnXSoundInstance != null) {
-                            turretTurnXSoundInstance.stop();
-                            turretTurnXSoundInstance = null;
+                        if (Math.abs(weaponUnit.xAimRot - weaponUnit.xRot) > 1 && weaponUnit.xRot < weaponUnit.xRotMax && weaponUnit.xRot > weaponUnit.xRotMin) {
+                            if (turretTurnXSoundInstance == null) {
+                                turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
+                                turretTurnXSoundInstance.play();
+                            }
+                        } else {
+                            if (turretTurnXSoundInstance != null) {
+                                turretTurnXSoundInstance.stop();
+                                turretTurnXSoundInstance = null;
+                            }
                         }
                     }
                 }

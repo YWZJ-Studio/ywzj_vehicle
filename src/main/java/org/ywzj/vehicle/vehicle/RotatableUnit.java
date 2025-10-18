@@ -1,0 +1,125 @@
+package org.ywzj.vehicle.vehicle;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraftforge.network.PacketDistributor;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ServerRotatableUnitRot;
+import org.ywzj.vehicle.util.EntityUtil;
+
+/**
+ * 可旋转运动的载具部件
+ */
+public class RotatableUnit extends PartUnit {
+
+    public float xRot;
+    public float yRot;
+    public float xRotO;
+    public float yRotO;
+    public float xRotSpeed;
+    public float yRotSpeed;
+    public float xRotMax = 90;
+    public float xRotMin = -90;
+    public float yRotMax = Float.MAX_VALUE;
+    public float yRotMin = -Float.MAX_VALUE;
+    public float xAimRot;
+    public float yAimRot;
+
+    public RotatableUnit(String name, int index, AbstractVehicle vehicle) {
+        super(name, index, vehicle);
+        this.initStructureModel(name);
+        this.initOBBs();
+    }
+
+    public RotatableUnit(Component name, int index, AbstractVehicle vehicle) {
+        super(name, index, vehicle);
+    }
+
+    public void tick() {
+        super.tick();
+        if (vehicle.hasPower()) {
+            tickRot();
+        } else {
+            this.xRotO = this.xRot;
+            this.yRotO = this.yRot;
+        }
+    }
+
+    protected void tickRot() {
+        this.xRotO = this.xRot;
+        this.yRotO = this.yRot;
+        float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
+        float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
+        if (Math.abs(xDiff) > getXRotSpeed()) {
+            this.xRot += Math.signum(xDiff) * getXRotSpeed();
+        } else {
+            this.xRot = this.xAimRot;
+        }
+        this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
+        if (Math.abs(yDiff) > getYRotSpeed()) {
+            this.yRot += Math.signum(yDiff) * getYRotSpeed();
+        } else {
+            this.yRot = this.yAimRot;
+        }
+        this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
+        if (!vehicle.level().isClientSide()) {
+            if (xDiff != 0 || yDiff != 0) {
+                vehicle.level().players().stream()
+                        .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && vehicle.getOwnOperatorUnit(player) != this)
+                        .forEach(player ->
+                                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerRotatableUnitRot(this)));
+            }
+        }
+    }
+
+    public float getXRotSpeed() {
+        return xRotSpeed;
+    }
+
+    public void setXRotSpeed(float xRotSpeed) {
+        this.xRotSpeed = xRotSpeed;
+    }
+
+    public float getYRotSpeed() {
+        return yRotSpeed;
+    }
+
+    public void setYRotSpeed(float yRotSpeed) {
+        this.yRotSpeed = yRotSpeed;
+    }
+
+    public float getXRotMax() {
+        return xRotMax;
+    }
+
+    public void setXRotMax(float xRotMax) {
+        this.xRotMax = xRotMax;
+    }
+
+    public float getXRotMin() {
+        return xRotMin;
+    }
+
+    public void setXRotMin(float xRotMin) {
+        this.xRotMin = xRotMin;
+    }
+
+    public float getYRotMax() {
+        return yRotMax;
+    }
+
+    public void setYRotMax(float yRotMax) {
+        this.yRotMax = yRotMax;
+    }
+
+    public float getYRotMin() {
+        return yRotMin;
+    }
+
+    public void setYRotMin(float yRotMin) {
+        this.yRotMin = yRotMin;
+    }
+
+}

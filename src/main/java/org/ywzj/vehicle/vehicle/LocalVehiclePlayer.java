@@ -59,19 +59,20 @@ public class LocalVehiclePlayer {
         // 根据视角与载具地形适应来更新摄像头位置
         if (onVehicle()) {
             AbstractVehicle vehicle = getVehicle();
-            if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
+            PartUnit partUnit = vehicle.getOwnOperatorUnit(getPlayer());
+            if (partUnit != null) {
                 if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
                     Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
-                            vehicle.thirdPersonPosition(getPlayer()) : weaponUnit.worldOperatorPosition();
+                            vehicle.thirdPersonPosition(getPlayer()) : partUnit.worldOwnerViewPosition();
                     cameraXO = cameraX;
                     cameraYO = cameraY;
                     cameraZO = cameraZ;
                     cameraX = vehicleCameraPos.x;
                     cameraY = vehicleCameraPos.y;
                     cameraZ = vehicleCameraPos.z;
-                } else if (viewType == ViewType.SCOPE) {
+                } else if (viewType == ViewType.SCOPE && partUnit instanceof WeaponUnit weaponUnit) {
                     Vec3 worldOpticalSightPosition = weaponUnit.getOpticalSightType() != WeaponUnit.OpticalSightType.OPERATOR ?
-                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOperatorPosition();
+                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
                     cameraXO = cameraX;
                     cameraYO = cameraY;
                     cameraZO = cameraZ;
@@ -118,7 +119,8 @@ public class LocalVehiclePlayer {
         if (!onVehicle()) {
             return;
         }
-        if (getVehicle().getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
+        PartUnit partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
+        if (partUnit instanceof WeaponUnit weaponUnit) {
             if (toViewType == null) {
                 if (viewType == ViewType.THIRD_PERSON) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnit.OpticalSightType.NONE) {
@@ -150,8 +152,14 @@ public class LocalVehiclePlayer {
                 cameraAimRotX = barrelAimRot.x;
                 cameraAimRotY = barrelAimRot.y;
             }
-            viewType = toViewType;
+        } else {
+            if (viewType == ViewType.THIRD_PERSON) {
+                toViewType = ViewType.OPERATOR;
+            } else if (viewType == ViewType.OPERATOR) {
+                toViewType = ViewType.THIRD_PERSON;
+            }
         }
+        viewType = toViewType;
     }
 
     public void mouseTurn(double pYRot, double pXRot) {

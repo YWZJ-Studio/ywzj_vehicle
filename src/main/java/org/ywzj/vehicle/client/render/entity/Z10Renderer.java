@@ -18,6 +18,7 @@ import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Z10;
 import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Z10Renderer extends EntityRenderer<Z10> {
 
@@ -52,11 +53,13 @@ public class Z10Renderer extends EntityRenderer<Z10> {
         float turretXRot = 0;
         float turretXRotAim = 0;
         if (!pEntity.operatorUnits.isEmpty()) {
-            PartUnit weaponUnit = pEntity.operatorUnits.get(0);
-            turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-            turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
-            turretYRotAim = weaponUnit.yAimRot;
-            turretXRotAim = weaponUnit.xAimRot;
+            PartUnit partUnit = pEntity.operatorUnits.get(0);
+            if (partUnit instanceof WeaponUnit weaponUnit) {
+                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
+                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
+                turretYRotAim = weaponUnit.yAimRot;
+                turretXRotAim = weaponUnit.xAimRot;
+            }
         }
 
         propeller.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));

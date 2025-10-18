@@ -58,7 +58,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             boolean isHelicopter = vehicle instanceof HelicopterVehicle;
             int color = isHelicopter ?  0xFF00FF00 : 0xFFFFFFFF;
             PartUnit operatorUnit = vehicle.getOwnOperatorUnit(player);
-            if (operatorUnit != null) {
+            if (operatorUnit instanceof WeaponUnit) {
                 if (showAim) {
                     double x = Mth.lerp(partialTick, screenAimXO, screenAimX);
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
