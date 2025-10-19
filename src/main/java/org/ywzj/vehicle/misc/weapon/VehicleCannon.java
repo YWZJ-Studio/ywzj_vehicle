@@ -12,10 +12,6 @@ public class VehicleCannon extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
         super(vehicle, unit, index, data);
     }
 
-    public long getShootInterval() {
-        return this.getData().getShootInterval();
-    }
-
     @Override
     public void shoot(Vec3 origin, float ammoXRot, float ammoYRot, LivingEntity shooter) {
         if (isCoolingDown() || isReloading() || !consumeAmmo()) {

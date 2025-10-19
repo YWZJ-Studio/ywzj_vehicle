@@ -10,6 +10,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.OnDatapackSyncEvent;
@@ -22,10 +23,11 @@ import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.ModRegistries;
+import org.ywzj.vehicle.custom.serialize.IngredientSerializer;
+import org.ywzj.vehicle.custom.serialize.Vec3Serializer;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerSyncData;
-import org.ywzj.vehicle.resource.Vec3Serializer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
@@ -42,6 +44,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
             .registerTypeAdapter(Vec3.class, new Vec3Serializer())
+            .registerTypeAdapter(Ingredient.class, new IngredientSerializer())
             .create();
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");

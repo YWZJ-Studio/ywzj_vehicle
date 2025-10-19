@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
  * @param dataSerializer 配置数据解析器
  * @param factory 武器单元工厂
  */
-public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D>(
+public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData>(
         ResourceLocation id,
         VehicleWeaponType.DataSerializer<D> dataSerializer,
         VehicleWeaponType.WeaponUnitFactory<T, D> factory
@@ -47,11 +47,11 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D>(
     }
 
     @FunctionalInterface
-    public interface WeaponUnitFactory<T extends AbstractVehicleWeapon<D>, D> {
+    public interface WeaponUnitFactory<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> {
         T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data);
     }
 
-    public static class Builder<T extends AbstractVehicleWeapon<D>, D> {
+    public static class Builder<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> {
         private final ResourceLocation id;
         private DataSerializer<D> dataSerializer;
         private WeaponUnitFactory<T, D> factory;
@@ -60,7 +60,7 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D>(
             this.id = id;
         }
 
-        public static <T extends AbstractVehicleWeapon<D>, D> Builder<T, D> of(ResourceLocation id) {
+        public static <T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> Builder<T, D> of(ResourceLocation id) {
             return new Builder<>(id);
         }
 

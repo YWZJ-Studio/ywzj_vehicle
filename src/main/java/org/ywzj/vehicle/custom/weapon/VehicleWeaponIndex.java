@@ -13,7 +13,7 @@ import org.ywzj.vehicle.vehicle.WeaponUnit;
  * @param type 载具武器类型
  * @param data 载具武器配置数据
  */
-public record VehicleWeaponIndex<T extends AbstractVehicleWeapon<D>, D>(
+public record VehicleWeaponIndex<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData>(
         ResourceLocation id,
         VehicleWeaponType<T, D> type,
         D data

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.resource;
+package org.ywzj.vehicle.custom.serialize;
 
 import com.google.gson.*;
 import net.minecraft.util.GsonHelper;

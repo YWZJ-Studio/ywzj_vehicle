@@ -22,7 +22,7 @@ public class AllVehicleWeaponType {
             "missile", json -> VehicleWeaponManager.GSON.fromJson(json, BaseVehicleWeaponData.class), VehicleMissile::new
     );
 
-    private static <T extends AbstractVehicleWeapon<D>, D> RegistryObject<VehicleWeaponType<T, D>> register(
+    private static <T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> RegistryObject<VehicleWeaponType<T, D>> register(
             String name,
             VehicleWeaponType.DataSerializer<D> dataSerializer,
             VehicleWeaponType.WeaponUnitFactory<T, D> factory

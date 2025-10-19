@@ -9,7 +9,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import org.ywzj.vehicle.all.AllItems;
+import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -18,7 +18,7 @@ import org.ywzj.vehicle.vehicle.WeaponUnit;
 /** 可配置的抽象武器模块<br/>
  * @param <T> 配置数据结构
  */
-public abstract class AbstractVehicleWeapon<T> {
+public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
 
     private final AbstractVehicle vehicle;
     private final WeaponUnit weaponUnit;
@@ -54,7 +54,7 @@ public abstract class AbstractVehicleWeapon<T> {
     }
 
     public long getShootInterval() {
-        return 100;
+        return this.getData().getShootInterval();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -80,6 +80,10 @@ public abstract class AbstractVehicleWeapon<T> {
 
     public int getRemainAmmo() {
         return remainAmmo;
+    }
+
+    public int getMaxCapacity() {
+        return this.getData().getMaxCapacity();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -148,7 +152,7 @@ public abstract class AbstractVehicleWeapon<T> {
     }
 
     public boolean isAmmoForWeapon(ItemStack stack) {
-        return stack.is(AllItems.AMMO_AUTO_CANNON.get());
+        return this.getData().getReload().isAmmo(stack);
     }
 
     public boolean canReload() {
@@ -169,7 +173,7 @@ public abstract class AbstractVehicleWeapon<T> {
     }
 
     public void reload() {
-        int maxCap = 64;
+        int maxCap = this.getData().getMaxCapacity();
         for (var item : vehicle.getItemStacks()) {
             int need = maxCap - remainAmmo;
             if (need <= 0) break;

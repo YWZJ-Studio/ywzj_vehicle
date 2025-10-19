@@ -2,5 +2,10 @@
   "type": "ywzj_vehicle:cannon",
   "damage": 25,
   "headshot_multiplier": 1.5,
-  "shoot_interval": 500
+  "shoot_interval": 400,
+  "max_capacity": 64,
+  "reload": {
+    "time": 60,
+    "ammo": "ywzj_vehicle:ammo_auto_cannon"
+  }
 }

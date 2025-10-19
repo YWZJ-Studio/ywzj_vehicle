@@ -2,5 +2,10 @@
   "type": "ywzj_vehicle:missile",
   "damage": 25,
   "headshot_multiplier": 1.5,
-  "shoot_interval": 500
+  "shoot_interval": 1000,
+  "max_capacity": 8,
+  "reload": {
+    "time": 60,
+    "ammo": "ywzj_vehicle:ammo_missile"
+  }
 }

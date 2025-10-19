@@ -18,9 +18,9 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.custom.serialize.Vec3Serializer;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleDataPojo;
-import org.ywzj.vehicle.resource.Vec3Serializer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Map;
