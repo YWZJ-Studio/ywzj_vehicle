@@ -31,7 +31,7 @@ public class PartUnit {
     public Vec3 ownerViewOffset;
     public Vec3 seatOffset;
     public PassengerPose operatorPose;
-    private BedrockBone unitBone;
+    protected BedrockBone unitBone;
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
 
     public PartUnit(String name, int index, AbstractVehicle vehicle) {

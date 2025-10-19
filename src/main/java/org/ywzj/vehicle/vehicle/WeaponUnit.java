@@ -363,9 +363,9 @@ public class WeaponUnit extends RotatableUnit {
             return new Vector4d(weaponUnit.boltOffset.x, weaponUnit.boltOffset.z, offsetX, offsetZ);
         }
         Vector4d pivotAndTargetOffset = rotatedOffsetWithBaseRot(weaponUnit.baseWeaponUnit, offsetX, offsetZ);
-        float rot = weaponUnit.baseWeaponUnit.yRot;
-        float cos = Math.cos(Math.toRadians(rot));
-        float sin = Math.sin(Math.toRadians(rot));
+        float rot = Math.toRadians(weaponUnit.baseWeaponUnit.yRot);
+        float cos = Math.cos(rot);
+        float sin = Math.sin(rot);
         float dx1 = (float) (weaponUnit.boltOffset.x - pivotAndTargetOffset.x);
         float dy1 = (float) (weaponUnit.boltOffset.z - pivotAndTargetOffset.y);
         float dx2 = (float) (pivotAndTargetOffset.z - pivotAndTargetOffset.x);
@@ -376,11 +376,11 @@ public class WeaponUnit extends RotatableUnit {
                 pivotAndTargetOffset.y + dx2 * sin + dy2 * cos);
     }
 
-    private Vec3 rotatedOffsetWithSelfRot(Vec3 offsetFromVehicle) {
+    protected Vec3 rotatedOffsetWithSelfRot(Vec3 offsetFromVehicle) {
         Vector4d offset = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
-        float rot = yRot;
-        float cos = Math.cos(Math.toRadians(rot));
-        float sin = Math.sin(Math.toRadians(rot));
+        float rot = Math.toRadians(yRot);
+        float cos = Math.cos(rot);
+        float sin = Math.sin(rot);
         float dx = (float) (offset.z - offset.x);
         float dy = (float) (offset.w - offset.y);
         return new Vec3(offset.x + dx * cos - dy * sin, offsetFromVehicle.y, offset.y + dx * sin + dy * cos);

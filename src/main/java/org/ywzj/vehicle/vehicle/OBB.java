@@ -255,17 +255,42 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         // 计算点到OBB中心的向量
         Vector3f rel = new Vector3f(vec3.toVector3f()).sub(center);
 
-        Vector3f[] axes = new Vector3f[3];
-        axes[0] = rotation.transform(new Vector3f(1, 0, 0));
-        axes[1] = rotation.transform(new Vector3f(0, 1, 0));
-        axes[2] = rotation.transform(new Vector3f(0, 0, 1));
-
         // 将相对向量投影到OBB的三个轴上
+        Vector3f[] axes = getAxes();
         float projX = Math.abs(rel.dot(axes[0]));
         float projY = Math.abs(rel.dot(axes[1]));
         float projZ = Math.abs(rel.dot(axes[2]));
 
         return Math.min(extents.x - projX, Math.min(extents.y - projY, extents.z - projZ));
+    }
+
+    public int embeddingFace(Vec3 vec3) {
+        // 计算点到OBB中心的向量
+        Vector3f rel = new Vector3f(vec3.toVector3f()).sub(center);
+
+        // 将相对向量投影到OBB的三个轴上
+        Vector3f[] axes = getAxes();
+        float projX = Math.abs(rel.dot(axes[0]));
+        float projY = Math.abs(rel.dot(axes[1]));
+        float projZ = Math.abs(rel.dot(axes[2]));
+
+        float min = Float.MAX_VALUE;
+        int index = 0;
+        float dx = extents.x - projX;
+        float dy = extents.y - projY;
+        float dz = extents.z - projZ;
+        if (dx < min) {
+            index = 1;
+            min = dx;
+        }
+        if (dy < min) {
+            index = 2;
+            min = dy;
+        }
+        if (dz < min) {
+            index = 3;
+        }
+        return (rel.dot(axes[index - 1]) < 0 ? -1 : 1) * index;
     }
 
     /**

@@ -463,8 +463,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
+        PartUnit partUnit = getOwnOperatorUnit(pPassenger);
         onLeaveVehicle(pPassenger);
-        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 1, 0));
+        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.seatOffset.z : 0));
     }
 
     @Override
@@ -665,30 +666,27 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                         pEntity.setOnGround(true);
                     }
                     double d = obb.embeddingDepth(feetPosition);
-                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d, 0));
+                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d * 1.1, 0));
+                    pEntity.fallDistance = 0;
                     continue;
                 }
             }
             if (!pEntity.noPhysics && !this.noPhysics) {
-                if (OBB.isColliding(obb, pEntity.getBoundingBox())) {
-                    double d0 = pEntity.getX() - obb.center().x;
-                    double d1 = pEntity.getZ() - obb.center().z;
-                    double d2 = Mth.absMax(d0, d1);
-                    if (d2 >= (double)0.01F) {
-                        d2 = Math.sqrt(d2);
-                        d0 /= d2;
-                        d1 /= d2;
-                        double d3 = 1.0D / d2;
-                        if (d3 > 1.0D) {
-                            d3 = 1.0D;
+                AABB aabb = pEntity.getBoundingBox();
+                if (OBB.isColliding(obb, aabb)) {
+                    int face = obb.embeddingFace(feetPosition);
+                    Vector3f[] axes = obb.getAxes();
+                    Vector3f support = axes[Math.abs(face) - 1];
+                    if (face < 0) {
+                        support.negate();
+                    }
+                    if (pEntity.isPushable()) {
+                        float force = 0.1f;
+                        if (this.getDeltaMovement().length() > 0.01 && face != 2) {
+                            force = 0.2f;
                         }
-                        d0 *= d3;
-                        d1 *= d3;
-                        d0 *= 0.05F;
-                        d1 *= 0.05F;
-                        if (pEntity.isPushable()) {
-                            pEntity.push(d0, 0.0D, d1);
-                        }
+                        pEntity.setPos(pEntity.position().add(new Vec3(support).scale(force)));
+                        this.hasImpulse = true;
                     }
                 }
             }

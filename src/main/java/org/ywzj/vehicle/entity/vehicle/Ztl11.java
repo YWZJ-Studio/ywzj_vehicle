@@ -67,7 +67,7 @@ public class Ztl11 extends WheeledVehicle {
         if (weaponIndex < operatorUnits.size()) {
             if (operatorUnits.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
                 machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-                this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+                this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }
         }
     }

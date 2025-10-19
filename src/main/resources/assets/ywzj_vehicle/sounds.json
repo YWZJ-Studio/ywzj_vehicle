@@ -24,6 +24,10 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.rocket_flying"
   },
+  "auto_cannon_shot": {
+    "sounds": ["ywzj_vehicle:misc/auto_cannon_shot"],
+    "subtitle": "ywzj_vehicle.sounds.auto_cannon_shot"
+  },
   "cannon_125mm_shot": {
     "sounds": [
       "ywzj_vehicle:misc/cannon_125mm_shot_01",
@@ -56,6 +60,14 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_v"
   },
+  "truck_engine_idle": {
+    "sounds": ["ywzj_vehicle:common/truck_engine_idle"],
+    "subtitle": "ywzj_vehicle.sounds.truck_engine_idle"
+  },
+  "truck_engine_run": {
+    "sounds": ["ywzj_vehicle:common/truck_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.truck_engine_run"
+  },
   "lav150_engine_start": {
     "sounds": ["ywzj_vehicle:lav150/lav150_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_start"
@@ -66,10 +78,6 @@
   },
   "lav150_engine_run": {
     "sounds": ["ywzj_vehicle:lav150/lav150_engine_run"],
-    "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
-  },
-  "entity.lav150.shoot": {
-    "sounds": ["ywzj_vehicle:lav150/shoot"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
   },
   "ztz99a_engine_start": {

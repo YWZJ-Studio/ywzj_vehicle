@@ -3,7 +3,10 @@ package org.ywzj.vehicle.vehicle;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
+import org.joml.Math;
+import org.joml.Quaternionf;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerRotatableUnitRot;
@@ -44,6 +47,23 @@ public class RotatableUnit extends PartUnit {
         } else {
             this.xRotO = this.xRot;
             this.yRotO = this.yRot;
+        }
+    }
+
+    public void updateOBBs() {
+        for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitBedrockCubeOBBs) {
+            OBB obb = unitBedrockCubeOBB.obb();
+            Quaternionf rotSelf = new Quaternionf(unitBedrockCubeOBB.selfRot());
+            rotSelf.rotateY(Math.toRadians(-yRot));
+            Vec3 pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
+            Vec3 centerToPivot = unitBedrockCubeOBB.offset().subtract(pivotOffset);
+            Quaternionf rotY = new Quaternionf().rotationY(Math.toRadians(yRot));
+            Quaternionf rotX = new Quaternionf().rotationX(Math.toRadians(xRot));
+            Quaternionf rotation = new Quaternionf(rotX).mul(rotY);
+            Vec3 centerToPivotRot = new Vec3(rotation.transform(centerToPivot.toVector3f()));
+            obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(pivotOffset.add(centerToPivotRot))).toVector3f());
+            rotSelf.rotateX(Math.toRadians(180 + xRot));
+            obb.setRotation(vehicle.rotYXZ().mul(rotSelf));
         }
     }
 

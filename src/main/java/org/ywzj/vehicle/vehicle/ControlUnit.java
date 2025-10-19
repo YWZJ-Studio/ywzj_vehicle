@@ -40,6 +40,19 @@ public class ControlUnit {
         yRot = 0;
     }
 
+    public void update(ControlUnit controlUnit) {
+        forward = controlUnit.forward;
+        backward = controlUnit.backward;
+        left = controlUnit.left;
+        right = controlUnit.right;
+        up = controlUnit.up;
+        down = controlUnit.down;
+        leftYaw = controlUnit.leftYaw;
+        rightYaw = controlUnit.rightYaw;
+        xRot = controlUnit.xRot;
+        yRot = controlUnit.yRot;
+    }
+
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
         if (ctxSupplier.get().getSender() != null) {
             Level level = ctxSupplier.get().getSender().level();

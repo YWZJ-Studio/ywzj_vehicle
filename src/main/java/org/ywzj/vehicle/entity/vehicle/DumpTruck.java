@@ -2,27 +2,36 @@ package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Math;
-import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.vehicle.OBB;
-import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.vehicle.RotatableUnit;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 
 public class DumpTruck extends WheeledVehicle {
 
+    private VehicleSound bedTurnSoundInstance;
+
     public DumpTruck(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.thirdPersonOffset = new Vec3(0, 4, -7);
+        this.maxSpeedForward = 0.2f;
     }
 
     @Override
     public void initPartUnits() {
-        PartUnit dumpTruckBed = new PartUnit("dump_truck_bed", 0, this);
+        RotatableUnit dumpTruckBed = new RotatableUnit("dump_truck_bed", 0, this);
+        dumpTruckBed.setYRotMin(0);
+        dumpTruckBed.setYRotMax(0);
+        dumpTruckBed.setXRotMin(-45);
+        dumpTruckBed.setXRotMax(0);
+        dumpTruckBed.setXRotSpeed((float) 15 / 20);
         dumpTruckBed.ownerViewOffset = new Vec3(0.5 ,1, 3);
         dumpTruckBed.seatOffset = new Vec3(0.5 ,1, 3);
         this.partUnits.add(dumpTruckBed);
@@ -35,18 +44,59 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (level().isClientSide) {
+            if (getDriver() != null) {
+                if (controlUnit.leftYaw || controlUnit.rightYaw) {
+                    RotatableUnit bed = (RotatableUnit) operatorUnits.get(0);
+                    if (controlUnit.leftYaw) {
+                        bed.xAimRot -= 5;
+                    } else {
+                        bed.xAimRot += 5;
+                    }
+                    bed.xAimRot = Mth.clamp(bed.xAimRot, bed.xRotMin, bed.xRotMax);
+                    ClientVehicleAction control = new ClientVehicleAction();
+                    control.vehicleEntityId = this.getId();
+                    control.weaponIndex = bed.getIndex();
+                    control.xAimRot = bed.xAimRot;
+                    control.yAimRot = 0;
+                    Channel.CHANNEL.sendToServer(control);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void tickSound() {
+        super.tickSound();
+        RotatableUnit bed = (RotatableUnit) operatorUnits.get(0);
+        if (Math.abs(bed.xAimRot - bed.xRot) > 1 && bed.xRot < bed.xRotMax && bed.xRot > bed.xRotMin) {
+            if (bedTurnSoundInstance == null) {
+                bedTurnSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
+                bedTurnSoundInstance.play();
+            }
+        } else {
+            if (bedTurnSoundInstance != null) {
+                bedTurnSoundInstance.stop();
+                bedTurnSoundInstance = null;
+            }
+        }
+    }
+
+    @Override
     public SoundEvent getEngineStartSound() {
         return AllSounds.LAV150_ENGINE_START.get();
     }
 
     @Override
     public SoundEvent getEngineIdleSound() {
-        return AllSounds.LAV150_ENGINE_IDLE.get();
+        return AllSounds.TRUCK_ENGINE_IDLE.get();
     }
 
     @Override
     public SoundEvent getEngineRunSound() {
-        return AllSounds.LAV150_ENGINE_RUN.get();
+        return AllSounds.TRUCK_ENGINE_RUN.get();
     }
 
     @Override
@@ -67,66 +117,6 @@ public class DumpTruck extends WheeledVehicle {
 //                this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
 //            }
 //        }
-    }
-
-    @Override
-    public void support(Entity pEntity) {
-        Vec3 feetPosition = pEntity.position().subtract(new Vec3(0, 0.1f, 0));
-
-        Vector3f sum = new Vector3f();
-        for (OBB obb : getOBBs()) {
-            sum.add(obb.center());
-        }
-        Vector3f c = sum.div(getOBBs().size());
-
-        for (OBB obb : getOBBs()) {
-            if (obb.contains(feetPosition)) {
-                if (!pEntity.noPhysics && !this.noPhysics) {
-                    double onVehicleGravity = Math.max(0, pEntity.getDeltaMovement().y);
-                    if (onVehicleGravity == 0) {
-                        pEntity.setOnGround(true);
-                    }
-                    double d = obb.embeddingDepth(feetPosition);
-                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d, 0));
-                    continue;
-                }
-            }
-            if (!pEntity.noPhysics && !this.noPhysics) {
-                if (OBB.isColliding(obb, pEntity.getBoundingBox())) {
-                    Vector3f[] axes = obb.getAxes();
-                    Vector3f pos = pEntity.position().toVector3f();
-                    if (pos.dot(axes[0]) >= 0.01F) {
-
-                    }
-
-
-                    pEntity.setPos(new Vec3(c));
-                    pEntity.hasImpulse = true;
-
-//                    double d0 = pEntity.getX() - obb.center().x;
-//                    double d1 = pEntity.getZ() - obb.center().z;
-//                    double d2 = Mth.absMax(d0, d1);
-//                    if (d2 >= (double)0.01F) {
-//                        d2 = Math.sqrt(d2);
-//                        d0 /= d2;
-//                        d1 /= d2;
-//                        double d3 = 1.0D / d2;
-//                        if (d3 > 1.0D) {
-//                            d3 = 1.0D;
-//                        }
-//                        d0 *= d3;
-//                        d1 *= d3;
-//                        d0 *= 0.05F;
-//                        d1 *= 0.05F;
-//                        if (pEntity.isPushable()) {
-//                            pEntity.setPos(pEntity.position().add(new Vec3(d0, 0.0D, d1)));
-//                            pEntity.hasImpulse = true;
-////                            pEntity.push(d0, 0.0D, d1);
-//                        }
-//                    }
-                }
-            }
-        }
     }
 
 }

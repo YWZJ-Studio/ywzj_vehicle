@@ -178,7 +178,7 @@ public class Ztz99a extends TrackedVehicle {
 
                 } else {
                     weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-                    this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
+                    this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
                 }
             }
         }

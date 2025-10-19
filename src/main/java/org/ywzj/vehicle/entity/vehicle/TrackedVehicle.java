@@ -135,10 +135,10 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                 }
                 float volume = Math.max(0.4f, vf != 0 ? Math.abs(vf) / maxSpeedForward : 0.7f);
                 if (engineRunSoundInstance == null) {
-                    engineRunSoundInstance = new VehicleSound(getEngineRunSound(), volume * soundDistance, 1f, true, 50, false, true, this.getId());
+                    engineRunSoundInstance = new VehicleSound(getEngineRunSound(), volume * soundDistance, 1f, true, 50, true, true, this.getId());
                     engineRunSoundInstance.play();
                 } else {
-                    engineRunSoundInstance.setVolume(volume);
+                    engineRunSoundInstance.setVolume(volume * soundDistance);
                 }
             }
         }

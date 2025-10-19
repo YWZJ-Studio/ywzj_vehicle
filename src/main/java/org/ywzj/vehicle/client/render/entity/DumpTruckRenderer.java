@@ -17,6 +17,8 @@ import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.DumpTruck;
+import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.vehicle.RotatableUnit;
 
 public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
 
@@ -43,8 +45,12 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
         BedrockBone wheel4 = model.getBoneMap().get("wheel4");
         BedrockBone wheel5 = model.getBoneMap().get("wheel8");
         BedrockBone wheel6 = model.getBoneMap().get("wheel7");
+        BedrockBone control = model.getBoneMap().get("control");
         BedrockBone bed = model.getBoneMap().get("back");
+        BedrockBone bedDoor = model.getBoneMap().get("back_door");
         BedrockBone lift = model.getBoneMap().get("lift");
+        BedrockBone lift2 = model.getBoneMap().get("lift2");
+        BedrockBone lift3 = model.getBoneMap().get("lift3");
 
         // 轮子转速
         float vf = pEntity.getEntityData().get(DumpTruck.FORWARD_SPEED);
@@ -59,37 +65,36 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
         float vt = pEntity.getEntityData().get(DumpTruck.TURN_SPEED);
         float turnRotation = vt * 16;
 
-//        // 炮塔旋转
-//        float turretYRot = 0;
-//        // 炮塔俯仰
-//        float turretXRot = 0;
-//        if (!pEntity.operatorUnits.isEmpty()) {
-//            PartUnit weaponUnit = pEntity.operatorUnits.get(0);
-//            turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-//            turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
-//        }
-//
-//        // 车长机枪旋转
-//        float machineGunYRot = 0;
-//        // 车长机枪俯仰
-//        float machineGunXRot = 0;
-//        if (!pEntity.operatorUnits.isEmpty()) {
-//            PartUnit weaponUnit = pEntity.operatorUnits.get(1);
-//            machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-//            machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
-//        }
+        // 车斗
+        float bedXRot = 0;
+        PartUnit dumpTruckBed = pEntity.operatorUnits.get(0);
+        if (dumpTruckBed instanceof RotatableUnit rotatableUnit) {
+            bedXRot = rotatableUnit.xRot;
+        }
 
         // 应用动画
         wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
         wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+        control.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 15 - 90));
+        bed.rotation.mul(Axis.XN.rotationDegrees(bedXRot));
+        bedDoor.rotation.mul(Axis.XN.rotationDegrees(-bedXRot * 2));
+        lift.rotation.mul(Axis.XN.rotationDegrees(-70 + 65 * (-bedXRot / 45)));
+        double a = Math.toRadians(-bedXRot);
+        double c = Math.toRadians(180 + bedXRot + 65 * bedXRot / 45);
+        float b = (float) (Math.sin(a) * 87 / Math.sin(c));
+        float d = (float) (65.46 - b);
+        if (d <= 18) {
+            lift2.y = 18 - d;
+        } else {
+            lift2.y = 0;
+            lift3.y = 23 - (d - 18);
+        }
         wheel1.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
         wheel2.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
         wheel3.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
         wheel4.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
         wheel5.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
         wheel6.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
-//        machineGun.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
 
         pEntity.lastRenderTime = System.currentTimeMillis();
         model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
@@ -101,8 +106,10 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
         wheel4.rotation.set(reset);
         wheel5.rotation.set(reset);
         wheel6.rotation.set(reset);
-//        machineGunBase.rotation.set(reset);
-//        machineGun.rotation.set(reset);
+        control.rotation.set(reset);
+        bed.rotation.set(reset);
+        bedDoor.rotation.set(reset);
+        lift.rotation.set(reset);
 
         pPoseStack.popPose();
     }

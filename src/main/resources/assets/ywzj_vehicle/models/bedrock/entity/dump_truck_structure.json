@@ -7,8 +7,8 @@
 				"texture_width": 16,
 				"texture_height": 16,
 				"visible_bounds_width": 11,
-				"visible_bounds_height": 4.5,
-				"visible_bounds_offset": [0, 1.75, 0]
+				"visible_bounds_height": 5,
+				"visible_bounds_offset": [0, 1.5, 0]
 			},
 			"bones": [
 				{
@@ -43,7 +43,7 @@
 				},
 				{
 					"name": "dump_truck_bed",
-					"pivot": [0, 0.4, 0],
+					"pivot": [0, 25, -70],
 					"cubes": [
 						{
 							"origin": [16.925, 21.35, -69.625],
@@ -95,7 +95,7 @@
 						},
 						{
 							"origin": [-16.975, 21.35, -69.3],
-							"size": [33.6, 4.95, 90.725],
+							"size": [33.6, 10.95, 90.725],
 							"uv": {
 								"north": {"uv": [0, 0], "uv_size": [16, 4.95]},
 								"east": {"uv": [0, 0], "uv_size": [16, 4.95]},

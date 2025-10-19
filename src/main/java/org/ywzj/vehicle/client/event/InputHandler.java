@@ -125,6 +125,7 @@ public class InputHandler {
                     xRotO = controlUnit.xRot;
                     yRotO = controlUnit.yRot;
                 }
+                vehicle.controlUnit.update(controlUnit);
                 sendControl(vehicle, controlUnit);
             }
 
