@@ -6,10 +6,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.entity.OBBEntity;
+import org.ywzj.vehicle.event.HitVehicleEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,6 +95,10 @@ public class EntityUtil {
                 var obbVec = obb.clip(startVec.toVector3f(), endVec.toVector3f()).orElse(null);
                 if (obbVec != null) {
                     Vec3 hitPos = new Vec3(obbVec);
+                    if (bulletEntity.getOwner() != null) {
+                        HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(bulletEntity.getOwner().getUUID(), entity.getId(), hitPos, bulletEntity.getDeltaMovement());
+                        MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
+                    }
                     return new BulletHitResult(entity, hitPos, false);
                 }
             }

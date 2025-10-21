@@ -6,11 +6,13 @@ import com.tacz.guns.util.EntityUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.ywzj.vehicle.entity.OBBEntity;
+import org.ywzj.vehicle.event.HitVehicleEvent;
 
 @Mixin(EntityUtil.class)
 public class EntityUtilMixin {
@@ -32,10 +34,15 @@ public class EntityUtilMixin {
                 }
             }
             if (closestHitPos != null) {
+                if (bulletEntity.getOwner() != null) {
+                    HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(bulletEntity.getOwner().getUUID(), entity.getId(), closestHitPos, bulletEntity.getDeltaMovement());
+                    MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
+                }
                 cir.setReturnValue(new EntityKineticBullet.EntityResult(entity, closestHitPos, false, HitBodyPartEvent.BodyPart.TORSO));
             } else {
                 cir.setReturnValue(null);
             }
         }
     }
+
 }

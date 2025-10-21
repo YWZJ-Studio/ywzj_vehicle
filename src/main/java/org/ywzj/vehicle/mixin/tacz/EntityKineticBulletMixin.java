@@ -13,6 +13,7 @@ import org.ywzj.vehicle.entity.OBBEntity;
 
 @Mixin(EntityKineticBullet.class)
 public class EntityKineticBulletMixin {
+
     @Inject(method = "onHitEntity", at = @At("HEAD"), remap = false)
     public void onHitEntity(TacHitResult result, Vec3 startVec, Vec3 endVec, CallbackInfo ci) {
         // 测试用，用于观察落点
@@ -24,4 +25,5 @@ public class EntityKineticBulletMixin {
             }
         }
     }
+
 }

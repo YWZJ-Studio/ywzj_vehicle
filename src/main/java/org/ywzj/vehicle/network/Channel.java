@@ -61,6 +61,11 @@ public class Channel {
                 SoundManager::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
+        CHANNEL.registerMessage(PacketId.S_HIT_VEHICLE_EVENT.value(), ServerHitVehicleEvent.class,
+                ServerHitVehicleEvent::encode, ServerHitVehicleEvent::decode,
+                ServerHitVehicleEvent::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
         CHANNEL.registerMessage(PacketId.S_VEHICLE_WEAPON_SYNC_DATA.value(), ServerVehicleWeaponSync.class,
                 ServerVehicleWeaponSync::encode, ServerVehicleWeaponSync::decode,
                 ServerVehicleWeaponSync::onServerMessageReceived,
@@ -79,7 +84,8 @@ enum PacketId {
     S_VEHICLE_WEAPON_SYNC_DATA(105),
 
     S_SYNC_DATA(200),
-    S_SOUND_EVENT(201);
+    S_SOUND_EVENT(201),
+    S_HIT_VEHICLE_EVENT(202);
 
     private final int id;
 
