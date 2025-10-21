@@ -657,37 +657,62 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     public void support(Entity pEntity) {
+        if (pEntity.noPhysics || this.noPhysics) {
+            return;
+        }
         Vec3 feetPosition = pEntity.position().subtract(new Vec3(0, 0.1f, 0));
+        Vec3 midPosition = feetPosition.add(0, pEntity.getEyeHeight() / 2, 0);
+        Vec3 eyePosition = feetPosition.add(0, pEntity.getEyeHeight(), 0);
         for (OBB obb : getOBBs()) {
             if (obb.contains(feetPosition)) {
-                if (!pEntity.noPhysics && !this.noPhysics) {
-                    double onVehicleGravity = Math.max(0, pEntity.getDeltaMovement().y);
-                    if (onVehicleGravity == 0) {
-                        pEntity.setOnGround(true);
+                double onVehicleGravity = Math.max(0, pEntity.getDeltaMovement().y);
+                if (onVehicleGravity == 0) {
+                    pEntity.setOnGround(true);
+                }
+                double d = obb.embeddingDepth(feetPosition);
+                pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d * 1.1, 0));
+                pEntity.fallDistance = 0;
+                continue;
+            }
+            if (obb.contains(eyePosition)) {
+                double dx = pEntity.getX() - obb.center().x;
+                double dz = pEntity.getZ() - obb.center().z;
+                double dMax = Mth.absMax(dx, dz);
+                if (dMax >= (double) 0.01F) {
+                    dMax = Math.sqrt(dMax);
+                    dx /= dMax;
+                    dz /= dMax;
+                    double d = 1.0D / dMax;
+                    if (d > 1.0D) {
+                        d = 1.0D;
                     }
-                    double d = obb.embeddingDepth(feetPosition);
-                    pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d * 1.1, 0));
-                    pEntity.fallDistance = 0;
+                    dx *= d;
+                    dz *= d;
+                    dx *= 0.05F;
+                    dz *= 0.05F;
+                    if (pEntity.isPushable()) {
+                        pEntity.push(dx, 0.0D, dz);
+                    }
                     continue;
                 }
             }
-            if (!pEntity.noPhysics && !this.noPhysics) {
-                AABB aabb = pEntity.getBoundingBox();
-                if (OBB.isColliding(obb, aabb)) {
-                    int face = obb.embeddingFace(feetPosition);
-                    Vector3f[] axes = obb.getAxes();
-                    Vector3f support = axes[Math.abs(face) - 1];
-                    if (face < 0) {
-                        support.negate();
+            AABB aabb = pEntity.getBoundingBox();
+            if (OBB.isColliding(obb, aabb)) {
+                int face = obb.embeddingFace(midPosition);
+                Vector3f[] axes = obb.getAxes();
+                Vector3f support = axes[Math.abs(face) - 1];
+                if (face < 0) {
+                    support.negate();
+                }
+                if (pEntity.isPushable()) {
+                    float force = 0.1f;
+                    if (this.getDeltaMovement().length() > 0.01 && Math.abs(face) != 2) {
+                        force = 0.2f;
                     }
-                    if (pEntity.isPushable()) {
-                        float force = 0.1f;
-                        if (this.getDeltaMovement().length() > 0.01 && face != 2) {
-                            force = 0.2f;
-                        }
-                        pEntity.setPos(pEntity.position().add(new Vec3(support).scale(force)));
-                        this.hasImpulse = true;
-                    }
+                    Vec3 move = new Vec3(support).scale(force);
+                    move = new Vec3(move.x, Math.max(0, move.y), move.z);
+                    pEntity.setPos(pEntity.position().add(move));
+                    this.hasImpulse = true;
                 }
             }
         }

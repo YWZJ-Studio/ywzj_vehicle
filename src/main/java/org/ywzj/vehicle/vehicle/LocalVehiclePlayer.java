@@ -153,10 +153,12 @@ public class LocalVehiclePlayer {
                 cameraAimRotY = barrelAimRot.y;
             }
         } else {
-            if (viewType == ViewType.THIRD_PERSON) {
-                toViewType = ViewType.OPERATOR;
-            } else if (viewType == ViewType.OPERATOR) {
-                toViewType = ViewType.THIRD_PERSON;
+            if (toViewType == null) {
+                if (viewType == ViewType.THIRD_PERSON) {
+                    toViewType = ViewType.OPERATOR;
+                } else if (viewType == ViewType.OPERATOR) {
+                    toViewType = ViewType.THIRD_PERSON;
+                }
             }
         }
         viewType = toViewType;

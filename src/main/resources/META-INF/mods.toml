@@ -39,7 +39,7 @@ authors="${mod_authors}" #optional
 #displayTest="MATCH_VERSION" # MATCH_VERSION is the default if nothing is specified (#optional)
 
 # The description text for the mod (multi line!) (#mandatory)
-description='''永无止境：载具模组'''
+description='''《永无止境：载具》内部测试版本，仅供评估使用，禁止分发。当前展示的功能与美术内容不代表最终品质。'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
     # the modid of the dependency

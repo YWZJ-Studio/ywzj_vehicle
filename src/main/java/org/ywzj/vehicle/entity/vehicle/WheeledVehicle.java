@@ -23,13 +23,13 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
-    public static float brakeAcceleration = 0.025f;
-    public static float forwardAcceleration = 0.01f;
-    public static float backwardAcceleration = 0.01f;
-    public static float maxSpeedForward = 0.5f;
-    public static float maxSpeedBackward = 0.2f;
-    public static float turnAcceleration = 0.1f;
-    public static float maxTurn = 2f;
+    public float brakeAcceleration = 0.025f;
+    public float forwardAcceleration = 0.01f;
+    public float backwardAcceleration = 0.01f;
+    public float maxSpeedForward = 0.5f;
+    public float maxSpeedBackward = 0.2f;
+    public float turnAcceleration = 0.1f;
+    public float maxTurn = 2f;
     public float wheelRotation;
     public long lastRenderTime;
     private VehicleSound engineIdleSoundInstance;

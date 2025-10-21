@@ -25,7 +25,6 @@ import static org.ywzj.vehicle.all.AllKeys.*;
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class InputHandler {
 
-    private static long lastFireTimeMillis;
     public static boolean freeCamera;
     public static boolean debugGui;
     public static float xRotO;
@@ -106,12 +105,10 @@ public class InputHandler {
                 controlUnit.backward = BACKWARD.isDown();
                 controlUnit.left = LEFT.isDown();
                 controlUnit.right = RIGHT.isDown();
+                controlUnit.up = UP.isDown();
+                controlUnit.down = DOWN.isDown();
                 controlUnit.leftYaw = LEFT_YAW.isDown();
                 controlUnit.rightYaw = RIGHT_YAW.isDown();
-                if (vehicle instanceof HelicopterVehicle) {
-                    controlUnit.up = COLLECTIVE_PITCH_UP.isDown();
-                    controlUnit.down = COLLECTIVE_PITCH_DOWN.isDown();
-                }
                 if (freeCamera) {
                     controlUnit.xRot = xRotO;
                     controlUnit.yRot = yRotO;
@@ -128,7 +125,6 @@ public class InputHandler {
                 vehicle.controlUnit.update(controlUnit);
                 sendControl(vehicle, controlUnit);
             }
-
             handleShoot(vehicle, player);
         }
     }
@@ -140,7 +136,6 @@ public class InputHandler {
                     LocalVehiclePlayer.instance.sendMessage("tips.spotter");
                     return;
                 }
-
                 weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
             }
         }

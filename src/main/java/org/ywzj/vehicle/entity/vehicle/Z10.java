@@ -11,9 +11,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.custom.VehicleDataManager;
 import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
@@ -46,7 +44,7 @@ public class Z10 extends HelicopterVehicle {
                 this,
                 new Vec3(0, 0.5d, 5d),
                 1f,
-                null,
+                new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
@@ -65,23 +63,23 @@ public class Z10 extends HelicopterVehicle {
                 null);
     }
 
-    @Override
-    public void initData() {
-        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("z10")).ifPresent(data -> {
-            var struct = data.getVehicleStructObbs();
-            this.mainCubeOBB = struct.mainCubeOBB();
-            this.vehicleBodyOBBs = struct.obbs();
-            var weapons = data.createPartUnits(this);
-            this.operatorUnits.addAll(weapons.values());
-            this.partUnits.addAll(weapons.values());
-        });
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 4.54d, -0.375d),
-                new Vec3(0, 0d, -6d),
-                new Vec3(0, -2.2d, -1.2d),
-                null);
-
-    }
+//    @Override
+//    public void initData() {
+//        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("z10")).ifPresent(data -> {
+//            var struct = data.getVehicleStructObbs();
+//            this.mainCubeOBB = struct.mainCubeOBB();
+//            this.vehicleBodyOBBs = struct.obbs();
+//            var weapons = data.createPartUnits(this);
+//            this.operatorUnits.addAll(weapons.values());
+//            this.partUnits.addAll(weapons.values());
+//        });
+//        this.spotterUnit = new SpotterUnit(this,
+//                new Vec3(0, 4.54d, -0.375d),
+//                new Vec3(0, 0d, -6d),
+//                new Vec3(0, -2.2d, -1.2d),
+//                null);
+//
+//    }
 
     @Override
     protected void tickParticle() {

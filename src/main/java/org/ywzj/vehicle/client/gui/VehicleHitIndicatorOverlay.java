@@ -47,8 +47,16 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         }
         guiGraphics.pose().pushPose();
         {
-            guiGraphics.pose().translate(screenWidth - (double) screenWidth / 8, (double) screenHeight / 2, 0);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, "Hit",  0, -40, 0xFFFFFFFF);
+            int bgWidth = 100;
+            int bgHeight = 80;
+            double modelX = screenWidth - (double) screenWidth / 8;
+            double modelY = (double) screenHeight / 2;
+            int bgX = (int) (modelX - (double) bgWidth / 2);
+            int bgY = (int) (modelY - (double) bgHeight / 2) - 20;
+            int backgroundColor = 0x88000000;
+            guiGraphics.fill(bgX, bgY, bgX + bgWidth, bgY + bgHeight, backgroundColor);
+            guiGraphics.pose().translate(modelX, modelY, 0);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, "Hit",  0, -50, 0xFFFFFFFF);
 
             Vec3 root = new Vec3(0, 0, 0);
             ServerHitVehicleEvent event = events.get(0);
