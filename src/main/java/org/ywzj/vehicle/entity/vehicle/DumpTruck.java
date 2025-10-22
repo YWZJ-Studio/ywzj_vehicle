@@ -24,7 +24,7 @@ public class DumpTruck extends WheeledVehicle {
     public DumpTruck(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.thirdPersonOffset = new Vec3(0, 4, -7);
-        this.maxSpeedForward = 0.2f;
+        this.maxSpeedForward = 0.4f;
     }
 
     @Override
@@ -35,8 +35,8 @@ public class DumpTruck extends WheeledVehicle {
         dumpTruckBed.setXRotMin(-45);
         dumpTruckBed.setXRotMax(0);
         dumpTruckBed.setXRotSpeed((float) 15 / 20);
-        dumpTruckBed.ownerViewOffset = new Vec3(0.5 ,1, 3);
-        dumpTruckBed.seatOffset = new Vec3(0.5 ,1, 3);
+        dumpTruckBed.setOwnerViewOffset(new Vec3(0.6,1, 3));
+        dumpTruckBed.setSeatOffset(new Vec3(0.7,1, 3));
         this.partUnits.add(dumpTruckBed);
         this.operatorUnits.add(dumpTruckBed);
         this.spotterUnit = new SpotterUnit(this,
@@ -118,7 +118,7 @@ public class DumpTruck extends WheeledVehicle {
         // 自动进车斗
         if (pEntity instanceof LivingEntity) {
             PartUnit partUnit = operatorUnits.get(0);
-            Vec3 leftDoorPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 0, partUnit != null ? partUnit.seatOffset.z : 0));
+            Vec3 leftDoorPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 0, partUnit != null ? partUnit.getSeatOffset().z : 0));
             if (pEntity.distanceToSqr(leftDoorPos) < 1) {
                 Vec3 bedPos = relativeRotPos(position().add(0, 5, 0));
                 pEntity.teleportTo(bedPos.x, bedPos.y, bedPos.z);

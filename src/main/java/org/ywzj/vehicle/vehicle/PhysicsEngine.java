@@ -195,16 +195,16 @@ public class PhysicsEngine {
                 List<Vector2f> polygon = VectorUtil.convexHull(new ArrayList<>(points.keySet()));
                 // 重心于支撑点闭包内，转动停止，自由落体停止
                 if (VectorUtil.isPointInPolygon(gc, polygon)) {
-                    velocity.y = Math.max(0, force.y);
+                    velocity.y = Math.max(0, velocity.y);
                     rotV = 0;
                     climb(touchPoints);
                     // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                    double angleWidth = Math.toDegrees(Math.atan2(0.55, physicsCube.getWidth()));
-                    double angleDepth = Math.toDegrees(Math.atan2(0.55, physicsCube.getDepth()));
-                    if (Mth.abs(vehicle.getZRot()) < angleWidth + MAGIC_NUMBER) {
+                    double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
+                    double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
+                    if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
                         vehicle.setZRot(0);
                     }
-                    if (Mth.abs(vehicle.getXRot()) < angleDepth + MAGIC_NUMBER) {
+                    if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
                         vehicle.setXRot(0);
                     }
                     if (AllConfigs.common.selfRighting.get()) {

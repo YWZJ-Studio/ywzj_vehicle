@@ -128,6 +128,8 @@ public class LocalVehiclePlayer {
                     }
                     toViewType = ViewType.SCOPE;
                 } else if (viewType == ViewType.SCOPE) {
+                    toViewType = ViewType.OPERATOR;
+                } else if (viewType == ViewType.OPERATOR) {
                     toViewType = ViewType.THIRD_PERSON;
                 }
             }
@@ -254,28 +256,26 @@ public class LocalVehiclePlayer {
     }
 
     /**
-     * 第三人称瞄准方法
-     * 摄像头自由预瞄某落点，返回让炮塔旋转去瞄准该落点的XY转向
+     * 摄像头自由预瞄某落点
      */
-    public Vec2 thirdPersonAimRot() {
+    public Vec3 freeAimRot() {
         AbstractVehicle vehicle = getVehicle();
         if (vehicle == null) {
             return null;
         }
-        if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
+        if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit) {
             Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
             cameraAimRotX = camera.getXRot() - 10;
             cameraAimRotY = camera.getYRot();
-            return weaponUnit.aim(cameraAimHit(-10, 0).getLocation());
+            return cameraAimHit(-10, 0).getLocation();
         }
         return null;
     }
 
     /**
-     * 第一人称瞄准方法
-     * 摄像头受限运动下预瞄某落点，返回让炮塔旋转去瞄准该落点的XY转向
+     * 摄像头受限运动下预瞄某落点
      */
-    public Vec2 scopeAimRot() {
+    public Vec3 scopeAimRot() {
         if (!mouseTurnedAfterScope) {
             return null;
         }
@@ -289,7 +289,7 @@ public class LocalVehiclePlayer {
             aimLocationDistance = getPlayer().position().distanceTo(hitPos);
             outOfRangeFinding = result.getType() == HitResult.Type.MISS;
             if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
-                return weaponUnit.aim(hitPos);
+                return hitPos;
             }
         }
         return null;

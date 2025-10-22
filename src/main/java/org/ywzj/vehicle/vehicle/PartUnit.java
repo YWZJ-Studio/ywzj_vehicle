@@ -28,8 +28,8 @@ public class PartUnit {
     protected final int index;
     protected final AbstractVehicle vehicle;
     protected LivingEntity owner;
-    public Vec3 ownerViewOffset;
-    public Vec3 seatOffset;
+    protected Vec3 ownerViewOffset;
+    protected Vec3 seatOffset;
     public PassengerPose operatorPose;
     protected BedrockBone unitBone;
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
@@ -158,6 +158,22 @@ public class PartUnit {
 
     public void setOwner(LivingEntity owner) {
         this.owner = owner;
+    }
+
+    public Vec3 getOwnerViewOffset() {
+        return ownerViewOffset;
+    }
+
+    public void setOwnerViewOffset(Vec3 ownerViewOffset) {
+        this.ownerViewOffset = ownerViewOffset;
+    }
+
+    public Vec3 getSeatOffset() {
+        return seatOffset;
+    }
+
+    public void setSeatOffset(Vec3 seatOffset) {
+        this.seatOffset = seatOffset;
     }
 
 }

@@ -30,6 +30,7 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
         public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
+        public final ForgeConfigSpec.ConfigValue<Boolean> hitIndicator;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
             explosionBreakBlocks = builder.comment("爆炸是否破坏方块")
@@ -40,6 +41,8 @@ public class AllConfigs {
                     .define("infiniteFuel", false);
             fuelNameWhiteList = builder.comment("允许视作燃油的液体")
                     .defineList("fuelNameWhiteList", Arrays.asList("fuel", "gas", "lava"), obj -> obj instanceof String);
+            hitIndicator = builder.comment("开启命中提示")
+                    .define("hitIndicator", true);
         }
 
     }

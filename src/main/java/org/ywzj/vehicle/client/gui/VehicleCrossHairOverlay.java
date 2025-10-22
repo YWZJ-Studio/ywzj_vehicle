@@ -120,6 +120,9 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     showAim = false;
                 }
                 // 瞄准落点
+                if (!weaponUnit.getSubWeaponUnits().isEmpty()) {
+                    weaponUnit = weaponUnit.getSubWeaponUnits().get(0);
+                }
                 Vec2 rot = weaponUnit.worldRot();
                 Vec3 screenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), rot.x, rot.y, player);
                 if (screenHitPos.z >= 0) {
@@ -131,19 +134,19 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 } else {
                     showHit = false;
                 }
-                // 机身瞄准落点
-                if (vehicle instanceof HelicopterVehicle) {
-                    Vec3 helicopterScreenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), vehicle.getXRot() - 10, vehicle.getYRot(), player);
-                    if (helicopterScreenHitPos.z >= 0) {
-                        helicopterScreenHitXO = helicopterScreenHitX;
-                        helicopterScreenHitYO = helicopterScreenHitY;
-                        helicopterScreenHitX = helicopterScreenHitPos.x;
-                        helicopterScreenHitY = helicopterScreenHitPos.y;
-                        helicopterShowHit = true;
-                    } else {
-                        helicopterShowHit = false;
-                    }
-                }
+//                // 机身瞄准落点
+//                if (vehicle instanceof HelicopterVehicle) {
+//                    Vec3 helicopterScreenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), vehicle.getXRot() - 10, vehicle.getYRot(), player);
+//                    if (helicopterScreenHitPos.z >= 0) {
+//                        helicopterScreenHitXO = helicopterScreenHitX;
+//                        helicopterScreenHitYO = helicopterScreenHitY;
+//                        helicopterScreenHitX = helicopterScreenHitPos.x;
+//                        helicopterScreenHitY = helicopterScreenHitPos.y;
+//                        helicopterShowHit = true;
+//                    } else {
+//                        helicopterShowHit = false;
+//                    }
+//                }
             }
         }
     }

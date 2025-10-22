@@ -87,13 +87,13 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.fuelConsumptionPerTick = 0.00001f;
         this.soundDistance = 3;
         this.vehicleBodyOBBs = new ArrayList<>();
+        this.setMaxUpStep(1.0f);
         this.initData();
         this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
         this.lookControl = new VehicleLookControl(this);
     }
 
     public void initData() {
-        this.setMaxUpStep(1.0f);
         initPartUnits();
         initOBBs();
     }
@@ -106,15 +106,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.entityData.define(POWER, 0f);
     }
 
-    @Override
-    public void onSyncedDataUpdated(EntityDataAccessor<?> pKey) {
-        super.onSyncedDataUpdated(pKey);
-        if (Z_ROT.equals(pKey)) {
-            this.zRotO = this.zRot;
-            this.zRot = this.entityData.get(Z_ROT);
-        }
-    }
-
     public List<PartUnit> getPartUnits() {
         return partUnits;
     }
@@ -122,7 +113,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public void tick() {
         super.tick();
-        tickZRot();
         tickParts();
         updateOBBs();
         if (level().isClientSide()) {
@@ -143,6 +133,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 //            DebugUtil.timer("物理计算耗时(纳秒)");
         }
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
+        tickZRot();
     }
 
     protected void tickFuel() {
@@ -193,6 +184,14 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         velocity = physicsEngine.rotAndFallByGravity(touchPoints, new Vector3f(0, 0, 0), axes, force.toVector3f(), velocity.toVector3f());
 
         setDeltaMovement(velocity);
+
+//        if (this instanceof Ka50) {
+//            DebugUtil.particle(level(), ((WeaponUnit)operatorUnits.get(0)).worldBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)operatorUnits.get(0)).worldOwnerViewPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)operatorUnits.get(0)).worldOpticalSightPosition());
+//            DebugUtil.particle(level(), operatorUnits.get(0).worldSeatPosition());
+//        }
+
     }
 
     @Override
@@ -232,12 +231,15 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     protected abstract Vec3 tickMove();
 
     protected void tickZRot() {
-        if (!level().isClientSide()) {
+        if (level().isClientSide()) {
+            this.zRotO = this.zRot;
+            this.zRot = this.entityData.get(Z_ROT);
+        } else {
             if (this.zRotO != this.zRot) {
                 this.entityData.set(Z_ROT, zRot, true);
             }
+            this.zRotO = this.zRot;
         }
-        this.zRotO = this.zRot;
     }
 
     protected void tickParts() {
@@ -465,7 +467,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
         PartUnit partUnit = getOwnOperatorUnit(pPassenger);
         onLeaveVehicle(pPassenger);
-        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.seatOffset.z : 0));
+        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0));
     }
 
     @Override

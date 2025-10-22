@@ -1,0 +1,35 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 16,
+				"texture_height": 16,
+				"visible_bounds_width": 17,
+				"visible_bounds_height": 4.5,
+				"visible_bounds_offset": [0, 1.75, 0]
+			},
+			"bones": [
+				{
+					"name": "vehicle_body",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-26.975, 0, -85.175],
+							"size": [53.925, 42.55, 205.95],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [53.925, 42.55]},
+								"east": {"uv": [0, 0], "uv_size": [205.95, 42.55]},
+								"south": {"uv": [0, 0], "uv_size": [53.925, 42.55]},
+								"west": {"uv": [0, 0], "uv_size": [205.95, 42.55]},
+								"up": {"uv": [53.925, 205.95], "uv_size": [-53.925, -205.95]},
+								"down": {"uv": [53.925, 205.95], "uv_size": [-53.925, -205.95]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

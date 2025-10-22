@@ -53,7 +53,7 @@ public class Mi24 extends HelicopterVehicle {
                 1f,
                 null,
                 new Vec3(0, 0d, -6d),
-                new Vec3(0, -2.2d, -1.2d),
+                new Vec3(0, 2.2d, 2d),
                 null);
         turret.xRotSpeed = 60f / 20;
         turret.yRotSpeed = 60f / 20;

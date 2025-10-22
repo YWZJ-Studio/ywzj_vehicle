@@ -51,7 +51,7 @@ public class Motorcycle extends WheeledVehicle {
         this.spotterUnit = new SpotterUnit(this,
                 new Vec3(0, 2, 0),
                 new Vec3(0, -0.3f, 0),
-                new Vec3(0, 0, -0.3),
+                new Vec3(0, 2, -0.3),
                 null);
         this.spotterUnit.operatorPose = new PassengerPose();
         this.spotterUnit.operatorPose.leftArmRotX = -1.5f;

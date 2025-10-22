@@ -87,7 +87,7 @@ public class RotatableUnit extends PartUnit {
         if (!vehicle.level().isClientSide()) {
             if (xDiff != 0 || yDiff != 0) {
                 vehicle.level().players().stream()
-                        .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && vehicle.getOwnOperatorUnit(player) != this)
+                        .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && getOwner() != player)
                         .forEach(player ->
                                 Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerRotatableUnitRot(this)));
             }

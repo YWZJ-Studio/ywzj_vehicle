@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
@@ -31,7 +32,8 @@ import java.util.Optional;
 /**
  * 武器站是一种有方向机与高低机，可发射多类武器的载具可动部件
  * 其中方向机与高低机的结构模型可相互独立运动
- * 多个武器站可以纵向堆叠，并在方向机上联动旋转
+ * 一个武器站可关联有多个子武器站，并在火控上联动
+ * 多个武器站可纵向堆叠，并在方向机上联动旋转
  */
 public class WeaponUnit extends RotatableUnit {
 
@@ -42,15 +44,19 @@ public class WeaponUnit extends RotatableUnit {
     // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于炮闩的偏移
     private final Vec3 opticalSightOffset;
     // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于炮闩的偏移
-    private final Vec3 operatorOffset;
-    // 武器站操作员座位偏移，为操作玩家的乘坐位置相对于炮闩的偏移
-    private Vec3 seatOffset;
+    private final Vec3 operatorViewOffset;
+    // 操作员视角是否随武器站转动
+    private boolean operatorOnWeaponUnit = true;
     // 开镜类型
     private final OpticalSightType opticalSightType;
     // 最大开镜缩放倍率
     private final float zoomMax;
     // 当前开镜缩放倍率
     private float zoom;
+    // 本武器站从属的父武器站
+    private WeaponUnit parentWeaponUnit;
+    // 本武器站附属的子武器站
+    private final List<WeaponUnit> subWeaponUnits = new ArrayList<>();
     // 本武器站所附着于的武器站
     private WeaponUnit baseWeaponUnit;
 
@@ -79,7 +85,7 @@ public class WeaponUnit extends RotatableUnit {
         this.boltOffset = data.getBoltOffset();
         this.barrelLength = data.getBarrelLength();
         this.opticalSightOffset = data.getOpticalSightOffset();
-        this.operatorOffset = data.getOperatorOffset();
+        this.operatorViewOffset = data.getOperatorOffset();
         this.seatOffset = data.getSeatOffset();
 
         this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
@@ -110,7 +116,7 @@ public class WeaponUnit extends RotatableUnit {
     @Deprecated
     public WeaponUnit(String name, int index, AbstractVehicle vehicle,
                       Vec3 boltOffset, float barrelLength,
-                      Vec3 opticalSightOffset, Vec3 operatorOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
+                      Vec3 opticalSightOffset, Vec3 operatorViewOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
 
         this.zoomMax = 8;
@@ -119,7 +125,7 @@ public class WeaponUnit extends RotatableUnit {
         this.boltOffset = boltOffset;
         this.barrelLength = barrelLength;
         this.opticalSightOffset = opticalSightOffset;
-        this.operatorOffset = operatorOffset;
+        this.operatorViewOffset = operatorViewOffset;
         this.seatOffset = seatOffset;
         this.baseWeaponUnit = baseWeaponUnit;
 
@@ -191,17 +197,7 @@ public class WeaponUnit extends RotatableUnit {
                 AABB aabb = aimLockEntity.getBoundingBox();
                 aimLockPosition = aabb.getCenter();
             }
-            Vec2 rot = aim(aimLockPosition);
-            if (xAimRot != rot.x || yAimRot != rot.y) {
-                xAimRot = rot.x;
-                yAimRot = rot.y;
-                ClientVehicleAction control = new ClientVehicleAction();
-                control.vehicleEntityId = vehicle.getId();
-                control.weaponIndex = getIndex();
-                control.xAimRot = rot.x;
-                control.yAimRot = rot.y;
-                Channel.CHANNEL.sendToServer(control);
-            }
+            aim(aimLockPosition);
         }
     }
 
@@ -257,7 +253,24 @@ public class WeaponUnit extends RotatableUnit {
         });
     }
 
-    public Vec2 aim(Vec3 worldPos) {
+    public void aim(Vec3 worldPos) {
+        Vec2 rot = aimRot(worldPos);
+        if (xAimRot != rot.x || yAimRot != rot.y) {
+            xAimRot = rot.x;
+            yAimRot = rot.y;
+            if (vehicle.level().isClientSide) {
+                ClientVehicleAction control = new ClientVehicleAction();
+                control.vehicleEntityId = vehicle.getId();
+                control.weaponIndex = index;
+                control.xAimRot = rot.x;
+                control.yAimRot = rot.y;
+                Channel.CHANNEL.sendToServer(control);
+            }
+        }
+        subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));
+    }
+
+    public Vec2 aimRot(Vec3 worldPos) {
         Vec3 boltWorldPos = worldBoltPosition();
         Vec3 worldAim = new Vec3(worldPos.x - boltWorldPos.x, worldPos.y - boltWorldPos.y, worldPos.z - boltWorldPos.z);
         return vecToRot(worldAim);
@@ -289,22 +302,27 @@ public class WeaponUnit extends RotatableUnit {
 
     @Override
     public Vec3 worldOwnerViewPosition() {
-        if (operatorOffset == null) {
+        if (!operatorOnWeaponUnit) {
+            Vec3 offsetFromVehicle = boltOffset.add(operatorViewOffset);
+            Vector4d offsetWithBaseRot = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
+            return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)));
+        }
+        if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
             return worldPosition(boltOffset.add(new Vec3(0, eyeHeight, 0)));
         }
-        return worldPosition(boltOffset.add(operatorOffset));
+        return worldPosition(boltOffset.add(operatorViewOffset));
     }
 
     @Override
     public Vec3 worldSeatPosition() {
         float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
-        Vec3 seatOffset = this.seatOffset;
-        if (seatOffset == null) {
-            seatOffset = boltOffset.subtract(new Vec3(0, eyeHeight, 0));
+        if (!operatorOnWeaponUnit) {
+            Vector4d offset = rotatedOffsetWithBaseRot(this, seatOffset.x, seatOffset.z);
+            return vehicle.relativeRotPos(vehicle.position().add(offset.z, seatOffset.y - eyeHeight, offset.w));
         }
-        Vector4d offset = rotatedOffsetWithBaseRot(this, boltOffset.x + seatOffset.x, boltOffset.z + seatOffset.z);
-        return vehicle.relativeRotPos(vehicle.position().add(offset.z, boltOffset.y + seatOffset.y - eyeHeight, offset.w));
+        Vec3 offset = rotatedOffsetWithSelfRot(this.seatOffset);
+        return vehicle.relativeRotPos(vehicle.position().add(offset.x, seatOffset.y - eyeHeight, offset.z));
     }
 
     /**
@@ -454,6 +472,38 @@ public class WeaponUnit extends RotatableUnit {
         return aimLockEntity;
     }
 
+    @Override
+    public LivingEntity getOwner() {
+        if (parentWeaponUnit != null) {
+            return parentWeaponUnit.owner;
+        }
+        return owner;
+    }
+
+    public boolean isOperatorOnWeaponUnit() {
+        return operatorOnWeaponUnit;
+    }
+
+    public void setOperatorOnWeaponUnit(boolean operatorOnWeaponUnit) {
+        this.operatorOnWeaponUnit = operatorOnWeaponUnit;
+    }
+
+    public WeaponUnit getParentWeaponUnit() {
+        return parentWeaponUnit;
+    }
+
+    public void setParentWeaponUnit(WeaponUnit parentWeaponUnit) {
+        this.parentWeaponUnit = parentWeaponUnit;
+    }
+
+    public void addSubWeaponUnit(WeaponUnit subWeaponUnit) {
+        this.subWeaponUnits.add(subWeaponUnit);
+    }
+
+    public List<WeaponUnit> getSubWeaponUnits() {
+        return subWeaponUnits;
+    }
+
     public WeaponUnit getBaseWeaponUnit() {
         return baseWeaponUnit;
     }
@@ -467,10 +517,6 @@ public class WeaponUnit extends RotatableUnit {
             return Optional.of(weapons.get(currentWeaponIndex));
         }
         return Optional.empty();
-    }
-
-    public void setSeatOffset(Vec3 seatOffset) {
-        this.seatOffset = seatOffset;
     }
 
 }

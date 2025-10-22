@@ -3,6 +3,7 @@ package org.ywzj.vehicle.network.message;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
 import org.ywzj.vehicle.event.HitVehicleEvent;
 
@@ -38,6 +39,9 @@ public class ServerHitVehicleEvent {
 
     public static void onServerMessageReceived(ServerHitVehicleEvent message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ctxSupplier.get().setPacketHandled(true);
+        if (!AllConfigs.common.hitIndicator.get()) {
+            return;
+        }
         ctxSupplier.get().enqueueWork(() -> {
             VehicleHitIndicatorOverlay.lastHitTime = System.currentTimeMillis();
             if (!VehicleHitIndicatorOverlay.events.isEmpty() && VehicleHitIndicatorOverlay.events.get(0).entityId != message.entityId) {

@@ -12,12 +12,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
@@ -82,28 +79,20 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     @Override
     protected void tickAim() {
         if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
-            Vec2 rot = null;
-            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                rot = LocalVehiclePlayer.instance.thirdPersonAimRot();
+            Vec3 pos = null;
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON
+                    || LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                pos = LocalVehiclePlayer.instance.freeAimRot();
             } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                rot = LocalVehiclePlayer.instance.scopeAimRot();
+                pos = LocalVehiclePlayer.instance.scopeAimRot();
             }
-            if (rot == null) {
+            if (pos == null) {
                 return;
             }
             if (weaponUnit.isStabilizerOn()) {
                 return;
             }
-            if (weaponUnit.xAimRot != rot.x || weaponUnit.yAimRot != rot.y) {
-                weaponUnit.xAimRot = rot.x;
-                weaponUnit.yAimRot = rot.y;
-                ClientVehicleAction control = new ClientVehicleAction();
-                control.vehicleEntityId = this.getId();
-                control.weaponIndex = weaponUnit.getIndex();
-                control.xAimRot = rot.x;
-                control.yAimRot = rot.y;
-                Channel.CHANNEL.sendToServer(control);
-            }
+            weaponUnit.aim(pos);
         }
     }
 

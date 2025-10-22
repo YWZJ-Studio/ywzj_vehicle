@@ -17,6 +17,7 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.joml.Math;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -25,12 +26,14 @@ import java.util.List;
 
 public class VehicleHitIndicatorOverlay implements IGuiOverlay {
 
-    public static float scale = 8;
     public static List<ServerHitVehicleEvent> events = new ArrayList<>();
     public static long lastHitTime = System.currentTimeMillis();
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        if (!AllConfigs.common.hitIndicator.get()) {
+            return;
+        }
         if (System.currentTimeMillis() - lastHitTime > 3000) {
             events.clear();
         }
@@ -47,16 +50,10 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         }
         guiGraphics.pose().pushPose();
         {
-            int bgWidth = 100;
-            int bgHeight = 80;
             double modelX = screenWidth - (double) screenWidth / 8;
             double modelY = (double) screenHeight / 2;
-            int bgX = (int) (modelX - (double) bgWidth / 2);
-            int bgY = (int) (modelY - (double) bgHeight / 2) - 20;
-            int backgroundColor = 0x88000000;
-            guiGraphics.fill(bgX, bgY, bgX + bgWidth, bgY + bgHeight, backgroundColor);
-            guiGraphics.pose().translate(modelX, modelY, 0);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, "Hit",  0, -50, 0xFFFFFFFF);
+            guiGraphics.pose().translate(modelX, modelY + (double) screenHeight / 5, 0);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, "Hit",  0, -55, 0xFFFFFFFF);
 
             Vec3 root = new Vec3(0, 0, 0);
             ServerHitVehicleEvent event = events.get(0);
@@ -66,13 +63,14 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             guiGraphics.pose().rotateAround(Axis.XP.rotationDegrees(pitch + 180), (float) root.x, (float) root.y, (float) root.z);
             guiGraphics.pose().rotateAround(Axis.YP.rotationDegrees(yaw), (float) root.x, (float) root.y, (float) root.z);
 
+            float scale = (float) (48 / entity.getBoundingBox().getSize() * 1);
             guiGraphics.pose().mulPoseMatrix((new Matrix4f()).scaling(scale, scale, -scale));
             Lighting.setupForEntityInInventory();
             EntityRenderDispatcher entityrenderdispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
 
             entityrenderdispatcher.setRenderShadow(false);
             RenderSystem.runAsFancy(() -> {
-                entityrenderdispatcher.render(entity, 0, 0,0, 0.0F, 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
+                entityrenderdispatcher.render(entity, 0, 0,0, entity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
                 for (ServerHitVehicleEvent hitVehicleEvent : events) {
                     Vec3 start = hitVehicleEvent.hitPosition.subtract(entity.position());
                     Vec3 end = start.subtract(hitVehicleEvent.hitVector.normalize().scale(3));

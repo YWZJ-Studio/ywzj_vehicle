@@ -137,6 +137,7 @@ public class InputHandler {
                     return;
                 }
                 weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
+                weaponUnit.getSubWeaponUnits().forEach(subWeaponUnit -> subWeaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot));
             }
         }
     }
