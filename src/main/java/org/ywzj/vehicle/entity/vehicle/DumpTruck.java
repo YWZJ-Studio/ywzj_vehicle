@@ -103,7 +103,7 @@ public class DumpTruck extends WheeledVehicle {
 
     @Override
     protected void tickParticle() {
-        if (!this.getPassengers().isEmpty() && tickCount % 10 == 0) {
+        if (hasPower() && tickCount % 10 == 0) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePos = this.position().add(this.getLookAngle().normalize().scale(2f)).add(v2.scale(-1.6)).add(0, 3, 0);

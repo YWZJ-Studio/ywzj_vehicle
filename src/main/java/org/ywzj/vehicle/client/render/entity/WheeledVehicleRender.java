@@ -14,18 +14,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
-import org.ywzj.vehicle.entity.vehicle.Motorcycle;
+import org.ywzj.vehicle.entity.vehicle.DumpTruck;
+import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
-public class MotorcycleRenderer extends EntityRenderer<Motorcycle> {
+public class WheeledVehicleRender extends EntityRenderer<WheeledVehicle> {
 
-    public MotorcycleRenderer(EntityRendererProvider.Context pContext) {
+    public WheeledVehicleRender(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
 
     @Override
-    public void render(Motorcycle pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(WheeledVehicle pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         pPoseStack.pushPose();
 
         Vec3 root = new Vec3(0, 0, 0);
@@ -34,15 +34,18 @@ public class MotorcycleRenderer extends EntityRenderer<Motorcycle> {
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        BedrockModel model = BedrockModelLoader.getModel(AllVehicles.MOTORCYCLE.getVisualBedrockModel());
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.MOTORCYCLE.getVisualBedrockTexture()));
+        BedrockModel model = BedrockModelLoader.getModel(pEntity.getVehicleType().getVisualBedrockModel());
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(pEntity.getVehicleType().getVisualBedrockTexture()));
 
-        BedrockBone wheelFront = model.getBoneMap().get("wheel_front");
-        BedrockBone wheelBack = model.getBoneMap().get("wheel_back");
-        BedrockBone front = model.getBoneMap().get("front");
+        BedrockBone wheel1 = model.getBoneMap().get("wheel1");
+        BedrockBone wheel2 = model.getBoneMap().get("wheel2");
+        BedrockBone wheel3 = model.getBoneMap().get("wheel3");
+        BedrockBone wheel4 = model.getBoneMap().get("wheel4");
+        BedrockBone control = model.getBoneMap().get("control");
+        Quaternionf controlBaseRot = new Quaternionf(control.rotation);
 
         // 轮子转速
-        float vf = pEntity.getEntityData().get(Motorcycle.FORWARD_SPEED);
+        float vf = pEntity.getEntityData().get(DumpTruck.FORWARD_SPEED);
         float t = (float) (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000 * 20;
         float s = t * vf;
         float l = (float) 20 / 16;
@@ -51,27 +54,33 @@ public class MotorcycleRenderer extends EntityRenderer<Motorcycle> {
         pEntity.wheelRotation %= 360;
 
         // 轮子转向幅度
-        float vt = pEntity.getEntityData().get(Motorcycle.TURN_SPEED);
-        float turnRotation = vt * 16;
+        float vt = pEntity.getEntityData().get(DumpTruck.TURN_SPEED);
+        float turnRotation = vt * 10;
 
         // 应用动画
-        front.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-        wheelFront.rotation.mul(Axis.XN.rotationDegrees(-pEntity.wheelRotation));
-        wheelBack.rotation.mul(Axis.XN.rotationDegrees(-pEntity.wheelRotation));
+        wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+        wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+        wheel1.rotation.mul(Axis.XN.rotationDegrees(-pEntity.wheelRotation));
+        wheel2.rotation.mul(Axis.XN.rotationDegrees(-pEntity.wheelRotation));
+        wheel3.rotation.mul(Axis.XN.rotationDegrees(-pEntity.wheelRotation));
+        wheel4.rotation.mul(Axis.XN.rotationDegrees(-pEntity.wheelRotation));
+        control.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 15));
 
         pEntity.lastRenderTime = System.currentTimeMillis();
         model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
 
         Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-        front.rotation.set(reset);
-        wheelFront.rotation.set(reset);
-        wheelBack.rotation.set(reset);
+        wheel1.rotation.set(reset);
+        wheel2.rotation.set(reset);
+        wheel3.rotation.set(reset);
+        wheel4.rotation.set(reset);
+        control.rotation.set(controlBaseRot);
 
         pPoseStack.popPose();
     }
 
     @Override
-    public ResourceLocation getTextureLocation(Motorcycle pEntity) {
+    public ResourceLocation getTextureLocation(WheeledVehicle pEntity) {
         return null;
     }
 

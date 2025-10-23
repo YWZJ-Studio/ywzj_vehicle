@@ -41,6 +41,8 @@ public class AllKeys {
     public static final KeyMapping CHANGE_SEAT_2 = key("change_seat_2", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_2);
     public static final KeyMapping CHANGE_SEAT_3 = key("change_seat_3", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_3);
     public static final KeyMapping CHANGE_SEAT_4 = key("change_seat_4", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_4);
+    public static final KeyMapping CHANGE_SEAT_5 = key("change_seat_5", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_5);
+    public static final KeyMapping CHANGE_SEAT_6 = key("change_seat_6", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_6);
 
     // 调试
     public static final KeyMapping DEBUG_GUI = key("debug_gui", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_SLASH);
@@ -49,7 +51,7 @@ public class AllKeys {
             FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW,
             FIRE_CONTROL_STABILIZER, FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, MAGNIFICATION_CHANGE,
             SWITCH_VIEW, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
-            CHANGE_SEAT_1, CHANGE_SEAT_2, CHANGE_SEAT_3, CHANGE_SEAT_4,
+            CHANGE_SEAT_1, CHANGE_SEAT_2, CHANGE_SEAT_3, CHANGE_SEAT_4, CHANGE_SEAT_5, CHANGE_SEAT_6,
             DEBUG_GUI
     };
 

@@ -51,6 +51,10 @@ public class InputHandler {
                     sendChangeSeat(vehicle, 2);
                 } else if (CHANGE_SEAT_4.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 3);
+                } else if (CHANGE_SEAT_5.matches(event.getKey(), event.getScanCode())) {
+                    sendChangeSeat(vehicle, 4);
+                } else if (CHANGE_SEAT_6.matches(event.getKey(), event.getScanCode())) {
+                    sendChangeSeat(vehicle, 5);
                 } else if (FIRE_CONTROL_STABILIZER.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.switchStabilizer();
