@@ -64,8 +64,8 @@ public class ScopeOverlay implements IGuiOverlay {
         // 成员组
         int x = centerX - 140;
         int y = centerY + guiGraphics.guiHeight() / 5;
-        for (int index = 0; index < vehicle.seats; index++) {
-            Integer playerId = vehicle.passengerIdsBySeat.get(index);
+        for (int index = 0; index < vehicle.seats.size(); index++) {
+            Integer playerId = vehicle.seats.get(index).passengerId;
             Entity entity = null;
             PartUnit partUnit = null;
             if (playerId != null) {

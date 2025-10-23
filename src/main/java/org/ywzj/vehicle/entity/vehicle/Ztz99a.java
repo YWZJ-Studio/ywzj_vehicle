@@ -10,16 +10,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.custom.VehicleDataManager;
-import org.ywzj.vehicle.vehicle.PartUnit;
-import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
-public class Ztz99a extends TrackedVehicle {
+import java.util.ArrayList;
+import java.util.List;
 
-    private VehicleSound turretTurnYSoundInstance;
-    private VehicleSound turretTurnXSoundInstance;
+public class Ztz99a extends TrackedVehicle {
 
     public Ztz99a(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -32,14 +29,13 @@ public class Ztz99a extends TrackedVehicle {
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleBodyOBBs = struct.obbs();
             var weapons = data.createPartUnits(this);
-            this.operatorUnits.addAll(weapons.values());
+//            this.operatorUnits.addAll(weapons.values());
+            List<WeaponUnit> weaponUnits = new ArrayList<>(weapons.values());
+            for (int index = 0; index < weapons.size(); index++) {
+                this.seats.add(new Seat(index, weaponUnits.get(index)));
+            }
             this.partUnits.addAll(weapons.values());
         });
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 4.54d, -0.375d),
-                new Vec3(0, 1.5d, 0),
-                new Vec3(0, 0, 0),
-                null);
     }
 
     @Deprecated
@@ -59,7 +55,7 @@ public class Ztz99a extends TrackedVehicle {
         turret.setXRotMax(5f);
         turret.setXRotMin(-13f);
         this.partUnits.add(turret);
-        this.operatorUnits.add(turret);
+        this.seats.add(new Seat(0, turret));
         WeaponUnit commanderMachineGun = new WeaponUnit("ztz99a_commander_machine_gun",
                 1,
                 this,
@@ -74,12 +70,7 @@ public class Ztz99a extends TrackedVehicle {
         commanderMachineGun.setXRotMax(15f);
         commanderMachineGun.setXRotMin(-18f);
         this.partUnits.add(commanderMachineGun);
-        this.operatorUnits.add(commanderMachineGun);
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 4.54d, -0.375d),
-                new Vec3(0, 1.5d, 0),
-                new Vec3(0, -2.2d, -1.2d),
-                null);
+        this.seats.add(new Seat(1, commanderMachineGun));
     }
 
     @Override
@@ -113,54 +104,10 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
-    protected void tickSound() {
-        super.tickSound();
-        if (hasPower()) {
-            for (PartUnit operatorUnit : operatorUnits) {
-                if (operatorUnit.getName().getString().equals("ztz99a_turret")) {
-                    if (operatorUnit instanceof WeaponUnit weaponUnit) {
-                        if (Math.abs(weaponUnit.yAimRot - weaponUnit.yRot) > 1) {
-                            if (turretTurnYSoundInstance == null) {
-                                turretTurnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, this.getId());
-                                turretTurnYSoundInstance.play();
-                            }
-                        } else {
-                            if (turretTurnYSoundInstance != null) {
-                                turretTurnYSoundInstance.stop();
-                                turretTurnYSoundInstance = null;
-                            }
-                        }
-                        if (Math.abs(weaponUnit.xAimRot - weaponUnit.xRot) > 1 && weaponUnit.xRot < weaponUnit.xRotMax && weaponUnit.xRot > weaponUnit.xRotMin) {
-                            if (turretTurnXSoundInstance == null) {
-                                turretTurnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
-                                turretTurnXSoundInstance.play();
-                            }
-                        } else {
-                            if (turretTurnXSoundInstance != null) {
-                                turretTurnXSoundInstance.stop();
-                                turretTurnXSoundInstance = null;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            if (turretTurnXSoundInstance != null) {
-                turretTurnXSoundInstance.stop();
-                turretTurnXSoundInstance = null;
-            }
-            if (turretTurnYSoundInstance != null) {
-                turretTurnYSoundInstance.stop();
-                turretTurnYSoundInstance = null;
-            }
-        }
-    }
-
-    @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (weaponIndex < operatorUnits.size()) {
+        if (weaponIndex < seats.size()) {
             //todo 武器配置
-            if (operatorUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+            if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
                 if (weaponUnit.getName().getString().equals("ztz99a_turret")) {
 
                     // 测试主炮

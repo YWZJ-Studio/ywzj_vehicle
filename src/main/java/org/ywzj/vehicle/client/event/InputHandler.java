@@ -95,11 +95,11 @@ public class InputHandler {
         }
         freeCamera = FREE_CAMERA.isDown();
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
+            if (LEAVE_VEHICLE.isDown()) {
+                sendLeaveVehicle(vehicle);
+                return;
+            }
             if (player.equals(vehicle.controlUnit.operator)) {
-                if (LEAVE_VEHICLE.isDown()) {
-                    sendLeaveVehicle(vehicle);
-                    return;
-                }
                 ControlUnit controlUnit = new ControlUnit();
                 controlUnit.forward = FORWARD.isDown();
                 controlUnit.backward = BACKWARD.isDown();
@@ -132,12 +132,9 @@ public class InputHandler {
     private static void handleShoot(AbstractVehicle vehicle, LocalPlayer player) {
         if (MAIN_WEAPON_SHOOT.isDown()) {
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                if (weaponUnit == vehicle.spotterUnit) {
-                    LocalVehiclePlayer.instance.sendMessage("tips.spotter");
-                    return;
-                }
                 weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
-                weaponUnit.getSubWeaponUnits().forEach(subWeaponUnit -> subWeaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot));
+            } else {
+                LocalVehiclePlayer.instance.sendMessage("tips.spotter");
             }
         }
     }

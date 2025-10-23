@@ -9,8 +9,8 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.particle.DustSmokeOption;
+import org.ywzj.vehicle.vehicle.PartUnit;
 import org.ywzj.vehicle.vehicle.PassengerPose;
-import org.ywzj.vehicle.vehicle.SpotterUnit;
 
 public class Motorcycle extends WheeledVehicle {
 
@@ -27,7 +27,7 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public int getSeats() {
+    public int passengerCapacity() {
         return 1;
     }
 
@@ -48,14 +48,14 @@ public class Motorcycle extends WheeledVehicle {
 
     @Override
     public void initPartUnits() {
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 2, 0),
-                new Vec3(0, -0.3f, 0),
-                new Vec3(0, 2, -0.3),
-                null);
-        this.spotterUnit.operatorPose = new PassengerPose();
-        this.spotterUnit.operatorPose.leftArmRotX = -1.5f;
-        this.spotterUnit.operatorPose.rightArmRotX= -1.5f;
+        PartUnit passengerSeat = new PartUnit("passenger_seat", 1, this);
+        passengerSeat.setOwnerViewOffset(new Vec3(0,2, 0));
+        passengerSeat.setSeatOffset(new Vec3(0,0, -0.3));
+        this.partUnits.add(passengerSeat);
+        this.seats.add(new Seat(0, passengerSeat));
+        passengerSeat.passengerPose = new PassengerPose();
+        passengerSeat.passengerPose.leftArmRotX = -1.5f;
+        passengerSeat.passengerPose.rightArmRotX= -1.5f;
     }
 
     @Override

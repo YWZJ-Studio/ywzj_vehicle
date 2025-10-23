@@ -34,9 +34,9 @@ public class HumanoidModelMixin {
     private void setupAnim(LivingEntity livingEntity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         if (livingEntity.getVehicle() instanceof AbstractVehicle vehicle) {
             if (livingEntity instanceof Player) {
-                PartUnit operatorUnit = vehicle.getOwnOperatorUnit(livingEntity);
-                if (operatorUnit != null && operatorUnit.operatorPose != null) {
-                    setPose(operatorUnit.operatorPose);
+                PartUnit partUnit = vehicle.getOwnOperatorUnit(livingEntity);
+                if (partUnit != null && partUnit.passengerPose != null) {
+                    setPose(partUnit.passengerPose);
                 }
             }
         }

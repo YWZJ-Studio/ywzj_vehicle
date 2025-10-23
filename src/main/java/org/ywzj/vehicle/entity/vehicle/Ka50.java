@@ -13,7 +13,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Ka50 extends HelicopterVehicle {
@@ -24,7 +23,7 @@ public class Ka50 extends HelicopterVehicle {
     }
 
     @Override
-    public int getSeats() {
+    public int passengerCapacity() {
         return 1;
     }
 
@@ -62,7 +61,7 @@ public class Ka50 extends HelicopterVehicle {
         sight.setYRotMin(-60f);
         sight.setOperatorOnWeaponUnit(false);
         this.partUnits.add(sight);
-        this.operatorUnits.add(sight);
+        this.seats.add(new Seat(0, sight));
         WeaponUnit autoCannon = new WeaponUnit("auto_cannon",
                 1,
                 this,
@@ -81,11 +80,6 @@ public class Ka50 extends HelicopterVehicle {
         autoCannon.setParentWeaponUnit(sight);
         sight.addSubWeaponUnit(autoCannon);
         this.partUnits.add(autoCannon);
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 4.54d, -0.375d),
-                new Vec3(0, 0d, -6d),
-                new Vec3(0, -2.2d, -1.2d),
-                null);
     }
 
 //    @Override
@@ -132,7 +126,7 @@ public class Ka50 extends HelicopterVehicle {
 
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (operatorUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+        if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
             this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
 

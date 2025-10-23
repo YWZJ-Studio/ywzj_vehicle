@@ -33,7 +33,6 @@ public class YwzjVehicle {
         AllVehicleWeaponType.register(modEventBus);
         AllParticleTypes.register(modEventBus);
         modEventBus.register(Channel.class);
-//        context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     public static ResourceLocation modLoc(String name) {

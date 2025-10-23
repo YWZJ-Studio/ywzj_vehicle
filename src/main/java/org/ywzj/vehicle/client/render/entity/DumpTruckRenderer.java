@@ -67,7 +67,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
 
         // 车斗
         float bedXRot = 0;
-        PartUnit dumpTruckBed = pEntity.operatorUnits.get(0);
+        PartUnit dumpTruckBed = pEntity.seats.get(0).partUnit;
         if (dumpTruckBed instanceof RotatableUnit rotatableUnit) {
             bedXRot = rotatableUnit.xRot;
         }

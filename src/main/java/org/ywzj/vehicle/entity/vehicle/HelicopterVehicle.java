@@ -48,7 +48,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     }
 
     @Override
-    public int getSeats() {
+    public int passengerCapacity() {
         return 2;
     }
 

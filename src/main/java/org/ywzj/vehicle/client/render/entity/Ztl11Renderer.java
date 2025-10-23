@@ -69,8 +69,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         float turretYRot = 0;
         // 炮塔俯仰
         float turretXRot = 0;
-        if (!pEntity.operatorUnits.isEmpty()) {
-            PartUnit partUnit = pEntity.operatorUnits.get(0);
+        if (!pEntity.seats.isEmpty()) {
+            PartUnit partUnit = pEntity.seats.get(0).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
                 turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
@@ -81,8 +81,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         float machineGunYRot = 0;
         // 车长机枪俯仰
         float machineGunXRot = 0;
-        if (!pEntity.operatorUnits.isEmpty()) {
-            PartUnit partUnit = pEntity.operatorUnits.get(1);
+        if (!pEntity.seats.isEmpty()) {
+            PartUnit partUnit = pEntity.seats.get(1).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
                 machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);

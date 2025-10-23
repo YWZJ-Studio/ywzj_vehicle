@@ -4,9 +4,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import org.joml.Math;
 import org.joml.Quaternionf;
+import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerRotatableUnitRot;
@@ -29,6 +33,8 @@ public class RotatableUnit extends PartUnit {
     public float yRotMin = -Float.MAX_VALUE;
     public float xAimRot;
     public float yAimRot;
+    private VehicleSound turnYSoundInstance;
+    private VehicleSound turnXSoundInstance;
 
     public RotatableUnit(String name, int index, AbstractVehicle vehicle) {
         super(name, index, vehicle);
@@ -44,6 +50,7 @@ public class RotatableUnit extends PartUnit {
         super.tick();
         if (vehicle.hasPower()) {
             tickRot();
+            tickSound();
         } else {
             this.xRotO = this.xRot;
             this.yRotO = this.yRot;
@@ -90,6 +97,43 @@ public class RotatableUnit extends PartUnit {
                         .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && getOwner() != player)
                         .forEach(player ->
                                 Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerRotatableUnitRot(this)));
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    protected void tickSound() {
+        if (vehicle.hasPower()) {
+            if (Math.abs(yAimRot - yRot) > 1) {
+                if (turnYSoundInstance == null) {
+                    turnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, vehicle.getId());
+                    turnYSoundInstance.play();
+                }
+            } else {
+                if (turnYSoundInstance != null) {
+                    turnYSoundInstance.stop();
+                    turnYSoundInstance = null;
+                }
+            }
+            if (Math.abs(xAimRot - xRot) > 1 && xRot < xRotMax && xRot > xRotMin) {
+                if (turnXSoundInstance == null) {
+                    turnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, vehicle.getId());
+                    turnXSoundInstance.play();
+                }
+            } else {
+                if (turnXSoundInstance != null) {
+                    turnXSoundInstance.stop();
+                    turnXSoundInstance = null;
+                }
+            }
+        } else {
+            if (turnXSoundInstance != null) {
+                turnXSoundInstance.stop();
+                turnXSoundInstance = null;
+            }
+            if (turnYSoundInstance != null) {
+                turnYSoundInstance.stop();
+                turnYSoundInstance = null;
             }
         }
     }

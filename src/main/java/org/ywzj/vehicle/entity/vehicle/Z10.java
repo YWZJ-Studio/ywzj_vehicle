@@ -12,7 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
 
 public class Z10 extends HelicopterVehicle {
@@ -55,12 +54,7 @@ public class Z10 extends HelicopterVehicle {
         turret.setYRotMax(90f);
         turret.setYRotMin(-90f);
         this.partUnits.add(turret);
-        this.operatorUnits.add(turret);
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 4.54d, -0.375d),
-                new Vec3(0, 0d, -6d),
-                new Vec3(0, -2.2d, -1.2d),
-                null);
+        this.seats.add(new Seat(0, turret));
     }
 
 //    @Override
@@ -107,7 +101,7 @@ public class Z10 extends HelicopterVehicle {
 
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (operatorUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+        if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
 //            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
 //            this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
 

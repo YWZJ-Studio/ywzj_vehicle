@@ -44,9 +44,8 @@ import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends ContainerMob implements OBBEntity {
@@ -55,12 +54,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     private final AllVehicles.VehicleType vehicleType;
-    public int seats;
-    public List<Integer> passengerIdsBySeat;
     public final ControlUnit controlUnit;
+    public List<Seat> seats;
     protected final List<PartUnit> partUnits;
-    public final List<PartUnit> operatorUnits;
-    public SpotterUnit spotterUnit;
     public Vec3 thirdPersonOffset;
     public float curbWeight;
     public float fuelCapacity;
@@ -75,12 +71,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.vehicleType = AllVehicles.getVehicleType(this.getClass());
-        this.seats = getSeats();
-        this.passengerIdsBySeat = new ArrayList<>(Collections.nCopies(seats, null));
+        this.seats = new ArrayList<>();
         this.controlUnit = new ControlUnit();
         this.partUnits = new ArrayList<>();
-        this.operatorUnits = new ArrayList<>();
-        this.spotterUnit = new SpotterUnit(this, Vec3.ZERO, Vec3.ZERO, Vec3.ZERO, null);
         this.thirdPersonOffset = Vec3.ZERO;
         this.curbWeight = 1;
         this.fuelCapacity = 1;
@@ -119,7 +112,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             tickAim();
             tickSound();
             tickParticle();
-            spotterUnit.tick();
         } else {
             if (tickCount == 1) {
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
@@ -186,10 +178,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         setDeltaMovement(velocity);
 
 //        if (this instanceof Ka50) {
-//            DebugUtil.particle(level(), ((WeaponUnit)operatorUnits.get(0)).worldBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)operatorUnits.get(0)).worldOwnerViewPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)operatorUnits.get(0)).worldOpticalSightPosition());
-//            DebugUtil.particle(level(), operatorUnits.get(0).worldSeatPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOwnerViewPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOpticalSightPosition());
+//            DebugUtil.particle(level(), seats.get(0).partUnit.worldSeatPosition());
 //        }
 
     }
@@ -215,7 +207,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
     }
 
-    public abstract int getSeats();
+    public abstract int passengerCapacity();
 
     public void initPartUnits() {};
 
@@ -303,59 +295,48 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     public void onEnterVehicle(LivingEntity livingEntity) {
-        int seat = passengerIdsBySeat.indexOf(null);
-        if (seat == -1 && passengerIdsBySeat.size() < seats) {
-            passengerIdsBySeat.add(null);
-            seat = passengerIdsBySeat.size() - 1;
-        }
-        if (seat != -1) {
-            if (seat == 0) {
+        Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
+        if (emptySeatOptional.isPresent()) {
+            Seat seat = emptySeatOptional.get();
+            if (seat.seatIndex == 0) {
                 controlUnit.setOperator(livingEntity);
             }
-            if (seat < operatorUnits.size()) {
-                operatorUnits.get(seat).setOwner(livingEntity);
-            }
-            passengerIdsBySeat.set(seat, livingEntity.getId());
+            seat.partUnit.setOwner(livingEntity);
+            seat.passengerId = livingEntity.getId();
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
     public void onLeaveVehicle(LivingEntity pPassenger) {
-        int seat = passengerIdsBySeat.indexOf(pPassenger.getId());
-        if (seat != -1) {
-            if (seat == 0) {
+        Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
+        if (ownSeat.isPresent()) {
+            Seat seat = ownSeat.get();
+            if (seat.seatIndex == 0) {
                 controlUnit.setOperator(null);
             }
-            if (seat < operatorUnits.size()) {
-                operatorUnits.get(seat).setOwner(null);
-            }
-            passengerIdsBySeat.set(seat, null);
+            seat.partUnit.setOwner(null);
+            seat.passengerId = -1;
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
-    public boolean changeSeat(LivingEntity pPassenger, int toSeat) {
-        if (toSeat < passengerIdsBySeat.size() && passengerIdsBySeat.get(toSeat) == null) {
-            int origSeat = passengerIdsBySeat.indexOf(pPassenger.getId());
-            if (origSeat == toSeat) {
-                return false;
-            }
-            if (origSeat != -1) {
-                if (origSeat == 0) {
+    public boolean changeSeat(LivingEntity pPassenger, int toSeatIndex) {
+        if (toSeatIndex <= seats.size() && seats.get(toSeatIndex).passengerId == -1) {
+            Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
+            if (ownSeat.isPresent()) {
+                Seat seat = ownSeat.get();
+                if (seat.seatIndex == 0) {
                     controlUnit.setOperator(null);
                 }
-                if (origSeat < operatorUnits.size()) {
-                    operatorUnits.get(origSeat).setOwner(null);
-                }
-                passengerIdsBySeat.set(origSeat, null);
+                seat.partUnit.setOwner(null);
+                seat.passengerId = -1;
             }
-            if (toSeat == 0) {
+            Seat toSeat = seats.get(toSeatIndex);
+            if (toSeat.seatIndex == 0) {
                 controlUnit.setOperator(pPassenger);
             }
-            if (toSeat < operatorUnits.size()) {
-                operatorUnits.get(toSeat).setOwner(pPassenger);
-            }
-            passengerIdsBySeat.set(toSeat, pPassenger.getId());
+            toSeat.partUnit.setOwner(pPassenger);
+            toSeat.passengerId = pPassenger.getId();
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
             return true;
         }
@@ -386,21 +367,27 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             Player player = LocalVehiclePlayer.instance.getPlayer();
             List<Integer> passengerIdsBySeat = new ArrayList<>();
             for (int id : message.passengerIdsBySeat) {
-                passengerIdsBySeat.add(id == -1 ? null : id);
+                passengerIdsBySeat.add(id);
             }
-            if (vehicle.passengerIdsBySeat.contains(player.getId()) && !passengerIdsBySeat.contains(player.getId())) {
+            if (vehicle.seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
+                    && !passengerIdsBySeat.contains(player.getId())) {
                 LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
             }
-            vehicle.passengerIdsBySeat = passengerIdsBySeat;
             for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
+                Seat seat = vehicle.seats.get(index);
                 Entity entity = passengerIdsBySeat.get(index) == null ? null : level.getEntity(passengerIdsBySeat.get(index));
                 if (entity instanceof LivingEntity passenger) {
                     if (index == 0) {
                         vehicle.controlUnit.setOperator(passenger);
                     }
-                    if (index < vehicle.operatorUnits.size()) {
-                        vehicle.operatorUnits.get(index).setOwner(passenger);
+                    seat.partUnit.setOwner(passenger);
+                    seat.passengerId = entity.getId();
+                } else {
+                    if (index == 0) {
+                        vehicle.controlUnit.setOperator(null);
                     }
+                    seat.partUnit.setOwner(null);
+                    seat.passengerId = -1;
                 }
             }
         }
@@ -425,7 +412,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     @Override
     protected boolean canAddPassenger(Entity pPassenger) {
-        return passengerIdsBySeat.stream().filter(Objects::nonNull).count() < seats;
+        return seats.stream().anyMatch(seat -> seat.passengerId == -1);
     }
 
     @Override
@@ -492,13 +479,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         if (pPassenger == null) {
             return null;
         }
-        int index = passengerIdsBySeat.indexOf(pPassenger.getId());
-        if (index != -1) {
-            if (index < operatorUnits.size()) {
-                return operatorUnits.get(index);
-            }
-        }
-        return pPassenger.level().isClientSide() ? spotterUnit : null;
+        Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
+        return ownSeat.map(seat -> seat.partUnit).orElse(null);
     }
 
     public void playVehicleSound(SoundEvent soundEvent, boolean on) {
@@ -672,7 +654,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                     pEntity.setOnGround(true);
                 }
                 double d = obb.embeddingDepth(feetPosition);
-                pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d < 0.1f ? 0 : d * 1.1, 0));
+                pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d <= 0.2f ? 0 : d, 0));
                 pEntity.fallDistance = 0;
                 continue;
             }
@@ -834,6 +816,20 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public boolean isInWall() {
         return false;
+    }
+
+    public static class Seat {
+
+        public final Integer seatIndex;
+        public final PartUnit partUnit;
+        public Integer passengerId;
+
+        public Seat(Integer seatIndex, PartUnit partUnit) {
+            this.seatIndex = seatIndex;
+            this.partUnit = partUnit;
+            this.passengerId = -1;
+        }
+
     }
 
 }

@@ -10,8 +10,10 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.VehicleDataManager;
-import org.ywzj.vehicle.vehicle.SpotterUnit;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Ztl11 extends WheeledVehicle {
 
@@ -26,15 +28,13 @@ public class Ztl11 extends WheeledVehicle {
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleBodyOBBs = struct.obbs();
             var weapons = data.createPartUnits(this);
-            this.operatorUnits.addAll(weapons.values());
+//            this.operatorUnits.addAll(weapons.values());
+            List<WeaponUnit> weaponUnits = new ArrayList<>(weapons.values());
+            for (int index = 0; index < weapons.size(); index++) {
+                this.seats.add(new Seat(index, weaponUnits.get(index)));
+            }
             this.partUnits.addAll(weapons.values());
         });
-        this.spotterUnit = new SpotterUnit(this,
-                new Vec3(0, 4.54d, -0.375d),
-                new Vec3(0, 1.5d, 0),
-                new Vec3(0, 0, 0),
-                null);
-
     }
 
     @Override
@@ -64,8 +64,8 @@ public class Ztl11 extends WheeledVehicle {
 
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (weaponIndex < operatorUnits.size()) {
-            if (operatorUnits.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
+        if (weaponIndex < this.seats.size()) {
+            if (seats.get(weaponIndex).partUnit instanceof WeaponUnit machineGunTurret) {
                 machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }

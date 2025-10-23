@@ -37,7 +37,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     }
 
     @Override
-    public int getSeats() {
+    public int passengerCapacity() {
         return 3;
     }
 

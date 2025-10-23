@@ -17,7 +17,7 @@ public class Lav150 extends WheeledVehicle {
     }
 
     @Override
-    public int getSeats() {
+    public int passengerCapacity() {
         return 1;
     }
 
@@ -29,7 +29,7 @@ public class Lav150 extends WheeledVehicle {
         machineGunTurret.setXRotMax(15);
         machineGunTurret.setXRotMin(-30);
         this.partUnits.add(machineGunTurret);
-        this.operatorUnits.add(machineGunTurret);
+        this.seats.add(new Seat(0, machineGunTurret));
     }
 
     @Override
@@ -65,7 +65,7 @@ public class Lav150 extends WheeledVehicle {
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
         if (weaponIndex == 0) {
-            if (operatorUnits.get(0) instanceof WeaponUnit machineGunTurret) {
+            if (seats.get(0).partUnit instanceof WeaponUnit machineGunTurret) {
                 machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }

@@ -30,7 +30,7 @@ public class PartUnit {
     protected LivingEntity owner;
     protected Vec3 ownerViewOffset;
     protected Vec3 seatOffset;
-    public PassengerPose operatorPose;
+    public PassengerPose passengerPose;
     protected BedrockBone unitBone;
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
 
@@ -99,11 +99,11 @@ public class PartUnit {
             Level level = ctxSupplier.get().getSender().level();
             Entity entity = level.getEntity(message.vehicleEntityId);
             if (entity instanceof AbstractVehicle vehicle) {
-                if (message.weaponIndex < vehicle.operatorUnits.size()) {
+                if (message.weaponIndex < vehicle.seats.size()) {
                     if (message.shoot) {
                         vehicle.shoot(message.weaponIndex, new Vec3(message.ammoX, message.ammoY, message.ammoZ), message.ammoXRot, message.ammoYRot);
                     } else {
-                        if (vehicle.operatorUnits.get(message.weaponIndex) instanceof RotatableUnit rotatableUnit) {
+                        if (vehicle.seats.get(message.weaponIndex).partUnit instanceof RotatableUnit rotatableUnit) {
                             rotatableUnit.xAimRot = message.xAimRot;
                             rotatableUnit.yAimRot = message.yAimRot % 360;
                         }

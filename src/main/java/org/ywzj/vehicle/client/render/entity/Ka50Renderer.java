@@ -50,7 +50,7 @@ public class Ka50Renderer extends EntityRenderer<Ka50> {
         float turretYRot = 0;
         // 炮塔俯仰
         float turretXRot = 0;
-        if (!pEntity.operatorUnits.isEmpty()) {
+        if (!pEntity.seats.isEmpty()) {
             PartUnit partUnit = pEntity.getPartUnits().get(1);
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
