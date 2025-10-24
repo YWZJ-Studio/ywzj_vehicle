@@ -6,6 +6,9 @@ import net.minecraft.world.item.crafting.Ingredient;
 import org.ywzj.vehicle.all.AllItems;
 
 public class BaseVehicleWeaponData {
+    @SerializedName("name")
+    private String name = "vehicle.weapon.unknown";
+
     @SerializedName("damage")
     private float damage = 5.0f;
 
@@ -59,5 +62,9 @@ public class BaseVehicleWeaponData {
 
     public Reload getReload() {
         return reload;
+    }
+
+    public String getName() {
+        return name;
     }
 }

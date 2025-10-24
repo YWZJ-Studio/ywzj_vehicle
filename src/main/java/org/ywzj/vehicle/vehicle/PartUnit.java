@@ -8,9 +8,14 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
+import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
+import org.ywzj.vehicle.custom.sync.SyncDataEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 
@@ -19,7 +24,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * 具有结构模型的载具部件
+ * 具有结构模型的载具部件<br/>
  * 任何乘位都应关联于一个载具部件，以计算座位与镜头位置
  */
 public class PartUnit {
@@ -34,8 +39,11 @@ public class PartUnit {
     protected BedrockBone unitBone;
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
 
+    private final PartUnitSyncData syncData;
+
     public PartUnit(String name, int index, AbstractVehicle vehicle) {
         this.name = Component.translatable(name);
+        this.syncData = new PartUnitSyncData(this);
         this.index = index;
         this.vehicle = vehicle;
         this.unitBedrockCubeOBBs = new ArrayList<>();
@@ -48,10 +56,18 @@ public class PartUnit {
         this.vehicle = vehicle;
         this.name = name;
         this.unitBedrockCubeOBBs = new ArrayList<>();
+        this.syncData = new PartUnitSyncData(this);
     }
 
     public void tick() {
         updateOBBs();
+        if (!this.getVehicle().level().isClientSide()) {
+            syncData.tick();
+        }
+    }
+
+    public PartUnitSyncData getSyncData() {
+        return syncData;
     }
 
     protected void initStructureModel(String name) {
@@ -148,6 +164,7 @@ public class PartUnit {
         return index;
     }
 
+    @NotNull
     public AbstractVehicle getVehicle() {
         return vehicle;
     }
@@ -176,4 +193,8 @@ public class PartUnit {
         this.seatOffset = seatOffset;
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public void onUpdateReceived(List<SyncDataEntry<?>> entries) {
+        this.syncData.onUpdateReceived(entries);
+    }
 }

@@ -18,7 +18,7 @@
   "weapon_units": [
     {
       "id": "ztl11_turret",
-      "type": "weapon",
+      "seat": true,
       "structure_bone": "ztl11_turret",
       "name": "xxx.xxx",
       "rot_info": {
@@ -30,12 +30,13 @@
       "operator_offset": [0, 1.5, 0],
       "seat_offset": [0, 1.5, 0],
       "weapons": [
-        "ywzj_vehicle:cannon"
+        "ywzj_vehicle:cannon",
+        "ywzj_vehicle:cannon_2"
       ]
     },
     {
       "id": "ztl11_commander_machine_gun",
-      "type": "weapon",
+      "seat": true,
       "structure_bone": "ztl11_commander_machine_gun",
       "parent": "ztl11_turret",
       "rot_info": {

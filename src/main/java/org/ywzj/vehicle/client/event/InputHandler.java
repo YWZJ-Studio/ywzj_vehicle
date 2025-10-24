@@ -16,6 +16,7 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
+import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
 import org.ywzj.vehicle.vehicle.ControlUnit;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.WeaponUnit;
@@ -130,6 +131,24 @@ public class InputHandler {
                 sendControl(vehicle, controlUnit);
             }
             handleShoot(vehicle, player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onKey(InputEvent.MouseScrollingEvent event) {
+        var mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null || player.isSpectator() || mc.gameMode == null) {
+            return;
+        }
+        if (LocalVehiclePlayer.instance.onVehicle()) {
+            AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+            boolean previous = event.getScrollDelta() == 0;
+            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
+                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), previous));
+                // 阻止滚轮事件传递给原版以避免物品栏切换
+                event.setCanceled(true);
+            }
         }
     }
 

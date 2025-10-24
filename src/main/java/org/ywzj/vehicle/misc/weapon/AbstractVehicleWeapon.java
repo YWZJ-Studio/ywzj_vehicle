@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.misc.weapon;
 
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -9,6 +8,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
+import org.ywzj.vehicle.custom.sync.SyncDataHolder;
+import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
@@ -24,10 +26,13 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
     private final WeaponUnit weaponUnit;
     private final int index;
     private final T data;
-    private Component name = Component.empty();
+    private Component name;
     protected long lastShootTime = 0;
     protected int remainAmmo = 0;
     protected int reloadTime = 0;
+
+    protected SyncDataHolder<Integer> remainAmmoHolder;
+    protected SyncDataHolder<Integer> reloadTimeHolder;
 
     // 你应该从工厂方法构建一个武器模块，而不是直接调用构造方法
     protected AbstractVehicleWeapon(AbstractVehicle vehicle, WeaponUnit weaponUnit, int index, T data) {
@@ -35,18 +40,30 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
         this.weaponUnit = weaponUnit;
         this.index = index;
         this.data = data;
+        this.name = Component.translatable(data.getName());
+    }
+
+    public void defineSyncData(PartUnitSyncData syncData) {
+        this.remainAmmoHolder = syncData.define(SyncDataSerializers.INT, this::setRemainAmmo , this::getRemainAmmo, remainAmmo);
+        this.reloadTimeHolder = syncData.define(SyncDataSerializers.INT, this::setReloadTime, this::getReloadTime, reloadTime);
     }
 
     public abstract void shoot(Vec3 origin, float ammoXRot, float ammoYRot, LivingEntity shooter);
 
-    public void writeSyncData(FriendlyByteBuf buf) {
-        buf.writeInt(remainAmmo);
-        buf.writeInt(reloadTime);
+    public void onSwitchTo() {
+        // 可选覆盖
     }
 
-    public void readSyncData(FriendlyByteBuf buf) {
-        this.remainAmmo = buf.readInt();
-        this.reloadTime = buf.readInt();
+    public void onSwitchFrom() {
+        this.reloadTime = 0;
+    }
+
+    protected void setRemainAmmo(int remainAmmo) {
+        this.remainAmmo = remainAmmo;
+    }
+
+    protected void setReloadTime(int reloadTime) {
+        this.reloadTime = reloadTime;
     }
 
     public boolean isCoolingDown() {
@@ -69,7 +86,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
         Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
         Vec2 rot = weaponUnit.worldRot();
 
-        sendShoot(this.getVehicle(), index, ammoSpawnPosition, rot.x, rot.y);
+        sendShoot(this.getVehicle(), weaponUnit.getIndex(), ammoSpawnPosition, rot.x, rot.y);
 
         return true;
     }

@@ -3,7 +3,6 @@ package org.ywzj.vehicle.vehicle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -11,18 +10,18 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.VehicleWeaponManager;
+import org.ywzj.vehicle.custom.sync.SyncDataHolder;
+import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.vehicle.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.network.message.ServerVehicleWeaponSync;
 import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.ArrayList;
@@ -69,6 +68,19 @@ public class WeaponUnit extends RotatableUnit {
     private final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     private int currentWeaponIndex = -1;
 
+    protected SyncDataHolder<Integer> currentWeaponIndexHolder;
+
+    public void switchWeapon(boolean next) {
+        int size = weapons.size();
+        this.getCurrentWeapon().ifPresent(
+                AbstractVehicleWeapon::onSwitchFrom
+        );
+        this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
+        this.getCurrentWeapon().ifPresent(
+                AbstractVehicleWeapon::onSwitchTo
+        );
+    }
+
     public enum OpticalSightType {
         // 不能开镜
         NONE,
@@ -90,6 +102,7 @@ public class WeaponUnit extends RotatableUnit {
 
         this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
         this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
+
         var rotInfo = data.getRotInfo();
         this.xRotSpeed = rotInfo.xRotSpeed;
         this.yRotSpeed = rotInfo.yRotSpeed;
@@ -102,15 +115,27 @@ public class WeaponUnit extends RotatableUnit {
         this.zoom = 1;
         this.opticalSightType = OpticalSightType.CRT;
 
+        this.currentWeaponIndexHolder = this.getSyncData().define(
+                SyncDataSerializers.INT,
+                this::setCurrentWeaponIndex,
+                this::getCurrentWeaponIndex,
+                currentWeaponIndex
+        );
+
         int cnt = 0;
         for (var weaponRes : data.getWeapons()) {
             VehicleWeaponManager.get().getIndex(weaponRes).ifPresent(
-                    i -> weapons.add(i.create(vehicle, this, cnt))
+                    i -> {
+                        var weapon = i.create(vehicle, this, cnt);
+                        weapon.defineSyncData(this.getSyncData());
+                        weapons.add(weapon);
+                    }
             );
         }
         if (!weapons.isEmpty()) {
             currentWeaponIndex = Math.min(cnt, weapons.size() - 1);
         }
+        this.getSyncData().initialize();
     }
 
     @Deprecated
@@ -132,7 +157,11 @@ public class WeaponUnit extends RotatableUnit {
         this.opticalSightType = OpticalSightType.CRT;
 
         VehicleWeaponManager.get().getIndex(new ResourceLocation(YwzjVehicle.MOD_ID, "cannon")).ifPresent(
-                i -> weapons.add(i.create(vehicle, this, 0))
+                i -> {
+                    var weapon = i.create(vehicle, this, 0);
+                    weapon.defineSyncData(this.getSyncData());
+                    weapons.add(weapon);
+                }
         );
         currentWeaponIndex = 0;
     }
@@ -141,8 +170,6 @@ public class WeaponUnit extends RotatableUnit {
     public void tick() {
         if (vehicle.level().isClientSide()) {
             tickStabilizer();
-        } else {
-            tickSync();
         }
         super.tick();
         this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
@@ -150,36 +177,7 @@ public class WeaponUnit extends RotatableUnit {
         updateOBBs(xTurnUnitOBBs, true);
     }
 
-    protected void tickSync() {
-        for (AbstractVehicleWeapon<?> weapon : weapons) {
-            if (!weapon.hasSyncData()) {
-                continue;
-            }
-            var packet = new ServerVehicleWeaponSync(this, weapon);
-            for (var entity : vehicle.getPassengers()) {
-                if (entity instanceof ServerPlayer player) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
-                }
-            }
-        }
-    }
 
-    @OnlyIn(Dist.CLIENT)
-    public static void onSyncData(ServerVehicleWeaponSync message) {
-        var level = Minecraft.getInstance().level;
-        if (level == null) return;
-        var entity = level.getEntity(message.vehicleEntityId);
-        if (entity instanceof AbstractVehicle vehicle) {
-            var partUnits = vehicle.getPartUnits();
-            if (partUnits.size() > message.vehiclePartUnitId) {
-                var partUnit = partUnits.get(message.vehiclePartUnitId);
-                if (partUnit instanceof WeaponUnit weaponUnit) {
-                    AbstractVehicleWeapon<?> vehicleWeapon = weaponUnit.weapons.get(message.weaponIndex);
-                    vehicleWeapon.readSyncData(message.buf);
-                }
-            }
-        }
-    }
 
     @OnlyIn(Dist.CLIENT)
     public void tickStabilizer() {
@@ -519,4 +517,11 @@ public class WeaponUnit extends RotatableUnit {
         return Optional.empty();
     }
 
+    public void setCurrentWeaponIndex(int index) {
+        this.currentWeaponIndex = index;
+    }
+
+    public int getCurrentWeaponIndex() {
+        return currentWeaponIndex;
+    }
 }

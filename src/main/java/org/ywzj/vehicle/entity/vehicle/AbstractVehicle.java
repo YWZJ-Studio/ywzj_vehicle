@@ -103,6 +103,13 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return partUnits;
     }
 
+    public Optional<PartUnit> getPartUnit(int index) {
+        if (index >= 0 && index < partUnits.size()) {
+            return Optional.of(partUnits.get(index));
+        }
+        return Optional.empty();
+    }
+
     @Override
     public void tick() {
         super.tick();
