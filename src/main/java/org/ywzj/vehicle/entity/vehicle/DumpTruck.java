@@ -13,8 +13,8 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.vehicle.PartUnit;
-import org.ywzj.vehicle.vehicle.RotatableUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
 public class DumpTruck extends WheeledVehicle {
 
@@ -60,7 +60,7 @@ public class DumpTruck extends WheeledVehicle {
                     bed.xAimRot = Mth.clamp(bed.xAimRot, bed.xRotMin, bed.xRotMax);
                     ClientVehicleAction control = new ClientVehicleAction();
                     control.vehicleEntityId = this.getId();
-                    control.weaponIndex = bed.getIndex();
+                    control.partUnitIndex = bed.getIndex();
                     control.xAimRot = bed.xAimRot;
                     control.yAimRot = 0;
                     Channel.CHANNEL.sendToServer(control);

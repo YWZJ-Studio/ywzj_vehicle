@@ -2,8 +2,8 @@ package org.ywzj.vehicle.custom.weapon;
 
 import net.minecraft.resources.ResourceLocation;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.misc.weapon.AbstractVehicleWeapon;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 /**
  * 代表了一个具体的包含参数配置的武器索引<br/>

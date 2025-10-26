@@ -3,7 +3,7 @@ package org.ywzj.vehicle.network.message;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.RotatableUnit;
+import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
 import java.util.function.Supplier;
 

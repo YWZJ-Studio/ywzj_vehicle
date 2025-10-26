@@ -7,9 +7,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import org.ywzj.vehicle.client.event.InputHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.control.InputHandler;
 
 import java.util.UUID;
 

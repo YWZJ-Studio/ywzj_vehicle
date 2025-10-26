@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class Ka50 extends HelicopterVehicle {
 
@@ -44,7 +44,7 @@ public class Ka50 extends HelicopterVehicle {
 
     @Override
     public void initPartUnits() {
-        WeaponUnit sight = new WeaponUnit("sight",
+        WeaponUnit sightingSystem = new WeaponUnit("sighting_system",
                 0,
                 this,
                 new Vec3(-0.2d, 1d, 5.3d),
@@ -53,15 +53,15 @@ public class Ka50 extends HelicopterVehicle {
                 new Vec3(0, 1.1d, -3d),
                 new Vec3(-0.2d, 2.1d, 3d),
                 null);
-        sight.setXRotSpeed(60f / 20);
-        sight.setYRotSpeed(60f / 20);
-        sight.setXRotMax(45f);
-        sight.setXRotMin(-13f);
-        sight.setYRotMax(60f);
-        sight.setYRotMin(-60f);
-        sight.setOperatorOnWeaponUnit(false);
-        this.partUnits.add(sight);
-        this.seats.add(new Seat(0, sight));
+        sightingSystem.setXRotSpeed(60f / 20);
+        sightingSystem.setYRotSpeed(60f / 20);
+        sightingSystem.setXRotMax(45f);
+        sightingSystem.setXRotMin(-13f);
+        sightingSystem.setYRotMax(60f);
+        sightingSystem.setYRotMin(-60f);
+        sightingSystem.setOperatorOnWeaponUnit(false);
+        this.partUnits.add(sightingSystem);
+        this.seats.add(new Seat(0, sightingSystem));
         WeaponUnit autoCannon = new WeaponUnit("auto_cannon",
                 1,
                 this,
@@ -77,8 +77,8 @@ public class Ka50 extends HelicopterVehicle {
         autoCannon.setXRotMin(0f);
         autoCannon.setYRotMax(20f);
         autoCannon.setYRotMin(0f);
-        autoCannon.setParentWeaponUnit(sight);
-        sight.addSubWeaponUnit(autoCannon);
+        autoCannon.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(autoCannon);
         this.partUnits.add(autoCannon);
     }
 

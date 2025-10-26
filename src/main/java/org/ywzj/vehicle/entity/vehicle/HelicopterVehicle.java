@@ -17,7 +17,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public abstract class HelicopterVehicle extends AbstractVehicle {
 

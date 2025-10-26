@@ -2,7 +2,7 @@ package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.ywzj.vehicle.vehicle.ControlUnit;
+import org.ywzj.vehicle.vehicle.control.ControlUnit;
 
 import java.util.function.Supplier;
 

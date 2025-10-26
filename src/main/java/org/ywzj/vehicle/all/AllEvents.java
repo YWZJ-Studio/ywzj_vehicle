@@ -14,12 +14,12 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.event.HitVehicleEvent;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
-import org.ywzj.vehicle.vehicle.VehicleCapabilityProvider;
 
 public class AllEvents {
 

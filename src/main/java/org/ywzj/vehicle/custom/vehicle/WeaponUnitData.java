@@ -5,7 +5,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.Bedr
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.vehicle.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.ArrayList;
 import java.util.Comparator;

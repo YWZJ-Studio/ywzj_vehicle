@@ -1,18 +1,21 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.tacz.guns.api.item.builder.GunItemBuilder;
-import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
 
 public class Z10 extends HelicopterVehicle {
 
@@ -38,7 +41,8 @@ public class Z10 extends HelicopterVehicle {
 
     @Override
     public void initPartUnits() {
-        WeaponUnit turret = new WeaponUnit("z10",
+        // 观瞄
+        WeaponUnit sightingSystem = new WeaponUnit("sighting_system",
                 0,
                 this,
                 new Vec3(0, 0.5d, 5d),
@@ -47,14 +51,135 @@ public class Z10 extends HelicopterVehicle {
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        turret.setXRotSpeed(60f / 20);
-        turret.setYRotSpeed(60f / 20);
-        turret.setXRotMax(45f);
-        turret.setXRotMin(-13f);
-        turret.setYRotMax(90f);
-        turret.setYRotMin(-90f);
-        this.partUnits.add(turret);
-        this.seats.add(new Seat(0, turret));
+        sightingSystem.setXRotSpeed(60f / 20);
+        sightingSystem.setYRotSpeed(60f / 20);
+        sightingSystem.setXRotMax(45f);
+        sightingSystem.setXRotMin(-13f);
+        sightingSystem.setYRotMax(90f);
+        sightingSystem.setYRotMin(-90f);
+        sightingSystem.setOperatorOnWeaponUnit(false);
+        sightingSystem.currentWeaponIndexHolder = sightingSystem.getSyncData().define(
+                SyncDataSerializers.INT,
+                sightingSystem::setCurrentWeaponIndex,
+                sightingSystem::getCurrentWeaponIndex,
+                0
+        );
+        this.partUnits.add(sightingSystem);
+        this.seats.add(new Seat(0, sightingSystem));
+        // 机炮
+        WeaponUnit autoCannon = new WeaponUnit("auto_cannon",
+                1,
+                this,
+                new Vec3(0, 0.5d, 5d),
+                1f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        autoCannon.setXRotSpeed(60f / 20);
+        autoCannon.setYRotSpeed(60f / 20);
+        autoCannon.setXRotMax(45f);
+        autoCannon.setXRotMin(-13f);
+        autoCannon.setYRotMax(90f);
+        autoCannon.setYRotMin(-90f);
+        autoCannon.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(autoCannon);
+        BaseVehicleWeaponData weaponDataAutoCannon = new BaseVehicleWeaponData();
+        weaponDataAutoCannon.setName("auto_cannon");
+        weaponDataAutoCannon.setMaxCapacity(120);
+        weaponDataAutoCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get())));
+        VehicleCannon vehicleCannon = new VehicleCannon(this, autoCannon, 0, weaponDataAutoCannon);
+        vehicleCannon.defineSyncData(autoCannon.getSyncData());
+        sightingSystem.weapons.add(vehicleCannon);
+        this.partUnits.add(autoCannon);
+        // 导弹挂架左
+        WeaponUnit missileLeft = new WeaponUnit("missile_left",
+                2,
+                this,
+                new Vec3(2.5d, 1d, 1d),
+                0f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        missileLeft.setXRotSpeed(0);
+        missileLeft.setYRotSpeed(0);
+        missileLeft.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(missileLeft);
+        BaseVehicleWeaponData weaponDataMissileLeft = new BaseVehicleWeaponData();
+        weaponDataMissileLeft.setName("missile_left");
+        weaponDataMissileLeft.setMaxCapacity(8);
+        weaponDataMissileLeft.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        VehicleMissile vehicleMissileLeft = new VehicleMissile(this, missileLeft, 1, weaponDataMissileLeft);
+        vehicleMissileLeft.defineSyncData(missileLeft.getSyncData());
+        sightingSystem.weapons.add(vehicleMissileLeft);
+        this.partUnits.add(missileLeft);
+        // 导弹挂架右
+        WeaponUnit missileRight = new WeaponUnit("missile_right",
+                3,
+                this,
+                new Vec3(-2.5d, 1d, 1d),
+                0f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        missileRight.setXRotSpeed(0);
+        missileRight.setYRotSpeed(0);
+        missileRight.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(missileRight);
+        BaseVehicleWeaponData weaponDataMissileRight = new BaseVehicleWeaponData();
+        weaponDataMissileRight.setName("missile_right");
+        weaponDataMissileRight.setMaxCapacity(8);
+        weaponDataMissileRight.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        VehicleMissile vehicleMissileRight = new VehicleMissile(this, missileRight, 2, weaponDataMissileRight);
+        vehicleMissileRight.defineSyncData(missileRight.getSyncData());
+        sightingSystem.weapons.add(vehicleMissileRight);
+        this.partUnits.add(missileRight);
+        // 火箭弹挂架左
+        WeaponUnit rocketLeft = new WeaponUnit("rocket_left",
+                4,
+                this,
+                new Vec3(1.5d, 1d, 1d),
+                0f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        rocketLeft.setXRotSpeed(0);
+        rocketLeft.setYRotSpeed(0);
+        rocketLeft.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(rocketLeft);
+        BaseVehicleWeaponData weaponDataRocketLeft = new BaseVehicleWeaponData();
+        weaponDataRocketLeft.setName("rocket_left");
+        weaponDataRocketLeft.setMaxCapacity(32);
+        weaponDataRocketLeft.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        VehicleRocket vehicleRocketLeft = new VehicleRocket(this, rocketLeft, 3, weaponDataRocketLeft);
+        vehicleRocketLeft.defineSyncData(rocketLeft.getSyncData());
+        sightingSystem.weapons.add(vehicleRocketLeft);
+        this.partUnits.add(rocketLeft);
+        // 火箭弹挂架右
+        WeaponUnit rocketRight = new WeaponUnit("rocket_right",
+                5,
+                this,
+                new Vec3(-1.5d, 1d, 1d),
+                0f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        rocketRight.setXRotSpeed(0);
+        rocketRight.setYRotSpeed(0);
+        rocketRight.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(rocketRight);
+        BaseVehicleWeaponData weaponDataRocketRight = new BaseVehicleWeaponData();
+        weaponDataRocketRight.setName("rocket_right");
+        weaponDataRocketRight.setMaxCapacity(32);
+        weaponDataRocketRight.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        VehicleRocket vehicleRocketRight = new VehicleRocket(this, rocketRight, 4, weaponDataRocketRight);
+        vehicleRocketRight.defineSyncData(rocketRight.getSyncData());
+        sightingSystem.weapons.add(vehicleRocketRight);
+        this.partUnits.add(rocketRight);
     }
 
 //    @Override
@@ -91,37 +216,11 @@ public class Z10 extends HelicopterVehicle {
         }
     }
 
-    private final ItemStack gunRPG = GunItemBuilder.create()
-            .setId(new ResourceLocation("tacz:rpg7"))
-            .setFireMode(FireMode.AUTO)
-            .setAmmoCount(1)
-            .setAmmoInBarrel(true)
-            .build();
-    private int count;
-
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
-//            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-//            this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
-
-//            IGunOperator.fromLivingEntity(this).draw(() -> gunRPG);
-//            Vec3 v1 = this.getLookAngle();
-//            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-//            TaczHelper.shoot(this.position().add(v2.scale(2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-//            TaczHelper.shoot(this.position().add(v2.scale(-2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-
-            //todo: 测试导弹
-            //todo: 导弹name从武器站当前武器的配置名取
-            Vec3 v1 = this.getLookAngle();
-            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            Vec3 missilePosLeft = this.position().add(v2.scale(2));
-            Vec3 missilePosRight = this.position().add(v2.scale(-2));
-            count += 1;
-            weaponUnit.shoot(count % 2 ==0 ? missilePosLeft : missilePosRight, ammoXRot, ammoYRot);
-
+        if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
         }
-
     }
 
 }

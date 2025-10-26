@@ -2,7 +2,7 @@ package org.ywzj.vehicle.network.message;
 
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.function.Supplier;
 

@@ -26,7 +26,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.List;
 

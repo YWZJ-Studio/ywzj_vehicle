@@ -9,8 +9,8 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.particle.DustSmokeOption;
-import org.ywzj.vehicle.vehicle.PartUnit;
-import org.ywzj.vehicle.vehicle.PassengerPose;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 
 public class Motorcycle extends WheeledVehicle {
 

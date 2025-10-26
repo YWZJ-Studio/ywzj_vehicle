@@ -9,8 +9,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.VehicleBedrockCubeOBB;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.*;
 

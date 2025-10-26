@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.custom.vehicle;
 
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 
 import java.util.List;
 import java.util.logging.Level;

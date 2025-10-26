@@ -1,6 +1,6 @@
 package org.ywzj.vehicle.entity;
 
-import org.ywzj.vehicle.vehicle.OBB;
+import org.ywzj.vehicle.vehicle.structure.OBB;
 
 import java.util.List;
 

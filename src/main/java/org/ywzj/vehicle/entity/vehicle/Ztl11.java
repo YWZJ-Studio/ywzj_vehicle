@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.VehicleDataManager;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -6,7 +6,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerEntityDataUpdate;
-import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 
 import java.util.ArrayList;
 import java.util.List;

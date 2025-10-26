@@ -14,6 +14,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
+import org.ywzj.vehicle.entity.weapon.RocketEntity;
 
 public class AllEntities {
 
@@ -30,6 +31,18 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .setCustomClientFactory(BulletEntity::new)
                     .build("bullet"));
+
+    public static final RegistryObject<EntityType<RocketEntity>> ROCKET = ENTITIES.register("rocket",
+            () -> EntityType.Builder.<RocketEntity>of(RocketEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(0.0625F, 0.0625F)
+                    .clientTrackingRange(16)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .setCustomClientFactory(RocketEntity::new)
+                    .build("rocket"));
 
     public static final RegistryObject<EntityType<MissileEntity>> MISSILE = ENTITIES.register("missile",
             () -> EntityType.Builder.<MissileEntity>of(MissileEntity::new, MobCategory.MISC)

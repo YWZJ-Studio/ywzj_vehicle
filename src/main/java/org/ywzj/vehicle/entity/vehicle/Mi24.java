@@ -14,7 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.util.TaczHelper;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class Mi24 extends HelicopterVehicle {
 

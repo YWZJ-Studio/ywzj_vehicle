@@ -3,7 +3,7 @@ package org.ywzj.vehicle.network.message;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 
 import java.util.function.Supplier;
 
@@ -11,7 +11,7 @@ public class ClientVehicleAction {
 
     public int vehicleEntityId;
     public boolean leaveVehicle;
-    public int weaponIndex;
+    public int partUnitIndex;
     public boolean shoot;
     public float ammoX;
     public float ammoY;
@@ -30,7 +30,7 @@ public class ClientVehicleAction {
         if (control.leaveVehicle) {
             return control;
         }
-        control.weaponIndex =  buf.readInt();
+        control.partUnitIndex = buf.readInt();
         control.shoot = buf.readBoolean();
         if (control.shoot) {
             control.ammoX = buf.readFloat();
@@ -51,7 +51,7 @@ public class ClientVehicleAction {
         if (leaveVehicle) {
             return;
         }
-        buf.writeInt(weaponIndex);
+        buf.writeInt(partUnitIndex);
         buf.writeBoolean(shoot);
         if (shoot) {
             buf.writeFloat(ammoX);

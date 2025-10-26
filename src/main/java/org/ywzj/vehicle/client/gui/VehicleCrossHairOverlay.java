@@ -18,8 +18,8 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.PartUnit;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import static org.ywzj.vehicle.util.RenderHelper.*;
 

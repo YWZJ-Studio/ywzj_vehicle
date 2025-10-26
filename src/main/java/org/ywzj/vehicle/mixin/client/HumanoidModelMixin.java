@@ -10,10 +10,9 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.PartUnit;
-import org.ywzj.vehicle.vehicle.PassengerPose;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 
 @Mixin(value = HumanoidModel.class)
 public class HumanoidModelMixin {
@@ -28,8 +27,7 @@ public class HumanoidModelMixin {
 
     @Inject(
             method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V",
-            at = @At(value = "TAIL"),
-            locals = LocalCapture.CAPTURE_FAILHARD
+            at = @At(value = "TAIL")
     )
     private void setupAnim(LivingEntity livingEntity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         if (livingEntity.getVehicle() instanceof AbstractVehicle vehicle) {

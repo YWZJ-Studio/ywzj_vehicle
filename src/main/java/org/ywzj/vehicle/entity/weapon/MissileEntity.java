@@ -7,6 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,7 +32,7 @@ import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class MissileEntity extends Projectile implements IEntityAdditionalSpawnData {
 
@@ -51,10 +52,11 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
         super(AllEntities.MISSILE.get(), level);
     }
 
-    public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, LivingEntity shooter) {
+    public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {
         this.vehicle = vehicle;
         this.name = name;
         this.setPos(spawnPos);
+        this.setRot(ammoYRot, ammoXRot);
         this.setOwner(shooter);
     }
 
@@ -89,13 +91,17 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
                     if (t < 0) t = 0; // 限制在射线范围内
                     Vec3 proj = start.add(dir.scale(t));
                     // 当前点逐渐靠近射线（朝投影点移动）
-                    double speed = 0.2; // 每 tick 靠近速度
+                    double speed = 0.2;
+                    // 逐步解锁机动
+                    float maneuverability = Math.min((float) tickCount / 20, 1);
+                    // 每 tick 靠近速度
+                    speed *= maneuverability;
                     Vec3 delta = proj.subtract(pos);
                     if (delta.length() > speed) {
                         delta = delta.normalize().scale(speed);
                     }
                     this.setPos(pos.add(delta));
-                    this.setRot(rot.y, rot.x);
+                    this.setRot(Mth.lerp(maneuverability, this.getYRot(), rot.y), Mth.lerp(maneuverability, this.getXRot(), rot.x));
                 }
             }
         }
