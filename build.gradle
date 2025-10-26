@@ -48,7 +48,7 @@ minecraft {
 
         client2 {
             parent minecraft.runs.client
-            args '--username', 'MC_tt'
+            args '--username', 'Ranpoes'
             workingDirectory project.file('run/client_2')
             property 'forge.enabledGameTestNamespaces', mod_id
             property 'mixin.env.remapRefMap', 'true'

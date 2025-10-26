@@ -26,38 +26,38 @@ public class Hiace extends WheeledVehicle {
     @Override
     public void initPartUnits() {
         PartUnit passengerSeat0 = new PartUnit("passenger_seat0", 0, this);
-        passengerSeat0.setOwnerViewOffset(new Vec3(0.5,0.2, 1.5));
-        passengerSeat0.setSeatOffset(new Vec3(0.5,0.2, 1.5));
+        passengerSeat0.setOwnerViewOffset(new Vec3(0.5, 1.9, 1.5));
+        passengerSeat0.setSeatOffset(new Vec3(0.5, 1.9, 1.5));
         this.partUnits.add(passengerSeat0);
         this.seats.add(new Seat(0, passengerSeat0));
 
         PartUnit passengerSeat1 = new PartUnit("passenger_seat1", 0, this);
-        passengerSeat1.setOwnerViewOffset(new Vec3(0.5 - 1,0.2, 1.5));
-        passengerSeat1.setSeatOffset(new Vec3(0.5 - 1,0.2, 1.5));
+        passengerSeat1.setOwnerViewOffset(new Vec3(0.5 - 1, 1.9, 1.5));
+        passengerSeat1.setSeatOffset(new Vec3(0.5 - 1, 1.9, 1.5));
         this.partUnits.add(passengerSeat1);
         this.seats.add(new Seat(1, passengerSeat1));
 
         PartUnit passengerSeat2 = new PartUnit("passenger_seat2", 0, this);
-        passengerSeat2.setOwnerViewOffset(new Vec3(0.5 - 0.3,0.3, 1.5 - 1.6));
-        passengerSeat2.setSeatOffset(new Vec3(0.5 - 0.3,0.3, 1.5 - 1.6));
+        passengerSeat2.setOwnerViewOffset(new Vec3(0.5 - 0.3, 2, 1.5 - 1.6));
+        passengerSeat2.setSeatOffset(new Vec3(0.5 - 0.3, 2, 1.5 - 1.6));
         this.partUnits.add(passengerSeat2);
         this.seats.add(new Seat(2, passengerSeat2));
 
         PartUnit passengerSeat3 = new PartUnit("passenger_seat3", 0, this);
-        passengerSeat3.setOwnerViewOffset(new Vec3(0.5 - 1,0.3, 1.5 - 1.6));
-        passengerSeat3.setSeatOffset(new Vec3(0.5 - 1,0.3, 1.5 - 1.6));
+        passengerSeat3.setOwnerViewOffset(new Vec3(0.5 - 1, 2, 1.5 - 1.6));
+        passengerSeat3.setSeatOffset(new Vec3(0.5 - 1, 2, 1.5 - 1.6));
         this.partUnits.add(passengerSeat3);
         this.seats.add(new Seat(3, passengerSeat3));
 
         PartUnit passengerSeat4 = new PartUnit("passenger_seat4", 0, this);
-        passengerSeat4.setOwnerViewOffset(new Vec3(0.5 - 0.3,0.3, 1.5 - 2.8));
-        passengerSeat4.setSeatOffset(new Vec3(0.5 - 0.3,0.3, 1.5 - 2.8));
+        passengerSeat4.setOwnerViewOffset(new Vec3(0.5 - 0.3, 2, 1.5 - 2.8));
+        passengerSeat4.setSeatOffset(new Vec3(0.5 - 0.3, 2, 1.5 - 2.8));
         this.partUnits.add(passengerSeat4);
         this.seats.add(new Seat(4, passengerSeat4));
 
         PartUnit passengerSeat5 = new PartUnit("passenger_seat5", 0, this);
-        passengerSeat5.setOwnerViewOffset(new Vec3(0.5 - 1,0.3, 1.5 - 2.8));
-        passengerSeat5.setSeatOffset(new Vec3(0.5 - 1,0.3, 1.5 - 2.8));
+        passengerSeat5.setOwnerViewOffset(new Vec3(0.5 - 1, 2, 1.5 - 2.8));
+        passengerSeat5.setSeatOffset(new Vec3(0.5 - 1, 2, 1.5 - 2.8));
         this.partUnits.add(passengerSeat5);
         this.seats.add(new Seat(5, passengerSeat5));
     }

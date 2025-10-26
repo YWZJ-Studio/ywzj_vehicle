@@ -27,7 +27,7 @@ public class Ztz99a extends TrackedVehicle {
         VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztz99a")).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
-            this.vehicleBodyOBBs = struct.obbs();
+            this.vehicleOBBs = struct.obbs();
             var weapons = data.createPartUnits(this);
 //            this.operatorUnits.addAll(weapons.values());
             List<WeaponUnit> weaponUnits = new ArrayList<>(weapons.values());

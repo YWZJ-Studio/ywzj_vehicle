@@ -11,6 +11,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 
@@ -42,12 +43,18 @@ public class AllEntities {
                     .setCustomClientFactory(MissileEntity::new)
                     .build("missile"));
 
+    public static final RegistryObject<EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
+            () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.8f, 1.9f)
+                    .clientTrackingRange(4)
+                    .build("fake_player"));
+
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
         AllVehicles.getVehicleTypes().forEach(vehicleType -> event.put(vehicleType.getEntityType(),
                 Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, vehicleType.getHealth())
                 .add(Attributes.MOVEMENT_SPEED, 0.4D).build()));
+        event.put(AllEntities.FAKE_PLAYER.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 8.0D).build());
     }
 
     public static void register(IEventBus eventBus) {

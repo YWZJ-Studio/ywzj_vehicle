@@ -40,7 +40,7 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     }
 
     public void play() {
-        Minecraft.getInstance().getSoundManager().play(this);
+        Minecraft.getInstance().execute(() -> Minecraft.getInstance().getSoundManager().play(this));
     }
 
     public void stop() {
@@ -91,7 +91,7 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         }
         Vec3 simulatedPos;
         if (entity.equals(player.getVehicle())) {
-            simulatedPos = calRelativePos(player.position(), Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(), 0.7);
+            simulatedPos = calRelativePos(entity.position(), Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(), 0.7);
         } else {
             simulatedPos = calRelativePos(entity.position(), player.position(), scale);
         }

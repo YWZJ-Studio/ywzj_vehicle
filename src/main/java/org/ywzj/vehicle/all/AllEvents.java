@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -33,10 +34,19 @@ public class AllEvents {
         }
 
         @SubscribeEvent
-        public void onPlayerTeleport(EntityTeleportEvent event) {
+        public static void onPlayerTeleport(EntityTeleportEvent event) {
             if (event.getEntity() instanceof Player player) {
                 if (player.isPassenger() && player.getVehicle() instanceof AbstractVehicle) {
                     player.stopRiding();
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public static void onLivingHurt(LivingHurtEvent event) {
+            if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle) {
+                if (vehicle.uav) {
+                    event.setCanceled(true);
                 }
             }
         }

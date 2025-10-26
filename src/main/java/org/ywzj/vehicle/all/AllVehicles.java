@@ -26,6 +26,7 @@ public class AllVehicles {
     public static final VehicleType MOTORCYCLE = registerVehicle("motorcycle", Motorcycle.class);
     public static final VehicleType DUMP_TRUCK = registerVehicle("dump_truck", DumpTruck.class);
     public static final VehicleType HIACE = registerVehicle("hiace", Hiace.class);
+    public static final VehicleType QUADCOPTER = registerVehicle("quadcopter", Quadcopter.class);
 
     public static void register() {}
 

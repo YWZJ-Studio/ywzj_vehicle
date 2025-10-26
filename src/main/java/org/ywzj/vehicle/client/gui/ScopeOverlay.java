@@ -106,11 +106,11 @@ public class ScopeOverlay implements IGuiOverlay {
             }
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
                 //todo 导弹配置里有射界，暂时写死
-                if (LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
-                    if (Math.abs(weaponUnit.yRot) > 15 || weaponUnit.xRot < -11.5 || weaponUnit.xRot > 33.5) {
-                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, "超出导弹射界", 0, -45, color);
-                    }
-                }
+//                if (LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
+//                    if (Math.abs(weaponUnit.yRot) > 15 || weaponUnit.xRot < -11.5 || weaponUnit.xRot > 33.5) {
+//                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, "超出导弹射界", 0, -45, color);
+//                    }
+//                }
                 guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
                 int baseX = 0;
                 int baseY = 140;
@@ -118,15 +118,15 @@ public class ScopeOverlay implements IGuiOverlay {
                 float yRotRange = weaponUnit.getYRotMax() - weaponUnit.getYRotMin();
                 drawRect(guiGraphics, baseX, baseY, (int) yRotRange, (int) xRotRange, color, 1f);
                 //todo 导弹配置里有射界，暂时写死
-                drawRect(guiGraphics, baseX, baseY - 5, 30, 45, color, 1f);
-                int x = (int) (weaponUnit.yRot - weaponUnit.getYRotMin());
-                int y = (int) (weaponUnit.xRot - weaponUnit.getXRotMin());
-                baseX -= (int) (yRotRange / 2);
-                baseY -= (int) (xRotRange / 2);
-                guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
-                guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
-                guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
-                guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
+//                drawRect(guiGraphics, baseX, baseY - 5, 30, 45, color, 1f);
+//                int x = (int) (weaponUnit.yRot - weaponUnit.getYRotMin());
+//                int y = (int) (weaponUnit.xRot - weaponUnit.getXRotMin());
+//                baseX -= (int) (yRotRange / 2);
+//                baseY -= (int) (xRotRange / 2);
+//                guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
+//                guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
+//                guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
+//                guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
             }
         }
         guiGraphics.pose().popPose();

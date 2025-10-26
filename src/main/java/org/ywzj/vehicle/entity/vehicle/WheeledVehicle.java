@@ -91,7 +91,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     @Override
     protected void tickSound() {
-        if (getPassengers().isEmpty()) {
+        if (getDriver() == null) {
             if (engineIdleSoundInstance != null) {
                 engineIdleSoundInstance.stop();
                 engineIdleSoundInstance = null;
@@ -101,6 +101,12 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 engineRunSoundInstance = null;
             }
         } else {
+            if (getFuel() != 0 && getPower() == 5) {
+                SoundEvent engineStartSound = getEngineStartSound();
+                if (engineStartSound != null) {
+                    new VehicleSound(engineStartSound, soundDistance, 1f, false, 50, true, true, this.getId()).play();
+                }
+            }
             float vf = entityData.get(FORWARD_SPEED);
             if (vf == 0) {
                 if (engineRunSoundInstance != null) {
@@ -113,8 +119,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                         engineIdleSoundInstance = null;
                     }
                 } else if (engineIdleSoundInstance == null) {
-                    engineIdleSoundInstance = new VehicleSound(getEngineIdleSound(), soundDistance, 1f, true, 50, true, true, this.getId());
-                    engineIdleSoundInstance.play();
+                    SoundEvent engineIdleSound = getEngineIdleSound();
+                    if (engineIdleSound != null) {
+                        engineIdleSoundInstance = new VehicleSound(engineIdleSound, soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineIdleSoundInstance.play();
+                    }
                 }
             } else {
                 if (engineIdleSoundInstance != null) {
@@ -123,8 +132,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 }
                 float volume = Math.max(0.4f, vf / maxSpeedForward);
                 if (engineRunSoundInstance == null) {
-                    engineRunSoundInstance = new VehicleSound(getEngineRunSound(), volume * soundDistance, 1f, true, 50, true, true, this.getId());
-                    engineRunSoundInstance.play();
+                    SoundEvent engineRunSound = getEngineRunSound();
+                    if (engineRunSound != null) {
+                        engineRunSoundInstance = new VehicleSound(engineRunSound, volume * soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineRunSoundInstance.play();
+                    }
                 } else {
                     engineRunSoundInstance.setVolume(volume * soundDistance);
                 }
@@ -136,17 +148,8 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     protected Vec3 tickMove() {
         if (getDriver() == null) {
             controlUnit.reset();
-        } else {
-            float power = getPower();
-            if (getFuel() == 0) {
-                setPower(0);
-            } else if (power < 100) {
-                if (power == 0) {
-                    playVehicleSound(getEngineStartSound(), true);
-                }
-                setPower(power + 1);
-            }
         }
+
         float vt = entityData.get(TURN_SPEED);
         int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
         float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);

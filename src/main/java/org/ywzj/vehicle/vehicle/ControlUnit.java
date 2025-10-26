@@ -20,6 +20,10 @@ public class ControlUnit {
     public boolean down;
     public boolean leftYaw;
     public boolean rightYaw;
+    public boolean functionalUp;
+    public boolean functionalDown;
+    public boolean functionalLeft;
+    public boolean functionalRight;
     public float xRot;
     public float yRot;
 
@@ -36,6 +40,10 @@ public class ControlUnit {
         down = false;
         leftYaw = false;
         rightYaw = false;
+        functionalUp = false;
+        functionalDown = false;
+        functionalLeft = false;
+        functionalRight = false;
         xRot = 0;
         yRot = 0;
     }
@@ -49,6 +57,10 @@ public class ControlUnit {
         down = controlUnit.down;
         leftYaw = controlUnit.leftYaw;
         rightYaw = controlUnit.rightYaw;
+        functionalUp = controlUnit.functionalUp;
+        functionalDown = controlUnit.functionalDown;
+        functionalLeft = controlUnit.functionalLeft;
+        functionalRight = controlUnit.functionalRight;
         xRot = controlUnit.xRot;
         yRot = controlUnit.yRot;
     }
@@ -69,6 +81,10 @@ public class ControlUnit {
                 vehicle.controlUnit.down = message.down;
                 vehicle.controlUnit.leftYaw = message.leftYaw;
                 vehicle.controlUnit.rightYaw = message.rightYaw;
+                vehicle.controlUnit.functionalUp = message.functionalUp;
+                vehicle.controlUnit.functionalDown = message.functionalDown;
+                vehicle.controlUnit.functionalLeft = message.functionalLeft;
+                vehicle.controlUnit.functionalRight = message.functionalRight;
                 vehicle.controlUnit.xRot = message.xRot;
                 vehicle.controlUnit.yRot = message.yRot;
             }

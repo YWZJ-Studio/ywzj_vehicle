@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
@@ -21,16 +22,20 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
@@ -38,12 +43,12 @@ import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.ContainerMob;
 import org.ywzj.vehicle.entity.OBBEntity;
-import org.ywzj.vehicle.item.FuelTankItem;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.vehicle.*;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -64,7 +69,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     private float zRot;
     public float zRotO;
     public int soundDistance;
-    protected List<VehicleBedrockCubeOBB> vehicleBodyOBBs;
+    public boolean uav;
+    protected final LinkedList<ChunkPos> forceChunksQueue;
+    protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     public final PhysicsEngine physicsEngine;
 
@@ -79,7 +86,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.fuelCapacity = 1;
         this.fuelConsumptionPerTick = 0.00001f;
         this.soundDistance = 3;
-        this.vehicleBodyOBBs = new ArrayList<>();
+        this.forceChunksQueue = new LinkedList<>();
+        this.vehicleOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.initData();
         this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
@@ -99,17 +107,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.entityData.define(POWER, 0f);
     }
 
-    public List<PartUnit> getPartUnits() {
-        return partUnits;
-    }
-
-    public Optional<PartUnit> getPartUnit(int index) {
-        if (index >= 0 && index < partUnits.size()) {
-            return Optional.of(partUnits.get(index));
-        }
-        return Optional.empty();
-    }
-
     @Override
     public void tick() {
         super.tick();
@@ -126,10 +123,13 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
                 }
             }
             tickFuel();
+            tickPower();
             Vec3 force = tickMove();
-//            DebugUtil.timer(null);
             tickCollide(force);
-//            DebugUtil.timer("物理计算耗时(纳秒)");
+            if (uav) {
+                forceLoad(position());
+                forceLoad(position().add(getLookAngle().normalize().scale(16)));
+            }
         }
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         tickZRot();
@@ -143,6 +143,22 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             entityData.set(FUEL, fuel);
             setFuel(fuel);
         });
+    }
+
+    protected void tickPower() {
+        float power = getPower();
+        if (getDriver() == null) {
+            if (power > 0) {
+                setPower(power - 1);
+            }
+        } else {
+            if (power < 100) {
+                setPower(power + 1);
+            }
+        }
+        if (getFuel() == 0) {
+            setPower(0);
+        }
     }
 
     protected void tickCollide(Vec3 force) {
@@ -208,6 +224,12 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         if (this.equals(entity.getVehicle())) {
             return;
         }
+        LivingEntity driver = getDriver();
+        if (entity instanceof TamableAnimal tamableAnimal) {
+            if (tamableAnimal.getOwner() == driver) {
+                return;
+            }
+        }
         double velocity = this.getDeltaMovement().length() * 20;
         if (velocity > 1) {
             entity.hurt(this.damageSources().magic(), (float) (velocity * velocity));
@@ -252,21 +274,21 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
         cubes.sort((cube1, cube2) -> (int) -(cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
-        vehicleBodyOBBs.add(mainCubeOBB);
+        vehicleOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {
-            vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
+            vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
         }
         for (BedrockBone child : bone.getChildren()) {
             List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
             for (BedrockCubePerFace cube : childCubes) {
-                vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
+                vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
             }
         }
     }
 
     @Override
     public List<OBB> getOBBs() {
-        List<OBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList());
+        List<OBB> vehicleOBBs = new ArrayList<>(this.vehicleOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList());
         for (PartUnit partUnit : partUnits) {
             vehicleOBBs.addAll(partUnit.getOBBs());
         }
@@ -275,7 +297,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     @Override
     public void updateOBBs() {
-        for (VehicleBedrockCubeOBB vehicleBedrockCubeOBB : vehicleBodyOBBs) {
+        for (VehicleBedrockCubeOBB vehicleBedrockCubeOBB : vehicleOBBs) {
             OBB obb = vehicleBedrockCubeOBB.obb();
             Vec3 center = vehicleBedrockCubeOBB.center(this);
             Quaternionf rot = vehicleBedrockCubeOBB.selfRot();
@@ -428,15 +450,12 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
                 if (itemStack.getItem().equals(AllItems.FUEL_TANK.get())) {
-                    int amount = itemStack.getMaxDamage() - itemStack.getDamageValue();
-                    amount = (int) (addFuel((float) amount / 1000) * 1000);
-                    ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(itemStack, amount);
-                    return InteractionResult.SUCCESS;
-                }
-                if (!pPlayer.startRiding(this)) {
                     return InteractionResult.PASS;
                 }
-                onEnterVehicle(pPlayer);
+                if (pPlayer.startRiding(this)) {
+                    onEnterVehicle(pPlayer);
+                    return InteractionResult.SUCCESS;
+                }
             }
             return InteractionResult.SUCCESS;
         }
@@ -498,6 +517,17 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return vehicleType;
     }
 
+    public List<PartUnit> getPartUnits() {
+        return partUnits;
+    }
+
+    public Optional<PartUnit> getPartUnit(int index) {
+        if (index >= 0 && index < partUnits.size()) {
+            return Optional.of(partUnits.get(index));
+        }
+        return Optional.empty();
+    }
+
     public VehicleBedrockCubeOBB getMainCubeOBB() {
         return mainCubeOBB;
     }
@@ -508,6 +538,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     public void setZRot(float rot) {
         zRot = rot;
+    }
+
+    public float getViewZRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? this.getXRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
     }
 
     public Quaternionf rotYXZ() {
@@ -802,6 +836,30 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
         if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
             this.hurt(this.damageSources().drown(), 1.0F);
+        }
+    }
+
+    public void forceLoad(Vec3 position) {
+        ChunkPos chunkPos = new ChunkPos(BlockPos.containing(position));
+        if (!forceChunksQueue.contains(chunkPos)) {
+            if (forceChunksQueue.size() >= 4) {
+                ChunkPos unloadChunkPos = forceChunksQueue.pop();
+                ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, unloadChunkPos.x, unloadChunkPos.z, false, true);
+            }
+            ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, chunkPos.x, chunkPos.z, true, true);
+            forceChunksQueue.add(chunkPos);
+        }
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+        if (!level().isClientSide) {
+            ServerLifecycleHooks.getCurrentServer().execute(() -> {
+                for (ChunkPos chunkPos : forceChunksQueue) {
+                    ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, chunkPos.x, chunkPos.z, false, true);
+                }
+            });
         }
     }
 

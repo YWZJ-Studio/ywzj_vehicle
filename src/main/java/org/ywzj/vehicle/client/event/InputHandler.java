@@ -114,6 +114,10 @@ public class InputHandler {
                 controlUnit.down = DOWN.isDown();
                 controlUnit.leftYaw = LEFT_YAW.isDown();
                 controlUnit.rightYaw = RIGHT_YAW.isDown();
+                controlUnit.functionalUp = FUNCTIONAL_UP.isDown();
+                controlUnit.functionalDown = FUNCTIONAL_DOWN.isDown();
+                controlUnit.functionalLeft = FUNCTIONAL_LEFT.isDown();
+                controlUnit.functionalRight = FUNCTIONAL_RIGHT.isDown();
                 if (freeCamera) {
                     controlUnit.xRot = xRotO;
                     controlUnit.yRot = yRotO;
@@ -173,6 +177,10 @@ public class InputHandler {
         control.down = controlUnit.down;
         control.leftYaw = controlUnit.leftYaw;
         control.rightYaw = controlUnit.rightYaw;
+        control.functionalUp = controlUnit.functionalUp;
+        control.functionalDown = controlUnit.functionalDown;
+        control.functionalLeft = controlUnit.functionalLeft;
+        control.functionalRight = controlUnit.functionalRight;
         control.xRot = controlUnit.xRot;
         control.yRot = controlUnit.yRot;
         Channel.CHANNEL.sendToServer(control);

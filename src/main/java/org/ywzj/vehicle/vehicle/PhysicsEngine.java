@@ -105,6 +105,9 @@ public class PhysicsEngine {
                 }
             }
         }
+        if (vehicle.level().getBlockState(BlockPos.containing(new Vec3(physicsCube.obb().center()))).isSolid()) {
+            velocity = new Vec3(velocity.x, 1, velocity.y);
+        }
         this.velocity = velocity.toVector3f();
         return velocity;
     }

@@ -50,7 +50,9 @@ public class RotatableUnit extends PartUnit {
         super.tick();
         if (vehicle.hasPower()) {
             tickRot();
-            tickSound();
+            if (vehicle.level().isClientSide) {
+                tickSound();
+            }
         } else {
             this.xRotO = this.xRot;
             this.yRotO = this.yRot;
@@ -104,7 +106,7 @@ public class RotatableUnit extends PartUnit {
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         if (vehicle.hasPower()) {
-            if (Math.abs(yAimRot - yRot) > 1) {
+            if (Math.abs(yAimRot - yRot) > 1 && yRot < yRotMax && yRot > yRotMin) {
                 if (turnYSoundInstance == null) {
                     turnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, vehicle.getId());
                     turnYSoundInstance.play();

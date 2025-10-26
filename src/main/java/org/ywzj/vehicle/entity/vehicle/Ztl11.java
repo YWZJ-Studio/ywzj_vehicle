@@ -26,7 +26,7 @@ public class Ztl11 extends WheeledVehicle {
         VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
-            this.vehicleBodyOBBs = struct.obbs();
+            this.vehicleOBBs = struct.obbs();
             var weapons = data.createPartUnits(this);
 //            this.operatorUnits.addAll(weapons.values());
             List<WeaponUnit> weaponUnits = new ArrayList<>(weapons.values());

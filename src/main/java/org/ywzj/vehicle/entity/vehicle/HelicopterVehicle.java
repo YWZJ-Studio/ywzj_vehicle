@@ -100,13 +100,16 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     protected void tickSound() {
         float engineSpeed = getPower();
         if (engineSpeed < 80 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
-            engineStopSoundInstance = new VehicleSound(getEngineStopSound(), soundDistance, 1f, false, 50, true, true, this.getId());
-            engineStopSoundInstance.play();
+            SoundEvent engineStopSound = getEngineStopSound();
+            if (engineStopSound != null) {
+                engineStopSoundInstance = new VehicleSound(engineStopSound, soundDistance, 1f, false, 50, true, true, this.getId());
+                engineStopSoundInstance.play();
+            }
             if (engineStartSoundInstance != null) {
                 engineStartSoundInstance.setVolume(engineSpeed / 100 * soundDistance);
             }
         }
-        if (engineSpeed == 0 && engineStartSoundInstance != null) {
+        if (engineSpeed == 0) {
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
@@ -120,12 +123,18 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 engineStopSoundInstance = null;
             }
             if (engineStartSoundInstance == null) {
-                engineStartSoundInstance = new VehicleSound(getEngineStartSound(), soundDistance, 1f, false, 0, false, false, this.getId());
-                engineStartSoundInstance.play();
+                SoundEvent engineStartSound = getEngineStartSound();
+                if (engineStartSound != null) {
+                    engineStartSoundInstance = new VehicleSound(engineStartSound, soundDistance, 1f, false, 0, false, false, this.getId());
+                    engineStartSoundInstance.play();
+                }
             }
             if (engineSpeed > 80 && engineRunSoundInstance == null) {
-                engineRunSoundInstance = new VehicleSound(getEngineRunSound(), soundDistance, 1f, true, 50, true, true, this.getId());
-                engineRunSoundInstance.play();
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
             }
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.setVolume(Math.max(0.2f * soundDistance, engineSpeed / 100 * soundDistance));
@@ -135,18 +144,8 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
     @Override
     protected Vec3 tickMove() {
-        float power = getPower();
         if (getDriver() == null) {
             controlUnit.reset();
-            if (power > 0) {
-                setPower(power - 1);
-            }
-        } else {
-            if (getFuel() == 0) {
-                setPower(0);
-            } else if (power < 100) {
-                setPower(power + 1);
-            }
         }
 
         // 总距控制
@@ -188,12 +187,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
         if (getDriver() != null) {
             if (!(controlUnit.leftYaw || controlUnit.rightYaw)) {
                 float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
+                float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
                 if (yDiff > 0) {
-                    yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration);
+                    yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration * shrink);
                 } else if (yDiff < 0) {
-                    yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
+                    yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration * shrink);
                 }
-                if (Math.abs(yDiff) > 0.5) {
+                if (Math.abs(yDiff) > 3) {
                     if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
                         yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
                     }
@@ -214,15 +214,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
             if (!(controlUnit.forward || controlUnit.backward)) {
                 float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
+                float shrink = Math.min(1, Math.abs(xDiff) / xRotSpeedAcceleration);
                 if (xDiff > 0) {
-                    xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration);
+                    xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration * shrink);
                 } else if (xDiff < 0) {
-                    xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
+                    xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration * shrink);
                 }
-                if (Math.abs(xDiff) > 0.5) {
-                    if (Math.abs(xDiff) <= Math.abs(xRotSpeed)) {
-                        xRotSpeed = (float) Mth.lerp(0.3, xRotSpeed, xDiff);
-                    }
+                if (Math.abs(xDiff) > 3) {
                     this.setXRot(this.getXRot() + xRotSpeed);
                 } else {
                     xRotSpeed = 0;
@@ -240,15 +238,13 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
 
             if (!(controlUnit.left || controlUnit.right)) {
                 float zDiff = Mth.wrapDegrees(-this.getZRot());
+                float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
                 if (zDiff > 0) {
-                    zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration);
+                    zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration * shrink);
                 } else if (zDiff < 0) {
-                    zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
+                    zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration * shrink);
                 }
-                if (Math.abs(zDiff) > 0.5) {
-                    if (Math.abs(zDiff) <= Math.abs(zRotSpeed)) {
-                        zRotSpeed = (float) Mth.lerp(0.3, zRotSpeed, zDiff);
-                    }
+                if (Math.abs(zDiff) > 3) {
                     this.setZRot(this.getZRot() + zRotSpeed);
                 } else {
                     zRotSpeed = 0;
@@ -285,7 +281,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
             }
             if (basePos != null) {
                 double radius = (double) tickCount % 20 / 20 * 10;
-                if (radius > 0) {
+                if (radius > 0 && radius < mainCubeOBB.depth * 1.3f) {
                     int pointCount = 8; // 生成的粒子数量
                     int particleCount = 2; // 生成的粒子数量
                     for (int i = 0; i < pointCount; i++) {

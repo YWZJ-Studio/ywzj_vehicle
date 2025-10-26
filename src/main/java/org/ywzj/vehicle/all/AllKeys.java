@@ -23,6 +23,10 @@ public class AllKeys {
     public static final KeyMapping DOWN = key("down", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_SHIFT);
     public static final KeyMapping LEFT_YAW = key("left_yaw", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Q);
     public static final KeyMapping RIGHT_YAW = key("right_yaw", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_E);
+    public static final KeyMapping FUNCTIONAL_UP = key("functional_up", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UP);
+    public static final KeyMapping FUNCTIONAL_DOWN = key("functional_down", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_DOWN);
+    public static final KeyMapping FUNCTIONAL_LEFT = key("functional_left", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT);
+    public static final KeyMapping FUNCTIONAL_RIGHT = key("functional_right", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT);
 
     // 武器控制类
     public static final KeyMapping FIRE_CONTROL_STABILIZER = key("fire_control_stabilizer", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F);
@@ -45,10 +49,10 @@ public class AllKeys {
     public static final KeyMapping CHANGE_SEAT_6 = key("change_seat_6", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_6);
 
     // 调试
-    public static final KeyMapping DEBUG_GUI = key("debug_gui", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_SLASH);
+    public static final KeyMapping DEBUG_GUI = key("debug_gui", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_ALT);
 
     private static final KeyMapping[] ALL_KEYS = {
-            FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW,
+            FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT,
             FIRE_CONTROL_STABILIZER, FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, MAGNIFICATION_CHANGE,
             SWITCH_VIEW, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
             CHANGE_SEAT_1, CHANGE_SEAT_2, CHANGE_SEAT_3, CHANGE_SEAT_4, CHANGE_SEAT_5, CHANGE_SEAT_6,

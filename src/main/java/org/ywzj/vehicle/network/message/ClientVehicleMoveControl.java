@@ -17,6 +17,10 @@ public class ClientVehicleMoveControl {
     public boolean down;
     public boolean leftYaw;
     public boolean rightYaw;
+    public boolean functionalUp;
+    public boolean functionalDown;
+    public boolean functionalLeft;
+    public boolean functionalRight;
     public float xRot;
     public float yRot;
 
@@ -33,6 +37,10 @@ public class ClientVehicleMoveControl {
         control.down = buf.readBoolean();
         control.leftYaw = buf.readBoolean();
         control.rightYaw = buf.readBoolean();
+        control.functionalUp = buf.readBoolean();
+        control.functionalDown = buf.readBoolean();
+        control.functionalLeft = buf.readBoolean();
+        control.functionalRight = buf.readBoolean();
         control.xRot = buf.readFloat();
         control.yRot = buf.readFloat();
         return control;
@@ -48,6 +56,10 @@ public class ClientVehicleMoveControl {
         buf.writeBoolean(down);
         buf.writeBoolean(leftYaw);
         buf.writeBoolean(rightYaw);
+        buf.writeBoolean(functionalUp);
+        buf.writeBoolean(functionalDown);
+        buf.writeBoolean(functionalLeft);
+        buf.writeBoolean(functionalRight);
         buf.writeFloat(xRot);
         buf.writeFloat(yRot);
     }

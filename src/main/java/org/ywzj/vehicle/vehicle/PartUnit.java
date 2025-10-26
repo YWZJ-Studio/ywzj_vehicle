@@ -144,7 +144,7 @@ public class PartUnit {
         if (ownerViewOffset == null) {
             return worldPosition(new Vec3(0, eyeHeight, 0));
         }
-        return worldPosition(ownerViewOffset).add(new Vec3(0, eyeHeight, 0));
+        return worldPosition(ownerViewOffset);
     }
 
     public Vec3 worldSeatPosition() {
@@ -153,7 +153,7 @@ public class PartUnit {
         if (seatOffset == null) {
             seatOffset = new Vec3(0, eyeHeight, 0);
         }
-        return vehicle.relativeRotPos(vehicle.position().add(seatOffset));
+        return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)));
     }
 
     public Component getName() {

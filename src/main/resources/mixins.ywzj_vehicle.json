@@ -10,6 +10,7 @@
     "client.EntityRenderDispatcherMixin",
     "client.HumanoidModelMixin",
     "client.LevelRendererMixin",
+    "client.LivingEntityRendererMixin",
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
     "client.PostChainMixin"

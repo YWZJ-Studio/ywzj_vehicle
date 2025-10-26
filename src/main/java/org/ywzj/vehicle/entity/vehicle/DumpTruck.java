@@ -34,13 +34,13 @@ public class DumpTruck extends WheeledVehicle {
         dumpTruckBed.setXRotMin(-45);
         dumpTruckBed.setXRotMax(0);
         dumpTruckBed.setXRotSpeed((float) 15 / 20);
-        dumpTruckBed.setOwnerViewOffset(new Vec3(0.6,1, 3));
-        dumpTruckBed.setSeatOffset(new Vec3(0.7,1, 3));
+        dumpTruckBed.setOwnerViewOffset(new Vec3(0.6, 2.5, 3.3));
+        dumpTruckBed.setSeatOffset(new Vec3(0.7, 2.7, 3));
         this.partUnits.add(dumpTruckBed);
         this.seats.add(new Seat(0, dumpTruckBed));
         PartUnit passengerSeat = new PartUnit("passenger_seat", 1, this);
-        passengerSeat.setOwnerViewOffset(new Vec3(0.6 - 1.4,1, 3));
-        passengerSeat.setSeatOffset(new Vec3(0.7 - 1.4,1, 3));
+        passengerSeat.setOwnerViewOffset(new Vec3(0.6 - 1.4, 2.5, 3.3));
+        passengerSeat.setSeatOffset(new Vec3(0.7 - 1.4, 2.7, 3));
         this.partUnits.add(passengerSeat);
         this.seats.add(new Seat(1, passengerSeat));
     }

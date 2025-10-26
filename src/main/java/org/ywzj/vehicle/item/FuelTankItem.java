@@ -2,6 +2,10 @@ package org.ywzj.vehicle.item;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
@@ -13,11 +17,29 @@ import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.all.AllItems;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 public class FuelTankItem extends Item {
 
     public FuelTankItem(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public InteractionResult interactLivingEntity(ItemStack itemStack, Player player, LivingEntity target, InteractionHand pHand) {
+        if (!player.level().isClientSide) {
+            if (pHand == InteractionHand.MAIN_HAND) {
+                if (target instanceof AbstractVehicle vehicle) {
+                    ItemStack fuelTankItemStack = player.getItemInHand(pHand);
+                    int amount = fuelTankItemStack.getMaxDamage() - fuelTankItemStack.getDamageValue();
+                    amount = (int) (vehicle.addFuel((float) amount / 1000) * 1000);
+                    ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(fuelTankItemStack, amount);
+                    return InteractionResult.sidedSuccess(player.level().isClientSide);
+                }
+            }
+        }
+        return InteractionResult.sidedSuccess(player.level().isClientSide);
     }
 
     @Override

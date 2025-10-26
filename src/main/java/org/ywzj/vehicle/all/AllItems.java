@@ -8,6 +8,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.item.AmmoItem;
 import org.ywzj.vehicle.item.FuelTankItem;
+import org.ywzj.vehicle.item.UavControllerItem;
 
 import java.util.LinkedHashMap;
 import java.util.function.Supplier;
@@ -18,6 +19,7 @@ public class AllItems {
     public static final LinkedHashMap<String, RegistryObject<Item>> ITEMS_LOOKUP = new LinkedHashMap<>();
 
     public static final RegistryObject<Item> FUEL_TANK = registerItem(AllTabs.Category.MISC, "fuel_tank", () -> new FuelTankItem(new Item.Properties().durability(125)));
+    public static final RegistryObject<Item> UAV_CONTROLLER = registerItem(AllTabs.Category.MISC, "uav_controller", () -> new UavControllerItem(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> AMMO_MACHINE_GUN = registerItem(AllTabs.Category.MISC, "ammo_machine_gun", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MACHINE_GUN));
     public static final RegistryObject<Item> AMMO_AUTO_CANNON = registerItem(AllTabs.Category.MISC, "ammo_auto_cannon", () -> new AmmoItem(new Item.Properties().stacksTo(32), AmmoItem.AmmoType.AUTO_CANNON));
     public static final RegistryObject<Item> AMMO_ARTILLERY = registerItem(AllTabs.Category.MISC, "ammo_artillery", () -> new AmmoItem(new Item.Properties().stacksTo(16), AmmoItem.AmmoType.ARTILLERY));
