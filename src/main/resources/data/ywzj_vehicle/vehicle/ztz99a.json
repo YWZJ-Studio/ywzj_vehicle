@@ -22,7 +22,7 @@
       "structure_bone": "ztz99a_turret",
       "name": "ztz99a_turret",
       "rot_info": {
-        "x_rot_speed": 0.75,
+        "x_rot_speed": 1.5,
         "y_rot_speed": 1.5,
         "x_rot_max": 5,
         "x_rot_min": -13

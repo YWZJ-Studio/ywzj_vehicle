@@ -440,7 +440,7 @@ public class WeaponUnit extends RotatableUnit {
         }
         if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON
                 || LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(-10, 0).getLocation();
+            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(-LocalVehiclePlayer.CAMERA_UPWARD_ANGLE, 0).getLocation();
         } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
             aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0).getLocation();
         }

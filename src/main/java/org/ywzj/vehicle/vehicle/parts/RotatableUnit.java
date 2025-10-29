@@ -108,7 +108,7 @@ public class RotatableUnit extends PartUnit {
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         if (vehicle.hasPower()) {
-            if (Math.abs(yAimRot - yRot) > 1 && yRot < yRotMax && yRot > yRotMin) {
+            if (Math.abs(yAimRot - yRot) > 1 && yRot < yRotMax && yRot > yRotMin && yRotMax != Float.MAX_VALUE && yRotMin != -Float.MAX_VALUE) {
                 if (turnYSoundInstance == null) {
                     turnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, vehicle.getId());
                     turnYSoundInstance.play();

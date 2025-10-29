@@ -10,10 +10,15 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 
 public class Ka50 extends HelicopterVehicle {
 
@@ -43,6 +48,7 @@ public class Ka50 extends HelicopterVehicle {
 
     @Override
     public void initPartUnits() {
+        // 观瞄
         WeaponUnit sightingSystem = new WeaponUnit("sighting_system",
                 0,
                 this,
@@ -59,8 +65,15 @@ public class Ka50 extends HelicopterVehicle {
         sightingSystem.setYRotMax(60f);
         sightingSystem.setYRotMin(-60f);
         sightingSystem.setOperatorOnWeaponUnit(false);
+        sightingSystem.currentWeaponIndexHolder = sightingSystem.getSyncData().define(
+                SyncDataSerializers.INT,
+                sightingSystem::setCurrentWeaponIndex,
+                sightingSystem::getCurrentWeaponIndex,
+                0
+        );
         this.partUnits.add(sightingSystem);
         this.seats.add(new Seat(0, sightingSystem));
+        // 机炮
         WeaponUnit autoCannon = new WeaponUnit("auto_cannon",
                 1,
                 this,
@@ -78,6 +91,13 @@ public class Ka50 extends HelicopterVehicle {
         autoCannon.setYRotMin(0f);
         autoCannon.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(autoCannon);
+        BaseVehicleWeaponData weaponDataAutoCannon = new BaseVehicleWeaponData();
+        weaponDataAutoCannon.setName("auto_cannon");
+        weaponDataAutoCannon.setMaxCapacity(120);
+        weaponDataAutoCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get())));
+        VehicleCannon vehicleCannon = new VehicleCannon(this, autoCannon, 0, weaponDataAutoCannon);
+        vehicleCannon.defineSyncData(autoCannon.getSyncData());
+        sightingSystem.weapons.add(vehicleCannon);
         this.partUnits.add(autoCannon);
     }
 

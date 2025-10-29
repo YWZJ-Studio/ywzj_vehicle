@@ -99,6 +99,9 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         if (event.phase == TickEvent.Phase.END) {
             return;
         }
+        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || !player.isAlive()) {

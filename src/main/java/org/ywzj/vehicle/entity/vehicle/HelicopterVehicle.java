@@ -16,8 +16,6 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public abstract class HelicopterVehicle extends AbstractVehicle {
 
@@ -76,23 +74,6 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     public void onLeaveVehicle(LivingEntity entity) {
         super.onLeaveVehicle(entity);
         this.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE);
-    }
-
-    @Override
-    protected void tickAim() {
-        if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
-            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                if (weaponUnit.isStabilizerOn()) {
-                    return;
-                }
-                Vec3 pos = LocalVehiclePlayer.instance.freeAimPos();
-                if (pos != null) {
-                    weaponUnit.aim(pos);
-                }
-            } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                LocalVehiclePlayer.instance.rangefinding();
-            }
-        }
     }
 
     @Override

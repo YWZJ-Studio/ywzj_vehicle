@@ -13,7 +13,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.control.InputHandler;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
@@ -37,6 +39,9 @@ public class LocalVehiclePlayer {
     public float cameraAimRotXO;
     public float cameraAimRotYO;
     public float cameraAimRotZO;
+    public WeaponUnit lastWeaponUnit;
+    public float scopeAimRotX;
+    public float scopeAimRotY;
     public double aimLocationDistance;
     public boolean outOfRangeFinding;
     public HashSet<Integer> controllingMissileIds = new HashSet<>();
@@ -56,7 +61,10 @@ public class LocalVehiclePlayer {
     }
 
     public void tick() {
-        // 根据视角与载具地形适应来更新摄像头位置
+        tickAim();
+    }
+
+    private void tickAim() {
         if (onVehicle()) {
             if (lock.isLocked()) {
                 return;
@@ -73,9 +81,12 @@ public class LocalVehiclePlayer {
                     cameraX = vehicleCameraPos.x;
                     cameraY = vehicleCameraPos.y;
                     cameraZ = vehicleCameraPos.z;
+                    if (InputHandler.freeCamera && !(vehicle instanceof HelicopterVehicle)) {
+                        return;
+                    }
                     if (viewType == ViewType.THIRD_PERSON && partUnit instanceof WeaponUnit weaponUnit) {
-                        if (weaponUnit.isStabilizerOn()) {
-                            thirdPersonCameraAimAt(weaponUnit.aimHitPosition(), vehicle);
+                        if (!weaponUnit.isStabilizerOn()) {
+                            weaponUnit.aim(freeAimPos());
                         }
                     } else {
                         cameraAimRotZO = cameraAimRotZ;
@@ -90,7 +101,17 @@ public class LocalVehiclePlayer {
                     cameraAimRotXO = cameraAimRotX;
                     cameraAimRotYO = cameraAimRotY;
                     cameraAimRotZO = cameraAimRotZ;
-                    cameraAimAt(weaponUnit.aimHitPosition());
+                    if (lastWeaponUnit != weaponUnit) {
+                        lastWeaponUnit = weaponUnit;
+                        scopeAimWeaponHit(weaponUnit);
+                        return;
+                    }
+                    if (weaponUnit.isStabilizerOn() || !mouseTurnedAfterScope) {
+                        scopeAimWeaponHit(weaponUnit);
+                        return;
+                    } else {
+                        weaponAimScopeHit(weaponUnit);
+                    }
                     Quaternionf rot = new Quaternionf();
                     rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
                     rot.rotateX((float) Math.toRadians(-weaponUnit.xRot));
@@ -136,8 +157,7 @@ public class LocalVehiclePlayer {
                     cameraX = worldScopePosition.x;
                     cameraY = worldScopePosition.y;
                     cameraZ = worldScopePosition.z;
-                    Vec3 hitPosition = weaponUnit.aimHitPosition();
-                    cameraAimAt(hitPosition);
+                    scopeAimWeaponHit(weaponUnit);
                     // 切换开镜后，若鼠标未移动，仍向开镜前第三人称预瞄的方向自动旋转
                     mouseTurnedAfterScope = false;
                 }
@@ -173,26 +193,34 @@ public class LocalVehiclePlayer {
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
            if (viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 if (Math.abs(pXRot) >= 0.5 || Math.abs(pYRot) >= 0.5) {
-                    weaponUnit.xAimRot = weaponUnit.xRot;
-                    weaponUnit.yAimRot = weaponUnit.yRot;
                     mouseTurnedAfterScope = true;
                 }
                 if (!mouseTurnedAfterScope) {
                     return;
                 }
-                pXRot /= weaponUnit.getZoom() / 2;
-                pYRot /= weaponUnit.getZoom() / 2;
+                pXRot *= 0.15f;
+                pYRot *= 0.15f;
                 if (weaponUnit.isStabilizerOn()) {
                     Vec3 pos = cameraAimHit((float) pXRot, (float) pYRot).getLocation();
                     weaponUnit.setAimLockPosition(pos);
                 } else {
-                    float t1 = Mth.abs(weaponUnit.xAimRot - weaponUnit.xRot) / weaponUnit.getXRotSpeed();
-                    if (t1 < 5f) {
-                        weaponUnit.xAimRot = (float) (weaponUnit.xAimRot + pXRot);
+                    float t1 = Mth.abs(scopeAimRotX - weaponUnit.xRot) / weaponUnit.getXRotSpeed();
+                    float v1 = 1;
+                    if (t1 > 3f) {
+                        // 运动平滑
+                        v1 = Math.max(0.00001f, (70 - t1 * 10) / 1000);
                     }
-                    float t2 = Mth.abs(weaponUnit.yAimRot - weaponUnit.yRot) / weaponUnit.getYRotSpeed();
-                    if (t2 < 5f) {
-                        weaponUnit.yAimRot = (float) (weaponUnit.yAimRot + pYRot);
+                    if ((pXRot > 0 && weaponUnit.xAimRot < weaponUnit.xRotMax) || (pXRot < 0 && weaponUnit.xAimRot > weaponUnit.xRotMin)) {
+                        scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
+                    }
+                    float t2 = Mth.abs(scopeAimRotY -  weaponUnit.combineYRot()) / weaponUnit.getYRotSpeed();
+                    float v2 = 1;
+                    if (t2 > 3f) {
+                        // 运动平滑
+                        v2 = Math.max(0.00001f, (70 - t2 * 10) / 1000);
+                    }
+                    if ((pYRot > 0 && weaponUnit.yAimRot < weaponUnit.yRotMax) || (pYRot < 0 && weaponUnit.yAimRot > weaponUnit.yRotMin)) {
+                        scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);
                     }
                 }
             }
@@ -208,6 +236,25 @@ public class LocalVehiclePlayer {
             return (AbstractVehicle) getPlayer().getVehicle();
         }
         return null;
+    }
+
+    public void scopeAimWeaponHit(WeaponUnit weaponUnit) {
+        Vec3 hitPosition = weaponUnit.aimHitPosition();
+        cameraAimAt(hitPosition);
+        Vec3 worldAim = new Vec3(hitPosition.x - cameraX, hitPosition.y - cameraY, hitPosition.z - cameraZ);
+        Vec3 vehicleVec = weaponUnit.getVehicle().relativeRotDirection(worldAim, true);
+        scopeAimRotX = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.sqrt(worldAim.x * worldAim.x + worldAim.z * worldAim.z)));
+        scopeAimRotY = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
+    }
+
+    public void weaponAimScopeHit(WeaponUnit weaponUnit) {
+        Vec3 worldVec = weaponUnit.getVehicle().relativeRotDirection(VectorUtil.calculateViewVector(scopeAimRotX, scopeAimRotY), false);
+        cameraAimRotX = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
+        cameraAimRotY = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
+        getPlayer().setXRot(cameraAimRotX);
+        getPlayer().setYRot(cameraAimRotY);
+        Vec3 hitPosition = scopeAimPos();
+        weaponUnit.aim(hitPosition);
     }
 
     public void cameraAimAt(Vec3 worldPos) {
@@ -257,20 +304,21 @@ public class LocalVehiclePlayer {
     }
 
     /**
-     * 摄像头抬头视线落点
+     * 抬头视线落点
      */
     public Vec3 freeAimPos() {
         return cameraAimHit(-CAMERA_UPWARD_ANGLE, 0).getLocation();
     }
 
     /**
-     * 摄像头视线落点测距
+     * 视线落点与测距
      */
-    public void rangefinding() {
+    public Vec3 scopeAimPos() {
         BlockHitResult result = cameraAimHit(0, 0);
-        Vec3 hitPos = result.getLocation();
-        aimLocationDistance = getPlayer().position().distanceTo(hitPos);
+        Vec3 hitPosition = result.getLocation();
+        aimLocationDistance = getPlayer().position().distanceTo(hitPosition);
         outOfRangeFinding = result.getType() == HitResult.Type.MISS;
+        return result.getLocation();
     }
 
     public WeaponUnit getWeaponUnit() {
