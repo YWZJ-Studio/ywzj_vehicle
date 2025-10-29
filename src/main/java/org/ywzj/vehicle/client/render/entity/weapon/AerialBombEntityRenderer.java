@@ -14,24 +14,24 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
-import org.ywzj.vehicle.entity.weapon.MissileEntity;
+import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
 
-public class MissileEntityRenderer extends EntityRenderer<MissileEntity> {
+public class AerialBombEntityRenderer extends EntityRenderer<AerialBombEntity> {
 
-    public MissileEntityRenderer(EntityRendererProvider.Context pContext) {
+    public AerialBombEntityRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
 
     @Override
-    public void render(MissileEntity pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(AerialBombEntity pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         pPoseStack.pushPose();
         {
             Vec3 root = new Vec3(0, 0, 0);
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
-            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("bedrock/entity/rocket_57mm"));
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/rocket_57mm.png")));
+            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("bedrock/entity/aerial_bomb"));
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/aerial_bomb.png")));
 
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
         }
@@ -39,7 +39,7 @@ public class MissileEntityRenderer extends EntityRenderer<MissileEntity> {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(MissileEntity pEntity) {
+    public ResourceLocation getTextureLocation(AerialBombEntity pEntity) {
         return null;
     }
 

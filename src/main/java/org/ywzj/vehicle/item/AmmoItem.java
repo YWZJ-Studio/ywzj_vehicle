@@ -7,7 +7,7 @@ public class AmmoItem extends Item {
     private final AmmoType ammoType;
 
     public enum AmmoType {
-        MACHINE_GUN, AUTO_CANNON, ARTILLERY, MISSILE
+        MACHINE_GUN, AUTO_CANNON, ARTILLERY, ROCKET, AERIAL_BOMB, MISSILE
     }
 
     public AmmoItem(Properties pProperties, AmmoType ammoType) {

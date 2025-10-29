@@ -22,7 +22,6 @@ public class DumpTruck extends WheeledVehicle {
 
     public DumpTruck(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.thirdPersonOffset = new Vec3(0, 4, -7);
         this.maxSpeedForward = 0.4f;
     }
 

@@ -12,6 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.entity.weapon.RocketEntity;
@@ -43,6 +44,18 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .setCustomClientFactory(RocketEntity::new)
                     .build("rocket"));
+
+    public static final RegistryObject<EntityType<AerialBombEntity>> AERIAL_BOMB = ENTITIES.register("aerial_bomb",
+            () -> EntityType.Builder.<AerialBombEntity>of(AerialBombEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(1F, 1F)
+                    .clientTrackingRange(16)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .setCustomClientFactory(AerialBombEntity::new)
+                    .build("aerial_bomb"));
 
     public static final RegistryObject<EntityType<MissileEntity>> MISSILE = ENTITIES.register("missile",
             () -> EntityType.Builder.<MissileEntity>of(MissileEntity::new, MobCategory.MISC)

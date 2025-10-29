@@ -19,7 +19,6 @@ public class Ka50 extends HelicopterVehicle {
 
     public Ka50(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.thirdPersonOffset = new Vec3(0, 6, -12);
     }
 
     @Override

@@ -31,8 +31,11 @@ public class FirstPersonHandler {
 
     @SubscribeEvent
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        if (LocalVehiclePlayer.instance.onVehicle() && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-            event.setRoll(zRot);
+        if (LocalVehiclePlayer.instance.onVehicle()) {
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE
+                    || LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                event.setRoll(zRot);
+            }
         }
     }
 

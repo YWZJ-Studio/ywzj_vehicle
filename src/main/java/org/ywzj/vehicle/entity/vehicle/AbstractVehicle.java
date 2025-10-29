@@ -69,7 +69,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public final ControlUnit controlUnit;
     public List<Seat> seats;
     protected final List<PartUnit> partUnits;
-    public Vec3 thirdPersonOffset;
+    public Vec3 thirdPersonCenterOffset;
+    public float thirdPersonDistance;
     public float curbWeight;
     public float fuelCapacity;
     public float fuelConsumptionPerTick;
@@ -88,7 +89,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.seats = new ArrayList<>();
         this.controlUnit = new ControlUnit();
         this.partUnits = new ArrayList<>();
-        this.thirdPersonOffset = Vec3.ZERO;
+        this.thirdPersonDistance = 8;
+        this.thirdPersonCenterOffset = Vec3.ZERO;
         this.curbWeight = 1;
         this.fuelCapacity = 1;
         this.fuelConsumptionPerTick = 0.00001f;
@@ -472,15 +474,24 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @OnlyIn(Dist.CLIENT)
     public Vec3 thirdPersonPosition(LivingEntity pPassenger) {
         if (pPassenger != null) {
+            Vec3 thirdPersonCenter = position().add(thirdPersonCenterOffset);
+            if (thirdPersonCenterOffset.x != 0 || thirdPersonCenterOffset.z != 0) {
+                thirdPersonCenter = relativeRotPos(thirdPersonCenter);
+            }
             Matrix3f axisRollMat = new Matrix3f();
             Quaternionf q = new Quaternionf();
             q.rotateY(Math.toRadians(-pPassenger.getYRot()));
             q.rotateX(Math.toRadians(pPassenger.getXRot()));
             q.get(axisRollMat);
-            Vector3f rotOffset = axisRollMat.transform(thirdPersonOffset.toVector3f());
-            return position().add(rotOffset.x, rotOffset.y, rotOffset.z);
+            Vector3f rotOffset = axisRollMat.transform(new Vector3f(0, 0, -thirdPersonDistance));
+            Vec3 thirdPersonPos = thirdPersonCenter.add(rotOffset.x, rotOffset.y, rotOffset.z);
+            Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(0.1);
+            while (level().getBlockState(BlockPos.containing(thirdPersonPos)).isSolid() && thirdPersonPos.distanceTo(thirdPersonCenter) > 1) {
+                thirdPersonPos = thirdPersonPos.add(step);
+            }
+            return thirdPersonPos;
         }
-        return position().add(thirdPersonOffset);
+        return Vec3.ZERO;
     }
 
     @Override

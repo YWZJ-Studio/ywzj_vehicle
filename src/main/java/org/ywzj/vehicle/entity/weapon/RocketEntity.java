@@ -2,10 +2,7 @@ package org.ywzj.vehicle.entity.weapon;
 
 import com.tacz.guns.util.block.BlockRayTrace;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -16,8 +13,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PlayMessages;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllConfigs;
@@ -28,7 +23,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 
-public class RocketEntity extends Projectile implements IEntityAdditionalSpawnData {
+public class RocketEntity extends AmmoEntity {
 
     public AbstractVehicle vehicle;
     public Component name;
@@ -64,11 +59,11 @@ public class RocketEntity extends Projectile implements IEntityAdditionalSpawnDa
     }
 
     private void tickMove() {
-        Vec3 vec3 = this.getDeltaMovement();
-        double d0 = this.getX() + vec3.x;
-        double d1 = this.getY() + vec3.y;
-        double d2 = this.getZ() + vec3.z;
-        this.setPos(d0, d1, d2);
+        Vec3 velocity = this.getDeltaMovement();
+        double dx = this.getX() + velocity.x;
+        double dy = this.getY() + velocity.y;
+        double dz = this.getZ() + velocity.z;
+        this.setPos(dx, dy, dz);
         Vec3 v = this.getLookAngle().normalize();
         this.setDeltaMovement(v.scale(speed));
     }
@@ -120,25 +115,6 @@ public class RocketEntity extends Projectile implements IEntityAdditionalSpawnDa
             sound = new VehicleSound(AllSounds.ROCKET_FLYING.get(), 1, 1f, false, 50, true, true, this.getId());
             sound.play();
         }
-    }
-
-    @Override
-    protected void defineSynchedData() {}
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
-
-    @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeComponent(name);
-        buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
-    }
-
-    @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
-        name = additionalData.readComponent();
     }
 
 }

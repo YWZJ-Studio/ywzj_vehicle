@@ -18,6 +18,8 @@ public class BedrockModelLoader {
 
         //todo: 统一武器注册
         event.register(YwzjVehicle.modLoc("bedrock/entity/missile_akd10"), BedrockModel::new);
+        event.register(YwzjVehicle.modLoc("bedrock/entity/rocket_57mm"), BedrockModel::new);
+        event.register(YwzjVehicle.modLoc("bedrock/entity/aerial_bomb"), BedrockModel::new);
 
         AllVehicles.getVehicleTypes().forEach(vehicle -> {
             event.register(vehicle.getVisualBedrockModel(), BedrockModel::new);

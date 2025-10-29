@@ -5,8 +5,7 @@ import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -20,8 +19,6 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllEntities;
@@ -29,15 +26,14 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BulletHitResult;
+import org.ywzj.vehicle.util.CustomExplosion;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
-public class MissileEntity extends Projectile implements IEntityAdditionalSpawnData {
+public class MissileEntity extends AmmoEntity {
 
-    public AbstractVehicle vehicle;
-    public Component name;
     public float speed = 5f;
     public Entity targetEntity;
     public Vec3 targetPos;
@@ -108,11 +104,11 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
     }
 
     private void tickMove() {
-        Vec3 vec3 = this.getDeltaMovement();
-        double d0 = this.getX() + vec3.x;
-        double d1 = this.getY() + vec3.y;
-        double d2 = this.getZ() + vec3.z;
-        this.setPos(d0, d1, d2);
+        Vec3 velocity = this.getDeltaMovement();
+        double dx = this.getX() + velocity.x;
+        double dy = this.getY() + velocity.y;
+        double dz = this.getZ() + velocity.z;
+        this.setPos(dx, dy, dz);
         Vec3 v = this.getLookAngle().normalize();
         this.setDeltaMovement(v.scale(speed));
     }
@@ -130,9 +126,10 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
             if (resultB.getType() != HitResult.Type.MISS) {
                 // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
                 endVec = resultB.getLocation();
-                //todo自己实现爆炸
-                this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
-                        AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+//                //todo自己实现爆炸
+//                this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
+//                        AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+                CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
                 this.kill();
                 return;
             }
@@ -189,22 +186,14 @@ public class MissileEntity extends Projectile implements IEntityAdditionalSpawnD
     }
 
     @Override
-    protected void defineSynchedData() {}
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
-
-    @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeComponent(name);
+        super.writeSpawnData(buffer);
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
     }
 
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
-        name = additionalData.readComponent();
+        super.readSpawnData(additionalData);
         operatorId = additionalData.readInt();
         if (level().isClientSide()) {
             localAddMissile();

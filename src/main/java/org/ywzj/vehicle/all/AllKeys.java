@@ -36,6 +36,7 @@ public class AllKeys {
 
     // 视角与交互类
     public static final KeyMapping SWITCH_VIEW = key("switch_view", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V);
+    public static final KeyMapping SWITCH_SCOPE = key("switch_scope", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_X);
     public static final KeyMapping FREE_CAMERA = key("free_camera", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C);
     public static final KeyMapping OPEN_INVENTORY = key("open_inventory", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B);
     public static final KeyMapping LEAVE_VEHICLE = key("leave_vehicle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J);
@@ -54,7 +55,7 @@ public class AllKeys {
     private static final KeyMapping[] ALL_KEYS = {
             FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT,
             FIRE_CONTROL_STABILIZER, FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, MAGNIFICATION_CHANGE,
-            SWITCH_VIEW, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
+            SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
             CHANGE_SEAT_1, CHANGE_SEAT_2, CHANGE_SEAT_3, CHANGE_SEAT_4, CHANGE_SEAT_5, CHANGE_SEAT_6,
             DEBUG_GUI
     };

@@ -33,7 +33,8 @@ public abstract class TrackedVehicle extends AbstractVehicle {
 
     public TrackedVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.thirdPersonOffset = new Vec3(0, 4, -5);
+        this.thirdPersonCenterOffset = new Vec3(0, 3, 0);
+        this.thirdPersonDistance = 7;
     }
 
     @Override
@@ -72,19 +73,17 @@ public abstract class TrackedVehicle extends AbstractVehicle {
             return;
         }
         if (getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
-            Vec3 pos = null;
             if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                pos = LocalVehiclePlayer.instance.freeAimRot();
+                if (weaponUnit.isStabilizerOn()) {
+                    return;
+                }
+                Vec3 pos = LocalVehiclePlayer.instance.freeAimPos();
+                if (pos != null) {
+                    weaponUnit.aim(pos);
+                }
             } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                pos = LocalVehiclePlayer.instance.scopeAimRot();
+                LocalVehiclePlayer.instance.rangefinding();
             }
-            if (pos == null) {
-                return;
-            }
-            if (weaponUnit.isStabilizerOn()) {
-                return;
-            }
-            weaponUnit.aim(pos);
         }
     }
 

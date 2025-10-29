@@ -7,12 +7,12 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.weapon.RocketEntity;
+import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
-public class VehicleRocket extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
+public class VehicleAerialBomb extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
 
-    public VehicleRocket(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
+    public VehicleAerialBomb(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
         super(vehicle, unit, index, data);
     }
 
@@ -26,10 +26,10 @@ public class VehicleRocket extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
         var vehicle = getVehicle();
         var data = this.getData();
 
-        RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level());
-        rocketEntity.shoot(this.getVehicle(), this.getName(), origin, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
-        vehicle.level().playSound(null, vehicle, AllSounds.ROCKET_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
-        vehicle.level().addFreshEntity(rocketEntity);
+        AerialBombEntity aerialBombEntity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level());
+        aerialBombEntity.shoot(this.getVehicle(), this.getName(), origin, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+        vehicle.level().playSound(null, vehicle, AllSounds.BOMB_DROP.get(), SoundSource.PLAYERS, 16f, 1f);
+        vehicle.level().addFreshEntity(aerialBombEntity);
     }
 
 }

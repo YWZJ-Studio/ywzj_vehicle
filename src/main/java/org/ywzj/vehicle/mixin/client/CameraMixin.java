@@ -42,6 +42,9 @@ public abstract class CameraMixin {
                         Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotXO, localVehiclePlayer.cameraAimRotX));
                 FirstPersonHandler.zRot = Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ);
             }
+            if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                FirstPersonHandler.zRot = Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ);
+            }
         }
     }
 

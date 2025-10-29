@@ -103,7 +103,7 @@ public class Quadcopter extends HelicopterVehicle {
         super.tick();
         if (level().isClientSide) {
             float cableLength = entityData.get(CABLE_LENGTH);
-            this.thirdPersonOffset = new Vec3(0, 3, -8 - cableLength * 1.5f);
+            this.thirdPersonDistance = 8 + cableLength * 1.5f;
         }
     }
 

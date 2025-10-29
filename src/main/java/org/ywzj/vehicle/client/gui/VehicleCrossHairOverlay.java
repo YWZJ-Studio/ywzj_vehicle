@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.gui;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -106,9 +107,10 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                 // 瞄准位置
-                Vec3 aimScreenPos = getHitScreenPos(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(),
-                        LocalVehiclePlayer.instance.cameraAimRotX,
-                        LocalVehiclePlayer.instance.cameraAimRotY,
+                Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+                Vec3 aimScreenPos = getHitScreenPos(camera.getPosition(),
+                        camera.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE,
+                        camera.getYRot(),
                         player);
                 if (aimScreenPos.z >= 0) {
                     screenAimXO = screenAimX;

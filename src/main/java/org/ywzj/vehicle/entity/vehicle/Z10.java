@@ -21,7 +21,6 @@ public class Z10 extends HelicopterVehicle {
 
     public Z10(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.thirdPersonOffset = new Vec3(0, 6, -9);
     }
 
     @Override
@@ -153,7 +152,7 @@ public class Z10 extends HelicopterVehicle {
         BaseVehicleWeaponData weaponDataRocketLeft = new BaseVehicleWeaponData();
         weaponDataRocketLeft.setName("rocket_left");
         weaponDataRocketLeft.setMaxCapacity(32);
-        weaponDataRocketLeft.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        weaponDataRocketLeft.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
         VehicleRocket vehicleRocketLeft = new VehicleRocket(this, rocketLeft, 3, weaponDataRocketLeft);
         vehicleRocketLeft.defineSyncData(rocketLeft.getSyncData());
         sightingSystem.weapons.add(vehicleRocketLeft);
@@ -175,7 +174,7 @@ public class Z10 extends HelicopterVehicle {
         BaseVehicleWeaponData weaponDataRocketRight = new BaseVehicleWeaponData();
         weaponDataRocketRight.setName("rocket_right");
         weaponDataRocketRight.setMaxCapacity(32);
-        weaponDataRocketRight.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        weaponDataRocketRight.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
         VehicleRocket vehicleRocketRight = new VehicleRocket(this, rocketRight, 4, weaponDataRocketRight);
         vehicleRocketRight.defineSyncData(rocketRight.getSyncData());
         sightingSystem.weapons.add(vehicleRocketRight);

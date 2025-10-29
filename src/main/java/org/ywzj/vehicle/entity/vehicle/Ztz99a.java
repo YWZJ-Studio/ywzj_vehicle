@@ -29,7 +29,6 @@ public class Ztz99a extends TrackedVehicle {
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleOBBs = struct.obbs();
             var weapons = data.createPartUnits(this);
-//            this.operatorUnits.addAll(weapons.values());
             List<WeaponUnit> weaponUnits = new ArrayList<>(weapons.values());
             for (int index = 0; index < weapons.size(); index++) {
                 this.seats.add(new Seat(index, weaponUnits.get(index)));

@@ -13,7 +13,6 @@ public class Hiace extends WheeledVehicle {
 
     public Hiace(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.thirdPersonOffset = new Vec3(0, 4, -7);
         physicsEngine.friction = 0.003f;
         forwardAcceleration = 0.013f;
         backwardAcceleration = 0.013f;

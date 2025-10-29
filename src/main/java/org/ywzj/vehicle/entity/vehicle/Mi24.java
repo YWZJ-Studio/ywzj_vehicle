@@ -1,20 +1,19 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.tacz.guns.api.entity.IGunOperator;
-import com.tacz.guns.api.item.builder.GunItemBuilder;
-import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.util.TaczHelper;
+import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 
 public class Mi24 extends HelicopterVehicle {
 
@@ -25,7 +24,6 @@ public class Mi24 extends HelicopterVehicle {
         this.xRotSpeedMax = 2f;
         this.yRotSpeedMax = 2f;
         this.zRotSpeedMax = 2f;
-        this.thirdPersonOffset = new Vec3(0, 6, -9);
     }
 
     @Override
@@ -45,7 +43,8 @@ public class Mi24 extends HelicopterVehicle {
 
     @Override
     public void initPartUnits() {
-        WeaponUnit turret = new WeaponUnit("mi24",
+        // 观瞄
+        WeaponUnit sightingSystem = new WeaponUnit("sighting_system",
                 0,
                 this,
                 new Vec3(0, 4.54d, -0.375d),
@@ -54,14 +53,43 @@ public class Mi24 extends HelicopterVehicle {
                 new Vec3(0, 0d, -6d),
                 new Vec3(0, 2.2d, 2d),
                 null);
-        turret.xRotSpeed = 60f / 20;
-        turret.yRotSpeed = 60f / 20;
-        turret.xRotMax = 45f;
-        turret.xRotMin = -13f;
-        turret.yRotMax = 45f;
-        turret.yRotMin = -45f;
-        this.partUnits.add(turret);
-        this.seats.add(new Seat(0, turret));
+        sightingSystem.setXRotSpeed(60f / 20);
+        sightingSystem.setYRotSpeed(60f / 20);
+        sightingSystem.setXRotMax(45f);
+        sightingSystem.setXRotMin(-13f);
+        sightingSystem.setYRotMax(90f);
+        sightingSystem.setYRotMin(-90f);
+        sightingSystem.setOperatorOnWeaponUnit(false);
+        sightingSystem.currentWeaponIndexHolder = sightingSystem.getSyncData().define(
+                SyncDataSerializers.INT,
+                sightingSystem::setCurrentWeaponIndex,
+                sightingSystem::getCurrentWeaponIndex,
+                0
+        );
+        this.partUnits.add(sightingSystem);
+        this.seats.add(new Seat(0, sightingSystem));
+        //todo: 测试航弹
+        WeaponUnit bomb = new WeaponUnit("bomb",
+                1,
+                this,
+                new Vec3(2.5d, 1d, 1d),
+                1f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        bomb.setXRotSpeed(0);
+        bomb.setYRotSpeed(0);
+        bomb.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(bomb);
+        BaseVehicleWeaponData weaponDataBomb = new BaseVehicleWeaponData();
+        weaponDataBomb.setName("bomb");
+        weaponDataBomb.setMaxCapacity(4);
+        weaponDataBomb.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AERIAL_BOMB.get())));
+        VehicleAerialBomb vehicleBomb = new VehicleAerialBomb(this, bomb, 0, weaponDataBomb);
+        vehicleBomb.defineSyncData(bomb.getSyncData());
+        sightingSystem.weapons.add(vehicleBomb);
+        this.partUnits.add(bomb);
     }
 
     @Override
@@ -80,25 +108,10 @@ public class Mi24 extends HelicopterVehicle {
         }
     }
 
-    private final ItemStack gunRPG = GunItemBuilder.create()
-            .setId(new ResourceLocation("tacz:rpg7"))
-            .setFireMode(FireMode.AUTO)
-            .setAmmoCount(1)
-            .setAmmoInBarrel(true)
-            .build();
-
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
-//            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-//            this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
-
-            IGunOperator.fromLivingEntity(this).draw(() -> gunRPG);
-            Vec3 v1 = this.getLookAngle();
-            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            TaczHelper.shoot(this.position().add(v2.scale(2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-            TaczHelper.shoot(this.position().add(v2.scale(-2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-
+        if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
         }
     }
 

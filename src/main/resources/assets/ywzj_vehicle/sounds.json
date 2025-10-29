@@ -10,20 +10,6 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.bullet_hit_outside"
   },
-  "missile_launch": {
-    "sounds": [
-      "ywzj_vehicle:misc/missile_start_light_001",
-      "ywzj_vehicle:misc/missile_start_light_002",
-      "ywzj_vehicle:misc/missile_start_light_003"
-    ],
-    "subtitle": "ywzj_vehicle.sounds.missile_launch"
-  },
-  "rocket_flying": {
-    "sounds": [
-      "ywzj_vehicle:misc/rocket_loop_very_close"
-    ],
-    "subtitle": "ywzj_vehicle.sounds.rocket_flying"
-  },
   "auto_cannon_shot": {
     "sounds": ["ywzj_vehicle:misc/auto_cannon_shot"],
     "subtitle": "ywzj_vehicle.sounds.auto_cannon_shot"
@@ -35,6 +21,44 @@
       "ywzj_vehicle:misc/cannon_125mm_shot_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.cannon_125mm_shot"
+  },
+  "rocket_launch": {
+    "sounds": [
+      "ywzj_vehicle:misc/rocket_start_01",
+      "ywzj_vehicle:misc/rocket_start_02",
+      "ywzj_vehicle:misc/rocket_start_03",
+      "ywzj_vehicle:misc/rocket_start_04"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.rocket_launch"
+  },
+  "missile_launch": {
+    "sounds": [
+      "ywzj_vehicle:misc/missile_start_light_01",
+      "ywzj_vehicle:misc/missile_start_light_02",
+      "ywzj_vehicle:misc/missile_start_light_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.missile_launch"
+  },
+  "rocket_flying": {
+    "sounds": ["ywzj_vehicle:misc/rocket_loop_very_close"],
+    "subtitle": "ywzj_vehicle.sounds.rocket_flying"
+  },
+  "bomb_drop": {
+    "sounds": ["ywzj_vehicle:misc/bomb_drop"],
+    "subtitle": "ywzj_vehicle.sounds.bomb_drop"
+  },
+  "bomb_whistle": {
+    "sounds": ["ywzj_vehicle:misc/bomb_whistle"],
+    "subtitle": "ywzj_vehicle.sounds.bomb_whistle"
+  },
+  "bombs_incoming": {
+    "sounds": [
+      "ywzj_vehicle:misc/bombs_incoming_01",
+      "ywzj_vehicle:misc/bombs_incoming_02",
+      "ywzj_vehicle:misc/bombs_incoming_03",
+      "ywzj_vehicle:misc/bombs_incoming_04"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.bombs_incoming"
   },
   "cannon_shell_drop": {
     "sounds": [
@@ -49,15 +73,11 @@
     "subtitle": "ywzj_vehicle.sounds.cannon_shell_drop"
   },
   "turret_turn_servo_h": {
-    "sounds": [
-      "ywzj_vehicle:misc/turret_turn_servo_h"
-    ],
+    "sounds": ["ywzj_vehicle:misc/turret_turn_servo_h"],
     "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_h"
   },
   "turret_turn_servo_v": {
-    "sounds": [
-      "ywzj_vehicle:misc/turret_turn_servo_v"
-    ],
+    "sounds": ["ywzj_vehicle:misc/turret_turn_servo_v"],
     "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_v"
   },
   "truck_engine_idle": {
