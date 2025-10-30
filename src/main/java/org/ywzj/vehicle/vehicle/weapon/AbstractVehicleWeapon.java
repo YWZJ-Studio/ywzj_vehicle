@@ -17,6 +17,9 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.Collections;
+import java.util.List;
+
 /** 可配置的抽象武器模块<br/>
  * @param <T> 配置数据结构
  */
@@ -48,7 +51,11 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
         this.reloadTimeHolder = syncData.define(SyncDataSerializers.INT, this::setReloadTime, this::getReloadTime, reloadTime);
     }
 
-    public abstract void shoot(Vec3 origin, float ammoXRot, float ammoYRot, LivingEntity shooter);
+    public abstract void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter);
+
+    public boolean check(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+        return true;
+    }
 
     public void onSwitchTo() {
         // 可选覆盖
@@ -86,12 +93,12 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
         Vec2 rot = weaponUnit.worldRot();
         int partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
         if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
-            sendShoot(this.getVehicle(), partUnitIndex, weaponUnit.ammoSpawnPosition(), rot.x, rot.y);
-            weaponUnit.countFire();
+            sendShoot(this.getVehicle(), partUnitIndex, Collections.singletonList(weaponUnit.ammoSpawnPosition()), rot.x, rot.y);
+            weaponUnit.countFire(1);
         } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
-            for (Vec3 pos : weaponUnit.ammoSpawnPositions()) {
-                sendShoot(this.getVehicle(), partUnitIndex, pos, rot.x, rot.y);
-            }
+            List<Vec3> ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
+            sendShoot(this.getVehicle(), partUnitIndex, ammoSpawnPositions, rot.x, rot.y);
+            weaponUnit.countFire(ammoSpawnPositions.size());
         }
         return true;
     }
@@ -109,14 +116,12 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = abstractVehicle.getId();
         action.partUnitIndex = weaponIndex;
         action.shoot = true;
-        action.ammoX = (float) ammoSpawnPosition.x;
-        action.ammoY = (float) ammoSpawnPosition.y;
-        action.ammoZ = (float) ammoSpawnPosition.z;
+        action.ammoSpawnPositions = ammoSpawnPositions;
         action.ammoXRot = ammoXRot;
         action.ammoYRot = ammoYRot;
         Channel.CHANNEL.sendToServer(action);
@@ -126,9 +131,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
         return remainAmmo > 0;
     }
 
-    public boolean consumeAmmo() {
-        if (remainAmmo > 0) {
-            remainAmmo--;
+    public boolean consumeAmmo(int count) {
+        if (remainAmmo >= count) {
+            remainAmmo -= count;
             return true;
         }
         return false;

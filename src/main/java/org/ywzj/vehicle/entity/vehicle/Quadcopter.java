@@ -219,7 +219,7 @@ public class Quadcopter extends HelicopterVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
 
     }
 

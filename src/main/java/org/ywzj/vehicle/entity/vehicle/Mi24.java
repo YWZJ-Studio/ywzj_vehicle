@@ -15,6 +15,8 @@ import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 
+import java.util.List;
+
 public class Mi24 extends HelicopterVehicle {
 
     public Mi24(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -109,9 +111,9 @@ public class Mi24 extends HelicopterVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
         }
     }
 

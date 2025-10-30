@@ -8,22 +8,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.client.gui.ScopeOverlay;
-import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
-public class VehicleMissile extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
+import java.util.List;
 
-    public VehicleMissile(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
+public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponData> {
+
+    public VehicleMissile(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleMissileWeaponData data) {
         super(vehicle, unit, index, data);
     }
 
     @Override
     @OnlyIn(Dist.CLIENT)
     public boolean doClientShoot() {
-        VehicleMissileWeaponData data = (VehicleMissileWeaponData) this.getData();
+        VehicleMissileWeaponData data = this.getData();
         WeaponUnit missileWeaponUnit = getWeaponUnit();
         if (missileWeaponUnit.parentWeaponUnitAim) {
             missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
@@ -39,8 +40,11 @@ public class VehicleMissile extends AbstractVehicleWeapon<BaseVehicleWeaponData>
     }
 
     @Override
-    public void shoot(Vec3 origin, float ammoXRot, float ammoYRot, LivingEntity shooter) {
-        if (isCoolingDown() || isReloading() || !consumeAmmo()) {
+    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+        if (!check(ammoSpawnPositions, ammoXRot, ammoYRot, shooter)) {
+            return;
+        }
+        if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
             return;
         }
         this.lastShootTime = System.currentTimeMillis();
@@ -49,9 +53,11 @@ public class VehicleMissile extends AbstractVehicleWeapon<BaseVehicleWeaponData>
         var data = this.getData();
 
         MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
-        missileEntity.shoot(this.getVehicle(), this.getName(), origin, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
-        vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
-        vehicle.level().addFreshEntity(missileEntity);
+        for (int index = 0; index < ammoSpawnPositions.size(); index += 1) {
+            missileEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPositions.get(index), ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+            vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
+            vehicle.level().addFreshEntity(missileEntity);
+        }
     }
 
 }

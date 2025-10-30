@@ -10,6 +10,8 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.List;
+
 public class Lav150 extends WheeledVehicle {
 
     public Lav150(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -63,10 +65,10 @@ public class Lav150 extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         if (weaponIndex == 0) {
             if (seats.get(0).partUnit instanceof WeaponUnit machineGunTurret) {
-                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+                machineGunTurret.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }
         }

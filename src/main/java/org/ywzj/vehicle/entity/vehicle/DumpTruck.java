@@ -16,6 +16,8 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
+import java.util.List;
+
 public class DumpTruck extends WheeledVehicle {
 
     private VehicleSound bedTurnSoundInstance;
@@ -125,7 +127,7 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
 //        if (weaponIndex < operatorUnits.size()) {
 //            if (seats.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
 //                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);

@@ -7,6 +7,8 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.List;
+
 public class VehicleCannon extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
 
     public VehicleCannon(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
@@ -14,21 +16,24 @@ public class VehicleCannon extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
     }
 
     @Override
-    public void shoot(Vec3 origin, float ammoXRot, float ammoYRot, LivingEntity shooter) {
-        if (isCoolingDown() || isReloading() || !consumeAmmo()) {
+    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
             return;
         }
         this.lastShootTime = System.currentTimeMillis();
 
         var vehicle = getVehicle();
         var data = this.getData();
-        BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, origin);
-        bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 0f);
 
-        bulletEntity.setDamage(data.getDamage());
-        bulletEntity.setHeadShot(data.getHeadshotMultiplier());
+        for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
+            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, ammoSpawnPosition);
+            bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 0f);
 
-        vehicle.level().addFreshEntity(bulletEntity);
+            bulletEntity.setDamage(data.getDamage());
+            bulletEntity.setHeadShot(data.getHeadshotMultiplier());
+
+            vehicle.level().addFreshEntity(bulletEntity);
+        }
     }
 
 }

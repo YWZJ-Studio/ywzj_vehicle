@@ -278,13 +278,13 @@ public class WeaponUnit extends RotatableUnit {
         }
     }
 
-    public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        shoot(ammoSpawnPosition, ammoXRot, ammoYRot, false);
+    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+        shoot(ammoSpawnPositions, ammoXRot, ammoYRot, false);
     }
 
-    public void shoot(Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot, boolean explosion) {
+    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, boolean explosion) {
         this.getCurrentWeapon().ifPresent(weapon -> {
-            weapon.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, owner);
+            weapon.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, owner);
         });
     }
 
@@ -464,8 +464,8 @@ public class WeaponUnit extends RotatableUnit {
         this.firingMode = firingMode;
     }
 
-    public void countFire() {
-        this.currentBoltIndex = (this.currentBoltIndex + 1) % bolts.size();
+    public void countFire(int times) {
+        this.currentBoltIndex = (this.currentBoltIndex + times) % bolts.size();
     }
 
     public OpticalSightType getOpticalSightType() {

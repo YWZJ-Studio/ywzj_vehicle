@@ -9,6 +9,8 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 
+import java.util.List;
+
 public class Hiace extends WheeledVehicle {
 
     public Hiace(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -87,7 +89,7 @@ public class Hiace extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
 //        if (weaponIndex < operatorUnits.size()) {
 //            if (seats.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
 //                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);

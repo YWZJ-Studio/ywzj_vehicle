@@ -120,7 +120,7 @@ public class PartUnit {
             if (entity instanceof AbstractVehicle vehicle) {
                 if (message.partUnitIndex < vehicle.getPartUnits().size()) {
                     if (message.shoot) {
-                        vehicle.shoot(message.partUnitIndex, new Vec3(message.ammoX, message.ammoY, message.ammoZ), message.ammoXRot, message.ammoYRot);
+                        vehicle.shoot(message.partUnitIndex, message.ammoSpawnPositions, message.ammoXRot, message.ammoYRot);
                     } else {
                         if (vehicle.getPartUnits().get(message.partUnitIndex) instanceof RotatableUnit rotatableUnit) {
                             rotatableUnit.xAimRot = message.xAimRot;

@@ -10,6 +10,8 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.RocketEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.List;
+
 public class VehicleRocket extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
 
     public VehicleRocket(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
@@ -17,8 +19,8 @@ public class VehicleRocket extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
     }
 
     @Override
-    public void shoot(Vec3 origin, float ammoXRot, float ammoYRot, LivingEntity shooter) {
-        if (isCoolingDown() || isReloading() || !consumeAmmo()) {
+    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
             return;
         }
         this.lastShootTime = System.currentTimeMillis();
@@ -27,9 +29,11 @@ public class VehicleRocket extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
         var data = this.getData();
 
         RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level());
-        rocketEntity.shoot(this.getVehicle(), this.getName(), origin, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
-        vehicle.level().playSound(null, vehicle, AllSounds.ROCKET_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
-        vehicle.level().addFreshEntity(rocketEntity);
+        for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
+            rocketEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+            vehicle.level().playSound(null, vehicle, AllSounds.ROCKET_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
+            vehicle.level().addFreshEntity(rocketEntity);
+        }
     }
 
 }

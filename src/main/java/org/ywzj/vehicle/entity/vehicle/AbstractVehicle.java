@@ -594,7 +594,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return new Vec3(d.x, d.y, d.z);
     }
 
-    public abstract void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot);
+    public abstract void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot);
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

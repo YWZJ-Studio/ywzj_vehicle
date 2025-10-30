@@ -12,6 +12,8 @@ import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 
+import java.util.List;
+
 public class Motorcycle extends WheeledVehicle {
 
     public Motorcycle(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -103,7 +105,7 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         // 喇叭声
     }
 

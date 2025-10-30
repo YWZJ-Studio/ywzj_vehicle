@@ -19,6 +19,8 @@ import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
 
+import java.util.List;
+
 public class Ka50 extends HelicopterVehicle {
 
     public Ka50(EntityType<? extends Mob> pEntityType, Level pLevel) {
@@ -139,7 +141,7 @@ public class Ka50 extends HelicopterVehicle {
                 new Vec3(0, 2d, 0d),
                 null);
         rocket.crosshairStyle = WeaponUnit.CrosshairStyle.RETICLE;
-        rocket.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        rocket.setFiringMode(WeaponUnit.FiringMode.SALVO);
         rocket.getBolts().clear();
         rocket.getBolts().add(new WeaponUnit.Bolt(new Vec3(1.8d, 0, 1d), 0.1f));
         rocket.getBolts().add(new WeaponUnit.Bolt(new Vec3(-1.8d, 0, 1d), 0.1f));
@@ -192,9 +194,9 @@ public class Ka50 extends HelicopterVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
             //todo: 测试
             if (weaponUnit.getCurrentWeapon().get().getIndex() == 0) {
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);

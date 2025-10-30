@@ -12,10 +12,13 @@ import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
+
+import java.util.List;
 
 public class Z10 extends HelicopterVehicle {
 
@@ -112,7 +115,7 @@ public class Z10 extends HelicopterVehicle {
         missile.setYRotSpeed(0);
         missile.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(missile);
-        BaseVehicleWeaponData weaponDataMissile = new BaseVehicleWeaponData();
+        VehicleMissileWeaponData weaponDataMissile = new VehicleMissileWeaponData();
         weaponDataMissile.setName("missile");
         weaponDataMissile.setMaxCapacity(8);
         weaponDataMissile.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
@@ -184,9 +187,9 @@ public class Z10 extends HelicopterVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
         }
     }
 

@@ -103,14 +103,14 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
         if (weaponIndex < seats.size()) {
             //todo 武器配置
             if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
                 if (weaponUnit.getName().getString().equals("ztz99a_turret")) {
 
                     // 测试主炮
-                    weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot, true);
+                    weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, true);
                     this.level().playSound(null, this, AllSounds.CANNON_125_MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
                     new Thread(() -> {
                         try {
@@ -123,7 +123,7 @@ public class Ztz99a extends TrackedVehicle {
 
 
                 } else {
-                    weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
+                    weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
                     this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
                 }
             }
