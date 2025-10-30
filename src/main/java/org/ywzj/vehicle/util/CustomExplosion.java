@@ -2,6 +2,8 @@ package org.ywzj.vehicle.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -14,6 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
+import org.ywzj.vehicle.all.AllConfigs;
 
 public class CustomExplosion {
 
@@ -40,31 +43,35 @@ public class CustomExplosion {
             }
         }
 
-        int minX = (int) Math.floor(pos.x - radius);
-        int maxX = (int) Math.ceil(pos.x + radius);
-        int minY = (int) Math.floor(pos.y - radius);
-        int maxY = (int) Math.ceil(pos.y + radius);
-        int minZ = (int) Math.floor(pos.z - radius);
-        int maxZ = (int) Math.ceil(pos.z + radius);
+        if (AllConfigs.common.explosionBreakBlocks.get()) {
+            int minX = (int) Math.floor(pos.x - radius);
+            int maxX = (int) Math.ceil(pos.x + radius);
+            int minY = (int) Math.floor(pos.y - radius);
+            int maxY = (int) Math.ceil(pos.y + radius);
+            int minZ = (int) Math.floor(pos.z - radius);
+            int maxZ = (int) Math.ceil(pos.z + radius);
 
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    BlockPos bpos = new BlockPos(x, y, z);
-                    double dist = Math.sqrt(bpos.distSqr(BlockPos.containing(pos)));
-                    if (dist > radius) continue;
-                    // 距离越远，破坏概率指数衰减
-                    double p = Math.exp(-dist * 1.2); // 1.2 为衰减系数，可调
-                    if (random.nextDouble() < p) {
-                        BlockState state = level.getBlockState(bpos);
-                        if (!state.isAir()) {
-                            level.destroyBlock(bpos, true);
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        BlockPos bpos = new BlockPos(x, y, z);
+                        double dist = Math.sqrt(bpos.distSqr(BlockPos.containing(pos)));
+                        if (dist > radius) continue;
+                        // 距离越远，破坏概率指数衰减
+                        double p = Math.exp(-dist * 0.1);
+                        if (random.nextDouble() < p) {
+                            BlockState state = level.getBlockState(bpos);
+                            float destroySpeed = state.getDestroySpeed(level, bpos);
+                            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50) {
+                                level.destroyBlock(bpos, false);
+                            }
                         }
                     }
                 }
             }
         }
 
+        level.playSound(source, BlockPos.containing(pos), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
         ExplosionEvent.Detonate detonateEvent = new ExplosionEvent.Detonate(level, vanillaExplosion, level.getEntitiesOfClass(Entity.class, box));
         MinecraftForge.EVENT_BUS.post(detonateEvent);
     }

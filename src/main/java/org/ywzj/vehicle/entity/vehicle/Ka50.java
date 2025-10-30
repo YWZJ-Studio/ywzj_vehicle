@@ -57,7 +57,7 @@ public class Ka50 extends HelicopterVehicle {
                 3f,
                 new Vec3(0, 0, 0),
                 new Vec3(0, 1.1d, -3d),
-                new Vec3(-0.2d, 2.1d, 3d),
+                new Vec3(-0.2d, 2.1d, 2.2d),
                 null);
         sightingSystem.setXRotSpeed(60f / 20);
         sightingSystem.setYRotSpeed(60f / 20);

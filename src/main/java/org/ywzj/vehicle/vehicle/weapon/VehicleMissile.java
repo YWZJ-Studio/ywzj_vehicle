@@ -52,8 +52,8 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         var vehicle = getVehicle();
         var data = this.getData();
 
-        MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
         for (int index = 0; index < ammoSpawnPositions.size(); index += 1) {
+            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
             missileEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPositions.get(index), ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(missileEntity);

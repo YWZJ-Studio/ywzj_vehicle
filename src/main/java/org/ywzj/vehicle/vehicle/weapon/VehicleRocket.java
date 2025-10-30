@@ -28,8 +28,8 @@ public class VehicleRocket extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
         var vehicle = getVehicle();
         var data = this.getData();
 
-        RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level());
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
+            RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level());
             rocketEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().playSound(null, vehicle, AllSounds.ROCKET_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(rocketEntity);

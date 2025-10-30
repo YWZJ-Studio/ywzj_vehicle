@@ -30,8 +30,8 @@ public class RocketEntityRenderer extends EntityRenderer<RocketEntity> {
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
-            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("bedrock/entity/missile_akd10"));
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/missile_akd10.png")));
+            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("bedrock/entity/rocket_57mm"));
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/rocket_57mm.png")));
 
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
         }

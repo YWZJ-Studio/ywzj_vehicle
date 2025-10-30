@@ -20,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PlayMessages;
-import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -126,9 +125,6 @@ public class MissileEntity extends AmmoEntity {
             if (resultB.getType() != HitResult.Type.MISS) {
                 // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
                 endVec = resultB.getLocation();
-//                //todo自己实现爆炸
-//                this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
-//                        AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
                 CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
                 this.kill();
                 return;
@@ -137,10 +133,8 @@ public class MissileEntity extends AmmoEntity {
             // 将单个命中是实体创建为单个内容的 list
             if (entityResult != null && entityResult.getEntity() != vehicle) {
                 //todo自己实现爆炸
-                this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
-                        AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+                CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
                 this.kill();
-                return;
             }
         }
     }
