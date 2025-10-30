@@ -8,6 +8,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -27,10 +28,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
-import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
+import org.ywzj.vehicle.util.CustomExplosion;
 import org.ywzj.vehicle.util.EntityUtil;
 
 import java.util.Collections;
@@ -64,8 +65,8 @@ public class BulletEntity extends AmmoEntity {
         super(type, worldIn);
     }
 
-    public BulletEntity(Level level, LivingEntity throwerIn, Vec3 startPos) {
-        this(level, throwerIn, startPos.x, startPos.y, startPos.z, false);
+    public BulletEntity(Level level, LivingEntity throwerIn, Vec3 startPos, boolean explosion) {
+        this(level, throwerIn, startPos.x, startPos.y, startPos.z, explosion);
     }
 
     public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z, boolean explosion) {
@@ -255,8 +256,9 @@ public class BulletEntity extends AmmoEntity {
 
         //todo自己实现爆炸
         if (explosion) {
-            this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
-                    AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+//            this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
+//                    AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+            CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
         }
 
         // 弹孔与点燃特效

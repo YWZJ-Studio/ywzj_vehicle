@@ -12,6 +12,7 @@ import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
@@ -87,7 +88,7 @@ public class Z10 extends HelicopterVehicle {
         autoCannon.setYRotMin(-90f);
         autoCannon.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(autoCannon);
-        BaseVehicleWeaponData weaponDataAutoCannon = new BaseVehicleWeaponData();
+        VehicleCannonWeaponData weaponDataAutoCannon = new VehicleCannonWeaponData();
         weaponDataAutoCannon.setName("auto_cannon");
         weaponDataAutoCannon.setMaxCapacity(120);
         weaponDataAutoCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get())));

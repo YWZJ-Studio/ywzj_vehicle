@@ -41,7 +41,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     public HelicopterVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.thirdPersonCenterOffset = new Vec3(0, 6, 0);
-        this.thirdPersonDistance = 12;
+        this.thirdPersonDistance = 14;
         this.soundDistance = 8;
         this.fuelCapacity = 0.25f;
         this.physicsEngine.lockCenterRot = true;

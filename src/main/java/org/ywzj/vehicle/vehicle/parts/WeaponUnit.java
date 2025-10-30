@@ -52,7 +52,7 @@ public class WeaponUnit extends RotatableUnit {
     // 操作员视角是否随武器站转动
     private boolean operatorOnWeaponUnit = true;
     // 开镜类型
-    private final OpticalSightType opticalSightType;
+    public OpticalSightType opticalSightType;
     // 最大开镜缩放倍率
     private final float zoomMax;
     // 当前开镜缩放倍率
@@ -279,10 +279,6 @@ public class WeaponUnit extends RotatableUnit {
     }
 
     public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
-        shoot(ammoSpawnPositions, ammoXRot, ammoYRot, false);
-    }
-
-    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, boolean explosion) {
         this.getCurrentWeapon().ifPresent(weapon -> {
             weapon.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, owner);
         });

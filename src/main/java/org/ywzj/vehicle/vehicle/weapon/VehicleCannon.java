@@ -2,16 +2,16 @@ package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.List;
 
-public class VehicleCannon extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
+public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData> {
 
-    public VehicleCannon(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
+    public VehicleCannon(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleCannonWeaponData data) {
         super(vehicle, unit, index, data);
     }
 
@@ -26,7 +26,7 @@ public class VehicleCannon extends AbstractVehicleWeapon<BaseVehicleWeaponData> 
         var data = this.getData();
 
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
-            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, ammoSpawnPosition);
+            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, ammoSpawnPosition, getData().isExplosion());
             bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, 10.0f, 0f);
 
             bulletEntity.setDamage(data.getDamage());

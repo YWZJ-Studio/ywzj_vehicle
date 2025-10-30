@@ -105,8 +105,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 // 瞄准位置
                 Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
                 Vec3 aimScreenPos = getHitScreenPos(camera.getPosition(),
-                        camera.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE,
-                        camera.getYRot(),
+                        player.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE,
+                        player.getYRot(),
                         player);
                 if (aimScreenPos.z >= 0) {
                     screenAimXO = screenAimX;
