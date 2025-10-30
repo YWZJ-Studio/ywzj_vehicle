@@ -55,6 +55,31 @@ public class RenderHelper {
         poseStack.popPose();
     }
 
+    public static void drawRectByCorner(GuiGraphics guiGraphics, int left, int right, int top, int bottom, int color, float scale) {
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.scale(scale, scale, scale);
+            // 上边框
+            for (int i = left; i <= right; i++) {
+                guiGraphics.fill(i, top, i + 1, top + 1, color);
+            }
+            // 下边框
+            for (int i = left; i <= right; i++) {
+                guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
+            }
+            // 左边框
+            for (int j = top; j <= bottom; j++) {
+                guiGraphics.fill(left, j, left + 1, j + 1, color);
+            }
+            // 右边框
+            for (int j = top; j <= bottom; j++) {
+                guiGraphics.fill(right, j, right + 1, j + 1, color);
+            }
+        }
+        poseStack.popPose();
+    }
+
     public static void drawRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int color, float scale) {
         int halfWidth = width / 2;
         int halfHeight = height / 2;
@@ -62,12 +87,10 @@ public class RenderHelper {
         int right = x + halfWidth;
         int top = y - halfHeight;
         int bottom = y + halfHeight;
-
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
             poseStack.scale(scale, scale, scale);
-
             // 上边框
             for (int i = left; i <= right; i++) {
                 guiGraphics.fill(i, top, i + 1, top + 1, color);

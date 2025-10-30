@@ -3,6 +3,7 @@ package org.ywzj.vehicle.custom.weapon;
 import com.google.gson.JsonElement;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;

@@ -37,13 +37,17 @@ import java.util.Optional;
  */
 public class WeaponUnit extends RotatableUnit {
 
-    // 炮闩偏移，为武器枢轴相对于载具枢轴的偏移
-    private final Vec3 boltOffset;
-    // 炮管长度，为发射物生成位置与炮闩位置的距离
-    private final float barrelLength;
-    // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于炮闩的偏移
+    // 武器站枢轴偏移，为武器站枢轴相对于载具枢轴的偏移
+    private final Vec3 pivotOffset;
+    // 武器站炮闩
+    private final List<Bolt> bolts = new ArrayList<>();
+    // 当前使用的炮闩
+    private int currentBoltIndex;
+    // 发射模式
+    private FiringMode firingMode;
+    // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于武器站枢轴的偏移
     private final Vec3 opticalSightOffset;
-    // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于炮闩的偏移
+    // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于武器站枢轴的偏移
     private final Vec3 operatorViewOffset;
     // 操作员视角是否随武器站转动
     private boolean operatorOnWeaponUnit = true;
@@ -59,10 +63,51 @@ public class WeaponUnit extends RotatableUnit {
     private final List<WeaponUnit> subWeaponUnits = new ArrayList<>();
     // 本武器站所附着于的武器站
     private WeaponUnit baseWeaponUnit;
-
+    // 光瞄火控
     private boolean stabilizer;
     private Vec3 aimLockPosition;
     private Entity aimLockEntity;
+    public boolean parentWeaponUnitAim;
+    // 第三人称准心样式
+    public CrosshairStyle crosshairStyle;
+
+    public static class Bolt {
+
+        // 炮闩偏移，为武器枢轴相对于武器站枢轴的偏移
+        public final Vec3 offset;
+        // 炮管长度，为发射物生成位置与武器枢轴位置的距离
+        public final float barrelLength;
+
+        public Bolt(Vec3 offset, float barrelLength) {
+            this.offset = offset;
+            this.barrelLength = barrelLength;
+        }
+
+    }
+
+    public enum FiringMode {
+        // 轮射
+        RIPPLE,
+        // 齐射
+        SALVO
+    }
+
+    public enum OpticalSightType {
+        // 不能开镜
+        NONE,
+        // 以操作员视角开镜
+        OPERATOR,
+        // 以观瞄视角开镜（光学瞄具）
+        OPTICAL_SCOPE,
+        // 以观瞄视角开镜（模拟电视）
+        CRT
+    }
+
+    public enum CrosshairStyle {
+        CIRCLE,
+        SQUARE,
+        RETICLE
+    }
 
     private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
     private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
@@ -82,21 +127,11 @@ public class WeaponUnit extends RotatableUnit {
         );
     }
 
-    public enum OpticalSightType {
-        // 不能开镜
-        NONE,
-        // 以操作员视角开镜
-        OPERATOR,
-        // 以观瞄视角开镜（光学瞄具）
-        OPTICAL_SCOPE,
-        // 以观瞄视角开镜（模拟电视）
-        CRT
-    }
-
     public WeaponUnit(WeaponUnitData data, int index, AbstractVehicle vehicle) {
         super(Component.translatable(data.getName()), index, vehicle);
-        this.boltOffset = data.getBoltOffset();
-        this.barrelLength = data.getBarrelLength();
+        this.pivotOffset = data.getBoltOffset();
+        this.bolts.add(new Bolt(Vec3.ZERO, data.getBarrelLength()));
+        this.firingMode = FiringMode.RIPPLE;
         this.opticalSightOffset = data.getOpticalSightOffset();
         this.operatorViewOffset = data.getOperatorOffset();
         this.seatOffset = data.getSeatOffset();
@@ -141,15 +176,16 @@ public class WeaponUnit extends RotatableUnit {
 
     @Deprecated
     public WeaponUnit(String name, int index, AbstractVehicle vehicle,
-                      Vec3 boltOffset, float barrelLength,
+                      Vec3 pivotOffset, float barrelLength,
                       Vec3 opticalSightOffset, Vec3 operatorViewOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(name, index, vehicle);
 
         this.zoomMax = 8;
         this.zoom = 1;
 
-        this.boltOffset = boltOffset;
-        this.barrelLength = barrelLength;
+        this.pivotOffset = pivotOffset;
+        this.bolts.add(new Bolt(Vec3.ZERO, barrelLength));
+        this.firingMode = FiringMode.RIPPLE;
         this.opticalSightOffset = opticalSightOffset;
         this.operatorViewOffset = operatorViewOffset;
         this.seatOffset = seatOffset;
@@ -183,7 +219,7 @@ public class WeaponUnit extends RotatableUnit {
     @OnlyIn(Dist.CLIENT)
     public void tickStabilizer() {
         if (stabilizer && aimLockPosition != null) {
-            BlockHitResult result = vehicle.level().clip(new ClipContext(worldBoltPosition(), aimLockPosition, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
+            BlockHitResult result = vehicle.level().clip(new ClipContext(worldPivotPosition(), aimLockPosition, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
             if (result.getType() != HitResult.Type.MISS) {
                 aimLockEntity = null;
             }
@@ -270,25 +306,38 @@ public class WeaponUnit extends RotatableUnit {
     }
 
     public Vec2 aimRot(Vec3 worldPos) {
-        Vec3 boltWorldPos = worldBoltPosition();
-        Vec3 worldAim = new Vec3(worldPos.x - boltWorldPos.x, worldPos.y - boltWorldPos.y, worldPos.z - boltWorldPos.z);
+        Vec3 pivotWorldPos = worldPivotPosition();
+        Vec3 worldAim = new Vec3(worldPos.x - pivotWorldPos.x, worldPos.y - pivotWorldPos.y, worldPos.z - pivotWorldPos.z);
         return vecToRot(worldAim);
     }
 
     public Vec3 aimHitPosition() {
-        Vec3 start = worldBoltPosition();
+        Vec3 start = worldPivotPosition();
         Vec3 end = start.add(worldVec().normalize().scale(256));
         return vehicle.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle)).getLocation();
     }
 
-    public Vec3 ammoSpawnPosition() {
-        Vec3 barrelOffset = worldVec().normalize().scale(barrelLength);
-        return worldBoltPosition().add(barrelOffset);
+    public List<Vec3> ammoSpawnPositions() {
+        List<Vec3> positions = new ArrayList<>();
+        for (int boltIndex = 0; boltIndex < bolts.size(); boltIndex += 1) {
+            positions.add(ammoSpawnPosition(boltIndex));
+        }
+        return positions;
     }
 
-    public Vec3 worldBoltPosition() {
-        Vector4d offset = rotatedOffsetWithBaseRot(this, this.boltOffset.x, this.boltOffset.z);
-        Vec3 boltPosition = vehicle.position().add(new Vec3(offset.x, boltOffset.y, offset.y));
+    public Vec3 ammoSpawnPosition() {
+        return ammoSpawnPosition(currentBoltIndex);
+    }
+
+    public Vec3 ammoSpawnPosition(int boltIndex) {
+        Bolt bolt = bolts.get(boltIndex < 0 || boltIndex >= bolts.size() ? currentBoltIndex : boltIndex);
+        Vec3 barrelOffset = worldVec().normalize().scale(bolt.barrelLength);
+        return worldPosition(pivotOffset.add(bolt.offset)).add(barrelOffset);
+    }
+
+    public Vec3 worldPivotPosition() {
+        Vector4d offset = rotatedOffsetWithBaseRot(this, this.pivotOffset.x, this.pivotOffset.z);
+        Vec3 boltPosition = vehicle.position().add(new Vec3(offset.x, pivotOffset.y, offset.y));
         return vehicle.relativeRotPos(boltPosition);
     }
 
@@ -296,21 +345,21 @@ public class WeaponUnit extends RotatableUnit {
         if (opticalSightOffset == null) {
             return worldOwnerViewPosition();
         }
-        return worldPosition(boltOffset.add(opticalSightOffset));
+        return worldPosition(pivotOffset.add(opticalSightOffset));
     }
 
     @Override
     public Vec3 worldOwnerViewPosition() {
         if (!operatorOnWeaponUnit) {
-            Vec3 offsetFromVehicle = boltOffset.add(operatorViewOffset);
+            Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
             Vector4d offsetWithBaseRot = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
             return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)));
         }
         if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
-            return worldPosition(boltOffset.add(new Vec3(0, eyeHeight, 0)));
+            return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));
         }
-        return worldPosition(boltOffset.add(operatorViewOffset));
+        return worldPosition(pivotOffset.add(operatorViewOffset));
     }
 
     @Override
@@ -377,14 +426,14 @@ public class WeaponUnit extends RotatableUnit {
      */
     private Vector4d rotatedOffsetWithBaseRot(WeaponUnit weaponUnit, double offsetX, double offsetZ) {
         if (weaponUnit.baseWeaponUnit == null) {
-            return new Vector4d(weaponUnit.boltOffset.x, weaponUnit.boltOffset.z, offsetX, offsetZ);
+            return new Vector4d(weaponUnit.pivotOffset.x, weaponUnit.pivotOffset.z, offsetX, offsetZ);
         }
         Vector4d pivotAndTargetOffset = rotatedOffsetWithBaseRot(weaponUnit.baseWeaponUnit, offsetX, offsetZ);
         float rot = Math.toRadians(weaponUnit.baseWeaponUnit.yRot);
         float cos = Math.cos(rot);
         float sin = Math.sin(rot);
-        float dx1 = (float) (weaponUnit.boltOffset.x - pivotAndTargetOffset.x);
-        float dy1 = (float) (weaponUnit.boltOffset.z - pivotAndTargetOffset.y);
+        float dx1 = (float) (weaponUnit.pivotOffset.x - pivotAndTargetOffset.x);
+        float dy1 = (float) (weaponUnit.pivotOffset.z - pivotAndTargetOffset.y);
         float dx2 = (float) (pivotAndTargetOffset.z - pivotAndTargetOffset.x);
         float dy2 = (float) (pivotAndTargetOffset.w - pivotAndTargetOffset.y);
         return new Vector4d(pivotAndTargetOffset.x + dx1 * cos - dy1 * sin,
@@ -403,6 +452,26 @@ public class WeaponUnit extends RotatableUnit {
         return new Vec3(offset.x + dx * cos - dy * sin, offsetFromVehicle.y, offset.y + dx * sin + dy * cos);
     }
 
+    public List<Bolt> getBolts() {
+        return bolts;
+    }
+
+    public FiringMode getFiringMode() {
+        return firingMode;
+    }
+
+    public void setFiringMode(FiringMode firingMode) {
+        this.firingMode = firingMode;
+    }
+
+    public void countFire() {
+        this.currentBoltIndex = (this.currentBoltIndex + 1) % bolts.size();
+    }
+
+    public OpticalSightType getOpticalSightType() {
+        return opticalSightType;
+    }
+
     public float getZoom() {
         return zoom;
     }
@@ -413,10 +482,6 @@ public class WeaponUnit extends RotatableUnit {
         } else {
             zoom = zoomMax;
         }
-    }
-
-    public OpticalSightType getOpticalSightType() {
-        return opticalSightType;
     }
 
     public boolean isStabilizerOn() {
@@ -444,12 +509,12 @@ public class WeaponUnit extends RotatableUnit {
         } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
             aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0).getLocation();
         }
-        Vec3 worldBoltPosition = worldBoltPosition();
-        Vec3 aimDirection = aimLockPosition.subtract(worldBoltPosition);
+        Vec3 worldPivotPosition = worldPivotPosition();
+        Vec3 aimDirection = aimLockPosition.subtract(worldPivotPosition);
         AABB aabb = vehicle.getBoundingBox()
                 .expandTowards(aimDirection)
                 .inflate(1.0D, 1.0D, 1.0D);
-        EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(vehicle, worldBoltPosition, aimLockPosition, aabb,
+        EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(vehicle, worldPivotPosition, aimLockPosition, aabb,
                 entity -> !entity.isSpectator() && !vehicle.getPassengers().contains(entity),
                 java.lang.Math.pow(Minecraft.getInstance().options.renderDistance().get() * 16, 2));
         if (entityHitResult != null) {
@@ -526,4 +591,5 @@ public class WeaponUnit extends RotatableUnit {
     public int getCurrentWeaponIndex() {
         return currentWeaponIndex;
     }
+
 }

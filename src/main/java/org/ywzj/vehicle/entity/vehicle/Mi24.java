@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 

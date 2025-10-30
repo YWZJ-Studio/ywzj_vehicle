@@ -1,24 +1,23 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.tacz.guns.api.item.builder.GunItemBuilder;
-import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
 
 public class Ka50 extends HelicopterVehicle {
 
@@ -83,6 +82,7 @@ public class Ka50 extends HelicopterVehicle {
                 new Vec3(1, 1.3d, 2.2d),
                 new Vec3(1, 1d, 2.2d),
                 null);
+        autoCannon.crosshairStyle = WeaponUnit.CrosshairStyle.SQUARE;
         autoCannon.setXRotSpeed(60f / 20);
         autoCannon.setYRotSpeed(60f / 20);
         autoCannon.setXRotMax(45f);
@@ -99,6 +99,62 @@ public class Ka50 extends HelicopterVehicle {
         vehicleCannon.defineSyncData(autoCannon.getSyncData());
         sightingSystem.weapons.add(vehicleCannon);
         this.partUnits.add(autoCannon);
+        // 导弹挂架
+        WeaponUnit missile = new WeaponUnit("missile",
+                2,
+                this,
+                new Vec3(0, 1d, 0),
+                0f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        missile.parentWeaponUnitAim = true;
+        missile.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
+        missile.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        missile.getBolts().clear();
+        missile.getBolts().add(new WeaponUnit.Bolt(new Vec3(2.8d, 0, 1d), 0.1f));
+        missile.getBolts().add(new WeaponUnit.Bolt(new Vec3(-2.8d, 0, 1d), 0.1f));
+        missile.setXRotSpeed(0);
+        missile.setYRotSpeed(0);
+        missile.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(missile);
+        VehicleMissileWeaponData weaponDataMissile = new VehicleMissileWeaponData();
+        weaponDataMissile.setName("missile");
+        weaponDataMissile.setMaxCapacity(8);
+        weaponDataMissile.setXRotMax(30);
+        weaponDataMissile.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        VehicleMissile vehicleMissile = new VehicleMissile(this, missile, 1, weaponDataMissile);
+        vehicleMissile.defineSyncData(missile.getSyncData());
+        sightingSystem.weapons.add(vehicleMissile);
+        this.partUnits.add(missile);
+        // 火箭弹挂架
+        WeaponUnit rocket = new WeaponUnit("rocket",
+                3,
+                this,
+                new Vec3(0, 1d, 0),
+                0f,
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 0.6d, 1.2d),
+                new Vec3(0, 2d, 0d),
+                null);
+        rocket.crosshairStyle = WeaponUnit.CrosshairStyle.RETICLE;
+        rocket.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        rocket.getBolts().clear();
+        rocket.getBolts().add(new WeaponUnit.Bolt(new Vec3(1.8d, 0, 1d), 0.1f));
+        rocket.getBolts().add(new WeaponUnit.Bolt(new Vec3(-1.8d, 0, 1d), 0.1f));
+        rocket.setXRotSpeed(0);
+        rocket.setYRotSpeed(0);
+        rocket.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(rocket);
+        BaseVehicleWeaponData weaponDataRocket = new BaseVehicleWeaponData();
+        weaponDataRocket.setName("rocket");
+        weaponDataRocket.setMaxCapacity(32);
+        weaponDataRocket.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
+        VehicleRocket vehicleRocket = new VehicleRocket(this, rocket, 2, weaponDataRocket);
+        vehicleRocket.defineSyncData(rocket.getSyncData());
+        sightingSystem.weapons.add(vehicleRocket);
+        this.partUnits.add(rocket);
     }
 
 //    @Override
@@ -135,37 +191,15 @@ public class Ka50 extends HelicopterVehicle {
         }
     }
 
-    private final ItemStack gunRPG = GunItemBuilder.create()
-            .setId(new ResourceLocation("tacz:rpg7"))
-            .setFireMode(FireMode.AUTO)
-            .setAmmoCount(1)
-            .setAmmoInBarrel(true)
-            .build();
-    private int count;
-
     @Override
     public void shoot(int weaponIndex, Vec3 ammoSpawnPosition, float ammoXRot, float ammoYRot) {
-        if (seats.get(weaponIndex).partUnit instanceof WeaponUnit weaponUnit) {
+        if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-            this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
-
-//            IGunOperator.fromLivingEntity(this).draw(() -> gunRPG);
-//            Vec3 v1 = this.getLookAngle();
-//            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-//            TaczHelper.shoot(this.position().add(v2.scale(2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-//            TaczHelper.shoot(this.position().add(v2.scale(-2)), gunRPG, () -> this.getXRot() - 10, this::getYRot, false, this, null);
-
-            //todo: 测试导弹
-            //todo: 导弹name从武器站当前武器的配置名取
-//            Vec3 v1 = this.getLookAngle();
-//            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-//            Vec3 missilePosLeft = this.position().add(v2.scale(2));
-//            Vec3 missilePosRight = this.position().add(v2.scale(-2));
-//            count += 1;
-//            weaponUnit.shoot(count % 2 ==0 ? missilePosLeft : missilePosRight, ammoXRot, ammoYRot);
-
+            //todo: 测试
+            if (weaponUnit.getCurrentWeapon().get().getIndex() == 0) {
+                this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
+            }
         }
-
     }
 
 }

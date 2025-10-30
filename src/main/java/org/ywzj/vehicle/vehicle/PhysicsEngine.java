@@ -274,8 +274,8 @@ public class PhysicsEngine {
     public void recoil(WeaponUnit weaponUnit) {
         Vec3 fireDirection = weaponUnit.worldVec();
         Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
-        Vector3f forceStartLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldBoltPosition().add(fireDirection.scale(5)).toVector3f(), axes);
-        Vector3f forcePointLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldBoltPosition().toVector3f(), axes);
+        Vector3f forceStartLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldPivotPosition().add(fireDirection.scale(5)).toVector3f(), axes);
+        Vector3f forcePointLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldPivotPosition().toVector3f(), axes);
         // 后坐力方向在局部坐标系下的矢量
         Vector3f force = new Vector3f(forcePointLocal).sub(forceStartLocal);
         Vector2f fc = getPlaneXY(force, forcePointLocal);

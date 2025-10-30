@@ -11,7 +11,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -83,11 +83,16 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
             return false;
         }
         lastShootTime = System.currentTimeMillis();
-        Vec3 ammoSpawnPosition = weaponUnit.ammoSpawnPosition();
         Vec2 rot = weaponUnit.worldRot();
         int partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
-        sendShoot(this.getVehicle(), partUnitIndex, ammoSpawnPosition, rot.x, rot.y);
-
+        if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
+            sendShoot(this.getVehicle(), partUnitIndex, weaponUnit.ammoSpawnPosition(), rot.x, rot.y);
+            weaponUnit.countFire();
+        } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
+            for (Vec3 pos : weaponUnit.ammoSpawnPositions()) {
+                sendShoot(this.getVehicle(), partUnitIndex, pos, rot.x, rot.y);
+            }
+        }
         return true;
     }
 

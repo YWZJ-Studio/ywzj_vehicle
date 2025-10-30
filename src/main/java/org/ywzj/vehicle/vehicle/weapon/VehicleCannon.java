@@ -2,7 +2,7 @@ package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;

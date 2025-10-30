@@ -26,8 +26,7 @@ import org.ywzj.vehicle.util.EntityUtil;
 public class RocketEntity extends AmmoEntity {
 
     public AbstractVehicle vehicle;
-    public Component name;
-    public float speed = 5f;
+    public float speed = 8f;
     private VehicleSound sound;
 
     public RocketEntity(EntityType<? extends Projectile> entityType, Level level) {

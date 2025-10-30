@@ -78,7 +78,7 @@ public class MissileEntity extends AmmoEntity {
             if (vehicle != null) {
                 if (vehicle.getOwnOperatorUnit((LivingEntity) getOwner()) instanceof WeaponUnit weaponUnit) {
                     Vec2 rot = weaponUnit.worldRot();
-                    Vec3 start = weaponUnit.worldBoltPosition();
+                    Vec3 start = weaponUnit.worldPivotPosition();
                     Vec3 dir = VectorUtil.calculateViewVector(rot.x, rot.y).normalize();
                     Vec3 pos = this.position();
                     // 计算实体在驾束射线上的投影点

@@ -12,6 +12,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
@@ -21,14 +22,19 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 
-import static org.ywzj.vehicle.util.RenderHelper.drawRect;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.ywzj.vehicle.util.RenderHelper.drawRectByCorner;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 
 public class ScopeOverlay implements IGuiOverlay {
 
     public static float fov;
     public static int color = 0xFF00FF00;
+    public static ConcurrentHashMap<Long, String> tips = new ConcurrentHashMap<>();
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -100,33 +106,51 @@ public class ScopeOverlay implements IGuiOverlay {
         HelicopterControlOverlay.renderHeightInfo(guiGraphics, centerX, centerY, vehicle);
         guiGraphics.pose().pushPose();
         {
+            // 提示信息
             guiGraphics.pose().translate(centerX, centerY, 0);
             if (!LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, "激光制导中", 0, -45, color);
+                tips.clear();
+            }
+            if (!tips.isEmpty()) {
+                for (Map.Entry<Long, String> tip : tips.entrySet()) {
+                    if (tip.getKey() + 3000 < System.currentTimeMillis()) {
+                        tips.remove(tip.getKey());
+                        continue;
+                    }
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, tip.getValue(), 0, -45, color);
+                }
             }
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
-                //todo 导弹配置里有射界，暂时写死
-//                if (LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
-//                    if (Math.abs(weaponUnit.yRot) > 15 || weaponUnit.xRot < -11.5 || weaponUnit.xRot > 33.5) {
-//                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, "超出导弹射界", 0, -45, color);
-//                    }
-//                }
-                guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
-                int baseX = 0;
-                int baseY = 140;
-                float xRotRange = weaponUnit.getXRotMax() - weaponUnit.getXRotMin();
-                float yRotRange = weaponUnit.getYRotMax() - weaponUnit.getYRotMin();
-                drawRect(guiGraphics, baseX, baseY, (int) yRotRange, (int) xRotRange, color, 1f);
-                //todo 导弹配置里有射界，暂时写死
-//                drawRect(guiGraphics, baseX, baseY - 5, 30, 45, color, 1f);
-//                int x = (int) (weaponUnit.yRot - weaponUnit.getYRotMin());
-//                int y = (int) (weaponUnit.xRot - weaponUnit.getXRotMin());
-//                baseX -= (int) (yRotRange / 2);
-//                baseY -= (int) (xRotRange / 2);
-//                guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
-//                guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
-//                guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
-//                guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
+                weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                    if (vehicleWeapon instanceof VehicleMissile vehicleMissile) {
+                        VehicleMissileWeaponData vehicleMissileWeaponData = (VehicleMissileWeaponData) vehicleMissile.getData();
+                        guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
+                        int baseX = 0;
+                        int baseY = 140;
+                        // 光瞄视野框
+                        drawRectByCorner(guiGraphics,
+                                (int) (baseX + weaponUnit.getYRotMin()),
+                                (int) (baseX + weaponUnit.getYRotMax()),
+                                (int) (baseY + weaponUnit.getXRotMin()),
+                                (int) (baseY + weaponUnit.getXRotMax()),
+                                color, 1f);
+                        // 导弹射界框
+                        drawRectByCorner(guiGraphics,
+                                (int) (baseX + vehicleMissileWeaponData.getYRotMin()),
+                                (int) (baseX + vehicleMissileWeaponData.getYRotMax()),
+                                (int) (baseY + vehicleMissileWeaponData.getXRotMin()),
+                                (int) (baseY + vehicleMissileWeaponData.getXRotMax()),
+                                color, 1f);
+                        int x = (int) weaponUnit.yRot;
+                        int y = (int) weaponUnit.xRot;
+                        // 光瞄指向十字
+                        guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
+                        guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
+                        guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
+                        guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
+                    }
+                });
             }
         }
         guiGraphics.pose().popPose();

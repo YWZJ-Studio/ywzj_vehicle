@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.weapon.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
@@ -75,6 +75,7 @@ public class Z10 extends HelicopterVehicle {
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
+        autoCannon.crosshairStyle = WeaponUnit.CrosshairStyle.SQUARE;
         autoCannon.setXRotSpeed(60f / 20);
         autoCannon.setYRotSpeed(60f / 20);
         autoCannon.setXRotMax(45f);
@@ -91,94 +92,61 @@ public class Z10 extends HelicopterVehicle {
         vehicleCannon.defineSyncData(autoCannon.getSyncData());
         sightingSystem.weapons.add(vehicleCannon);
         this.partUnits.add(autoCannon);
-        // 导弹挂架左
-        WeaponUnit missileLeft = new WeaponUnit("missile_left",
+        // 导弹挂架
+        WeaponUnit missile = new WeaponUnit("missile",
                 2,
                 this,
-                new Vec3(2.5d, 1d, 1d),
+                new Vec3(0, 1d, 0),
                 0f,
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        missileLeft.setXRotSpeed(0);
-        missileLeft.setYRotSpeed(0);
-        missileLeft.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(missileLeft);
-        BaseVehicleWeaponData weaponDataMissileLeft = new BaseVehicleWeaponData();
-        weaponDataMissileLeft.setName("missile_left");
-        weaponDataMissileLeft.setMaxCapacity(8);
-        weaponDataMissileLeft.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
-        VehicleMissile vehicleMissileLeft = new VehicleMissile(this, missileLeft, 1, weaponDataMissileLeft);
-        vehicleMissileLeft.defineSyncData(missileLeft.getSyncData());
-        sightingSystem.weapons.add(vehicleMissileLeft);
-        this.partUnits.add(missileLeft);
-        // 导弹挂架右
-        WeaponUnit missileRight = new WeaponUnit("missile_right",
+        missile.parentWeaponUnitAim = true;
+        missile.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
+        missile.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        missile.getBolts().clear();
+        missile.getBolts().add(new WeaponUnit.Bolt(new Vec3(2.5d, 0, 1d), 0.1f));
+        missile.getBolts().add(new WeaponUnit.Bolt(new Vec3(-2.5d, 0, 1d), 0.1f));
+        missile.setXRotSpeed(0);
+        missile.setYRotSpeed(0);
+        missile.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(missile);
+        BaseVehicleWeaponData weaponDataMissile = new BaseVehicleWeaponData();
+        weaponDataMissile.setName("missile");
+        weaponDataMissile.setMaxCapacity(8);
+        weaponDataMissile.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
+        VehicleMissile vehicleMissile = new VehicleMissile(this, missile, 1, weaponDataMissile);
+        vehicleMissile.defineSyncData(missile.getSyncData());
+        sightingSystem.weapons.add(vehicleMissile);
+        this.partUnits.add(missile);
+        // 火箭弹挂架
+        WeaponUnit rocket = new WeaponUnit("rocket",
                 3,
                 this,
-                new Vec3(-2.5d, 1d, 1d),
+                new Vec3(0, 1d, 0),
                 0f,
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        missileRight.setXRotSpeed(0);
-        missileRight.setYRotSpeed(0);
-        missileRight.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(missileRight);
-        BaseVehicleWeaponData weaponDataMissileRight = new BaseVehicleWeaponData();
-        weaponDataMissileRight.setName("missile_right");
-        weaponDataMissileRight.setMaxCapacity(8);
-        weaponDataMissileRight.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
-        VehicleMissile vehicleMissileRight = new VehicleMissile(this, missileRight, 2, weaponDataMissileRight);
-        vehicleMissileRight.defineSyncData(missileRight.getSyncData());
-        sightingSystem.weapons.add(vehicleMissileRight);
-        this.partUnits.add(missileRight);
-        // 火箭弹挂架左
-        WeaponUnit rocketLeft = new WeaponUnit("rocket_left",
-                4,
-                this,
-                new Vec3(1.5d, 1d, 1d),
-                0f,
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 2d, 0d),
-                null);
-        rocketLeft.setXRotSpeed(0);
-        rocketLeft.setYRotSpeed(0);
-        rocketLeft.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(rocketLeft);
-        BaseVehicleWeaponData weaponDataRocketLeft = new BaseVehicleWeaponData();
-        weaponDataRocketLeft.setName("rocket_left");
-        weaponDataRocketLeft.setMaxCapacity(32);
-        weaponDataRocketLeft.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
-        VehicleRocket vehicleRocketLeft = new VehicleRocket(this, rocketLeft, 3, weaponDataRocketLeft);
-        vehicleRocketLeft.defineSyncData(rocketLeft.getSyncData());
-        sightingSystem.weapons.add(vehicleRocketLeft);
-        this.partUnits.add(rocketLeft);
-        // 火箭弹挂架右
-        WeaponUnit rocketRight = new WeaponUnit("rocket_right",
-                5,
-                this,
-                new Vec3(-1.5d, 1d, 1d),
-                0f,
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 2d, 0d),
-                null);
-        rocketRight.setXRotSpeed(0);
-        rocketRight.setYRotSpeed(0);
-        rocketRight.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(rocketRight);
-        BaseVehicleWeaponData weaponDataRocketRight = new BaseVehicleWeaponData();
-        weaponDataRocketRight.setName("rocket_right");
-        weaponDataRocketRight.setMaxCapacity(32);
-        weaponDataRocketRight.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
-        VehicleRocket vehicleRocketRight = new VehicleRocket(this, rocketRight, 4, weaponDataRocketRight);
-        vehicleRocketRight.defineSyncData(rocketRight.getSyncData());
-        sightingSystem.weapons.add(vehicleRocketRight);
-        this.partUnits.add(rocketRight);
+        rocket.crosshairStyle = WeaponUnit.CrosshairStyle.RETICLE;
+        rocket.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        rocket.getBolts().clear();
+        rocket.getBolts().add(new WeaponUnit.Bolt(new Vec3(1.5d, 0, 1d), 0.1f));
+        rocket.getBolts().add(new WeaponUnit.Bolt(new Vec3(-1.5d, 0, 1d), 0.1f));
+        rocket.setXRotSpeed(0);
+        rocket.setYRotSpeed(0);
+        rocket.setParentWeaponUnit(sightingSystem);
+        sightingSystem.addSubWeaponUnit(rocket);
+        BaseVehicleWeaponData weaponDataRocket = new BaseVehicleWeaponData();
+        weaponDataRocket.setName("rocket");
+        weaponDataRocket.setMaxCapacity(32);
+        weaponDataRocket.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
+        VehicleRocket vehicleRocket = new VehicleRocket(this, rocket, 2, weaponDataRocket);
+        vehicleRocket.defineSyncData(rocket.getSyncData());
+        sightingSystem.weapons.add(vehicleRocket);
+        this.partUnits.add(rocket);
     }
 
 //    @Override

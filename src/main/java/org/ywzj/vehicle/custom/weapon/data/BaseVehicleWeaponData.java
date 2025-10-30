@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom.weapon;
+package org.ywzj.vehicle.custom.weapon.data;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.item.ItemStack;

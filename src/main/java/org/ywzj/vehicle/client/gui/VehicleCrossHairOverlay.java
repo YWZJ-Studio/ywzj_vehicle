@@ -22,6 +22,8 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.List;
+
 import static org.ywzj.vehicle.util.RenderHelper.*;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
@@ -32,12 +34,6 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
     private static double screenHitX = 0;
     private static double screenHitY = 0;
     private static boolean showHit = true;
-
-    private static double helicopterScreenHitXO = 0;
-    private static double helicopterScreenHitYO = 0;
-    private static double helicopterScreenHitX = 0;
-    private static double helicopterScreenHitY = 0;
-    private static boolean helicopterShowHit = true;
 
     private static double screenAimXO = 0;
     private static double screenAimYO = 0;
@@ -59,7 +55,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             boolean isHelicopter = vehicle instanceof HelicopterVehicle;
             int color = isHelicopter ?  0xFF00FF00 : 0xFFFFFFFF;
             PartUnit operatorUnit = vehicle.getOwnOperatorUnit(player);
-            if (operatorUnit instanceof WeaponUnit) {
+            if (operatorUnit instanceof WeaponUnit weaponUnit) {
                 if (showAim) {
                     double x = Mth.lerp(partialTick, screenAimXO, screenAimX);
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
@@ -73,19 +69,16 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     double y = Mth.lerp(partialTick, screenHitYO, screenHitY);
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    if (isHelicopter) {
-                        drawSquare(guiGraphics, 0 ,0, 5, color);
-                    } else {
-                        drawCircle(guiGraphics, 0 ,0, 5, color);
-                    }
-                    guiGraphics.pose().popPose();
-                }
-                if (helicopterShowHit) {
-                    double x = Mth.lerp(partialTick, helicopterScreenHitXO, helicopterScreenHitX);
-                    double y = Mth.lerp(partialTick, helicopterScreenHitYO, helicopterScreenHitY);
-                    guiGraphics.pose().pushPose();
-                    guiGraphics.pose().translate(x, y, 0);
-                    drawReticle(guiGraphics, 0 ,0, 15, 1, color);
+                    weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                        WeaponUnit.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
+                        if (crosshairStyle != null) {
+                            switch (crosshairStyle) {
+                                case CIRCLE -> drawCircle(guiGraphics, 0 ,0, 5, color);
+                                case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
+                                case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
+                            }
+                        }
+                    });
                     guiGraphics.pose().popPose();
                 }
                 // 稳定器锁定的位置
@@ -125,33 +118,32 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     showAim = false;
                 }
                 // 瞄准落点
-                if (!weaponUnit.getSubWeaponUnits().isEmpty()) {
-                    weaponUnit = weaponUnit.getSubWeaponUnits().get(0);
-                }
-                Vec2 rot = weaponUnit.worldRot();
-                Vec3 screenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), rot.x, rot.y, player);
-                if (screenHitPos.z >= 0) {
-                    screenHitXO = screenHitX;
-                    screenHitYO = screenHitY;
-                    screenHitX = screenHitPos.x;
-                    screenHitY = screenHitPos.y;
-                    showHit = true;
-                } else {
-                    showHit = false;
-                }
-//                // 机身瞄准落点
-//                if (vehicle instanceof HelicopterVehicle) {
-//                    Vec3 helicopterScreenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), vehicle.getXRot() - 10, vehicle.getYRot(), player);
-//                    if (helicopterScreenHitPos.z >= 0) {
-//                        helicopterScreenHitXO = helicopterScreenHitX;
-//                        helicopterScreenHitYO = helicopterScreenHitY;
-//                        helicopterScreenHitX = helicopterScreenHitPos.x;
-//                        helicopterScreenHitY = helicopterScreenHitPos.y;
-//                        helicopterShowHit = true;
-//                    } else {
-//                        helicopterShowHit = false;
-//                    }
-//                }
+                weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                    WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
+                    if (currentWeaponUnit.parentWeaponUnitAim) {
+                        currentWeaponUnit = currentWeaponUnit.getParentWeaponUnit();
+                    }
+                    Vec2 rot = currentWeaponUnit.worldRot();
+                    Vec3 screenHitPos;
+                    if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
+                        screenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), rot.x, rot.y, player);
+                    } else {
+                        List<Vec3> positions = weaponUnit.ammoSpawnPositions();
+                        double x = positions.stream().mapToDouble(v -> v.x).average().orElse(0);
+                        double y = positions.stream().mapToDouble(v -> v.y).average().orElse(0);
+                        double z = positions.stream().mapToDouble(v -> v.z).average().orElse(0);
+                        screenHitPos = getHitScreenPos(new Vec3(x, y, z), rot.x, rot.y, player);
+                    }
+                    if (screenHitPos.z >= 0) {
+                        screenHitXO = screenHitX;
+                        screenHitYO = screenHitY;
+                        screenHitX = screenHitPos.x;
+                        screenHitY = screenHitPos.y;
+                        showHit = true;
+                    } else {
+                        showHit = false;
+                    }
+                });
             }
         }
     }
