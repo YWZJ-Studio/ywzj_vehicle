@@ -55,7 +55,7 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
                 if (bullet.tickCount >= 5 || bulletDistance > 2) {
                     RenderType type = RenderType.energySwirl(InternalAssetLoader.DEFAULT_BULLET_TEXTURE, 15, 15);
                     model.render(poseStack, ItemDisplayContext.NONE, type, packedLight, OverlayTexture.NO_OVERLAY,
-                            1f, 1f, 1f, 1);
+                            0.7f, 0.5f, 0.1f, 1);
                 }
             }
             poseStack.popPose();

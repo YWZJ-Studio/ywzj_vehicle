@@ -1,10 +1,8 @@
 package org.ywzj.vehicle.vehicle.parts;
 
 import com.google.gson.annotations.SerializedName;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -309,8 +307,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public Vec3 aimHitPosition() {
         Vec3 start = worldPivotPosition();
-        Vec3 end = start.add(worldVec().normalize().scale(256));
-        return vehicle.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle)).getLocation();
+        Vec3 direction = worldVec().normalize();
+        Vec3 end = start.add(direction.scale(256));
+        return VectorUtil.hitPosition(vehicle, start, end);
     }
 
     public List<Vec3> ammoSpawnPositions() {
@@ -501,20 +500,16 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON
                 || LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(-LocalVehiclePlayer.CAMERA_UPWARD_ANGLE, 0).getLocation();
+            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(-LocalVehiclePlayer.CAMERA_UPWARD_ANGLE, 0);
         } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0).getLocation();
+            aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0);
         }
-        Vec3 worldPivotPosition = worldPivotPosition();
-        Vec3 aimDirection = aimLockPosition.subtract(worldPivotPosition);
-        AABB aabb = vehicle.getBoundingBox()
-                .expandTowards(aimDirection)
-                .inflate(1.0D, 1.0D, 1.0D);
-        EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(vehicle, worldPivotPosition, aimLockPosition, aabb,
-                entity -> !entity.isSpectator() && !vehicle.getPassengers().contains(entity),
-                java.lang.Math.pow(Minecraft.getInstance().options.renderDistance().get() * 16, 2));
-        if (entityHitResult != null) {
-            aimLockEntity = entityHitResult.getEntity();
+        List<Entity> entities = vehicle.level().getEntities(vehicle, AABB.ofSize(aimLockPosition, 8, 8, 8));
+        entities = entities.stream()
+                .filter(entity -> !entity.isSpectator() && !vehicle.getPassengers().contains(entity))
+                .toList();
+        if (!entities.isEmpty()) {
+            aimLockEntity = entities.get(0);
             stabilizer = true;
         } else {
             aimLockEntity = null;

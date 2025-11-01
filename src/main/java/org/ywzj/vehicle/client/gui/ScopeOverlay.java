@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
@@ -50,23 +51,29 @@ public class ScopeOverlay implements IGuiOverlay {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         // 准心
-        guiGraphics.pose().pushPose();
-        {
-            guiGraphics.pose().translate(centerX, centerY, 0);
-            drawSquare(guiGraphics, 0, 0, 5, color);
-            guiGraphics.fill(0, -32, 1, -8, color);
-            guiGraphics.fill(0, 8, 1, 32, color);
-            guiGraphics.fill(-32, 0, -8, 1, color);
-            guiGraphics.fill(32, 0, 8, 1, color);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                    (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
-                            + (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
-            if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+        if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+            RenderHelper.drawRect(guiGraphics, centerX, centerY, 15, 15, color, 1f);
+            guiGraphics.pose().pushPose();
+            {
+                Vec3 posO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
+                Vec3 pos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
+                guiGraphics.pose().translate(
+                        Mth.lerp(partialTick, posO.x, pos.x),
+                        Mth.lerp(partialTick, posO.y, pos.y),
+                        0);
+                drawSquare(guiGraphics, 0, 0, 5, color);
+                guiGraphics.fill(0, -32, 1, -8, color);
+                guiGraphics.fill(0, 8, 1, 32, color);
+                guiGraphics.fill(-32, 0, -8, 1, color);
+                guiGraphics.fill(32, 0, 8, 1, color);
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
+                        (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
+                                + (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.isStabilizerOn() ? "稳定器开" : "", 36, 28, color);
             }
+            guiGraphics.pose().popPose();
         }
-        guiGraphics.pose().popPose();
         // 成员组
         int x = centerX - 140;
         int y = centerY + guiGraphics.guiHeight() / 5;

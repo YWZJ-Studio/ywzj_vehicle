@@ -37,6 +37,8 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
     public float yRotMax = Float.MAX_VALUE;
     public float yRotMin = -Float.MAX_VALUE;
 
+    public boolean needPower = true;
+
     private VehicleSound turnYSoundInstance;
     private VehicleSound turnXSoundInstance;
 
@@ -56,7 +58,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
         if (vehicle.level().isClientSide) {
             tickSound();
         }
-        if (vehicle.hasPower()) {
+        if (!needPower || vehicle.hasPower()) {
             tickRot();
         } else {
             this.xRotO = this.getXRot();
@@ -109,7 +111,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
 
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
-        if (vehicle.hasPower()) {
+        if (!needPower || vehicle.hasPower()) {
             if (yRotSpeed != 0 && Math.abs(yAimRot - yRot) > 1 && yRot < yRotMax && yRot > yRotMin) {
                 if (turnYSoundInstance == null) {
                     turnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, true, 10, true, true, vehicle.getId());

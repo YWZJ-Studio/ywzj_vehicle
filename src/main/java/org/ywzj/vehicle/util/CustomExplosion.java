@@ -63,7 +63,7 @@ public class CustomExplosion {
                             BlockState state = level.getBlockState(bpos);
                             float destroySpeed = state.getDestroySpeed(level, bpos);
                             if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50) {
-                                level.destroyBlock(bpos, false);
+                                level.removeBlock(bpos, true);
                             }
                         }
                     }

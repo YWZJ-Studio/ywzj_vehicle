@@ -55,7 +55,7 @@ public class Ztz99a extends TrackedVehicle {
                 null);
         turret.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
         turret.setXRotSpeed(30f / 20);
-        turret.setYRotSpeed(15f / 20);
+        turret.setYRotSpeed(30f / 20);
         turret.setXRotMax(5f);
         turret.setXRotMin(-13f);
         turret.currentWeaponIndexHolder = turret.getSyncData().define(
@@ -83,6 +83,7 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0.5d, 0.5d, -1d),
                 new Vec3(0, 1d, 1.2d),
                 turret);
+        commanderMachineGun.needPower = false;
         commanderMachineGun.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
         commanderMachineGun.opticalSightType = WeaponUnit.OpticalSightType.OPERATOR;
         commanderMachineGun.setXRotSpeed(60f / 20);
@@ -161,6 +162,9 @@ public class Ztz99a extends TrackedVehicle {
                     serverLevel.sendParticles(ParticleTypes.FLAME, muzzlePos.x, muzzlePos.y, muzzlePos.z, 10, 0.1, 0.1, 0.1, 0.01);
                     serverLevel.sendParticles(ParticleTypes.SMOKE, muzzlePos.x, muzzlePos.y, muzzlePos.z, 15, 0.2, 0.2, 0.2, 0.01);
                 }
+            } else if (weaponIndex == 1) {
+                // todo: 测试音效
+                this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }
         }
     }

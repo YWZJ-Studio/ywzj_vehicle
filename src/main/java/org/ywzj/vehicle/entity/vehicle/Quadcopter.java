@@ -52,6 +52,8 @@ public class Quadcopter extends HelicopterVehicle {
         this.zRotSpeedMax = 8f;
         this.maxAirSpeed = 2f;
         this.uav = true;
+        this.thirdPersonCenterOffset = new Vec3(0, 3, 0);
+        this.thirdPersonDistance = 7;
     }
 
     @Override
@@ -78,7 +80,7 @@ public class Quadcopter extends HelicopterVehicle {
     @Override
     public void initPartUnits() {
         WeaponUnit sightingSystem = new WeaponUnit("sighting_system", 0, this,
-        new Vec3(0f, 0f, 0f),
+                new Vec3(0f, 0f, 0f),
                 0,
                 new Vec3(0f, 0f, 0.2f),
                 null,

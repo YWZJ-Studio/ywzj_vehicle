@@ -61,7 +61,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    drawCircle(guiGraphics, 0 ,0, 10, color);
+                    drawCircle(guiGraphics, 0 ,0, 15, color);
                     guiGraphics.pose().popPose();
                 }
                 if (showHit) {

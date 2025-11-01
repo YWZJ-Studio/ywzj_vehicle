@@ -2,6 +2,13 @@ package org.ywzj.vehicle.util;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
@@ -15,6 +22,7 @@ import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
@@ -51,6 +59,31 @@ public class VectorUtil {
         if (event.usedConfiguredFov()) {
             fov = event.getFOV();
         }
+    }
+
+    public static Vec3 hitPosition(Entity shooter, Vec3 start, Vec3 end) {
+        Level level = shooter.level();
+        ClipContext blockContext = new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, shooter);
+        BlockHitResult blockHit = level.clip(blockContext);
+        Vec3 blockHitPos = blockHit.getLocation();
+        double blockDistance = blockHitPos.distanceTo(start);
+        Vec3 direction = end.subtract(start).normalize();
+        AABB aabb = shooter.getBoundingBox().expandTowards(direction.scale(256)).inflate(1.0);
+        EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(level, shooter, start, end, aabb, entity ->
+                entity.isPickable() && !entity.isSpectator() && entity != shooter);
+        Vec3 hitPoint = blockHitPos;
+        if (entityHit != null) {
+            AABB targetBox = entityHit.getEntity().getBoundingBox();
+            Optional<Vec3> intersectOptional = targetBox.clip(start, end);
+            if (intersectOptional.isPresent()) {
+                Vec3 intersectPos = intersectOptional.get();
+                double entityDistance = intersectPos.distanceTo(start);
+                if (entityDistance < blockDistance) {
+                    hitPoint = intersectPos;
+                }
+            }
+        }
+        return hitPoint;
     }
 
     public static Vec3 calculateViewVector(float pXRot, float pYRot) {

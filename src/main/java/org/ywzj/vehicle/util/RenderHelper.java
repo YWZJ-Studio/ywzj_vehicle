@@ -7,12 +7,18 @@ import net.minecraft.util.Mth;
 public class RenderHelper {
 
     public static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
-        float c = 2 * 3.1415f / 32;
-        for (int i = 0; i < 32; i += 1) {
-            float rx = Mth.cos(c * i) * r;
-            float ry = Mth.sin(c * i) * r;
-            guiGraphics.fill((int) (x + rx), (int) (y + ry), (int) (x + rx) + 1, (int) (y + ry) + 1, color);
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.scale(0.5f, 0.5f, 0.5f);
+            float c = 2 * 3.1415f / 32;
+            for (int i = 0; i < 32; i += 1) {
+                float rx = Mth.cos(c * i) * r;
+                float ry = Mth.sin(c * i) * r;
+                guiGraphics.fill((int) (x + rx), (int) (y + ry), (int) (x + rx) + 1, (int) (y + ry) + 1, color);
+            }
         }
+        poseStack.popPose();
     }
 
     public static void drawCross(GuiGraphics guiGraphics, int x, int y, int size, int color) {
