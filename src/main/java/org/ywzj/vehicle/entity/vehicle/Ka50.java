@@ -125,6 +125,7 @@ public class Ka50 extends HelicopterVehicle {
         sightingSystem.addSubWeaponUnit(missile);
         VehicleMissileWeaponData weaponDataMissile = new VehicleMissileWeaponData();
         weaponDataMissile.setName("missile");
+        weaponDataMissile.setDamage(50);
         weaponDataMissile.setMaxCapacity(8);
         weaponDataMissile.setXRotMax(30);
         weaponDataMissile.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));

@@ -29,6 +29,10 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         this.rotation.set(rotation);
     }
 
+    public float getSize() {
+        return extents.x * 2 * extents.y * 2 * extents.z * 2;
+    }
+
     /**
      * 获取OBB的8个顶点坐标
      *

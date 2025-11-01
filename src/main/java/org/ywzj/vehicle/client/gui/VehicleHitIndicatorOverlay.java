@@ -18,7 +18,9 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.ArrayList;
@@ -48,6 +50,18 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         if (entity == null) {
             return;
         }
+        Vec3 viewVec;
+        float scale;
+        ServerHitVehicleEvent event = events.get(0);
+        if (entity instanceof AbstractVehicle vehicle) {
+            viewVec = vehicle.relativeRotPos(event.hitRelativePosition.add(vehicle.position()), false).subtract(entity.position());
+            scale = Math.min(10, 8 / (vehicle.getMainCubeOBB().obb().extents().z * 2) * 10);
+        } else {
+            viewVec = VectorUtil.relativeRotPos(entity, event.hitRelativePosition.add(entity.position()), false).subtract(entity.position());
+            scale = Math.min(10, (float) (48 / entity.getBoundingBox().getSize()));
+        }
+        float pitch = (float) Math.toDegrees(Math.atan2(-viewVec.y, Math.sqrt(viewVec.x * viewVec.x + viewVec.z * viewVec.z)));
+        float yaw = (float) Math.toDegrees(Math.atan2(viewVec.x, viewVec.z));
         guiGraphics.pose().pushPose();
         {
             double modelX = screenWidth - (double) screenWidth / 8;
@@ -56,14 +70,9 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             guiGraphics.drawCenteredString(Minecraft.getInstance().font, "Hit",  0, -55, 0xFFFFFFFF);
 
             Vec3 root = new Vec3(0, 0, 0);
-            ServerHitVehicleEvent event = events.get(0);
-            Vec3 viewVec = event.hitPosition.subtract(entity.position());
-            float pitch = (float) Math.toDegrees(Math.atan2(-viewVec.y, Math.sqrt(viewVec.x * viewVec.x + viewVec.z * viewVec.z)));
-            float yaw = (float) Math.toDegrees(Math.atan2(viewVec.x, viewVec.z));
             guiGraphics.pose().rotateAround(Axis.XP.rotationDegrees(pitch + 180), (float) root.x, (float) root.y, (float) root.z);
             guiGraphics.pose().rotateAround(Axis.YP.rotationDegrees(yaw), (float) root.x, (float) root.y, (float) root.z);
 
-            float scale = (float) (48 / entity.getBoundingBox().getSize() * 1);
             guiGraphics.pose().mulPoseMatrix((new Matrix4f()).scaling(scale, scale, -scale));
             Lighting.setupForEntityInInventory();
             EntityRenderDispatcher entityrenderdispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
@@ -72,8 +81,15 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             RenderSystem.runAsFancy(() -> {
                 entityrenderdispatcher.render(entity, 0, 0,0, entity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
                 for (ServerHitVehicleEvent hitVehicleEvent : events) {
-                    Vec3 start = hitVehicleEvent.hitPosition.subtract(entity.position());
-                    Vec3 end = start.subtract(hitVehicleEvent.hitVector.normalize().scale(3));
+                    Vec3 start;
+                    Vec3 end;
+                    if (entity instanceof AbstractVehicle vehicle) {
+                        start = vehicle.relativeRotPos(hitVehicleEvent.hitRelativePosition.add(vehicle.position()), false).subtract(entity.position());
+                        end = start.subtract(vehicle.relativeRotDirection(hitVehicleEvent.hitRelativeVector, false).normalize().scale(3));
+                    } else {
+                        start = VectorUtil.relativeRotPos(entity, hitVehicleEvent.hitRelativePosition.add(entity.position()), false).subtract(entity.position());
+                        end = start.subtract(VectorUtil.relativeRotDirection(entity, hitVehicleEvent.hitRelativeVector, false).normalize().scale(3));
+                    }
                     renderRedLine(guiGraphics, start, end);
                 }
             });

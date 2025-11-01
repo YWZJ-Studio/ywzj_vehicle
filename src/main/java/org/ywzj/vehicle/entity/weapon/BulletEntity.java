@@ -243,6 +243,10 @@ public class BulletEntity extends AmmoEntity {
             // 创建伤害
             performAttack(entity, damage, sources);
         }
+
+        if (explosion) {
+            CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+        }
     }
 
     protected void onHitBlock(BlockHitResult result, Vec3 startVec, Vec3 endVec) {
@@ -254,10 +258,7 @@ public class BulletEntity extends AmmoEntity {
 
         super.onHitBlock(result);
 
-        //todo自己实现爆炸
         if (explosion) {
-//            this.level().explode(this, this.getX(), this.getY(0.0625D), this.getZ(), 8.0F,
-//                    AllConfigs.common.explosionBreakBlocks.get() ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
             CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
         }
 

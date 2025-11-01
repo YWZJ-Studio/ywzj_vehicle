@@ -307,7 +307,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             OBB obb = vehicleBedrockCubeOBB.obb();
             Vec3 center = vehicleBedrockCubeOBB.center(this);
             Quaternionf rot = vehicleBedrockCubeOBB.selfRot();
-            obb.setCenter(relativeRotPos(center).toVector3f());
+            obb.setCenter(relativeRotPos(center, false).toVector3f());
             obb.setRotation(rotYXZ().mul(rot));
         }
     }
@@ -500,7 +500,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
         PartUnit<?> partUnit = getOwnOperatorUnit(pPassenger);
         onLeaveVehicle(pPassenger);
-        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0));
+        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
     }
 
     @Override
@@ -574,14 +574,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     /**
-     * 某世界坐标随载具三轴旋转后的新坐标
+     * 某世界坐标随载具三轴旋转后或前的新坐标
      */
-    public Vec3 relativeRotPos(Vec3 worldPos) {
-        Vec3 relPos = worldPos.subtract(this.position());
-        Matrix3f axisRollMat = new Matrix3f();
-        rotYXZ().get(axisRollMat);
-        Vector3f rotPos = axisRollMat.transform(new Vector3f((float) relPos.x, (float) relPos.y, (float) relPos.z));
-        return this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+    public Vec3 relativeRotPos(Vec3 worldPos, boolean reverse) {
+        return relativeRotDirection(worldPos.subtract(position()), reverse).add(position());
     }
 
     /**

@@ -15,11 +15,9 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -89,6 +87,23 @@ public class VectorUtil {
             }
         }
         return hitPoint;
+    }
+
+    public static Vec3 relativeRotPos(Entity entity, Vec3 worldPos, boolean reverse) {
+        return relativeRotDirection(entity, worldPos.subtract(entity.position()), reverse).add(entity.position());
+    }
+
+    public static Vec3 relativeRotDirection(Entity entity, Vec3 worldDirection, boolean reverse) {
+        Quaternionf q = new Quaternionf();
+        q.rotateY(org.joml.Math.toRadians(-entity.getYRot()))
+                .rotateX(org.joml.Math.toRadians(entity.getXRot()));
+        Matrix3f axisRollMat = new Matrix3f();
+        q.get(axisRollMat);
+        if (reverse) {
+            axisRollMat = axisRollMat.transpose();
+        }
+        Vector3f d = axisRollMat.transform(new Vector3f((float) worldDirection.x(), (float) worldDirection.y(), (float) worldDirection.z()));
+        return new Vec3(d.x, d.y, d.z);
     }
 
     public static Vec3 calculateViewVector(float pXRot, float pYRot) {

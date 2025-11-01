@@ -132,10 +132,10 @@ public class Quadcopter extends HelicopterVehicle {
         } else if (controlUnit.functionalUp) {
             cableLength = Mth.clamp(cableLength - 1, 0, 8);
         }
-        Vec3 hookPos = relativeRotPos(position().add(new Vec3(0, -cableLength, 0)));
+        Vec3 hookPos = relativeRotPos(position().add(new Vec3(0, -cableLength, 0)), false);
         while (level().getBlockState(BlockPos.containing(hookPos)).isSolid() && cableLength > 0) {
             cableLength = Mth.clamp(cableLength - 1, 0, 8);
-            hookPos = relativeRotPos(position().add(new Vec3(0, -cableLength, 0)));
+            hookPos = relativeRotPos(position().add(new Vec3(0, -cableLength, 0)), false);
         }
         this.entityData.set(CABLE_LENGTH, cableLength);
         hookCooldown = Math.max(0, hookCooldown - 1);

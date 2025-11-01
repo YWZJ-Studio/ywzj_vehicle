@@ -76,7 +76,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
             Quaternionf rotX = new Quaternionf().rotationX(Math.toRadians(getXRot()));
             Quaternionf rotation = new Quaternionf(rotX).mul(rotY);
             Vec3 centerToPivotRot = new Vec3(rotation.transform(centerToPivot.toVector3f()));
-            obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(this.pivotOffset.add(centerToPivotRot))).toVector3f());
+            obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(this.pivotOffset.add(centerToPivotRot)), false).toVector3f());
             rotSelf.rotateX(Math.toRadians(180 + getXRot()));
             obb.setRotation(vehicle.rotYXZ().mul(rotSelf));
         }

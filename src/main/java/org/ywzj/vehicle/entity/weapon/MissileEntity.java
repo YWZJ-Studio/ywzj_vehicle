@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import com.tacz.guns.init.ModDamageTypes;
 import com.tacz.guns.util.block.BlockRayTrace;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
@@ -132,7 +133,7 @@ public class MissileEntity extends AmmoEntity {
             BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
             // 将单个命中是实体创建为单个内容的 list
             if (entityResult != null && entityResult.getEntity() != vehicle) {
-                //todo自己实现爆炸
+                entityResult.getEntity().hurt(ModDamageTypes.Sources.bullet(level().registryAccess(), this, vehicle, true), damage);
                 CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
                 this.kill();
             }

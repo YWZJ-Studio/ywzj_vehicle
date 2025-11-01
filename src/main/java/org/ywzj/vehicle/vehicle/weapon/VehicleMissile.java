@@ -31,7 +31,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         }
         if (missileWeaponUnit.getXRot() < data.getXRotMin()
                 || missileWeaponUnit.getXRot() > data.getXRotMax()
-                || missileWeaponUnit.getXRot() < data.getYRotMin()
+                || missileWeaponUnit.getYRot() < data.getYRotMin()
                 || missileWeaponUnit.getYRot() > data.getYRotMax()) {
             ScopeOverlay.tips.put(System.currentTimeMillis(), "超出导弹射界");
             return false;
@@ -54,6 +54,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
 
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
+            missileEntity.damage = getData().getDamage();
             missileEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(missileEntity);

@@ -67,6 +67,7 @@ public class Ztz99a extends TrackedVehicle {
         VehicleCannonWeaponData weaponDataCannon = new VehicleCannonWeaponData();
         weaponDataCannon.setName("cannon");
         weaponDataCannon.setMaxCapacity(1);
+        weaponDataCannon.setDamage(33);
         weaponDataCannon.setExplosion(true);
         weaponDataCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ARTILLERY.get())));
         VehicleCannon vehicleCannon = new VehicleCannon(this, turret, 0, weaponDataCannon);

@@ -1,7 +1,9 @@
 package org.ywzj.vehicle.util;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -72,6 +74,18 @@ public class CustomExplosion {
         }
 
         level.playSound(source, BlockPos.containing(pos), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
+        for (ServerPlayer player : level.getPlayers(player -> player.distanceTo(source) < 128)) {
+            level.sendParticles(
+                    player,
+                    ParticleTypes.EXPLOSION_EMITTER,
+                    true,
+                    pos.x, pos.y, pos.z,
+                    3,
+                    0.5, 0.5, 0.5,
+                    0.1
+            );
+        }
+
         ExplosionEvent.Detonate detonateEvent = new ExplosionEvent.Detonate(level, vanillaExplosion, level.getEntitiesOfClass(Entity.class, box));
         MinecraftForge.EVENT_BUS.post(detonateEvent);
     }

@@ -134,7 +134,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
             OBB obb = unitBedrockCubeOBB.obb();
             Vec3 center = unitBedrockCubeOBB.center(this.vehicle);
             Quaternionf selfRot = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            obb.setCenter(vehicle.relativeRotPos(center).toVector3f());
+            obb.setCenter(vehicle.relativeRotPos(center, false).toVector3f());
             obb.setRotation(vehicle.rotYXZ().mul(selfRot));
         }
     }
@@ -146,7 +146,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         if (offsetFromVehicle == null) {
             return vehicle.position();
         }
-        return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle));
+        return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
     }
 
     public Vec3 worldOwnerViewPosition() {
@@ -163,7 +163,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         if (seatOffset == null) {
             seatOffset = new Vec3(0, eyeHeight, 0);
         }
-        return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)));
+        return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)), false);
     }
 
     public Component getName() {

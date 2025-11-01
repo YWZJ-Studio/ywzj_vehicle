@@ -267,7 +267,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 double x = v.x;
                 double y = -len * sin;
                 double z = v.z;
-                obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(new Vec3(x, y, z).add(barrelPivotOffset))).toVector3f());
+                obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(new Vec3(x, y, z).add(barrelPivotOffset)), false).toVector3f());
                 rotSelf.rotateX(Math.toRadians(180 + xRot));
             } else {
                 obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
@@ -333,7 +333,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public Vec3 worldPivotPosition() {
         Vector4d offset = rotatedOffsetWithBaseRot(this, this.pivotOffset.x, this.pivotOffset.z);
         Vec3 boltPosition = vehicle.position().add(new Vec3(offset.x, pivotOffset.y, offset.y));
-        return vehicle.relativeRotPos(boltPosition);
+        return vehicle.relativeRotPos(boltPosition, false);
     }
 
     public Vec3 worldOpticalSightPosition() {
@@ -348,7 +348,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (!operatorOnWeaponUnit) {
             Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
             Vector4d offsetWithBaseRot = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
-            return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)));
+            return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)), false);
         }
         if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
@@ -362,10 +362,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
         if (!operatorOnWeaponUnit) {
             Vector4d offset = rotatedOffsetWithBaseRot(this, seatOffset.x, seatOffset.z);
-            return vehicle.relativeRotPos(vehicle.position().add(offset.z, seatOffset.y - eyeHeight, offset.w));
+            return vehicle.relativeRotPos(vehicle.position().add(offset.z, seatOffset.y - eyeHeight, offset.w), false);
         }
         Vec3 offset = rotatedOffsetWithSelfRot(this.seatOffset);
-        return vehicle.relativeRotPos(vehicle.position().add(offset.x, seatOffset.y - eyeHeight, offset.z));
+        return vehicle.relativeRotPos(vehicle.position().add(offset.x, seatOffset.y - eyeHeight, offset.z), false);
     }
 
     /**
@@ -376,7 +376,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (offsetFromVehicle == null) {
             return vehicle.position();
         }
-        return vehicle.relativeRotPos(vehicle.position().add(rotatedOffsetWithSelfRot(offsetFromVehicle)));
+        return vehicle.relativeRotPos(vehicle.position().add(rotatedOffsetWithSelfRot(offsetFromVehicle)), false);
     }
 
     public Vec2 worldRot() {

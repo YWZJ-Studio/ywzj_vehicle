@@ -118,9 +118,9 @@ public class DumpTruck extends WheeledVehicle {
         // 自动进车斗
         if (pEntity instanceof LivingEntity) {
             PartUnit partUnit = seats.get(0).partUnit;
-            Vec3 leftDoorPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 0, partUnit != null ? partUnit.getSeatOffset().z : 0));
+            Vec3 leftDoorPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 0, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
             if (pEntity.distanceToSqr(leftDoorPos) < 1) {
-                Vec3 bedPos = relativeRotPos(position().add(0, 5, 0));
+                Vec3 bedPos = relativeRotPos(position().add(0, 5, 0), false);
                 pEntity.teleportTo(bedPos.x, bedPos.y, bedPos.z);
             }
         }
