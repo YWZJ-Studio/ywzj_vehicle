@@ -562,7 +562,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     public float getViewZRot(float pPartialTicks) {
-        return pPartialTicks == 1.0F ? this.getXRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
+        return pPartialTicks == 1.0F ? this.getZRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
     }
 
     public Quaternionf rotYXZ() {

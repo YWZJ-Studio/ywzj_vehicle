@@ -67,10 +67,15 @@ public class VectorUtil {
         BlockHitResult blockHit = level.clip(blockContext);
         Vec3 blockHitPos = blockHit.getLocation();
         double blockDistance = blockHitPos.distanceTo(start);
-        Vec3 direction = end.subtract(start).normalize();
-        AABB aabb = shooter.getBoundingBox().expandTowards(direction.scale(256)).inflate(1.0);
+        Vec3 direction = end.subtract(start);
+        AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
         EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(level, shooter, start, end, aabb, entity ->
-                entity.isPickable() && !entity.isSpectator() && entity != shooter);
+                entity.isPickable()
+                && !entity.isSpectator()
+                && entity != shooter
+                && entity != shooter.getVehicle()
+                && entity.getVehicle() != shooter.getVehicle()
+                && !shooter.getPassengers().contains(entity));
         Vec3 hitPoint = blockHitPos;
         if (entityHit != null) {
             AABB targetBox = entityHit.getEntity().getBoundingBox();

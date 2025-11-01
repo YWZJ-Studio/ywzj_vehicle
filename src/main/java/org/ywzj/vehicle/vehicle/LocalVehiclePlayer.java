@@ -109,27 +109,33 @@ public class LocalVehiclePlayer {
                     cameraAimRotXO = cameraAimRotX;
                     cameraAimRotYO = cameraAimRotY;
                     cameraAimRotZO = cameraAimRotZ;
-                    if (lastWeaponUnit != weaponUnit) {
-                        lastWeaponUnit = weaponUnit;
-                        scopeAimWeaponHit(weaponUnit);
-                        return;
-                    }
-                    if (weaponUnit.isStabilizerOn() || !mouseTurnedAfterScope) {
-                        scopeAimWeaponHit(weaponUnit);
-                        return;
-                    } else {
-                        weaponAimScopeHit(weaponUnit);
-                    }
-                    Quaternionf rot = new Quaternionf();
-                    rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
-                    rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
-                    rot = vehicle.rotYXZ().mul(rot);
-                    Vector3f eulerAngles = new Vector3f();
-                    rot.getEulerAnglesYXZ(eulerAngles);
-                    cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
-                    float yDiff = cameraAimRotY - cameraAimRotYO;
-                    if (Math.abs(yDiff) > 90) {
-                        cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
+                    try {
+                        Quaternionf rot = new Quaternionf();
+                        rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
+                        rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
+                        rot = vehicle.rotYXZ().mul(rot);
+                        Vector3f eulerAngles = new Vector3f();
+                        rot.getEulerAnglesYXZ(eulerAngles);
+                        cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
+                        if (lastWeaponUnit != weaponUnit) {
+                            lastWeaponUnit = weaponUnit;
+                            scopeAimWeaponHit(weaponUnit);
+                            return;
+                        }
+                        if (weaponUnit.isStabilizerOn() || !mouseTurnedAfterScope) {
+                            scopeAimWeaponHit(weaponUnit);
+                        } else {
+                            weaponAimScopeHit(weaponUnit);
+                        }
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    } finally {
+                        if (Math.abs(cameraAimRotY - cameraAimRotYO) > 90) {
+                            cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
+                        }
+                        if (Math.abs(cameraAimRotZ - cameraAimRotZO) > 90) {
+                            cameraAimRotZO += cameraAimRotZO < 0 ? 360f : -360f;
+                        }
                     }
                 }
             }
