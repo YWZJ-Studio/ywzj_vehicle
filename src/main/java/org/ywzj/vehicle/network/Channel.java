@@ -51,9 +51,14 @@ public class Channel {
                 ClientVehicleChangeSeat::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
-        CHANNEL.registerMessage(PacketId.S_SYNC_DATA.value(), ServerSyncData.class,
-                ServerSyncData::encode, ServerSyncData::decode,
-                ServerSyncData::onServerMessageReceived,
+        CHANNEL.registerMessage(PacketId.S_SYNC_WEAPON_DATA.value(), ServerSyncWeaponData.class,
+                ServerSyncWeaponData::encode, ServerSyncWeaponData::decode,
+                ServerSyncWeaponData::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.S_SYNC_VEHICLE_DATA.value(), ServerSyncVehicleData.class,
+                ServerSyncVehicleData::encode, ServerSyncVehicleData::decode,
+                ServerSyncVehicleData::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
         CHANNEL.registerMessage(PacketId.S_SOUND_EVENT.value(), ServerSoundEvent.class,
@@ -91,7 +96,8 @@ enum PacketId {
 
     S_ENTITY_SYNC_DATA(120),
 
-    S_SYNC_DATA(200),
+    S_SYNC_WEAPON_DATA(150),
+    S_SYNC_VEHICLE_DATA(151),
     S_SOUND_EVENT(201),
     S_HIT_VEHICLE_EVENT(202);
 

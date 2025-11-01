@@ -22,6 +22,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
@@ -94,7 +95,7 @@ public class Quadcopter extends HelicopterVehicle {
     }
 
     @Override
-    public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+    public @NotNull InteractionResult mobInteract(@NotNull Player pPlayer, @NotNull InteractionHand pHand) {
         return InteractionResult.PASS;
     }
 
@@ -169,7 +170,7 @@ public class Quadcopter extends HelicopterVehicle {
     }
 
     @Override
-    protected void positionRider(Entity pPassenger, Entity.MoveFunction pCallback) {
+    protected void positionRider(@NotNull Entity pPassenger, Entity.MoveFunction pCallback) {
         if (fakeOperatorPos == null) {
             fakeOperatorPos = pPassenger.position();
             Vec3 vehiclePos = this.position();

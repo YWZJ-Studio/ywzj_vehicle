@@ -55,10 +55,10 @@ public class Z10Renderer extends EntityRenderer<Z10> {
         if (!pEntity.seats.isEmpty()) {
             PartUnit partUnit = pEntity.seats.get(0).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
-                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
-                turretYRotAim = weaponUnit.yAimRot;
-                turretXRotAim = weaponUnit.xAimRot;
+                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+                turretYRotAim = weaponUnit.getYAimRot();
+                turretXRotAim = weaponUnit.getXAimRot();
             }
         }
 

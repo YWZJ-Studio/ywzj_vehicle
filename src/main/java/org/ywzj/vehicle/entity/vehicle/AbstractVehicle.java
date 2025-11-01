@@ -33,6 +33,7 @@ import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.jetbrains.annotations.NotNull;
 import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -40,17 +41,17 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.ContainerMob;
-import org.ywzj.vehicle.entity.OBBEntity;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
+import org.ywzj.vehicle.vehicle.parts.IRotatableUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
@@ -68,7 +69,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     private final AllVehicles.VehicleType vehicleType;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
-    protected final List<PartUnit> partUnits;
+    protected final List<PartUnit<?>> partUnits;
     public Vec3 thirdPersonCenterOffset;
     public float thirdPersonDistance;
     public float curbWeight;
@@ -294,7 +295,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     public List<OBB> getOBBs() {
         List<OBB> vehicleOBBs = new ArrayList<>(this.vehicleOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList());
-        for (PartUnit partUnit : partUnits) {
+        for (PartUnit<?> partUnit : partUnits) {
             vehicleOBBs.addAll(partUnit.getOBBs());
         }
         return vehicleOBBs;
@@ -379,14 +380,14 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     public static void onClientVehicleChangeSeat(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ServerPlayer player = ctxSupplier.get().getSender();
-        if (player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+        if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
             vehicle.changeSeat(player, message.toSeat);
         }
     }
 
     public static void onClientVehicleAction(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ServerPlayer player = ctxSupplier.get().getSender();
-        if (player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle) {
+        if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle) {
             player.stopRiding();
         }
     }
@@ -435,22 +436,23 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
         if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
             if (message.partUnitIndex < vehicle.partUnits.size()) {
-                PartUnit partUnit = vehicle.partUnits.get(message.partUnitIndex);
-                if (partUnit instanceof RotatableUnit rotatableUnit) {
-                    rotatableUnit.xAimRot = message.xAimRot;
-                    rotatableUnit.yAimRot = message.yAimRot;
+                PartUnit<?> partUnit = vehicle.partUnits.get(message.partUnitIndex);
+                if (partUnit instanceof IRotatableUnit rotatableUnit) {
+                    rotatableUnit.setXAimRot(message.xAimRot);
+                    rotatableUnit.setYAimRot(message.yAimRot);
                 }
             }
         }
     }
 
     @Override
-    protected boolean canAddPassenger(Entity pPassenger) {
+    protected boolean canAddPassenger(@NotNull Entity pPassenger) {
         return seats.stream().anyMatch(seat -> seat.passengerId == -1);
     }
 
+    @NotNull
     @Override
-    public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+    public InteractionResult mobInteract(@NotNull Player pPlayer, @NotNull InteractionHand pHand) {
         if (!this.level().isClientSide()) {
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
@@ -493,19 +495,21 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return Vec3.ZERO;
     }
 
+    @NotNull
     @Override
-    public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
-        PartUnit partUnit = getOwnOperatorUnit(pPassenger);
+    public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
+        PartUnit<?> partUnit = getOwnOperatorUnit(pPassenger);
         onLeaveVehicle(pPassenger);
         return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0));
     }
 
     @Override
-    protected void positionRider(Entity pPassenger, Entity.MoveFunction pCallback) {
-        if (!(pPassenger instanceof LivingEntity)) {
+    protected void positionRider(@NotNull Entity pPassenger, Entity.MoveFunction pCallback) {
+        if (!(pPassenger instanceof LivingEntity living)) {
             super.positionRider(pPassenger, pCallback);
+            return;
         }
-        PartUnit partUnit = getOwnOperatorUnit((LivingEntity) pPassenger);
+        PartUnit<?> partUnit = getOwnOperatorUnit(living);
         if (partUnit != null) {
             Vec3 pos = partUnit.worldSeatPosition();
             pCallback.accept(pPassenger, pos.x, pos.y, pos.z);
@@ -518,7 +522,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return controlUnit.operator;
     }
 
-    public PartUnit getOwnOperatorUnit(LivingEntity pPassenger) {
+    public PartUnit<?> getOwnOperatorUnit(LivingEntity pPassenger) {
         if (pPassenger == null) {
             return null;
         }
@@ -534,11 +538,11 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return vehicleType;
     }
 
-    public List<PartUnit> getPartUnits() {
+    public List<PartUnit<?>> getPartUnits() {
         return partUnits;
     }
 
-    public Optional<PartUnit> getPartUnit(int index) {
+    public Optional<PartUnit<?>> getPartUnit(int index) {
         if (index >= 0 && index < partUnits.size()) {
             return Optional.of(partUnits.get(index));
         }
@@ -605,7 +609,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     @Override
-    protected SoundEvent getHurtSound(DamageSource pDamageSource) {
+    protected SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {
         return AllSounds.BULLET_HIT_OUTSIDE.get();
     }
 
@@ -661,7 +665,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     @Override
-    public void push(Entity pEntity) {
+    public void push(@NotNull Entity pEntity) {
         if (!this.isPassengerOfSameVehicle(pEntity)) {
             if (pEntity instanceof AbstractVehicle vehicle) {
                 VehicleBedrockCubeOBB bodyCube = vehicle.getMainCubeOBB();
@@ -903,10 +907,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public static class Seat {
 
         public final Integer seatIndex;
-        public final PartUnit partUnit;
+        public final PartUnit<?> partUnit;
         public Integer passengerId;
 
-        public Seat(Integer seatIndex, PartUnit partUnit) {
+        public Seat(Integer seatIndex, PartUnit<?> partUnit) {
             this.seatIndex = seatIndex;
             this.partUnit = partUnit;
             this.passengerId = -1;

@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.ywzj.vehicle.entity.OBBEntity;
-import org.ywzj.vehicle.event.HitVehicleEvent;
+import org.ywzj.vehicle.api.entity.OBBEntity;
+import org.ywzj.vehicle.api.event.HitVehicleEvent;
 
 @Mixin(EntityUtil.class)
 public class EntityUtilMixin {

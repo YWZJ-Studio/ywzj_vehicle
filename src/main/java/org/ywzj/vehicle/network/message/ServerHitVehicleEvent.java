@@ -4,8 +4,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
-import org.ywzj.vehicle.event.HitVehicleEvent;
 
 import java.util.function.Supplier;
 

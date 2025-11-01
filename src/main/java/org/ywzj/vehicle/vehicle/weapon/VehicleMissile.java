@@ -29,10 +29,10 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         if (missileWeaponUnit.parentWeaponUnitAim) {
             missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
         }
-        if (missileWeaponUnit.xRot < data.getXRotMin()
-                || missileWeaponUnit.xRot > data.getXRotMax()
-                || missileWeaponUnit.yRot < data.getYRotMin()
-                || missileWeaponUnit.yRot > data.getYRotMax()) {
+        if (missileWeaponUnit.getXRot() < data.getXRotMin()
+                || missileWeaponUnit.getXRot() > data.getXRotMax()
+                || missileWeaponUnit.getXRot() < data.getYRotMin()
+                || missileWeaponUnit.getYRot() > data.getYRotMax()) {
             ScopeOverlay.tips.put(System.currentTimeMillis(), "超出导弹射界");
             return false;
         }
@@ -52,9 +52,9 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         var vehicle = getVehicle();
         var data = this.getData();
 
-        for (int index = 0; index < ammoSpawnPositions.size(); index += 1) {
+        for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
-            missileEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPositions.get(index), ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+            missileEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(missileEntity);
         }

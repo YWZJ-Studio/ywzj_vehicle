@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom.sync;
+package org.ywzj.vehicle.api.custom.sync;
 
 import net.minecraft.network.FriendlyByteBuf;
 

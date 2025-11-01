@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.vehicle.parts;
 
+import com.google.gson.annotations.SerializedName;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -12,10 +12,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
+import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.VehicleWeaponManager;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
+import org.ywzj.vehicle.custom.pojo.Bolt;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
-import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.vehicle.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -27,15 +28,17 @@ import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
- * 武器站是一种有方向机与高低机，可发射多类武器的载具可动部件
- * 其中方向机与高低机的结构模型可相互独立运动
- * 一个武器站可关联有多个子武器站，并在火控上联动
- * 多个武器站可纵向堆叠，并在方向机上联动旋转
+ * 默认武器站实现<br/>
+ * 武器站是一种有方向机与高低机，可发射多类武器的载具可动部件<br/>
+ * 其中方向机与高低机的结构模型可相互独立运动<br/>
+ * 一个武器站可关联有多个子武器站，并在火控上联动<br/>
+ * 多个武器站可纵向堆叠，并在方向机上联动旋转<br/>
  */
-public class WeaponUnit extends RotatableUnit {
+public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     // 武器站枢轴偏移，为武器站枢轴相对于载具枢轴的偏移
     private final Vec3 pivotOffset;
@@ -69,21 +72,7 @@ public class WeaponUnit extends RotatableUnit {
     private Entity aimLockEntity;
     public boolean parentWeaponUnitAim;
     // 第三人称准心样式
-    public CrosshairStyle crosshairStyle;
-
-    public static class Bolt {
-
-        // 炮闩偏移，为武器枢轴相对于武器站枢轴的偏移
-        public final Vec3 offset;
-        // 炮管长度，为发射物生成位置与武器枢轴位置的距离
-        public final float barrelLength;
-
-        public Bolt(Vec3 offset, float barrelLength) {
-            this.offset = offset;
-            this.barrelLength = barrelLength;
-        }
-
-    }
+    public CrosshairStyle crosshairStyle = CrosshairStyle.CIRCLE;
 
     public enum FiringMode {
         // 轮射
@@ -94,12 +83,16 @@ public class WeaponUnit extends RotatableUnit {
 
     public enum OpticalSightType {
         // 不能开镜
+        @SerializedName("none")
         NONE,
         // 以操作员视角开镜
+        @SerializedName("operator")
         OPERATOR,
         // 以观瞄视角开镜（光学瞄具）
+        @SerializedName("optical_scope")
         OPTICAL_SCOPE,
         // 以观瞄视角开镜（模拟电视）
+        @SerializedName("crt")
         CRT
     }
 
@@ -127,9 +120,9 @@ public class WeaponUnit extends RotatableUnit {
         );
     }
 
-    public WeaponUnit(WeaponUnitData data, int index, AbstractVehicle vehicle) {
-        super(Component.translatable(data.getName()), index, vehicle);
-        this.pivotOffset = data.getBoltOffset();
+    public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
+        super(index, vehicle, data);
+        this.pivotOffset = data.getPivotOffset();
         this.bolts.add(new Bolt(Vec3.ZERO, data.getBarrelLength()));
         this.firingMode = FiringMode.RIPPLE;
         this.opticalSightOffset = data.getOpticalSightOffset();
@@ -147,9 +140,10 @@ public class WeaponUnit extends RotatableUnit {
         this.yRotMax = rotInfo.yRotMax;
         this.yRotMin = rotInfo.yRotMin;
 
-        this.zoomMax = 8;
+        this.zoomMax = data.getZoomMax();
+        this.opticalSightType = data.getOpticalSightType();
+
         this.zoom = 1;
-        this.opticalSightType = OpticalSightType.CRT;
 
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
@@ -157,21 +151,7 @@ public class WeaponUnit extends RotatableUnit {
                 this::getCurrentWeaponIndex,
                 currentWeaponIndex
         );
-
-        int cnt = 0;
-        for (var weaponRes : data.getWeapons()) {
-            VehicleWeaponManager.get().getIndex(weaponRes).ifPresent(
-                    i -> {
-                        var weapon = i.create(vehicle, this, cnt);
-                        weapon.defineSyncData(this.getSyncData());
-                        weapons.add(weapon);
-                    }
-            );
-        }
-        if (!weapons.isEmpty()) {
-            currentWeaponIndex = Math.min(cnt, weapons.size() - 1);
-        }
-        this.getSyncData().initialize();
+        currentWeaponIndex = 0;
     }
 
     @Deprecated
@@ -193,14 +173,34 @@ public class WeaponUnit extends RotatableUnit {
 
         this.opticalSightType = OpticalSightType.CRT;
 
-//        VehicleWeaponManager.get().getIndex(new ResourceLocation(YwzjVehicle.MOD_ID, "cannon")).ifPresent(
-//                i -> {
-//                    var weapon = i.create(vehicle, this, 0);
-//                    weapon.defineSyncData(this.getSyncData());
-//                    weapons.add(weapon);
-//                }
-//        );
         currentWeaponIndex = 0;
+    }
+
+    @Override
+    public void combineAndInit(Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
+        if (data.getBase() != null) {
+            PartUnit<?> basePart = partUnitsView.get(data.getBase());
+            if (basePart instanceof WeaponUnit base) {
+                this.setBaseWeaponUnit(base);
+            }
+        }
+        int i = 0;
+        for (var weaponInfo : data.getWeapons()) {
+            var index = VehicleWeaponManager.get().getIndex(weaponInfo.id).orElse(null);
+            if (index != null) {
+                var parent = this;
+                if (weaponInfo.partUnit != null) {
+                    PartUnit<?> basePart = partUnitsView.get(weaponInfo.partUnit);
+                    if (basePart instanceof WeaponUnit weaponUnit) {
+                        parent = weaponUnit;
+                    }
+                }
+                var weapon = index.create(vehicle, parent, i);
+                this.weapons.add(weapon);
+                weapon.defineSyncData(this.getSyncData());
+                i++;
+            }
+        }
     }
 
     @Override
@@ -327,8 +327,8 @@ public class WeaponUnit extends RotatableUnit {
 
     public Vec3 ammoSpawnPosition(int boltIndex) {
         Bolt bolt = bolts.get(boltIndex < 0 || boltIndex >= bolts.size() ? currentBoltIndex : boltIndex);
-        Vec3 barrelOffset = worldVec().normalize().scale(bolt.barrelLength);
-        return worldPosition(pivotOffset.add(bolt.offset)).add(barrelOffset);
+        Vec3 barrelOffset = worldVec().normalize().scale(bolt.barrelLength());
+        return worldPosition(pivotOffset.add(bolt.offset())).add(barrelOffset);
     }
 
     public Vec3 worldPivotPosition() {
@@ -381,7 +381,7 @@ public class WeaponUnit extends RotatableUnit {
     }
 
     public Vec2 worldRot() {
-        return worldRot(xRot, yRot);
+        return worldRot(getXRot(), getYRot());
     }
 
     public Vec2 worldRot(float xRot, float yRot) {
@@ -402,15 +402,15 @@ public class WeaponUnit extends RotatableUnit {
         Vec3 vehicleVec = vehicle.relativeRotDirection(worldVec, true);
         float pitch = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         float yaw = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
-        yaw -= combineYRot() - yRot;
+        yaw -= combineYRot() - getYRot();
         return new Vec2(pitch, yaw);
     }
 
     public float combineYRot() {
         if (baseWeaponUnit == null) {
-            return yRot;
+            return getYRot();
         }
-        return yRot + baseWeaponUnit.combineYRot();
+        return getYRot() + baseWeaponUnit.combineYRot();
     }
 
     /**
@@ -425,7 +425,7 @@ public class WeaponUnit extends RotatableUnit {
             return new Vector4d(weaponUnit.pivotOffset.x, weaponUnit.pivotOffset.z, offsetX, offsetZ);
         }
         Vector4d pivotAndTargetOffset = rotatedOffsetWithBaseRot(weaponUnit.baseWeaponUnit, offsetX, offsetZ);
-        float rot = Math.toRadians(weaponUnit.baseWeaponUnit.yRot);
+        float rot = Math.toRadians(weaponUnit.baseWeaponUnit.getYRot());
         float cos = Math.cos(rot);
         float sin = Math.sin(rot);
         float dx1 = (float) (weaponUnit.pivotOffset.x - pivotAndTargetOffset.x);
@@ -440,7 +440,7 @@ public class WeaponUnit extends RotatableUnit {
 
     protected Vec3 rotatedOffsetWithSelfRot(Vec3 offsetFromVehicle) {
         Vector4d offset = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
-        float rot = Math.toRadians(yRot);
+        float rot = Math.toRadians(getYRot());
         float cos = Math.cos(rot);
         float sin = Math.sin(rot);
         float dx = (float) (offset.z - offset.x);

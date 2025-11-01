@@ -4,6 +4,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.api.custom.sync.SyncDataSerializer;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerEntityDataUpdate;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -26,7 +27,6 @@ public class PartUnitSyncData {
     private boolean isInitialized = false;
 
     //todo: 支持不同的同步模式
-    //todo: 确保发送初始数据
     public enum SyncMode {
         /**
          * 所有追踪此实体的玩家

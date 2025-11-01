@@ -10,19 +10,19 @@ import org.ywzj.vehicle.custom.VehicleWeaponManager;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public record ServerSyncData(
+public record ServerSyncWeaponData(
         Map<ResourceLocation, String> weaponUnitTypes
 ) {
 
-    public static void encode(ServerSyncData msg, FriendlyByteBuf buf) {
+    public static void encode(ServerSyncWeaponData msg, FriendlyByteBuf buf) {
         buf.writeMap(msg.weaponUnitTypes, FriendlyByteBuf::writeResourceLocation, FriendlyByteBuf::writeUtf);
     }
 
-    public static ServerSyncData decode(FriendlyByteBuf buf) {
-        return new ServerSyncData(buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf));
+    public static ServerSyncWeaponData decode(FriendlyByteBuf buf) {
+        return new ServerSyncWeaponData(buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf));
     }
 
-    public static void onServerMessageReceived(ServerSyncData msg, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void onServerMessageReceived(ServerSyncWeaponData msg, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> handle(msg));
@@ -31,7 +31,7 @@ public record ServerSyncData(
     }
 
     @OnlyIn(Dist.CLIENT)
-    private static void handle(ServerSyncData message) {
+    private static void handle(ServerSyncWeaponData message) {
         VehicleWeaponManager.fromNetwork(message.weaponUnitTypes);
     }
 }

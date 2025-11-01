@@ -29,7 +29,7 @@ public class DumpTruck extends WheeledVehicle {
 
     @Override
     public void initPartUnits() {
-        RotatableUnit dumpTruckBed = new RotatableUnit("dump_truck_bed", 0, this);
+        RotatableUnit<?> dumpTruckBed = new RotatableUnit<>("dump_truck_bed", 0, this);
         dumpTruckBed.setYRotMin(0);
         dumpTruckBed.setYRotMax(0);
         dumpTruckBed.setXRotMin(-45);
@@ -39,7 +39,7 @@ public class DumpTruck extends WheeledVehicle {
         dumpTruckBed.setSeatOffset(new Vec3(0.7, 2.7, 3));
         this.partUnits.add(dumpTruckBed);
         this.seats.add(new Seat(0, dumpTruckBed));
-        PartUnit passengerSeat = new PartUnit("passenger_seat", 1, this);
+        PartUnit<?> passengerSeat = new PartUnit<>("passenger_seat", 1, this);
         passengerSeat.setOwnerViewOffset(new Vec3(0.6 - 1.4, 2.5, 3.3));
         passengerSeat.setSeatOffset(new Vec3(0.7 - 1.4, 2.7, 3));
         this.partUnits.add(passengerSeat);
@@ -54,15 +54,15 @@ public class DumpTruck extends WheeledVehicle {
                 if (controlUnit.leftYaw || controlUnit.rightYaw) {
                     RotatableUnit bed = (RotatableUnit) seats.get(0).partUnit;
                     if (controlUnit.leftYaw) {
-                        bed.xAimRot -= 5;
+                        bed.setXAimRot(bed.getXAimRot() - 5);
                     } else {
-                        bed.xAimRot += 5;
+                        bed.setXAimRot(bed.getXAimRot() + 5);
                     }
-                    bed.xAimRot = Mth.clamp(bed.xAimRot, bed.xRotMin, bed.xRotMax);
+                    bed.setXAimRot(Mth.clamp(bed.getXAimRot(), bed.xRotMin, bed.xRotMax));
                     ClientVehicleAction control = new ClientVehicleAction();
                     control.vehicleEntityId = this.getId();
                     control.partUnitIndex = bed.getIndex();
-                    control.xAimRot = bed.xAimRot;
+                    control.xAimRot = bed.getXAimRot();
                     control.yAimRot = 0;
                     Channel.CHANNEL.sendToServer(control);
                 }
@@ -74,7 +74,7 @@ public class DumpTruck extends WheeledVehicle {
     protected void tickSound() {
         super.tickSound();
         RotatableUnit bed = (RotatableUnit) seats.get(0).partUnit;
-        if (Math.abs(bed.xAimRot - bed.xRot) > 1 && bed.xRot < bed.xRotMax && bed.xRot > bed.xRotMin) {
+        if (Math.abs(bed.getXAimRot() - bed.getXRot()) > 1 && bed.getXRot() < bed.xRotMax && bed.getXRot() > bed.xRotMin) {
             if (bedTurnSoundInstance == null) {
                 bedTurnSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
                 bedTurnSoundInstance.play();

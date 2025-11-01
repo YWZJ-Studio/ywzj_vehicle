@@ -72,8 +72,8 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
         if (!pEntity.seats.isEmpty()) {
             PartUnit partUnit = pEntity.seats.get(0).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
-                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
+                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
             }
         }
 
@@ -84,8 +84,8 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
         if (!pEntity.seats.isEmpty()) {
             PartUnit partUnit = pEntity.seats.get(1).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
-                machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.yRot);
-                machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.xRot);
+                machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+                machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
             }
         }
 

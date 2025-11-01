@@ -10,8 +10,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.entity.OBBEntity;
-import org.ywzj.vehicle.event.HitVehicleEvent;
+import org.ywzj.vehicle.api.entity.OBBEntity;
+import org.ywzj.vehicle.api.event.HitVehicleEvent;
 
 import java.util.ArrayList;
 import java.util.List;

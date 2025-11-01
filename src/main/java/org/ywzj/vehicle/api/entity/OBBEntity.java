@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.entity;
+package org.ywzj.vehicle.api.entity;
 
 import org.ywzj.vehicle.vehicle.structure.OBB;
 

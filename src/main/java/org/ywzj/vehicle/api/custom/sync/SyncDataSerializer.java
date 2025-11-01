@@ -1,7 +1,8 @@
-package org.ywzj.vehicle.custom.sync;
+package org.ywzj.vehicle.api.custom.sync;
 
 import net.minecraft.network.FriendlyByteBuf;
 import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.custom.sync.SyncDataEntry;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

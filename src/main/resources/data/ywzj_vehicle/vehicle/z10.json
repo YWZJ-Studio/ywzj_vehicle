@@ -15,10 +15,10 @@
       "minecraft:lava"
     ]
   },
-  "weapon_units": [
+  "parts": [
     {
       "id": "z10",
-      "type": "weapon",
+      "type": "ywzj_vehicle:weapon",
       "structure_bone": "z10",
       "name": "xxx.xxx",
       "rot_info": {

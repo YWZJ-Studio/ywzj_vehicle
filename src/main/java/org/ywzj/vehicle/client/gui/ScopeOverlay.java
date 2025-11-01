@@ -73,7 +73,7 @@ public class ScopeOverlay implements IGuiOverlay {
         for (int index = 0; index < vehicle.seats.size(); index++) {
             Integer playerId = vehicle.seats.get(index).passengerId;
             Entity entity = null;
-            PartUnit partUnit = null;
+            PartUnit<?> partUnit = null;
             if (playerId != null) {
                 entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
                 if (entity instanceof LivingEntity livingEntity) {
@@ -142,8 +142,8 @@ public class ScopeOverlay implements IGuiOverlay {
                                 (int) (baseY + vehicleMissileWeaponData.getXRotMin()),
                                 (int) (baseY + vehicleMissileWeaponData.getXRotMax()),
                                 color, 1f);
-                        int x = (int) weaponUnit.yRot;
-                        int y = (int) weaponUnit.xRot;
+                        int x = (int) weaponUnit.getYRot();
+                        int y = (int) weaponUnit.getXRot();
                         // 光瞄指向十字
                         guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
                         guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);

@@ -8,9 +8,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import org.ywzj.vehicle.api.YwzjVehicleAPI;
+import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
-import org.ywzj.vehicle.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
@@ -37,7 +38,11 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
     protected SyncDataHolder<Integer> remainAmmoHolder;
     protected SyncDataHolder<Integer> reloadTimeHolder;
 
-    // 你应该从工厂方法构建一个武器模块，而不是直接调用构造方法
+    /**
+     *  你应该尽可能从工厂方法构建一个武器模块，而不是直接调用武器的构造方法<br/>
+     *  此方法仅供子类实现使用<br/>
+     *  参见{@link YwzjVehicleAPI#getVehicleWeaponManager()}
+     */
     protected AbstractVehicleWeapon(AbstractVehicle vehicle, WeaponUnit weaponUnit, int index, T data) {
         this.vehicle = vehicle;
         this.weaponUnit = weaponUnit;

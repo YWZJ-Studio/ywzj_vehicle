@@ -15,10 +15,10 @@
       "minecraft:lava"
     ]
   },
-  "weapon_units": [
+  "parts": [
     {
       "id": "ztz99a_turret",
-      "type": "weapon",
+      "type": "ywzj_vehicle:weapon",
       "structure_bone": "ztz99a_turret",
       "name": "ztz99a_turret",
       "rot_info": {
@@ -36,9 +36,9 @@
     },
     {
       "id": "ztz99a_commander_machine_gun",
-      "type": "weapon",
+      "type": "ywzj_vehicle:weapon",
       "structure_bone": "ztz99a_commander_machine_gun",
-      "parent": "ztz99a_turret",
+      "base": "ztz99a_turret",
       "rot_info": {
         "x_rot_speed": 3,
         "y_rot_speed": 3,

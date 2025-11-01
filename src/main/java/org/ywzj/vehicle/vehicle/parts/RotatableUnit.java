@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.vehicle.parts;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -11,6 +10,7 @@ import org.joml.Math;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.custom.part.data.RotatableUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerRotatableUnitRot;
@@ -21,10 +21,13 @@ import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 /**
  * 可旋转运动的载具部件
  */
-public class RotatableUnit extends PartUnit {
+public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> implements IRotatableUnit {
 
-    public float xRot;
-    public float yRot;
+    protected float xAimRot;
+    protected float yAimRot;
+    protected float xRot;
+    protected float yRot;
+
     public float xRotO;
     public float yRotO;
     public float xRotSpeed;
@@ -33,19 +36,19 @@ public class RotatableUnit extends PartUnit {
     public float xRotMin = -90;
     public float yRotMax = Float.MAX_VALUE;
     public float yRotMin = -Float.MAX_VALUE;
-    public float xAimRot;
-    public float yAimRot;
+
     private VehicleSound turnYSoundInstance;
     private VehicleSound turnXSoundInstance;
 
+    public RotatableUnit(int index, AbstractVehicle vehicle, T data) {
+        super(index, vehicle, data);
+    }
+
+    @Deprecated
     public RotatableUnit(String name, int index, AbstractVehicle vehicle) {
         super(name, index, vehicle);
         this.initStructureModel(name);
         this.initOBBs();
-    }
-
-    public RotatableUnit(Component name, int index, AbstractVehicle vehicle) {
-        super(name, index, vehicle);
     }
 
     public void tick() {
@@ -56,8 +59,8 @@ public class RotatableUnit extends PartUnit {
         if (vehicle.hasPower()) {
             tickRot();
         } else {
-            this.xRotO = this.xRot;
-            this.yRotO = this.yRot;
+            this.xRotO = this.getXRot();
+            this.yRotO = this.getYRot();
         }
     }
 
@@ -65,15 +68,14 @@ public class RotatableUnit extends PartUnit {
         for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitBedrockCubeOBBs) {
             OBB obb = unitBedrockCubeOBB.obb();
             Quaternionf rotSelf = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            rotSelf.rotateY(Math.toRadians(-yRot));
-            Vec3 pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
-            Vec3 centerToPivot = unitBedrockCubeOBB.offset().subtract(pivotOffset);
-            Quaternionf rotY = new Quaternionf().rotationY(Math.toRadians(yRot));
-            Quaternionf rotX = new Quaternionf().rotationX(Math.toRadians(xRot));
+            rotSelf.rotateY(Math.toRadians(-getYRot()));
+            Vec3 centerToPivot = unitBedrockCubeOBB.offset().subtract(this.pivotOffset);
+            Quaternionf rotY = new Quaternionf().rotationY(Math.toRadians(getYRot()));
+            Quaternionf rotX = new Quaternionf().rotationX(Math.toRadians(getXRot()));
             Quaternionf rotation = new Quaternionf(rotX).mul(rotY);
             Vec3 centerToPivotRot = new Vec3(rotation.transform(centerToPivot.toVector3f()));
-            obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(pivotOffset.add(centerToPivotRot))).toVector3f());
-            rotSelf.rotateX(Math.toRadians(180 + xRot));
+            obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(this.pivotOffset.add(centerToPivotRot))).toVector3f());
+            rotSelf.rotateX(Math.toRadians(180 + getXRot()));
             obb.setRotation(vehicle.rotYXZ().mul(rotSelf));
         }
     }
@@ -190,4 +192,43 @@ public class RotatableUnit extends PartUnit {
         this.yRotMin = yRotMin;
     }
 
+    @Override
+    public float getXAimRot() {
+        return xAimRot;
+    }
+
+    @Override
+    public void setXAimRot(float xAimRot) {
+        this.xAimRot = xAimRot;
+    }
+
+    @Override
+    public float getYAimRot() {
+        return yAimRot;
+    }
+
+    @Override
+    public void setYAimRot(float yAimRot) {
+        this.yAimRot = yAimRot;
+    }
+
+    @Override
+    public float getXRot() {
+        return xRot;
+    }
+
+    @Override
+    public void setXRot(float xRot) {
+        this.xRot = xRot;
+    }
+
+    @Override
+    public float getYRot() {
+        return yRot;
+    }
+
+    @Override
+    public void setYRot(float yRot) {
+        this.yRot = yRot;
+    }
 }

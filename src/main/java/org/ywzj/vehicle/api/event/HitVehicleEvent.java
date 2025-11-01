@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.event;
+package org.ywzj.vehicle.api.event;
 
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.eventbus.api.Event;

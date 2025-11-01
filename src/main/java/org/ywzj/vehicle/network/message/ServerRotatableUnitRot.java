@@ -19,8 +19,8 @@ public class ServerRotatableUnitRot {
     public ServerRotatableUnitRot(RotatableUnit rotatableUnit) {
         this.vehicleEntityId = rotatableUnit.getVehicle().getId();
         this.partUnitIndex = rotatableUnit.getIndex();
-        this.xAimRot = rotatableUnit.xAimRot;
-        this.yAimRot = rotatableUnit.yAimRot;
+        this.xAimRot = rotatableUnit.getXAimRot();
+        this.yAimRot = rotatableUnit.getYAimRot();
     }
 
     public static ServerRotatableUnitRot decode(FriendlyByteBuf buf) {

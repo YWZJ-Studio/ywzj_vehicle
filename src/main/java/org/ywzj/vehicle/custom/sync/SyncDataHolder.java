@@ -1,5 +1,7 @@
 package org.ywzj.vehicle.custom.sync;
 
+import org.ywzj.vehicle.api.custom.sync.SyncDataSerializer;
+
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 

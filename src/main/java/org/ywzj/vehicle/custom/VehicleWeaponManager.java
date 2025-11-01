@@ -1,8 +1,6 @@
 package org.ywzj.vehicle.custom;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.resources.ResourceLocation;
@@ -10,8 +8,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -23,11 +19,11 @@ import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.ModRegistries;
-import org.ywzj.vehicle.custom.serialize.IngredientSerializer;
-import org.ywzj.vehicle.custom.serialize.Vec3Serializer;
+import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
+import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ServerSyncData;
+import org.ywzj.vehicle.network.message.ServerSyncWeaponData;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
@@ -40,12 +36,6 @@ import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 @ParametersAreNonnullByDefault
 public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>>
         implements IVehicleWeaponManager {
-
-    public static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
-            .registerTypeAdapter(Vec3.class, new Vec3Serializer())
-            .registerTypeAdapter(Ingredient.class, new IngredientSerializer())
-            .create();
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");
 
@@ -68,7 +58,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
         public void fromNetwork(Map<ResourceLocation, String> map) {
             Map<ResourceLocation, JsonElement> jsonMap = new HashMap<>();
             for (var entry : map.entrySet()) {
-                var ele = GSON.fromJson(entry.getValue(), JsonElement.class);
+                var ele = GsonUtil.GSON.fromJson(entry.getValue(), JsonElement.class);
                 if (ele != null) {
                     jsonMap.put(entry.getKey(), ele);
                 }
@@ -88,7 +78,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
     @NotNull
     @Override
     public Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller profiler) {
-        var map = scanDirectory(manager, "weapon_units", GSON);
+        var map = scanDirectory(manager, "weapon_units", GsonUtil.GSON);
         ImmutableMap.Builder<ResourceLocation, String> builder = ImmutableMap.builder();
         for (var entry : map.entrySet()) {
             builder.put(entry.getKey(), entry.getValue().toString());
@@ -135,7 +125,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
         if (INSTANCE == null) {
             return;
         }
-        var msg = new ServerSyncData(INSTANCE.cache);
+        var msg = new ServerSyncWeaponData(INSTANCE.cache);
         if (event.getPlayer() != null) {
             Channel.CHANNEL.send(PacketDistributor.PLAYER.with(event::getPlayer), msg);
         } else {
@@ -149,7 +139,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
     private static Map<ResourceLocation, VehicleWeaponIndex<?, ?>> parseIndexes(
             Map<ResourceLocation, JsonElement> map
     ) {
-        var registry = ModRegistries.WEAPON_UNIT_TYPE_SUPPLIER.get();
+        var registry = ModRegistries.VEHICLE_WEAPON_TYPE_SUPPLIER.get();
         if (registry == null) {
             YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data: registry is null. Is the game in a broken state?");
             return Map.of();

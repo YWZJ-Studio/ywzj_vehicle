@@ -8,17 +8,18 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
+import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.*;
 
 public class BaseVehicleData {
     private ResourceLocation structureModel;
-    private List<WeaponUnitData> weaponUnitData;
+    private List<PartUnitEntry<?, ?>> parts;
     private VehicleBedrockCubeOBB mainCubeOBB;
-    private List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
+    private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
     private float width = 1.0f;
     private float length = 1.0f;
     private float height = 1.0f;
@@ -34,37 +35,30 @@ public class BaseVehicleData {
         data.structureModel = pojo.structureModel;
         var model = BedrockModelLoader.getModel(pojo.structureModel);
 
-        data.weaponUnitData = pojo.weaponUnitData.stream().map(
-                unitPojo -> WeaponUnitData.of(unitPojo, model)
-        ).toList();
-
+        data.parts = pojo.parts;
+        for (var entry : data.parts) {
+            var partData = entry.data();
+            partData.initStructureModel(model);
+        }
         data.initOBBs(model);
         return data;
     }
 
-    public Map<String, WeaponUnit> createPartUnits(AbstractVehicle vehicle) {
-        Map<String, WeaponUnit> partUnitMap = new LinkedHashMap<>();
+    public Map<String, PartUnit<?>> createPartUnits(AbstractVehicle vehicle) {
+        Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>();
         int i = 0;
         // 从data创建
-        for (var partData : weaponUnitData) {
-            var partUnit = new WeaponUnit(partData, i, vehicle);
-            partUnitMap.put(partData.getId(), partUnit);
+        for (var partData : parts) {
+            partUnitMap.put(partData.data().getId(), partData.create(i, vehicle));
             i++;
         }
-        // 依照父级进行链接
-        for (var partUnit : weaponUnitData) {
-            if (partUnit.getParent() != null) {
-                var parent = partUnitMap.get(partUnit.getParent());
-                if (parent != null) {
-                    partUnitMap.get(partUnit.getId()).setBaseWeaponUnit(parent);
-                }
-            }
+        // 额外操作
+        var view = Collections.unmodifiableMap(partUnitMap);
+        for (var partUnit : partUnitMap.values()) {
+            partUnit.combineAndInit(view, vehicle);
         }
-        return partUnitMap;
-    }
 
-    public List<WeaponUnitData> getWeaponUnitData() {
-        return weaponUnitData;
+        return partUnitMap;
     }
 
     public ResourceLocation getStructureModel() {
@@ -112,7 +106,8 @@ public class BaseVehicleData {
             }
         }
         // 由部件结构拓展车体长宽
-        for (var data : weaponUnitData) {
+        for (var entry : this.parts) {
+            var data = entry.data();
             for (var cubeOBB : data.getUnitBedrockCubeOBBs()) {
                 Vec3 offset = cubeOBB.offset();
                 this.width = (float) Math.max((Math.abs(offset.x) + cubeOBB.getWidth() / 2) * 2, this.width);

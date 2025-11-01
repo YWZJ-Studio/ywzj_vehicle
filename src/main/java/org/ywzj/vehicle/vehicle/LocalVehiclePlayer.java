@@ -12,6 +12,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -70,7 +71,7 @@ public class LocalVehiclePlayer {
                 return;
             }
             AbstractVehicle vehicle = getVehicle();
-            PartUnit partUnit = vehicle.getOwnOperatorUnit(getPlayer());
+            PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(getPlayer());
             if (partUnit != null) {
                 cameraXO = cameraX;
                 cameraYO = cameraY;
@@ -114,7 +115,7 @@ public class LocalVehiclePlayer {
                     }
                     Quaternionf rot = new Quaternionf();
                     rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
-                    rot.rotateX((float) Math.toRadians(-weaponUnit.xRot));
+                    rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
                     rot = vehicle.rotYXZ().mul(rot);
                     Vector3f eulerAngles = new Vector3f();
                     rot.getEulerAnglesYXZ(eulerAngles);
@@ -135,7 +136,7 @@ public class LocalVehiclePlayer {
         lock.lock();
         try {
             AbstractVehicle vehicle = getVehicle();
-            PartUnit partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
+            PartUnit<?> partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
@@ -176,7 +177,7 @@ public class LocalVehiclePlayer {
             cameraYO = cameraY;
             cameraZO = cameraZ;
         } catch (Exception exception) {
-            exception.printStackTrace();
+            YwzjVehicle.LOGGER.error("Failed while switch view type", exception);
         } finally {
             lock.unlock();
         }
@@ -204,13 +205,13 @@ public class LocalVehiclePlayer {
                     Vec3 pos = cameraAimHit((float) pXRot, (float) pYRot).getLocation();
                     weaponUnit.setAimLockPosition(pos);
                 } else {
-                    float t1 = Mth.abs(scopeAimRotX - weaponUnit.xRot) / weaponUnit.getXRotSpeed();
+                    float t1 = Mth.abs(scopeAimRotX - weaponUnit.getXRot()) / weaponUnit.getXRotSpeed();
                     float v1 = 1;
                     if (t1 > 3f) {
                         // 运动平滑
                         v1 = Math.max(0.00001f, (70 - t1 * 10) / 1000);
                     }
-                    if ((pXRot > 0 && weaponUnit.xAimRot < weaponUnit.xRotMax) || (pXRot < 0 && weaponUnit.xAimRot > weaponUnit.xRotMin)) {
+                    if ((pXRot > 0 && weaponUnit.getXAimRot() < weaponUnit.xRotMax) || (pXRot < 0 && weaponUnit.getXAimRot() > weaponUnit.xRotMin)) {
                         scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
                     }
                     float t2 = Mth.abs(scopeAimRotY -  weaponUnit.combineYRot()) / weaponUnit.getYRotSpeed();
@@ -219,7 +220,7 @@ public class LocalVehiclePlayer {
                         // 运动平滑
                         v2 = Math.max(0.00001f, (70 - t2 * 10) / 1000);
                     }
-                    if ((pYRot > 0 && weaponUnit.yAimRot < weaponUnit.yRotMax) || (pYRot < 0 && weaponUnit.yAimRot > weaponUnit.yRotMin)) {
+                    if ((pYRot > 0 && weaponUnit.getYAimRot() < weaponUnit.yRotMax) || (pYRot < 0 && weaponUnit.getYAimRot() > weaponUnit.yRotMin)) {
                         scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);
                     }
                 }

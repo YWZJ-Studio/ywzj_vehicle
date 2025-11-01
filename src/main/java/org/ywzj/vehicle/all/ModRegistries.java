@@ -9,19 +9,26 @@ import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.NewRegistryEvent;
 import net.minecraftforge.registries.RegistryBuilder;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.custom.part.PartUnitType;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponType;
 
 import java.util.function.Supplier;
 
 @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModRegistries {
-    public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> WEAPON_UNIT_TYPE = ResourceKey.createRegistryKey(
-            new ResourceLocation(YwzjVehicle.MOD_ID, "weapon_unit_type")
+    public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE = ResourceKey.createRegistryKey(
+            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_weapon_type")
     );
-    public static Supplier<IForgeRegistry<VehicleWeaponType<?, ?>>> WEAPON_UNIT_TYPE_SUPPLIER;
+    public static Supplier<IForgeRegistry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE_SUPPLIER;
+
+    public static final ResourceKey<Registry<PartUnitType<?, ?>>> PART_UNIT_TYPE = ResourceKey.createRegistryKey(
+            new ResourceLocation(YwzjVehicle.MOD_ID, "part_unit_type")
+    );
+    public static Supplier<IForgeRegistry<PartUnitType<?, ?>>> PART_UNIT_TYPE_SUPPLIER;
 
     @SubscribeEvent
     public static void registerRegistries(NewRegistryEvent event) {
-        WEAPON_UNIT_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleWeaponType<?, ?>>().setName(WEAPON_UNIT_TYPE.location()));
+        VEHICLE_WEAPON_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleWeaponType<?, ?>>().setName(VEHICLE_WEAPON_TYPE.location()));
+        PART_UNIT_TYPE_SUPPLIER = event.create(new RegistryBuilder<PartUnitType<?, ?>>().setName(PART_UNIT_TYPE.location()));
     }
 }
