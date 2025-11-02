@@ -1,7 +1,14 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.event.RegisterBedrockAnimationReloadListenerEvent;
+import com.maydaymemory.mae.basic.ArrayPoseBuilder;
+import com.maydaymemory.mae.basic.Pose;
+import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
+import com.maydaymemory.mae.blend.EulerAdditiveBlender;
+import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -13,18 +20,35 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.entity.vehicle.Ztz99a;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.List;
+
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
+    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
 
     public Ztz99aRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
+
+    private static List<BedrockAnimation> animations;
+
+    @SubscribeEvent
+    public static void onRegisterAnimationReloadListener(RegisterBedrockAnimationReloadListenerEvent event) {
+        event.register(map -> {
+            animations = map.get(YwzjVehicle.modLoc("bedrock/entity/ztz99a.animation"));
+        });
+    }
+
 
     @Override
     public void render(Ztz99a pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
@@ -38,6 +62,29 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
 
         BedrockModel model = BedrockModelLoader.getModel(AllVehicles.ZTZ99A.getVisualBedrockModel());
         VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.ZTZ99A.getVisualBedrockTexture()));
+
+        TrackAnimationInstance instance = pEntity.getTrackAnimationInstance();
+        if (instance == null) {
+            instance = new TrackAnimationInstance(animations);
+            pEntity.setTrackAnimationInstance(instance);
+        }
+
+        float deltaTime = (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000f;
+
+        float vf = pEntity.getEntityData().get(Ztz99a.FORWARD_SPEED); // 线速度
+        float omega = pEntity.getEntityData().get(Ztz99a.TURN_SPEED); // 角速度
+        float trackWidth = 3.0f / 20f;
+
+        float leftTrackSpeed = vf + omega * trackWidth / 2;
+        float rightTrackSpeed = vf - omega * trackWidth / 2;
+
+        instance.leftAnimProgress = (1 + instance.leftAnimProgress + leftTrackSpeed * deltaTime * 35) % 1f;
+        instance.rightAnimProgress = (1 + instance.rightAnimProgress + rightTrackSpeed * deltaTime * 35) % 1f;
+
+        Pose bindPose = model.getBindPose();
+        Pose blended = BLENDER.blend(bindPose, instance.evaluate());
+        model.applyPose(blended);
+
 
 //        BedrockBone wheel1 = model.getBoneMap().get("wheel1");
 //        BedrockBone wheel2 = model.getBoneMap().get("wheel2");
@@ -114,20 +161,7 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
         pEntity.lastRenderTime = System.currentTimeMillis();
         model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
 
-        Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-//        wheel1.rotation.set(reset);
-//        wheel2.rotation.set(reset);
-//        wheel3.rotation.set(reset);
-//        wheel4.rotation.set(reset);
-//        wheel5.rotation.set(reset);
-//        wheel6.rotation.set(reset);
-//        wheel7.rotation.set(reset);
-//        wheel8.rotation.set(reset);
-        turret.rotation.set(reset);
-        cannon.rotation.set(reset);
-        machineGunBase.rotation.set(reset);
-        machineGun.rotation.set(reset);
-
+        model.applyPose(model.getBindPose());
         pPoseStack.popPose();
     }
 

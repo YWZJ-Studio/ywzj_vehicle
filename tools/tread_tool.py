@@ -33,18 +33,15 @@ def extract_transform(bone):
     }
 
 
-def build_animation(bones, duration=1.0, anim_name="tread_move"):
+def build_animation(bones, duration=1.0):
     anim = {
         "format_version": "1.8.0",
         "animations": {
-            anim_name: {
-                "bones": {},
-                "animation_length": duration
-            }
         }
     }
     bones_map = {b.get("name"): b for b in bones if "name" in b}
     pattern = re.compile(r"^tread_([a-z])_(\d+)$")
+
     for name, bone in bones_map.items():
         m = pattern.match(name)
         if not m:
@@ -78,7 +75,16 @@ def build_animation(bones, duration=1.0, anim_name="tread_move"):
             "0.0": [0, 0, 0],
             f"{duration}": d_pos
         }
-        anim["animations"][anim_name]["bones"][name] = bone_anim
+
+        anim_name = f"tread_{part}_move"
+
+        if anim_name not in anim["animations"]:
+            anim["animations"][anim_name] = {
+                "bones": {},
+                "animation_length": duration
+            }
+
+        anim["animations"].get(anim_name).get("bones")[name] = bone_anim
     return anim
 
 
@@ -87,7 +93,6 @@ def main():
     parser.add_argument("model", nargs="?", help="输入模型 JSON 文件，例如 `ztz99a.json`")
     parser.add_argument("--out", "-o", help="输出动画文件名，默认：<modelname>.animation.json")
     parser.add_argument("--duration", "-d", type=float, default=1.0, help="关键帧间时长（秒），默认 1.0")
-    parser.add_argument("--anim-name", default="tread_move", help="生成的动画名，默认 `tread_move`")
     args = parser.parse_args()
 
     if not args.model:
@@ -106,7 +111,7 @@ def main():
         print(str(e))
         return
 
-    animation = build_animation(bones, duration=args.duration, anim_name=args.anim_name)
+    animation = build_animation(bones, duration=args.duration)
 
     out_path = Path(args.out) if args.out else model_path.with_name(model_path.stem + ".animation.json")
     save_json(animation, out_path)

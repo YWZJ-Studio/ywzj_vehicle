@@ -13,6 +13,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -21,6 +22,8 @@ import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import java.util.List;
 
 public class Ztz99a extends TrackedVehicle {
+
+    private TrackAnimationInstance trackAnimationInstance;
 
     public Ztz99a(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -170,4 +173,11 @@ public class Ztz99a extends TrackedVehicle {
         }
     }
 
+    public TrackAnimationInstance getTrackAnimationInstance() {
+        return trackAnimationInstance;
+    }
+
+    public void setTrackAnimationInstance(TrackAnimationInstance trackAnimationInstance) {
+        this.trackAnimationInstance = trackAnimationInstance;
+    }
 }

@@ -20,8 +20,8 @@ public class BedrockAnimationLoader {
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(RegisterBedrockAnimationEvent event) {
         event.register(
-                YwzjVehicle.modLoc("entity/ztz99a.animation"),
-                YwzjVehicle.modLoc("entity/ztz99a.animation"),
+                YwzjVehicle.modLoc("bedrock/entity/ztz99a.animation"),
+                YwzjVehicle.modLoc("entity/ztz99a"),
                 RawResourceLoaders.COMMON_LOADER
         );
     }
