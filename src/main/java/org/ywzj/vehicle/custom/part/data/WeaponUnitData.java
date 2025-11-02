@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.custom.part.data;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.custom.pojo.WeaponInfo;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -101,13 +101,13 @@ public class WeaponUnitData extends RotatableUnitData {
             this.pivotOffset = new Vec3(yTurnBone.x / 16, xTurnBone.y / 16, yTurnBone.z / 16);
             var cubes = xTurnBone.cubes.stream().map(c -> (BedrockCubePerFace) c).toList();
             var barrelCube = cubes.stream()
-                    .max(Comparator.comparingDouble(c -> c.getDepth() * c.getWidth() * c.getHeight()))
+                    .max(Comparator.comparingDouble(c -> c.depth() * c.width() * c.height()))
                     .orElse(null);
             if (barrelCube != null) {
                 double barrelHalfLength = new Vec3(
-                        xTurnBone.x / 16 - yTurnBone.x / 16 + barrelCube.getX() + barrelCube.getWidth() / 2,
-                        barrelCube.getY() + barrelCube.getHeight() / 2,
-                        xTurnBone.z / 16 - yTurnBone.z / 16 + barrelCube.getZ() + barrelCube.getDepth() / 2
+                        xTurnBone.x / 16 - yTurnBone.x / 16 + barrelCube.x() + barrelCube.width() / 2,
+                        barrelCube.y() + barrelCube.height() / 2,
+                        xTurnBone.z / 16 - yTurnBone.z / 16 + barrelCube.z() + barrelCube.depth() / 2
                 ).length();
                 this.barrelLength = (float) (barrelHalfLength * 2);
             }

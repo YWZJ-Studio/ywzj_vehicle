@@ -61,9 +61,9 @@ public class AllVehicles {
 //            this.health = 100f;
 
             this.entityClass = entityClass;
-            this.visualBedrockModel = YwzjVehicle.modLoc("bedrock/entity/" + name);
+            this.visualBedrockModel = YwzjVehicle.modLoc("entity/" + name);
             this.visualBedrockTexture = YwzjVehicle.modLoc("textures/entity/" + name +".png");
-            this.structureBedrockModel = YwzjVehicle.modLoc("bedrock/entity/" + name + "_structure");
+            this.structureBedrockModel = YwzjVehicle.modLoc("entity/" + name + "_structure");
         }
 
         public String getName() {

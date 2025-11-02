@@ -1,5 +1,5 @@
 {
-  "structure_model": "ywzj_vehicle:bedrock/entity/ztz99a_structure",
+  "structure_model": "ywzj_vehicle:entity/ztz99a_structure",
   "attributes": {
     "max_health": 200
     // ...

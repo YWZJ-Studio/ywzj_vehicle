@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.custom.part.data;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 

@@ -1,15 +1,15 @@
 package org.ywzj.vehicle.custom.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
-import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
@@ -90,10 +90,10 @@ public class BaseVehicleData {
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
         // 约定取体积最大的块表达车体的长宽高
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-        cubes.sort(Comparator.comparingDouble(cube1 -> cube1.getDepth() * cube1.getWidth() * cube1.getHeight()));
-        this.width = cubes.get(0).getWidth();
-        this.length = cubes.get(0).getDepth();
-        this.height = cubes.get(0).getHeight();
+        cubes.sort(Comparator.comparingDouble(cube1 -> cube1.depth() * cube1.width() * cube1.height()));
+        this.width = cubes.get(0).width();
+        this.length = cubes.get(0).depth();
+        this.height = cubes.get(0).height();
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleBodyOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {

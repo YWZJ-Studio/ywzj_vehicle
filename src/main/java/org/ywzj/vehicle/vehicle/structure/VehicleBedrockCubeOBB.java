@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.vehicle.structure;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -28,19 +28,19 @@ public class VehicleBedrockCubeOBB {
     public final double width;
     public final double depth;
 
-    public VehicleBedrockCubeOBB(OBB obb, BedrockBone bone, BedrockCubePerFace cube) {
+    public VehicleBedrockCubeOBB(OBB obb, BedrockBone bone, BedrockCube cube) {
         this.obb = obb;
         this.selfRot = new Quaternionf(bone.rotation);
         this.cubePoints = new ArrayList<>();
         this.initCubePoints();
         this.offset = new Vec3(bone.x / 16, bone.y / 16, bone.z / 16)
-                .add(cube.getX() + cube.getWidth() / 2, cube.getY() + cube.getHeight() / 2, cube.getZ() + cube.getDepth() / 2);
+                .add(cube.x() + cube.width() / 2, cube.y() + cube.height() / 2, cube.z() + cube.depth() / 2);
         this.boneX = bone.x;
         this.boneY = bone.y;
         this.boneZ = bone.z;
-        this.height = cube.getHeight();
-        this.width = cube.getWidth();
-        this.depth = cube.getDepth();
+        this.height = cube.height();
+        this.width = cube.width();
+        this.depth = cube.depth();
     }
 
     public VehicleBedrockCubeOBB(VehicleBedrockCubeOBB origin) {
@@ -57,9 +57,9 @@ public class VehicleBedrockCubeOBB {
         this.depth = origin.depth;
     }
 
-    public static VehicleBedrockCubeOBB init(BedrockBone bone, BedrockCubePerFace cube) {
+    public static VehicleBedrockCubeOBB init(BedrockBone bone, BedrockCube cube) {
         OBB obb = new OBB(Vec3.ZERO.toVector3f(),
-                new Vector3f(cube.getWidth() / 2, cube.getHeight() / 2, cube.getDepth() / 2),
+                new Vector3f(cube.width() / 2, cube.height() / 2, cube.depth() / 2),
                 new Quaternionf(bone.rotation));
         return new VehicleBedrockCubeOBB(obb, bone, cube);
     }

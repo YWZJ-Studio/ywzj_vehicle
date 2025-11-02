@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -15,8 +15,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.entity.vehicle.Quadcopter;
+import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 import static org.ywzj.vehicle.entity.vehicle.Quadcopter.CABLE_LENGTH;
 
@@ -65,10 +65,10 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
 
         float d = 16 * cableLength;
         ropeConnect.y -= d;
-        BedrockCubePerFace cube = (BedrockCubePerFace) rope.getChildren().get(0).cubes.get(0);
-        float scale = (cube.getHeight() + cableLength) / cube.getHeight();
+        BedrockCube cube = rope.getChildren().get(0).cubes.get(0);
+        float scale = (cube.height() + cableLength) / cube.height();
         rope.yScale = scale;
-        float diffY = (cube.getY() * scale - cube.getY()) * 1.8f;
+        float diffY = (cube.y() * scale - cube.y()) * 1.8f;
         rope.y -= diffY;
 
         pEntity.lastRenderTime = System.currentTimeMillis();

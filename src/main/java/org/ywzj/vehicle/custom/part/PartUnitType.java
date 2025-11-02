@@ -11,7 +11,6 @@ import org.ywzj.vehicle.vehicle.parts.PartUnit;
  * @param id 类型id
  * @param dataSerializer 配置解析器
  * @param factory 部件工厂
- * @param combineFunction 组合方法
  * @param <T> 载具部件实现类
  * @param <D> 载具部件配置
  */

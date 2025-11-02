@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.bedrock.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -42,11 +42,11 @@ import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.api.entity.OBBEntity;
-import org.ywzj.vehicle.bedrock.model.BedrockModelLoader;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.ContainerMob;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
+import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
@@ -277,16 +277,16 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         BedrockModel model = BedrockModelLoader.getModel(vehicleType.getStructureBedrockModel());
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
         // 约定取体积最大的块计算物理
-        List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-        cubes.sort((cube1, cube2) -> (int) -(cube1.getDepth() * cube1.getWidth() * cube1.getHeight() - cube2.getDepth() * cube2.getWidth() * cube2.getHeight()));
+        List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
+        cubes.sort((cube1, cube2) -> (int) -(cube1.depth() * cube1.width() * cube1.height() - cube2.depth() * cube2.width() * cube2.height()));
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleOBBs.add(mainCubeOBB);
-        for (BedrockCubePerFace cube : cubes) {
+        for (BedrockCube cube : cubes) {
             vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
         }
         for (BedrockBone child : bone.getChildren()) {
-            List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-            for (BedrockCubePerFace cube : childCubes) {
+            List<BedrockCube> childCubes = new ArrayList<>(child.cubes.stream().toList());
+            for (BedrockCube cube : childCubes) {
                 vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
             }
         }

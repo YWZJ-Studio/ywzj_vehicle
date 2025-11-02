@@ -25,7 +25,8 @@ public class ChunkMapMixin {
             method = "playerLoadedChunk",
             at = @At("TAIL")
     )
-    private void playerLoadedChunk(ServerPlayer pPlayer, MutableObject<ClientboundLevelChunkWithLightPacket> pPacketCache, LevelChunk pChunk, CallbackInfo ci, @Local(name = "list1") List<Entity> list1) {
+    private void playerLoadedChunk(ServerPlayer pPlayer, MutableObject<ClientboundLevelChunkWithLightPacket> pPacketCache,
+                                   LevelChunk pChunk, CallbackInfo ci, @Local(name = "list1") List<Entity> list1) {
         for (Entity entity : list1) {
             if (entity instanceof AbstractVehicle vehicle) {
                 Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> pPlayer), new ServerVehicleSeatsChange(vehicle));

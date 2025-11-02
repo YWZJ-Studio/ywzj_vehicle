@@ -8,7 +8,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.block.TestBlock;
 
 import java.util.function.Supplier;
 
@@ -16,7 +15,6 @@ public class AllBlocks {
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, YwzjVehicle.MOD_ID);
 
-    public static final RegistryObject<Block> TEST_BLOCK = registerBlock(AllTabs.Category.MISC, "test_block", TestBlock::new);
 
     public static <T extends Block> RegistryObject<Block> registerBlock(AllTabs.Category category, String name, Supplier<T> block) {
         RegistryObject<Block> toReturn = BLOCKS.register(name, block);
