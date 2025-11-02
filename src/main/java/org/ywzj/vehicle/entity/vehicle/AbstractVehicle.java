@@ -83,6 +83,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     public final PhysicsEngine physicsEngine;
+    public long lastRenderTime;
 
     protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);

@@ -49,7 +49,6 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
         });
     }
 
-
     @Override
     public void render(Ztz99a pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         pPoseStack.pushPose();
@@ -78,46 +77,44 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
         float leftTrackSpeed = vf + omega * trackWidth / 2;
         float rightTrackSpeed = vf - omega * trackWidth / 2;
 
-        instance.leftAnimProgress = (1 + instance.leftAnimProgress + leftTrackSpeed * deltaTime * 35) % 1f;
-        instance.rightAnimProgress = (1 + instance.rightAnimProgress + rightTrackSpeed * deltaTime * 35) % 1f;
+        leftTrackSpeed *= 20f; // 转换为米/秒
+        rightTrackSpeed *= 20f; // 转换为米/秒
+
+        instance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime, 0.25f);
 
         Pose bindPose = model.getBindPose();
         Pose blended = BLENDER.blend(bindPose, instance.evaluate());
         model.applyPose(blended);
 
+        for (int i = 0; i < 13; i++) {
+            String boneName = "hull_big_" + i;
+            BedrockBone bone = model.getBoneMap().get(boneName);
+            if (bone != null) {
+                float angle = i < 7 ? instance.leftWheelDegrees(0.375f) : instance.rightWheelDegrees(0.375f);
+                bone.rotation.mul(Axis.XP.rotationDegrees(angle));
+            }
+        }
 
-//        BedrockBone wheel1 = model.getBoneMap().get("wheel1");
-//        BedrockBone wheel2 = model.getBoneMap().get("wheel2");
-//        BedrockBone wheel3 = model.getBoneMap().get("wheel3");
-//        BedrockBone wheel4 = model.getBoneMap().get("wheel4");
-//        BedrockBone wheel5 = model.getBoneMap().get("wheel5");
-//        BedrockBone wheel6 = model.getBoneMap().get("wheel6");
-//        BedrockBone wheel7 = model.getBoneMap().get("wheel7");
-//        BedrockBone wheel8 = model.getBoneMap().get("wheel8");
+        for (int i = 0; i < 5; i++) {
+            String boneName = "hull_small_" + i;
+            BedrockBone bone = model.getBoneMap().get(boneName);
+            if (bone != null) {
+                float angle = i < 3 ? instance.leftWheelDegrees(0.28f) : instance.rightWheelDegrees(0.28f);
+                bone.rotation.mul(Axis.XP.rotationDegrees(angle));
+            }
+        }
+
         BedrockBone turret = model.getBoneMap().get("turret");
         BedrockBone cannon = model.getBoneMap().get("canno");
         BedrockBone machineGunBase = model.getBoneMap().get("machine_gun");
         BedrockBone machineGun = model.getBoneMap().get("machine_gun_high");
-//
-//        // 轮子转速
-//        float vf = pEntity.getEntityData().get(Ztz99a.FORWARD_SPEED);
-//        float t = (float) (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000 * 20;
-//        float s = t * vf;
-//        float l = (float) 20 / 16;
-//        float r = s / (l * 3.1415f) * 360;
-//        pEntity.wheelRotation += r;
-//        pEntity.wheelRotation %= 360;
-//
-//        // 轮子转向幅度
-//        float vt = pEntity.getEntityData().get(Ztz99a.TURN_SPEED);
-//        float turnRotation = vt * 16;
 
         // 炮塔旋转
         float turretYRot = 0;
         // 炮塔俯仰
         float turretXRot = 0;
         if (!pEntity.seats.isEmpty()) {
-            PartUnit partUnit = pEntity.seats.get(0).partUnit;
+            PartUnit<?> partUnit = pEntity.seats.get(0).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
                 turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
@@ -129,30 +126,14 @@ public class Ztz99aRenderer extends EntityRenderer<Ztz99a> {
         // 车长机枪俯仰
         float machineGunXRot = 0;
         if (!pEntity.seats.isEmpty()) {
-            PartUnit partUnit = pEntity.seats.get(1).partUnit;
+            PartUnit<?> partUnit = pEntity.seats.get(1).partUnit;
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
                 machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
             }
         }
 
-        // 应用动画
-//        wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-//        wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-//        wheel3.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 0.5f));
-//        wheel5.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 0.5f));
-//        wheel6.rotation.mul(Axis.YN.rotationDegrees(-turnRotation * 0.5f));
-//        wheel4.rotation.mul(Axis.YN.rotationDegrees(-turnRotation * 0.5f));
-//        wheel8.rotation.mul(Axis.YN.rotationDegrees(-turnRotation));
-//        wheel7.rotation.mul(Axis.YN.rotationDegrees(-turnRotation));
-//        wheel1.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel2.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel3.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel4.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel5.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel6.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel7.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-//        wheel8.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+
         turret.rotation.mul(Axis.YN.rotationDegrees(turretYRot));
         cannon.rotation.mul(Axis.XN.rotationDegrees(-turretXRot));
         machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));

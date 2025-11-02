@@ -24,7 +24,6 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     public float maxSpeedBackward = 0.2f;
     public float turnAcceleration = 1f;
     public float maxTurn = 2f;
-    public long lastRenderTime;
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
 
