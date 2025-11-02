@@ -7,7 +7,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.client.gui.ScopeOverlay;
+import org.ywzj.vehicle.client.gui.VehicleScopeOverlay;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
@@ -33,7 +33,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
                 || missileWeaponUnit.getXRot() > data.getXRotMax()
                 || missileWeaponUnit.getYRot() < data.getYRotMin()
                 || missileWeaponUnit.getYRot() > data.getYRotMax()) {
-            ScopeOverlay.tips.put(System.currentTimeMillis(), "超出导弹射界");
+            VehicleScopeOverlay.tips.put(System.currentTimeMillis(), "超出导弹射界");
             return false;
         }
         return super.doClientShoot();

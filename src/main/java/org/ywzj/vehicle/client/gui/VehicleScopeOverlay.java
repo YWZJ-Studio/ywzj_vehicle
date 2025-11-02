@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.ywzj.vehicle.util.RenderHelper.drawRectByCorner;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 
-public class ScopeOverlay implements IGuiOverlay {
+public class VehicleScopeOverlay implements IGuiOverlay {
 
     public static float fov;
     public static int color = 0xFF00FF00;
@@ -107,10 +107,6 @@ public class ScopeOverlay implements IGuiOverlay {
     public void renderHelicopter(GuiGraphics guiGraphics, int screenWidth, int screenHeight, HelicopterVehicle vehicle) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
-        // 主信息
-        HelicopterControlOverlay.renderMainInfo(guiGraphics, centerX, centerY, vehicle);
-        // 高度信息
-        HelicopterControlOverlay.renderHeightInfo(guiGraphics, centerX, centerY, vehicle);
         guiGraphics.pose().pushPose();
         {
             // 提示信息
@@ -125,7 +121,7 @@ public class ScopeOverlay implements IGuiOverlay {
                         tips.remove(tip.getKey());
                         continue;
                     }
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, tip.getValue(), 0, -45, color);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, tip.getValue(), 0, -45, 0xFFFF0000);
                 }
             }
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
@@ -188,8 +184,8 @@ public class ScopeOverlay implements IGuiOverlay {
         }
     }
 
-    private void renderCompassBar(GuiGraphics guiGraphics, int screenWidth, AbstractVehicle vehicle) {
-        PartUnit partUnit = vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer());
+    public static void renderCompassBar(GuiGraphics guiGraphics, int screenWidth, AbstractVehicle vehicle) {
+        PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer());
         if (partUnit instanceof WeaponUnit weaponUnit) {
             float yaw = weaponUnit.worldRot().y;
             Font font = Minecraft.getInstance().font;
@@ -240,7 +236,7 @@ public class ScopeOverlay implements IGuiOverlay {
         }
     }
 
-    private void renderDirection(GuiGraphics graphics, PoseStack poseStack, Font font, int x, String s) {
+    public static void renderDirection(GuiGraphics graphics, PoseStack poseStack, Font font, int x, String s) {
         graphics.vLine(x * 4, 0, 8, color);
         poseStack.translate(1f, 0, 0);
         graphics.drawCenteredString(font, s, x * 4, 12, color);

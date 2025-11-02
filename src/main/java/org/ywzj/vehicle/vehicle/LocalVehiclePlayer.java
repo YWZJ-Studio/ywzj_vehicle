@@ -83,22 +83,38 @@ public class LocalVehiclePlayer {
                 cameraXO = cameraX;
                 cameraYO = cameraY;
                 cameraZO = cameraZ;
+                cameraAimRotXO = cameraAimRotX;
+                cameraAimRotYO = cameraAimRotY;
+                cameraAimRotZO = cameraAimRotZ;
                 if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
                     Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
                             vehicle.thirdPersonPosition(getPlayer()) : partUnit.worldOwnerViewPosition();
                     cameraX = vehicleCameraPos.x;
                     cameraY = vehicleCameraPos.y;
                     cameraZ = vehicleCameraPos.z;
-                    if (InputHandler.freeCamera && !(vehicle instanceof HelicopterVehicle)) {
-                        return;
-                    }
-                    if (viewType == ViewType.THIRD_PERSON && partUnit instanceof WeaponUnit weaponUnit) {
-                        if (!weaponUnit.isStabilizerOn()) {
-                            weaponUnit.aim(freeAimPos());
+                    try {
+                        if (partUnit instanceof WeaponUnit weaponUnit) {
+                            if (!weaponUnit.isStabilizerOn()) {
+                                if (!InputHandler.freeCamera || vehicle instanceof HelicopterVehicle) {
+                                    weaponUnit.aim(freeAimPos());
+                                }
+                            }
                         }
-                    } else {
-                        cameraAimRotZO = cameraAimRotZ;
-                        cameraAimRotZ = vehicle.getZRot();
+                        if (viewType == ViewType.THIRD_PERSON) {
+                            cameraAimRotX = getPlayer().getXRot();
+                            cameraAimRotY = getPlayer().getYRot();
+                        } else {
+                            float xRot = getPlayer().getXRot() - vehicle.getXRot();
+                            float yRot = getPlayer().getYRot() - vehicle.getYRot();
+                            Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, yRot), false);
+                            cameraAimRotX = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
+                            cameraAimRotY = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
+                            cameraAimRotZ = vehicle.getZRot();
+                        }
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    } finally {
+                        fixLerp();
                     }
                 } else if (viewType == ViewType.SCOPE && partUnit instanceof WeaponUnit weaponUnit) {
                     Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnit.OpticalSightType.OPERATOR ?
@@ -106,9 +122,7 @@ public class LocalVehiclePlayer {
                     cameraX = worldScopePosition.x;
                     cameraY = worldScopePosition.y;
                     cameraZ = worldScopePosition.z;
-                    cameraAimRotXO = cameraAimRotX;
-                    cameraAimRotYO = cameraAimRotY;
-                    cameraAimRotZO = cameraAimRotZ;
+                    Vec3 hitPosition = Vec3.ZERO;
                     try {
                         Quaternionf rot = new Quaternionf();
                         rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
@@ -119,23 +133,19 @@ public class LocalVehiclePlayer {
                         cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
                         if (lastWeaponUnit != weaponUnit) {
                             lastWeaponUnit = weaponUnit;
-                            scopeAimWeaponHit(weaponUnit);
+                            hitPosition = scopeAimWeaponHit(weaponUnit);
                             return;
                         }
                         if (weaponUnit.isStabilizerOn() || !mouseTurnedAfterScope) {
-                            scopeAimWeaponHit(weaponUnit);
+                            hitPosition = scopeAimWeaponHit(weaponUnit);
                         } else {
-                            weaponAimScopeHit(weaponUnit);
+                            hitPosition = weaponAimScopeHit(weaponUnit);
                         }
                     } catch (Exception exception) {
                         exception.printStackTrace();
                     } finally {
-                        if (Math.abs(cameraAimRotY - cameraAimRotYO) > 90) {
-                            cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
-                        }
-                        if (Math.abs(cameraAimRotZ - cameraAimRotZO) > 90) {
-                            cameraAimRotZO += cameraAimRotZO < 0 ? 360f : -360f;
-                        }
+                        rangeFinding(hitPosition);
+                        fixLerp();
                     }
                 }
             }
@@ -244,16 +254,17 @@ public class LocalVehiclePlayer {
         return null;
     }
 
-    public void scopeAimWeaponHit(WeaponUnit weaponUnit) {
+    public Vec3 scopeAimWeaponHit(WeaponUnit weaponUnit) {
         Vec3 hitPosition = weaponUnit.aimHitPosition();
         cameraAimAt(hitPosition);
         Vec3 worldAim = new Vec3(hitPosition.x - cameraX, hitPosition.y - cameraY, hitPosition.z - cameraZ);
         Vec3 vehicleVec = weaponUnit.getVehicle().relativeRotDirection(worldAim, true);
         scopeAimRotX = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.sqrt(worldAim.x * worldAim.x + worldAim.z * worldAim.z)));
         scopeAimRotY = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
+        return hitPosition;
     }
 
-    public void weaponAimScopeHit(WeaponUnit weaponUnit) {
+    public Vec3 weaponAimScopeHit(WeaponUnit weaponUnit) {
         Vec3 worldVec = weaponUnit.getVehicle().relativeRotDirection(VectorUtil.calculateViewVector(scopeAimRotX, scopeAimRotY), false);
         cameraAimRotX = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         cameraAimRotY = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
@@ -261,6 +272,7 @@ public class LocalVehiclePlayer {
         getPlayer().setYRot(cameraAimRotY);
         Vec3 hitPosition = scopeAimPos();
         weaponUnit.aim(hitPosition);
+        return hitPosition;
     }
 
     public void cameraAimAt(Vec3 worldPos) {
@@ -311,6 +323,15 @@ public class LocalVehiclePlayer {
         return VectorUtil.hitPosition(getPlayer(), start, end);
     }
 
+    private void fixLerp() {
+        if (Math.abs(cameraAimRotY - cameraAimRotYO) > 90) {
+            cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
+        }
+        if (Math.abs(cameraAimRotZ - cameraAimRotZO) > 90) {
+            cameraAimRotZO += cameraAimRotZO < 0 ? 360f : -360f;
+        }
+    }
+
     /**
      * 抬头视线落点
      */
@@ -319,13 +340,15 @@ public class LocalVehiclePlayer {
     }
 
     /**
-     * 视线落点与测距
+     * 视线落点
      */
     public Vec3 scopeAimPos() {
-        Vec3 hitPosition = cameraAimHit(0, 0);
-        aimLocationDistance = getPlayer().position().distanceTo(hitPosition);
+        return cameraAimHit(0, 0);
+    }
+
+    public void rangeFinding(Vec3 worldPos) {
+        aimLocationDistance = getPlayer().position().distanceTo(worldPos);
         outOfRangeFinding = aimLocationDistance > renderDistance();
-        return hitPosition;
     }
 
     public WeaponUnit getWeaponUnit() {

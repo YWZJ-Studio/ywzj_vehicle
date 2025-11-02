@@ -82,7 +82,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     guiGraphics.pose().popPose();
                 }
                 // 稳定器锁定的位置
-                ScopeOverlay.renderAimLockTarget(guiGraphics);
+                VehicleScopeOverlay.renderAimLockTarget(guiGraphics);
             }
         }
     }
@@ -105,8 +105,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 // 瞄准位置
                 Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
                 Vec3 aimScreenPos = getHitScreenPos(camera.getPosition(),
-                        player.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE,
-                        player.getYRot(),
+                        LocalVehiclePlayer.instance.cameraAimRotX - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE,
+                        LocalVehiclePlayer.instance.cameraAimRotY,
                         player);
                 if (aimScreenPos.z >= 0) {
                     screenAimXO = screenAimX;

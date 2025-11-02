@@ -63,6 +63,8 @@ import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends ContainerMob implements OBBEntity {
 
+    public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -75,6 +77,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     public float curbWeight;
     public float fuelCapacity;
     public float fuelConsumptionPerTick;
+    private float xRot;
+    public float xRotO;
+    private float yRot;
+    public float yRotO;
     private float zRot;
     public float zRotO;
     public int soundDistance;
@@ -113,6 +119,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
+        this.entityData.define(X_ROT, 0f);
+        this.entityData.define(Y_ROT, 0f);
         this.entityData.define(Z_ROT, 0f);
         this.entityData.define(FUEL, 0f);
         this.entityData.define(POWER, 0f);
@@ -142,7 +150,7 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             }
         }
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
-        tickZRot();
+        tickRot();
     }
 
     protected void tickFuel() {
@@ -258,14 +266,26 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     protected abstract Vec3 tickMove();
 
-    protected void tickZRot() {
+    protected void tickRot() {
         if (level().isClientSide()) {
+            this.xRotO = this.xRot;
+            this.yRotO = this.yRot;
             this.zRotO = this.zRot;
+            this.xRot = this.entityData.get(X_ROT);
+            this.yRot = this.entityData.get(Y_ROT);
             this.zRot = this.entityData.get(Z_ROT);
         } else {
-            if (this.zRotO != this.zRot) {
-                this.entityData.set(Z_ROT, zRot, true);
+            if (this.xRotO != this.xRot) {
+                this.entityData.set(X_ROT, this.xRot, true);
             }
+            if (this.yRotO != this.yRot) {
+                this.entityData.set(Y_ROT, this.yRot, true);
+            }
+            if (this.zRotO != this.zRot) {
+                this.entityData.set(Z_ROT, this.zRot, true);
+            }
+            this.xRotO = this.xRot;
+            this.yRotO = this.yRot;
             this.zRotO = this.zRot;
         }
     }
@@ -554,12 +574,28 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return mainCubeOBB;
     }
 
+    public float getXRot() {
+        return this.xRot;
+    }
+
+    public void setXRot(float rot) {
+        this.xRot = rot;
+    }
+
+    public float getYRot() {
+        return this.yRot;
+    }
+
+    public void setYRot(float rot) {
+        this.yRot = rot;
+    }
+
     public float getZRot() {
-        return zRot;
+        return this.zRot;
     }
 
     public void setZRot(float rot) {
-        zRot = rot;
+        this.zRot = rot;
     }
 
     public float getViewZRot(float pPartialTicks) {
@@ -767,12 +803,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
             double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
             double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-            double dYRot = Mth.wrapDegrees(this.lerpYRot - (double)this.getYRot());
-            this.setYRot(this.getYRot() + (float)dYRot / (float)this.lerpSteps);
-            this.setXRot((float) this.lerpXRot);
             --this.lerpSteps;
             this.setPos(dX, dY, dZ);
-            this.setRot(this.getYRot(), this.getXRot());
         }
 
         if (this.lerpHeadSteps > 0) {
