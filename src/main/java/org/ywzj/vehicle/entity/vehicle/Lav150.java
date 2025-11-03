@@ -19,11 +19,6 @@ public class Lav150 extends WheeledVehicle {
     }
 
     @Override
-    public int passengerCapacity() {
-        return 1;
-    }
-
-    @Override
     public void initPartUnits() {
         WeaponUnit machineGunTurret = new WeaponUnit("lav150_main_gun_turret", 0, this, new Vec3(0d, 2.5d, 0d), 3.3f, null, null, null, null);
         machineGunTurret.setXRotSpeed(3f);

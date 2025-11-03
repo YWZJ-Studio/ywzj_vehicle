@@ -29,11 +29,6 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public int passengerCapacity() {
-        return 1;
-    }
-
-    @Override
     public SoundEvent getEngineStartSound() {
         return AllSounds.MOTORCYCLE_ENGINE_START.get();
     }

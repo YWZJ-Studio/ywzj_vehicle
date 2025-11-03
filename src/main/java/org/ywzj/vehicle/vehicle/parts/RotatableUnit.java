@@ -49,8 +49,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
     @Deprecated
     public RotatableUnit(String name, int index, AbstractVehicle vehicle) {
         super(name, index, vehicle);
-        this.initStructureModel(name);
-        this.initOBBs();
     }
 
     public void tick() {

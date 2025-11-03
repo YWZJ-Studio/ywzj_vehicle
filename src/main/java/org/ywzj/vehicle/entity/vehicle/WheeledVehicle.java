@@ -36,17 +36,6 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     }
 
     @Override
-    public int passengerCapacity() {
-        return 3;
-    }
-
-    public abstract SoundEvent getEngineStartSound();
-
-    public abstract SoundEvent getEngineIdleSound();
-
-    public abstract SoundEvent getEngineRunSound();
-
-    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(FORWARD_SPEED, 0f);

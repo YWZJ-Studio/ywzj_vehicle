@@ -48,17 +48,6 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     }
 
     @Override
-    public int passengerCapacity() {
-        return 2;
-    }
-
-    public abstract SoundEvent getEngineStartSound();
-
-    public abstract SoundEvent getEngineStopSound();
-
-    public abstract SoundEvent getEngineRunSound();
-
-    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(COLLECTIVE_PITCH, 0);

@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -254,7 +255,25 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
     }
 
-    public abstract int passengerCapacity();
+    public int passengerCapacity() {
+        return seats.size();
+    }
+
+    public SoundEvent getEngineStartSound() {
+        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_start"));
+    }
+
+    public SoundEvent getEngineStopSound() {
+        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_stop"));
+    }
+
+    public SoundEvent getEngineIdleSound() {
+        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_idle"));
+    }
+
+    public SoundEvent getEngineRunSound() {
+        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_run"));
+    }
 
     public void initPartUnits() {}
 

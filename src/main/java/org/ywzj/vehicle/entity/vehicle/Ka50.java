@@ -30,11 +30,6 @@ public class Ka50 extends HelicopterVehicle {
     }
 
     @Override
-    public int passengerCapacity() {
-        return 1;
-    }
-
-    @Override
     public SoundEvent getEngineStartSound() {
         return AllSounds.Z10_ENGINE_START.get();
     }

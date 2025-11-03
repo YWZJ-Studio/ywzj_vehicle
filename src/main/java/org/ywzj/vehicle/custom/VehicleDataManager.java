@@ -33,8 +33,7 @@ import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 
 @Mod.EventBusSubscriber
 @ParametersAreNonnullByDefault
-public class VehicleDataManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>>
-        implements IVehicleDataManager {
+public class VehicleDataManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IVehicleDataManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleDataManager");
 
@@ -62,7 +61,6 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
                     jsonMap.put(entry.getKey(), ele);
                 }
             }
-
             indexes = parseIndexes(jsonMap);
         }
     }

@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.parts;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -12,12 +13,14 @@ import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.VehicleWeaponManager;
+import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.pojo.Bolt;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.structure.OBB;
@@ -39,7 +42,7 @@ import java.util.Optional;
 public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     // 武器站枢轴偏移，为武器站枢轴相对于载具枢轴的偏移
-    private final Vec3 pivotOffset;
+    private Vec3 pivotOffset;
     // 武器站炮闩
     private final List<Bolt> bolts = new ArrayList<>();
     // 当前使用的炮闩
@@ -100,8 +103,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         RETICLE
     }
 
-    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
-    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
+    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs;
+    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs;
     public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     private int currentWeaponIndex = -1;
 
@@ -160,16 +163,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
         this.zoomMax = 8;
         this.zoom = 1;
-
-        this.pivotOffset = pivotOffset;
-        this.bolts.add(new Bolt(Vec3.ZERO, barrelLength));
+        this.opticalSightType = OpticalSightType.CRT;
         this.firingMode = FiringMode.RIPPLE;
+
+        if (pivotOffset != null) {
+            this.pivotOffset = pivotOffset;
+        }
+        this.bolts.add(new Bolt(Vec3.ZERO, barrelLength));
         this.opticalSightOffset = opticalSightOffset;
         this.operatorViewOffset = operatorViewOffset;
         this.seatOffset = seatOffset;
         this.baseWeaponUnit = baseWeaponUnit;
-
-        this.opticalSightType = OpticalSightType.CRT;
 
         currentWeaponIndex = 0;
     }
@@ -581,6 +585,37 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public int getCurrentWeaponIndex() {
         return currentWeaponIndex;
+    }
+
+    @Override
+    public void initStructureModel(String name) {
+        BedrockModel model = BedrockModelLoader.getModel(vehicle.getVehicleType().getStructureBedrockModel());
+        if (model == null) {
+            return;
+        }
+        var yTurnBone = model.getBoneMap().get(name);
+        var xTurnBone = model.getBoneMap().get(name + "_barrel");
+        if (yTurnBone != null && xTurnBone != null) {
+//            this.pivotOffset = new Vec3(yTurnBone.x / 16, xTurnBone.y / 16, yTurnBone.z / 16);
+//            var cubes = xTurnBone.cubes.stream().map(c -> (BedrockCubePerFace) c).toList();
+//            var barrelCube = cubes.stream()
+//                    .max(Comparator.comparingDouble(c -> c.depth() * c.width() * c.height()))
+//                    .orElse(null);
+//            if (barrelCube != null) {
+//                double barrelHalfLength = new Vec3(
+//                        xTurnBone.x / 16 - yTurnBone.x / 16 + barrelCube.x() + barrelCube.width() / 2,
+//                        barrelCube.y() + barrelCube.height() / 2,
+//                        xTurnBone.z / 16 - yTurnBone.z / 16 + barrelCube.z() + barrelCube.depth() / 2
+//                ).length();
+//            }
+        }
+        this.yTurnUnitOBBs = PartUnitData.collectOBBs(yTurnBone);
+        this.xTurnUnitOBBs = PartUnitData.collectOBBs(xTurnBone);
+    }
+
+    protected void initOBBs() {
+        this.unitBedrockCubeOBBs.addAll(xTurnUnitOBBs);
+        this.unitBedrockCubeOBBs.addAll(yTurnUnitOBBs);
     }
 
 }

@@ -4,9 +4,9 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Math;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
@@ -16,24 +16,30 @@ import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 import java.util.*;
 
 public class BaseVehicleData {
+
     private ResourceLocation structureModel;
     private List<PartUnitEntry<?, ?>> parts;
     private VehicleBedrockCubeOBB mainCubeOBB;
     private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
-    private float width = 1.0f;
-    private float length = 1.0f;
-    private float height = 1.0f;
 
-    protected BaseVehicleData() {
+    protected BaseVehicleData() {}
+
+    protected static String check(BaseVehicleDataPojo pojo) {
+        return "";
     }
 
     @Nullable
     public static BaseVehicleData of(BaseVehicleDataPojo pojo) {
-        if (pojo.structureModel == null) return null;
+        String checkResult = check(pojo);
+        if (!StringUtils.isBlank(checkResult)) {
+            YwzjVehicle.LOGGER.warn(checkResult);
+            return null;
+        }
+
         var data = new BaseVehicleData();
 
-        data.structureModel = pojo.structureModel;
-        var model = BedrockModelLoader.getModel(pojo.structureModel);
+        data.structureModel = pojo.assets.models.structureModel;
+        var model = BedrockModelLoader.getModel(pojo.assets.models.structureModel);
 
         data.parts = pojo.parts;
         for (var entry : data.parts) {
@@ -61,22 +67,6 @@ public class BaseVehicleData {
         return partUnitMap;
     }
 
-    public ResourceLocation getStructureModel() {
-        return structureModel;
-    }
-
-    public float getHeight() {
-        return height;
-    }
-
-    public float getWidth() {
-        return width;
-    }
-
-    public float getLength() {
-        return length;
-    }
-
     public VehicleStructObbs getVehicleStructObbs() {
         var obbs = vehicleBodyOBBs.stream().map(VehicleBedrockCubeOBB::new).toList();
         return new VehicleStructObbs(obbs, obbs.get(0));
@@ -88,12 +78,9 @@ public class BaseVehicleData {
     // 缓存
     private void initOBBs(BedrockModel model) {
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
-        // 约定取体积最大的块表达车体的长宽高
+        // 约定取体积最大的块表达车体的物理
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
         cubes.sort(Comparator.comparingDouble(cube1 -> cube1.depth() * cube1.width() * cube1.height()));
-        this.width = cubes.get(0).width();
-        this.length = cubes.get(0).depth();
-        this.height = cubes.get(0).height();
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleBodyOBBs.add(mainCubeOBB);
         for (BedrockCubePerFace cube : cubes) {
@@ -105,15 +92,6 @@ public class BaseVehicleData {
                 vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
             }
         }
-        // 由部件结构拓展车体长宽
-        for (var entry : this.parts) {
-            var data = entry.data();
-            for (var cubeOBB : data.getUnitBedrockCubeOBBs()) {
-                Vec3 offset = cubeOBB.offset();
-                this.width = (float) Math.max((Math.abs(offset.x) + cubeOBB.getWidth() / 2) * 2, this.width);
-                this.length = (float) Math.max((Math.abs(offset.z) + cubeOBB.getDepth() / 2) * 2, this.length);
-                this.height = (float) Math.max(Math.abs(offset.y) + cubeOBB.getHeight() / 2, this.height);
-            }
-        }
     }
+
 }

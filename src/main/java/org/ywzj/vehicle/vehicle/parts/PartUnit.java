@@ -102,7 +102,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
             if (unitBone != null) {
                 this.pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
             }
-
         }
     }
 
