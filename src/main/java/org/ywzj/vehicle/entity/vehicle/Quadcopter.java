@@ -31,7 +31,7 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.List;
 
-public class Quadcopter extends HelicopterVehicle {
+public class Quadcopter extends RotaryWingVehicle {
 
     public static final EntityDataAccessor<Float> CABLE_LENGTH = SynchedEntityData.defineId(Quadcopter.class, EntityDataSerializers.FLOAT);
     public Entity cargo;
@@ -97,7 +97,7 @@ public class Quadcopter extends HelicopterVehicle {
     }
 
     @Override
-    public @NotNull InteractionResult mobInteract(@NotNull Player pPlayer, @NotNull InteractionHand pHand) {
+    public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         return InteractionResult.PASS;
     }
 

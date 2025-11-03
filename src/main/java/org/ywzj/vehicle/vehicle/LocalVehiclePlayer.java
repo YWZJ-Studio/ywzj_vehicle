@@ -11,7 +11,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
+import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.control.InputHandler;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -95,7 +95,7 @@ public class LocalVehiclePlayer {
                     try {
                         if (partUnit instanceof WeaponUnit weaponUnit) {
                             if (!weaponUnit.isStabilizerOn()) {
-                                if (!InputHandler.freeCamera || vehicle instanceof HelicopterVehicle) {
+                                if (!InputHandler.freeCamera || vehicle instanceof RotaryWingVehicle) {
                                     weaponUnit.aim(freeAimPos());
                                 }
                             }

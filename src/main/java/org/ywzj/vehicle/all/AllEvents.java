@@ -4,11 +4,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -18,6 +20,7 @@ import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 
@@ -39,6 +42,14 @@ public class AllEvents {
                 if (player.isPassenger() && player.getVehicle() instanceof AbstractVehicle) {
                     player.stopRiding();
                 }
+            }
+        }
+
+        @SubscribeEvent
+        public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+            ItemStack itemStack = event.getItemStack();
+            if (itemStack.getItem() instanceof VehicleItem vehicleItem) {
+                vehicleItem.interactEntity(itemStack, event.getEntity(), event.getTarget(), event.getHand());
             }
         }
 

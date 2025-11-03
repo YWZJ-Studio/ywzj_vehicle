@@ -22,7 +22,9 @@ public class ClientVehicleMoveControl {
     public boolean functionalLeft;
     public boolean functionalRight;
     public float xRot;
+    public boolean xRotKeep;
     public float yRot;
+    public boolean yRotKeep;
 
     public ClientVehicleMoveControl() {}
 
@@ -42,7 +44,9 @@ public class ClientVehicleMoveControl {
         control.functionalLeft = buf.readBoolean();
         control.functionalRight = buf.readBoolean();
         control.xRot = buf.readFloat();
+        control.xRotKeep = buf.readBoolean();
         control.yRot = buf.readFloat();
+        control.yRotKeep = buf.readBoolean();
         return control;
     }
 
@@ -61,7 +65,9 @@ public class ClientVehicleMoveControl {
         buf.writeBoolean(functionalLeft);
         buf.writeBoolean(functionalRight);
         buf.writeFloat(xRot);
+        buf.writeBoolean(xRotKeep);
         buf.writeFloat(yRot);
+        buf.writeBoolean(yRotKeep);
     }
 
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {

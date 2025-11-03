@@ -10,10 +10,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
+import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
-public class HelicopterControlOverlay implements IGuiOverlay {
+public class RotaryWingVehicleOverlay implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -21,47 +21,47 @@ public class HelicopterControlOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-        if (!(vehicle instanceof HelicopterVehicle helicopterVehicle)) {
+        if (!(vehicle instanceof RotaryWingVehicle rotaryWingVehicle)) {
             return;
         }
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         LocalVehiclePlayer.ViewType viewType = LocalVehiclePlayer.instance.viewType;
-        renderMainInfo(guiGraphics, centerX, centerY, helicopterVehicle);
-        renderHeightInfo(guiGraphics, centerX, centerY, helicopterVehicle);
+        renderMainInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
+        renderHeightInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
         if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON || viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-            renderSpeedInfo(guiGraphics, centerX, centerY, helicopterVehicle);
-            renderRollInfo(guiGraphics, centerX, centerY, helicopterVehicle, viewType);
+            renderSpeedInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
+            renderRollInfo(guiGraphics, centerX, centerY, rotaryWingVehicle, viewType);
         }
     }
 
     /**
      * 主信息
      */
-    public static void renderMainInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle) {
+    public static void renderMainInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle) {
         int leftX = centerX - 120;
         int leftY = centerY - 21;
         // 信息
         guiGraphics.drawString(Minecraft.getInstance().font, "转速: " +
-                        (int) helicopterVehicle.getPower(),
+                        (int) rotaryWingVehicle.getPower(),
                 leftX, leftY, 0x00FF00);
         guiGraphics.drawString(Minecraft.getInstance().font, "总距: " +
-                        helicopterVehicle.getCollectivePitch(),
+                        rotaryWingVehicle.getCollectivePitch(),
                 leftX, leftY + 12, 0x00FF00);
         guiGraphics.drawString(Minecraft.getInstance().font, "速度: " +
-                        (int) (new Vec3(helicopterVehicle.getDeltaMovement().x, 0, helicopterVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
+                        (int) (new Vec3(rotaryWingVehicle.getDeltaMovement().x, 0, rotaryWingVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
                 leftX, leftY + 24, 0x00FF00);
         guiGraphics.drawString(Minecraft.getInstance().font, "燃油: " +
-                        secondsToHms(helicopterVehicle.getFuel() / helicopterVehicle.fuelConsumptionPerTick / 20),
+                        secondsToHms(rotaryWingVehicle.getFuel() / rotaryWingVehicle.fuelConsumptionPerTick / 20),
                 leftX, leftY + 36, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) helicopterVehicle.getY(),
+        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) rotaryWingVehicle.getY(),
                 centerX + 62, leftY + 24, 0x00FF00);
     }
 
     /**
      * 高度信息
      */
-    public static void renderHeightInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle) {
+    public static void renderHeightInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle) {
         // 高度变化
         int heightY = centerY - 21;
         int heightX = centerX + 110;
@@ -78,7 +78,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-            heightY = (int) (centerY + 3 + (24 * -helicopterVehicle.getDeltaMovement().y));
+            heightY = (int) (centerY + 3 + (24 * -rotaryWingVehicle.getDeltaMovement().y));
             heightX = centerX + 123;
             pose.translate(heightX, heightY, 0);
             BufferBuilder buf = Tesselator.getInstance().getBuilder();
@@ -87,7 +87,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
             buf.vertex(pose.last().pose(), 6, 3, 0).color(0, 255, 0, 255).endVertex();
             buf.vertex(pose.last().pose(), 6, -3, 0).color(0, 255, 0, 255).endVertex();
             Tesselator.getInstance().end();
-            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (helicopterVehicle.getDeltaMovement().y * 20)), 12, -4, 0x00FF00);
+            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (rotaryWingVehicle.getDeltaMovement().y * 20)), 12, -4, 0x00FF00);
 
             RenderSystem.disableBlend();
         }
@@ -97,9 +97,9 @@ public class HelicopterControlOverlay implements IGuiOverlay {
     /**
      * 速度信息
      */
-    public static void renderSpeedInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle) {
-        Vec3 v = helicopterVehicle.relativeRotDirection(helicopterVehicle.getDeltaMovement(), true);
-        float arrowLength = (float) (15.0f * v.length() / helicopterVehicle.maxAirSpeed);
+    public static void renderSpeedInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle) {
+        Vec3 v = rotaryWingVehicle.relativeRotDirection(rotaryWingVehicle.getDeltaMovement(), true);
+        float arrowLength = (float) (15.0f * v.length() / rotaryWingVehicle.maxAirSpeed);
         float arrowSize = 4.0f;
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
@@ -109,7 +109,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
             pose.translate(centerX, centerY, 0);
-            pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(helicopterVehicle.getZRot())));
+            pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
             pose.mulPose(Axis.ZP.rotation((float) Math.atan2(-v.x, v.z)));
 
             // 速度线主干
@@ -137,7 +137,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
     /**
      * 滚转信息
      */
-    public static void renderRollInfo(GuiGraphics guiGraphics, int centerX, int centerY, HelicopterVehicle helicopterVehicle, LocalVehiclePlayer.ViewType viewType) {
+    public static void renderRollInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle, LocalVehiclePlayer.ViewType viewType) {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         {
@@ -149,7 +149,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
                 guiGraphics.fill(3, 0, 7, 1, 0xFF00FF00);
                 guiGraphics.fill(8, 0, 12, 1, 0xFF00FF00);
                 guiGraphics.fill(13, 0, 17, 1, 0xFF00FF00);
-                pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(helicopterVehicle.getZRot())));
+                pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(rotaryWingVehicle.getZRot())));
                 pose.scale(1f, 0.6f, 1f);
                 guiGraphics.fill(-11, 0, -2, 1, 0xFF00FF00);
                 guiGraphics.fill(-3, 0, -2, 3, 0xFF00FF00);
@@ -172,7 +172,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
                     RenderSystem.disableBlend();
                 }
                 pose.popPose();
-                int xRot = (int) -helicopterVehicle.getXRot();
+                int xRot = (int) -rotaryWingVehicle.getXRot();
                 int range = 45;
                 float interval = 5;
                 float gap = 9;
@@ -181,7 +181,7 @@ public class HelicopterControlOverlay implements IGuiOverlay {
                 int rot = (int) (Math.floor(value / interval) * interval);
                 float mod = ((xRot % interval) + interval) % interval;
                 pose.translate(centerX, centerY + mod / interval * gap, 0);
-                pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(helicopterVehicle.getZRot())));
+                pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
                 while (baseY <= 45) {
                     guiGraphics.fill(-17, baseY, -13, baseY + 1, 0xFF00FF00);
                     guiGraphics.fill(-12, baseY, -8, baseY + 1, 0xFF00FF00);

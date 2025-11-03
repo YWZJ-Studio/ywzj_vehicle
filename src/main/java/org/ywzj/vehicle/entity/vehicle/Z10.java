@@ -22,7 +22,7 @@ import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
 
 import java.util.List;
 
-public class Z10 extends HelicopterVehicle {
+public class Z10 extends RotaryWingVehicle {
 
     public Z10(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);

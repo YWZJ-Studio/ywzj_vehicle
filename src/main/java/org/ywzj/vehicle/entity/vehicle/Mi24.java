@@ -17,7 +17,7 @@ import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 
 import java.util.List;
 
-public class Mi24 extends HelicopterVehicle {
+public class Mi24 extends RotaryWingVehicle {
 
     public Mi24(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);

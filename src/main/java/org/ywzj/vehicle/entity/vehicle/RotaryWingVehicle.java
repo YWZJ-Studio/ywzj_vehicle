@@ -17,9 +17,9 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.util.VectorUtil;
 
-public abstract class HelicopterVehicle extends AbstractVehicle {
+public abstract class RotaryWingVehicle extends AbstractVehicle {
 
-    public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(HelicopterVehicle.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.INT);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
     public float xRotSpeed;
     public float xRotSpeedAcceleration = 1f;
@@ -38,7 +38,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
 
-    public HelicopterVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public RotaryWingVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.thirdPersonCenterOffset = new Vec3(0, 6, 0);
         this.thirdPersonDistance = 14;
@@ -154,7 +154,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
         float yRotSpeedAcceleration = (float) (this.yRotSpeedAcceleration * scale);
         float zRotSpeedAcceleration = (float) (this.zRotSpeedAcceleration * scale);
         if (getDriver() != null) {
-            if (!(controlUnit.leftYaw || controlUnit.rightYaw)) {
+            if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep) {
                 float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
                 float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
                 if (yDiff > 0) {
@@ -181,7 +181,7 @@ public abstract class HelicopterVehicle extends AbstractVehicle {
                 this.setYRot(this.getYRot() + yRotSpeed);
             }
 
-            if (!(controlUnit.forward || controlUnit.backward)) {
+            if (!(controlUnit.forward || controlUnit.backward) && !controlUnit.xRotKeep) {
                 float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
                 float shrink = Math.min(1, Math.abs(xDiff) / xRotSpeedAcceleration);
                 if (xDiff > 0) {

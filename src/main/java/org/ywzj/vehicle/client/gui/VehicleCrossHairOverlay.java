@@ -16,7 +16,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
+import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -52,7 +52,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            boolean isHelicopter = vehicle instanceof HelicopterVehicle;
+            boolean isHelicopter = vehicle instanceof RotaryWingVehicle;
             int color = isHelicopter ?  0xFF00FF00 : 0xFFFFFFFF;
             PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(player);
             if (operatorUnit instanceof WeaponUnit weaponUnit) {

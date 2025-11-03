@@ -18,9 +18,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -44,7 +42,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
-import org.ywzj.vehicle.entity.ContainerMob;
+import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
@@ -62,7 +60,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public abstract class AbstractVehicle extends ContainerMob implements OBBEntity {
+public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -109,7 +107,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         this.setMaxUpStep(1.0f);
         this.initData();
         this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
-        this.lookControl = new VehicleLookControl(this);
     }
 
     public void initData() {
@@ -119,7 +116,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     @Override
     protected void defineSynchedData() {
-        super.defineSynchedData();
         this.entityData.define(X_ROT, 0f);
         this.entityData.define(Y_ROT, 0f);
         this.entityData.define(Z_ROT, 0f);
@@ -152,6 +148,9 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         tickRot();
+        if (!this.isRemoved()) {
+            this.aiStep();
+        }
     }
 
     protected void tickFuel() {
@@ -234,24 +233,18 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
     }
 
     @Override
-    public void travel(Vec3 pTravelVector) {
-        this.moveRelative(0.02F, pTravelVector);
-        this.move(MoverType.SELF, this.getDeltaMovement());
-    }
-
-    public void impact(Entity entity) {
-        if (this.equals(entity.getVehicle())) {
-            return;
+    public boolean hurt(DamageSource source, float amount) {
+        if (source.is(DamageTypes.PLAYER_ATTACK)) {
+            return false;
         }
-        LivingEntity driver = getDriver();
-        if (entity instanceof TamableAnimal tamableAnimal) {
-            if (tamableAnimal.getOwner() == driver) {
-                return;
+        if (this.isInvulnerableTo(source)) {
+            return false;
+        } else {
+            if (!level().isClientSide()) {
+                this.playSound(getHurtSound(source), 1, 1);
             }
-        }
-        double velocity = this.getDeltaMovement().length() * 20;
-        if (velocity > 1) {
-            entity.hurt(this.damageSources().magic(), (float) (velocity * velocity));
+            this.markHurt();
+            return true;
         }
     }
 
@@ -273,6 +266,10 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     public SoundEvent getEngineRunSound() {
         return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_run"));
+    }
+
+    protected SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {
+        return AllSounds.BULLET_HIT_OUTSIDE.get();
     }
 
     public void initPartUnits() {}
@@ -490,9 +487,8 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         return seats.stream().anyMatch(seat -> seat.passengerId == -1);
     }
 
-    @NotNull
     @Override
-    public InteractionResult mobInteract(@NotNull Player pPlayer, @NotNull InteractionHand pHand) {
+    public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         if (!this.level().isClientSide()) {
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
@@ -652,19 +648,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
 
     public abstract void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot);
 
-    @Override
-    public boolean hurt(DamageSource source, float amount) {
-        if (source.is(DamageTypes.PLAYER_ATTACK)) {
-            return false;
-        }
-        return super.hurt(source, amount);
-    }
-
-    @Override
-    protected SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {
-        return AllSounds.BULLET_HIT_OUTSIDE.get();
-    }
-
     public float getFuel() {
         float amount = entityData.get(FUEL);
         if (amount == 0 && AllConfigs.common.infiniteFuel.get()) {
@@ -816,7 +799,22 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
     }
 
-    @Override
+    public void impact(Entity entity) {
+        if (this.equals(entity.getVehicle())) {
+            return;
+        }
+        LivingEntity driver = getDriver();
+        if (entity instanceof TamableAnimal tamableAnimal) {
+            if (tamableAnimal.getOwner() == driver) {
+                return;
+            }
+        }
+        double velocity = this.getDeltaMovement().length() * 20;
+        if (velocity > 1) {
+            entity.hurt(this.damageSources().magic(), (float) (velocity * velocity));
+        }
+    }
+
     public void aiStep() {
         if (this.lerpSteps > 0) {
             double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
@@ -826,86 +824,17 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             this.setPos(dX, dY, dZ);
         }
 
-        if (this.lerpHeadSteps > 0) {
-            this.yHeadRot += (float)Mth.wrapDegrees(this.lyHeadRot - (double)this.yHeadRot) / (float)this.lerpHeadSteps;
-            --this.lerpHeadSteps;
-        }
-
-        Vec3 vec31 = this.getDeltaMovement();
-        double d1 = vec31.x;
-        double d3 = vec31.y;
-        double d5 = vec31.z;
-        if (Math.abs(vec31.x) < 0.003D) {
-            d1 = 0.0D;
-        }
-        if (Math.abs(vec31.y) < 0.003D) {
-            d3 = 0.0D;
-        }
-        if (Math.abs(vec31.z) < 0.003D) {
-            d5 = 0.0D;
-        }
-        this.setDeltaMovement(d1, d3, d5);
-
-        this.level().getProfiler().push("ai");
-        {
-            if (this.isImmobile()) {
-                this.jumping = false;
-                this.xxa = 0.0F;
-                this.zza = 0.0F;
-            } else if (this.isEffectiveAi()) {
-                this.level().getProfiler().push("newAi");
-                {
-                    this.serverAiStep();
-                }
-                this.level().getProfiler().pop();
-            }
-        }
-        this.level().getProfiler().pop();
-
         this.level().getProfiler().push("travel");
-        AABB aabb = this.getBoundingBox();
         {
-            this.xxa *= 0.98F;
-            this.zza *= 0.98F;
-            Vec3 vec3 = new Vec3(this.xxa, this.yya, this.zza);
-            if (this.hasEffect(MobEffects.SLOW_FALLING) || this.hasEffect(MobEffects.LEVITATION)) {
-                this.resetFallDistance();
-            }
-            this.travel(vec3);
-        }
-        this.level().getProfiler().pop();
-
-        this.level().getProfiler().push("freezing");
-        {
-            if (!this.level().isClientSide && !this.isDeadOrDying()) {
-                int i = this.getTicksFrozen();
-                if (this.isInPowderSnow && this.canFreeze()) {
-                    this.setTicksFrozen(Math.min(this.getTicksRequiredToFreeze(), i + 1));
-                } else {
-                    this.setTicksFrozen(Math.max(0, i - 2));
-                }
-            }
-            this.removeFrost();
-            this.tryAddFrost();
-            if (!this.level().isClientSide && this.tickCount % 40 == 0 && this.isFullyFrozen() && this.canFreeze()) {
-                this.hurt(this.damageSources().freeze(), 1.0F);
-            }
+            this.move(MoverType.SELF, this.getDeltaMovement());
         }
         this.level().getProfiler().pop();
 
         this.level().getProfiler().push("push");
         {
-            if (this.autoSpinAttackTicks > 0) {
-                --this.autoSpinAttackTicks;
-                this.checkAutoSpinAttack(aabb, this.getBoundingBox());
-            }
             this.pushEntities();
         }
         this.level().getProfiler().pop();
-
-        if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
-            this.hurt(this.damageSources().drown(), 1.0F);
-        }
     }
 
     public void forceLoad(Vec3 position) {
@@ -932,26 +861,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
         }
     }
 
-    @Override
-    public boolean shouldBeSaved() {
-        return true;
-    }
-
-    @Override
-    public boolean removeWhenFarAway(double v) {
-        return false;
-    }
-
-    @Override
-    public boolean isPushable() {
-        return true;
-    }
-
-    @Override
-    public boolean isInWall() {
-        return false;
-    }
-
     public static class Seat {
 
         public final Integer seatIndex;
@@ -964,18 +873,6 @@ public abstract class AbstractVehicle extends ContainerMob implements OBBEntity 
             this.passengerId = -1;
         }
 
-    }
-
-}
-
-class VehicleLookControl extends LookControl {
-
-    VehicleLookControl(Mob pMob) {
-        super(pMob);
-    }
-
-    protected boolean resetXRotOnTick() {
-        return false;
     }
 
 }

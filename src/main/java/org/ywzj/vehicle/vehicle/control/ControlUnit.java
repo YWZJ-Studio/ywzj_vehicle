@@ -25,7 +25,9 @@ public class ControlUnit {
     public boolean functionalLeft;
     public boolean functionalRight;
     public float xRot;
+    public boolean xRotKeep;
     public float yRot;
+    public boolean yRotKeep;
 
     public void setOperator(LivingEntity operator) {
         this.operator = operator;
@@ -45,7 +47,9 @@ public class ControlUnit {
         functionalLeft = false;
         functionalRight = false;
         xRot = 0;
+        xRotKeep = false;
         yRot = 0;
+        yRotKeep = false;
     }
 
     public void update(ControlUnit controlUnit) {
@@ -62,7 +66,9 @@ public class ControlUnit {
         functionalLeft = controlUnit.functionalLeft;
         functionalRight = controlUnit.functionalRight;
         xRot = controlUnit.xRot;
+        xRotKeep = controlUnit.xRotKeep;
         yRot = controlUnit.yRot;
+        yRotKeep = controlUnit.yRotKeep;
     }
 
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -86,7 +92,9 @@ public class ControlUnit {
                 vehicle.controlUnit.functionalLeft = message.functionalLeft;
                 vehicle.controlUnit.functionalRight = message.functionalRight;
                 vehicle.controlUnit.xRot = message.xRot;
+                vehicle.controlUnit.xRotKeep = message.xRotKeep;
                 vehicle.controlUnit.yRot = message.yRot;
+                vehicle.controlUnit.yRotKeep = message.yRotKeep;
             }
         }
     }

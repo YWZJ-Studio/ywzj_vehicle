@@ -5,16 +5,16 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.HasCustomInventoryScreen;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -25,23 +25,55 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.ywzj.vehicle.YwzjVehicle;
 
-public abstract class ContainerMob extends Mob implements ContainerEntity, HasCustomInventoryScreen {
+import java.util.List;
+
+public abstract class ContainerCraft extends Entity implements ContainerEntity, HasCustomInventoryScreen {
 
     private LazyOptional<?> itemHandler = LazyOptional.of(() -> new InvWrapper(this));
+    protected double lerpX;
+    protected double lerpY;
+    protected double lerpZ;
+    protected int lerpSteps;
+    protected float health;
+    protected float maxHealth;
     protected final NonNullList<ItemStack> items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
 
-    protected ContainerMob(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    protected ContainerCraft(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
-    @Override
-    public NonNullList<ItemStack> getItemStacks() {
-        return this.items;
+    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements, boolean pTeleport) {
+        this.lerpX = pX;
+        this.lerpY = pY;
+        this.lerpZ = pZ;
+        this.lerpSteps = pPosRotationIncrements;
     }
 
-    @Override
-    public void clearItemStacks() {
-        this.items.clear();
+    protected void pushEntities() {
+        if (this.level().isClientSide()) {
+            this.level().getEntities(EntityTypeTest.forClass(Player.class), this.getBoundingBox(), EntitySelector.pushableBy(this))
+                    .forEach(entity -> entity.push(this));
+        } else {
+            List<Entity> list = this.level().getEntities(this, this.getBoundingBox(), EntitySelector.pushableBy(this));
+            if (!list.isEmpty()) {
+                int i = this.level().getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
+                if (i > 0 && list.size() > i - 1 && this.random.nextInt(4) == 0) {
+                    int j = 0;
+                    for (int k = 0; k < list.size(); ++k) {
+                        if (!list.get(k).isPassenger()) {
+                            ++j;
+                        }
+                    }
+                    if (j > i - 1) {
+                        this.hurt(this.damageSources().cramming(), 6.0F);
+                    }
+                }
+                for (int l = 0; l < list.size(); ++l) {
+                    Entity entity = list.get(l);
+                    entity.push(this);
+                }
+            }
+        }
     }
 
     @Override
@@ -120,7 +152,17 @@ public abstract class ContainerMob extends Mob implements ContainerEntity, HasCu
     }
 
     @Override
+    public @Nullable ResourceLocation getLootTable() {
+        return null;
+    }
+
+    @Override
     public void setLootTable(@Nullable ResourceLocation pLootTable) {}
+
+    @Override
+    public long getLootTableSeed() {
+        return 0;
+    }
 
     @Override
     public void setLootTableSeed(long pLootTableSeed) {}
@@ -158,15 +200,59 @@ public abstract class ContainerMob extends Mob implements ContainerEntity, HasCu
     }
 
     @Override
+    public boolean isPickable() {
+        return true;
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return true;
+    }
+
+    @Override
+    public boolean isPushable() {
+        return true;
+    }
+
+    @Override
+    public boolean isInWall() {
+        return false;
+    }
+
+    @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
         ContainerHelper.saveAllItems(compound, this.getItemStacks());
     }
 
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
         ContainerHelper.loadAllItems(compound, this.getItemStacks());
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public void setMaxHealth(float maxHealth) {
+        this.maxHealth = maxHealth;
+    }
+
+    @Override
+    public NonNullList<ItemStack> getItemStacks() {
+        return this.items;
+    }
+
+    @Override
+    public void clearItemStacks() {
+        this.items.clear();
     }
 
 }

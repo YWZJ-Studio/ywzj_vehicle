@@ -6,14 +6,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.ywzj.vehicle.entity.vehicle.Quadcopter;
 
-public class UavControllerItem extends Item {
+public class UavControllerItem extends VehicleItem {
 
     public UavControllerItem(Properties pProperties) {
         super(pProperties);
@@ -38,7 +36,7 @@ public class UavControllerItem extends Item {
     }
 
     @Override
-    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand pHand) {
+    public InteractionResult interactEntity(ItemStack stack, Player player, Entity target, InteractionHand pHand) {
         if (!player.level().isClientSide) {
             if (pHand == InteractionHand.MAIN_HAND) {
                 if (target instanceof Quadcopter quadcopter) {

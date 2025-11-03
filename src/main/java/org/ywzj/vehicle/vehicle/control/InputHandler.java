@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.HelicopterVehicle;
+import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
@@ -126,10 +126,10 @@ public class InputHandler {
                 if (freeCamera) {
                     controlUnit.xRot = xRotO;
                     controlUnit.yRot = yRotO;
-                } else if (vehicle instanceof HelicopterVehicle
+                } else if (vehicle instanceof RotaryWingVehicle
                         && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                     controlUnit.xRot = 0;
-                    controlUnit.yRot = vehicle.getYRot();
+                    controlUnit.yRotKeep = true;
                 } else {
                     controlUnit.xRot = player.getXRot();
                     controlUnit.yRot = player.getYRot();
@@ -187,7 +187,9 @@ public class InputHandler {
         control.functionalLeft = controlUnit.functionalLeft;
         control.functionalRight = controlUnit.functionalRight;
         control.xRot = controlUnit.xRot;
+        control.xRotKeep = controlUnit.xRotKeep;
         control.yRot = controlUnit.yRot;
+        control.yRotKeep = controlUnit.yRotKeep;
         Channel.CHANNEL.sendToServer(control);
     }
 

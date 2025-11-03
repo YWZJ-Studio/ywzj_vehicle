@@ -4,9 +4,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -20,14 +19,14 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-public class FuelTankItem extends Item {
+public class FuelTankItem extends VehicleItem {
 
     public FuelTankItem(Properties properties) {
         super(properties);
     }
 
     @Override
-    public InteractionResult interactLivingEntity(ItemStack itemStack, Player player, LivingEntity target, InteractionHand pHand) {
+    public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand pHand) {
         if (!player.level().isClientSide) {
             if (pHand == InteractionHand.MAIN_HAND) {
                 if (target instanceof AbstractVehicle vehicle) {
