@@ -28,6 +28,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
@@ -41,6 +42,7 @@ import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.all.AllVehicles;
 import org.ywzj.vehicle.api.entity.OBBEntity;
+import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
@@ -116,6 +118,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     protected void defineSynchedData() {
+        super.defineSynchedData();
         this.entityData.define(X_ROT, 0f);
         this.entityData.define(Y_ROT, 0f);
         this.entityData.define(Z_ROT, 0f);
@@ -233,8 +236,13 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     @Override
+    public boolean isInvulnerableTo(DamageSource source) {
+        return super.isInvulnerableTo(source) || source.is(DamageTypes.PLAYER_ATTACK);
+    }
+
+    @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source.is(DamageTypes.PLAYER_ATTACK)) {
+        if (MinecraftForge.EVENT_BUS.post(new VehicleAttackEvent(this, source, amount))) {
             return false;
         }
         if (this.isInvulnerableTo(source)) {
@@ -242,6 +250,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         } else {
             if (!level().isClientSide()) {
                 this.playSound(getHurtSound(source), 1, 1);
+            }
+            this.setHealth(this.getHealth() - amount);
+            if (this.getHealth() <= 0) {
+                this.discard();
             }
             this.markHurt();
             return true;
@@ -823,6 +835,21 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             --this.lerpSteps;
             this.setPos(dX, dY, dZ);
         }
+
+        Vec3 v = this.getDeltaMovement();
+        double dx = v.x;
+        double dy = v.y;
+        double dz = v.z;
+        if (Math.abs(v.x) < 0.003D) {
+            dx = 0.0D;
+        }
+        if (Math.abs(v.y) < 0.003D) {
+            dy = 0.0D;
+        }
+        if (Math.abs(v.z) < 0.003D) {
+            dz = 0.0D;
+        }
+        this.setDeltaMovement(dx, dy, dz);
 
         this.level().getProfiler().push("travel");
         {

@@ -76,10 +76,6 @@ public class AllEntities {
 
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
-        AllVehicles.getVehicleTypes().forEach(vehicleType -> event.put(vehicleType.getEntityType(),
-                Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, vehicleType.getHealth())
-                .add(Attributes.MOVEMENT_SPEED, 0.4D).build()));
         event.put(AllEntities.FAKE_PLAYER.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 8.0D).build());
     }
 

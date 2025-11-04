@@ -60,7 +60,7 @@ public class LocalVehiclePlayer {
         return Minecraft.getInstance().player;
     }
 
-    public double renderDistance() {
+    public static double renderDistance() {
         return Minecraft.getInstance().options.renderDistance().get() * 16;
     }
 

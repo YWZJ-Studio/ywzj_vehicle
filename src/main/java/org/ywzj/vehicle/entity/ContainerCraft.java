@@ -3,7 +3,12 @@ package org.ywzj.vehicle.entity;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Inventory;
@@ -29,24 +34,82 @@ import java.util.List;
 
 public abstract class ContainerCraft extends Entity implements ContainerEntity, HasCustomInventoryScreen {
 
+    private static final EntityDataAccessor<Float> HEALTH = SynchedEntityData.defineId(ContainerCraft.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> MAX_HEALTH = SynchedEntityData.defineId(ContainerCraft.class, EntityDataSerializers.FLOAT);
     private LazyOptional<?> itemHandler = LazyOptional.of(() -> new InvWrapper(this));
     protected double lerpX;
     protected double lerpY;
     protected double lerpZ;
     protected int lerpSteps;
-    protected float health;
-    protected float maxHealth;
     protected final NonNullList<ItemStack> items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
 
     protected ContainerCraft(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
+    @Override
+    protected void defineSynchedData() {
+        this.entityData.define(HEALTH, 1.0F);
+        this.entityData.define(MAX_HEALTH, 1.0F);
+    }
+
+    @Override
+    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+        ContainerHelper.saveAllItems(compound, this.getItemStacks());
+        compound.putFloat("Health", this.getHealth());
+    }
+
+    @Override
+    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+        ContainerHelper.loadAllItems(compound, this.getItemStacks());
+        this.setMaxHealth(100);
+        if (compound.contains("Health", 99)) {
+            this.setHealth(compound.getFloat("Health"));
+        } else {
+            this.setHealth(100);
+        }
+    }
+
+    @Override
     public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements, boolean pTeleport) {
         this.lerpX = pX;
         this.lerpY = pY;
         this.lerpZ = pZ;
         this.lerpSteps = pPosRotationIncrements;
+    }
+
+    public void heal(float pHealAmount) {
+        if (pHealAmount <= 0) return;
+        float f = this.getHealth();
+        if (f > 0.0F) {
+            this.setHealth(f + pHealAmount);
+        }
+    }
+
+    public float getHealth() {
+        return this.entityData.get(HEALTH);
+    }
+
+    public void setHealth(float health) {
+        this.entityData.set(HEALTH, Mth.clamp(health, 0.0F, this.getMaxHealth()));
+    }
+
+    public float getMaxHealth() {
+        return this.entityData.get(MAX_HEALTH);
+    }
+
+    public void setMaxHealth(float maxHealth) {
+        this.entityData.set(MAX_HEALTH, maxHealth);
+    }
+
+    @Override
+    public NonNullList<ItemStack> getItemStacks() {
+        return this.items;
+    }
+
+    @Override
+    public void clearItemStacks() {
+        this.items.clear();
     }
 
     protected void pushEntities() {
@@ -200,6 +263,21 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     }
 
     @Override
+    public boolean hasCustomName() {
+        return true;
+    }
+
+    @Override
+    public Component getCustomName() {
+        return Component.empty();
+    }
+
+    @Override
+    public boolean shouldShowName() {
+        return true;
+    }
+
+    @Override
     public boolean isPickable() {
         return true;
     }
@@ -217,42 +295,6 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     @Override
     public boolean isInWall() {
         return false;
-    }
-
-    @Override
-    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
-        ContainerHelper.saveAllItems(compound, this.getItemStacks());
-    }
-
-    @Override
-    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
-        ContainerHelper.loadAllItems(compound, this.getItemStacks());
-    }
-
-    public float getHealth() {
-        return health;
-    }
-
-    public void setHealth(float health) {
-        this.health = health;
-    }
-
-    public float getMaxHealth() {
-        return maxHealth;
-    }
-
-    public void setMaxHealth(float maxHealth) {
-        this.maxHealth = maxHealth;
-    }
-
-    @Override
-    public NonNullList<ItemStack> getItemStacks() {
-        return this.items;
-    }
-
-    @Override
-    public void clearItemStacks() {
-        this.items.clear();
     }
 
 }

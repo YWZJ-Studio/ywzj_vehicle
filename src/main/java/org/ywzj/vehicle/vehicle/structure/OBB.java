@@ -193,7 +193,6 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         Vector3f localHit = new Vector3f(dir).mul((float) tEnter).add(localFrom);
         // 转换回世界坐标系
         return Optional.of(localToWorld(localHit, axes));
-
     }
 
     // 世界坐标转局部坐标

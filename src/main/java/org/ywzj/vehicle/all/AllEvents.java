@@ -7,7 +7,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -16,7 +15,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -74,14 +72,6 @@ public class AllEvents {
             ServerPlayer serverPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(event.shooterUuid);
             if (serverPlayer != null) {
                 Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerHitVehicleEvent(event));
-            }
-        }
-
-        @SubscribeEvent
-        public static void onLivingAttack(LivingAttackEvent livingAttackEvent) {
-            //todo 完善伤害过滤
-            if (livingAttackEvent.getEntity() instanceof OBBEntity && !"genericKill".equals(livingAttackEvent.getSource().getMsgId())) {
-                livingAttackEvent.setCanceled(true);
             }
         }
 

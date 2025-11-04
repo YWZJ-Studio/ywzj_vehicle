@@ -27,7 +27,7 @@ import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 
 public class VehicleScopeOverlay implements IGuiOverlay {
 
-    public static float fov;
+    public static double fov;
     public static int color = 0xFF00FF00;
     public static ConcurrentHashMap<Long, String> tips = new ConcurrentHashMap<>();
 

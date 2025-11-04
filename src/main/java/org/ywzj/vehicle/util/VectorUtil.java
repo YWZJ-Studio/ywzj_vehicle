@@ -15,7 +15,9 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
+import org.ywzj.vehicle.api.entity.OBBEntity;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -65,15 +67,7 @@ public class VectorUtil {
         BlockHitResult blockHit = level.clip(blockContext);
         Vec3 blockHitPos = blockHit.getLocation();
         double blockDistance = blockHitPos.distanceTo(start);
-        Vec3 direction = end.subtract(start);
-        AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
-        EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(level, shooter, start, end, aabb, entity ->
-                entity.isPickable()
-                && !entity.isSpectator()
-                && entity != shooter
-                && entity != shooter.getVehicle()
-                && entity.getVehicle() != shooter.getVehicle()
-                && !shooter.getPassengers().contains(entity));
+        EntityHitResult entityHit = hitEntity(shooter, start, end);
         Vec3 hitPoint = blockHitPos;
         if (entityHit != null) {
             AABB targetBox = entityHit.getEntity().getBoundingBox();
@@ -87,6 +81,31 @@ public class VectorUtil {
             }
         }
         return hitPoint;
+    }
+
+    public static EntityHitResult hitEntity(Entity shooter, Vec3 start, Vec3 end) {
+        Vec3 direction = end.subtract(start);
+        AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
+        return ProjectileUtil.getEntityHitResult(shooter.level(), shooter, start, end, aabb, entity ->
+                entity.isPickable()
+                        && !entity.isSpectator()
+                        && entity != shooter
+                        && entity != shooter.getVehicle()
+                        && !(shooter.getVehicle() != null && shooter.getVehicle() == entity.getVehicle())
+                        && !shooter.getPassengers().contains(entity));
+    }
+
+    public static Pair<OBBEntity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {
+        EntityHitResult entityHitResult = VectorUtil.hitEntity(shooter, start, end);
+        if (entityHitResult != null && entityHitResult.getEntity() instanceof OBBEntity entity) {
+            for (var obb : entity.getOBBs()) {
+                var obbVec = obb.clip(start.toVector3f(), end.toVector3f()).orElse(null);
+                if (obbVec != null) {
+                    return Pair.of(entity, new Vec3(obbVec));
+                }
+            }
+        }
+        return null;
     }
 
     public static Vec3 relativeRotPos(Entity entity, Vec3 worldPos, boolean reverse) {
