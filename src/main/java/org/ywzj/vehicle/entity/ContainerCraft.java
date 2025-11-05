@@ -3,7 +3,6 @@ package org.ywzj.vehicle.entity;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -260,21 +259,6 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         if (this.hasContainer()) {
             itemHandler = LazyOptional.of(() -> new InvWrapper(this));
         }
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return true;
-    }
-
-    @Override
-    public Component getCustomName() {
-        return Component.empty();
-    }
-
-    @Override
-    public boolean shouldShowName() {
-        return true;
     }
 
     @Override

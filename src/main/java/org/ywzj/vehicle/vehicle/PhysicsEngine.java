@@ -120,7 +120,7 @@ public class PhysicsEngine {
     public Vec3 decelerationByFriction(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
         if (!touchPoints.isEmpty()) {
             // 接触摩擦力
-            velocity = velocity.normalize().scale(velocity.length() - friction / mass);
+            velocity = velocity.normalize().scale(Math.max(0, velocity.length() - friction / mass));
         } else {
             // 空气阻力
             velocity = velocity.normalize().scale(velocity.length() - velocity.length() * friction / mass);

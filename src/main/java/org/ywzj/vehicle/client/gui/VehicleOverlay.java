@@ -37,9 +37,9 @@ public class VehicleOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = localVehiclePlayer.getVehicle();
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
-        renderCrew(guiGraphics, centerX, centerY, vehicle);
+//        int centerX = screenWidth / 2;
+//        int centerY = screenHeight / 2;
+//        renderCrew(guiGraphics, centerX, centerY, vehicle);
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             renderCompassBar(guiGraphics, screenWidth, vehicle);
         }

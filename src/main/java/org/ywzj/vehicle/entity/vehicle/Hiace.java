@@ -16,11 +16,11 @@ public class Hiace extends WheeledVehicle {
     public Hiace(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         physicsEngine.friction = 0.003f;
-        forwardAcceleration = 0.013f;
-        backwardAcceleration = 0.013f;
-        maxSpeedForward = 0.6f;
+        forwardForce = 0.013f;
+        backwardForce = 0.013f;
+        maxSpeedForward = 1f;
         maxSpeedBackward= 0.2f;
-        turnAcceleration = 1f;
+        turnStep = 1f;
         maxTurn = 3f;
     }
 

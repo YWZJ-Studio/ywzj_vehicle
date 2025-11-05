@@ -62,7 +62,7 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         pEntity.wheelRotation %= 360;
 
         // 轮子转向幅度
-        float vt = pEntity.getEntityData().get(Ztl11.TURN_SPEED);
+        float vt = pEntity.getEntityData().get(Ztl11.TURN_FORCE);
         float turnRotation = vt * 16;
 
         // 炮塔旋转

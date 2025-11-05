@@ -51,7 +51,7 @@ public class MotorcycleRenderer extends EntityRenderer<Motorcycle> {
         pEntity.wheelRotation %= 360;
 
         // 轮子转向幅度
-        float vt = pEntity.getEntityData().get(Motorcycle.TURN_SPEED);
+        float vt = pEntity.getEntityData().get(Motorcycle.TURN_FORCE);
         float turnRotation = vt * 16;
 
         // 应用动画

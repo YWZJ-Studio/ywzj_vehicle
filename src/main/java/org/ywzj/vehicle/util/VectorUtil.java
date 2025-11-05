@@ -135,6 +135,17 @@ public class VectorUtil {
         return new Vec3(f3 * f4, -f5, f2 * f4);
     }
 
+    public static double angleBetween(Vec3 a, Vec3 b) {
+        double dot = a.dot(b); // 点积
+        double magA = a.length(); // 向量长度
+        double magB = b.length();
+        if (magA == 0 || magB == 0) return 0; // 避免除以0
+        double cos = dot / (magA * magB);
+        // 限制范围防止浮点误差导致 NaN
+        cos = Math.max(-1.0, Math.min(1.0, cos));
+        return Math.acos(cos);
+    }
+
     public static Vec3 project(Vec3 a, Vec3 b) {
         double dot = a.dot(b); // 点积
         double len2 = b.lengthSqr(); // |b|^2
