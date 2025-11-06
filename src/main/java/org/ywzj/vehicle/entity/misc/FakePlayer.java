@@ -95,17 +95,11 @@ public class FakePlayer extends Mob {
     public void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
         this.entityData.set(NAME, nbt.getString("name").equals("") ? DEFAULT_NAME : nbt.getString("name"));
-//        if (!(this.level() instanceof ServerLevel)) {
-//            FakePlayerSkin.handle(this.entityData.get(NAME), this.entityData.get(SKIN_URL));
-//        }
     }
 
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> entityDataAccessor) {
         super.onSyncedDataUpdated(entityDataAccessor);
-//        if (!(this.level() instanceof ServerLevel)) {
-//            FakePlayerSkin.handle(this.entityData.get(NAME), this.entityData.get(SKIN_URL));
-//        }
     }
 
     @Override

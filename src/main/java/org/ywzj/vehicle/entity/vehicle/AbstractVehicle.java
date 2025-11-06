@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -29,10 +30,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.NotNull;
 import org.joml.*;
 import org.joml.Math;
@@ -57,7 +56,6 @@ import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -86,7 +84,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public float zRotO;
     public int soundDistance;
     public boolean uav;
-    protected final LinkedList<ChunkPos> forceChunksQueue;
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     public final PhysicsEngine physicsEngine;
@@ -104,7 +101,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.fuelCapacity = 1;
         this.fuelConsumptionPerTick = 0.00001f;
         this.soundDistance = 3;
-        this.forceChunksQueue = new LinkedList<>();
         this.vehicleOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.initData();
@@ -145,8 +141,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             Vec3 force = tickMove();
             tickCollide(force);
             if (uav) {
-                forceLoad(position());
-                forceLoad(position().add(getLookAngle().normalize().scale(16)));
+                keepChunkLoaded(position());
+                keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
         getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
@@ -379,15 +375,17 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public void onEnterVehicle(LivingEntity livingEntity) {
-        Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
-        if (emptySeatOptional.isPresent()) {
-            Seat seat = emptySeatOptional.get();
-            if (seat.seatIndex == 0) {
-                controlUnit.setOperator(livingEntity);
+        if (!level().isClientSide()) {
+            Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
+            if (emptySeatOptional.isPresent()) {
+                Seat seat = emptySeatOptional.get();
+                if (seat.seatIndex == 0) {
+                    controlUnit.setOperator(livingEntity);
+                }
+                seat.partUnit.setOwner(livingEntity);
+                seat.passengerId = livingEntity.getId();
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
             }
-            seat.partUnit.setOwner(livingEntity);
-            seat.passengerId = livingEntity.getId();
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
@@ -500,6 +498,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     @Override
+    protected void addPassenger(Entity pPassenger) {
+        super.addPassenger(pPassenger);
+        if (pPassenger instanceof LivingEntity livingEntity) {
+            onEnterVehicle(livingEntity);
+        }
+    }
+
+    @Override
     public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         if (!this.level().isClientSide()) {
             if (pHand == InteractionHand.MAIN_HAND) {
@@ -508,7 +514,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                     return InteractionResult.PASS;
                 }
                 if (pPlayer.startRiding(this)) {
-                    onEnterVehicle(pPlayer);
                     return InteractionResult.SUCCESS;
                 }
             }
@@ -711,6 +716,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return transform.transform(new Vector4f(x, y, z, 1));
     }
 
+    public void keepChunkLoaded(Vec3 position) {
+        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
+        ((ServerLevel)this.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, this.getId());
+    }
+
     @Override
     public void push(@NotNull Entity pEntity) {
         if (!this.isPassengerOfSameVehicle(pEntity)) {
@@ -862,30 +872,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             this.pushEntities();
         }
         this.level().getProfiler().pop();
-    }
-
-    public void forceLoad(Vec3 position) {
-        ChunkPos chunkPos = new ChunkPos(BlockPos.containing(position));
-        if (!forceChunksQueue.contains(chunkPos)) {
-            if (forceChunksQueue.size() >= 4) {
-                ChunkPos unloadChunkPos = forceChunksQueue.pop();
-                ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, unloadChunkPos.x, unloadChunkPos.z, false, true);
-            }
-            ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, chunkPos.x, chunkPos.z, true, true);
-            forceChunksQueue.add(chunkPos);
-        }
-    }
-
-    @Override
-    public void onRemovedFromWorld() {
-        super.onRemovedFromWorld();
-        if (!level().isClientSide) {
-            ServerLifecycleHooks.getCurrentServer().execute(() -> {
-                for (ChunkPos chunkPos : forceChunksQueue) {
-                    ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, chunkPos.x, chunkPos.z, false, true);
-                }
-            });
-        }
     }
 
     public static class Seat {

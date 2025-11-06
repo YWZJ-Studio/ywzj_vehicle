@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -16,14 +15,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.world.ForgeChunkManager;
-import net.minecraftforge.server.ServerLifecycleHooks;
-import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
@@ -38,7 +32,6 @@ public class Quadcopter extends RotaryWingVehicle {
     private int hookCooldown;
     private Vec3 fakeOperatorPos;
     private FakePlayer fakeOperator;
-    private ChunkPos operatorForceChunk;
 
     public Quadcopter(EntityType<? extends Mob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -104,9 +97,13 @@ public class Quadcopter extends RotaryWingVehicle {
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             float cableLength = entityData.get(CABLE_LENGTH);
             this.thirdPersonDistance = 8 + cableLength * 1.5f;
+        } else {
+            if (fakeOperatorPos != null) {
+                keepChunkLoaded(fakeOperatorPos);
+            }
         }
     }
 
@@ -172,25 +169,14 @@ public class Quadcopter extends RotaryWingVehicle {
     }
 
     @Override
-    protected void positionRider(@NotNull Entity pPassenger, Entity.MoveFunction pCallback) {
-        if (fakeOperatorPos == null) {
-            fakeOperatorPos = pPassenger.position();
-            Vec3 vehiclePos = this.position();
-            pPassenger.teleportTo(vehiclePos.x, vehiclePos.y, vehiclePos.z);
-        }
-        super.positionRider(pPassenger, pCallback);
-    }
-
-    @Override
     public void onEnterVehicle(LivingEntity livingEntity) {
         super.onEnterVehicle(livingEntity);
         if (livingEntity instanceof ServerPlayer serverPlayer) {
+            fakeOperatorPos = livingEntity.position();
             fakeOperator = new FakePlayer(AllEntities.FAKE_PLAYER.get(), level());
             fakeOperator.spawn(serverPlayer);
             fakeOperator.setPos(fakeOperatorPos);
             level().addFreshEntity(fakeOperator);
-            operatorForceChunk = new ChunkPos(BlockPos.containing(serverPlayer.position()));
-            ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, operatorForceChunk.x, operatorForceChunk.z, true, true);
         }
     }
 
@@ -203,10 +189,6 @@ public class Quadcopter extends RotaryWingVehicle {
             Vec3 pos = fakeOperator.position();
             serverPlayer.teleportTo(pos.x, pos.y, pos.z);
             fakeOperatorPos = null;
-        }
-        if (!level().isClientSide && operatorForceChunk != null) {
-            ServerLifecycleHooks.getCurrentServer().execute(() ->
-                    ForgeChunkManager.forceChunk((ServerLevel) level(), YwzjVehicle.MOD_ID, this, operatorForceChunk.x, operatorForceChunk.z, false, true));
         }
     }
 

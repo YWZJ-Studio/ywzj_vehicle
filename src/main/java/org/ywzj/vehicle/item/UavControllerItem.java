@@ -26,9 +26,7 @@ public class UavControllerItem extends VehicleItem {
                 int uavId = tag.getInt("uavId");
                 Entity entity = level.getEntity(uavId);
                 if (entity instanceof Quadcopter quadcopter) {
-                    if (player.startRiding(quadcopter)) {
-                        quadcopter.onEnterVehicle(player);
-                    }
+                    player.startRiding(quadcopter);
                 }
             }
         }
