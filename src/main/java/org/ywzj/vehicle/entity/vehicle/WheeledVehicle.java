@@ -11,8 +11,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 
 public abstract class WheeledVehicle extends AbstractVehicle {
@@ -27,6 +29,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     public float turnStep = 0.1f;
     public float maxTurn = 2f;
     public float wheelRotation;
+    public double trackLength;
     public long lastRenderTime;
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
@@ -118,6 +121,26 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         } else if (tireSquealSoundInstance != null) {
             tireSquealSoundInstance.stop();
             tireSquealSoundInstance = null;
+        }
+    }
+
+    @Override
+    protected void tickParticle() {
+        trackLength += getDeltaMovement().length();
+        if (trackLength >= 0.5) {
+            trackLength = 0;
+            Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+            Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+            if (EntityUtil.isOnBlockSurface(this, trackLeftPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  0.1f, this.getYRot(), 0
+                );
+            }
+            if (EntityUtil.isOnBlockSurface(this, trackRightPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  0.1f, this.getYRot(), 0
+                );
+            }
         }
     }
 

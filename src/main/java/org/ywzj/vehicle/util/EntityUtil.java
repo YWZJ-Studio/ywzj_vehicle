@@ -1,11 +1,15 @@
 package org.ywzj.vehicle.util;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
@@ -131,6 +135,16 @@ public class EntityUtil {
         MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
 
         return new BulletHitResult(entity, hitPos, headshot);
+    }
+
+    public static boolean isOnBlockSurface(Entity entity, Vec3 pos) {
+        BlockPos blockBelow = BlockPos.containing(pos.x, pos.y - 0.05, pos.z); // 稍微往下偏一点
+        BlockState stateBelow = entity.level().getBlockState(blockBelow);
+        if (stateBelow.isAir()) return false;
+        VoxelShape shape = stateBelow.getCollisionShape(entity.level(), blockBelow);
+        if (shape.isEmpty()) return false;
+        double surfaceY = shape.max(Direction.Axis.Y) + blockBelow.getY();
+        return pos.y - surfaceY <= 0.05;
     }
 
 }

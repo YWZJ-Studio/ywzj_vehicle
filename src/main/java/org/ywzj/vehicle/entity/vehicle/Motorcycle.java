@@ -57,6 +57,7 @@ public class Motorcycle extends WheeledVehicle {
 
     @Override
     protected void tickParticle() {
+        super.tickParticle();
         double speedSqr = this.getDeltaMovement().lengthSqr();
         if (speedSqr <= 0.255) return;
 

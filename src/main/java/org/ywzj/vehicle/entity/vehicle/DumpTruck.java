@@ -104,6 +104,7 @@ public class DumpTruck extends WheeledVehicle {
 
     @Override
     protected void tickParticle() {
+        super.tickParticle();
         if (hasPower() && tickCount % 10 == 0) {
             Vec3 v1 = this.getLookAngle();
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();

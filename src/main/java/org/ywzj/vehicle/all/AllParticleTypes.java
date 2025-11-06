@@ -23,6 +23,10 @@ public class AllParticleTypes {
             () -> new SimpleParticleType(false)
     );
 
+    public static final RegistryObject<SimpleParticleType> TRACK = PARTICLE_TYPES.register("track",
+            () -> new SimpleParticleType(false)
+    );
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }
