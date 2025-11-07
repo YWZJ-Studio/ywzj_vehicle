@@ -63,6 +63,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     @Override
     protected void tickSound() {
+        super.tickSound();
         if (getDriver() == null) {
             if (engineIdleSoundInstance != null) {
                 engineIdleSoundInstance.stop();
@@ -127,6 +128,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     @Override
     protected void tickParticle() {
+        super.tickParticle();
         trackLength += getDeltaMovement().length();
         if (trackLength >= 0.5) {
             trackLength = 0;

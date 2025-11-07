@@ -66,6 +66,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
 
     @Override
     protected void tickSound() {
+        super.tickSound();
         float engineSpeed = getPower();
         if (engineSpeed < 80 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
             SoundEvent engineStopSound = getEngineStopSound();
@@ -236,6 +237,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
 
     @Override
     protected void tickParticle() {
+        super.tickParticle();
         // 飞行扬尘效果
         if (getPower() > 30 && tickCount % 2 == 0) {
             // 获取当前位置并从下方开始查找第一个实心方块

@@ -144,6 +144,7 @@ public class Ztz99a extends TrackedVehicle {
 
     @Override
     protected void tickParticle() {
+        super.tickParticle();
         double velocity = Math.abs(entityData.get(FORWARD_SPEED)) * 20 + Math.abs(entityData.get(TURN_SPEED)) * 5;
         if ((!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) && hasPower()) {
             Vec3 v1 = this.getLookAngle();

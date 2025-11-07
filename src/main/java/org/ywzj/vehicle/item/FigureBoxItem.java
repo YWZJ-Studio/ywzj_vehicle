@@ -38,6 +38,7 @@ public class FigureBoxItem extends VehicleItem {
             }
             CompoundTag entityData = new CompoundTag();
             target.saveWithoutId(entityData);
+            entityData.remove("Passengers");
             tag.put("entityData", entityData);
             tag.putString("entityId", EntityType.getKey(target.getType()).toString());
             itemStack.setTag(tag);

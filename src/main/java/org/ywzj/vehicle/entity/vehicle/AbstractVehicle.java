@@ -6,6 +6,8 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -14,7 +16,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -25,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -68,6 +74,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     private final AllVehicles.VehicleType vehicleType;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -122,6 +129,21 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.entityData.define(Z_ROT, 0f);
         this.entityData.define(FUEL, 0f);
         this.entityData.define(POWER, 0f);
+        this.entityData.define(DESTROYED, false);
+    }
+
+    @Override
+    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        compound.putBoolean("Destroyed", isDestroyed());
+    }
+
+    @Override
+    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        if (compound.contains("Destroyed", 99)) {
+            entityData.set(DESTROYED, compound.getBoolean("Destroyed"));
+        }
     }
 
     @Override
@@ -167,6 +189,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     protected void tickPower() {
+        FluidState fluidState = level().getFluidState(BlockPos.containing(new Vec3(mainCubeOBB.obb().center())));
+        if (!fluidState.isEmpty()) {
+            setPower(0);
+            return;
+        }
         float power = getPower();
         if (getDriver() == null) {
             if (power > 0) {
@@ -253,7 +280,30 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             this.setHealth(this.getHealth() - amount);
             if (this.getHealth() <= 0) {
-                this.discard();
+                if (isDestroyed()) {
+                    this.discard();
+                } else {
+                    this.getPassengers().forEach(passenger -> {
+                        passenger.stopRiding();
+                        passenger.hurt(source, 100);
+                    });
+                    this.setHealth(this.getMaxHealth());
+                    Vec3 position = this.position();
+                    ServerLevel level = (ServerLevel) level();
+                    level.playSound(this, BlockPos.containing(position), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
+                    for (ServerPlayer player : level.getPlayers(player -> player.distanceTo(this) < 256)) {
+                        level.sendParticles(
+                                player,
+                                ParticleTypes.EXPLOSION_EMITTER,
+                                true,
+                                position.x, position.y, position.z,
+                                3,
+                                0.5, 0.5, 0.5,
+                                0.1
+                        );
+                    }
+                    entityData.set(DESTROYED, true);
+                }
             }
             this.markHurt();
             return true;
@@ -287,10 +337,40 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public void initPartUnits() {}
 
     @OnlyIn(Dist.CLIENT)
-    protected void tickSound() {};
+    protected void tickSound() {
+        if (isDestroyed() && tickCount % 20 == 0) {
+            Level level = this.level();
+            level.playLocalSound(
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    SoundEvents.FIRE_AMBIENT,
+                    SoundSource.BLOCKS,
+                    0.6F + level.random.nextFloat() * 0.4F,
+                    0.8F + level.random.nextFloat() * 0.4F,
+                    false
+            );
+        }
+    }
 
     @OnlyIn(Dist.CLIENT)
-    protected void tickParticle() {};
+    protected void tickParticle() {
+        if (isDestroyed() && tickCount % 20 == 0) {
+            AABB aabb = getBoundingBox();
+            Level level = this.level();
+            if (level.isClientSide()) {
+                for (int i = 0; i < 5; i++) {
+                    double x = Mth.nextDouble(RandomSource.create(), aabb.minX, aabb.maxX);
+                    double y = Mth.nextDouble(RandomSource.create(), aabb.minY, aabb.maxY);
+                    double z = Mth.nextDouble(RandomSource.create(), aabb.minZ, aabb.maxZ);
+                    double vx = (level.random.nextDouble() - 0.5D) * 0.02D;
+                    double vy = level.random.nextDouble() * 0.05D + 0.02D;
+                    double vz = (level.random.nextDouble() - 0.5D) * 0.02D;
+                    level.addParticle(ParticleTypes.LARGE_SMOKE, true, x, y, z, vx, vy, vz);
+                }
+            }
+        }
+    }
 
     protected abstract Vec3 tickMove();
 
@@ -512,6 +592,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Override
     public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         if (!this.level().isClientSide()) {
+            if (isDestroyed()) {
+                return InteractionResult.PASS;
+            }
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
                 if (itemStack.getItem().equals(AllItems.FUEL_TANK.get())) {
@@ -719,6 +802,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public boolean hasPower() {
         return getPower() > 20;
+    }
+
+    public boolean isDestroyed() {
+        return entityData.get(DESTROYED);
     }
 
     public Matrix4f getWheelsTransform(float ticks) {

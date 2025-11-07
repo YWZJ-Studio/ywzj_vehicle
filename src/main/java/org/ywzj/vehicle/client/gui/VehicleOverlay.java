@@ -192,13 +192,17 @@ public class VehicleOverlay implements IGuiOverlay {
             float maxHealth = vehicle.getMaxHealth();
             float percent = Math.max(0, Math.min(1, health / maxHealth));
             int red, green;
-            // 绿 -> 黄 -> 红
-            if (percent > 0.5f) {
-                red = (int) (255 * (1.0f - (percent - 0.5f) * 2f));
-                green = 255;
-            } else {
+            if (vehicle.isDestroyed()) {
                 red = 255;
-                green = (int) (255 * (percent * 2f));
+                green = 64;
+            } else {
+                if (percent > 0.5f) {
+                    red = (int) (255 * (1.0f - (percent - 0.5f) * 2f));
+                    green = 255;
+                } else {
+                    red = 255;
+                    green = (int) (255 * (percent * 2f));
+                }
             }
             int barColor = (0xFF << 24) | (red << 16) | (green << 8); // ARGB
             int filledWidth = (int) (barWidth * percent);

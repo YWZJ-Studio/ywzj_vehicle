@@ -134,7 +134,8 @@ public class Ztz99aRenderer extends VehicleRender<Ztz99a> {
             machineGun.rotation.mul(Axis.XN.rotationDegrees(-machineGunXRot));
 
             pEntity.lastRenderTime = System.currentTimeMillis();
-            model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+            //todo: 通用的残骸低光
+            model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
             model.applyPose(model.getBindPose());
         }
