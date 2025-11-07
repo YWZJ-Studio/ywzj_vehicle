@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "ywzj_vehicle:block/figure_box_block",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "ywzj_vehicle:block/figure_box_block"
+    },
+    "facing=south": {
+      "model": "ywzj_vehicle:block/figure_box_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ywzj_vehicle:block/figure_box_block",
+      "y": 270
+    }
+  }
+}

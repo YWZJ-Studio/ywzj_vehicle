@@ -27,6 +27,8 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     public float maxSpeedBackward = 0.2f;
     public float turnStep = 0.1f;
     public float maxTurn = 2f;
+    public boolean loseTraction;
+    public int regainTractionTick;
     public float wheelRotation;
     public double trackLength;
     public long lastRenderTime;
@@ -158,7 +160,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             if (controlUnit.forward) {
                 if (motion == 0 || angleDiff < 90) {
                     if (motion < maxSpeedForward) {
-                        velocity = velocity.add(vehicleDirection.scale(forwardForce));
+                        velocity = velocity.add(vehicleDirection.scale(forwardForce * (loseTraction ? 0.5 : 1)));
                     }
                 } else {
                     velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));
@@ -167,7 +169,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             } else {
                 if (motion == 0 || angleDiff >= 90) {
                     if (motion < maxSpeedBackward) {
-                        velocity = velocity.add(vehicleDirection.scale(-backwardForce));
+                        velocity = velocity.add(vehicleDirection.scale(-backwardForce * (loseTraction ? 0.5 : 1)));
                     }
                 } else {
                     velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));
@@ -224,13 +226,23 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         }
         if (motion!= 0 && turnVector.length() > 0.001f) {
             float turnLength = (float) turnVector.length();
-            float k1 = (float) Math.max(0.01, 1 - Math.pow(motion / maxSpeedForward, 0.3));
+            float k1 = (float) Math.max(0.01, 1 - Math.pow(motion / maxSpeedForward, 0.5));
             float k2 = (float) (Math.cos(Math.min(Math.PI / 2, Math.toRadians(angleDiff * 4))) * 0.9f + 0.1f);
-            float k3 = handbrake ? (float) 0.05 : 1;
-            turnForce = Math.min(1, 30 * k1 * k2 * k3) * turnLength;
+            float k3 = handbrake ? (float) 0.2 : 1;
+            float k4 = k1 * k2 * k3;
+            if (k4 < 0.003) {
+                loseTraction = true;
+                regainTractionTick = 10;
+            }
+            turnForce = (float) (Math.min(1, 30 * k4 * (loseTraction ? 0.5 : 1)) * turnLength);
             if (turnForce != 0) {
                 velocity = velocity.add(turnVector.normalize().scale(turnForce));
                 velocity = velocity.normalize().scale(Math.max(0, motion - 0.001 * angleDiff / 90));
+            }
+        } else if (regainTractionTick > 0) {
+            regainTractionTick -= 1;
+            if (regainTractionTick == 0) {
+                loseTraction = false;
             }
         }
         this.setDeltaMovement(velocity);

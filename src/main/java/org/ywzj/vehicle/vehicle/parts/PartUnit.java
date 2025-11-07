@@ -16,6 +16,7 @@ import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.network.NetworkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
+import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataEntry;
@@ -56,8 +57,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     @Deprecated
     public PartUnit(String name, int index, AbstractVehicle vehicle) {
         this.name = Component.translatable(name);
-        this.syncData = new PartUnitSyncData(this);
         this.index = index;
+        this.syncData = new PartUnitSyncData(this);
+        this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
         this.vehicle = vehicle;
         this.unitBedrockCubeOBBs = new ArrayList<>();
         this.initStructureModel(name);

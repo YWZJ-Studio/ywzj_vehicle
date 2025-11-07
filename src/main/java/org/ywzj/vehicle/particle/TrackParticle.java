@@ -50,7 +50,12 @@ public class TrackParticle extends TextureSheetParticle {
         quaternionf.rotateY((float) -Math.toRadians(yRot + 180));
         quaternionf.rotateX((float) (Math.PI / 2));
 
-        Vector3f[] avector3f = new Vector3f[]{new Vector3f(-1.0F, -1.0F, 0.0F), new Vector3f(-1.0F, 1.0F, 0.0F), new Vector3f(1.0F, 1.0F, 0.0F), new Vector3f(1.0F, -1.0F, 0.0F)};
+        Vector3f[] avector3f = new Vector3f[] {
+            new Vector3f(-1.0F, -1.0F, 0.0F),
+            new Vector3f(-1.0F, 1.0F, 0.0F),
+            new Vector3f(1.0F, 1.0F, 0.0F),
+            new Vector3f(1.0F, -1.0F, 0.0F)
+        };
 
         for(int i = 0; i < 4; ++i) {
             Vector3f vector3f = avector3f[i];

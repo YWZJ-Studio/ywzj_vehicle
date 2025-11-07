@@ -83,6 +83,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public float yRotO;
     private float zRot;
     public float zRotO;
+    public boolean lockPassengerYBodyRot;
     public int soundDistance;
     public boolean uav;
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
@@ -146,7 +147,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
-        getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
+        if (lockPassengerYBodyRot) {
+            getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
+        }
         tickRot();
         if (!this.isRemoved()) {
             this.aiStep();
@@ -514,6 +517,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 if (itemStack.getItem().equals(AllItems.FUEL_TANK.get())) {
                     return InteractionResult.PASS;
                 }
+                if (itemStack.getItem().equals(AllItems.FIGURE_BOX.get())) {
+                    return InteractionResult.PASS;
+                }
                 if (pPlayer.startRiding(this)) {
                     return InteractionResult.SUCCESS;
                 }
@@ -562,6 +568,15 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (!(pPassenger instanceof LivingEntity living)) {
             super.positionRider(pPassenger, pCallback);
             return;
+        }
+        if (lockPassengerYBodyRot) {
+            float vehicleYaw = this.getYRot();
+            float delta = Mth.wrapDegrees(pPassenger.getYHeadRot() - vehicleYaw);
+            float limit = 45.0F;
+            delta = Mth.clamp(delta, -limit, limit);
+            float clampedYaw = vehicleYaw + delta;
+            pPassenger.setYHeadRot(clampedYaw);
+            pPassenger.setYRot(clampedYaw);
         }
         PartUnit<?> partUnit = getOwnOperatorUnit(living);
         if (partUnit != null) {

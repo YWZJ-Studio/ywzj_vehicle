@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AllVehicles {
 
     private final static ConcurrentHashMap<Class<? extends AbstractVehicle>, VehicleType> ALL_VEHICLES = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<String, VehicleType> ALL_VEHICLES_BY_NAME = new ConcurrentHashMap<>();
 
     public static final VehicleType LAV150 = registerVehicle("lav150", Lav150.class);
     public static final VehicleType ZTL11 = registerVehicle("ztl11", Ztl11.class);
@@ -33,12 +34,17 @@ public class AllVehicles {
     public static VehicleType registerVehicle(String name, Class<? extends AbstractVehicle> entityClass) {
         VehicleType vehicleType = new VehicleType(name, entityClass);
         ALL_VEHICLES.put(entityClass, vehicleType);
+        ALL_VEHICLES_BY_NAME.put(name, vehicleType);
         YwzjVehicle.LOGGER.info("Vehicle {} registered", name);
         return vehicleType;
     }
 
     public static VehicleType getVehicleType(Class<? extends AbstractVehicle> entityClass) {
         return ALL_VEHICLES.get(entityClass);
+    }
+
+    public static VehicleType getVehicleType(String name) {
+        return ALL_VEHICLES_BY_NAME.get(name);
     }
 
     public static List<VehicleType> getVehicleTypes() {

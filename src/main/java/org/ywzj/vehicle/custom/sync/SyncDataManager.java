@@ -132,6 +132,7 @@ public class SyncDataManager {
             manager.registerSerializer(SyncDataSerializers.INT);
             manager.registerSerializer(SyncDataSerializers.FLOAT);
             manager.registerSerializer(SyncDataSerializers.DOUBLE);
+            manager.registerSerializer(SyncDataSerializers.VEC3);
         }
     }
 }

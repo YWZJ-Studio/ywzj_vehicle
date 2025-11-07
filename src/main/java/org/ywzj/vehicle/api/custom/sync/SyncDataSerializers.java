@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.api.custom.sync;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.phys.Vec3;
 
 public class SyncDataSerializers {
 
@@ -22,5 +23,12 @@ public class SyncDataSerializers {
             Double::equals
     );
 
+    public static SyncDataSerializer<Vec3> VEC3 = SyncDataSerializer.create(
+            (friendlyByteBuf, vec3) -> friendlyByteBuf.writeVector3f(vec3.toVector3f()),
+            friendlyByteBuf -> new Vec3(friendlyByteBuf.readFloat(), friendlyByteBuf.readFloat(), friendlyByteBuf.readFloat()),
+            Vec3::equals
+    );
+
     private SyncDataSerializers(){}
+
 }

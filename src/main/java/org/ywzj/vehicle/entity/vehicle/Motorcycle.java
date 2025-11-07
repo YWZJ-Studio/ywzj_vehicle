@@ -10,6 +10,7 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.particle.DustSmokeOption;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 
@@ -26,6 +27,7 @@ public class Motorcycle extends WheeledVehicle {
         maxSpeedBackward= 0.1f;
         turnStep = 2f;
         maxTurn = 4f;
+        lockPassengerYBodyRot = true;
         physicsEngine.lockZRot = true;
     }
 
@@ -46,9 +48,9 @@ public class Motorcycle extends WheeledVehicle {
 
     @Override
     public void initPartUnits() {
-        PartUnit passengerSeat = new PartUnit("passenger_seat", 1, this);
-        passengerSeat.setOwnerViewOffset(new Vec3(0,2, 0));
-        passengerSeat.setSeatOffset(new Vec3(0,0, -0.3));
+        PartUnit passengerSeat = new PartUnit("passenger_seat", 0, this);
+        passengerSeat.setOwnerViewOffset(new Vec3(0,1.7, 0));
+        passengerSeat.setSeatOffset(new Vec3(0,1.7, -0.3));
         this.partUnits.add(passengerSeat);
         this.seats.add(new Seat(0, passengerSeat));
         passengerSeat.passengerPose = new PassengerPose();
@@ -58,7 +60,17 @@ public class Motorcycle extends WheeledVehicle {
 
     @Override
     protected void tickParticle() {
-        super.tickParticle();
+        trackLength += getDeltaMovement().length();
+        if (trackLength >= 0.5) {
+            trackLength = 0;
+            Vec3 trackPos = relativeRotPos(position().add(0, 0, -mainCubeOBB.obb().extents().z), false);
+            if (EntityUtil.isOnBlockSurface(this, trackPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackPos.x, trackPos.y, trackPos.z,  0.1f, this.getYRot(), 0
+                );
+            }
+        }
+
         double speedSqr = this.getDeltaMovement().lengthSqr();
         if (speedSqr <= 0.255) return;
 
