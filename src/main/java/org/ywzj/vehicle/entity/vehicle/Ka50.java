@@ -5,10 +5,11 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
@@ -25,7 +26,7 @@ import java.util.List;
 
 public class Ka50 extends RotaryWingVehicle {
 
-    public Ka50(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public Ka50(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
@@ -192,9 +193,9 @@ public class Ka50 extends RotaryWingVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
         if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
             //todo: 测试
             if (weaponUnit.getCurrentWeapon().get().getIndex() == 0) {
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);

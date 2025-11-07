@@ -13,11 +13,11 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
@@ -33,7 +33,7 @@ public class Quadcopter extends RotaryWingVehicle {
     private Vec3 fakeOperatorPos;
     private FakePlayer fakeOperator;
 
-    public Quadcopter(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public Quadcopter(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.physicsEngine.mass = 1f;
         this.mainRotorForce = 1.2f * physicsEngine.gravityA * physicsEngine.mass;
@@ -204,7 +204,7 @@ public class Quadcopter extends RotaryWingVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
 
     }
 

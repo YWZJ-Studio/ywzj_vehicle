@@ -5,11 +5,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
@@ -19,13 +19,21 @@ import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 public class Ztz99a extends TrackedVehicle {
 
     private TrackAnimationInstance trackAnimationInstance;
 
-    public Ztz99a(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public record ScheduleTask(int tickCount, Runnable task) {
+    }
+
+    private final Queue<ScheduleTask> scheduledTasks = new PriorityQueue<>(Comparator.comparingInt(task -> task.tickCount));
+
+    public Ztz99a(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
@@ -121,6 +129,20 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        while (!scheduledTasks.isEmpty()) {
+            ScheduleTask scheduleTask = scheduledTasks.peek();
+            if (scheduleTask.tickCount <= this.tickCount) {
+                scheduleTask.task.run();
+                scheduledTasks.poll();
+            } else {
+                break;
+            }
+        }
+    }
+
+    @Override
     protected void tickParticle() {
         double velocity = Math.abs(entityData.get(FORWARD_SPEED)) * 20 + Math.abs(entityData.get(TURN_SPEED)) * 5;
         if ((!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) && hasPower()) {
@@ -136,18 +158,15 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
         if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
             if (weaponIndex == 0) {
                 // todo: 测试音效
                 this.level().playSound(null, this, AllSounds.CANNON_125_MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Exception ex) {}
-                    ServerLifecycleHooks.getCurrentServer().execute(() -> this.level().playSound(null, this, AllSounds.CANNON_SHELL_DROP.get(), SoundSource.PLAYERS, 16f, 1f));
-                }).start();
+                this.scheduledTasks.add(new ScheduleTask(this.tickCount + 20, () -> {
+                    this.level().playSound(null, this, AllSounds.CANNON_SHELL_DROP.get(), SoundSource.PLAYERS, 16f, 1f);
+                }));
                 // todo: 后坐
                 physicsEngine.recoil(weaponUnit);
                 // todo: 测试粒子
@@ -171,13 +190,5 @@ public class Ztz99a extends TrackedVehicle {
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }
         }
-    }
-
-    public TrackAnimationInstance getTrackAnimationInstance() {
-        return trackAnimationInstance;
-    }
-
-    public void setTrackAnimationInstance(TrackAnimationInstance trackAnimationInstance) {
-        this.trackAnimationInstance = trackAnimationInstance;
     }
 }

@@ -6,9 +6,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
@@ -22,7 +22,7 @@ public class DumpTruck extends WheeledVehicle {
 
     private VehicleSound bedTurnSoundInstance;
 
-    public DumpTruck(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public DumpTruck(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.maxSpeedForward = 0.4f;
     }
@@ -128,7 +128,7 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
 //        if (weaponIndex < operatorUnits.size()) {
 //            if (seats.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
 //                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);

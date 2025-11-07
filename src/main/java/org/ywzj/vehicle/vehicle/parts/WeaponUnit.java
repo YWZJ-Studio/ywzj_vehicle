@@ -8,10 +8,14 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.custom.VehicleWeaponManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
@@ -20,6 +24,7 @@ import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.network.message.ServerVehicleFire;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -281,8 +286,21 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+        shoot(ammoSpawnPositions, ammoXRot, ammoYRot, null);
+    }
+
+    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
         this.getCurrentWeapon().ifPresent(weapon -> {
-            weapon.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, owner);
+            if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, weapon, operator))) {
+                return;
+            }
+            weapon.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
+            MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
+            int entityId = vehicle.getId();
+            int operatorId = operator == null ? -1 : operator.getId();
+
+            ServerVehicleFire packet = new ServerVehicleFire(entityId, operatorId, index, weapon.getIndex());
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(()-> vehicle), packet);
         });
     }
 

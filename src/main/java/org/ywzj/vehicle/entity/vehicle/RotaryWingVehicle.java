@@ -10,7 +10,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -38,7 +37,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
 
-    public RotaryWingVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.thirdPersonCenterOffset = new Vec3(0, 6, 0);
         this.thirdPersonDistance = 14;

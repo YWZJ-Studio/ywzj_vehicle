@@ -8,7 +8,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllParticleTypes;
@@ -35,7 +34,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     private VehicleSound engineRunSoundInstance;
     private VehicleSound tireSquealSoundInstance;
 
-    public WheeledVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public WheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.thirdPersonCenterOffset = new Vec3(0, 4, 0);
         this.thirdPersonDistance = 7;

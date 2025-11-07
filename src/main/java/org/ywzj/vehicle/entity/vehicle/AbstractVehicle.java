@@ -33,6 +33,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -89,7 +90,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public final PhysicsEngine physicsEngine;
     public long lastRenderTime;
 
-    protected AbstractVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.vehicleType = AllVehicles.getVehicleType(this.getClass());
         this.seats = new ArrayList<>();
@@ -283,10 +284,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public void initPartUnits() {}
 
     @OnlyIn(Dist.CLIENT)
-    protected abstract void tickSound();
+    protected void tickSound() {};
 
     @OnlyIn(Dist.CLIENT)
-    protected abstract void tickParticle();
+    protected void tickParticle() {};
 
     protected abstract Vec3 tickMove();
 
@@ -663,7 +664,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return new Vec3(d.x, d.y, d.z);
     }
 
-    public abstract void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot);
+    public abstract void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator);
 
     public float getFuel() {
         float amount = entityData.get(FUEL);

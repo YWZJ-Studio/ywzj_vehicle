@@ -9,7 +9,10 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.HasCustomInventoryScreen;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
@@ -42,7 +45,7 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     protected int lerpSteps;
     protected final NonNullList<ItemStack> items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
 
-    protected ContainerCraft(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    protected ContainerCraft(EntityType<? extends Entity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 

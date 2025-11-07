@@ -81,6 +81,11 @@ public class Channel {
                 ClientVehicleSwitchWeapon::encode, ClientVehicleSwitchWeapon::decode,
                 ClientVehicleSwitchWeapon::onReceived,
                 Optional.of(PLAY_TO_SERVER));
+
+        CHANNEL.registerMessage(PacketId.S_VEHICLE_FIRE.value(), ServerVehicleFire.class,
+                ServerVehicleFire::encode, ServerVehicleFire::decode,
+                ServerVehicleFire::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
     }
 
 }
@@ -93,6 +98,7 @@ enum PacketId {
     S_ROTATABLE_UNIT_ROT(103),
     C_VEHICLE_CHANGE_SEAT(104),
     C_VEHICLE_SWITCH_WEAPON(105),
+    S_VEHICLE_FIRE(106),
 
     S_ENTITY_SYNC_DATA(120),
 

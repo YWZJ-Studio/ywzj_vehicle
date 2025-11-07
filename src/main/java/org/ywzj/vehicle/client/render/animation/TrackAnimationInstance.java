@@ -11,6 +11,9 @@ import com.maydaymemory.mae.control.runner.AnimationRunner;
 
 import java.util.List;
 
+/**
+ * 一个简单的履带动画实例，包含左右履带动画的进度与累计位移计算
+ */
 public class TrackAnimationInstance {
     private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
 

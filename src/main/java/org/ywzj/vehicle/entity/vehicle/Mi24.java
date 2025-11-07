@@ -4,10 +4,11 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
@@ -19,7 +20,7 @@ import java.util.List;
 
 public class Mi24 extends RotaryWingVehicle {
 
-    public Mi24(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public Mi24(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.physicsEngine.mass = 1.5f;
         this.mainRotorForce = 1.1f * physicsEngine.gravityA * physicsEngine.mass;
@@ -111,9 +112,9 @@ public class Mi24 extends RotaryWingVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
         if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot);
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
         }
     }
 

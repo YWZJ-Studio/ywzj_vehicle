@@ -8,10 +8,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 
 public abstract class TrackedVehicle extends AbstractVehicle {
 
@@ -27,7 +30,9 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
 
-    public TrackedVehicle(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    private TrackAnimationInstance trackAnimationInstance;
+
+    public TrackedVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.thirdPersonCenterOffset = new Vec3(0, 3, 0);
         this.thirdPersonDistance = 7;
@@ -171,6 +176,20 @@ public abstract class TrackedVehicle extends AbstractVehicle {
         motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
         this.setDeltaMovement(motion);
         return new Vec3(0, 0, 0);
+    }
+
+    /**
+     * 获取履带动画实例
+     */
+    @Nullable
+    @OnlyIn(Dist.CLIENT)
+    public TrackAnimationInstance getTrackAnimationInstance() {
+        return trackAnimationInstance;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void setTrackAnimationInstance(TrackAnimationInstance trackAnimationInstance) {
+        this.trackAnimationInstance = trackAnimationInstance;
     }
 
 }

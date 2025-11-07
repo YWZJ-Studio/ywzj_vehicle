@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -7,9 +8,11 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
@@ -52,7 +55,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
     }
 
     public void defineSyncData(PartUnitSyncData syncData) {
-        this.remainAmmoHolder = syncData.define(SyncDataSerializers.INT, this::setRemainAmmo , this::getRemainAmmo, remainAmmo);
+        this.remainAmmoHolder = syncData.define(SyncDataSerializers.INT, this::setRemainAmmo, this::getRemainAmmo, remainAmmo);
         this.reloadTimeHolder = syncData.define(SyncDataSerializers.INT, this::setReloadTime, this::getReloadTime, reloadTime);
     }
 
@@ -88,23 +91,31 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
 
     @OnlyIn(Dist.CLIENT)
     public boolean doClientShoot() {
+        if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player))) {
+            return false;
+        }
         if (isCoolingDown()) {
             return false;
         }
         if (!hasAmmo()) {
             return false;
         }
-        lastShootTime = System.currentTimeMillis();
+
         Vec2 rot = weaponUnit.worldRot();
         int partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
+        List<Vec3> ammoSpawnPositions;
         if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
-            sendShoot(this.getVehicle(), partUnitIndex, Collections.singletonList(weaponUnit.ammoSpawnPosition()), rot.x, rot.y);
+            ammoSpawnPositions = Collections.singletonList(weaponUnit.ammoSpawnPosition());
             weaponUnit.countFire(1);
         } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
-            List<Vec3> ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
-            sendShoot(this.getVehicle(), partUnitIndex, ammoSpawnPositions, rot.x, rot.y);
+            ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
             weaponUnit.countFire(ammoSpawnPositions.size());
+        } else {
+            return false;
         }
+
+        lastShootTime = System.currentTimeMillis();
+        sendShoot(this.getVehicle(), partUnitIndex, ammoSpawnPositions, rot.x, rot.y);
         return true;
     }
 

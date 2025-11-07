@@ -2,9 +2,10 @@ package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
@@ -16,7 +17,7 @@ import java.util.List;
 
 public class Motorcycle extends WheeledVehicle {
 
-    public Motorcycle(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public Motorcycle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         physicsEngine.friction = 0.003f;
         forwardForce = 0.013f;
@@ -101,7 +102,7 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
         // 喇叭声
     }
 

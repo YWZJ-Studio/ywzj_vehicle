@@ -21,6 +21,7 @@
   "mixins": [
     "common.ChunkMapMixin",
     "common.EntityMixin",
+    "common.PathPackResourcesMixin",
     "common.PlayerMixin",
     "common.ServerEntityMixin",
     "tacz.EntityKineticBulletMixin",
