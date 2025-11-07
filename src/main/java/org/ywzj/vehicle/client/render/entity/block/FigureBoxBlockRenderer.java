@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -16,11 +15,7 @@ import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBlockEntity> {
-
-    private static final ConcurrentHashMap<EntityType<?>, Entity> CACHE = new ConcurrentHashMap<>();
 
     public FigureBoxBlockRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -34,34 +29,26 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
             return;
         }
 
-        EntityType<?> type = figureBoxBlockEntity.getEntity().getType();
-        if (!CACHE.containsKey(type)) {
-            Entity entity = type.create(level);
-            if (entity == null) {
-                return;
-            }
-            Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
-            float yaw;
-            switch (facing) {
-                case NORTH -> yaw = 180f;
-                case SOUTH -> yaw = 0f;
-                case WEST -> yaw = 90f;
-                case EAST -> yaw = -90f;
-                default -> yaw = 0f;
-            }
-            yaw += 45;
-            entity.moveTo(figureBoxBlockEntity.getBlockPos().getX() + 0.5,
-                    figureBoxBlockEntity.getBlockPos().getY(),
-                    figureBoxBlockEntity.getBlockPos().getZ() + 0.5,
-                    yaw, 0);
-            if (entity instanceof LivingEntity) {
-                entity.setYRot(yaw);
-                entity.setYBodyRot(yaw);
-                entity.setYHeadRot(yaw);
-            }
-            CACHE.put(type, entity);
+        Entity entity = figureBoxBlockEntity.getEntity();
+        Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
+        float yaw;
+        switch (facing) {
+            case NORTH -> yaw = 180f;
+            case SOUTH -> yaw = 0f;
+            case WEST -> yaw = 90f;
+            case EAST -> yaw = -90f;
+            default -> yaw = 0f;
         }
-        Entity entity = CACHE.get(type);
+        yaw += 45;
+        entity.moveTo(figureBoxBlockEntity.getBlockPos().getX() + 0.5,
+                figureBoxBlockEntity.getBlockPos().getY(),
+                figureBoxBlockEntity.getBlockPos().getZ() + 0.5,
+                yaw, 0);
+        if (entity instanceof LivingEntity) {
+            entity.setYRot(yaw);
+            entity.setYBodyRot(yaw);
+            entity.setYHeadRot(yaw);
+        }
 
         poseStack.pushPose();
         {

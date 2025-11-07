@@ -67,6 +67,7 @@ public class FigureBoxItem extends VehicleItem {
         EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(id));
         if (type != null) {
             Entity entity = type.create(level);
+            entity.load(entityData);
             if (player.isShiftKeyDown()) {
                 player.level().setBlock(pos, AllBlocks.FIGURE_BOX_BLOCK.get().defaultBlockState()
                         .setValue(FigureBoxBlock.FACING, Direction.fromYRot(player.getYRot()).getOpposite()),
@@ -79,7 +80,6 @@ public class FigureBoxItem extends VehicleItem {
                     return InteractionResult.SUCCESS;
                 }
             } else {
-                entity.load(entityData);
                 entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
                 level.addFreshEntity(entity);
                 tag.remove("entityData");
