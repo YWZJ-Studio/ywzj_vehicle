@@ -2,7 +2,6 @@ package org.ywzj.vehicle.entity.weapon;
 
 import com.tacz.guns.api.entity.ITargetEntity;
 import com.tacz.guns.api.entity.KnockBackModifier;
-import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
@@ -28,6 +27,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
@@ -227,8 +227,8 @@ public class BulletEntity extends AmmoEntity {
             damage *= headShotMultiplier;
         }
         Pair<DamageSource, DamageSource> sources = Pair.of(
-                ModDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, false),
-                ModDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, true)
+                AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation()),
+                AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation())
         );
         // 对 LivingEntity 进行击退强度的自定义
         if (entity instanceof LivingEntity livingCore) {

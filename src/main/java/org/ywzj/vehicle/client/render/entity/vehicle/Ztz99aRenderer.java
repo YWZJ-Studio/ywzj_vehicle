@@ -50,9 +50,9 @@ public class Ztz99aRenderer extends VehicleRender<Ztz99a> {
 
     @Override
     public void render(Ztz99a pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
         pPoseStack.pushPose();
         {
+            super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             BedrockModel model = BedrockModelLoader.getModel(AllVehicles.ZTZ99A.getVisualBedrockModel());
             VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.ZTZ99A.getVisualBedrockTexture()));
 

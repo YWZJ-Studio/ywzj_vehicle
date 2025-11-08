@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -54,6 +55,7 @@ import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
+import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
@@ -268,25 +270,25 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
-        if (MinecraftForge.EVENT_BUS.post(new VehicleAttackEvent(this, source, amount))) {
+    public boolean hurt(DamageSource damageSource, float amount) {
+        if (MinecraftForge.EVENT_BUS.post(new VehicleAttackEvent(this, damageSource, amount))) {
             return false;
         }
-        if (this.isInvulnerableTo(source)) {
+        if (this.isInvulnerableTo(damageSource)) {
             return false;
         } else {
             if (!level().isClientSide()) {
-                this.playSound(getHurtSound(source), 1, 1);
-                this.level().broadcastDamageEvent(this, source);
+                this.playSound(getHurtSound(damageSource), 1, 1);
+                this.level().broadcastDamageEvent(this, damageSource);
             }
-            this.setHealth(this.getHealth() - amount);
+            DamageSystem.hurt(damageSource, amount, this);
             if (this.getHealth() <= 0) {
                 if (isDestroyed()) {
                     this.discard();
                 } else {
                     this.getPassengers().forEach(passenger -> {
                         passenger.stopRiding();
-                        passenger.hurt(source, 100);
+                        passenger.hurt(damageSource, 100);
                     });
                     this.setHealth(this.getMaxHealth());
                     Vec3 position = this.position();
@@ -376,27 +378,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     protected abstract Vec3 tickMove();
 
     protected void tickRot() {
-        if (level().isClientSide()) {
-            this.xRotO = this.xRot;
-            this.yRotO = this.yRot;
-            this.zRotO = this.zRot;
-            this.xRot = this.entityData.get(X_ROT);
-            this.yRot = this.entityData.get(Y_ROT);
-            this.zRot = this.entityData.get(Z_ROT);
-        } else {
-            if (this.xRotO != this.xRot) {
-                this.entityData.set(X_ROT, this.xRot, true);
-            }
-            if (this.yRotO != this.yRot) {
-                this.entityData.set(Y_ROT, this.yRot, true);
-            }
-            if (this.zRotO != this.zRot) {
-                this.entityData.set(Z_ROT, this.zRot, true);
-            }
-            this.xRotO = this.xRot;
-            this.yRotO = this.yRot;
-            this.zRotO = this.zRot;
-        }
+        this.xRotO = this.xRot;
+        this.yRotO = this.yRot;
+        this.zRotO = this.zRot;
     }
 
     protected void tickParts() {
@@ -579,15 +563,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     protected boolean canAddPassenger(@NotNull Entity pPassenger) {
-        return seats.stream().anyMatch(seat -> seat.passengerId == -1);
-    }
-
-    @Override
-    protected void addPassenger(Entity pPassenger) {
-        super.addPassenger(pPassenger);
-        if (pPassenger instanceof LivingEntity livingEntity) {
-            onEnterVehicle(livingEntity);
-        }
+        return seats.stream().anyMatch(seat -> seat.passengerId == pPassenger.getId());
     }
 
     @Override
@@ -712,6 +688,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public void setXRot(float rot) {
         this.xRot = rot;
+        if (!level().isClientSide()) {
+            this.entityData.set(X_ROT, this.xRot, true);
+        }
     }
 
     public float getYRot() {
@@ -720,6 +699,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public void setYRot(float rot) {
         this.yRot = rot;
+        if (!level().isClientSide()) {
+            this.entityData.set(Y_ROT, this.yRot, true);
+        }
     }
 
     public float getZRot() {
@@ -728,6 +710,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public void setZRot(float rot) {
         this.zRot = rot;
+        if (!level().isClientSide()) {
+            this.entityData.set(Z_ROT, this.zRot, true);
+        }
     }
 
     public float getViewZRot(float pPartialTicks) {
@@ -818,11 +803,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public Vector4f transformPosition(Matrix4f transform, float x, float y, float z) {
         return transform.transform(new Vector4f(x, y, z, 1));
-    }
-
-    public void keepChunkLoaded(Vec3 position) {
-        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
-        ((ServerLevel)this.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, this.getId());
     }
 
     @Override
@@ -941,13 +921,31 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
+    public void keepChunkLoaded(Vec3 position) {
+        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
+        ((ServerLevel) this.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, this.getId());
+    }
+
+    public void triggerRotUpdate() {
+        ClientboundMoveEntityPacket.Rot packet = new ClientboundMoveEntityPacket.Rot(this.getId(), (byte) 0, (byte) 0, this.onGround());
+        ((ServerLevel) this.level()).getChunkSource().broadcast(this, packet);
+    }
+
     public void aiStep() {
-        if (this.lerpSteps > 0) {
-            double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
-            double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
-            double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-            --this.lerpSteps;
-            this.setPos(dX, dY, dZ);
+        if (level().isClientSide()) {
+            if (this.lerpSteps > 0) {
+                double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
+                double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
+                double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
+                this.lerpSteps -= 1;
+                this.setPos(dX, dY, dZ);
+            }
+            float dXRot = Mth.wrapDegrees(entityData.get(X_ROT) - this.getXRot());
+            float dYRot = Mth.wrapDegrees(entityData.get(Y_ROT) - this.getYRot());
+            float dZRot = Mth.wrapDegrees(entityData.get(Z_ROT) - this.getZRot());
+            this.setXRot(this.getXRot() + dXRot);
+            this.setYRot(this.getYRot() + dYRot);
+            this.setZRot(this.getZRot() + dZRot);
         }
 
         Vec3 v = this.getDeltaMovement();

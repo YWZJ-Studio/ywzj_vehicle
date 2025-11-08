@@ -36,7 +36,7 @@ public class EntityUtil {
 
     @Nullable
     public static BulletHitResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
-        Vec3 hitVec = null;
+        Vec3 hitPos = null;
         Entity hitEntity = null;
         boolean headshot = false;
         // 获取子弹 tick 路径上所有的实体
@@ -54,11 +54,10 @@ public class EntityUtil {
                 if (result == null) {
                     continue;
                 }
-                Vec3 hitPos = result.getLocation();
+                hitPos = result.getLocation();
                 double distanceToHit = startVec.distanceTo(hitPos);
                 if (entity.isAlive()) {
                     if (distanceToHit < closestDistance) {
-                        hitVec = hitPos;
                         hitEntity = entity;
                         closestDistance = distanceToHit;
                         headshot = result.isHeadshot();
@@ -66,7 +65,7 @@ public class EntityUtil {
                 }
             }
         }
-        return hitEntity != null ? new BulletHitResult(hitEntity, hitVec, headshot) : null;
+        return hitEntity != null ? new BulletHitResult(hitEntity, hitPos, headshot) : null;
     }
 
     @NotNull

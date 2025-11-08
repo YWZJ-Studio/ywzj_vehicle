@@ -74,7 +74,7 @@ public class CustomExplosion {
         }
 
         level.playSound(source, BlockPos.containing(pos), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
-        for (ServerPlayer player : level.getPlayers(player -> player.distanceTo(source) < 128)) {
+        for (ServerPlayer player : level.getPlayers(player -> player.distanceTo(source) < 256)) {
             level.sendParticles(
                     player,
                     ParticleTypes.EXPLOSION_EMITTER,

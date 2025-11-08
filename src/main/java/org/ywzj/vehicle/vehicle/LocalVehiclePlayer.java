@@ -74,7 +74,8 @@ public class LocalVehiclePlayer {
                 return;
             }
             AbstractVehicle vehicle = getVehicle();
-            PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(getPlayer());
+            Player player = getPlayer();
+            PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 weaponHitPosO = weaponHitPos;
                 weaponHitPos = weaponUnit.aimHitPosition();
@@ -88,7 +89,7 @@ public class LocalVehiclePlayer {
                 cameraAimRotZO = cameraAimRotZ;
                 if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
                     Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
-                            vehicle.thirdPersonPosition(getPlayer()) : partUnit.worldOwnerViewPosition();
+                            vehicle.thirdPersonPosition(player) : partUnit.worldOwnerViewPosition();
                     cameraX = vehicleCameraPos.x;
                     cameraY = vehicleCameraPos.y;
                     cameraZ = vehicleCameraPos.z;
@@ -101,11 +102,11 @@ public class LocalVehiclePlayer {
                             }
                         }
                         if (viewType == ViewType.THIRD_PERSON) {
-                            cameraAimRotX = getPlayer().getXRot();
-                            cameraAimRotY = getPlayer().getYRot();
+                            cameraAimRotX = player.getXRot();
+                            cameraAimRotY = player.getYRot();
                         } else {
-                            float xRot = getPlayer().getXRot() - vehicle.getXRot();
-                            float yRot = getPlayer().getYRot() - vehicle.getYRot();
+                            float xRot = player.getXRot() - vehicle.getXRot();
+                            float yRot = player.getYRot() - vehicle.getYRot();
                             Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, yRot), false);
                             cameraAimRotX = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
                             cameraAimRotY = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
@@ -148,6 +149,13 @@ public class LocalVehiclePlayer {
                         fixLerp();
                     }
                 }
+            } else {
+                cameraX = player.getX();
+                cameraY = player.getEyeY() + 16;
+                cameraZ = player.getZ();
+                cameraXO = cameraX;
+                cameraYO = cameraY;
+                cameraZO = cameraZ;
             }
         }
     }

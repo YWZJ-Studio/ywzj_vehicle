@@ -2,6 +2,7 @@ package org.ywzj.vehicle.util;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.FastColor;
@@ -9,6 +10,10 @@ import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 public class RenderHelper {
+
+    public static void drawCenteredString(GuiGraphics guiGraphics, Font pFont, String pText, int pX, int pY, int pColor) {
+        guiGraphics.drawString(pFont, pText, pX - pFont.width(pText) / 2, pY, pColor, false);
+    }
 
     public static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
         PoseStack poseStack = guiGraphics.pose();

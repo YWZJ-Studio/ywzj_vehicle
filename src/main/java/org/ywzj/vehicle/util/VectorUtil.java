@@ -64,8 +64,8 @@ public class VectorUtil {
     public static Vec3 hitPosition(Entity shooter, Vec3 start, Vec3 end) {
         Level level = shooter.level();
         ClipContext blockContext = new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, shooter);
-        BlockHitResult blockHit = level.clip(blockContext);
-        Vec3 blockHitPos = blockHit.getLocation();
+        BlockHitResult blockHitResult = level.clip(blockContext);
+        Vec3 blockHitPos = blockHitResult.getLocation();
         double blockDistance = blockHitPos.distanceTo(start);
         EntityHitResult entityHit = hitEntity(shooter, start, end);
         Vec3 hitPoint = blockHitPos;
@@ -96,8 +96,14 @@ public class VectorUtil {
     }
 
     public static Pair<OBBEntity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {
+        Level level = shooter.level();
+        ClipContext blockContext = new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, shooter);
+        BlockHitResult blockHitResult = level.clip(blockContext);
         EntityHitResult entityHitResult = VectorUtil.hitEntity(shooter, start, end);
-        if (entityHitResult != null && entityHitResult.getEntity() instanceof OBBEntity entity) {
+        if (entityHitResult == null || blockHitResult.getLocation().distanceTo(start) < entityHitResult.getLocation().distanceTo(start)) {
+            return null;
+        }
+        if (entityHitResult.getEntity() instanceof OBBEntity entity) {
             for (var obb : entity.getOBBs()) {
                 var obbVec = obb.clip(start.toVector3f(), end.toVector3f()).orElse(null);
                 if (obbVec != null) {

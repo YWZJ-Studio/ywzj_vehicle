@@ -3,9 +3,11 @@ package org.ywzj.vehicle.all;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -48,6 +50,15 @@ public class AllEvents {
             ItemStack itemStack = event.getItemStack();
             if (itemStack.getItem() instanceof VehicleItem vehicleItem) {
                 vehicleItem.interactEntity(itemStack, event.getEntity(), event.getTarget(), event.getHand());
+            }
+        }
+
+        @SubscribeEvent
+        public static void onEntityMount(EntityMountEvent event) {
+            if (event.isMounting() && event.getEntityBeingMounted() instanceof AbstractVehicle vehicle) {
+                if (event.getEntityMounting() instanceof LivingEntity livingEntity) {
+                    vehicle.onEnterVehicle(livingEntity);
+                }
             }
         }
 

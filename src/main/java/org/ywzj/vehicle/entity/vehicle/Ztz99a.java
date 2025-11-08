@@ -98,6 +98,7 @@ public class Ztz99a extends TrackedVehicle {
         commanderMachineGun.needPower = false;
         commanderMachineGun.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
         commanderMachineGun.opticalSightType = WeaponUnit.OpticalSightType.OPERATOR;
+        commanderMachineGun.setOperatorOnWeaponUnit(false);
         commanderMachineGun.setXRotSpeed(60f / 20);
         commanderMachineGun.setYRotSpeed(60f / 20);
         commanderMachineGun.setXRotMax(15f);

@@ -42,10 +42,12 @@ public class InputHandler {
                 if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
                     LocalVehiclePlayer.instance.switchViewType(null);
                 } else if (SWITCH_SCOPE.matches(event.getKey(), event.getScanCode())) {
-                    if (LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-                        LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.SCOPE);
-                    } else {
-                        LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
+                    if (weaponUnit != null) {
+                        if (LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
+                            LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.SCOPE);
+                        } else {
+                            LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
+                        }
                     }
                 } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
                     Minecraft.getInstance().player.sendOpenInventory();

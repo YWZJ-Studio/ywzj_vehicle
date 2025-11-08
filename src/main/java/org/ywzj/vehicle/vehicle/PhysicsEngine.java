@@ -206,11 +206,13 @@ public class PhysicsEngine {
                     // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
                     double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
                     double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
-                    if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
+                    if (vehicle.getZRot() != 0 && Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
                         vehicle.setZRot(0);
+                        vehicle.triggerRotUpdate();
                     }
-                    if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
+                    if (vehicle.getXRot() != 0 && Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
                         vehicle.setXRot(0);
+                        vehicle.triggerRotUpdate();
                     }
                     if (AllConfigs.common.selfRighting.get()) {
                         if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
@@ -288,7 +290,7 @@ public class PhysicsEngine {
         rot(axes);
         // 后坐力产生推移
         force = force.normalize();
-        double motion = force.dot(new Vector3f(0, 0, 1)) * 0.01;
+        double motion = force.dot(new Vector3f(0, 0, 1)) * 0.05;
         vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
     }
 

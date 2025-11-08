@@ -182,7 +182,7 @@ public class VehicleOverlay implements IGuiOverlay {
             float barHalfHeight = (float) barHeight / 2;
             poseStack.translate(x, y + barHalfHeight - 8, 0);
             poseStack.scale(size, size, size);
-            guiGraphics.drawCenteredString(font, vehicle.getVehicleType().getName(), 0, -14, 0xFFFFFFFF);
+            RenderHelper.drawCenteredString(guiGraphics, font, vehicle.getVehicleType().getName(), 0, -14, 0xFFFFFFFF);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, 0, bgColor);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, 0, 0xFF999999);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, 0, 0xFF999999);
@@ -191,13 +191,14 @@ public class VehicleOverlay implements IGuiOverlay {
 
             float health = vehicle.getHealth();
             float maxHealth = vehicle.getMaxHealth();
-            float lastHealth = vehicle.lastHealth;
+            float uiHealth = vehicle.uiHealth;
             int hurtTime = vehicle.hurtTime;
 
             float percent = maxHealth > 0 ? Math.max(0, Math.min(1, health / maxHealth)) : 0f;
             float hurtT = Math.max(0f, Math.min(1f, hurtTime / 10f));
-            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, lastHealth / maxHealth)) : percent;
+            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, uiHealth / maxHealth)) : percent;
             float lastPercent = Mth.lerp(hurtT, percent, rawLastPercent);
+            float healthDiff = uiHealth - health;
 
             int red, green;
             if (vehicle.isDestroyed()) {
@@ -229,7 +230,10 @@ public class VehicleOverlay implements IGuiOverlay {
             poseStack.pushPose();
             {
                 String text = String.format("%.0f/%.0f", health, maxHealth);
-                guiGraphics.drawCenteredString(font, text, 0, -4, 0xFFFFFFFF);
+                RenderHelper.drawCenteredString(guiGraphics, font, text, 0, -4, 0xFFFFFFFF);
+                if (healthDiff > 0) {
+                    RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 6, 0xFFFF0000);
+                }
             }
             poseStack.popPose();
         }
@@ -239,7 +243,7 @@ public class VehicleOverlay implements IGuiOverlay {
     public static void renderDirection(GuiGraphics graphics, PoseStack poseStack, Font font, int x, String s) {
         graphics.vLine(x * 4, 0, 8, color);
         poseStack.translate(1f, 0, 0);
-        graphics.drawCenteredString(font, s, x * 4, 12, color);
+        RenderHelper.drawCenteredString(graphics, font, s, x * 4, 12, color);
         poseStack.translate(-1f, 0, 0);
     }
 
