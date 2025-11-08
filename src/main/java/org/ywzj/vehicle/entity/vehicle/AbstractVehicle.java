@@ -277,6 +277,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         } else {
             if (!level().isClientSide()) {
                 this.playSound(getHurtSound(source), 1, 1);
+                this.level().broadcastDamageEvent(this, source);
             }
             this.setHealth(this.getHealth() - amount);
             if (this.getHealth() <= 0) {

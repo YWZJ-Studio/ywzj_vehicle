@@ -45,6 +45,11 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     protected int lerpSteps;
     protected final NonNullList<ItemStack> items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
 
+    // 血条记录，无实际作用，仅供渲染使用
+    public float lastHealth = -1;
+    public float health = -1;
+    public int hurtTime = 0;
+
     protected ContainerCraft(EntityType<? extends Entity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
@@ -78,6 +83,22 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         this.lerpY = pY;
         this.lerpZ = pZ;
         this.lerpSteps = pPosRotationIncrements;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (hurtTime > 0) {
+            hurtTime--;
+        }
+        if (health == -1) {
+            health = this.getHealth();
+            lastHealth = health;
+        } else if (health != this.getHealth()) {
+            hurtTime = 10;
+            lastHealth = health;
+            health = this.getHealth();
+        }
     }
 
     public void heal(float pHealAmount) {

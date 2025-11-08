@@ -152,14 +152,14 @@ public class VehicleOverlay implements IGuiOverlay {
         if (hitResult != null) {
             OBBEntity obbEntity = hitResult.getLeft();
             if (obbEntity instanceof AbstractVehicle vehicle) {
-                float distance = player.distanceTo(vehicle);
+                double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
                 if (distance > showVehicleInfoDistance) {
                     return;
                 }
                 PoseStack poseStack = guiGraphics.pose();
                 poseStack.pushPose();
                 {
-                    float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.33, 1);
+                    float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
                     AABB aabb = vehicle.getBoundingBox();
                     Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                             Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
@@ -188,9 +188,17 @@ public class VehicleOverlay implements IGuiOverlay {
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, 0, 0xFF999999);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, 0, 0xFF999999);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, 0, 0xFF999999);
+
             float health = vehicle.getHealth();
             float maxHealth = vehicle.getMaxHealth();
-            float percent = Math.max(0, Math.min(1, health / maxHealth));
+            float lastHealth = vehicle.lastHealth;
+            int hurtTime = vehicle.hurtTime;
+
+            float percent = maxHealth > 0 ? Math.max(0, Math.min(1, health / maxHealth)) : 0f;
+            float hurtT = Math.max(0f, Math.min(1f, hurtTime / 10f));
+            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, lastHealth / maxHealth)) : percent;
+            float lastPercent = Mth.lerp(hurtT, percent, rawLastPercent);
+
             int red, green;
             if (vehicle.isDestroyed()) {
                 red = 255;
@@ -205,8 +213,19 @@ public class VehicleOverlay implements IGuiOverlay {
                 }
             }
             int barColor = (0xFF << 24) | (red << 16) | (green << 8); // ARGB
+
             int filledWidth = (int) (barWidth * percent);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, 0, barColor);
+            int lastFilledWidth = (int) (barWidth * lastPercent);
+            if (lastFilledWidth != filledWidth) {
+                RenderHelper.fill(
+                        guiGraphics, RenderType.guiOverlay(),
+                        -barHalfWidth + Math.min(filledWidth, lastFilledWidth), -barHalfHeight,
+                        -barHalfWidth + Math.max(filledWidth, lastFilledWidth), barHalfHeight,
+                        0, 0xFFFFFFFF
+                );
+            }
+
             poseStack.pushPose();
             {
                 String text = String.format("%.0f/%.0f", health, maxHealth);
