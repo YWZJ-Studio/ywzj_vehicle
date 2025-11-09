@@ -1,7 +1,5 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import com.tacz.guns.api.entity.ITargetEntity;
-import com.tacz.guns.api.entity.KnockBackModifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,6 +27,7 @@ import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.api.entity.KnockBackModifier;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.CustomExplosion;
@@ -208,12 +207,6 @@ public class BulletEntity extends AmmoEntity {
     }
 
     protected void onHitEntity(BulletHitResult result) {
-        if (result.getEntity() instanceof ITargetEntity targetEntity) {
-            DamageSource source = this.damageSources().thrown(this, this.getOwner());
-            targetEntity.onProjectileHit(this, result, source, this.getDamage(result.getLocation()));
-            // 打靶直接返回
-            return;
-        }
         // 获取Pre事件必要的信息
         Entity entity = result.getEntity();
         @Nullable Entity owner = this.getOwner();
@@ -234,11 +227,11 @@ public class BulletEntity extends AmmoEntity {
         if (entity instanceof LivingEntity livingCore) {
             // 取消击退效果，设定自己的击退强度
             KnockBackModifier modifier = KnockBackModifier.fromLivingEntity(livingCore);
-            modifier.setKnockBackStrength(this.knockback);
+            modifier.ywzj_vehicle$setKnockBackStrength(this.knockback);
             // 创建伤害
             performAttack(entity, damage, sources);
             // 恢复原位
-            modifier.resetKnockBackStrength();
+            modifier.ywzj_vehicle$resetKnockBackStrength();
         } else {
             // 创建伤害
             performAttack(entity, damage, sources);

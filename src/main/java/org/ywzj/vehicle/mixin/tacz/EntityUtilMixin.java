@@ -8,12 +8,14 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
+@Pseudo
 @Mixin(EntityUtil.class)
 public class EntityUtilMixin {
 

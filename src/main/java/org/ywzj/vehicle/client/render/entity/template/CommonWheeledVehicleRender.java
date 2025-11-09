@@ -34,12 +34,13 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
 
         ResourceLocation displayId = pEntity.getCustomDisplayId();
         ResourceLocation modelLoc = new ResourceLocation(displayId.getNamespace(), "entity/" + displayId.getPath());
-        ResourceLocation textureLoc = new ResourceLocation( modelLoc.getNamespace(), "textures/entity/" + displayId.getPath() + ".png");
+        ResourceLocation textureLoc = new ResourceLocation(modelLoc.getNamespace(), "textures/entity/" + displayId.getPath() + ".png");
 
         BedrockModel model = BedrockModelLoader.getModel(modelLoc);
         VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(textureLoc));
 
         if (model != null) {
+            pEntity.lastRenderTime = System.currentTimeMillis();
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
         }
 

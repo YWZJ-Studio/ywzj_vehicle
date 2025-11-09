@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import com.tacz.guns.util.block.BlockRayTrace;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -20,6 +19,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.CustomExplosion;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -90,7 +90,6 @@ public class RocketEntity extends AmmoEntity {
             if (entityResult != null && entityResult.getEntity() != vehicle) {
                 CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
                 this.kill();
-                return;
             }
         }
     }

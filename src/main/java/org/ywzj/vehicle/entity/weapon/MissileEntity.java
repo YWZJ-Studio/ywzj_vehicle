@@ -1,13 +1,12 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import com.tacz.guns.init.ModDamageTypes;
-import com.tacz.guns.util.block.BlockRayTrace;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,14 +20,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PlayMessages;
+import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.BulletHitResult;
-import org.ywzj.vehicle.util.CustomExplosion;
-import org.ywzj.vehicle.util.EntityUtil;
-import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.util.*;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
@@ -121,21 +119,23 @@ public class MissileEntity extends AmmoEntity {
             // 子弹在 tick 结束的位置
             Vec3 endVec = startVec.add(this.getDeltaMovement());
             // 子弹的碰撞检测
-            HitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-            BlockHitResult resultB = (BlockHitResult) result;
-            if (resultB.getType() != HitResult.Type.MISS) {
+            BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            if (result.getType() != HitResult.Type.MISS) {
                 // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
-                endVec = resultB.getLocation();
                 CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
-                this.kill();
+                this.discard();
                 return;
             }
             BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
             // 将单个命中是实体创建为单个内容的 list
             if (entityResult != null && entityResult.getEntity() != vehicle) {
-                entityResult.getEntity().hurt(ModDamageTypes.Sources.bullet(level().registryAccess(), this, vehicle, true), damage);
+                @Nullable Entity owner = this.getOwner();
+                // 攻击者
+                LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
+                DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation());
+                entityResult.getEntity().hurt(source, damage);
                 CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
-                this.kill();
+                this.discard();
             }
         }
     }

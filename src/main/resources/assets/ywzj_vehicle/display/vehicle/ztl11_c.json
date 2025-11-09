@@ -1,0 +1,18 @@
+{
+  "model": "ywzj_vehicle:entity/ztl11_c",
+  "textures": "ywzj_vehicle:textures/entity/ztl11.png",
+  "special_bones": [
+    {
+      "type": "ywzj_vehicle:rotatable_unit",
+      "bone": "turret",
+      "part_unit_id": "ztl11_turret",
+      "action": "rotY"
+    },
+    {
+      "type": "ywzj_vehicle:rotatable_unit",
+      "bone": "canno",
+      "part_unit_id": "ztl11_turret",
+      "action": "rotX"
+    }
+  ]
+}

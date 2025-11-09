@@ -1,7 +1,5 @@
 package org.ywzj.vehicle.util;
 
-import com.tacz.guns.api.entity.ITargetEntity;
-import com.tacz.guns.config.common.OtherConfig;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -21,7 +19,7 @@ public final class HitboxHelper {
     // 玩家速度缓存表
     private static final WeakHashMap<Player, LinkedList<Vec3>> PLAYER_VELOCITY = new WeakHashMap<>();
     // 命中箱缓存 Tick 上限
-    private static final int SAVE_TICK = Mth.floor(OtherConfig.SERVER_HITBOX_LATENCY_MAX_SAVE_MS.get() / 1000 * 20 + 0.5);
+    private static final int SAVE_TICK = 20;
 
     public static void onPlayerTick(Player player) {
         if (player.isSpectator()) {
@@ -83,7 +81,7 @@ public final class HitboxHelper {
         AABB boundingBox = entity.getBoundingBox();
         Vec3 velocity = new Vec3(entity.getX() - entity.xOld, entity.getY() - entity.yOld, entity.getZ() - entity.zOld);
         // hitbox 延迟补偿。只有射击者是玩家（且被击中者也是玩家）才进行此类延迟补偿计算
-        if (OtherConfig.SERVER_HITBOX_LATENCY_FIX.get() && entity instanceof ServerPlayer player && owner instanceof ServerPlayer serverPlayerOwner) {
+        if (entity instanceof ServerPlayer player && owner instanceof ServerPlayer serverPlayerOwner) {
             int ping = Mth.floor((serverPlayerOwner.latency / 1000.0) * 20.0 + 0.5);
             boundingBox = getBoundingBox(player, ping);
             velocity = getVelocity(player, ping);
@@ -94,7 +92,7 @@ public final class HitboxHelper {
         // 根据速度一定程度地扩展 hitbox
         boundingBox = boundingBox.expandTowards(velocity.x, velocity.y, velocity.z);
         // 玩家 hitbox 修正，可以通过 Config 调整
-        double playerHitboxOffset = OtherConfig.SERVER_HITBOX_OFFSET.get();
+        double playerHitboxOffset = 3;
         if (entity instanceof ServerPlayer) {
             if (entity.getVehicle() != null) {
                 boundingBox = boundingBox.move(velocity.multiply(playerHitboxOffset / 2, playerHitboxOffset / 2, playerHitboxOffset / 2));
@@ -102,7 +100,7 @@ public final class HitboxHelper {
             boundingBox = boundingBox.move(velocity.multiply(playerHitboxOffset, playerHitboxOffset, playerHitboxOffset));
         }
         // 给所有实体统一应用的 Hitbox 偏移，其数值为实验得出的定值。
-        if (entity.getVehicle() != null || entity instanceof ITargetEntity) {
+        if (entity.getVehicle() != null) {
             boundingBox = boundingBox.move(velocity.multiply(-2.5, -2.5, -2.5));
         }
         boundingBox = boundingBox.move(velocity.multiply(-5, -5, -5));

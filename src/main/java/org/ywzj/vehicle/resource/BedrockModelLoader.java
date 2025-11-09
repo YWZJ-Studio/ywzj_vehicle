@@ -31,6 +31,8 @@ public class BedrockModelLoader {
 
         // todo 临时测试用
         event.register(YwzjVehicle.modLoc("entity/ztl11_c"), RawResourceLoaders.COMMON_LOADER);
+
+        event.register(YwzjVehicle.modLoc("entity/basic_bullet"), RawResourceLoaders.COMMON_LOADER);
     }
 
     public static BedrockModel getModel(ResourceLocation location) {

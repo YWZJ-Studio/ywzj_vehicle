@@ -20,7 +20,7 @@ public class AllVehicleDataTypes {
             }
     );
 
-    private static <T extends VehicleDataType<D>, D extends BaseVehicleData> RegistryObject<VehicleDataType<D>> register(
+    private static <D extends BaseVehicleData> RegistryObject<VehicleDataType<D>> register(
             String name,
             VehicleDataType.DataSerializer<D> dataSerializer
     ) {
