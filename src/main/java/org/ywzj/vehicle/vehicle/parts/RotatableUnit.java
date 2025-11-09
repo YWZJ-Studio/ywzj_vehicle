@@ -1,35 +1,33 @@
 package org.ywzj.vehicle.vehicle.parts;
 
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.custom.part.data.RotatableUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ServerRotatableUnitRot;
-import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 /**
  * 可旋转运动的载具部件
  */
-public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> implements IRotatableUnit {
+public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     protected float xAimRot;
     protected float yAimRot;
     protected float xRot;
     protected float yRot;
-
+    protected float xRemoteRot;
+    protected float yRemoteRot;
     public float xRotO;
     public float yRotO;
+
     public float xRotSpeed;
     public float yRotSpeed;
     public float xRotMax = 90;
@@ -49,18 +47,17 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
     @Deprecated
     public RotatableUnit(String name, int index, AbstractVehicle vehicle) {
         super(name, index, vehicle);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteRot, this::getXRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteRot, this::getYRot, 0f);
     }
 
     public void tick() {
         super.tick();
-        if (vehicle.level().isClientSide) {
+        if (vehicle.level().isClientSide()) {
             tickSound();
         }
         if (!needPower || vehicle.hasPower()) {
             tickRot();
-        } else {
-            this.xRotO = this.getXRot();
-            this.yRotO = this.getYRot();
         }
     }
 
@@ -81,29 +78,26 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
     }
 
     protected void tickRot() {
-        this.xRotO = this.xRot;
-        this.yRotO = this.yRot;
-        float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
-        float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
-        if (Math.abs(xDiff) > getXRotSpeed()) {
-            this.xRot += Math.signum(xDiff) * getXRotSpeed();
+        this.xRotO = this.getXRot();
+        this.yRotO = this.getYRot();
+        if (vehicle.level().isClientSide()) {
+            this.xRot = this.xRemoteRot;
+            this.yRot = this.yRemoteRot;
         } else {
-            this.xRot = this.xAimRot;
-        }
-        this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
-        if (Math.abs(yDiff) > getYRotSpeed()) {
-            this.yRot += Math.signum(yDiff) * getYRotSpeed();
-        } else {
-            this.yRot = this.yAimRot;
-        }
-        this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
-        if (!vehicle.level().isClientSide()) {
-            if (xDiff != 0 || yDiff != 0) {
-                vehicle.level().players().stream()
-                        .filter(player -> EntityUtil.withinBroadcastRange(vehicle, player) && getOwner() != player)
-                        .forEach(player ->
-                                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerRotatableUnitRot(this)));
+            float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
+            float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
+            if (Math.abs(xDiff) > getXRotSpeed()) {
+                this.xRot += Math.signum(xDiff) * getXRotSpeed();
+            } else {
+                this.xRot = this.xAimRot;
             }
+            this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
+            if (Math.abs(yDiff) > getYRotSpeed()) {
+                this.yRot += Math.signum(yDiff) * getYRotSpeed();
+            } else {
+                this.yRot = this.yAimRot;
+            }
+            this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
         }
     }
 
@@ -192,43 +186,52 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> impl
         this.yRotMin = yRotMin;
     }
 
-    @Override
     public float getXAimRot() {
         return xAimRot;
     }
 
-    @Override
     public void setXAimRot(float xAimRot) {
         this.xAimRot = xAimRot;
     }
 
-    @Override
     public float getYAimRot() {
         return yAimRot;
     }
 
-    @Override
     public void setYAimRot(float yAimRot) {
         this.yAimRot = yAimRot;
     }
 
-    @Override
     public float getXRot() {
         return xRot;
     }
 
-    @Override
     public void setXRot(float xRot) {
         this.xRot = xRot;
     }
 
-    @Override
     public float getYRot() {
         return yRot;
     }
 
-    @Override
     public void setYRot(float yRot) {
         this.yRot = yRot;
     }
+
+    public float getXRemoteRot() {
+        return xRemoteRot;
+    }
+
+    public void setXRemoteRot(float xRemoteRot) {
+        this.xRemoteRot = xRemoteRot;
+    }
+
+    public float getYRemoteRot() {
+        return yRemoteRot;
+    }
+
+    public void setYRemoteRot(float yRemoteRot) {
+        this.yRemoteRot = yRemoteRot;
+    }
+
 }

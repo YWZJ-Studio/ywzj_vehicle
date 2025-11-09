@@ -153,8 +153,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             controlUnit.reset();
         }
 
+        double powerScale = getPower() / 100;
         Vec3 velocity = getDeltaMovement();
+        velocity = new Vec3(velocity.x, 0, velocity.z);
         Vec3 vehicleDirection = getLookAngle();
+        vehicleDirection = new Vec3(vehicleDirection.x, 0, vehicleDirection.z);
         float angleDiff = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
         // 前后控制
         double motion = velocity.length();
@@ -162,7 +165,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             if (controlUnit.forward) {
                 if (motion == 0 || angleDiff < 90) {
                     if (motion < maxSpeedForward) {
-                        velocity = velocity.add(vehicleDirection.scale(forwardForce * (loseTraction ? 0.5 : 1)));
+                        velocity = velocity.add(vehicleDirection.scale(forwardForce * powerScale * (loseTraction ? 0.5 : 1)));
                     }
                 } else {
                     velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));
@@ -171,7 +174,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             } else {
                 if (motion == 0 || angleDiff >= 90) {
                     if (motion < maxSpeedBackward) {
-                        velocity = velocity.add(vehicleDirection.scale(-backwardForce * (loseTraction ? 0.5 : 1)));
+                        velocity = velocity.add(vehicleDirection.scale(-backwardForce * powerScale * (loseTraction ? 0.5 : 1)));
                     }
                 } else {
                     velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));

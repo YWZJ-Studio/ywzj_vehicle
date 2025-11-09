@@ -53,24 +53,37 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(HEALTH, 1.0F);
-        this.entityData.define(MAX_HEALTH, 1.0F);
+        this.entityData.define(HEALTH, -1F);
+        this.entityData.define(MAX_HEALTH, -1F);
+    }
+
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+        if (level().isClientSide) {
+            return;
+        }
+        if (getHealth() < 0) {
+            this.setMaxHealth(100);
+            this.setHealth(100);
+        }
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         ContainerHelper.saveAllItems(compound, this.getItemStacks());
+        compound.putFloat("MaxHealth", this.getMaxHealth());
         compound.putFloat("Health", this.getHealth());
     }
 
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         ContainerHelper.loadAllItems(compound, this.getItemStacks());
-        this.setMaxHealth(100);
+        if (compound.contains("MaxHealth", 99)) {
+            this.setMaxHealth(compound.getFloat("MaxHealth"));
+        }
         if (compound.contains("Health", 99)) {
             this.setHealth(compound.getFloat("Health"));
-        } else {
-            this.setHealth(100);
         }
     }
 

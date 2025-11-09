@@ -44,22 +44,21 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.all.AllConfigs;
-import org.ywzj.vehicle.all.AllItems;
-import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.all.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.*;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
+import org.ywzj.vehicle.network.message.ServerSoundEvent;
+import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
-import org.ywzj.vehicle.vehicle.parts.IRotatableUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
@@ -158,6 +157,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Override
     public void tick() {
         super.tick();
+        tickRot();
         tickParts();
         updateOBBs();
         if (level().isClientSide()) {
@@ -181,7 +181,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (lockPassengerYBodyRot) {
             getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         }
-        tickRot();
         if (!this.isRemoved()) {
             this.aiStep();
         }
@@ -551,23 +550,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public static void onServerRotatableUnitRot(ServerRotatableUnitRot message) {
-        Level level = Minecraft.getInstance().level;
-        if (level == null) {
-            return;
-        }
-        if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-            if (message.partUnitIndex < vehicle.partUnits.size()) {
-                PartUnit<?> partUnit = vehicle.partUnits.get(message.partUnitIndex);
-                if (partUnit instanceof IRotatableUnit rotatableUnit) {
-                    rotatableUnit.setXAimRot(message.xAimRot);
-                    rotatableUnit.setYAimRot(message.yAimRot);
-                }
-            }
-        }
-    }
-
     @Override
     protected boolean canAddPassenger(@NotNull Entity pPassenger) {
         return seats.stream().anyMatch(seat -> seat.passengerId == pPassenger.getId());
@@ -814,37 +796,38 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     public void push(@NotNull Entity pEntity) {
-        if (!this.isPassengerOfSameVehicle(pEntity)) {
-            if (pEntity instanceof AbstractVehicle vehicle) {
-                VehicleBedrockCubeOBB bodyCube = vehicle.getMainCubeOBB();
-                if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
-                    return;
-                }
-            } else {
-                if (!getMainCubeOBB().obb().contains(pEntity.getEyePosition())) {
-                    return;
-                }
+        if (this.isPassengerOfSameVehicle(pEntity)) {
+            return;
+        }
+        if (pEntity instanceof AbstractVehicle vehicle) {
+            VehicleBedrockCubeOBB bodyCube = vehicle.getMainCubeOBB();
+            if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
+                return;
             }
-            impact(pEntity);
-            if (!pEntity.noPhysics && !this.noPhysics) {
-                double d0 = pEntity.getX() - this.getX();
-                double d1 = pEntity.getZ() - this.getZ();
-                double d2 = Mth.absMax(d0, d1);
-                if (d2 >= (double)0.01F) {
-                    d2 = Math.sqrt(d2);
-                    d0 /= d2;
-                    d1 /= d2;
-                    double d3 = 1.0D / d2;
-                    if (d3 > 1.0D) {
-                        d3 = 1.0D;
-                    }
-                    d0 *= d3;
-                    d1 *= d3;
-                    d0 *= 0.05F;
-                    d1 *= 0.05F;
-                    if (pEntity.isPushable()) {
-                        pEntity.push(d0, 0.0D, d1);
-                    }
+        } else {
+            if (!getMainCubeOBB().obb().contains(pEntity.getEyePosition())) {
+                return;
+            }
+        }
+        impact(pEntity);
+        if (pEntity instanceof AbstractVehicle vehicle) {
+            double d0 = pEntity.getX() - this.getX();
+            double d1 = pEntity.getZ() - this.getZ();
+            double d2 = Mth.absMax(d0, d1);
+            if (d2 >= (double)0.01F) {
+                d2 = Math.sqrt(d2);
+                d0 /= d2;
+                d1 /= d2;
+                double d3 = 1.0D / d2;
+                if (d3 > 1.0D) {
+                    d3 = 1.0D;
+                }
+                d0 *= d3;
+                d1 *= d3;
+                d0 *= 0.05F;
+                d1 *= 0.05F;
+                if (vehicle.isPushable()) {
+                    vehicle.push(d0, 0.0D, d1);
                 }
             }
         }
@@ -922,9 +905,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 return;
             }
         }
-        double velocity = this.getDeltaMovement().length() * 20;
-        if (velocity > 1) {
-            entity.hurt(this.damageSources().magic(), (float) (velocity * velocity));
+        double velocity = this.getDeltaMovement().length();
+        double entityVelocity = entity.getDeltaMovement().dot(this.getDeltaMovement()) / velocity;
+        double relVelocity = (velocity - entityVelocity) * 20;
+        if (relVelocity > 3) {
+            entity.hurt(AllDamageTypes.Sources.vehicleCollision(level().registryAccess(), this, this.getDriver(), null),
+                    (float) relVelocity * curbWeight);
         }
     }
 

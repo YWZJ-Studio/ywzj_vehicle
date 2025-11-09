@@ -224,7 +224,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
                 vehicle.shoot(message.partUnitIndex, message.ammoSpawnPositions, message.ammoXRot, message.ammoYRot, serverPlayer);
             } else {
                 PartUnit<?> partUnit = vehicle.getPartUnits().get(message.partUnitIndex);
-                if (partUnit instanceof IRotatableUnit rotatableUnit) {
+                if (partUnit instanceof RotatableUnit<?> rotatableUnit) {
                     rotatableUnit.setXAimRot(message.xAimRot);
                     rotatableUnit.setYAimRot(message.yAimRot);
                 }
