@@ -28,6 +28,9 @@ public class BedrockModelLoader {
             event.register(vehicle.getVisualBedrockModel(), RawResourceLoaders.COMMON_LOADER);
             event.register(vehicle.getStructureBedrockModel(), RawResourceLoaders.COMMON_LOADER);
         });
+
+        // todo 临时测试用
+        event.register(YwzjVehicle.modLoc("entity/ztl11_c"), RawResourceLoaders.COMMON_LOADER);
     }
 
     public static BedrockModel getModel(ResourceLocation location) {

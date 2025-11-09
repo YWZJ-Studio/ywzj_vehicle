@@ -31,7 +31,8 @@ public class YwzjVehicle {
         AllSounds.register(modEventBus);
         AllTabs.register(modEventBus);
         AllPartUnitType.register(modEventBus);
-        AllVehicleWeaponType.register(modEventBus);
+        AllVehicleWeaponTypes.register(modEventBus);
+        AllVehicleDataTypes.register(modEventBus);
         AllParticleTypes.register(modEventBus);
         modEventBus.register(Channel.class);
     }

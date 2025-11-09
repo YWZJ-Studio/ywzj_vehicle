@@ -12,6 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.entity.vehicle.CommonWheeledVehicle;
 import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
@@ -73,6 +74,9 @@ public class AllEntities {
             () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.8f, 1.9f)
                     .clientTrackingRange(4)
                     .build("fake_player"));
+
+    public static final RegistryObject<EntityType<CommonWheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("common_wheeled_vehicle",
+            () -> CommonWheeledVehicle.TYPE);
 
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {

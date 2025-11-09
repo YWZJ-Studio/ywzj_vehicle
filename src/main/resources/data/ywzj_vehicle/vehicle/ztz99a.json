@@ -1,17 +1,5 @@
 {
-  "assets": {
-    "models": {
-      "visual_model": "ywzj_vehicle:entity/ztz99a",
-      "visual_texture": "ywzj_vehicle:textures/entity/ztz99a.png",
-      "structure_model": "ywzj_vehicle:entity/ztz99a_structure"
-    },
-    "sounds": {
-      "engine_start": "ywzj_vehicle:ztz99a_engine_start",
-      "engine_stop": "",
-      "engine_idle": "ywzj_vehicle:ztz99a_engine_idle",
-      "engine_run": "ywzj_vehicle:ztz99a_engine_run"
-    }
-  },
+  "structure_model": "ywzj_vehicle:entity/ztz99a_structure",
   "attributes": {
     "max_health": 200
     // ...

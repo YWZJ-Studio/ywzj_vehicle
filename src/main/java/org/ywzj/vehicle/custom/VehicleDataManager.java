@@ -17,10 +17,10 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.all.ModRegistries;
 import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
-import org.ywzj.vehicle.custom.vehicle.BaseVehicleDataPojo;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerSyncVehicleData;
 
@@ -70,10 +70,22 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
         for (var ele : jsonMap.entrySet()) {
             try {
                 var obj = GsonHelper.convertToJsonObject(ele.getValue(), "vehicle data");
-                var pojo = GsonUtil.GSON.fromJson(obj, BaseVehicleDataPojo.class);
-                var data = BaseVehicleData.of(pojo);
+                String type = GsonHelper.getAsString(obj, "type", "ywzj_vehicle:generic");
+                ResourceLocation typeId = ResourceLocation.tryParse(type);
+                if (typeId == null) {
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, invalid type id {}", ele.getKey(), type);
+                    continue;
+                }
+
+                var dataType = ModRegistries.VEHICLE_TYPE_SUPPLIER.get().getValue(typeId);
+                if (dataType == null) {
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", ele.getKey(), typeId);
+                    continue;
+                }
+
+                var data = dataType.parse(ele.getValue());
                 if (data == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, invalid structure model", ele.getKey());
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle data: {}", ele.getKey());
                     continue;
                 }
                 builder.put(ele.getKey(), data);
@@ -116,6 +128,7 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
         INSTANCE = null;
     }
 
+    @Override
     public Optional<BaseVehicleData> getVehicleData(ResourceLocation id) {
         return Optional.ofNullable(indexes.get(id));
     }

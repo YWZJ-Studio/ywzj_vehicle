@@ -13,7 +13,7 @@ import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 
-public class AllVehicleWeaponType {
+public class AllVehicleWeaponTypes {
     public static final DeferredRegister<VehicleWeaponType<?, ?>> WEAPON_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_WEAPON_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<VehicleWeaponType<VehicleCannon, VehicleCannonWeaponData>> CANNON = register(

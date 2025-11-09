@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.network.NetworkEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
@@ -83,7 +84,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
      * @param partUnitsView 载具所有部件的不可变视图
      * @param vehicle 所属载具
      */
-    public void combineAndInit(Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
+    public void combineAndInit(@UnmodifiableView Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
     }
 
     public void tick() {

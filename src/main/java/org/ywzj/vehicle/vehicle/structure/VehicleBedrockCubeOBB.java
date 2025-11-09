@@ -28,6 +28,20 @@ public class VehicleBedrockCubeOBB {
     public final double width;
     public final double depth;
 
+    public VehicleBedrockCubeOBB(OBB obb) {
+        this.obb = obb;
+        this.selfRot = new Quaternionf();
+        this.cubePoints = new ArrayList<>();
+        this.initCubePoints();
+        this.offset = Vec3.ZERO;
+        this.boneX = 0;
+        this.boneY = 0;
+        this.boneZ = 0;
+        this.height = obb.extents().y * 2;
+        this.width = obb.extents().x * 2;
+        this.depth = obb.extents().z * 2;
+    }
+
     public VehicleBedrockCubeOBB(OBB obb, BedrockBone bone, BedrockCube cube) {
         this.obb = obb;
         this.selfRot = new Quaternionf(bone.rotation);
@@ -62,6 +76,10 @@ public class VehicleBedrockCubeOBB {
                 new Vector3f(cube.width() / 2, cube.height() / 2, cube.depth() / 2),
                 new Quaternionf(bone.rotation));
         return new VehicleBedrockCubeOBB(obb, bone, cube);
+    }
+
+    public static VehicleBedrockCubeOBB defaultCube() {
+        return new VehicleBedrockCubeOBB(new OBB(Vec3.ZERO.toVector3f(), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf()));
     }
 
     public void initCubePoints() {

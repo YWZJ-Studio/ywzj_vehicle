@@ -182,7 +182,7 @@ public class VehicleOverlay implements IGuiOverlay {
             float barHalfHeight = (float) barHeight / 2;
             poseStack.translate(x, y + barHalfHeight - 8, 0);
             poseStack.scale(size, size, size);
-            RenderHelper.drawCenteredString(guiGraphics, font, vehicle.getVehicleType().getName(), 0, -14, 0xFFFFFFFF);
+            guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, 0xFFFFFFFF);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, 0, bgColor);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, 0, 0xFF999999);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, 0, 0xFF999999);

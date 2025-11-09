@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
@@ -11,10 +12,8 @@ import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.VehicleDataManager;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Ztl11 extends WheeledVehicle {
@@ -24,18 +23,14 @@ public class Ztl11 extends WheeledVehicle {
     }
 
     @Override
-    public void initData() {
+    public void initData(ResourceLocation customId) {
         VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleOBBs = struct.obbs();
             var weapons = data.createPartUnits(this);
-//            this.operatorUnits.addAll(weapons.values());
-            List<PartUnit<?>> weaponUnits = new ArrayList<>(weapons.values());
-            for (int index = 0; index < weapons.size(); index++) {
-                this.seats.add(new Seat(index, weaponUnits.get(index)));
-            }
-            this.partUnits.addAll(weapons.values());
+            this.partUnits.addAll(weapons.partUnitMap().values());
+            this.seats.addAll(weapons.seats());
         });
     }
 

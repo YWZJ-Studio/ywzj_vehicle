@@ -38,8 +38,8 @@ public class BaseVehicleData {
 
         var data = new BaseVehicleData();
 
-        data.structureModel = pojo.assets.models.structureModel;
-        var model = BedrockModelLoader.getModel(pojo.assets.models.structureModel);
+        data.structureModel = pojo.structureModel;
+        var model = BedrockModelLoader.getModel(pojo.structureModel);
 
         data.parts = pojo.parts;
         for (var entry : data.parts) {
@@ -50,12 +50,24 @@ public class BaseVehicleData {
         return data;
     }
 
-    public Map<String, PartUnit<?>> createPartUnits(AbstractVehicle vehicle) {
+    public record PartUnitsAndSeats(
+            Map<String, PartUnit<?>> partUnitMap,
+            List<AbstractVehicle.Seat> seats
+    ) {
+    }
+
+    public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
         Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>();
+        List<AbstractVehicle.Seat> seats = new ArrayList<>();
         int i = 0;
         // 从data创建
         for (var partData : parts) {
-            partUnitMap.put(partData.data().getId(), partData.create(i, vehicle));
+            var partUnit = partData.create(i, vehicle);
+            partUnitMap.put(partData.data().getId(), partUnit);
+            if (partData.data().isSeat()) {
+                int seatIndex = seats.size();
+                seats.add(new AbstractVehicle.Seat(seatIndex, partUnit));
+            }
             i++;
         }
         // 额外操作
@@ -64,7 +76,7 @@ public class BaseVehicleData {
             partUnit.combineAndInit(view, vehicle);
         }
 
-        return partUnitMap;
+        return new PartUnitsAndSeats(partUnitMap, seats);
     }
 
     public VehicleStructObbs getVehicleStructObbs() {

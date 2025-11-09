@@ -97,7 +97,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public boolean uav;
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
-    public final PhysicsEngine physicsEngine;
+    public PhysicsEngine physicsEngine;
     public long lastRenderTime;
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
@@ -115,12 +115,19 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.vehicleOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.initData();
+        if (mainCubeOBB == null) {
+            mainCubeOBB = VehicleBedrockCubeOBB.defaultCube();
+        }
         this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
     }
 
-    public void initData() {
+    public void initData(ResourceLocation customId) {
         initPartUnits();
         initOBBs();
+    }
+
+    public final void initData() {
+        this.initData(null);
     }
 
     @Override
