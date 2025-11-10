@@ -34,6 +34,7 @@ public class YwzjVehicle {
         AllVehicleWeaponTypes.register(modEventBus);
         AllVehicleDataTypes.register(modEventBus);
         AllParticleTypes.register(modEventBus);
+        AllVehicleDisplayTypes.register(modEventBus);
         modEventBus.register(Channel.class);
     }
 

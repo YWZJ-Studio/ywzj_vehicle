@@ -42,6 +42,8 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public RotatableUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteRot, this::getXRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteRot, this::getYRot, 0f);
     }
 
     @Deprecated

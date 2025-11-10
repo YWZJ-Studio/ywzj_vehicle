@@ -77,7 +77,7 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
                     continue;
                 }
 
-                var dataType = ModRegistries.VEHICLE_TYPE_SUPPLIER.get().getValue(typeId);
+                var dataType = ModRegistries.VEHICLE_DATA_TYPE_SUPPLIER.get().getValue(typeId);
                 if (dataType == null) {
                     YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", ele.getKey(), typeId);
                     continue;

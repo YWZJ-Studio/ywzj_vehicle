@@ -9,6 +9,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.NewRegistryEvent;
 import net.minecraftforge.registries.RegistryBuilder;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplayType;
 import org.ywzj.vehicle.custom.part.PartUnitType;
 import org.ywzj.vehicle.custom.vehicle.VehicleDataType;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponType;
@@ -28,14 +29,21 @@ public class ModRegistries {
     public static Supplier<IForgeRegistry<PartUnitType<?, ?>>> PART_UNIT_TYPE_SUPPLIER;
 
     public static final ResourceKey<Registry<VehicleDataType<?>>> VEHICLE_DATA_TYPE = ResourceKey.createRegistryKey(
-            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_type")
+            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_data_type")
     );
-    public static Supplier<IForgeRegistry<VehicleDataType<?>>> VEHICLE_TYPE_SUPPLIER;
+    public static Supplier<IForgeRegistry<VehicleDataType<?>>> VEHICLE_DATA_TYPE_SUPPLIER;
+
+    public static final ResourceKey<Registry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE = ResourceKey.createRegistryKey(
+            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_display_type")
+    );
+    public static Supplier<IForgeRegistry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE_SUPPLIER;
 
     @SubscribeEvent
     public static void registerRegistries(NewRegistryEvent event) {
         VEHICLE_WEAPON_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleWeaponType<?, ?>>().setName(VEHICLE_WEAPON_TYPE.location()));
         PART_UNIT_TYPE_SUPPLIER = event.create(new RegistryBuilder<PartUnitType<?, ?>>().setName(PART_UNIT_TYPE.location()));
-        VEHICLE_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleDataType<?>>().setName(VEHICLE_DATA_TYPE.location()));
+        VEHICLE_DATA_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleDataType<?>>().setName(VEHICLE_DATA_TYPE.location()));
+        VEHICLE_DISPLAY_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleDisplayType<?>>()
+                .disableSync().setName(VEHICLE_DISPLAY_TYPE.location()));
     }
 }

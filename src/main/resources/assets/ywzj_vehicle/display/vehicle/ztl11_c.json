@@ -1,6 +1,15 @@
 {
-  "model": "ywzj_vehicle:entity/ztl11_c",
-  "textures": "ywzj_vehicle:textures/entity/ztl11.png",
+  "model": "ywzj_vehicle:entity/ztl11",
+  "texture": "ywzj_vehicle:textures/entity/ztl11.png",
+  "animation": "ywzj_vehicle:entity/ztl11_fire.animation",
+  // 音效，需要先去assets/<namespace>/sounds.json注册
+  "sounds": {
+    "engine_start": "",
+    "engine_stop": "",
+    "engine_idle": "",
+    "engine_run": ""
+  },
+  // 没想好咋弄，先放着
   "special_bones": [
     {
       "type": "ywzj_vehicle:rotatable_unit",
