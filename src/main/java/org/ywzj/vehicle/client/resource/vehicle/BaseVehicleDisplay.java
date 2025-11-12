@@ -7,6 +7,7 @@ import net.minecraft.sounds.SoundEvent;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,15 +35,30 @@ public class BaseVehicleDisplay {
 
         this.texture = pojo.texture;
 
-        var animationPojo = ClientAssetsManager.INSTANCE.getAnimation(pojo.animations);
-        var animations = animationPojo.map(animationPOJO -> {
-            return BedrockAnimation.createAnimation(animationPOJO, model);
-        }).orElseThrow();
-
-        var map = new HashMap<String, BedrockAnimation>();
-        for (var anim : animations) {
-            map.put(anim.getName(), anim);
+        if (pojo.animations != null) {
+            var animationPojo = ClientAssetsManager.INSTANCE.getAnimation(pojo.animations);
+            var animations = animationPojo.map(animationPOJO -> {
+                return BedrockAnimation.createAnimation(animationPOJO, model);
+            }).orElse(List.of());
+            var map = new HashMap<String, BedrockAnimation>();
+            for (var anim : animations) {
+                map.put(anim.getName(), anim);
+            }
+            this.animations = map;
+        } else {
+            this.animations = Map.of();
         }
-        this.animations = map;
+    }
+
+    public ResourceLocation getTexture() {
+        return texture;
+    }
+
+    public BedrockModel getModel() {
+        return model;
+    }
+
+    public Map<String, BedrockAnimation> getAnimations() {
+        return animations;
     }
 }

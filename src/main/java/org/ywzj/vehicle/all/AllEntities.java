@@ -12,7 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
-import org.ywzj.vehicle.entity.vehicle.CommonWheeledVehicle;
+import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
@@ -78,13 +78,43 @@ public class AllEntities {
     public static final RegistryObject<EntityType<CommonWheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("common_wheeled_vehicle",
             () -> CommonWheeledVehicle.TYPE);
 
+    public static final RegistryObject<EntityType<DumpTruck>> DUMP_TRUCK = registerVehicle("dump_truck", DumpTruck::new);
+
+    public static final RegistryObject<EntityType<Lav150>> LAV150 = registerVehicle("lav150", Lav150::new);
+
+    public static final RegistryObject<EntityType<Ztl11>> ZTL11 = registerVehicle("ztl11", Ztl11::new);
+
+    public static final RegistryObject<EntityType<Ztz99a>> ZTZ99A = registerVehicle("ztz99a", Ztz99a::new);
+
+    public static final RegistryObject<EntityType<Z10>> Z10 = registerVehicle("z10", Z10::new);
+
+    public static final RegistryObject<EntityType<Mi24>> MI24 = registerVehicle("mi24", Mi24::new);
+
+    public static final RegistryObject<EntityType<Ka50>> KA50 = registerVehicle("ka50", Ka50::new);
+
+    public static final RegistryObject<EntityType<Motorcycle>> MOTORCYCLE = registerVehicle("motorcycle", Motorcycle::new);
+
+    public static final RegistryObject<EntityType<Hiace>> HIACE = registerVehicle("hiace", Hiace::new);
+
+    public static final RegistryObject<EntityType<Quadcopter>> QUADCOPTER = registerVehicle("quadcopter", Quadcopter::new);
+
+    public static <T extends AbstractVehicle> RegistryObject<EntityType<T>> registerVehicle(
+            String name, EntityType.EntityFactory<T> factory
+    ) {
+        return ENTITIES.register(name, () -> EntityType.Builder
+                .of(factory, MobCategory.MISC)
+                .sized(1f, 1f)
+                .updateInterval(1)
+                .clientTrackingRange(16)
+                .build(name));
+    }
+
     @SubscribeEvent
     public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
         event.put(AllEntities.FAKE_PLAYER.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 8.0D).build());
     }
 
     public static void register(IEventBus eventBus) {
-        AllVehicles.getVehicleTypes().forEach(AllVehicles.VehicleType::registerEntity);
         ENTITIES.register(eventBus);
         eventBus.register(AllEntities.class);
     }

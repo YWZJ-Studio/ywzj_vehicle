@@ -22,7 +22,6 @@ public class YwzjVehicle {
     public YwzjVehicle() {
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         AllConfigs.register(ModLoadingContext.get());
-        AllVehicles.register();
         IEventBus modEventBus = context.getModEventBus();
         AllBlocks.register(modEventBus);
         AllItems.register(modEventBus);

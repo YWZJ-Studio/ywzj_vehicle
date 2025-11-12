@@ -1,9 +1,7 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.event.RegisterBedrockAnimationReloadListenerEvent;
 import com.maydaymemory.mae.basic.ArrayPoseBuilder;
 import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
@@ -18,20 +16,13 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.all.AllVehicles;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.Ztz99a;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
-import java.util.List;
-
-@Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Ztz99aRenderer extends VehicleRender<Ztz99a> {
     private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
 
@@ -39,26 +30,23 @@ public class Ztz99aRenderer extends VehicleRender<Ztz99a> {
         super(pContext);
     }
 
-    private static List<BedrockAnimation> animations;
-
-    @SubscribeEvent
-    public static void onRegisterAnimationReloadListener(RegisterBedrockAnimationReloadListenerEvent event) {
-        event.register(map -> {
-            animations = map.get(YwzjVehicle.modLoc("bedrock/entity/ztz99a.animation"));
-        });
-    }
-
     @Override
     public void render(Ztz99a pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         pPoseStack.pushPose();
         {
             super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-            BedrockModel model = BedrockModelLoader.getModel(AllVehicles.ZTZ99A.getVisualBedrockModel());
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(AllVehicles.ZTZ99A.getVisualBedrockTexture()));
+            var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.ZTZ99A.getId()).orElse(null);
+            if (display == null || display.getModel() == null) {
+                return;
+            }
+
+            BedrockModel model = display.getModel();
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
             TrackAnimationInstance instance = pEntity.getTrackAnimationInstance();
             if (instance == null) {
-                instance = new TrackAnimationInstance(animations);
+                var animations = display.getAnimations();
+                instance = new TrackAnimationInstance(animations.get("tread_l_move"), animations.get("tread_r_move"));
                 pEntity.setTrackAnimationInstance(instance);
             }
 

@@ -1,5 +1,5 @@
 {
-  "structure_model": "ywzj_vehicle:entity/z10_structure",
+  "structure_model": "ywzj_vehicle:entity/z10",
   "attributes": {
     "max_health": 200
     // ...

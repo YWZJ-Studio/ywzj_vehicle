@@ -32,7 +32,7 @@ public enum ClientAssetsManager {
         // 完成加载后清理临时数据
         consumer.accept(new SimplePreparableReloadListener<Void>() {
             @Override
-            protected Void prepare(ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+            protected @NotNull Void prepare(ResourceManager pResourceManager, ProfilerFiller pProfiler) {
                 return null;
             }
 
@@ -56,6 +56,7 @@ public enum ClientAssetsManager {
         return models != null ? models.getAllData() : null;
     }
 
+    @NotNull
     public Optional<BedrockModelPOJO> getModel(ResourceLocation id) {
         if (models == null) {
             return Optional.empty();
@@ -69,6 +70,7 @@ public enum ClientAssetsManager {
         return animations != null ? animations.getAllData() : null;
     }
 
+    @NotNull
     public Optional<BedrockAnimationFile> getAnimation(ResourceLocation id) {
         if (animations == null) {
             return Optional.empty();

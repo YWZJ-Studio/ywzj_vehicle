@@ -2,8 +2,7 @@ package org.ywzj.vehicle.api;
 
 import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
-import org.ywzj.vehicle.custom.VehicleDataManager;
-import org.ywzj.vehicle.custom.VehicleWeaponManager;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 
 public class YwzjVehicleAPI {
     /**
@@ -13,10 +12,10 @@ public class YwzjVehicleAPI {
      * @return 载具武器管理器实例
      */
     public static IVehicleWeaponManager getVehicleWeaponManager() {
-        return VehicleWeaponManager.get();
+        return CommonAssetsManager.vehicleWeaponManager();
     }
 
     public static IVehicleDataManager getVehicleDataManager() {
-        return VehicleDataManager.get();
+        return CommonAssetsManager.vehicleDataManager();
     }
 }

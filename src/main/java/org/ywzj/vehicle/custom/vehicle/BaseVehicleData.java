@@ -7,9 +7,9 @@ import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
@@ -39,7 +39,8 @@ public class BaseVehicleData {
         var data = new BaseVehicleData();
 
         data.structureModel = pojo.structureModel;
-        var model = BedrockModelLoader.getModel(pojo.structureModel);
+        var model = CommonAssetsManager.structureModelManager()
+                .getStructureModel(pojo.structureModel).orElseThrow();
 
         data.parts = pojo.parts;
         for (var entry : data.parts) {

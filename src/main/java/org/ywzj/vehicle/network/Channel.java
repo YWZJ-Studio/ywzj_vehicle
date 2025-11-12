@@ -46,16 +46,6 @@ public class Channel {
                 ClientVehicleChangeSeat::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
-        CHANNEL.registerMessage(PacketId.S_SYNC_WEAPON_DATA.value(), ServerSyncWeaponData.class,
-                ServerSyncWeaponData::encode, ServerSyncWeaponData::decode,
-                ServerSyncWeaponData::onServerMessageReceived,
-                Optional.of(PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(PacketId.S_SYNC_VEHICLE_DATA.value(), ServerSyncVehicleData.class,
-                ServerSyncVehicleData::encode, ServerSyncVehicleData::decode,
-                ServerSyncVehicleData::onServerMessageReceived,
-                Optional.of(PLAY_TO_CLIENT));
-
         CHANNEL.registerMessage(PacketId.S_SOUND_EVENT.value(), ServerSoundEvent.class,
                 ServerSoundEvent::encode, ServerSoundEvent::decode,
                 SoundManager::onServerMessageReceived,
@@ -81,18 +71,24 @@ public class Channel {
                 ServerVehicleFire::encode, ServerVehicleFire::decode,
                 ServerVehicleFire::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
+                ServerSlicedPacket::encode, ServerSlicedPacket::decode,
+                ServerSlicedPacket::handle,
+                Optional.of(PLAY_TO_CLIENT));
     }
 
 }
 
 enum PacketId {
-
     C_VEHICLE_CONTROL(100),
     C_WEAPON_UNIT_CONTROL(101),
     S_VEHICLE_SEATS_CHANGE(102),
     C_VEHICLE_CHANGE_SEAT(103),
     C_VEHICLE_SWITCH_WEAPON(104),
     S_VEHICLE_FIRE(105),
+
+    S_SLICED_PACKET(110),
 
     S_ENTITY_SYNC_DATA(120),
 

@@ -2,7 +2,6 @@ package org.ywzj.vehicle.vehicle.parts;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,12 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
@@ -99,13 +98,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     protected void initStructureModel(String name) {
-        BedrockModel model = BedrockModelLoader.getModel(vehicle.getVehicleType().getStructureBedrockModel());
-        if (model != null) {
-            this.unitBone = model.getBoneMap().get(name);
-            if (unitBone != null) {
-                this.pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
-            }
-        }
+        CommonAssetsManager.structureModelManager().getStructureModel(vehicle.getStructureModel()).ifPresent(
+                model -> {
+                    this.unitBone = model.getBoneMap().get(name);
+                    if (unitBone != null) {
+                        this.pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
+                    }
+                }
+        );
     }
 
     protected void initOBBs() {

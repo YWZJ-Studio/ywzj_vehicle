@@ -14,8 +14,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.Ka50;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
@@ -35,8 +36,13 @@ public class Ka50Renderer extends EntityRenderer<Ka50> {
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        BedrockModel model = BedrockModelLoader.getModel(pEntity.getVehicleType().getVisualBedrockModel());
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(pEntity.getVehicleType().getVisualBedrockTexture()));
+        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.KA50.getId()).orElse(null);
+        if (display == null || display.getModel() == null) {
+            return;
+        }
+
+        BedrockModel model = display.getModel();
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
         BedrockBone propeller = model.getBoneMap().get("1");
         BedrockBone propeller2 = model.getBoneMap().get("2");

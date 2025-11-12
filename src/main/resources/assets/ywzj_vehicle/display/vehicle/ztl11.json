@@ -1,7 +1,7 @@
 {
   "model": "ywzj_vehicle:entity/ztl11",
   "texture": "ywzj_vehicle:textures/entity/ztl11.png",
-  "animations": "ywzj_vehicle:entity/ztl11_fire.animation",
+//  "animations": "ywzj_vehicle:entity/ztl11_fire.animation",
   // 音效，需要先去assets/<namespace>/sounds.json注册
   "sounds": {
     "engine_start": "",

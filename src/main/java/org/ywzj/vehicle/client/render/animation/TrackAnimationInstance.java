@@ -9,8 +9,6 @@ import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 
-import java.util.List;
-
 /**
  * 一个简单的履带动画实例，包含左右履带动画的进度与累计位移计算
  */
@@ -26,9 +24,9 @@ public class TrackAnimationInstance {
     public float leftCumulativeDisplacement = 0f;
     public float rightCumulativeDisplacement = 0f;
 
-    public TrackAnimationInstance(List<BedrockAnimation> animations) {
-        leftTrackRunner = new AnimationRunner(animations.get(0), new AnimationContext(animations.get(0).getSpecifiedEndTimeS()));
-        rightTrackRunner = new AnimationRunner(animations.get(1), new AnimationContext(animations.get(1).getSpecifiedEndTimeS()));
+    public TrackAnimationInstance(BedrockAnimation left, BedrockAnimation right) {
+        leftTrackRunner = new AnimationRunner(left, new AnimationContext(left.getSpecifiedEndTimeS()));
+        rightTrackRunner = new AnimationRunner(right, new AnimationContext(right.getSpecifiedEndTimeS()));
     }
 
     /**

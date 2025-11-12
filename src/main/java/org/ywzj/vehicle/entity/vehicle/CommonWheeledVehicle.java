@@ -17,7 +17,7 @@ import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
-import org.ywzj.vehicle.custom.VehicleDataManager;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
@@ -70,7 +70,7 @@ public class CommonWheeledVehicle extends WheeledVehicle implements ICustomVehic
     @Override
     public void initData(ResourceLocation customId) {
         this.customId = customId;
-        VehicleDataManager.get().getVehicleData(customId).ifPresent(data -> {
+        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleOBBs = struct.obbs();

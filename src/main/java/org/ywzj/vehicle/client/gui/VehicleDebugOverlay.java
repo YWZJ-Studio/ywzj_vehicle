@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -28,8 +29,12 @@ public class VehicleDebugOverlay implements IGuiOverlay {
                 ServerPlayer serverPlayer = server.getPlayerList().getPlayer(uuid);
                 int leftX = 0;
                 int leftY = 0;
-                AbstractVehicle vehicle = (AbstractVehicle) serverPlayer.level().getEntity(LocalVehiclePlayer.instance.getVehicle().getId());
-                guiGraphics.drawString(Minecraft.getInstance().font, "载具: " + vehicle.getVehicleType().getName(), leftX, leftY, 0xFFFFFF);
+                Entity entity = serverPlayer.level().getEntity(LocalVehiclePlayer.instance.getVehicle().getId());
+                if (!(entity instanceof AbstractVehicle vehicle)) {
+                    return;
+                }
+
+                guiGraphics.drawString(Minecraft.getInstance().font, "载具: " + vehicle.getDisplayName(), leftX, leftY, 0xFFFFFF);
                 leftY += 10;
                 guiGraphics.drawString(Minecraft.getInstance().font, "整备质量: " + vehicle.curbWeight, leftX, leftY, 0xFFFFFF);
                 leftY += 10;

@@ -8,12 +8,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
@@ -22,8 +17,6 @@ import org.ywzj.vehicle.all.ModRegistries;
 import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
-import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ServerSyncWeaponData;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
@@ -39,9 +32,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");
 
-    private static VehicleWeaponManager INSTANCE;
-
-    private enum ClientCache implements IVehicleWeaponManager {
+    enum ClientCache implements IVehicleWeaponManager {
         INSTANCE;
         private Map<ResourceLocation, VehicleWeaponIndex<?, ?>> indexes = Map.of();
 
@@ -66,10 +57,6 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
 
             indexes = parseIndexes(jsonMap);
         }
-    }
-
-    public static IVehicleWeaponManager get() {
-        return INSTANCE != null ? INSTANCE : ClientCache.INSTANCE;
     }
 
     private Map<ResourceLocation, String> cache = Map.of();
@@ -104,33 +91,8 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
         return Optional.ofNullable(indexes.get(id));
     }
 
-    protected static void clear() {
-        INSTANCE = null;
-    }
-
-    @SubscribeEvent
-    public static void onServerStopped(ServerStoppedEvent event) {
-        clear();
-    }
-
-    @SubscribeEvent
-    public static void onReload(AddReloadListenerEvent event) {
-        var commonAssetsManager = new VehicleWeaponManager();
-        event.addListener(commonAssetsManager);
-        INSTANCE = commonAssetsManager;
-    }
-
-    @SubscribeEvent
-    public static void OnDatapackSync(OnDatapackSyncEvent event) {
-        if (INSTANCE == null) {
-            return;
-        }
-        var msg = new ServerSyncWeaponData(INSTANCE.cache);
-        if (event.getPlayer() != null) {
-            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(event::getPlayer), msg);
-        } else {
-            Channel.CHANNEL.send(PacketDistributor.ALL.noArg(), msg);
-        }
+    public Map<ResourceLocation, String> getCache() {
+        return cache;
     }
 
     /**

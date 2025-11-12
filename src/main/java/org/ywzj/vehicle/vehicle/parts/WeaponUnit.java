@@ -16,7 +16,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
-import org.ywzj.vehicle.custom.VehicleWeaponManager;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.pojo.Bolt;
@@ -25,7 +25,6 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerVehicleFire;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.structure.OBB;
@@ -193,7 +192,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         int i = 0;
         for (var weaponInfo : data.getWeapons()) {
-            var index = VehicleWeaponManager.get().getIndex(weaponInfo.id).orElse(null);
+            var index = CommonAssetsManager.vehicleWeaponManager().getIndex(weaponInfo.id).orElse(null);
             if (index != null) {
                 var parent = this;
                 if (weaponInfo.partUnit != null) {
@@ -605,9 +604,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return currentWeaponIndex;
     }
 
+    @Deprecated
     @Override
     public void initStructureModel(String name) {
-        BedrockModel model = BedrockModelLoader.getModel(vehicle.getVehicleType().getStructureBedrockModel());
+        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(vehicle.getStructureModel()).orElse(null);
         if (model == null) {
             return;
         }

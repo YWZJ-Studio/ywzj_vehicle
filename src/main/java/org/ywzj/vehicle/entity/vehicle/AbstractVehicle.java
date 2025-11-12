@@ -39,22 +39,26 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.all.*;
+import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.all.AllDamageTypes;
+import org.ywzj.vehicle.all.AllItems;
+import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
@@ -76,7 +80,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
-    private final AllVehicles.VehicleType vehicleType;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
     protected final List<PartUnit<?>> partUnits;
@@ -101,7 +104,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.vehicleType = AllVehicles.getVehicleType(this.getClass());
         this.seats = new ArrayList<>();
         this.controlUnit = new ControlUnit();
         this.partUnits = new ArrayList<>();
@@ -393,8 +395,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         partUnits.forEach(PartUnit::tick);
     }
 
+    @Deprecated
     protected void initOBBs() {
-        BedrockModel model = BedrockModelLoader.getModel(vehicleType.getStructureBedrockModel());
+        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(this.getStructureModel()).orElse(null);
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
         // 约定取体积最大的块计算物理
         List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
@@ -410,6 +413,16 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
             }
         }
+    }
+
+    @Deprecated
+    @Nullable
+    public ResourceLocation getStructureModel() {
+        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(this.getType());
+        if (id == null) {
+            return null;
+        }
+        return new ResourceLocation(id.getNamespace(), "entity/" + id.getPath());
     }
 
     @Override
@@ -650,10 +663,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public void playVehicleSound(SoundEvent soundEvent, boolean on) {
         Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), on));
-    }
-
-    public AllVehicles.VehicleType getVehicleType() {
-        return vehicleType;
     }
 
     public List<PartUnit<?>> getPartUnits() {

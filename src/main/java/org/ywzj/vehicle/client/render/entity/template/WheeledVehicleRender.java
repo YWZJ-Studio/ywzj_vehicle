@@ -14,9 +14,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.DumpTruck;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 public class WheeledVehicleRender extends EntityRenderer<WheeledVehicle> {
 
@@ -34,8 +35,13 @@ public class WheeledVehicleRender extends EntityRenderer<WheeledVehicle> {
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        BedrockModel model = BedrockModelLoader.getModel(pEntity.getVehicleType().getVisualBedrockModel());
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(pEntity.getVehicleType().getVisualBedrockTexture()));
+        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.HIACE.getId()).orElse(null);
+        if (display == null || display.getModel() == null) {
+            return;
+        }
+
+        BedrockModel model = display.getModel();
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
         BedrockBone wheel1 = model.getBoneMap().get("wheel1");
         BedrockBone wheel2 = model.getBoneMap().get("wheel2");

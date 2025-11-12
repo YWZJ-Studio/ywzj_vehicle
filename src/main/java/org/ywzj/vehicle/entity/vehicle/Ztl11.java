@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.custom.VehicleDataManager;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.List;
@@ -24,7 +24,7 @@ public class Ztl11 extends WheeledVehicle {
 
     @Override
     public void initData(ResourceLocation customId) {
-        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
+        CommonAssetsManager.vehicleDataManager().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleOBBs = struct.obbs();
