@@ -60,7 +60,7 @@ public class WheeledVehicleRender extends EntityRenderer<WheeledVehicle> {
         pEntity.wheelRotation %= 360;
 
         // 轮子转向幅度
-        float vt = pEntity.getEntityData().get(DumpTruck.TURN_FORCE);
+        float vt = pEntity.getEntityData().get(DumpTruck.TURN_ANGLE);
         float turnRotation = vt * 10;
 
         // 应用动画

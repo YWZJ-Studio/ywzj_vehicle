@@ -30,18 +30,22 @@ public class CustomExplosion {
         if (MinecraftForge.EVENT_BUS.post(startEvent)) return;
 
         AABB box = new AABB(pos.x - radius, pos.y - radius, pos.z - radius, pos.x + radius, pos.y + radius, pos.z + radius);
-        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
+        for (Entity entity : level.getEntitiesOfClass(Entity.class, box)) {
             double distance = entity.position().distanceTo(pos);
             if (distance > radius) continue;
             // 距离衰减
             double attenuation = 1.0 - (distance / radius);
             double damage = maxDamage * attenuation * attenuation;
+            DamageSource dmgSource = level.damageSources().explosion(source, null);
             // 盔甲减伤
-            damage = applyArmorReduction(entity, (float) damage);
-            DamageSource dmgSource = level.damageSources().explosion(source, source);
-            LivingHurtEvent hurtEvent = new LivingHurtEvent(entity, dmgSource, (float) damage);
-            if (!MinecraftForge.EVENT_BUS.post(hurtEvent)) {
-                entity.hurt(dmgSource, hurtEvent.getAmount());
+            if (entity instanceof LivingEntity livingEntity) {
+                damage = applyArmorReduction(livingEntity, (float) damage);
+                LivingHurtEvent hurtEvent = new LivingHurtEvent(livingEntity, dmgSource, (float) damage);
+                if (!MinecraftForge.EVENT_BUS.post(hurtEvent)) {
+                    entity.hurt(dmgSource, hurtEvent.getAmount());
+                }
+            } else {
+                entity.hurt(dmgSource, (float) damage);
             }
         }
 
@@ -85,9 +89,6 @@ public class CustomExplosion {
                     0.1
             );
         }
-
-        ExplosionEvent.Detonate detonateEvent = new ExplosionEvent.Detonate(level, vanillaExplosion, level.getEntitiesOfClass(Entity.class, box));
-        MinecraftForge.EVENT_BUS.post(detonateEvent);
     }
 
     private static double applyArmorReduction(LivingEntity entity, float damage) {

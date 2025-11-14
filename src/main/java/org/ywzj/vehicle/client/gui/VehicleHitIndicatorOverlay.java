@@ -20,6 +20,7 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
+import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -52,12 +53,13 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         }
         Vec3 viewVec;
         float scale;
-        ServerHitVehicleEvent event = events.get(0);
+        ServerHitVehicleEvent topEvent = events.get(0);
+        double damage = events.stream().mapToDouble(event -> event.damage).sum();
         if (entity instanceof AbstractVehicle vehicle) {
-            viewVec = vehicle.relativeRotPos(event.hitRelativePosition.add(vehicle.position()), false).subtract(entity.position());
+            viewVec = vehicle.relativeRotPos(topEvent.hitRelativePosition.add(vehicle.position()), false).subtract(entity.position());
             scale = Math.min(10, 8 / (vehicle.getMainCubeOBB().obb().extents().z * 2) * 10);
         } else {
-            viewVec = VectorUtil.relativeRotPos(entity, event.hitRelativePosition.add(entity.position()), false).subtract(entity.position());
+            viewVec = VectorUtil.relativeRotPos(entity, topEvent.hitRelativePosition.add(entity.position()), false).subtract(entity.position());
             scale = Math.min(10, (float) (48 / entity.getBoundingBox().getSize()));
         }
         float pitch = (float) Math.toDegrees(Math.atan2(-viewVec.y, Math.sqrt(viewVec.x * viewVec.x + viewVec.z * viewVec.z)));
@@ -67,7 +69,8 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             double modelX = screenWidth - (double) screenWidth / 8;
             double modelY = (double) screenHeight / 2;
             guiGraphics.pose().translate(modelX, modelY + (double) screenHeight / 5, 0);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, "Hit",  0, -55, 0xFFFFFFFF);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, topEvent.message, 0, -55, 0xFFFFFFFF);
+            RenderHelper.drawCenteredString(guiGraphics, Minecraft.getInstance().font, String.format("-%.2f", damage), 0, -45, 0xFFFF0000);
 
             Vec3 root = new Vec3(0, 0, 0);
             guiGraphics.pose().rotateAround(Axis.XP.rotationDegrees(pitch + 180), (float) root.x, (float) root.y, (float) root.z);

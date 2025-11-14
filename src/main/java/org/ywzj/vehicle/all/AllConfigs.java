@@ -54,7 +54,7 @@ public class AllConfigs {
         public ServerConfig(ForgeConfigSpec.Builder builder) {
             showVehicleInfoDistance = builder
                     .comment("允许看向载具时展示信息的最大距离")
-                    .defineInRange("showVehicleInfoDistance", 128.0, 0.0, 1024.0);
+                    .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
         }
 
     }

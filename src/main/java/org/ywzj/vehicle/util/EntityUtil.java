@@ -10,11 +10,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
@@ -92,21 +90,10 @@ public class EntityUtil {
 
     @Nullable
     protected static BulletHitResult getHitResult(Projectile bulletEntity, Entity entity, Vec3 startVec, Vec3 endVec) {
-        if (entity instanceof AbstractVehicle vehicle) {
-            for (var obb : vehicle.getOBBs()) {
-                // 计算射线与 OBB 的交点
-                var obbVec = obb.clip(startVec.toVector3f(), endVec.toVector3f()).orElse(null);
-                if (obbVec != null) {
-                    Vec3 hitPos = new Vec3(obbVec);
-                    if (bulletEntity.getOwner() != null) {
-                        HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(bulletEntity.getOwner().getUUID(),
-                                entity.getId(),
-                                vehicle.relativeRotPos(hitPos, true).subtract(entity.position()),
-                                vehicle.relativeRotDirection(bulletEntity.getDeltaMovement(), true));
-                        MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
-                    }
-                    return new BulletHitResult(entity, hitPos, false);
-                }
+        if (entity instanceof AbstractVehicle) {
+            Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, startVec, endVec);
+            if (closestHitPos != null) {
+                return new BulletHitResult(bulletEntity, closestHitPos, false);
             }
         }
 
@@ -126,13 +113,6 @@ public class EntityUtil {
         if ((eyeHeight - 0.25) < hitBoxPos.y && hitBoxPos.y < (eyeHeight + 0.25)) {
             headshot = true;
         }
-
-        HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(bulletEntity.getOwner().getUUID(),
-                entity.getId(),
-                VectorUtil.relativeRotPos(entity, hitPos, true).subtract(entity.position()),
-                VectorUtil.relativeRotDirection(entity, bulletEntity.getDeltaMovement(), true));
-        MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
-
         return new BulletHitResult(entity, hitPos, headshot);
     }
 

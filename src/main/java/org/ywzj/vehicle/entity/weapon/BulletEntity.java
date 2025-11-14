@@ -238,7 +238,7 @@ public class BulletEntity extends AmmoEntity {
         }
 
         if (explosion) {
-            CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+            CustomExplosion.explode((ServerLevel) level(), this, result.getLocation(), 8, 20);
         }
     }
 
@@ -252,7 +252,7 @@ public class BulletEntity extends AmmoEntity {
         super.onHitBlock(result);
 
         if (explosion) {
-            CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+            CustomExplosion.explode((ServerLevel) level(), this, result.getLocation(), 8, 20);
         }
 
         // 弹孔与点燃特效

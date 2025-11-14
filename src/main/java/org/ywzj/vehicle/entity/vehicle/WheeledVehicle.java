@@ -19,7 +19,7 @@ import org.ywzj.vehicle.util.VectorUtil;
 public abstract class WheeledVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
-    public static final EntityDataAccessor<Float> TURN_FORCE = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> TURN_ANGLE = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public float brakeForce = 0.025f;
     public float forwardForce = 0.01f;
     public float backwardForce = 0.01f;
@@ -46,7 +46,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(FORWARD_SPEED, 0f);
-        this.entityData.define(TURN_FORCE, 0f);
+        this.entityData.define(TURN_ANGLE, 0f);
     }
 
     @Override
@@ -74,7 +74,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 engineRunSoundInstance = null;
             }
         } else {
-            if (getFuel() != 0 && getPower() == 5) {
+            if (getFuel() != 0 && getPower() == 5 && isEngineOn()) {
                 SoundEvent engineStartSound = getEngineStartSound();
                 if (engineStartSound != null) {
                     new VehicleSound(engineStartSound, soundDistance, 1f, false, 50, true, true, this.getId()).play();
@@ -103,7 +103,8 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                     engineIdleSoundInstance.stop();
                     engineIdleSoundInstance = null;
                 }
-                float volume = Math.max(0.4f, vf / maxSpeedForward);
+                float volume = Math.max(0.7f, vf / maxSpeedForward);
+                float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
                 if (engineRunSoundInstance == null) {
                     SoundEvent engineRunSound = getEngineRunSound();
                     if (engineRunSound != null) {
@@ -112,10 +113,12 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                     }
                 } else {
                     engineRunSoundInstance.setVolume(volume * soundDistance);
+                    engineRunSoundInstance.setPitch(pitch);
                 }
             }
         }
-        if (getDeltaMovement().length() > 0.1 && Math.sin(VectorUtil.angleBetween(getDeltaMovement(), getLookAngle())) > Math.sin(Math.PI / 10)) {
+        Vec3 velocity = new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z);
+        if (velocity.length() > 0.1 && Math.sin(VectorUtil.angleBetween(velocity, getLookAngle())) > Math.sin(Math.PI / 10)) {
             if (tireSquealSoundInstance == null) {
                 tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1, 1, true, 50, true, true, this.getId());
                 tireSquealSoundInstance.play();
@@ -155,58 +158,13 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
         double powerScale = getPower() / 100;
         Vec3 velocity = getDeltaMovement();
+        double gVelocity = velocity.y;
         velocity = new Vec3(velocity.x, 0, velocity.z);
         Vec3 vehicleDirection = getLookAngle();
-        vehicleDirection = new Vec3(vehicleDirection.x, 0, vehicleDirection.z);
-        float angleDiff = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
-        // 前后控制
         double motion = velocity.length();
-        if (controlUnit.forward || controlUnit.backward) {
-            if (controlUnit.forward) {
-                if (motion == 0 || angleDiff < 90) {
-                    if (motion < maxSpeedForward) {
-                        velocity = velocity.add(vehicleDirection.scale(forwardForce * powerScale * (loseTraction ? 0.5 : 1)));
-                    }
-                } else {
-                    velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));
-                }
-                entityData.set(FORWARD_SPEED, (float) velocity.length());
-            } else {
-                if (motion == 0 || angleDiff >= 90) {
-                    if (motion < maxSpeedBackward) {
-                        velocity = velocity.add(vehicleDirection.scale(-backwardForce * powerScale * (loseTraction ? 0.5 : 1)));
-                    }
-                } else {
-                    velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));
-                }
-                entityData.set(FORWARD_SPEED, (float) -velocity.length());
-            }
-        } else {
-            entityData.set(FORWARD_SPEED, (float) (angleDiff < 90 ? motion : -motion));
-        }
-        if (controlUnit.left || controlUnit.right) {
-            if (angleDiff > 90 && !controlUnit.backward) {
-                velocity = velocity.normalize().scale(Math.max(0, motion - brakeForce));
-            }
-        }
-        angleDiff = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
-        motion = velocity.length();
-
-        // 转向控制
-        float turnForce = entityData.get(TURN_FORCE);
-        if (controlUnit.left || controlUnit.right) {
-            turnForce += controlUnit.right ? turnStep : -turnStep;
-            turnForce = Mth.clamp(turnForce, -maxTurn, maxTurn);
-        } else {
-            if (turnForce < 0) {
-                turnForce += turnStep;
-                turnForce = Math.min(turnForce, 0);
-            } else if (turnForce > 0) {
-                turnForce -= turnStep;
-                turnForce = Math.max(turnForce, 0);
-            }
-        }
-        entityData.set(TURN_FORCE, turnForce);
+        float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+        vehicleDirection = new Vec3(vehicleDirection.x, 0, vehicleDirection.z);
+        Vec3 turnDirection = new Vec3(-vehicleDirection.z, 0, vehicleDirection.x);
 
         // 手刹控制
         boolean handbrake = controlUnit.up;
@@ -215,43 +173,87 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             motion = velocity.length();
         }
 
-        // 作用于速度
-        if (controlUnit.backward) {
-            if (angleDiff > 90) {
-                turnForce *= -1;
-            }
-        }
-        this.setYRot((float) (this.getYRot() + turnForce * Math.min(motion / 0.3f, 1)));
-        Vec3 turnVector;
-        if (angleDiff < 90) {
-            turnVector = vehicleDirection.scale(motion).subtract(velocity);
+        // 转向控制
+        float turnAngle = entityData.get(TURN_ANGLE);
+        if (controlUnit.left || controlUnit.right) {
+            turnAngle += controlUnit.right ? turnStep : -turnStep;
+            turnAngle = Mth.clamp(turnAngle, -maxTurn, maxTurn);
         } else {
-            angleDiff = 180 - angleDiff;
-            turnVector = vehicleDirection.scale(-motion).subtract(velocity);
-        }
-        if (motion!= 0 && turnVector.length() > 0.001f) {
-            float turnLength = (float) turnVector.length();
-            float k1 = (float) Math.max(0.01, 1 - Math.pow(motion / maxSpeedForward, 0.5));
-            float k2 = (float) (Math.cos(Math.min(Math.PI / 2, Math.toRadians(angleDiff * 4))) * 0.9f + 0.1f);
-            float k3 = handbrake ? (float) 0.2 : 1;
-            float k4 = k1 * k2 * k3;
-            if (k4 < 0.003) {
-                loseTraction = true;
-                regainTractionTick = 10;
-            }
-            turnForce = (float) (Math.min(1, 30 * k4 * (loseTraction ? 0.5 : 1)) * turnLength);
-            if (turnForce != 0) {
-                velocity = velocity.add(turnVector.normalize().scale(turnForce));
-                velocity = velocity.normalize().scale(Math.max(0, motion - 0.001 * angleDiff / 90));
-            }
-        } else if (regainTractionTick > 0) {
-            regainTractionTick -= 1;
-            if (regainTractionTick == 0) {
-                loseTraction = false;
+            if (turnAngle < 0) {
+                turnAngle += turnStep;
+                turnAngle = Math.min(turnAngle, 0);
+            } else if (turnAngle > 0) {
+                turnAngle -= turnStep;
+                turnAngle = Math.max(turnAngle, 0);
             }
         }
-        this.setDeltaMovement(velocity);
-        return new Vec3(0, 0, 0);
+        entityData.set(TURN_ANGLE, turnAngle);
+        if (angle > 90) {
+            turnAngle *= -1;
+        }
+
+        // 前后控制
+        Vec3 propulsiveForce = Vec3.ZERO;
+        if (controlUnit.forward) {
+            if (motion != 0 && angle > 90) {
+                propulsiveForce = vehicleDirection.normalize().scale(brakeForce);
+            } else {
+                if (motion < maxSpeedForward) {
+                    propulsiveForce = vehicleDirection.normalize().scale(forwardForce * powerScale);
+                }
+            }
+        } else if (controlUnit.backward) {
+            if (motion != 0 && angle < 90) {
+                propulsiveForce = vehicleDirection.normalize().scale(-brakeForce);
+            } else {
+                if (motion < maxSpeedBackward) {
+                    propulsiveForce = vehicleDirection.normalize().scale(-backwardForce * powerScale);
+                }
+            }
+        }
+
+        // 速度与转向角度产生转向力，并产生车头偏转
+        float turnStep = (float) Math.toDegrees(Math.atan2(motion * turnAngle / maxTurn, mainCubeOBB.depth));
+        Vec3 turnForce = turnDirection.normalize().scale(turnStep / 100);
+        this.setYRot(this.getYRot() + turnStep);
+        // 受力产生加速度
+        Vec3 deltaVelocity = propulsiveForce.add(turnForce).scale(1 / physicsEngine.mass);
+        velocity = velocity.add(deltaVelocity);
+        motion = velocity.length();
+        angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+        // 车头朝向与速度方向不一致，产生回正倾向
+        if (motion != 0) {
+            Vec3 turnVector = vehicleDirection.scale(angle > 90 ? -motion : motion).subtract(velocity);
+            if (turnVector.length() > 0.001f) {
+                float turnLength = (float) turnVector.length();
+                float k1 = (float) Math.max(0.01, 1 - Math.pow(motion / maxSpeedForward, 0.5));
+                float k2 = (float) (Math.cos(Math.min(Math.PI / 2, Math.toRadians(angle * 4))) * 0.9f + 0.1f);
+                float k3 = handbrake ? (float) 0.01 : 1;
+                float k4 = k1 * k2 * k3;
+                if (k4 < 0.003) {
+                    loseTraction = true;
+                    regainTractionTick = 10;
+                }
+                float f = (float) (Math.min(1, 10 * k4 * (loseTraction ? 0.5 : 1)) * turnLength);
+                if (f != 0) {
+                    velocity = velocity.add(turnVector.normalize().scale(f));
+                    velocity = velocity.normalize().scale(Math.max(0, motion - 0.001 * angle / 90));
+                }
+            } else if (regainTractionTick > 0) {
+                regainTractionTick -= 1;
+                if (regainTractionTick == 0) {
+                    loseTraction = false;
+                }
+            }
+        }
+
+        // 轴向速度
+        motion = velocity.length();
+        angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+        entityData.set(FORWARD_SPEED, (angle < 90 ? 1 : -1) * (float) motion);
+
+        this.setDeltaMovement(new Vec3(velocity.x, velocity.y + gVelocity, velocity.z));
+        return Vec3.ZERO;
     }
 
     public float getSpeed() {

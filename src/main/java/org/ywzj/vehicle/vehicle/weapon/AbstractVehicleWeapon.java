@@ -203,7 +203,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
     }
 
     public void startReload() {
-        this.reloadTime = 60;
+        this.reloadTime = this.getData().getReload().getTime();
     }
 
     public void tickReload() {

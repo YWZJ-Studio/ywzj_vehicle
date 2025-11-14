@@ -6,12 +6,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -21,8 +24,11 @@ import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.item.VehicleItem;
+import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
+
+import java.util.Iterator;
 
 public class AllEvents {
 
@@ -65,8 +71,36 @@ public class AllEvents {
         @SubscribeEvent
         public static void onLivingHurt(LivingHurtEvent event) {
             if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle) {
-                if (vehicle.uav) {
-                    event.setCanceled(true);
+                event.setCanceled(true);
+                vehicle.hurt(event.getSource(), event.getAmount());
+            }
+        }
+
+        @SubscribeEvent
+        public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
+            Iterator<Entity> iterator = event.getAffectedEntities().iterator();
+            while (iterator.hasNext()) {
+                Entity entity = iterator.next();
+                if (entity instanceof AbstractVehicle) {
+                    iterator.remove();
+                    Explosion explosion = event.getExplosion();
+                    Vec3 explosionPos = explosion.getPosition();
+                    float explosionRadius = ((ExplosionAccessor) explosion).getRadius() * 2.0F;
+                    if (!entity.ignoreExplosion()) {
+                        double distanceRatio = Math.sqrt(entity.distanceToSqr(explosionPos)) / explosionRadius;
+                        if (distanceRatio <= 1.0D) {
+                            double dx = entity.getX() - explosionPos.x;
+                            double dy = entity.getEyeY() - explosionPos.y;
+                            double dz = entity.getZ() - explosionPos.z;
+                            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                            if (distance != 0.0D) {
+                                double visibilityFactor = Explosion.getSeenPercent(explosionPos, entity);
+                                double impactStrength = (1.0D - distanceRatio) * visibilityFactor;
+                                float damage = (float) ((int) ((impactStrength * impactStrength + impactStrength) / 2.0D * 7.0D * explosionRadius + 1.0D));
+                                entity.hurt(explosion.getDamageSource(), damage);
+                            }
+                        }
+                    }
                 }
             }
         }

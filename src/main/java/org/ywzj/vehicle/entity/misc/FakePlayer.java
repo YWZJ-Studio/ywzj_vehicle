@@ -62,6 +62,9 @@ public class FakePlayer extends Mob {
         if (copyPlayer != null) {
             copyPlayer.unRide();
             copyPlayer.teleportTo(this.getX(), this.getY(), this.getZ());
+            copyPlayer.setYRot(getYRot());
+            copyPlayer.setYBodyRot(yBodyRot);
+            copyPlayer.setXRot(getXRot());
             copyPlayer.hurt(damageSource, amount);
         }
         return super.hurt(damageSource, amount);

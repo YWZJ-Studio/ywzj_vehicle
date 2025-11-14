@@ -78,9 +78,9 @@ public class Ztz99a extends TrackedVehicle {
         VehicleCannonWeaponData weaponDataCannon = new VehicleCannonWeaponData();
         weaponDataCannon.setName("cannon");
         weaponDataCannon.setMaxCapacity(1);
-        weaponDataCannon.setDamage(25);
+        weaponDataCannon.setDamage(333);
         weaponDataCannon.setExplosion(true);
-        weaponDataCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ARTILLERY.get())));
+        weaponDataCannon.setReload(new BaseVehicleWeaponData.Reload(100, Ingredient.of(AllItems.AMMO_ARTILLERY.get())));
         VehicleCannon vehicleCannon = new VehicleCannon(this, turret, 0, weaponDataCannon);
         vehicleCannon.defineSyncData(turret.getSyncData());
         turret.weapons.add(vehicleCannon);
@@ -93,7 +93,7 @@ public class Ztz99a extends TrackedVehicle {
                 1.7f,
                 new Vec3(-1d, 0d, -1),
                 new Vec3(0.5d, 0.5d, -1d),
-                new Vec3(0, 1d, 1.2d),
+                new Vec3(0, 2d, 1.2d),
                 turret);
         commanderMachineGun.needPower = false;
         commanderMachineGun.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
@@ -106,7 +106,7 @@ public class Ztz99a extends TrackedVehicle {
         VehicleCannonWeaponData weaponDataMachineGun = new VehicleCannonWeaponData();
         weaponDataMachineGun.setName("machine_gun");
         weaponDataMachineGun.setMaxCapacity(120);
-        weaponDataCannon.setDamage(2);
+        weaponDataMachineGun.setDamage(2);
         weaponDataMachineGun.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MACHINE_GUN.get())));
         VehicleCannon vehicleMachineGun = new VehicleCannon(this, commanderMachineGun, 1, weaponDataMachineGun);
         vehicleMachineGun.defineSyncData(commanderMachineGun.getSyncData());

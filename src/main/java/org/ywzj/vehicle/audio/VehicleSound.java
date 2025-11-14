@@ -54,6 +54,10 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         this.volume = volume;
     }
 
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
+
     @Override
     public boolean isStopped() {
         return !isPlaying;

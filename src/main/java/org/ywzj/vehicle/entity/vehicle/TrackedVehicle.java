@@ -70,7 +70,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                 engineRunSoundInstance = null;
             }
         } else {
-            if (getFuel() != 0 && getPower() == 5) {
+            if (getFuel() != 0 && getPower() == 5 && isEngineOn()) {
                 SoundEvent engineStartSound = getEngineStartSound();
                 if (engineStartSound != null) {
                     new VehicleSound(engineStartSound, soundDistance, 1f, false, 50, true, true, this.getId()).play();
@@ -101,6 +101,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                     engineIdleSoundInstance = null;
                 }
                 float volume = Math.max(0.4f, vf != 0 ? Math.abs(vf) / maxSpeedForward : 0.7f);
+                float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
                 if (engineRunSoundInstance == null) {
                     SoundEvent engineRunSound = getEngineRunSound();
                     if (engineRunSound != null) {
@@ -109,6 +110,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                     }
                 } else {
                     engineRunSoundInstance.setVolume(volume * soundDistance);
+                    engineRunSoundInstance.setPitch(pitch);
                 }
             }
         }

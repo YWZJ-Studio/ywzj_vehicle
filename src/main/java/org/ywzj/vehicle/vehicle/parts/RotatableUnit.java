@@ -58,9 +58,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         if (vehicle.level().isClientSide()) {
             tickSound();
         }
-        if (!needPower || vehicle.hasPower()) {
-            tickRot();
-        }
+        tickRot();
     }
 
     public void updateOBBs() {
@@ -82,6 +80,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     protected void tickRot() {
         this.xRotO = this.getXRot();
         this.yRotO = this.getYRot();
+        if (needPower && !vehicle.hasPower()) {
+            return;
+        }
         if (vehicle.level().isClientSide()) {
             this.xRot = this.xRemoteRot;
             this.yRot = this.yRemoteRot;

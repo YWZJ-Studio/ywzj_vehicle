@@ -1,14 +1,42 @@
 {
-  "bullet_hit_outside": {
+  "vehicle_hurt": {
     "sounds": [
-      "ywzj_vehicle:misc/bullet_hit_outside_03_01",
-      "ywzj_vehicle:misc/bullet_hit_outside_03_02",
-      "ywzj_vehicle:misc/bullet_hit_outside_03_03",
-      "ywzj_vehicle:misc/bullet_hit_outside_03_04",
-      "ywzj_vehicle:misc/bullet_hit_outside_03_05",
-      "ywzj_vehicle:misc/bullet_hit_outside_03_06"
+      "ywzj_vehicle:misc/vehicle_hurt_01",
+      "ywzj_vehicle:misc/vehicle_hurt_02",
+      "ywzj_vehicle:misc/vehicle_hurt_03"
     ],
-    "subtitle": "ywzj_vehicle.sounds.bullet_hit_outside"
+    "subtitle": "ywzj_vehicle.sounds.vehicle_hurt"
+  },
+  "vehicle_hit_small": {
+    "sounds": [
+      "ywzj_vehicle:misc/vehicle_hit_small_01",
+      "ywzj_vehicle:misc/vehicle_hit_small_02",
+      "ywzj_vehicle:misc/vehicle_hit_small_03",
+      "ywzj_vehicle:misc/vehicle_hit_small_04",
+      "ywzj_vehicle:misc/vehicle_hit_small_05",
+      "ywzj_vehicle:misc/vehicle_hit_small_06",
+      "ywzj_vehicle:misc/vehicle_hit_small_07",
+      "ywzj_vehicle:misc/vehicle_hit_small_08",
+      "ywzj_vehicle:misc/vehicle_hit_small_09",
+      "ywzj_vehicle:misc/vehicle_hit_small_10"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.vehicle_hit_small"
+  },
+  "vehicle_hit_med": {
+    "sounds": [
+      "ywzj_vehicle:misc/vehicle_hit_med_01",
+      "ywzj_vehicle:misc/vehicle_hit_med_02",
+      "ywzj_vehicle:misc/vehicle_hit_med_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.vehicle_hit_med"
+  },
+  "vehicle_hit_big": {
+    "sounds": [
+      "ywzj_vehicle:misc/vehicle_hit_big_01",
+      "ywzj_vehicle:misc/vehicle_hit_big_02",
+      "ywzj_vehicle:misc/vehicle_hit_big_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.vehicle_hit_big"
   },
   "auto_cannon_shot": {
     "sounds": ["ywzj_vehicle:misc/auto_cannon_shot"],

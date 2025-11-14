@@ -16,6 +16,7 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class PhysicsEngine {
 
@@ -28,7 +29,9 @@ public class PhysicsEngine {
     public float rotV = 0;
     public Quaternionf stepRot;
     public Vector3f localRotAxisStart;
+    public Vector3f localRotAxisStartO;
     public Vector3f localRotAxisEnd;
+    public Vector3f localRotAxisEndO;
     public Vector3f localRotAxisVec;
     public Vector3f planeSupport;
     public Vector3f planeU;
@@ -54,7 +57,7 @@ public class PhysicsEngine {
     public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
-                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.maxUpStep()) {
+                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
                     continue;
                 }
                 Vec3 axesX = new Vec3(axes[0]).normalize();
@@ -73,7 +76,7 @@ public class PhysicsEngine {
                     }
                 }
             } else if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK) {
-                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.maxUpStep()) {
+                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
                     continue;
                 }
                 Vec3 axesZ = new Vec3(axes[2]).normalize();
@@ -143,6 +146,7 @@ public class PhysicsEngine {
             // 无任何接触，因转动惯量而继续转动，因重力而自由落体
             if (touchPoints.isEmpty()) {
                 centerRot(gravityCenter, axes);
+                rotV = Math.max(0, rotV - rotA / 3);
                 velocity.y -= gravityA;
                 return new Vec3(velocity);
             }
@@ -197,6 +201,8 @@ public class PhysicsEngine {
             }
 
             if (localForcePoints.size() > 2) {
+                localRotAxisStartO = localRotAxisStart;
+                localRotAxisEndO = localRotAxisEnd;
                 List<Vector2f> polygon = VectorUtil.convexHull(new ArrayList<>(points.keySet()));
                 // 重心于支撑点闭包内，转动停止，自由落体停止
                 if (VectorUtil.isPointInPolygon(gc, polygon)) {
@@ -256,7 +262,8 @@ public class PhysicsEngine {
                 return new Vec3(velocity);
             }
 
-            checkDirection(gc);
+            checkDirection(gravityCenter);
+            rotLoss(gc);
             localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
             rotV = Math.min(rotV + rotA, 0.3f);
             rot(axes);
@@ -280,12 +287,11 @@ public class PhysicsEngine {
         Vector3f forcePointLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldPivotPosition().toVector3f(), axes);
         // 后坐力方向在局部坐标系下的矢量
         Vector3f force = new Vector3f(forcePointLocal).sub(forceStartLocal);
-        Vector2f fc = getPlaneXY(force, forcePointLocal);
         // 简化旋转为都从炮闩下的载具中心处产生转轴，该转轴平行于底面
         Vec3 axis = new Vec3(-force.z, 0, force.x).add(forcePointLocal.x, 0, forcePointLocal.z);
         localRotAxisStart = axis.normalize().scale(5).toVector3f();
         localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
-        checkDirection(fc);
+        checkDirection(forcePointLocal);
         rotV = 0.05f;
         rot(axes);
         // 后坐力产生推移
@@ -300,34 +306,66 @@ public class PhysicsEngine {
                                 || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BOTTOM
                                 || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK)
                 .toList());
+        if (climbPoints.isEmpty()) {
+            return;
+        }
         // 自动爬高
         DoubleSummaryStatistics stats = climbPoints.stream()
                 .mapToDouble(p -> p.obbLocalPos().y)
                 .summaryStatistics();
         double yRange = stats.getMax() - stats.getMin();
-        double liftLimit = vehicle.maxUpStep() + 1;
-        if (yRange < liftLimit) {
-            if (yRange >= vehicle.maxUpStep() || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
-                climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
-                VehicleBedrockCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-                double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
-                        ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                                || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
-                if (liftHeight > vehicle.position().y) {
-                    vehicle.setPos(new Vec3(vehicle.position().x, liftHeight, vehicle.position().z));
-                }
-            }
+        double liftLimit = vehicle.getMainCubeOBB().spaceY * 2;
+        if (yRange >= liftLimit) {
+            return;
+        }
+        if (yRange >= vehicle.getMainCubeOBB().spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
+            climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+            VehicleBedrockCubeOBB.CubePoint liftPoint = climbPoints.get(0);
+            double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
+                    ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                            || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
+            double toLift = liftHeight - vehicle.position().y;
+            vehicle.setPos(new Vec3(vehicle.position().x, vehicle.position().y + Mth.clamp(toLift, 0, vehicle.maxUpStep()), vehicle.position().z));
         }
     }
 
-    private void checkDirection(Vector2f rotToPoint) {
+    private void checkDirection(Vector3f localRotToPoint) {
         // 左手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
-        Vector2f v1 = getPlaneXY(null, localRotAxisStart);
-        Vector2f v2 = getPlaneXY(null, localRotAxisEnd);
-        if ((v2.x - v1.x) * (rotToPoint.y - v1.y) - (v2.y - v1.y) * (rotToPoint.x - v1.x) < 0) {
+        Vector3f v1 = new Vector3f(localRotAxisStart).sub(localRotToPoint);
+        Vector3f v2 = new Vector3f(localRotAxisEnd).sub(localRotToPoint);
+        if (v1.cross(v2).dot(planeSupport) < 0) {
             Vector3f tmp = localRotAxisEnd;
             localRotAxisEnd = localRotAxisStart;
             localRotAxisStart = tmp;
+        }
+    }
+
+    private void rotLoss(Vector2f rotToPoint) {
+        if (localRotAxisStartO == null || localRotAxisEndO == null) {
+            return;
+        }
+        Vector2f v1 = getPlaneXY(null, localRotAxisStart);
+        Vector2f v2 = getPlaneXY(null, localRotAxisEnd);
+        Vector2f v3 = getPlaneXY(null, localRotAxisStartO);
+        Vector2f v4 = getPlaneXY(null, localRotAxisEndO);
+        Function<Vector2f[], Vector2f> getPerp = (arr) -> {
+            Vector2f a = arr[0], b = arr[1];
+            Vector2f ab = new Vector2f(b).sub(a);
+            Vector2f ap = new Vector2f(rotToPoint).sub(a);
+            float t = ap.dot(ab) / ab.dot(ab);
+            Vector2f proj = new Vector2f(a).add(new Vector2f(ab).mul(t));
+            return new Vector2f(rotToPoint).sub(proj);
+        };
+        Vector2f perp1 = getPerp.apply(new Vector2f[]{v1, v2});
+        Vector2f perp2 = getPerp.apply(new Vector2f[]{v3, v4});
+        if (perp1.lengthSquared() == 0 || perp2.lengthSquared() == 0) {
+            return;
+        }
+        float cosTheta = perp1.dot(perp2) / (perp1.length() * perp2.length());
+        cosTheta = Math.max(-1.0f, Math.min(1.0f, cosTheta));
+        float angleRad = Math.acos(cosTheta);
+        if (angleRad > Math.PI / 2) {
+            rotV *= 0.5f;
         }
     }
 
@@ -338,7 +376,6 @@ public class PhysicsEngine {
         if (localRotAxisVec != null) {
             localRotAxisStart = new Vector3f(center).sub(localRotAxisVec);
             localRotAxisEnd = new Vector3f(center).add(localRotAxisVec);
-
             // 目前仅考虑重力
             Vector3f g = new Vector3f(0, -1, 0);
             // 重力方向在局部坐标系下的矢量
@@ -346,10 +383,8 @@ public class PhysicsEngine {
             float gy = g.dot(axes[1]);
             float gz = g.dot(axes[2]);
             Vector3f gLocal = new Vector3f(gx, gy, gz);
-
-            // 重力、受力点投影到重力为法向量的平面上
-            Vector2f forcePoint = getPlaneXY(gLocal, center);
-            checkDirection(forcePoint);
+            getPlaneXY(gLocal, center);
+            checkDirection(center);
             rot(axes);
         }
     }
@@ -358,21 +393,25 @@ public class PhysicsEngine {
         if (localRotAxisStart == null || localRotAxisEnd == null || rotV == 0) {
             return;
         }
-        Vec3 localVehiclePos = vehicle.position().subtract(physicsCube.center(this.vehicle));
-        Vector3f p1 = rotateAroundAxis(localVehiclePos.toVector3f(), localRotAxisStart, localRotAxisEnd, rotV);
+        Vector3f pc = vehicle.relativeRotPos(physicsCube.center(this.vehicle), false).toVector3f();
+        Vector3f p1 = rotateAroundAxis(physicsCube.obb().worldToLocal(pc, axes), localRotAxisStart, localRotAxisEnd, rotV);
         Vector3f p2 = physicsCube.obb().localToWorld(p1, axes);
-        vehicle.setPos(new Vec3(p2));
+        Vector3f p3 = vehicle.relativeRotPos(new Vec3(p2), true).toVector3f();
+        Vec3 pRot = new Vec3(p3).subtract(physicsCube.offset());
+        vehicle.setPos(pRot);
 
 //        DebugUtil.particle(vehicle.level(), new Vec3(p2));
 
+        Quaternionf q = vehicle.rotYXZ();
+        q.mul(stepRot);
         Vector3f as = new Vector3f();
-        stepRot.getEulerAnglesYXZ(as);
-        vehicle.setYRot((float) (vehicle.getYRot() + Math.toDegrees(as.y)));
-        vehicle.setXRot((float) (vehicle.getXRot() + Math.toDegrees(as.x)));
+        q.getEulerAnglesYXZ(as);
+        vehicle.setYRot(-(float) Math.toDegrees(as.y));
+        vehicle.setXRot((float) Math.toDegrees(as.x));
         if (lockZRot) {
             vehicle.setZRot(0);
         } else {
-            vehicle.setZRot((float) (vehicle.getZRot() + Math.toDegrees(as.z)));
+            vehicle.setZRot((float) Math.toDegrees(as.z));
         }
     }
 
@@ -388,14 +427,7 @@ public class PhysicsEngine {
         if (support != null) {
             // 以planeSupport为法向量的平面有planeU, planeV两轴
             planeSupport = new Vector3f(support).normalize();
-            Vector3f tmp;
-            if (Math.abs(planeSupport.x) <= Math.abs(planeSupport.y) && Math.abs(planeSupport.x) <= Math.abs(planeSupport.z)) {
-                tmp = new Vector3f(1, 0, 0);
-            } else if (Math.abs(planeSupport.y) <= Math.abs(planeSupport.z)) {
-                tmp = new Vector3f(0, 1, 0);
-            } else {
-                tmp = new Vector3f(0, 0, 1);
-            }
+            Vector3f tmp = new Vector3f(1, 0, 0);
             planeU = tmp.cross(planeSupport).normalize();
             planeV = new Vector3f(planeSupport).cross(planeU).normalize();
         }

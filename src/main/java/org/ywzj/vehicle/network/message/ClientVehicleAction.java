@@ -14,6 +14,7 @@ public class ClientVehicleAction {
 
     public int vehicleEntityId;
     public boolean leaveVehicle;
+    public boolean toggleEngine;
     public int partUnitIndex;
     public boolean shoot;
     public List<Vec3> ammoSpawnPositions = new ArrayList<>();
@@ -29,6 +30,10 @@ public class ClientVehicleAction {
         control.vehicleEntityId = buf.readInt();
         control.leaveVehicle = buf.readBoolean();
         if (control.leaveVehicle) {
+            return control;
+        }
+        control.toggleEngine = buf.readBoolean();
+        if (control.toggleEngine) {
             return control;
         }
         control.partUnitIndex = buf.readInt();
@@ -53,6 +58,10 @@ public class ClientVehicleAction {
         if (leaveVehicle) {
             return;
         }
+        buf.writeBoolean(toggleEngine);
+        if (toggleEngine) {
+            return;
+        }
         buf.writeInt(partUnitIndex);
         buf.writeBoolean(shoot);
         if (shoot) {
@@ -74,7 +83,7 @@ public class ClientVehicleAction {
 
     public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ctxSupplier.get().enqueueWork(() -> {
-            if (message.leaveVehicle) {
+            if (message.leaveVehicle || message.toggleEngine) {
                 AbstractVehicle.onClientVehicleAction(message, ctxSupplier);
             } else {
                 PartUnit.onClientMessageReceived(message, ctxSupplier);

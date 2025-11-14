@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.all.AllConfigs;
@@ -14,6 +15,8 @@ public class ServerHitVehicleEvent {
     public int entityId;
     public Vec3 hitRelativePosition;
     public Vec3 hitRelativeVector;
+    public float damage;
+    public Component message;
 
     public ServerHitVehicleEvent() {}
 
@@ -21,6 +24,8 @@ public class ServerHitVehicleEvent {
         this.entityId = hitVehicleEvent.entityId;
         this.hitRelativePosition = hitVehicleEvent.hitRelativePosition;
         this.hitRelativeVector = hitVehicleEvent.hitRelativeVector;
+        this.damage = hitVehicleEvent.damage;
+        this.message = hitVehicleEvent.message;
     }
 
     public static ServerHitVehicleEvent decode(FriendlyByteBuf buf) {
@@ -28,6 +33,8 @@ public class ServerHitVehicleEvent {
         vehicleSeatsChange.entityId = buf.readInt();
         vehicleSeatsChange.hitRelativePosition = new Vec3(buf.readVector3f());
         vehicleSeatsChange.hitRelativeVector = new Vec3(buf.readVector3f());
+        vehicleSeatsChange.damage = buf.readFloat();
+        vehicleSeatsChange.message = buf.readComponent();
         return vehicleSeatsChange;
     }
 
@@ -35,6 +42,8 @@ public class ServerHitVehicleEvent {
         buf.writeInt(entityId);
         buf.writeVector3f(hitRelativePosition.toVector3f());
         buf.writeVector3f(hitRelativeVector.toVector3f());
+        buf.writeFloat(damage);
+        buf.writeComponent(message);
     }
 
     public static void onServerMessageReceived(ServerHitVehicleEvent message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -48,7 +57,7 @@ public class ServerHitVehicleEvent {
                 VehicleHitIndicatorOverlay.events.clear();
             }
             VehicleHitIndicatorOverlay.events.add(message);
-            if (VehicleHitIndicatorOverlay.events.size() > 10) {
+            if (VehicleHitIndicatorOverlay.events.size() > 128) {
                 VehicleHitIndicatorOverlay.events.remove(0);
             }
         });

@@ -51,6 +51,8 @@ public class InputHandler {
                     }
                 } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
                     Minecraft.getInstance().player.sendOpenInventory();
+                } else if (TOGGLE_ENGINE.matches(event.getKey(), event.getScanCode())) {
+                    sendToggleEngine(vehicle);
                 } else if (CHANGE_SEAT_1.matches(event.getKey(), event.getScanCode())) {
                     sendChangeSeat(vehicle, 0);
                 } else if (CHANGE_SEAT_2.matches(event.getKey(), event.getScanCode())) {
@@ -206,6 +208,13 @@ public class InputHandler {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = abstractVehicle.getId();
         action.leaveVehicle = true;
+        Channel.CHANNEL.sendToServer(action);
+    }
+
+    private static void sendToggleEngine(AbstractVehicle abstractVehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = abstractVehicle.getId();
+        action.toggleEngine = true;
         Channel.CHANNEL.sendToServer(action);
     }
 

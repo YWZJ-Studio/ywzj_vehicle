@@ -18,7 +18,8 @@ public class Hiace extends WheeledVehicle {
         super(pEntityType, pLevel);
         physicsEngine.friction = 0.003f;
         forwardForce = 0.03f;
-        backwardForce = 0.013f;
+        backwardForce = 0.02f;
+        brakeForce = 0.05f;
         maxSpeedForward = 1f;
         maxSpeedBackward= 0.2f;
         turnStep = 1f;

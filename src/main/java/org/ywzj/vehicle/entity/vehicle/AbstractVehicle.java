@@ -79,6 +79,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -139,6 +140,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.entityData.define(Z_ROT, 0f);
         this.entityData.define(FUEL, 0f);
         this.entityData.define(POWER, 0f);
+        this.entityData.define(ENGINE_ON, false);
         this.entityData.define(DESTROYED, false);
     }
 
@@ -204,16 +206,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             setPower(0);
             return;
         }
-        float power = getPower();
         if (getDriver() == null) {
-            if (power > 0) {
-                setPower(power - 1);
-            }
-        } else {
-            if (power < 100) {
-                setPower(power + 1);
-            }
+            this.entityData.set(ENGINE_ON, false);
         }
+        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
         if (getFuel() == 0) {
             setPower(0);
         }
@@ -286,7 +282,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             return false;
         } else {
             if (!level().isClientSide()) {
-                this.playSound(getHurtSound(damageSource), 1, 1);
                 this.level().broadcastDamageEvent(this, damageSource);
             }
             DamageSystem.hurt(damageSource, amount, this);
@@ -296,7 +291,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 } else {
                     this.getPassengers().forEach(passenger -> {
                         passenger.stopRiding();
-                        passenger.hurt(damageSource, 100);
+                        if (!uav) {
+                            passenger.hurt(damageSource, 100);
+                        }
                     });
                     this.setHealth(this.getMaxHealth());
                     Vec3 position = this.position();
@@ -341,8 +338,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_run"));
     }
 
-    protected SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {
-        return AllSounds.BULLET_HIT_OUTSIDE.get();
+    public SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {
+        return AllSounds.VEHICLE_HURT.get();
     }
 
     public void initPartUnits() {}
@@ -469,6 +466,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 Seat seat = emptySeatOptional.get();
                 if (seat.seatIndex == 0) {
                     controlUnit.setOperator(livingEntity);
+                    toggleEngine(true);
                 }
                 seat.partUnit.setOwner(livingEntity);
                 seat.passengerId = livingEntity.getId();
@@ -504,6 +502,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             Seat toSeat = seats.get(toSeatIndex);
             if (toSeat.seatIndex == 0) {
                 controlUnit.setOperator(pPassenger);
+                toggleEngine(true);
             }
             toSeat.partUnit.setOwner(pPassenger);
             toSeat.passengerId = pPassenger.getId();
@@ -522,8 +521,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public static void onClientVehicleAction(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ServerPlayer player = ctxSupplier.get().getSender();
-        if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle) {
-            player.stopRiding();
+        if (message.leaveVehicle) {
+            if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle) {
+                player.stopRiding();
+            }
+        } else if (message.toggleEngine) {
+            if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+                vehicle.toggleEngine(null);
+            }
         }
     }
 
@@ -572,7 +577,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         if (!this.level().isClientSide()) {
             if (isDestroyed()) {
-                return InteractionResult.PASS;
+                this.openCustomInventoryScreen(pPlayer);
+                return InteractionResult.SUCCESS;
             }
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
@@ -786,6 +792,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public boolean hasPower() {
         return getPower() > 20;
+    }
+
+    public void toggleEngine(Boolean on) {
+        entityData.set(ENGINE_ON, on == null ? !isEngineOn() : on);
+    }
+
+    public boolean isEngineOn() {
+        return entityData.get(ENGINE_ON);
     }
 
     public boolean isDestroyed() {

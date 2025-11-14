@@ -15,6 +15,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -109,12 +110,12 @@ public class Quadcopter extends RotaryWingVehicle {
 
     @Override
     protected void tickPower() {
-        float power = getPower();
-        if (getDriver() != null) {
-            if (power < 100) {
-                setPower(power + 1);
-            }
+        FluidState fluidState = level().getFluidState(BlockPos.containing(new Vec3(mainCubeOBB.obb().center())));
+        if (!fluidState.isEmpty()) {
+            setPower(0);
+            return;
         }
+        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
         if (getFuel() == 0) {
             setPower(0);
         }
@@ -188,6 +189,9 @@ public class Quadcopter extends RotaryWingVehicle {
             serverPlayer.unRide();
             Vec3 pos = fakeOperator.position();
             serverPlayer.teleportTo(pos.x, pos.y, pos.z);
+            serverPlayer.setYRot(fakeOperator.getYRot());
+            serverPlayer.setYBodyRot(fakeOperator.yBodyRot);
+            serverPlayer.setXRot(fakeOperator.getXRot());
             fakeOperatorPos = null;
         }
     }
@@ -198,6 +202,9 @@ public class Quadcopter extends RotaryWingVehicle {
             onLeaveVehicle(serverPlayer);
             Vec3 pos = fakeOperator.position();
             fakeOperatorPos = null;
+            serverPlayer.setYRot(fakeOperator.getYRot());
+            serverPlayer.setYBodyRot(fakeOperator.yBodyRot);
+            serverPlayer.setXRot(fakeOperator.getXRot());
             return pos;
         }
         return super.getDismountLocationForPassenger(pPassenger);

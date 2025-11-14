@@ -3,7 +3,6 @@ package org.ywzj.vehicle.entity.vehicle;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -110,20 +109,6 @@ public class DumpTruck extends WheeledVehicle {
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePos = this.position().add(this.getLookAngle().normalize().scale(2f)).add(v2.scale(-1.6)).add(0, 3, 0);
             level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePos.x, engineSmokePos.y, engineSmokePos.z, 0, 0, 0);
-        }
-    }
-
-    @Override
-    public void support(Entity pEntity) {
-        super.support(pEntity);
-        // 自动进车斗
-        if (pEntity instanceof LivingEntity) {
-            PartUnit partUnit = seats.get(0).partUnit;
-            Vec3 leftDoorPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 0, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
-            if (pEntity.distanceToSqr(leftDoorPos) < 1) {
-                Vec3 bedPos = relativeRotPos(position().add(0, 5, 0), false);
-                pEntity.teleportTo(bedPos.x, bedPos.y, bedPos.z);
-            }
         }
     }
 

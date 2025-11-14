@@ -13,13 +13,21 @@
     "client.LivingEntityRendererMixin",
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
-    "client.PostChainMixin"
+    "client.PostChainMixin",
+    "client.ProjectileUtilMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "mixins": [
-    "common.ChunkMapMixin", "common.EntityMixin", "common.LivingEntityMixin", "common.PathPackResourcesMixin",
-    "common.PlayerMixin", "common.ServerEntityMixin", "tacz.EntityKineticBulletMixin", "tacz.EntityUtilMixin"
+    "common.ChunkMapMixin",
+    "common.EntityMixin",
+    "common.ExplosionAccessor",
+    "common.LivingEntityMixin",
+    "common.PathPackResourcesMixin",
+    "common.PlayerMixin",
+    "common.ServerEntityMixin",
+    "tacz.EntityKineticBulletMixin",
+    "tacz.EntityUtilMixin"
   ]
 }

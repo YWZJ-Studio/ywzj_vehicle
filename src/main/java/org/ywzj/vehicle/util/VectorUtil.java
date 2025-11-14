@@ -95,23 +95,39 @@ public class VectorUtil {
                         && !shooter.getPassengers().contains(entity));
     }
 
-    public static Pair<OBBEntity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {
+    public static Pair<Entity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {
         Level level = shooter.level();
         ClipContext blockContext = new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, shooter);
         BlockHitResult blockHitResult = level.clip(blockContext);
         EntityHitResult entityHitResult = VectorUtil.hitEntity(shooter, start, end);
-        if (entityHitResult == null || blockHitResult.getLocation().distanceTo(start) < entityHitResult.getLocation().distanceTo(start)) {
-            return null;
-        }
-        if (entityHitResult.getEntity() instanceof OBBEntity entity) {
-            for (var obb : entity.getOBBs()) {
-                var obbVec = obb.clip(start.toVector3f(), end.toVector3f()).orElse(null);
-                if (obbVec != null) {
-                    return Pair.of(entity, new Vec3(obbVec));
+        if (entityHitResult != null) {
+            Vec3 obbPos = closestHitObbPosition(entityHitResult.getEntity(), start, end);
+            if (obbPos != null) {
+                if (blockHitResult.getLocation().distanceTo(start) > obbPos.distanceTo(start)) {
+                    return Pair.of(entityHitResult.getEntity(), obbPos);
                 }
             }
         }
         return null;
+    }
+
+    public static Vec3 closestHitObbPosition(Entity entity, Vec3 startVec, Vec3 endVec) {
+        Vec3 closestHitPos = null;
+        double minDistance = Double.MAX_VALUE;
+        if (entity instanceof OBBEntity obbEntity) {
+            for (var obb : obbEntity.getOBBs()) {
+                var obbVec = obb.clip(startVec.toVector3f(), endVec.toVector3f()).orElse(null);
+                if (obbVec != null) {
+                    Vec3 hitPos = new Vec3(obbVec);
+                    double distance = hitPos.distanceToSqr(startVec);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestHitPos = hitPos;
+                    }
+                }
+            }
+        }
+        return closestHitPos;
     }
 
     public static Vec3 relativeRotPos(Entity entity, Vec3 worldPos, boolean reverse) {

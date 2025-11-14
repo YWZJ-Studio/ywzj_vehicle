@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,7 +18,6 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
-import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -127,7 +127,13 @@ public class VehicleOverlay implements IGuiOverlay {
     }
 
     private void renderBaseInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        renderHealth(guiGraphics, 60, screenHeight - 20, 100, 10, vehicle, 1);
+        renderHealth(guiGraphics, 70, screenHeight - 20, 120, 10, vehicle, 1);
+        guiGraphics.drawString(Minecraft.getInstance().font,
+                String.format("FUEL: %.1f%%", vehicle.getFuel() / vehicle.fuelCapacity * 100),
+                10, screenHeight - 12, 0xFFFFFFFF);
+        guiGraphics.drawString(Minecraft.getInstance().font,
+                String.format("POWER: %.1f%%", vehicle.getPower()),
+                70, screenHeight - 12, 0xFFFFFFFF);
     }
 
     private void renderLookAt(GuiGraphics guiGraphics, float partialTick) {
@@ -141,17 +147,18 @@ public class VehicleOverlay implements IGuiOverlay {
             rot = localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.SCOPE ? LocalVehiclePlayer.CAMERA_UPWARD_ANGLE : 0;
         }
         Player player = localVehiclePlayer.getPlayer();
-        float xRot = player.getXRot() - rot;
-        float yRot = player.getYRot();
-        Vec3 start = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        float xRot = camera.getXRot() - rot;
+        float yRot = camera.getYRot();
+        Vec3 start = camera.getPosition();
         Vec3 end = start.add(VectorUtil
                 .calculateViewVector(xRot, yRot)
                 .normalize()
                 .scale(LocalVehiclePlayer.renderDistance()));
-        Pair<OBBEntity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);
+        Pair<Entity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);
         if (hitResult != null) {
-            OBBEntity obbEntity = hitResult.getLeft();
-            if (obbEntity instanceof AbstractVehicle vehicle) {
+            Entity entity = hitResult.getLeft();
+            if (entity instanceof AbstractVehicle vehicle) {
                 double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
                 if (distance > showVehicleInfoDistance) {
                     return;
@@ -230,7 +237,8 @@ public class VehicleOverlay implements IGuiOverlay {
             poseStack.pushPose();
             {
                 String text = String.format("%.0f/%.0f", health, maxHealth);
-                RenderHelper.drawCenteredString(guiGraphics, font, text, 0, -4, 0xFFFFFFFF);
+                poseStack.translate(0, -3.5, 0);
+                RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, 0xFFFFFFFF);
                 if (healthDiff > 0) {
                     RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 6, 0xFFFF0000);
                 }
