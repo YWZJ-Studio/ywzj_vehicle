@@ -22,7 +22,6 @@ public class PhysicsEngine {
 
     public static final double MAGIC_NUMBER = .943;
     public final AbstractVehicle vehicle;
-    public final VehicleBedrockCubeOBB physicsCube;
     public float mass = 1;
     public float bounce = 0.02f;
     public float rotA = 0.01f;
@@ -43,9 +42,12 @@ public class PhysicsEngine {
     public boolean lockZRot;
     public boolean lockCenterRot;
 
-    public PhysicsEngine(AbstractVehicle vehicle, VehicleBedrockCubeOBB physicsCube) {
+    public PhysicsEngine(AbstractVehicle vehicle) {
         this.vehicle = vehicle;
-        this.physicsCube = physicsCube;
+    }
+
+    public VehicleBedrockCubeOBB physicsCube() {
+        return vehicle.getMainCubeOBB();
     }
 
     /**
@@ -57,6 +59,8 @@ public class PhysicsEngine {
      * 车体底面若有陷地则会施加较大的向上速度
      */
     public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
+        var physicsCube = vehicle.getMainCubeOBB();
+
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
                 if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
@@ -141,6 +145,7 @@ public class PhysicsEngine {
      * 受重力影响下的自由落体与三轴滚动
      */
     public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vector3f force, Vector3f velocity) {
+        var physicsCube = vehicle.getMainCubeOBB();
         try {
             // 升力影响
             if (force.y >= gravityA * mass) {
@@ -393,6 +398,7 @@ public class PhysicsEngine {
         if (localRotAxisStart == null || localRotAxisEnd == null || rotV == 0) {
             return;
         }
+        var physicsCube = vehicle.getMainCubeOBB();
         Vector3f pc = vehicle.relativeRotPos(physicsCube.center(this.vehicle), false).toVector3f();
         Vector3f p1 = rotateAroundAxis(physicsCube.obb().worldToLocal(pc, axes), localRotAxisStart, localRotAxisEnd, rotV);
         Vector3f p2 = physicsCube.obb().localToWorld(p1, axes);

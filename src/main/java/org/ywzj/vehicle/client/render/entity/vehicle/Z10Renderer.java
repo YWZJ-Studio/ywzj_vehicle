@@ -28,6 +28,11 @@ public class Z10Renderer extends EntityRenderer<Z10> {
 
     @Override
     public void render(Z10 pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.Z10.getId()).orElse(null);
+        if (display == null || display.getModel() == null) {
+            return;
+        }
+
         pPoseStack.pushPose();
 
         Vec3 root = new Vec3(0, 0, 0);
@@ -35,11 +40,6 @@ public class Z10Renderer extends EntityRenderer<Z10> {
         pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-
-        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.Z10.getId()).orElse(null);
-        if (display == null || display.getModel() == null) {
-            return;
-        }
 
         BedrockModel model = display.getModel();
         VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));

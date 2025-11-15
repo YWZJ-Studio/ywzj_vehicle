@@ -8,6 +8,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -37,9 +41,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -50,6 +55,7 @@ import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
+import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
@@ -73,7 +79,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, BoundingBoxChangeable {
+public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, ICustomVehicle,
+        IEntityAdditionalSpawnData, BoundingBoxChangeable {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -104,8 +111,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public PhysicsEngine physicsEngine;
     public long lastRenderTime;
 
+    private ResourceLocation customId;
+
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.customId = EntityType.getKey(pEntityType);
         this.seats = new ArrayList<>();
         this.controlUnit = new ControlUnit();
         this.partUnits = new ArrayList<>();
@@ -117,20 +127,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.soundDistance = 3;
         this.vehicleOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
-        this.initData();
-        if (mainCubeOBB == null) {
-            mainCubeOBB = VehicleBedrockCubeOBB.defaultCube();
-        }
-        this.physicsEngine = new PhysicsEngine(this, mainCubeOBB);
+        // 占位符
+        this.mainCubeOBB = VehicleBedrockCubeOBB.defaultCube();
+        this.physicsEngine = new PhysicsEngine(this);
     }
 
     public void initData(ResourceLocation customId) {
         initPartUnits();
         initOBBs();
-    }
-
-    public final void initData() {
-        this.initData(null);
     }
 
     @Override
@@ -145,18 +149,58 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.entityData.define(DESTROYED, false);
     }
 
+    @NotNull
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return NetworkHooks.getEntitySpawningPacket(this);
+    }
+
+    @Override
+    public void writeSpawnData(FriendlyByteBuf buffer) {
+        buffer.writeResourceLocation(this.getCustomId());
+    }
+
+    @Override
+    public void readSpawnData(FriendlyByteBuf additionalData) {
+        ResourceLocation customId = additionalData.readResourceLocation();
+        this.customId = customId;
+        this.initData(customId);
+    }
+
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Destroyed", isDestroyed());
+        compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getCustomId().toString());
     }
 
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        if (compound.contains("Destroyed", 99)) {
+        if (compound.contains("Destroyed", Tag.TAG_ANY_NUMERIC)) {
             entityData.set(DESTROYED, compound.getBoolean("Destroyed"));
         }
+        if (compound.contains(ICustomVehicle.TAG_VEHICLE_ID, Tag.TAG_STRING)) {
+            ResourceLocation id = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
+            if (id != null) {
+                this.customId = id;
+            }
+        }
+        this.initData(this.getCustomId());
+    }
+
+    /**
+     * 获取载具自定义配置ID，默认会是载具注册ID
+     */
+    @NotNull
+    @Override
+    public ResourceLocation getCustomId() {
+        return this.customId;
+    }
+
+    @Override
+    public void setCustomId(@NotNull ResourceLocation customId) {
+        this.customId = customId;
     }
 
     @Override
@@ -416,10 +460,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Deprecated
     @Nullable
     public ResourceLocation getStructureModel() {
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(this.getType());
-        if (id == null) {
-            return null;
-        }
+        ResourceLocation id = this.getCustomId();
         return new ResourceLocation(id.getNamespace(), "entity/" + id.getPath());
     }
 
