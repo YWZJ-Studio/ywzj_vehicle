@@ -24,8 +24,8 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D extends Ba
         VehicleWeaponType.WeaponUnitFactory<T, D> factory
 ) {
     @Nullable
-    public T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data) {
-        return factory.create(vehicle, unit, index, data);
+    public T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data, String serializeId) {
+        return factory.create(vehicle, unit, index, data, serializeId);
     }
 
     @Nullable
@@ -49,7 +49,7 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D extends Ba
 
     @FunctionalInterface
     public interface WeaponUnitFactory<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> {
-        T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data);
+        T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data, String serializeId);
     }
 
     public static class Builder<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> {

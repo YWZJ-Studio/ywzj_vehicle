@@ -13,8 +13,8 @@ import java.util.List;
 
 public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponData> {
 
-    public VehicleGrenade(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleGrenadeWeaponData data) {
-        super(vehicle, unit, index, data);
+    public VehicleGrenade(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleGrenadeWeaponData data, String serializeId) {
+        super(vehicle, unit, index, data, serializeId);
     }
 
     @Override

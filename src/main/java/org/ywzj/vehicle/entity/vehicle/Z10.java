@@ -91,10 +91,10 @@ public class Z10 extends RotaryWingVehicle {
         autoCannon.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(autoCannon);
         VehicleCannonWeaponData weaponDataAutoCannon = new VehicleCannonWeaponData();
-        weaponDataAutoCannon.setName("auto_cannon");
+        weaponDataAutoCannon.setDisplayName("auto_cannon");
         weaponDataAutoCannon.setMaxCapacity(120);
         weaponDataAutoCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get())));
-        VehicleCannon vehicleCannon = new VehicleCannon(this, autoCannon, 0, weaponDataAutoCannon);
+        VehicleCannon vehicleCannon = new VehicleCannon(this, autoCannon, 0, weaponDataAutoCannon, "auto_cannon");
         vehicleCannon.defineSyncData(autoCannon.getSyncData());
         sightingSystem.weapons.add(vehicleCannon);
         this.partUnits.add(autoCannon);
@@ -119,10 +119,10 @@ public class Z10 extends RotaryWingVehicle {
         missile.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(missile);
         VehicleMissileWeaponData weaponDataMissile = new VehicleMissileWeaponData();
-        weaponDataMissile.setName("missile");
+        weaponDataMissile.setDisplayName("missile");
         weaponDataMissile.setMaxCapacity(8);
         weaponDataMissile.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
-        VehicleMissile vehicleMissile = new VehicleMissile(this, missile, 1, weaponDataMissile);
+        VehicleMissile vehicleMissile = new VehicleMissile(this, missile, 1, weaponDataMissile, "missile");
         vehicleMissile.defineSyncData(missile.getSyncData());
         sightingSystem.weapons.add(vehicleMissile);
         this.partUnits.add(missile);
@@ -146,10 +146,10 @@ public class Z10 extends RotaryWingVehicle {
         rocket.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(rocket);
         BaseVehicleWeaponData weaponDataRocket = new BaseVehicleWeaponData();
-        weaponDataRocket.setName("rocket");
+        weaponDataRocket.setDisplayName("rocket");
         weaponDataRocket.setMaxCapacity(32);
         weaponDataRocket.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
-        VehicleRocket vehicleRocket = new VehicleRocket(this, rocket, 2, weaponDataRocket);
+        VehicleRocket vehicleRocket = new VehicleRocket(this, rocket, 2, weaponDataRocket, "rocket");
         vehicleRocket.defineSyncData(rocket.getSyncData());
         sightingSystem.weapons.add(vehicleRocket);
         this.partUnits.add(rocket);

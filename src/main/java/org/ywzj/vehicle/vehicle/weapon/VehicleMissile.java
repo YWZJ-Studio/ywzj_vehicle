@@ -17,8 +17,8 @@ import java.util.List;
 
 public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponData> {
 
-    public VehicleMissile(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleMissileWeaponData data) {
-        super(vehicle, unit, index, data);
+    public VehicleMissile(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleMissileWeaponData data, String serializeId) {
+        super(vehicle, unit, index, data, serializeId);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
             missileEntity.damage = getData().getDamage();
-            missileEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+            missileEntity.shoot(this.getVehicle(), this.getDisplayName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(missileEntity);
         }

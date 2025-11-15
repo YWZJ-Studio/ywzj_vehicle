@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -10,6 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.INBTSerializable;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -27,13 +29,14 @@ import java.util.List;
 /** 可配置的抽象武器模块<br/>
  * @param <T> 配置数据结构
  */
-public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
+public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> implements INBTSerializable<CompoundTag> {
 
     private final AbstractVehicle vehicle;
     private final WeaponUnit weaponUnit;
     private final int index;
     private final T data;
-    private Component name;
+    private final String serializeId;
+    private Component displayName;
     protected long lastShootTime = 0;
     protected int remainAmmo = 0;
     protected int reloadTime = 0;
@@ -46,12 +49,13 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
      *  此方法仅供子类实现使用<br/>
      *  参见{@link YwzjVehicleAPI#getVehicleWeaponManager()}
      */
-    protected AbstractVehicleWeapon(AbstractVehicle vehicle, WeaponUnit weaponUnit, int index, T data) {
+    protected AbstractVehicleWeapon(AbstractVehicle vehicle, WeaponUnit weaponUnit, int index, T data, String serializeId) {
         this.vehicle = vehicle;
         this.weaponUnit = weaponUnit;
         this.index = index;
         this.data = data;
-        this.name = Component.translatable(data.getName());
+        this.displayName = Component.translatable(data.getDisplayName());
+        this.serializeId = serializeId;
     }
 
     public void defineSyncData(PartUnitSyncData syncData) {
@@ -260,16 +264,31 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> {
         return weaponUnit;
     }
 
-    public void setName(Component name) {
-        this.name = name;
+    public void setDisplayName(Component displayName) {
+        this.displayName = displayName;
     }
 
-    public Component getName() {
-        return name;
+    public Component getDisplayName() {
+        return displayName;
     }
 
     public boolean hasSyncData() {
         return true;
     }
 
+    @Override
+    public CompoundTag serializeNBT() {
+        var tag = new CompoundTag();
+        tag.putInt("RemainAmmo", remainAmmo);
+        return tag;
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        this.remainAmmo = nbt.getInt("RemainAmmo");
+    }
+
+    public String getSerializeId() {
+        return serializeId;
+    }
 }

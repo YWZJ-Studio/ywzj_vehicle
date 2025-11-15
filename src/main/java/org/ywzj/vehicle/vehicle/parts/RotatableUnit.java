@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.parts;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -47,8 +48,8 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     }
 
     @Deprecated
-    public RotatableUnit(String name, int index, AbstractVehicle vehicle) {
-        super(name, index, vehicle);
+    public RotatableUnit(String id, int index, AbstractVehicle vehicle) {
+        super(id, index, vehicle);
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteRot, this::getXRot, 0f);
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteRot, this::getYRot, 0f);
     }
@@ -139,6 +140,23 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
                 turnYSoundInstance = null;
             }
         }
+    }
+
+    @Override
+    public CompoundTag serializeNBT() {
+        CompoundTag tag = super.serializeNBT();
+        tag.putFloat("xRot", this.xRot);
+        tag.putFloat("yRot", this.yRot);
+        return tag;
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        super.deserializeNBT(nbt);
+        this.xRot = nbt.getFloat("xRot");
+        this.xRotO = nbt.getFloat("xRotO");
+        this.yRot = nbt.getFloat("yRot");
+        this.yRotO = nbt.getFloat("yRotO");
     }
 
     public float getXRotSpeed() {

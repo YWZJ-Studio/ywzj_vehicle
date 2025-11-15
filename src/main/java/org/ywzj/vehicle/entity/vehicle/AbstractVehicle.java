@@ -172,6 +172,16 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Destroyed", isDestroyed());
         compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getCustomId().toString());
+
+        CompoundTag tag = new CompoundTag();
+        this.getPartUnits().forEach((partUnit -> {
+            CompoundTag partTag = partUnit.serializeNBT();
+            if (partTag.isEmpty()) {
+                return;
+            }
+            tag.put(partUnit.getId(), partTag);
+        }));
+        compound.put("PartUnits", tag);
     }
 
     @Override
@@ -187,6 +197,16 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
         }
         this.initData(this.getCustomId());
+        // 初始化完成后再读部件持久化数据
+        if (compound.contains("PartUnits", Tag.TAG_COMPOUND)) {
+            CompoundTag tag = compound.getCompound("PartUnits");
+            this.getPartUnits().forEach(partUnit -> {
+                if (tag.contains(partUnit.getId(), Tag.TAG_COMPOUND)) {
+                    CompoundTag partTag = tag.getCompound(partUnit.getId());
+                    partUnit.deserializeNBT(partTag);
+                }
+            });
+        }
     }
 
     /**

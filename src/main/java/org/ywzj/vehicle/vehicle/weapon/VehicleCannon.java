@@ -11,8 +11,8 @@ import java.util.List;
 
 public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData> {
 
-    public VehicleCannon(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleCannonWeaponData data) {
-        super(vehicle, unit, index, data);
+    public VehicleCannon(AbstractVehicle vehicle, WeaponUnit unit, int index, VehicleCannonWeaponData data, String serializeId) {
+        super(vehicle, unit, index, data, serializeId);
     }
 
     @Override

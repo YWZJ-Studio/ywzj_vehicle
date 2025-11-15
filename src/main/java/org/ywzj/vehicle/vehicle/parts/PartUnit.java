@@ -41,7 +41,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     private final PartUnitSyncData syncData;
 
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
-    protected final Component name;
+    protected final Component displayName;
+    protected final String id;
     protected final int index;
     protected final AbstractVehicle vehicle;
     protected T data;
@@ -50,29 +51,38 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected Vec3 ownerViewOffset;
     protected Vec3 seatOffset;
     protected Vec3 pivotOffset = Vec3.ZERO;
+
+    @Deprecated
     protected BedrockBone unitBone;
 
     public PassengerPose passengerPose;
 
+    /**
+     * 你应该尽可能从数据包创建部件，而不是使用此构造函数手动创建部件<br/>
+     * 仅供测试使用
+     */
     @Deprecated
-    public PartUnit(String name, int index, AbstractVehicle vehicle) {
-        this.name = Component.translatable(name);
+    public PartUnit(String id, int index, AbstractVehicle vehicle) {
+        this.displayName = Component.translatable(id);
+        this.id = id;
         this.index = index;
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
         this.vehicle = vehicle;
         this.unitBedrockCubeOBBs = new ArrayList<>();
-        this.initStructureModel(name);
+        this.initStructureModel(id);
         this.initOBBs();
     }
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
         this.vehicle = vehicle;
-        this.name = Component.translatable(data.getName());
+        this.displayName = Component.translatable(data.getName());
+        this.id = data.getId();
         this.data = data;
         this.unitBedrockCubeOBBs = data.getUnitBedrockCubeOBBs();
         this.syncData = new PartUnitSyncData(this);
+        this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
     }
 
     /**
@@ -97,6 +107,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return syncData;
     }
 
+    @Deprecated
     protected void initStructureModel(String name) {
         CommonAssetsManager.structureModelManager().getStructureModel(vehicle.getStructureModel()).ifPresent(
                 model -> {
@@ -108,6 +119,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         );
     }
 
+    @Deprecated
     protected void initOBBs() {
         if (unitBone != null) {
             List<BedrockCubePerFace> cubes = new ArrayList<>(unitBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
@@ -168,8 +180,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)), false);
     }
 
-    public Component getName() {
-        return name;
+    public Component getDisplayName() {
+        return displayName;
     }
 
     public int getIndex() {
@@ -234,10 +246,15 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     @Override
     public CompoundTag serializeNBT() {
-        return null;
+        return new CompoundTag();
     }
 
     @Override
     public void deserializeNBT(CompoundTag nbt) {
+    }
+
+    @NotNull
+    public String getId() {
+        return id;
     }
 }

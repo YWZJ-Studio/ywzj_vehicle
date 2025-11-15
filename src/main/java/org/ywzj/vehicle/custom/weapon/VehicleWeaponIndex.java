@@ -19,7 +19,7 @@ public record VehicleWeaponIndex<T extends AbstractVehicleWeapon<D>, D extends B
         VehicleWeaponType<T, D> type,
         D data
 ) {
-    public T create(AbstractVehicle vehicle, WeaponUnit unit, int index) {
-        return type.create(vehicle, unit, index, data);
+    public T create(AbstractVehicle vehicle, WeaponUnit unit, int index, String serializeId) {
+        return type.create(vehicle, unit, index, data, serializeId);
     }
 }

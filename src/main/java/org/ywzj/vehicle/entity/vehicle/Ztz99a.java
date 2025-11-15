@@ -82,12 +82,12 @@ public class Ztz99a extends TrackedVehicle {
         );
         // 炮塔-主炮
         VehicleCannonWeaponData weaponDataCannon = new VehicleCannonWeaponData();
-        weaponDataCannon.setName("cannon");
+        weaponDataCannon.setDisplayName("cannon");
         weaponDataCannon.setMaxCapacity(1);
         weaponDataCannon.setDamage(33);
         weaponDataCannon.setExplosion(true);
         weaponDataCannon.setReload(new BaseVehicleWeaponData.Reload(100, Ingredient.of(AllItems.AMMO_ARTILLERY.get())));
-        VehicleCannon vehicleCannon = new VehicleCannon(this, turret, 0, weaponDataCannon);
+        VehicleCannon vehicleCannon = new VehicleCannon(this, turret, 0, weaponDataCannon, "cannon");
         vehicleCannon.defineSyncData(turret.getSyncData());
         turret.weapons.add(vehicleCannon);
         this.partUnits.add(turret);
@@ -113,10 +113,10 @@ public class Ztz99a extends TrackedVehicle {
         smokeGrenade.setParentWeaponUnit(turret);
         turret.addSubWeaponUnit(smokeGrenade);
         VehicleGrenadeWeaponData vehicleGrenadeWeaponData = new VehicleGrenadeWeaponData();
-        vehicleGrenadeWeaponData.setName("smoke_grenade");
+        vehicleGrenadeWeaponData.setDisplayName("smoke_grenade");
         vehicleGrenadeWeaponData.setMaxCapacity(8);
         vehicleGrenadeWeaponData.setReload(new BaseVehicleWeaponData.Reload(100, Ingredient.of(AllItems.AMMO_GRENADE.get())));
-        VehicleGrenade vehicleGrenade = new VehicleGrenade(this, smokeGrenade, 1, vehicleGrenadeWeaponData);
+        VehicleGrenade vehicleGrenade = new VehicleGrenade(this, smokeGrenade, 1, vehicleGrenadeWeaponData, "smoke_grenade");
         vehicleGrenade.defineSyncData(smokeGrenade.getSyncData());
         turret.weapons.add(vehicleGrenade);
         this.partUnits.add(smokeGrenade);
@@ -140,11 +140,11 @@ public class Ztz99a extends TrackedVehicle {
         commanderMachineGun.setXRotMin(-18f);
         // 车长位-机枪
         VehicleCannonWeaponData weaponDataMachineGun = new VehicleCannonWeaponData();
-        weaponDataMachineGun.setName("machine_gun");
+        weaponDataMachineGun.setDisplayName("machine_gun");
         weaponDataMachineGun.setMaxCapacity(120);
         weaponDataMachineGun.setDamage(2);
         weaponDataMachineGun.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MACHINE_GUN.get())));
-        VehicleCannon vehicleMachineGun = new VehicleCannon(this, commanderMachineGun, 0, weaponDataMachineGun);
+        VehicleCannon vehicleMachineGun = new VehicleCannon(this, commanderMachineGun, 0, weaponDataMachineGun, "machine_gun");
         vehicleMachineGun.defineSyncData(commanderMachineGun.getSyncData());
         commanderMachineGun.weapons.add(vehicleMachineGun);
         this.partUnits.add(commanderMachineGun);

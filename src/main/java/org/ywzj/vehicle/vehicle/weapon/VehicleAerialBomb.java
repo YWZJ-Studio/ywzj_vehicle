@@ -14,8 +14,8 @@ import java.util.List;
 
 public class VehicleAerialBomb extends AbstractVehicleWeapon<BaseVehicleWeaponData> {
 
-    public VehicleAerialBomb(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data) {
-        super(vehicle, unit, index, data);
+    public VehicleAerialBomb(AbstractVehicle vehicle, WeaponUnit unit, int index, BaseVehicleWeaponData data, String serializeId) {
+        super(vehicle, unit, index, data, serializeId);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<BaseVehicleWeaponDa
 
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
             AerialBombEntity aerialBombEntity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level());
-            aerialBombEntity.shoot(this.getVehicle(), this.getName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+            aerialBombEntity.shoot(this.getVehicle(), this.getDisplayName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().playSound(null, vehicle, AllSounds.BOMB_DROP.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(aerialBombEntity);
         }

@@ -15,8 +15,12 @@ public class WeaponInfo {
     @SerializedName("part_unit")
     public String partUnit;
 
-    public WeaponInfo(ResourceLocation id, @Nullable String partUnit) {
+    @SerializedName("save_id")
+    public String saveId;
+
+    public WeaponInfo(ResourceLocation id, String saveId, @Nullable String partUnit) {
         this.id = id;
         this.partUnit = partUnit;
+        this.saveId = saveId;
     }
 }

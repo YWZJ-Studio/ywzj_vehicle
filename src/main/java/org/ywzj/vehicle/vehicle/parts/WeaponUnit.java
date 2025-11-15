@@ -2,6 +2,8 @@ package org.ywzj.vehicle.vehicle.parts;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
@@ -116,17 +118,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
 
-    public void switchWeapon(boolean next) {
-        int size = weapons.size();
-        this.getCurrentWeapon().ifPresent(
-                AbstractVehicleWeapon::onSwitchFrom
-        );
-        this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
-        this.getCurrentWeapon().ifPresent(
-                AbstractVehicleWeapon::onSwitchTo
-        );
-    }
-
     public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
         super(index, vehicle, data);
         this.pivotOffset = data.getPivotOffset();
@@ -162,10 +153,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Deprecated
-    public WeaponUnit(String name, int index, AbstractVehicle vehicle,
+    public WeaponUnit(String id, int index, AbstractVehicle vehicle,
                       Vec3 pivotOffset, float barrelLength,
                       Vec3 opticalSightOffset, Vec3 operatorViewOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
-        super(name, index, vehicle);
+        super(id, index, vehicle);
 
         this.zoomMax = 8;
         this.zoom = 1;
@@ -182,6 +173,24 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.baseWeaponUnit = baseWeaponUnit;
 
         currentWeaponIndex = 0;
+    }
+
+    public void switchWeapon(boolean next) {
+        int size = weapons.size();
+        this.getCurrentWeapon().ifPresent(
+                AbstractVehicleWeapon::onSwitchFrom
+        );
+        this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
+        this.getCurrentWeapon().ifPresent(
+                AbstractVehicleWeapon::onSwitchTo
+        );
+    }
+
+    public void initWeapon(int index) {
+        if (index < 0 || index >= weapons.size() || index == currentWeaponIndex) {
+            return;
+        }
+        this.currentWeaponIndex = index;
     }
 
     @Override
@@ -203,7 +212,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                         parent = weaponUnit;
                     }
                 }
-                var weapon = index.create(vehicle, parent, i);
+                var weapon = index.create(vehicle, parent, i, weaponInfo.saveId);
                 this.weapons.add(weapon);
                 weapon.defineSyncData(this.getSyncData());
                 i++;
@@ -221,8 +230,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         updateOBBs(yTurnUnitOBBs, false);
         updateOBBs(xTurnUnitOBBs, true);
     }
-
-
 
     @OnlyIn(Dist.CLIENT)
     public void tickStabilizer() {
@@ -643,9 +650,38 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.xTurnUnitOBBs = PartUnitData.collectOBBs(xTurnBone);
     }
 
+    @Deprecated
+    @Override
     protected void initOBBs() {
         this.unitBedrockCubeOBBs.addAll(xTurnUnitOBBs);
         this.unitBedrockCubeOBBs.addAll(yTurnUnitOBBs);
     }
 
+    @Override
+    public CompoundTag serializeNBT() {
+        CompoundTag tag = super.serializeNBT();
+        tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
+        CompoundTag weaponTag = new CompoundTag();
+        this.weapons.forEach(weapon -> {
+            CompoundTag tag1 = weapon.serializeNBT();
+            if (tag1.isEmpty()) {
+                return;
+            }
+            weaponTag.put(weapon.getSerializeId(), tag1);
+        });
+        tag.put("WeaponTag", weaponTag);
+        return tag;
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        super.deserializeNBT(nbt);
+        this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
+        CompoundTag weaponTag = nbt.getCompound("WeaponTag");
+        this.weapons.forEach(weapon -> {
+            if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
+                weapon.deserializeNBT(weaponTag.getCompound(weapon.getSerializeId()));
+            }
+        });
+    }
 }

@@ -35,7 +35,7 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
                 poseStack.pushPose();
                 {
                     guiGraphics.drawString(font, "Ammo: " + remainAmmo + " / " + maxAmmo, 10, screenHeight / 2 - 20, 0xFFFFFF);
-                    guiGraphics.drawString(font, vehicleWeapon.getName(), 10, screenHeight / 2 - 35, 0xFFFFFF);
+                    guiGraphics.drawString(font, vehicleWeapon.getDisplayName(), 10, screenHeight / 2 - 35, 0xFFFFFF);
                     if (reloadTime > 0) {
                         guiGraphics.drawString(font,  String.format("Reloading: %.2fs", (float) reloadTime / 20), 10, screenHeight / 2 - 50, 0xFF0000);
                     }
