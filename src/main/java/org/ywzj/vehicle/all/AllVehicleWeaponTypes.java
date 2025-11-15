@@ -8,9 +8,11 @@ import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponType;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 
 public class AllVehicleWeaponTypes {
@@ -22,6 +24,10 @@ public class AllVehicleWeaponTypes {
 
     public static final RegistryObject<VehicleWeaponType<VehicleMissile, VehicleMissileWeaponData>> MISSILE = register(
             "missile", json -> GsonUtil.GSON.fromJson(json, VehicleMissileWeaponData.class), VehicleMissile::new
+    );
+
+    public static final RegistryObject<VehicleWeaponType<VehicleGrenade, VehicleGrenadeWeaponData>> GRENADE = register(
+            "grenade", json -> GsonUtil.GSON.fromJson(json, VehicleGrenadeWeaponData.class), VehicleGrenade::new
     );
 
     private static <T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> RegistryObject<VehicleWeaponType<T, D>> register(

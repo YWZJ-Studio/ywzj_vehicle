@@ -20,7 +20,7 @@ public class Hiace extends WheeledVehicle {
         forwardForce = 0.03f;
         backwardForce = 0.02f;
         brakeForce = 0.05f;
-        maxSpeedForward = 1f;
+        maxSpeedForward = 1.2f;
         maxSpeedBackward= 0.2f;
         turnStep = 1f;
         maxTurn = 3f;
@@ -92,7 +92,7 @@ public class Hiace extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
 //        if (weaponIndex < operatorUnits.size()) {
 //            if (seats.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
 //                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);

@@ -100,6 +100,22 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.cannon_shell_drop"
   },
+  "smoke_grenade_launcher": {
+    "sounds": [
+      "ywzj_vehicle:misc/smoke_grenade_launcher_01",
+      "ywzj_vehicle:misc/smoke_grenade_launcher_02",
+      "ywzj_vehicle:misc/smoke_grenade_launcher_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.smoke_grenade_launcher"
+  },
+  "smoke_grenade_explosion": {
+    "sounds": [
+      "ywzj_vehicle:misc/smoke_grenade_explosion_01",
+      "ywzj_vehicle:misc/smoke_grenade_explosion_02",
+      "ywzj_vehicle:misc/smoke_grenade_explosion_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.smoke_grenade_explosion"
+  },
   "turret_turn_servo_h": {
     "sounds": ["ywzj_vehicle:misc/turret_turn_servo_h"],
     "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_h"

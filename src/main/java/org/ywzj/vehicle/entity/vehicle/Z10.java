@@ -190,8 +190,8 @@ public class Z10 extends RotaryWingVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
-        if (partUnits.get(weaponIndex) instanceof WeaponUnit weaponUnit) {
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+        if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
         }
     }

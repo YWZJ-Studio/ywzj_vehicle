@@ -18,6 +18,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
+import org.ywzj.vehicle.api.entity.SightBlockade;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -87,7 +88,7 @@ public class VectorUtil {
         Vec3 direction = end.subtract(start);
         AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
         return ProjectileUtil.getEntityHitResult(shooter.level(), shooter, start, end, aabb, entity ->
-                entity.isPickable()
+                (entity.isPickable() || entity instanceof SightBlockade)
                         && !entity.isSpectator()
                         && entity != shooter
                         && entity != shooter.getVehicle()

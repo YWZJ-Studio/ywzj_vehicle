@@ -62,8 +62,8 @@ public class Lav150 extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
-        if (weaponIndex == 0) {
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+        if (partUnitIndex == 0) {
             if (seats.get(0).partUnit instanceof WeaponUnit machineGunTurret) {
                 machineGunTurret.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
                 this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);

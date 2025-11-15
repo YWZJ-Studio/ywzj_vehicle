@@ -17,6 +17,7 @@ import java.util.Set;
 public class OverlayHandler {
 
     private static final Set<ResourceLocation> HOTBAR_ELEMENTS = Set.of(
+            VanillaGuiOverlay.CROSSHAIR.id(),
             VanillaGuiOverlay.HOTBAR.id(),
             VanillaGuiOverlay.ARMOR_LEVEL.id(),
             VanillaGuiOverlay.AIR_LEVEL.id(),

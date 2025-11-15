@@ -113,7 +113,7 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
 //        if (weaponIndex < operatorUnits.size()) {
 //            if (seats.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
 //                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);

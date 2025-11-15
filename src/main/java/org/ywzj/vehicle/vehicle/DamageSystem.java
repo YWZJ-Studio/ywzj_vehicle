@@ -5,6 +5,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -19,8 +20,9 @@ public class DamageSystem {
         if (damageSource.getDirectEntity() instanceof Projectile) {
             hitPos = damageSource.getDirectEntity().position();
         }
+        //todo: 细化击穿伤害
         if (amount < 20) {
-            scale = 0.2;
+            scale = 0.1;
             amount = 1f;
         } else {
             if (hitPos == null) {
@@ -67,6 +69,7 @@ public class DamageSystem {
         } else {
             vehicle.playSound(vehicle.getHurtSound(damageSource), 1, 1);
         }
+        YwzjVehicle.LOGGER.debug("{} damaged by {} with amount: {}", vehicle, damageSource, amount);
         vehicle.setHealth(vehicle.getHealth() - amount);
     }
 

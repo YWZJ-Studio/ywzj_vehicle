@@ -28,6 +28,8 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> BOMB_WHISTLE = registerSoundEvent("bomb_whistle", new ResourceLocation(YwzjVehicle.MOD_ID, "bomb_whistle"));
     public static final RegistryObject<SoundEvent> BOMBS_INCOMING = registerSoundEvent("bombs_incoming", new ResourceLocation(YwzjVehicle.MOD_ID, "bombs_incoming"));
     public static final RegistryObject<SoundEvent> CANNON_SHELL_DROP = registerSoundEvent("cannon_shell_drop", new ResourceLocation(YwzjVehicle.MOD_ID, "cannon_shell_drop"));
+    public static final RegistryObject<SoundEvent> SMOKE_GRENADE_LAUNCHER = registerSoundEvent("smoke_grenade_launcher", new ResourceLocation(YwzjVehicle.MOD_ID, "smoke_grenade_launcher"));
+    public static final RegistryObject<SoundEvent> SMOKE_GRENADE_EXPLOSION = registerSoundEvent("smoke_grenade_explosion", new ResourceLocation(YwzjVehicle.MOD_ID, "smoke_grenade_explosion"));
     public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_V = registerSoundEvent("turret_turn_servo_v", new ResourceLocation(YwzjVehicle.MOD_ID, "turret_turn_servo_v"));
     public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_H = registerSoundEvent("turret_turn_servo_h", new ResourceLocation(YwzjVehicle.MOD_ID, "turret_turn_servo_h"));
     public static final RegistryObject<SoundEvent> TIRE_SQUEAL = registerSoundEvent("tire_squeal", new ResourceLocation(YwzjVehicle.MOD_ID, "tire_squeal"));

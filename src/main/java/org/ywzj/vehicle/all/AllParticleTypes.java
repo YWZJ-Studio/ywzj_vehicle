@@ -27,6 +27,9 @@ public class AllParticleTypes {
             () -> new SimpleParticleType(false)
     );
 
+    public static final RegistryObject<SimpleParticleType> SMOKE_CLOUD = PARTICLE_TYPES.register("smoke_cloud",
+            () -> new SimpleParticleType(true));
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }
@@ -39,6 +42,5 @@ public class AllParticleTypes {
             }
         };
     }
-
 
 }

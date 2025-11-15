@@ -213,7 +213,10 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         }
 
         // 速度与转向角度产生转向力，并产生车头偏转
-        float turnStep = (float) Math.toDegrees(Math.atan2(motion * turnAngle / maxTurn, mainCubeOBB.depth));
+        float turnStep = (float) Math.toDegrees(Math.atan2(motion
+                * (turnAngle / maxTurn)
+                * (1 - motion / maxSpeedForward * 0.5)
+                * (loseTraction ? 0.8 : 1), mainCubeOBB.depth));
         Vec3 turnForce = turnDirection.normalize().scale(turnStep / 100);
         this.setYRot(this.getYRot() + turnStep);
         // 受力产生加速度
@@ -233,17 +236,19 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 if (k4 < 0.003) {
                     loseTraction = true;
                     regainTractionTick = 10;
+                } else if (regainTractionTick > 0) {
+                    regainTractionTick -= 1;
+                    if (regainTractionTick == 0) {
+                        loseTraction = false;
+                    }
                 }
                 float f = (float) (Math.min(1, 10 * k4 * (loseTraction ? 0.5 : 1)) * turnLength);
                 if (f != 0) {
                     velocity = velocity.add(turnVector.normalize().scale(f));
                     velocity = velocity.normalize().scale(Math.max(0, motion - 0.001 * angle / 90));
                 }
-            } else if (regainTractionTick > 0) {
-                regainTractionTick -= 1;
-                if (regainTractionTick == 0) {
-                    loseTraction = false;
-                }
+            } else {
+                loseTraction = false;
             }
         }
 

@@ -61,9 +61,9 @@ public class Ztl11 extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
-        if (weaponIndex < this.partUnits.size()) {
-            this.getPartUnit(weaponIndex).ifPresent(partUnit -> {
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+        if (partUnitIndex < this.partUnits.size()) {
+            this.getPartUnit(partUnitIndex).ifPresent(partUnit -> {
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
                     this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);

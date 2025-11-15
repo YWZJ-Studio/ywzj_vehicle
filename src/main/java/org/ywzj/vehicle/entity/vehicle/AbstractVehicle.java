@@ -49,6 +49,7 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
@@ -72,7 +73,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity {
+public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, BoundingBoxChangeable {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -752,7 +753,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return new Vec3(d.x, d.y, d.z);
     }
 
-    public abstract void shoot(int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator);
+    public abstract void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator);
 
     public float getFuel() {
         float amount = entityData.get(FUEL);

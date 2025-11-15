@@ -53,6 +53,8 @@ public class PhysicsEngine {
      * 车体视作理想刚体，采样点受方块的力垂直于OBB面向内
      * 方块作用力将完全抵消载具速度在力反方向上的分速度
      * 追加一个模拟撞击力导致的力方向上的微小速度
+     * 为助于攀爬方块，一定车体高度下的方块碰撞会被忽略
+     * 车体底面若有陷地则会施加较大的向上速度
      */
     public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
@@ -106,6 +108,9 @@ public class PhysicsEngine {
                 } else {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
+                    }
+                    if (vehicle.level().getBlockState(BlockPos.containing(new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f, 0)))).isSolid()) {
+                        velocity = velocity.add(0, 0.001f, 0);
                     }
                 }
             }
@@ -179,12 +184,7 @@ public class PhysicsEngine {
                         }
                         return true;
                     })
-                    .map(touchPoint -> {
-                        if (lockZRot) {
-                            return new Vector3f(0, touchPoint.obbLocalPos().y, touchPoint.obbLocalPos().z);
-                        }
-                        return touchPoint.obbLocalPos();
-                    })
+                    .map(VehicleBedrockCubeOBB.CubePoint::obbLocalPos)
                     .toList();
 
             // 重力方向在局部坐标系下的向量
@@ -398,7 +398,6 @@ public class PhysicsEngine {
         Vector3f p2 = physicsCube.obb().localToWorld(p1, axes);
         Vector3f p3 = vehicle.relativeRotPos(new Vec3(p2), true).toVector3f();
         Vec3 pRot = new Vec3(p3).subtract(physicsCube.offset());
-        vehicle.setPos(pRot);
 
 //        DebugUtil.particle(vehicle.level(), new Vec3(p2));
 
@@ -406,6 +405,10 @@ public class PhysicsEngine {
         q.mul(stepRot);
         Vector3f as = new Vector3f();
         q.getEulerAnglesYXZ(as);
+        if (Double.isNaN(as.x) || Double.isNaN(as.y) || Double.isNaN(as.z)) {
+            return;
+        }
+        vehicle.setPos(pRot);
         vehicle.setYRot(-(float) Math.toDegrees(as.y));
         vehicle.setXRot((float) Math.toDegrees(as.x));
         if (lockZRot) {

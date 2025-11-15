@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -37,9 +36,9 @@ public class VehicleOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = localVehiclePlayer.getVehicle();
-//        int centerX = screenWidth / 2;
-//        int centerY = screenHeight / 2;
-//        renderCrew(guiGraphics, centerX, centerY, vehicle);
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
+        renderCrew(guiGraphics, centerX, centerY, vehicle);
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             renderCompassBar(guiGraphics, screenWidth, vehicle);
         }
@@ -55,16 +54,16 @@ public class VehicleOverlay implements IGuiOverlay {
         for (int index = 0; index < vehicle.seats.size(); index++) {
             Integer playerId = vehicle.seats.get(index).passengerId;
             Entity entity = null;
-            PartUnit<?> partUnit = null;
+//            PartUnit<?> partUnit = null;
             if (playerId != null) {
                 entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
-                if (entity instanceof LivingEntity livingEntity) {
-                    partUnit = vehicle.getOwnOperatorUnit(livingEntity);
-                }
+//                if (entity instanceof LivingEntity livingEntity) {
+//                    partUnit = vehicle.getOwnOperatorUnit(livingEntity);
+//                }
             }
             String info = "[]";
             if (entity != null) {
-                info = "[" + entity.getDisplayName().getString() + "] " + (partUnit == null ? "" : partUnit.getName().getString());
+                info = "[" + entity.getDisplayName().getString() + "]";
             }
             guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, color);
             y += 10;
@@ -127,13 +126,27 @@ public class VehicleOverlay implements IGuiOverlay {
     }
 
     private void renderBaseInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        renderHealth(guiGraphics, 70, screenHeight - 20, 120, 10, vehicle, 1);
-        guiGraphics.drawString(Minecraft.getInstance().font,
-                String.format("FUEL: %.1f%%", vehicle.getFuel() / vehicle.fuelCapacity * 100),
-                10, screenHeight - 12, 0xFFFFFFFF);
-        guiGraphics.drawString(Minecraft.getInstance().font,
-                String.format("POWER: %.1f%%", vehicle.getPower()),
-                70, screenHeight - 12, 0xFFFFFFFF);
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.translate((float) screenWidth / 2, screenHeight + 5, 0);
+            renderHealth(guiGraphics, 0, -20, 120, 10, vehicle, 1);
+            poseStack.scale(0.7f, 0.7f, 0.7f);
+            float fuelPercent = vehicle.getFuel() / vehicle.fuelCapacity * 100;
+            float powerPercent = vehicle.getPower();
+            guiGraphics.drawString(Minecraft.getInstance().font,
+                    "FUEL:", 90, -40, 0xFFFFFFFF);
+            guiGraphics.drawString(Minecraft.getInstance().font,
+                    String.format("%.1f%%", fuelPercent),
+                    118, -40, fuelPercent < 5 ? 0xFFFF0000 : 0xFFFFFFFF);
+            guiGraphics.drawString(Minecraft.getInstance().font,
+                    String.format("POWER:", powerPercent),
+                    90, -30, 0xFFFFFFFF);
+            guiGraphics.drawString(Minecraft.getInstance().font,
+                    String.format("%.1f%%", powerPercent),
+                    124, -30, powerPercent < 30 ? 0xFFFF0000 : 0xFFFFFFFF);
+        }
+        poseStack.popPose();
     }
 
     private void renderLookAt(GuiGraphics guiGraphics, float partialTick) {
@@ -190,11 +203,11 @@ public class VehicleOverlay implements IGuiOverlay {
             poseStack.translate(x, y + barHalfHeight - 8, 0);
             poseStack.scale(size, size, size);
             guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, 0xFFFFFFFF);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, 0, bgColor);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, 0, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, 0, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, 0, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, 0, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -128, bgColor);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -128, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -128, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, -128, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, -128, 0xFF999999);
 
             float health = vehicle.getHealth();
             float maxHealth = vehicle.getMaxHealth();
@@ -223,14 +236,14 @@ public class VehicleOverlay implements IGuiOverlay {
             int barColor = (0xFF << 24) | (red << 16) | (green << 8); // ARGB
 
             int filledWidth = (int) (barWidth * percent);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, 0, barColor);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, -128, barColor);
             int lastFilledWidth = (int) (barWidth * lastPercent);
             if (lastFilledWidth != filledWidth) {
                 RenderHelper.fill(
                         guiGraphics, RenderType.guiOverlay(),
                         -barHalfWidth + Math.min(filledWidth, lastFilledWidth), -barHalfHeight,
                         -barHalfWidth + Math.max(filledWidth, lastFilledWidth), barHalfHeight,
-                        0, 0xFFFFFFFF
+                        -128, 0xFFFFFFFF
                 );
             }
 
@@ -240,7 +253,7 @@ public class VehicleOverlay implements IGuiOverlay {
                 poseStack.translate(0, -3.5, 0);
                 RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, 0xFFFFFFFF);
                 if (healthDiff > 0) {
-                    RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 6, 0xFFFF0000);
+                    RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 1 + barHeight, 0xFFFF0000);
                 }
             }
             poseStack.popPose();

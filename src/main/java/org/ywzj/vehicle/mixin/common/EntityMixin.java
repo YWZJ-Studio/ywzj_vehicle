@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 @Mixin(Entity.class)
@@ -34,8 +35,8 @@ public abstract class EntityMixin {
             at = @At("HEAD"),
             cancellable = true)
     public void getBoundingBox(CallbackInfoReturnable<AABB> cir) {
-        if ((Object) this instanceof AbstractVehicle vehicle) {
-            cir.setReturnValue(vehicle.getAABB());
+        if ((Object) this instanceof BoundingBoxChangeable boundingBoxChangeable) {
+            cir.setReturnValue(boundingBoxChangeable.getAABB());
         }
     }
 

@@ -15,6 +15,7 @@ import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
+import org.ywzj.vehicle.api.entity.SightBlockade;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
@@ -102,6 +103,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public enum CrosshairStyle {
+        NONE,
         CIRCLE,
         SQUARE,
         RETICLE
@@ -228,6 +230,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             BlockHitResult result = vehicle.level().clip(new ClipContext(worldPivotPosition(), aimLockPosition, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
             if (result.getType() != HitResult.Type.MISS) {
                 aimLockEntity = null;
+            }
+            EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, worldPivotPosition(), aimLockPosition);
+            if (entityHit != null) {
+                aimLockEntity = entityHit.getEntity();
+                if (aimLockEntity instanceof SightBlockade) {
+                    aimLockEntity = null;
+                    stabilizer = false;
+                    return;
+                }
             }
             if (aimLockEntity != null) {
                 if (!aimLockEntity.isAlive()) {
@@ -525,12 +536,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
             aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0);
         }
-        List<Entity> entities = vehicle.level().getEntities(vehicle, AABB.ofSize(aimLockPosition, 8, 8, 8));
-        entities = entities.stream()
-                .filter(entity -> !entity.isSpectator() && !vehicle.getPassengers().contains(entity))
-                .toList();
-        if (!entities.isEmpty()) {
-            aimLockEntity = entities.get(0);
+        EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, worldPivotPosition(), aimLockPosition);
+        if (entityHit != null) {
+            aimLockEntity = entityHit.getEntity();
+            if (aimLockEntity instanceof SightBlockade) {
+                aimLockEntity = null;
+                return;
+            }
             stabilizer = true;
         } else {
             aimLockEntity = null;

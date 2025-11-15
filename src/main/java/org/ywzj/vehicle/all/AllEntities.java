@@ -13,10 +13,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.vehicle.*;
-import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
-import org.ywzj.vehicle.entity.weapon.BulletEntity;
-import org.ywzj.vehicle.entity.weapon.MissileEntity;
-import org.ywzj.vehicle.entity.weapon.RocketEntity;
+import org.ywzj.vehicle.entity.weapon.*;
 
 public class AllEntities {
 
@@ -69,6 +66,17 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .setCustomClientFactory(MissileEntity::new)
                     .build("missile"));
+
+    public static final RegistryObject<EntityType<SmokeGrenadeEntity>> SMOKE_GRENADE = ENTITIES.register("smoke_grenade",
+            () -> EntityType.Builder.<SmokeGrenadeEntity>of(SmokeGrenadeEntity::new, MobCategory.MISC)
+            .setShouldReceiveVelocityUpdates(true)
+            .setTrackingRange(64)
+            .setUpdateInterval(1)
+            .setCustomClientFactory(SmokeGrenadeEntity::new)
+            .sized(0.3f, 0.3f)
+            .noSave()
+            .fireImmune()
+            .build("smoke_grenade"));
 
     public static final RegistryObject<EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
             () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.8f, 1.9f)
