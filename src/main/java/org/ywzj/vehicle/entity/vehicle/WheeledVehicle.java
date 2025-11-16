@@ -42,6 +42,14 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         this.thirdPersonDistance = 7;
     }
 
+    public float getForwardSpeed() {
+        return this.entityData.get(FORWARD_SPEED);
+    }
+
+    public float getTurnAngle() {
+        return this.entityData.get(TURN_ANGLE);
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();

@@ -10,9 +10,12 @@ import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -49,6 +52,11 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
             this.partUnits.addAll(weapons.partUnitMap().values());
             this.seats.addAll(weapons.seats());
         });
+        Map<String, PartUnit<?>> map = new HashMap<>();
+        for (PartUnit<?> partUnit : partUnits) {
+            map.put(partUnit.getId(), partUnit);
+        }
+        this.partUnitMap = map;
     }
 
     @Override

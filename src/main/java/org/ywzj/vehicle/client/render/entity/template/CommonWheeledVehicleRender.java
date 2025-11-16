@@ -12,11 +12,14 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import org.mozilla.javascript.ContextFactory;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.CommonWheeledVehicle;
-import org.ywzj.vehicle.resource.BedrockModelLoader;
+
 
 // todo 测试用
 public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehicle> {
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
     public CommonWheeledVehicleRender(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -24,6 +27,12 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
 
     @Override
     public void render(CommonWheeledVehicle pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        ResourceLocation displayId = pEntity.getCustomDisplayId();
+        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(displayId).orElse(null);
+        if (display == null) {
+            return;
+        }
+
         pPoseStack.pushPose();
 
         Vec3 root = new Vec3(0, 0, 0);
@@ -32,16 +41,21 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        ResourceLocation displayId = pEntity.getCustomDisplayId();
-        ResourceLocation modelLoc = new ResourceLocation(displayId.getNamespace(), "entity/" + displayId.getPath());
-        ResourceLocation textureLoc = new ResourceLocation(modelLoc.getNamespace(), "textures/entity/" + displayId.getPath() + ".png");
-
-        BedrockModel model = BedrockModelLoader.getModel(modelLoc);
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(textureLoc));
+        BedrockModel model = display.getModel();
+        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
         if (model != null) {
+            display.getVehicleContext().update(pPartialTick, pEntity);
+            var func = display.getPrepareBonesFunction();
+            if (func != null) {
+                try (var ctx = ContextFactory.getGlobal().enterContext()) {
+                    func.call(ctx, display.getScope(), func, EMPTY_ARGS);
+                }
+            }
+
             pEntity.lastRenderTime = System.currentTimeMillis();
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+            model.applyPose(model.getBindPose());
         }
 
         pPoseStack.popPose();

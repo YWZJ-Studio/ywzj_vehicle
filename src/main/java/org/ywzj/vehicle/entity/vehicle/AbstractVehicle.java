@@ -74,9 +74,7 @@ import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, ICustomVehicle,
@@ -92,6 +90,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public final ControlUnit controlUnit;
     public List<Seat> seats;
     protected final List<PartUnit<?>> partUnits;
+    protected Map<String, PartUnit<?>> partUnitMap;
     public Vec3 thirdPersonCenterOffset;
     public float thirdPersonDistance;
     public float curbWeight;
@@ -119,6 +118,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.seats = new ArrayList<>();
         this.controlUnit = new ControlUnit();
         this.partUnits = new ArrayList<>();
+        this.partUnitMap = Map.of();
         this.thirdPersonDistance = 8;
         this.thirdPersonCenterOffset = Vec3.ZERO;
         this.curbWeight = 1;
@@ -135,6 +135,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public void initData(ResourceLocation customId) {
         initPartUnits();
         initOBBs();
+        Map<String, PartUnit<?>> map = new HashMap<>();
+        for (PartUnit<?> partUnit : partUnits) {
+            map.put(partUnit.getId(), partUnit);
+        }
+        this.partUnitMap = map;
     }
 
     @Override
@@ -742,6 +747,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             return Optional.of(partUnits.get(index));
         }
         return Optional.empty();
+    }
+
+    public Optional<PartUnit<?>> getPartUnit(String id) {
+        return Optional.ofNullable(partUnitMap.get(id));
     }
 
     public VehicleBedrockCubeOBB getMainCubeOBB() {

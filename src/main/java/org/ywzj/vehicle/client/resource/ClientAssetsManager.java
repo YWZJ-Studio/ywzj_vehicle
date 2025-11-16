@@ -10,6 +10,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.mozilla.javascript.Script;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
@@ -22,11 +23,15 @@ public enum ClientAssetsManager {
     private JsonDataManager<BedrockModelPOJO> models;
     private JsonDataManager<BedrockAnimationFile> animations;
     private VehicleDisplayManager vehicleDisplayManager;
+    private ScriptManager scriptManager;
 
     public void registerListeners(Consumer<PreparableReloadListener> consumer) {
         models = this.create(BedrockModelPOJO.class, "models/bedrock", "BedrockModelPojo", consumer);
         animations = this.create(BedrockAnimationFile.class, "animations/bedrock", "BedrockAnimationPojo", consumer);
         vehicleDisplayManager = new VehicleDisplayManager();
+        scriptManager = new ScriptManager();
+
+        consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
 
         // 完成加载后清理临时数据
@@ -90,5 +95,13 @@ public enum ClientAssetsManager {
             return Optional.empty();
         }
         return Optional.ofNullable(vehicleDisplayManager.getDisplayMap().get(id));
+    }
+
+    public ScriptManager getScriptManager() {
+        return scriptManager;
+    }
+
+    public Optional<Script> getScript(ResourceLocation script) {
+        return scriptManager.getScript(script);
     }
 }

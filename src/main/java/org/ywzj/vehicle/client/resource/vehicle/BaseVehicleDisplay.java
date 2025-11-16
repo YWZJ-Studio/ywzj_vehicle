@@ -4,6 +4,9 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockA
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import org.mozilla.javascript.*;
+import org.ywzj.vehicle.client.render.animation.BoneHandlers;
+import org.ywzj.vehicle.client.render.animation.WheeledVehicleScriptContext;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 
 import java.util.HashMap;
@@ -14,6 +17,7 @@ import java.util.Map;
  * 基础载具效果配置实例
  */
 public class BaseVehicleDisplay {
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
     protected BedrockModel model;
     protected ResourceLocation texture;
@@ -21,6 +25,13 @@ public class BaseVehicleDisplay {
     protected Map<String, BedrockAnimation> animations;
 
     protected Map<String, SoundEvent> soundEvents;
+
+    protected BoneHandlers boneHandlers;
+
+    protected Scriptable scope;
+    protected Script script;
+    protected Function prepareBonesFunction;
+    protected WheeledVehicleScriptContext vehicleScriptContext;
 
     protected BaseVehicleDisplay() {
     }
@@ -32,6 +43,45 @@ public class BaseVehicleDisplay {
     public BaseVehicleDisplay(BaseVehicleDisplayPojo pojo) {
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.model = modelPojo.map(BedrockModel::new).orElseThrow();
+
+        this.boneHandlers = new BoneHandlers(model);
+        if (pojo.specialBones != null) {
+            for (var boneName : pojo.specialBones) {
+                var bone = model.getBone(boneName);
+                if (bone != null) {
+                    boneHandlers.addSpecialBone(boneName);
+                }
+            }
+        }
+
+        if (pojo.script != null) {
+            this.script = ClientAssetsManager.INSTANCE.getScript(pojo.script).orElse(null);
+            if (this.script != null) {
+                try (var ctx = ContextFactory.getGlobal().enterContext()) {
+                    ctx.setInterpretedMode(false);
+                    this.scope = ctx.initStandardObjects();
+
+                    script.exec(ctx, this.scope);
+
+                    var func = this.scope.get("prepareBones", this.scope);
+                    if (func instanceof Function function) {
+                        this.prepareBonesFunction = function;
+                    }
+
+                    Object bonesJs = Context.javaToJS(this.boneHandlers, this.scope);
+                    ScriptableObject.defineProperty(this.scope, "boneHandlers", bonesJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
+
+                    var initBonesFunc = this.scope.get("initBones", this.scope);
+                    if (initBonesFunc instanceof Function function) {
+                        function.call(ctx, this.scope, function, EMPTY_ARGS);
+                    }
+
+                    this.vehicleScriptContext = new WheeledVehicleScriptContext(null);
+                    Object vehicleContextJs = Context.javaToJS(this.vehicleScriptContext, this.scope);
+                    ScriptableObject.defineProperty(this.scope, "vehicleContext", vehicleContextJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
+                }
+            }
+        }
 
         this.texture = pojo.texture;
 
@@ -61,4 +111,26 @@ public class BaseVehicleDisplay {
     public Map<String, BedrockAnimation> getAnimations() {
         return animations;
     }
+
+    public Script getScript() {
+        return script;
+    }
+
+
+    public BoneHandlers getBoneHandlers() {
+        return boneHandlers;
+    }
+
+    public Function getPrepareBonesFunction() {
+        return prepareBonesFunction;
+    }
+
+    public Scriptable getScope() {
+        return scope;
+    }
+
+    public WheeledVehicleScriptContext getVehicleContext() {
+        return vehicleScriptContext;
+    }
+
 }

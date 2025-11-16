@@ -94,6 +94,10 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
+    jarJar(minecraftLibrary("org.mozilla:rhino:1.8.0")) {
+        jarJar.ranged(it, "[1.8.0,2.0.0)")
+    }
+
     jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.0.0-forge+mc1.20.1"))) {
         jarJar.ranged(it, "[2.0.0,)")
     }
