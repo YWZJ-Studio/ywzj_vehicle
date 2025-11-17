@@ -1,27 +1,33 @@
 package org.ywzj.vehicle.client.render.animation;
 
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.ApiStatus;
+import org.ywzj.vehicle.api.scripts.EntityContextProvider;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
 @SuppressWarnings("unused")
-public class WheeledVehicleScriptContext {
-    private WheeledVehicle vehicle;
+public class WheeledVehicleContext extends EntityContextProvider<WheeledVehicle> {
     private float partialTick;
 
-    public WheeledVehicleScriptContext(WheeledVehicle vehicle) {
-        this.vehicle = vehicle;
+    public WheeledVehicleContext(WheeledVehicle vehicle) {
+        super(vehicle);
     }
 
     @ApiStatus.Internal
-    public void update(float partialTick, WheeledVehicle vehicle) {
-        this.vehicle = vehicle;
+    public void updateRenderer(float partialTick, WheeledVehicle vehicle) {
+        this.entity = vehicle;
         this.partialTick = partialTick;
     }
 
+    @ApiStatus.Internal
+    public void updateLogic(WheeledVehicle vehicle) {
+        this.entity = vehicle;
+    }
+
     public float getPartXRot(String id) {
-        return vehicle.getPartUnit(id).map(part -> {
+        return entity.getPartUnit(id).map(part -> {
             if (part instanceof RotatableUnit<?> rotatable) {
                 var xRot = rotatable.getXRot();
                 var xRotO = rotatable.xRotO;
@@ -32,7 +38,7 @@ public class WheeledVehicleScriptContext {
     }
 
     public float getPartYRot(String id) {
-        return vehicle.getPartUnit(id).map(part -> {
+        return entity.getPartUnit(id).map(part -> {
             if (part instanceof RotatableUnit<?> rotatable) {
                 var yRot = rotatable.getYRot();
                 var yRotO = rotatable.yRotO;
@@ -43,20 +49,15 @@ public class WheeledVehicleScriptContext {
     }
 
     public float getForwardSpeed() {
-        return vehicle.getForwardSpeed();
+        return entity.getForwardSpeed();
     }
 
     public float getTurnAngle() {
-        return vehicle.getTurnAngle();
+        return entity.getTurnAngle();
     }
 
-    public float getWheelRotation() {
-        return vehicle.wheelRotation;
-    }
-
-    public float setWheelRotation(float rotation) {
-        vehicle.wheelRotation = rotation % 360;
-        return vehicle.wheelRotation;
+    public float getHealth() {
+        return entity.getHealth();
     }
 
     public long currentTimeMillis() {
@@ -64,6 +65,18 @@ public class WheeledVehicleScriptContext {
     }
 
     public long lastRenderTime() {
-        return vehicle.lastRenderTime;
+        return entity.lastRenderTime;
+    }
+
+    public void saveCache(Object data) {
+        entity.getScriptCache().set(data);
+    }
+
+    public Object loadCache() {
+        return entity.getScriptCache().get();
+    }
+
+    public void addParticle(ParticleOptions particleOptions, double x, double y, double z, double vx, double vy, double vz) {
+        entity.level().addParticle(particleOptions, true, x, y, z, vx, vy, vz);
     }
 }

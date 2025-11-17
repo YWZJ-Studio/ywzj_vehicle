@@ -3,10 +3,10 @@ package org.ywzj.vehicle.client.render.animation;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import org.joml.Quaternionf;
 
-public class BedrockBoneWrapper implements IBoneHandler {
+public class BedrockBoneHandler implements IBoneHandler {
     private final BedrockBone bone;
 
-    public BedrockBoneWrapper(BedrockBone bone) {
+    public BedrockBoneHandler(BedrockBone bone) {
         this.bone = bone;
     }
 

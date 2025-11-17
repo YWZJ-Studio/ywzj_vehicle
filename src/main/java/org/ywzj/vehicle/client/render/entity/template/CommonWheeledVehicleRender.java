@@ -45,7 +45,7 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
         VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
         if (model != null) {
-            display.getVehicleContext().update(pPartialTick, pEntity);
+            display.getVehicleContext().updateRenderer(pPartialTick, pEntity);
             var func = display.getPrepareBonesFunction();
             if (func != null) {
                 try (var ctx = ContextFactory.getGlobal().enterContext()) {

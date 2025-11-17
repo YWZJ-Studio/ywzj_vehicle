@@ -13,6 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.render.animation.ScriptCache;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 
@@ -273,4 +274,9 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         return (float) getDeltaMovement().length();
     }
 
+    private final ScriptCache scriptCache = new ScriptCache(null);
+
+    public ScriptCache getScriptCache() {
+        return scriptCache;
+    }
 }

@@ -23,6 +23,6 @@ public class BoneHandlers {
         if (bone == null) {
             return;
         }
-        boneHandlers.put(boneName, new BedrockBoneWrapper(bone));
+        boneHandlers.put(boneName, new BedrockBoneHandler(bone));
     }
 }

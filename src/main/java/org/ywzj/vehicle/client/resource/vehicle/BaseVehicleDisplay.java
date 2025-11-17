@@ -5,8 +5,9 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.mozilla.javascript.*;
+import org.ywzj.vehicle.api.scripts.ScriptUtils;
 import org.ywzj.vehicle.client.render.animation.BoneHandlers;
-import org.ywzj.vehicle.client.render.animation.WheeledVehicleScriptContext;
+import org.ywzj.vehicle.client.render.animation.WheeledVehicleContext;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 
 import java.util.HashMap;
@@ -17,7 +18,7 @@ import java.util.Map;
  * 基础载具效果配置实例
  */
 public class BaseVehicleDisplay {
-    private static final Object[] EMPTY_ARGS = new Object[0];
+    public static final Object[] EMPTY_ARGS = new Object[0];
 
     protected BedrockModel model;
     protected ResourceLocation texture;
@@ -31,7 +32,8 @@ public class BaseVehicleDisplay {
     protected Scriptable scope;
     protected Script script;
     protected Function prepareBonesFunction;
-    protected WheeledVehicleScriptContext vehicleScriptContext;
+    protected Function tickParticleFunction;
+    protected WheeledVehicleContext vehicleScriptContext;
 
     protected BaseVehicleDisplay() {
     }
@@ -60,6 +62,7 @@ public class BaseVehicleDisplay {
                 try (var ctx = ContextFactory.getGlobal().enterContext()) {
                     ctx.setInterpretedMode(false);
                     this.scope = ctx.initStandardObjects();
+                    ScriptUtils.inject(scope);
 
                     script.exec(ctx, this.scope);
 
@@ -68,17 +71,22 @@ public class BaseVehicleDisplay {
                         this.prepareBonesFunction = function;
                     }
 
+                    var tickParticleFunc = this.scope.get("tickParticle", this.scope);
+                    if (tickParticleFunc instanceof Function function) {
+                        this.tickParticleFunction = function;
+                    }
+
                     Object bonesJs = Context.javaToJS(this.boneHandlers, this.scope);
                     ScriptableObject.defineProperty(this.scope, "boneHandlers", bonesJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
+
+                    this.vehicleScriptContext = new WheeledVehicleContext(null);
+                    Object vehicleContextJs = Context.javaToJS(this.vehicleScriptContext, this.scope);
+                    ScriptableObject.defineProperty(this.scope, "vehicleContext", vehicleContextJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
 
                     var initBonesFunc = this.scope.get("initBones", this.scope);
                     if (initBonesFunc instanceof Function function) {
                         function.call(ctx, this.scope, function, EMPTY_ARGS);
                     }
-
-                    this.vehicleScriptContext = new WheeledVehicleScriptContext(null);
-                    Object vehicleContextJs = Context.javaToJS(this.vehicleScriptContext, this.scope);
-                    ScriptableObject.defineProperty(this.scope, "vehicleContext", vehicleContextJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
                 }
             }
         }
@@ -125,11 +133,15 @@ public class BaseVehicleDisplay {
         return prepareBonesFunction;
     }
 
+    public Function getTickParticleFunction() {
+        return tickParticleFunction;
+    }
+
     public Scriptable getScope() {
         return scope;
     }
 
-    public WheeledVehicleScriptContext getVehicleContext() {
+    public WheeledVehicleContext getVehicleContext() {
         return vehicleScriptContext;
     }
 

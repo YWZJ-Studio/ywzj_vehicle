@@ -8,7 +8,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
+import org.mozilla.javascript.ContextFactory;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -16,6 +18,8 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay.EMPTY_ARGS;
 
 
 /**
@@ -57,6 +61,19 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
             map.put(partUnit.getId(), partUnit);
         }
         this.partUnitMap = map;
+    }
+
+    @Override
+    protected void tickParticle() {
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getCustomId()).ifPresent(display -> {
+            display.getVehicleContext().updateLogic(this);
+            var func = display.getTickParticleFunction();
+            if (func != null) {
+                try (var ctx = ContextFactory.getGlobal().enterContext()) {
+                    func.call(ctx, display.getScope(), func, EMPTY_ARGS);
+                }
+            }
+        });
     }
 
     @Override
