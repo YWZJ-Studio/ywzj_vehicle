@@ -4,7 +4,6 @@ import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -122,7 +121,8 @@ public class MissileEntity extends AmmoEntity {
             BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
             if (result.getType() != HitResult.Type.MISS) {
                 // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
-                CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), position(), 8, 20);
+                vehicleExplosion.explode();
                 this.discard();
                 return;
             }
@@ -134,7 +134,8 @@ public class MissileEntity extends AmmoEntity {
                 LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
                 DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation());
                 entityResult.getEntity().hurt(source, damage);
-                CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), position(), 8, 20);
+                vehicleExplosion.explode();
                 this.discard();
             }
         }

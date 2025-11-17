@@ -5,7 +5,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -15,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -30,8 +30,8 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.entity.KnockBackModifier;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
-import org.ywzj.vehicle.util.CustomExplosion;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.VehicleExplosion;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -238,7 +238,8 @@ public class BulletEntity extends AmmoEntity {
         }
 
         if (explosion) {
-            CustomExplosion.explode((ServerLevel) level(), this, result.getLocation(), 8, 20);
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), result.getLocation(), 4, 20);
+            vehicleExplosion.explode();
         }
     }
 
@@ -251,8 +252,21 @@ public class BulletEntity extends AmmoEntity {
 
         super.onHitBlock(result);
 
+        // 穿甲爆破
         if (explosion) {
-            CustomExplosion.explode((ServerLevel) level(), this, result.getLocation(), 8, 20);
+            Level level = level();
+            BlockState state = level.getBlockState(pos);
+            float destroySpeed = state.getDestroySpeed(level, pos);
+            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50) {
+                level().destroyBlock(pos, false);
+            }
+            Vec3 explosionAtPos = hitVec.add(endVec.subtract(startVec).normalize().scale(getDeltaMovement().length()));
+            BlockHitResult resultAfterPenetrate = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(hitVec, explosionAtPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            if (resultAfterPenetrate.getType() != HitResult.Type.MISS) {
+                explosionAtPos = resultAfterPenetrate.getLocation();
+            }
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), explosionAtPos, 4, 30);
+            vehicleExplosion.explode();
         }
 
         // 弹孔与点燃特效

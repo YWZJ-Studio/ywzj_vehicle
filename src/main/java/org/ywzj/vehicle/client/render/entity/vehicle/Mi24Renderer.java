@@ -36,7 +36,7 @@ public class Mi24Renderer extends EntityRenderer<Mi24> {
         pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
         pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.LAV150.getId()).orElse(null);
+        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.MI24.getId()).orElse(null);
         if (display == null || display.getModel() == null) {
             return;
         }

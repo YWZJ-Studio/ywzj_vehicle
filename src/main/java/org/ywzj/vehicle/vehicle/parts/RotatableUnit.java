@@ -24,10 +24,10 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     protected float yAimRot;
     protected float xRot;
     protected float yRot;
-    protected float xRemoteRot;
-    protected float yRemoteRot;
     public float xRotO;
     public float yRotO;
+    protected float xRemoteAimRot;
+    protected float yRemoteAimRot;
 
     public float xRotSpeed;
     public float yRotSpeed;
@@ -43,15 +43,15 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public RotatableUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
-        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteRot, this::getXRot, 0f);
-        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteRot, this::getYRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
 
     @Deprecated
     public RotatableUnit(String id, int index, AbstractVehicle vehicle) {
         super(id, index, vehicle);
-        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteRot, this::getXRot, 0f);
-        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteRot, this::getYRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
 
     public void tick() {
@@ -81,13 +81,11 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     protected void tickRot() {
         this.xRotO = this.getXRot();
         this.yRotO = this.getYRot();
-        if (needPower && !vehicle.hasPower()) {
-            return;
-        }
         if (vehicle.level().isClientSide()) {
-            this.xRot = this.xRemoteRot;
-            this.yRot = this.yRemoteRot;
-        } else {
+            this.xAimRot = this.xRemoteAimRot;
+            this.yAimRot = this.yRemoteAimRot;
+        }
+        if (!needPower || vehicle.hasPower()) {
             float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
             float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
             if (Math.abs(xDiff) > getXRotSpeed()) {
@@ -154,9 +152,11 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public void deserializeNBT(CompoundTag nbt) {
         super.deserializeNBT(nbt);
         this.xRot = nbt.getFloat("xRot");
-        this.xRotO = nbt.getFloat("xRotO");
+        this.xRotO = this.xRot;
+        this.xAimRot = this.xRot;
         this.yRot = nbt.getFloat("yRot");
-        this.yRotO = nbt.getFloat("yRotO");
+        this.yRotO = this.yRot;
+        this.yAimRot = this.yRot;
     }
 
     public float getXRotSpeed() {
@@ -239,20 +239,20 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.yRot = yRot;
     }
 
-    public float getXRemoteRot() {
-        return xRemoteRot;
+    public float getXRemoteAimRot() {
+        return xRemoteAimRot;
     }
 
-    public void setXRemoteRot(float xRemoteRot) {
-        this.xRemoteRot = xRemoteRot;
+    public void setXRemoteAimRot(float xRemoteAimRot) {
+        this.xRemoteAimRot = xRemoteAimRot;
     }
 
-    public float getYRemoteRot() {
-        return yRemoteRot;
+    public float getYRemoteAimRot() {
+        return yRemoteAimRot;
     }
 
-    public void setYRemoteRot(float yRemoteRot) {
-        this.yRemoteRot = yRemoteRot;
+    public void setYRemoteAimRot(float yRemoteAimRot) {
+        this.yRemoteAimRot = yRemoteAimRot;
     }
 
 }

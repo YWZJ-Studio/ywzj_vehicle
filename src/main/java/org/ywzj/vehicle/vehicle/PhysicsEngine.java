@@ -3,6 +3,7 @@ package org.ywzj.vehicle.vehicle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Math;
@@ -13,6 +14,7 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.*;
@@ -26,6 +28,7 @@ public class PhysicsEngine {
     public float bounce = 0.02f;
     public float rotA = 0.01f;
     public float rotV = 0;
+    public int rotTick;
     public Quaternionf stepRot;
     public Vector3f localRotAxisStart;
     public Vector3f localRotAxisStartO;
@@ -113,8 +116,13 @@ public class PhysicsEngine {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
                     }
-                    if (vehicle.level().getBlockState(BlockPos.containing(new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f, 0)))).isSolid()) {
-                        velocity = velocity.add(0, 0.001f, 0);
+                    Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f, 0));
+                    BlockPos testBlockPos = BlockPos.containing(testPos);
+                    BlockState blockState = vehicle.level().getBlockState(testBlockPos);
+                    if (blockState.isSolid()) {
+                        if (!isHalfBlock(touchPoint) || testPos.y < testBlockPos.getY() + 0.55) {
+                            velocity = velocity.add(0, 0.001f, 0);
+                        }
                     }
                 }
             }
@@ -182,10 +190,9 @@ public class PhysicsEngine {
             List<Vector3f> localForcePoints = touchPoints.stream()
                     .filter(touchPoint -> faces.contains(touchPoint.cubeFace()))
                     .filter(touchPoint -> {
-                        if (touchPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                                || touchPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) {
+                        if (isHalfBlock(touchPoint)) {
                             Vector3f worldPos = touchPoint.cachedWorldPos();
-                            return worldPos.y <= BlockPos.containing(new Vec3(worldPos)).getY() + 0.7f;
+                            return worldPos.y <= BlockPos.containing(new Vec3(worldPos)).getY() + 0.65f;
                         }
                         return true;
                     })
@@ -217,13 +224,18 @@ public class PhysicsEngine {
                     // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
                     double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
                     double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
-                    if (vehicle.getZRot() != 0 && Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
+                    boolean shouldRotUpdate = false;
+                    if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
                         vehicle.setZRot(0);
-                        vehicle.triggerRotUpdate();
+                        shouldRotUpdate = true;
                     }
-                    if (vehicle.getXRot() != 0 && Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
+                    if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
                         vehicle.setXRot(0);
+                        shouldRotUpdate = true;
+                    }
+                    if (shouldRotUpdate && rotTick > 0) {
                         vehicle.triggerRotUpdate();
+                        rotTick -= 1;
                     }
                     if (AllConfigs.common.selfRighting.get()) {
                         if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
@@ -287,22 +299,27 @@ public class PhysicsEngine {
      */
     public void recoil(WeaponUnit weaponUnit) {
         Vec3 fireDirection = weaponUnit.worldVec();
-        Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
-        Vector3f forceStartLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldPivotPosition().add(fireDirection.scale(5)).toVector3f(), axes);
-        Vector3f forcePointLocal = vehicle.getMainCubeOBB().obb().worldToLocal(weaponUnit.worldPivotPosition().toVector3f(), axes);
+        OBB obb = vehicle.getMainCubeOBB().obb();
+        Vector3f[] axes = obb.getAxes();
+        Vector3f forceStartLocal = obb.worldToLocal(weaponUnit.worldPivotPosition().add(fireDirection.scale(5)).toVector3f(), axes);
+        Vector3f forcePointLocal = obb.worldToLocal(weaponUnit.worldPivotPosition().toVector3f(), axes);
         // 后坐力方向在局部坐标系下的矢量
         Vector3f force = new Vector3f(forcePointLocal).sub(forceStartLocal);
-        // 简化旋转为都从炮闩下的载具中心处产生转轴，该转轴平行于底面
-        Vec3 axis = new Vec3(-force.z, 0, force.x).add(forcePointLocal.x, 0, forcePointLocal.z);
-        localRotAxisStart = axis.normalize().scale(5).toVector3f();
-        localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
-        checkDirection(forcePointLocal);
-        rotV = 0.05f;
-        rot(axes);
-        // 后坐力产生推移
-        force = force.normalize();
-        double motion = force.dot(new Vector3f(0, 0, 1)) * 0.05;
-        vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
+        getPlaneXY(force, forcePointLocal);
+        Optional<Vector3f> forceEdge = obb.clip(new Vector3f(obb.center()).add(fireDirection.normalize().scale(16).toVector3f().negate()), obb.center());
+        if (forceEdge.isPresent()) {
+            Vector3f forceEdgeLocal = obb.worldToLocal(forceEdge.get(), axes);
+            Vec3 axis = new Vec3(-force.z, 0, force.x).add(forceEdgeLocal.x, 0, forceEdgeLocal.z);
+            localRotAxisStart = axis.normalize().scale(5).toVector3f();
+            localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
+            checkDirection(forcePointLocal);
+            rotV = 0.05f;
+            rot(axes);
+            // 后坐力产生推移
+            force = force.normalize();
+            double motion = force.dot(new Vector3f(0, 0, 1)) * 0.05;
+            vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
+        }
     }
 
     public void climb(List<VehicleBedrockCubeOBB.CubePoint> touchPoints) {
@@ -326,9 +343,7 @@ public class PhysicsEngine {
         if (yRange >= vehicle.getMainCubeOBB().spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
             climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
             VehicleBedrockCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-            double liftHeight = liftPoint.cubePointContext.blockPos().getY() +
-                    ((liftPoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                            || liftPoint.cubePointContext.blockState().getBlock() instanceof SlabBlock) ? 0.7f : 1f);
+            double liftHeight = liftPoint.cubePointContext.blockPos().getY() + (isHalfBlock(liftPoint) ? 0.55f : 1f);
             double toLift = liftHeight - vehicle.position().y;
             vehicle.setPos(new Vec3(vehicle.position().x, vehicle.position().y + Mth.clamp(toLift, 0, vehicle.maxUpStep()), vehicle.position().z));
         }
@@ -414,6 +429,7 @@ public class PhysicsEngine {
         if (Double.isNaN(as.x) || Double.isNaN(as.y) || Double.isNaN(as.z)) {
             return;
         }
+        rotTick = 10;
         vehicle.setPos(pRot);
         vehicle.setYRot(-(float) Math.toDegrees(as.y));
         vehicle.setXRot((float) Math.toDegrees(as.x));
@@ -443,6 +459,11 @@ public class PhysicsEngine {
         // 求point在平面上的投影点x, y
         Vector3f projected = new Vector3f(point).sub(new Vector3f(planeSupport).mul(point.dot(planeSupport)));
         return new Vector2f(projected.dot(planeU), projected.dot(planeV));
+    }
+
+    private boolean isHalfBlock(VehicleBedrockCubeOBB.CubePoint cubePoint) {
+        return cubePoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
+                || cubePoint.cubePointContext.blockState().getBlock() instanceof SlabBlock;
     }
 
 }

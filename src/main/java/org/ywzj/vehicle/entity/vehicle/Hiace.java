@@ -20,7 +20,7 @@ public class Hiace extends WheeledVehicle {
         forwardForce = 0.03f;
         backwardForce = 0.02f;
         brakeForce = 0.05f;
-        maxSpeedForward = 1.2f;
+        maxSpeedForward = 0.5f;
         maxSpeedBackward= 0.2f;
         turnStep = 1f;
         maxTurn = 3f;

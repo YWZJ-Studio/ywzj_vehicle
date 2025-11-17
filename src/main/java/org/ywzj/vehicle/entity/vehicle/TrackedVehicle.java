@@ -131,6 +131,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
             entityData.set(TURN_SPEED, 0f);
             return new Vec3(0, 0, 0);
         }
+
         // 前后控制
         if (controlUnit.forward || controlUnit.backward) {
             if (controlUnit.forward) {
@@ -154,6 +155,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
         }
         vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
         entityData.set(FORWARD_SPEED, vf);
+
         // 转向控制
         if (controlUnit.left || controlUnit.right) {
             vt += controlUnit.right ? turnAcceleration : -turnAcceleration;
@@ -168,11 +170,16 @@ public abstract class TrackedVehicle extends AbstractVehicle {
             }
         }
         entityData.set(TURN_SPEED, vt);
+
         // 转向幅度应用于车身朝向
         if (controlUnit.backward) {
             vt *= -1;
         }
-        this.setYRot(this.getYRot() + vt);
+        this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
+        if (Math.abs(vt) > 0) {
+            vf *= 0.98f;
+        }
+
         // 前进速度应用于车身朝向
         Vec3 direction = getLookAngle();
         Vec3 motion = direction.normalize().scale(vf);

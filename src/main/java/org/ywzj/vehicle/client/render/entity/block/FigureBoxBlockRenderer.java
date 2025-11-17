@@ -53,8 +53,8 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
         poseStack.pushPose();
         {
             double length;
-            if (entity instanceof AbstractVehicle) {
-                AABB aabb = entity.getBoundingBox();
+            if (entity instanceof AbstractVehicle vehicle) {
+                AABB aabb = vehicle.getBoundingBox();
                 length = aabb.maxZ - aabb.minZ;
             } else {
                 length = entity.getBbHeight() * 2;
@@ -63,7 +63,7 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
             float scale = (float) (1 / length / 1.2);
             poseStack.scale(scale, scale, scale);
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-            dispatcher.render(entity, 0.0, 0.0, 0.0, entity.getYRot(), 1, poseStack, bufferSource, 0xF000F0);
+            dispatcher.render(entity, 0.0, 0.0, 0.0, entity.getYRot(), 1, poseStack, bufferSource, packedLight);
         }
         poseStack.popPose();
     }

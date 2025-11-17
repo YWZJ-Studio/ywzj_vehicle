@@ -58,18 +58,6 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     }
 
     @Override
-    public void onAddedToWorld() {
-        super.onAddedToWorld();
-        if (level().isClientSide) {
-            return;
-        }
-        if (getHealth() < 0) {
-            this.setMaxHealth(100);
-            this.setHealth(100);
-        }
-    }
-
-    @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         ContainerHelper.saveAllItems(compound, this.getItemStacks());
         compound.putFloat("MaxHealth", this.getMaxHealth());
@@ -92,7 +80,7 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         this.lerpX = pX;
         this.lerpY = pY;
         this.lerpZ = pZ;
-        this.lerpSteps = pPosRotationIncrements;
+        this.lerpSteps = Math.min(2, pPosRotationIncrements);
     }
 
     @Override

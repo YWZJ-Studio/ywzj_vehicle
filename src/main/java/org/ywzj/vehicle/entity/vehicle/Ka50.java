@@ -92,7 +92,7 @@ public class Ka50 extends RotaryWingVehicle {
         autoCannon.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(autoCannon);
         VehicleCannonWeaponData weaponDataAutoCannon = new VehicleCannonWeaponData();
-        weaponDataAutoCannon.setDisplayName("auto_cannon");
+        weaponDataAutoCannon.setName("auto_cannon");
         weaponDataAutoCannon.setMaxCapacity(120);
         weaponDataAutoCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get())));
         VehicleCannon vehicleCannon = new VehicleCannon(this, autoCannon, 0, weaponDataAutoCannon, "auto_cannon");
@@ -120,7 +120,7 @@ public class Ka50 extends RotaryWingVehicle {
         missile.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(missile);
         VehicleMissileWeaponData weaponDataMissile = new VehicleMissileWeaponData();
-        weaponDataMissile.setDisplayName("missile");
+        weaponDataMissile.setName("missile");
         weaponDataMissile.setDamage(50);
         weaponDataMissile.setMaxCapacity(8);
         weaponDataMissile.setXRotMax(30);
@@ -149,7 +149,7 @@ public class Ka50 extends RotaryWingVehicle {
         rocket.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(rocket);
         BaseVehicleWeaponData weaponDataRocket = new BaseVehicleWeaponData();
-        weaponDataRocket.setDisplayName("rocket");
+        weaponDataRocket.setName("rocket");
         weaponDataRocket.setMaxCapacity(32);
         weaponDataRocket.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
         VehicleRocket vehicleRocket = new VehicleRocket(this, rocket, 2, weaponDataRocket, "rocket");

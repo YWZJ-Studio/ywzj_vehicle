@@ -77,8 +77,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 import java.util.*;
 import java.util.function.Supplier;
 
-public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, ICustomVehicle,
-        IEntityAdditionalSpawnData, BoundingBoxChangeable {
+public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -98,16 +97,20 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public float fuelConsumptionPerTick;
     private float xRot;
     public float xRotO;
+    private float lerpXRot;
     private float yRot;
     public float yRotO;
+    private float lerpYRot;
     private float zRot;
     public float zRotO;
+    private float lerpZRot;
     public boolean lockPassengerYBodyRot;
     public int soundDistance;
     public boolean uav;
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     public PhysicsEngine physicsEngine;
+    private boolean dataInitialized;
     public long lastRenderTime;
 
     private ResourceLocation customId;
@@ -127,19 +130,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.soundDistance = 3;
         this.vehicleOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
-        // 占位符
-        this.mainCubeOBB = VehicleBedrockCubeOBB.defaultCube();
         this.physicsEngine = new PhysicsEngine(this);
-    }
-
-    public void initData(ResourceLocation customId) {
-        initPartUnits();
-        initOBBs();
-        Map<String, PartUnit<?>> map = new HashMap<>();
-        for (PartUnit<?> partUnit : partUnits) {
-            map.put(partUnit.getId(), partUnit);
-        }
-        this.partUnitMap = map;
     }
 
     @Override
@@ -154,39 +145,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.entityData.define(DESTROYED, false);
     }
 
-    @NotNull
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
-
-    @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeResourceLocation(this.getCustomId());
-    }
-
-    @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
-        ResourceLocation customId = additionalData.readResourceLocation();
-        this.customId = customId;
-        this.initData(customId);
-    }
-
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Destroyed", isDestroyed());
         compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getCustomId().toString());
-
-        CompoundTag tag = new CompoundTag();
-        this.getPartUnits().forEach((partUnit -> {
-            CompoundTag partTag = partUnit.serializeNBT();
-            if (partTag.isEmpty()) {
-                return;
-            }
-            tag.put(partUnit.getId(), partTag);
-        }));
-        compound.put("PartUnits", tag);
+        compound.put("PartUnits", serializePartUnitsData());
     }
 
     @Override
@@ -202,16 +166,87 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
         }
         this.initData(this.getCustomId());
-        // 初始化完成后再读部件持久化数据
         if (compound.contains("PartUnits", Tag.TAG_COMPOUND)) {
-            CompoundTag tag = compound.getCompound("PartUnits");
+            deserializePartUnitsData(compound.getCompound("PartUnits"));
+        }
+    }
+
+    @NotNull
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return NetworkHooks.getEntitySpawningPacket(this);
+    }
+
+    @Override
+    public void writeSpawnData(FriendlyByteBuf buffer) {
+        buffer.writeResourceLocation(this.getCustomId());
+        buffer.writeNbt(serializePartUnitsData());
+    }
+
+    @Override
+    public void readSpawnData(FriendlyByteBuf buffer) {
+        this.customId = buffer.readResourceLocation();;
+        this.initData(this.getCustomId());
+        deserializePartUnitsData(buffer.readNbt());
+    }
+
+    private CompoundTag serializePartUnitsData() {
+        CompoundTag partUnitsTag = new CompoundTag();
+        this.getPartUnits().forEach((partUnit -> {
+            CompoundTag partTag = partUnit.serializeNBT();
+            if (partTag.isEmpty()) {
+                return;
+            }
+            partUnitsTag.put(partUnit.getId(), partTag);
+        }));
+        return partUnitsTag;
+    }
+
+    private void deserializePartUnitsData(CompoundTag partUnitsTag) {
+        if (partUnitsTag != null) {
             this.getPartUnits().forEach(partUnit -> {
-                if (tag.contains(partUnit.getId(), Tag.TAG_COMPOUND)) {
-                    CompoundTag partTag = tag.getCompound(partUnit.getId());
+                if (partUnitsTag.contains(partUnit.getId(), Tag.TAG_COMPOUND)) {
+                    CompoundTag partTag = partUnitsTag.getCompound(partUnit.getId());
                     partUnit.deserializeNBT(partTag);
                 }
             });
         }
+    }
+
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+        if (!level().isClientSide()) {
+            if (!dataInitialized) {
+                this.initData(getCustomId());
+            }
+        }
+    }
+
+    public void initData(ResourceLocation customId) {
+        initPartUnits();
+        initOBBs();
+        Map<String, PartUnit<?>> map = new HashMap<>();
+        for (PartUnit<?> partUnit : partUnits) {
+            map.put(partUnit.getId(), partUnit);
+        }
+        this.partUnitMap = map;
+
+        //todo: 读数据包配置
+        if (getHealth() < 0) {
+            if (this instanceof Hiace) {
+                this.setMaxHealth(10);
+                this.setHealth(10);
+            } else if (this instanceof Ztz99a) {
+                this.setMaxHealth(300);
+                this.setHealth(300);
+            } else {
+                this.setMaxHealth(100);
+                this.setHealth(100);
+            }
+        }
+
+        this.dataInitialized = true;
     }
 
     /**
@@ -246,7 +281,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             tickFuel();
             tickPower();
             Vec3 force = tickMove();
-            tickCollide(force);
+            tickPhysics(force);
             if (uav) {
                 keepChunkLoaded(position());
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
@@ -285,7 +320,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
-    protected void tickCollide(Vec3 force) {
+    protected void tickPhysics(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
         List<VehicleBedrockCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
@@ -1002,7 +1037,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         double velocity = this.getDeltaMovement().length();
         double entityVelocity = entity.getDeltaMovement().dot(this.getDeltaMovement()) / velocity;
         double relVelocity = (velocity - entityVelocity) * 20;
-        if (relVelocity > 3) {
+        if (relVelocity > 1) {
             entity.hurt(AllDamageTypes.Sources.vehicleCollision(level().registryAccess(), this, this.getDriver(), null),
                     (float) relVelocity * curbWeight);
         }
@@ -1018,21 +1053,29 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         ((ServerLevel) this.level()).getChunkSource().broadcast(this, packet);
     }
 
+    @Override
+    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements, boolean pTeleport) {
+        super.lerpTo(pX, pY, pZ, pYaw, pPitch, pPosRotationIncrements, pTeleport);
+        this.lerpXRot = entityData.get(X_ROT);
+        this.lerpYRot = entityData.get(Y_ROT);
+        this.lerpZRot = entityData.get(Z_ROT);
+    }
+
     public void aiStep() {
         if (level().isClientSide()) {
             if (this.lerpSteps > 0) {
                 double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
                 double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
                 double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
+                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot());
+                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot());
+                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot());
+                this.setXRot(this.getXRot() + dXRot / this.lerpSteps);
+                this.setYRot(this.getYRot() + dYRot / this.lerpSteps);
+                this.setZRot(this.getZRot() + dZRot / this.lerpSteps);
                 this.lerpSteps -= 1;
                 this.setPos(dX, dY, dZ);
             }
-            float dXRot = Mth.wrapDegrees(entityData.get(X_ROT) - this.getXRot());
-            float dYRot = Mth.wrapDegrees(entityData.get(Y_ROT) - this.getYRot());
-            float dZRot = Mth.wrapDegrees(entityData.get(Z_ROT) - this.getZRot());
-            this.setXRot(this.getXRot() + dXRot);
-            this.setYRot(this.getYRot() + dYRot);
-            this.setZRot(this.getZRot() + dZRot);
         }
 
         Vec3 v = this.getDeltaMovement();

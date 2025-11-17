@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
@@ -15,7 +14,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.CustomExplosion;
+import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 public class AerialBombEntity extends AmmoEntity {
@@ -69,7 +68,8 @@ public class AerialBombEntity extends AmmoEntity {
             if (fuseDelay > 0) {
                 fuseDelay -= 1;
             } else {
-                CustomExplosion.explode((ServerLevel) level(), this, position(), 16, 20);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), position(), 16, 20);
+                vehicleExplosion.explode();
                 this.kill();
             }
         }

@@ -54,7 +54,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         this.weaponUnit = weaponUnit;
         this.index = index;
         this.data = data;
-        this.displayName = Component.translatable(data.getDisplayName());
+        this.displayName = Component.translatable(data.getName());
         this.serializeId = serializeId;
     }
 

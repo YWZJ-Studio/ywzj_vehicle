@@ -21,7 +21,7 @@ public class DamageSystem {
             hitPos = damageSource.getDirectEntity().position();
         }
         //todo: 细化击穿伤害
-        if (amount < 20) {
+        if (amount < 50) {
             scale = 0.1;
             amount = 1f;
         } else {

@@ -324,8 +324,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void aim(Vec3 worldPos) {
         Vec2 rot = aimRot(worldPos);
         if (xAimRot != rot.x || yAimRot != rot.y) {
-            xAimRot = rot.x;
-            yAimRot = rot.y;
             if (vehicle.level().isClientSide) {
                 ClientVehicleAction control = new ClientVehicleAction();
                 control.vehicleEntityId = vehicle.getId();

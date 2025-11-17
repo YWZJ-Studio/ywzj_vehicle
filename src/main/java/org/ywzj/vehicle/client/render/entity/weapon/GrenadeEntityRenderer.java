@@ -1,13 +1,20 @@
 package org.ywzj.vehicle.client.render.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.weapon.GrenadeEntity;
+import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 public class GrenadeEntityRenderer extends EntityRenderer<GrenadeEntity> {
 
@@ -16,31 +23,19 @@ public class GrenadeEntityRenderer extends EntityRenderer<GrenadeEntity> {
     }
 
     @Override
-    public void render(GrenadeEntity entityIn, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferIn, int light) {
-        poseStack.pushPose();
+    public void render(GrenadeEntity pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        pPoseStack.pushPose();
+        {
+            Vec3 root = new Vec3(0, 0, 0);
+            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTicks, entityIn.yRotO, entityIn.getYRot()) - 90));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(90 + Mth.lerp(partialTicks, entityIn.xRotO, entityIn.getXRot())));
-        poseStack.translate(0.1, 0.3, 0);
+            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("entity/grenade_40mm"));
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/grenade_40mm.png")));
 
-//        if (entityIn.getItem() != null) {
-//            CustomBedrockModel model = null;
-//            if (IClientItemExtensions.of(entityIn.getItem()).getCustomRenderer() instanceof ThrowableItemRendererWrapper renderer) {
-//                var m = renderer.getModel(entityIn.getItem());
-//                if (m instanceof CustomBedrockModel customModel) {
-//                    model = customModel;
-//                    model.setEntityRendering(true);
-//                }
-//            }
-//
-//            Minecraft.getInstance().getItemRenderer().renderStatic(entityIn.getItem(), ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
-//                    poseStack, bufferIn, entityIn.level(), 0);
-//            if (model != null) {
-//                model.setEntityRendering(false);
-//            }
-//        }
-
-        poseStack.popPose();
+            model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+        }
+        pPoseStack.popPose();
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -21,8 +20,8 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
-import org.ywzj.vehicle.util.CustomExplosion;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.VehicleExplosion;
 
 public class RocketEntity extends AmmoEntity {
 
@@ -81,14 +80,16 @@ public class RocketEntity extends AmmoEntity {
             if (resultB.getType() != HitResult.Type.MISS) {
                 // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
                 endVec = resultB.getLocation();
-                CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), position(), 8, 20);
+                vehicleExplosion.explode();
                 this.kill();
                 return;
             }
             BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
             // 将单个命中是实体创建为单个内容的 list
             if (entityResult != null && entityResult.getEntity() != vehicle) {
-                CustomExplosion.explode((ServerLevel) level(), this, this.position(), 8, 20);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), position(), 8, 20);
+                vehicleExplosion.explode();
                 this.kill();
             }
         }

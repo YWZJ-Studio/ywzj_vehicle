@@ -26,7 +26,7 @@ public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChan
 
     public AABB getAABB() {
         if (entityData.get(EXPLODED)) {
-            return AABB.ofSize(position(), 8, 8, 8);
+            return AABB.ofSize(position(), 10, 10, 10);
         }
         return AABB.ofSize(position(), 0.3, 0.3, 0.3);
     }
@@ -40,10 +40,10 @@ public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChan
                 double x = this.getX();
                 double y = this.getY();
                 double z = this.getZ();
-                for (int i = 0; i < 32; i++) {
-                    double offsetX = this.random.triangle(0, 8);
-                    double offsetY = this.random.triangle(0, 6);
-                    double offsetZ = this.random.triangle(0, 8);
+                for (int i = 0; i < 48; i++) {
+                    double offsetX = this.random.triangle(0, 10);
+                    double offsetY = this.random.triangle(0, 8);
+                    double offsetZ = this.random.triangle(0, 10);
                     this.level().addParticle(AllParticleTypes.SMOKE_CLOUD.get(), true, x + offsetX, y + offsetY, z + offsetZ, 0.0D, 0.0D, 0.0D);
                 }
             }

@@ -86,7 +86,7 @@ public class Mi24 extends RotaryWingVehicle {
         bomb.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(bomb);
         BaseVehicleWeaponData weaponDataBomb = new BaseVehicleWeaponData();
-        weaponDataBomb.setDisplayName("bomb");
+        weaponDataBomb.setName("bomb");
         weaponDataBomb.setMaxCapacity(4);
         weaponDataBomb.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AERIAL_BOMB.get())));
         VehicleAerialBomb vehicleBomb = new VehicleAerialBomb(this, bomb, 0, weaponDataBomb, "bomb");

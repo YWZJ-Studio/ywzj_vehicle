@@ -23,12 +23,12 @@ public class AllItems {
     public static final RegistryObject<Item> UAV_CONTROLLER = registerItem(AllTabs.Category.MISC, "uav_controller", () -> new UavControllerItem(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> FIGURE_BOX = registerItem(AllTabs.Category.MISC, "figure_box", () -> new FigureBoxItem(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> AMMO_MACHINE_GUN = registerItem(AllTabs.Category.MISC, "ammo_machine_gun", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MACHINE_GUN));
-    public static final RegistryObject<Item> AMMO_AUTO_CANNON = registerItem(AllTabs.Category.MISC, "ammo_auto_cannon", () -> new AmmoItem(new Item.Properties().stacksTo(32), AmmoItem.AmmoType.AUTO_CANNON));
-    public static final RegistryObject<Item> AMMO_ARTILLERY = registerItem(AllTabs.Category.MISC, "ammo_artillery", () -> new AmmoItem(new Item.Properties().stacksTo(16), AmmoItem.AmmoType.ARTILLERY));
-    public static final RegistryObject<Item> AMMO_ROCKET = registerItem(AllTabs.Category.MISC, "ammo_rocket", () -> new AmmoItem(new Item.Properties().stacksTo(32), AmmoItem.AmmoType.ROCKET));
-    public static final RegistryObject<Item> AMMO_AERIAL_BOMB = registerItem(AllTabs.Category.MISC, "ammo_aerial_bomb", () -> new AmmoItem(new Item.Properties().stacksTo(4), AmmoItem.AmmoType.AERIAL_BOMB));
-    public static final RegistryObject<Item> AMMO_MISSILE = registerItem(AllTabs.Category.MISC, "ammo_missile", () -> new AmmoItem(new Item.Properties().stacksTo(8), AmmoItem.AmmoType.MISSILE));
-    public static final RegistryObject<Item> AMMO_GRENADE = registerItem(AllTabs.Category.MISC, "ammo_grenade", () -> new AmmoItem(new Item.Properties().stacksTo(8), AmmoItem.AmmoType.GRENADE));
+    public static final RegistryObject<Item> AMMO_AUTO_CANNON = registerItem(AllTabs.Category.MISC, "ammo_auto_cannon", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AUTO_CANNON));
+    public static final RegistryObject<Item> AMMO_GRENADE = registerItem(AllTabs.Category.MISC, "ammo_grenade", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.GRENADE));
+    public static final RegistryObject<Item> AMMO_ARTILLERY = registerItem(AllTabs.Category.MISC, "ammo_artillery", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.ARTILLERY));
+    public static final RegistryObject<Item> AMMO_ROCKET = registerItem(AllTabs.Category.MISC, "ammo_rocket", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.ROCKET));
+    public static final RegistryObject<Item> AMMO_AERIAL_BOMB = registerItem(AllTabs.Category.MISC, "ammo_aerial_bomb", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AERIAL_BOMB));
+    public static final RegistryObject<Item> AMMO_MISSILE = registerItem(AllTabs.Category.MISC, "ammo_missile", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MISSILE));
 
     public static <T extends Item> RegistryObject<Item> registerItem(AllTabs.Category category, String name, Supplier<T> item) {
         RegistryObject<Item> registryObject = ITEMS.register(name, item);

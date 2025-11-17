@@ -40,7 +40,7 @@ public class VehicleOverlay implements IGuiOverlay {
         int centerY = screenHeight / 2;
         renderCrew(guiGraphics, centerX, centerY, vehicle);
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-            renderCompassBar(guiGraphics, screenWidth, vehicle);
+            renderCompassBar(guiGraphics, partialTick, screenWidth, vehicle);
         }
         renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
     }
@@ -73,10 +73,12 @@ public class VehicleOverlay implements IGuiOverlay {
     /**
      * 罗盘
      */
-    public static void renderCompassBar(GuiGraphics guiGraphics, int screenWidth, AbstractVehicle vehicle) {
+    public static void renderCompassBar(GuiGraphics guiGraphics, float partialTick, int screenWidth, AbstractVehicle vehicle) {
         PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer());
         if (partUnit instanceof WeaponUnit weaponUnit) {
-            float yaw = weaponUnit.worldRot().y;
+            float y = weaponUnit.worldRot().y;
+            float yO = weaponUnit.worldRot(weaponUnit.xRotO, weaponUnit.yRotO).y;
+            float yaw = Mth.lerp(partialTick, yO, y);
             Font font = Minecraft.getInstance().font;
             PoseStack poseStack = guiGraphics.pose();
             poseStack.pushPose();
@@ -203,11 +205,11 @@ public class VehicleOverlay implements IGuiOverlay {
             poseStack.translate(x, y + barHalfHeight - 8, 0);
             poseStack.scale(size, size, size);
             guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, 0xFFFFFFFF);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -128, bgColor);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -128, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -128, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, -128, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, -128, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -512, bgColor);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -512, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -512, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, -512, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, -512, 0xFF999999);
 
             float health = vehicle.getHealth();
             float maxHealth = vehicle.getMaxHealth();
@@ -236,14 +238,14 @@ public class VehicleOverlay implements IGuiOverlay {
             int barColor = (0xFF << 24) | (red << 16) | (green << 8); // ARGB
 
             int filledWidth = (int) (barWidth * percent);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, -128, barColor);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, -512, barColor);
             int lastFilledWidth = (int) (barWidth * lastPercent);
             if (lastFilledWidth != filledWidth) {
                 RenderHelper.fill(
                         guiGraphics, RenderType.guiOverlay(),
                         -barHalfWidth + Math.min(filledWidth, lastFilledWidth), -barHalfHeight,
                         -barHalfWidth + Math.max(filledWidth, lastFilledWidth), barHalfHeight,
-                        -128, 0xFFFFFFFF
+                        -512, 0xFFFFFFFF
                 );
             }
 

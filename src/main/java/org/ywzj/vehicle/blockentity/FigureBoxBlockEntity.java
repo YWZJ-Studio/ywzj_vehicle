@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.all.AllBlockEntities;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 public class FigureBoxBlockEntity extends BlockEntity {
 
@@ -42,7 +43,10 @@ public class FigureBoxBlockEntity extends BlockEntity {
             if (type != null) {
                 Entity entity = type.create(level);
                 entity.load(entityData);
-                this.entity = entity;
+                setEntity(entity);
+                if (entity instanceof AbstractVehicle vehicle) {
+                    vehicle.initData(vehicle.getCustomId());
+                }
             }
         }
     }

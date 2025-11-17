@@ -36,6 +36,8 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 smokeGrenadeEntity.setBaseData(data);
                 smokeGrenadeEntity.setPos(ammoSpawnPosition);
                 smokeGrenadeEntity.shootFromRotation(this.getVehicle(), ammoXRot, ammoYRot, 0, 1f, 0);
+                smokeGrenadeEntity.setXRot(ammoXRot);
+                smokeGrenadeEntity.setYRot(ammoYRot);
 
                 vehicle.level().playSound(null, vehicle, AllSounds.SMOKE_GRENADE_LAUNCHER.get(), SoundSource.PLAYERS, 16f, 1f);
                 vehicle.level().addFreshEntity(smokeGrenadeEntity);
