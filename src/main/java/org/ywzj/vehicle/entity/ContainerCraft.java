@@ -80,7 +80,7 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         this.lerpX = pX;
         this.lerpY = pY;
         this.lerpZ = pZ;
-        this.lerpSteps = Math.min(2, pPosRotationIncrements);
+        this.lerpSteps = pPosRotationIncrements;
     }
 
     @Override

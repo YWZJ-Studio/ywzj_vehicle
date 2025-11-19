@@ -238,7 +238,7 @@ public class BulletEntity extends AmmoEntity {
         }
 
         if (explosion) {
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), result.getLocation(), 4, 20);
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), result.getLocation(), 6, 20);
             vehicleExplosion.explode();
         }
     }
@@ -265,7 +265,7 @@ public class BulletEntity extends AmmoEntity {
             if (resultAfterPenetrate.getType() != HitResult.Type.MISS) {
                 explosionAtPos = resultAfterPenetrate.getLocation();
             }
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), explosionAtPos, 4, 30);
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), explosionAtPos, 6, 30);
             vehicleExplosion.explode();
         }
 

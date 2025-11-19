@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -30,6 +31,10 @@ public class TrackParticle extends TextureSheetParticle {
     @Override
     public void tick() {
         super.tick();
+        if (level.getBlockState(BlockPos.containing(new Vec3(this.x, this.y - 0.01f, this.z))).isAir()) {
+            this.remove();
+            return;
+        }
         // 渐隐
         this.alpha = ((float) this.lifetime - this.age) / this.lifetime;
     }
@@ -37,7 +42,7 @@ public class TrackParticle extends TextureSheetParticle {
     @Override
     public ParticleRenderType getRenderType() {
         // 使用粒子纹理图集
-        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
     public void render(VertexConsumer pBuffer, Camera pRenderInfo, float pPartialTicks) {

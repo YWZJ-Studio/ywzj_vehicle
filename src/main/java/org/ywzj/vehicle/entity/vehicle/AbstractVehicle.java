@@ -127,7 +127,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.curbWeight = 1;
         this.fuelCapacity = 1;
         this.fuelConsumptionPerTick = 0.00001f;
-        this.soundDistance = 3;
+        this.soundDistance = 5;
         this.vehicleOBBs = new ArrayList<>();
         this.setMaxUpStep(1.0f);
         this.physicsEngine = new PhysicsEngine(this);

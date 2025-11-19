@@ -27,6 +27,7 @@ public class AllConfigs {
     public static class CommonConfig {
 
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionBreakBlocks;
+        public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlocks;
         public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
         public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
@@ -35,6 +36,8 @@ public class AllConfigs {
         public CommonConfig(ForgeConfigSpec.Builder builder) {
             explosionBreakBlocks = builder.comment("爆炸是否破坏方块")
                     .define("explosionBreakBlocks", true);
+            explosionDropBlocks = builder.comment("爆炸是否掉落方块")
+                    .define("explosionDropBlocks", true);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
             infiniteFuel = builder.comment("无需燃油仍可运作")

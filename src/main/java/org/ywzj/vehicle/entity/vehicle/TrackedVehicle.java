@@ -13,8 +13,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
+import org.ywzj.vehicle.util.EntityUtil;
 
 public abstract class TrackedVehicle extends AbstractVehicle {
 
@@ -27,6 +29,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
     public float maxSpeedBackward = 0.2f;
     public float turnAcceleration = 1f;
     public float maxTurn = 2f;
+    public double trackLength;
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
 
@@ -105,13 +108,34 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                 if (engineRunSoundInstance == null) {
                     SoundEvent engineRunSound = getEngineRunSound();
                     if (engineRunSound != null) {
-                        engineRunSoundInstance = new VehicleSound(engineRunSound, volume * soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineRunSoundInstance = new VehicleSound(engineRunSound, soundDistance, 1f, true, 50, true, true, this.getId());
                         engineRunSoundInstance.play();
                     }
                 } else {
-                    engineRunSoundInstance.setVolume(volume * soundDistance);
+                    engineRunSoundInstance.setVolume(volume);
                     engineRunSoundInstance.setPitch(pitch);
                 }
+            }
+        }
+    }
+
+    @Override
+    protected void tickParticle() {
+        super.tickParticle();
+        trackLength += getDeltaMovement().length();
+        if (trackLength >= 1) {
+            trackLength = 0;
+            Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+            Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+            if (EntityUtil.isOnBlockSurface(this, trackLeftPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  0.3f, this.getYRot(), 0
+                );
+            }
+            if (EntityUtil.isOnBlockSurface(this, trackRightPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  0.3f, this.getYRot(), 0
+                );
             }
         }
     }

@@ -117,11 +117,11 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 if (engineRunSoundInstance == null) {
                     SoundEvent engineRunSound = getEngineRunSound();
                     if (engineRunSound != null) {
-                        engineRunSoundInstance = new VehicleSound(engineRunSound, volume * soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineRunSoundInstance = new VehicleSound(engineRunSound, soundDistance, 1f, true, 50, true, true, this.getId());
                         engineRunSoundInstance.play();
                     }
                 } else {
-                    engineRunSoundInstance.setVolume(volume * soundDistance);
+                    engineRunSoundInstance.setVolume(volume);
                     engineRunSoundInstance.setPitch(pitch);
                 }
             }

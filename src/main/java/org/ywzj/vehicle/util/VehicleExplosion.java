@@ -44,11 +44,16 @@ public class VehicleExplosion {
     private final double z;
     private final float radius;
     private final float damage;
+    private final boolean dropBlocks;
     private final DamageSource damageSource;
     private final ExplosionDamageCalculator damageCalculator;
     private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
 
     public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage) {
+        this(level, source, position, radius, damage, AllConfigs.common.explosionDropBlocks.get());
+    }
+
+    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean dropBlocks) {
         this.level = level;
         this.source = source;
         this.x = position.x;
@@ -56,6 +61,7 @@ public class VehicleExplosion {
         this.z = position.z;
         this.radius = radius;
         this.damage = damage;
+        this.dropBlocks = dropBlocks;
         this.damageSource = level.damageSources().explosion(source, null);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
@@ -123,16 +129,18 @@ public class VehicleExplosion {
                 }
                 BlockPos immutablePos = pos.immutable();
                 this.level.getProfiler().push("explosion_blocks");
-                if (blockState.canDropFromExplosion(this.level, pos, vanillaExplosion) && this.level instanceof ServerLevel serverLevel) {
-                    BlockEntity blockEntity = blockState.hasBlockEntity() ? this.level.getBlockEntity(pos) : null;
-                    LootParams.Builder lootParams = new LootParams.Builder(serverLevel)
-                            .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
-                            .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
-                            .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity)
-                            .withOptionalParameter(LootContextParams.THIS_ENTITY, this.source)
-                            .withParameter(LootContextParams.EXPLOSION_RADIUS, this.radius);
-                    blockState.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false);
-                    blockState.getDrops(lootParams).forEach(stack -> addBlockDrops(dropsBuffer, stack, immutablePos));
+                if (dropBlocks) {
+                    if (blockState.canDropFromExplosion(this.level, pos, vanillaExplosion) && this.level instanceof ServerLevel serverLevel) {
+                        BlockEntity blockEntity = blockState.hasBlockEntity() ? this.level.getBlockEntity(pos) : null;
+                        LootParams.Builder lootParams = new LootParams.Builder(serverLevel)
+                                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+                                .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+                                .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity)
+                                .withOptionalParameter(LootContextParams.THIS_ENTITY, this.source)
+                                .withParameter(LootContextParams.EXPLOSION_RADIUS, this.radius);
+                        blockState.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false);
+                        blockState.getDrops(lootParams).forEach(stack -> addBlockDrops(dropsBuffer, stack, immutablePos));
+                    }
                 }
                 blockState.onBlockExploded(this.level, pos, vanillaExplosion);
                 this.level.getProfiler().pop();
