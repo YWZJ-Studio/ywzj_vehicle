@@ -6,7 +6,8 @@ import org.mozilla.javascript.ScriptableObject;
 
 public class ScriptUtils {
 
-    // 如果一些原版的类需要被操作，为了避免混淆产生的问题，建议都包装一层再注入脚本环境
+    // 为了绕开混淆和安全策略限制，原版类都需要包装一层
+    // 这里提供了一些全局的工具类
     public static void inject(Scriptable scope) {
         Object jsVec3Class = Context.javaToJS(MathUtil.INSTANCE, scope);
         ScriptableObject.putProperty(scope, "MathUtil", jsVec3Class);

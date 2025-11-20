@@ -1,9 +1,9 @@
-package org.ywzj.vehicle.client.render.animation;
+package org.ywzj.vehicle.scripts.vehicle;
 
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.ApiStatus;
 import org.ywzj.vehicle.api.scripts.EntityContextProvider;
+import org.ywzj.vehicle.api.scripts.ParticleUtil;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
@@ -76,7 +76,8 @@ public class WheeledVehicleContext extends EntityContextProvider<WheeledVehicle>
         return entity.getScriptCache().get();
     }
 
-    public void addParticle(ParticleOptions particleOptions, double x, double y, double z, double vx, double vy, double vz) {
-        entity.level().addParticle(particleOptions, true, x, y, z, vx, vy, vz);
+    public void addParticle(ParticleUtil.ParticleOptionsWrapper particleOptions, double x, double y, double z,
+                            double vx, double vy, double vz) {
+        entity.level().addParticle(particleOptions.options(), true, x, y, z, vx, vy, vz);
     }
 }

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation;
+package org.ywzj.vehicle.api.scripts.bedrock;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 

@@ -1,6 +1,10 @@
 package org.ywzj.vehicle.client.render.entity.template;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.maydaymemory.mae.basic.ArrayPoseBuilder;
+import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
+import com.maydaymemory.mae.blend.EulerAdditiveBlender;
+import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -12,13 +16,19 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.mozilla.javascript.ContextFactory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import org.ywzj.vehicle.api.event.VehicleFireEvent;
+import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.CommonWheeledVehicle;
 
 
-// todo 测试用
+@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehicle> {
+    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
+
     private static final Object[] EMPTY_ARGS = new Object[0];
 
     public CommonWheeledVehicleRender(EntityRendererProvider.Context pContext) {
@@ -45,10 +55,16 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
         VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
         if (model != null) {
+            pEntity.getAnimationInstance().tick();
+            var pose = pEntity.getAnimationInstance().getCurrentPose();
+            model.applyPose(BLENDER.blend(model.getBindPose(), pose));
+
+            ArrayPoseBuilder poseBuilder = new ArrayPoseBuilder();
+
             display.getVehicleContext().updateRenderer(pPartialTick, pEntity);
             var func = display.getPrepareBonesFunction();
             if (func != null) {
-                try (var ctx = ContextFactory.getGlobal().enterContext()) {
+                try (var ctx = ScriptContextFactory.get().enterContext()) {
                     func.call(ctx, display.getScope(), func, EMPTY_ARGS);
                 }
             }
@@ -66,4 +82,14 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
         return null;
     }
 
+
+    @SubscribeEvent
+    public static void onFire(VehicleFireEvent.Post event) {
+        if (event.isClientSide()) {
+            var vehicle = event.getVehicle();
+            if (vehicle instanceof CommonWheeledVehicle commonWheeledVehicle) {
+                commonWheeledVehicle.getAnimationInstance().onFire();
+            }
+        }
+    }
 }

@@ -10,7 +10,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 public enum ParticleUtil {
     INSTANCE;
 
-    public ParticleOptions buildParticleOptions(String particleName, String params) {
+    public record ParticleOptionsWrapper(ParticleOptions options) {}
+
+    public ParticleOptionsWrapper buildParticleOptions(String particleName, String params) {
         ResourceLocation location = new ResourceLocation(particleName);
         if (!ForgeRegistries.PARTICLE_TYPES.containsKey(location)) {
             return null;
@@ -20,7 +22,7 @@ public enum ParticleUtil {
             return null;
         }
         try {
-            return readParticle(params, type);
+            return new ParticleOptionsWrapper(readParticle(params, type));
         } catch (CommandSyntaxException e) {
             return null;
         }

@@ -34,18 +34,18 @@ public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLo
     @Override
     protected Map<ResourceLocation, Script> prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         Map<ResourceLocation, Script> output = Maps.newHashMap();
-        for(Map.Entry<ResourceLocation, Resource> entry : filetoidconverter.listMatchingResources(manager).entrySet()) {
-            ResourceLocation resourcelocation = entry.getKey();
-            ResourceLocation resourcelocation1 = filetoidconverter.fileToId(resourcelocation);
+        try (Context ctx = ContextFactory.getGlobal().enterContext()) {
+            ctx.setInterpretedMode(false);
+            for(Map.Entry<ResourceLocation, Resource> entry : filetoidconverter.listMatchingResources(manager).entrySet()) {
+                ResourceLocation resourcelocation = entry.getKey();
+                ResourceLocation resourcelocation1 = filetoidconverter.fileToId(resourcelocation);
 
-            try (Reader reader = entry.getValue().openAsReader()) {
-                try (Context ctx = ContextFactory.getGlobal().enterContext()) {
-                    ctx.setInterpretedMode(false);
+                try (Reader reader = entry.getValue().openAsReader()) {
                     Script compiled = ctx.compileReader(reader, entry.getKey().toString(), 1, null);
                     output.put(resourcelocation1, compiled);
+                } catch (IllegalArgumentException | IOException | JsonParseException jsonparseexception) {
+                    YwzjVehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
                 }
-            } catch (IllegalArgumentException | IOException | JsonParseException jsonparseexception) {
-                YwzjVehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
             }
         }
         return output;

@@ -5,10 +5,10 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.mozilla.javascript.*;
-import org.ywzj.vehicle.api.scripts.ScriptUtils;
-import org.ywzj.vehicle.client.render.animation.BoneHandlers;
-import org.ywzj.vehicle.client.render.animation.WheeledVehicleContext;
+import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
+import org.ywzj.vehicle.api.scripts.bedrock.BoneHandlers;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.scripts.vehicle.WheeledVehicleContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +23,7 @@ public class BaseVehicleDisplay {
     protected BedrockModel model;
     protected ResourceLocation texture;
     // todo 临时存这，实际使用需要封装成状态机
-    protected Map<String, BedrockAnimation> animations;
+    protected Map<String, BedrockAnimation> animations = Map.of();
 
     protected Map<String, SoundEvent> soundEvents;
 
@@ -35,7 +35,7 @@ public class BaseVehicleDisplay {
     protected Function tickParticleFunction;
     protected WheeledVehicleContext vehicleScriptContext;
 
-    protected BaseVehicleDisplay() {
+    public BaseVehicleDisplay() {
     }
 
     /**
@@ -59,10 +59,8 @@ public class BaseVehicleDisplay {
         if (pojo.script != null) {
             this.script = ClientAssetsManager.INSTANCE.getScript(pojo.script).orElse(null);
             if (this.script != null) {
-                try (var ctx = ContextFactory.getGlobal().enterContext()) {
-                    ctx.setInterpretedMode(false);
-                    this.scope = ctx.initStandardObjects();
-                    ScriptUtils.inject(scope);
+                try (var ctx = ScriptContextFactory.get().enterContext()) {
+                    this.scope = ScriptContextFactory.get().createScope(ctx);
 
                     script.exec(ctx, this.scope);
 

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation;
+package org.ywzj.vehicle.api.scripts;
 
 public class ScriptCache {
     private Object data;
