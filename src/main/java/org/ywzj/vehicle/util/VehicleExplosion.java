@@ -32,6 +32,7 @@ import net.minecraftforge.event.level.ExplosionEvent;
 import org.ywzj.vehicle.all.AllConfigs;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,16 +45,17 @@ public class VehicleExplosion {
     private final double z;
     private final float radius;
     private final float damage;
+    private final boolean breakBlocks;
     private final boolean dropBlocks;
     private final DamageSource damageSource;
     private final ExplosionDamageCalculator damageCalculator;
     private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
 
     public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage) {
-        this(level, source, position, radius, damage, AllConfigs.common.explosionDropBlocks.get());
+        this(level, source, position, radius, damage, AllConfigs.common.explosionBreakBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
     }
 
-    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean dropBlocks) {
+    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean breakBlocks, boolean dropBlocks) {
         this.level = level;
         this.source = source;
         this.x = position.x;
@@ -61,24 +63,33 @@ public class VehicleExplosion {
         this.z = position.z;
         this.radius = radius;
         this.damage = damage;
+        this.breakBlocks = breakBlocks;
         this.dropBlocks = dropBlocks;
         this.damageSource = level.damageSources().explosion(source, null);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
 
     public void explode() {
+        explode(null);
+    }
+
+    public void explode(List<Entity> excludedEntities) {
         Explosion vanillaExplosion = new Explosion(level, source, x, y, z, radius, false, Explosion.BlockInteraction.KEEP);
         ExplosionEvent.Start startEvent = new ExplosionEvent.Start(level, vanillaExplosion);
         if (MinecraftForge.EVENT_BUS.post(startEvent)) {
             return;
         }
-        ruin(vanillaExplosion);
-        hurt();
-        effect();
+        try {
+            ruin(vanillaExplosion);
+            hurt(excludedEntities);
+            effect();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
     }
 
     private void ruin(Explosion vanillaExplosion) {
-        if (AllConfigs.common.explosionBreakBlocks.get()) {
+        if (breakBlocks) {
             Set<BlockPos> affectedBlocks = new HashSet<>();
             int resolution = 16;
             for (int xEdge = 0; xEdge < resolution; xEdge++) {
@@ -151,9 +162,12 @@ public class VehicleExplosion {
         }
     }
 
-    private void hurt() {
+    private void hurt(List<Entity> excludedEntities) {
         AABB box = new AABB(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius);
         for (Entity entity : level.getEntitiesOfClass(Entity.class, box)) {
+            if (excludedEntities != null && excludedEntities.contains(entity)) {
+                continue;
+            }
             double distance = entity.position().distanceTo(new Vec3(x, y, z));
             if (distance > radius) {
                 continue;

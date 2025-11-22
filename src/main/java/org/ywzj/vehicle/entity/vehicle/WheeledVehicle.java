@@ -86,7 +86,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
             if (getFuel() != 0 && getPower() == 5 && isEngineOn()) {
                 SoundEvent engineStartSound = getEngineStartSound();
                 if (engineStartSound != null) {
-                    new VehicleSound(engineStartSound, soundDistance, 1f, false, 50, true, true, this.getId()).play();
+                    new VehicleSound(engineStartSound, 1f, soundDistance, 1f, false, 50, true, true, this.getId()).play();
                 }
             }
             float vf = getSpeed();
@@ -103,7 +103,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 } else if (engineIdleSoundInstance == null) {
                     SoundEvent engineIdleSound = getEngineIdleSound();
                     if (engineIdleSound != null) {
-                        engineIdleSoundInstance = new VehicleSound(engineIdleSound, soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, soundDistance, 1f, true, 50, true, true, this.getId());
                         engineIdleSoundInstance.play();
                     }
                 }
@@ -112,16 +112,14 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                     engineIdleSoundInstance.stop();
                     engineIdleSoundInstance = null;
                 }
-                float volume = Math.max(0.7f, vf / maxSpeedForward);
                 float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
                 if (engineRunSoundInstance == null) {
                     SoundEvent engineRunSound = getEngineRunSound();
                     if (engineRunSound != null) {
-                        engineRunSoundInstance = new VehicleSound(engineRunSound, soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, soundDistance, 1f, true, 50, true, true, this.getId());
                         engineRunSoundInstance.play();
                     }
                 } else {
-                    engineRunSoundInstance.setVolume(volume);
                     engineRunSoundInstance.setPitch(pitch);
                 }
             }
@@ -129,7 +127,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         Vec3 velocity = new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z);
         if (velocity.length() > 0.1 && Math.sin(VectorUtil.angleBetween(velocity, getLookAngle())) > Math.sin(Math.PI / 10)) {
             if (tireSquealSoundInstance == null) {
-                tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1, 1, true, 50, true, true, this.getId());
+                tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1f, 1f, 1f, true, 50, true, true, this.getId());
                 tireSquealSoundInstance.play();
             }
         } else if (tireSquealSoundInstance != null) {

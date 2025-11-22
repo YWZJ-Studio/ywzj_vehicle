@@ -25,7 +25,7 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     private boolean fadeOut;
     private Integer fadeInTick = 0;
 
-    public VehicleSound(SoundEvent event, float volume, float pitch, boolean loop, int fadeTicks, boolean fadeIn, boolean fadeOut, int entityId) {
+    public VehicleSound(SoundEvent event, float volume, float distance, float pitch, boolean loop, int fadeTicks, boolean fadeIn, boolean fadeOut, int entityId) {
         super(event, SoundSource.PLAYERS, volume, pitch, SoundInstance.createUnseededRandom(), 0, 0, 0);
         this.entityId = entityId;
         updateRelativePos();
@@ -33,7 +33,7 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         this.fadeTicks = fadeTicks;
         this.fadeIn = fadeIn;
         this.fadeOut = fadeOut;
-        this.scale = 1 / volume;
+        this.scale = 1 / distance;
         this.looping = loop;
         this.isPlaying = true;
         this.isFadeOut = false;

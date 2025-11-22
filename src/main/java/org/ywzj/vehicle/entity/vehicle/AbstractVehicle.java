@@ -66,6 +66,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
+import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
@@ -119,7 +120,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         super(pEntityType, pLevel);
         this.customId = EntityType.getKey(pEntityType);
         this.seats = new ArrayList<>();
-        this.controlUnit = new ControlUnit();
+        this.controlUnit = new ControlUnit(this);
         this.partUnits = new ArrayList<>();
         this.partUnitMap = Map.of();
         this.thirdPersonDistance = 8;
@@ -181,6 +182,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public void writeSpawnData(FriendlyByteBuf buffer) {
         buffer.writeResourceLocation(this.getCustomId());
         buffer.writeNbt(serializePartUnitsData());
+        buffer.writeInt(seats.size());
+        for (Seat seat : seats) {
+            buffer.writeInt(seat.passengerId);
+        }
     }
 
     @Override
@@ -188,6 +193,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.customId = buffer.readResourceLocation();;
         this.initData(this.getCustomId());
         deserializePartUnitsData(buffer.readNbt());
+        int[] passengerIdsBySeat = new int[buffer.readInt()];
+        for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
+            passengerIdsBySeat[index] = buffer.readInt();
+        }
+        setSeats(passengerIdsBySeat);
     }
 
     private CompoundTag serializePartUnitsData() {
@@ -394,28 +404,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 if (isDestroyed()) {
                     this.discard();
                 } else {
-                    this.getPassengers().forEach(passenger -> {
-                        passenger.stopRiding();
-                        if (!uav) {
-                            passenger.hurt(damageSource, 100);
-                        }
-                    });
-                    this.setHealth(this.getMaxHealth());
-                    Vec3 position = this.position();
-                    ServerLevel level = (ServerLevel) level();
-                    level.playSound(this, BlockPos.containing(position), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
-                    for (ServerPlayer player : level.getPlayers(player -> player.distanceTo(this) < 256)) {
-                        level.sendParticles(
-                                player,
-                                ParticleTypes.EXPLOSION_EMITTER,
-                                true,
-                                position.x, position.y, position.z,
-                                3,
-                                0.5, 0.5, 0.5,
-                                0.1
-                        );
-                    }
+                    this.getPassengers().forEach(Entity::stopRiding);
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this.position(),
+                            (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
+                    vehicleExplosion.explode(Collections.singletonList(this));
                     entityData.set(DESTROYED, true);
+                    this.setHealth(this.getMaxHealth());
                 }
             }
             this.markHurt();
@@ -614,6 +608,36 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return false;
     }
 
+    @OnlyIn(Dist.CLIENT)
+    private void setSeats(int[] ids) {
+        Player player = LocalVehiclePlayer.instance.getPlayer();
+        List<Integer> passengerIdsBySeat = new ArrayList<>();
+        for (int id : ids) {
+            passengerIdsBySeat.add(id);
+        }
+        if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
+                && !passengerIdsBySeat.contains(player.getId())) {
+            LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
+        }
+        for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
+            Seat seat = seats.get(index);
+            Integer id = passengerIdsBySeat.get(index);
+            if (id != -1) {
+                if (index == 0) {
+                    controlUnit.setOperatorId(id);
+                }
+                seat.partUnit.setOwnerId(id);
+                seat.passengerId = id;
+            } else {
+                if (index == 0) {
+                    controlUnit.setOperator(null);
+                }
+                seat.partUnit.setOwner(null);
+                seat.passengerId = -1;
+            }
+        }
+    }
+
     public static void onClientVehicleChangeSeat(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ServerPlayer player = ctxSupplier.get().getSender();
         if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
@@ -641,32 +665,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             return;
         }
         if (level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-            Player player = LocalVehiclePlayer.instance.getPlayer();
-            List<Integer> passengerIdsBySeat = new ArrayList<>();
-            for (int id : message.passengerIdsBySeat) {
-                passengerIdsBySeat.add(id);
-            }
-            if (vehicle.seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
-                    && !passengerIdsBySeat.contains(player.getId())) {
-                LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
-            }
-            for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
-                Seat seat = vehicle.seats.get(index);
-                Entity entity = passengerIdsBySeat.get(index) == null ? null : level.getEntity(passengerIdsBySeat.get(index));
-                if (entity instanceof LivingEntity passenger) {
-                    if (index == 0) {
-                        vehicle.controlUnit.setOperator(passenger);
-                    }
-                    seat.partUnit.setOwner(passenger);
-                    seat.passengerId = entity.getId();
-                } else {
-                    if (index == 0) {
-                        vehicle.controlUnit.setOperator(null);
-                    }
-                    seat.partUnit.setOwner(null);
-                    seat.passengerId = -1;
-                }
-            }
+            vehicle.setSeats(message.passengerIdsBySeat);
         }
     }
 
@@ -758,7 +757,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public LivingEntity getDriver() {
-        return controlUnit.operator;
+        return controlUnit.getOperator();
     }
 
     public PartUnit<?> getOwnOperatorUnit(LivingEntity pPassenger) {

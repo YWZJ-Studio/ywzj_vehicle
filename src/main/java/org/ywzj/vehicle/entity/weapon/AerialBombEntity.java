@@ -86,12 +86,12 @@ public class AerialBombEntity extends AmmoEntity {
             }
         } else {
             if (soundWhistle == null) {
-                soundWhistle = new VehicleSound(AllSounds.BOMB_WHISTLE.get(), 2, 1f, false, 50, true, true, this.getId());
+                soundWhistle = new VehicleSound(AllSounds.BOMB_WHISTLE.get(), 1f, 2f, 1f, false, 50, true, true, this.getId());
                 soundWhistle.play();
             }
             if (LocalVehiclePlayer.instance.getPlayer().distanceTo(this) < 8) {
                 if (soundIncoming == null) {
-                    soundIncoming = new VehicleSound(AllSounds.BOMBS_INCOMING.get(), 1, 1f, false, 50, true, true, this.getId());
+                    soundIncoming = new VehicleSound(AllSounds.BOMBS_INCOMING.get(), 1f, 2f, 1f, false, 50, true, true, this.getId());
                     soundIncoming.play();
                 }
             }

@@ -37,6 +37,7 @@ public class SoundManager {
         VehicleSound instance = new VehicleSound(event,
                 message.volume,
                 1f,
+                1f,
                 false,
                 50,
                 false,

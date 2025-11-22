@@ -20,13 +20,11 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "common.ChunkMapMixin",
     "common.EntityMixin",
     "common.ExplosionAccessor",
     "common.LivingEntityMixin",
     "common.PathPackResourcesMixin",
     "common.PlayerMixin",
-    "common.ServerEntityMixin",
     "tacz.EntityKineticBulletMixin",
     "tacz.EntityUtilMixin"
   ]

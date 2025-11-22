@@ -39,6 +39,7 @@ public class Ztz99a extends TrackedVehicle {
 
     public Ztz99a(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.soundDistance = 7;
     }
 
 //    @Override

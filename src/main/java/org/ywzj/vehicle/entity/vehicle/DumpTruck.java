@@ -75,7 +75,7 @@ public class DumpTruck extends WheeledVehicle {
         RotatableUnit bed = (RotatableUnit) seats.get(0).partUnit;
         if (Math.abs(bed.getXAimRot() - bed.getXRot()) > 1 && bed.getXRot() < bed.xRotMax && bed.getXRot() > bed.xRotMin) {
             if (bedTurnSoundInstance == null) {
-                bedTurnSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, true, 10, true, true, this.getId());
+                bedTurnSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, 1f, true, 10, true, true, this.getId());
                 bedTurnSoundInstance.play();
             }
         } else {

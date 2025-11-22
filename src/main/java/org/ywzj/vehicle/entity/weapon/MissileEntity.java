@@ -162,7 +162,7 @@ public class MissileEntity extends AmmoEntity {
     @OnlyIn(Dist.CLIENT)
     public void tickSound() {
         if (sound == null) {
-            sound = new VehicleSound(AllSounds.ROCKET_FLYING.get(), 1, 1f, false, 50, true, true, this.getId());
+            sound = new VehicleSound(AllSounds.ROCKET_FLYING.get(), 1f, 1f, 1f, false, 50, true, true, this.getId());
             sound.play();
         }
     }

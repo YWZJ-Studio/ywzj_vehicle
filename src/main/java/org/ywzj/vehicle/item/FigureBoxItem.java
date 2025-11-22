@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -30,7 +32,7 @@ public class FigureBoxItem extends VehicleItem {
 
     @Override
     public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand hand) {
-        if (!player.level().isClientSide && hand == InteractionHand.MAIN_HAND) {
+        if (!player.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
             CompoundTag tag = itemStack.getOrCreateTag();
             if (tag.contains("entityData")) {
                 player.displayClientMessage(Component.translatable("tips.figure_box_has_entity"), true);
@@ -43,6 +45,7 @@ public class FigureBoxItem extends VehicleItem {
             tag.putString("entityId", EntityType.getKey(target.getType()).toString());
             itemStack.setTag(tag);
             target.remove(Entity.RemovalReason.DISCARDED);
+            player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
             player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
             return InteractionResult.SUCCESS;
         }
@@ -54,7 +57,7 @@ public class FigureBoxItem extends VehicleItem {
         Level level = context.getLevel();
         Player player = context.getPlayer();
         ItemStack itemStack = context.getItemInHand();
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         CompoundTag tag = itemStack.getTag();
@@ -62,10 +65,10 @@ public class FigureBoxItem extends VehicleItem {
             player.displayClientMessage(Component.translatable("tips.figure_box_empty"), true);
             return InteractionResult.FAIL;
         }
-        String id = tag.getString("entityId");
+        String entityId = tag.getString("entityId");
         CompoundTag entityData = tag.getCompound("entityData");
         BlockPos pos = context.getClickedPos().above();
-        EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(id));
+        EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(entityId));
         if (type != null) {
             Entity entity = type.create(level);
             entity.load(entityData);
@@ -86,6 +89,7 @@ public class FigureBoxItem extends VehicleItem {
                 tag.remove("entityData");
                 tag.remove("entityId");
                 itemStack.setTag(tag);
+                player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.PLAYERS, 1.0F, 1.0F);
                 player.displayClientMessage(Component.translatable("tips.figure_box_release_entity"), true);
                 return InteractionResult.SUCCESS;
             }

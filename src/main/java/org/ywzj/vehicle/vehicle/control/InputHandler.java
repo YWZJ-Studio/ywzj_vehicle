@@ -113,8 +113,8 @@ public class InputHandler {
                 sendLeaveVehicle(vehicle);
                 return;
             }
-            if (player.equals(vehicle.controlUnit.operator)) {
-                ControlUnit controlUnit = new ControlUnit();
+            if (player.equals(vehicle.controlUnit.getOperator())) {
+                ControlUnit controlUnit = new ControlUnit(vehicle);
                 controlUnit.forward = FORWARD.isDown();
                 controlUnit.backward = BACKWARD.isDown();
                 controlUnit.left = LEFT.isDown();

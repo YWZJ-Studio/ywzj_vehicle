@@ -17,14 +17,26 @@ public class AllTabs {
 
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, YwzjVehicle.MOD_ID);
 
+    public static final List<String> VEHICLE_ENTITY_IDS = new ArrayList<>();
     public static final List<Supplier<? extends ItemLike>> MISC_ITEMS = new ArrayList<>();
+
+    public static final RegistryObject<CreativeModeTab> TAB_VEHICLE = TABS.register("tab_vehicle", () ->
+            CreativeModeTab
+                    .builder()
+                    .title(Component.translatable("tab.vehicle"))
+                    .icon(AllItems.FIGURE_BOX.get()::getDefaultInstance)
+                    .displayItems((displayParams, output) ->
+                            VEHICLE_ENTITY_IDS.forEach(vehicleEntityId ->
+                                    output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().getInstance(vehicleEntityId))))
+                    .build());
 
     public static final RegistryObject<CreativeModeTab> TAB_MISC = TABS.register("tab_misc", () ->
             CreativeModeTab
                     .builder()
                     .title(Component.translatable("tab.misc"))
                     .icon(AllItems.FUEL_TANK.get()::getDefaultInstance)
-                    .displayItems((displayParams, output) -> MISC_ITEMS.forEach(itemLike -> output.accept(itemLike.get())))
+                    .displayItems((displayParams, output) ->
+                            MISC_ITEMS.forEach(itemLike -> output.accept(itemLike.get())))
                     .build());
 
     public static void register(IEventBus eventBus) {
@@ -32,6 +44,7 @@ public class AllTabs {
     }
 
     public enum Category {
+        VEHICLE,
         MISC
     }
 

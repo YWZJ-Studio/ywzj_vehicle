@@ -28,6 +28,7 @@ public class AllConfigs {
 
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionBreakBlocks;
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlocks;
+        public final ForgeConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
         public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
         public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
@@ -38,6 +39,8 @@ public class AllConfigs {
                     .define("explosionBreakBlocks", true);
             explosionDropBlocks = builder.comment("爆炸是否掉落方块")
                     .define("explosionDropBlocks", true);
+            vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
+                    .defineInRange("showVehicleInfoDistance", 512.0, 0.0, Double.MAX_VALUE);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
             infiniteFuel = builder.comment("无需燃油仍可运作")
@@ -55,8 +58,7 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
 
         public ServerConfig(ForgeConfigSpec.Builder builder) {
-            showVehicleInfoDistance = builder
-                    .comment("允许看向载具时展示信息的最大距离")
+            showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离")
                     .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
         }
 

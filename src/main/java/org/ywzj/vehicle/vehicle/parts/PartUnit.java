@@ -48,6 +48,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected T data;
 
     protected LivingEntity owner;
+    protected int ownerId;
     protected Vec3 ownerViewOffset;
     protected Vec3 seatOffset;
     protected Vec3 pivotOffset = Vec3.ZERO;
@@ -194,11 +195,26 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     public LivingEntity getOwner() {
-        return owner;
+        if (this.owner == null && this.ownerId != -1) {
+            if (this.vehicle.level().getEntity(this.ownerId) instanceof LivingEntity livingEntity) {
+                this.owner = livingEntity;
+            }
+        }
+        return this.owner;
     }
 
     public void setOwner(LivingEntity owner) {
-        this.owner = owner;
+        if (owner == null) {
+            this.owner = null;
+            this.ownerId = -1;
+        } else {
+            this.owner = owner;
+            this.ownerId = owner.getId();
+        }
+    }
+
+    public void setOwnerId(int ownerId) {
+        this.ownerId = ownerId;
     }
 
     public Vec3 getOwnerViewOffset() {

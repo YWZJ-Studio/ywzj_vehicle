@@ -76,7 +76,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
             if (getFuel() != 0 && getPower() == 5 && isEngineOn()) {
                 SoundEvent engineStartSound = getEngineStartSound();
                 if (engineStartSound != null) {
-                    new VehicleSound(engineStartSound, soundDistance, 1f, false, 50, true, true, this.getId()).play();
+                    new VehicleSound(engineStartSound, 1f, soundDistance, 1f, false, 50, true, true, this.getId()).play();
                 }
             }
             float vf = entityData.get(FORWARD_SPEED);
@@ -94,7 +94,7 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                 } else if (engineIdleSoundInstance == null) {
                     SoundEvent engineIdleSound = getEngineIdleSound();
                     if (engineIdleSound != null) {
-                        engineIdleSoundInstance = new VehicleSound(engineIdleSound, soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, soundDistance, 1f, true, 50, true, true, this.getId());
                         engineIdleSoundInstance.play();
                     }
                 }
@@ -103,16 +103,14 @@ public abstract class TrackedVehicle extends AbstractVehicle {
                     engineIdleSoundInstance.stop();
                     engineIdleSoundInstance = null;
                 }
-                float volume = Math.max(0.4f, vf != 0 ? Math.abs(vf) / maxSpeedForward : 0.7f);
                 float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
                 if (engineRunSoundInstance == null) {
                     SoundEvent engineRunSound = getEngineRunSound();
                     if (engineRunSound != null) {
-                        engineRunSoundInstance = new VehicleSound(engineRunSound, soundDistance, 1f, true, 50, true, true, this.getId());
+                        engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, soundDistance, 1f, true, 50, true, true, this.getId());
                         engineRunSoundInstance.play();
                     }
                 } else {
-                    engineRunSoundInstance.setVolume(volume);
                     engineRunSoundInstance.setPitch(pitch);
                 }
             }

@@ -11,7 +11,9 @@ import java.util.function.Supplier;
 
 public class ControlUnit {
 
-    public LivingEntity operator;
+    private final AbstractVehicle vehicle;
+    private LivingEntity operator;
+    private int operatorId;
     public boolean forward;
     public boolean backward;
     public boolean left;
@@ -29,8 +31,31 @@ public class ControlUnit {
     public float yRot;
     public boolean yRotKeep;
 
+    public ControlUnit(AbstractVehicle vehicle) {
+        this.vehicle = vehicle;
+    }
+
+    public LivingEntity getOperator() {
+        if (operator == null && operatorId != -1) {
+            if (vehicle.level().getEntity(operatorId) instanceof LivingEntity livingEntity) {
+                operator = livingEntity;
+            }
+        }
+        return operator;
+    }
+
     public void setOperator(LivingEntity operator) {
-        this.operator = operator;
+        if (operator == null) {
+            this.operator = null;
+            this.operatorId = -1;
+        } else {
+            this.operator = operator;
+            this.operatorId = operator.getId();
+        }
+    }
+
+    public void setOperatorId(int operatorId) {
+        this.operatorId = operatorId;
     }
 
     public void reset() {
