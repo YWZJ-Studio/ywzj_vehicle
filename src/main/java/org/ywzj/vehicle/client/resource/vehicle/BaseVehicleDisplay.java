@@ -4,7 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockA
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import org.mozilla.javascript.*;
+import org.mozillaa.javascript.*;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.api.scripts.bedrock.BoneHandlers;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;

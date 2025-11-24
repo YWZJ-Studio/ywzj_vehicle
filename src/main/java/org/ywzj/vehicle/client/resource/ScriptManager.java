@@ -12,9 +12,9 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Script;
+import org.mozillaa.javascript.Context;
+import org.mozillaa.javascript.ContextFactory;
+import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.YwzjVehicle;
 
 import java.io.IOException;

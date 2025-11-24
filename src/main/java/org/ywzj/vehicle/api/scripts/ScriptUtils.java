@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.api.scripts;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
+import org.mozillaa.javascript.Context;
+import org.mozillaa.javascript.Scriptable;
+import org.mozillaa.javascript.ScriptableObject;
 
 public class ScriptUtils {
 

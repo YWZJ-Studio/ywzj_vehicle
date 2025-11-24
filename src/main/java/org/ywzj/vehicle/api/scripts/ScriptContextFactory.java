@@ -1,6 +1,6 @@
 package org.ywzj.vehicle.api.scripts;
 
-import org.mozilla.javascript.*;
+import org.mozillaa.javascript.*;
 
 public final class ScriptContextFactory extends ContextFactory {
     private static final ScriptContextFactory INSTANCE;

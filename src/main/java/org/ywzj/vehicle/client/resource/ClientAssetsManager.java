@@ -10,7 +10,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
-import org.mozilla.javascript.Script;
+import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
