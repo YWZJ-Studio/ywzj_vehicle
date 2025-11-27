@@ -38,81 +38,92 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.vehicle_hit_big"
   },
+  "gun_12.7mm_shot": {
+    "sounds": [
+      "ywzj_vehicle:weapon/gun/gun_12.7mm_shot_01",
+      "ywzj_vehicle:weapon/gun/gun_12.7mm_shot_02",
+      "ywzj_vehicle:weapon/gun/gun_12.7mm_shot_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.gun_12.7mm_shot"
+  },
+  "gun_14.5mm_shot": {
+    "sounds": [
+      "ywzj_vehicle:weapon/gun/gun_14.5mm_shot_01",
+      "ywzj_vehicle:weapon/gun/gun_14.5mm_shot_02",
+      "ywzj_vehicle:weapon/gun/gun_14.5mm_shot_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.gun_14.5mm_shot"
+  },
   "auto_cannon_shot": {
-    "sounds": ["ywzj_vehicle:misc/auto_cannon_shot"],
+    "sounds": ["ywzj_vehicle:weapon/auto_cannon/auto_cannon_shot"],
     "subtitle": "ywzj_vehicle.sounds.auto_cannon_shot"
   },
   "cannon_125mm_shot": {
     "sounds": [
-      "ywzj_vehicle:misc/cannon_125mm_shot_01",
-      "ywzj_vehicle:misc/cannon_125mm_shot_02",
-      "ywzj_vehicle:misc/cannon_125mm_shot_03"
+      "ywzj_vehicle:weapon/artillery/cannon_125mm_shot_01",
+      "ywzj_vehicle:weapon/artillery/cannon_125mm_shot_02",
+      "ywzj_vehicle:weapon/artillery/cannon_125mm_shot_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.cannon_125mm_shot"
   },
   "rocket_launch": {
     "sounds": [
-      "ywzj_vehicle:misc/rocket_start_01",
-      "ywzj_vehicle:misc/rocket_start_02",
-      "ywzj_vehicle:misc/rocket_start_03",
-      "ywzj_vehicle:misc/rocket_start_04"
+      "ywzj_vehicle:weapon/rocket/rocket_start_01",
+      "ywzj_vehicle:weapon/rocket/rocket_start_02",
+      "ywzj_vehicle:weapon/rocket/rocket_start_03",
+      "ywzj_vehicle:weapon/rocket/rocket_start_04"
     ],
     "subtitle": "ywzj_vehicle.sounds.rocket_launch"
   },
   "missile_launch": {
     "sounds": [
-      "ywzj_vehicle:misc/missile_start_light_01",
-      "ywzj_vehicle:misc/missile_start_light_02",
-      "ywzj_vehicle:misc/missile_start_light_03"
+      "ywzj_vehicle:weapon/missile/missile_start_light_01",
+      "ywzj_vehicle:weapon/missile/missile_start_light_02",
+      "ywzj_vehicle:weapon/missile/missile_start_light_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.missile_launch"
   },
   "rocket_flying": {
-    "sounds": ["ywzj_vehicle:misc/rocket_loop_very_close"],
+    "sounds": ["ywzj_vehicle:weapon/rocket/rocket_loop_very_close"],
     "subtitle": "ywzj_vehicle.sounds.rocket_flying"
   },
   "bomb_drop": {
-    "sounds": ["ywzj_vehicle:misc/bomb_drop"],
+    "sounds": ["ywzj_vehicle:weapon/bomb/bomb_drop"],
     "subtitle": "ywzj_vehicle.sounds.bomb_drop"
   },
   "bomb_whistle": {
-    "sounds": ["ywzj_vehicle:misc/bomb_whistle"],
+    "sounds": ["ywzj_vehicle:weapon/bomb/bomb_whistle"],
     "subtitle": "ywzj_vehicle.sounds.bomb_whistle"
   },
   "bombs_incoming": {
     "sounds": [
-      "ywzj_vehicle:misc/bombs_incoming_01",
-      "ywzj_vehicle:misc/bombs_incoming_02",
-      "ywzj_vehicle:misc/bombs_incoming_03",
-      "ywzj_vehicle:misc/bombs_incoming_04"
+      "ywzj_vehicle:weapon/bomb/bombs_incoming_01",
+      "ywzj_vehicle:weapon/bomb/bombs_incoming_02",
+      "ywzj_vehicle:weapon/bomb/bombs_incoming_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.bombs_incoming"
   },
   "cannon_shell_drop": {
     "sounds": [
-      "ywzj_vehicle:misc/cannon_shell_drop_01",
-      "ywzj_vehicle:misc/cannon_shell_drop_02",
-      "ywzj_vehicle:misc/cannon_shell_drop_03",
-      "ywzj_vehicle:misc/cannon_shell_drop_04",
-      "ywzj_vehicle:misc/cannon_shell_drop_05",
-      "ywzj_vehicle:misc/cannon_shell_drop_06",
-      "ywzj_vehicle:misc/cannon_shell_drop_07"
+      "ywzj_vehicle:weapon/artillery/cannon_shell_drop_01",
+      "ywzj_vehicle:weapon/artillery/cannon_shell_drop_02",
+      "ywzj_vehicle:weapon/artillery/cannon_shell_drop_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.cannon_shell_drop"
   },
   "smoke_grenade_launcher": {
     "sounds": [
-      "ywzj_vehicle:misc/smoke_grenade_launcher_01",
-      "ywzj_vehicle:misc/smoke_grenade_launcher_02",
-      "ywzj_vehicle:misc/smoke_grenade_launcher_03"
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_launcher_01",
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_launcher_02",
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_launcher_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.smoke_grenade_launcher"
   },
   "smoke_grenade_explosion": {
     "sounds": [
-      "ywzj_vehicle:misc/smoke_grenade_explosion_01",
-      "ywzj_vehicle:misc/smoke_grenade_explosion_02",
-      "ywzj_vehicle:misc/smoke_grenade_explosion_03"
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_explosion_01",
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_explosion_02",
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_explosion_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.smoke_grenade_explosion"
   },
@@ -129,59 +140,71 @@
     "subtitle": "ywzj_vehicle.sounds.tire_squeal"
   },
   "truck_engine_idle": {
-    "sounds": ["ywzj_vehicle:common/truck_engine_idle"],
+    "sounds": ["ywzj_vehicle:vehicle/common/truck_engine_idle"],
     "subtitle": "ywzj_vehicle.sounds.truck_engine_idle"
   },
   "truck_engine_run": {
-    "sounds": ["ywzj_vehicle:common/truck_engine_run"],
+    "sounds": ["ywzj_vehicle:vehicle/common/truck_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.truck_engine_run"
   },
   "lav150_engine_start": {
-    "sounds": ["ywzj_vehicle:lav150/lav150_engine_start"],
+    "sounds": ["ywzj_vehicle:vehicle/lav150/lav150_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_start"
   },
   "lav150_engine_idle": {
-    "sounds": ["ywzj_vehicle:lav150/lav150_engine_idle"],
+    "sounds": ["ywzj_vehicle:vehicle/lav150/lav150_engine_idle"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_idle"
   },
   "lav150_engine_run": {
-    "sounds": ["ywzj_vehicle:lav150/lav150_engine_run"],
+    "sounds": ["ywzj_vehicle:vehicle/lav150/lav150_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_run"
   },
   "ztz99a_engine_start": {
-    "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_start"],
+    "sounds": ["ywzj_vehicle:vehicle/ztz99a/ztz99a_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_start"
   },
   "ztz99a_engine_idle": {
-    "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_idle"],
+    "sounds": ["ywzj_vehicle:vehicle/ztz99a/ztz99a_engine_idle"],
     "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_idle"
   },
   "ztz99a_engine_run": {
-    "sounds": ["ywzj_vehicle:ztz99a/ztz99a_engine_run"],
+    "sounds": ["ywzj_vehicle:vehicle/ztz99a/ztz99a_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.ztz99a_engine_run"
   },
   "z10_engine_start": {
-    "sounds": ["ywzj_vehicle:z10/z10_engine_start"],
+    "sounds": ["ywzj_vehicle:vehicle/z10/z10_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.z10_engine_start"
   },
   "z10_engine_stop": {
-    "sounds": ["ywzj_vehicle:z10/z10_engine_stop"],
+    "sounds": ["ywzj_vehicle:vehicle/z10/z10_engine_stop"],
     "subtitle": "ywzj_vehicle.sounds.z10_engine_stop"
   },
   "z10_engine_run": {
-    "sounds": ["ywzj_vehicle:z10/z10_engine_run"],
+    "sounds": ["ywzj_vehicle:vehicle/z10/z10_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.z10_engine_run"
   },
   "motorcycle_engine_start": {
-    "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_start"],
+    "sounds": ["ywzj_vehicle:vehicle/motorcycle/motorcycle_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_start"
   },
   "motorcycle_engine_idle": {
-    "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_idle"],
+    "sounds": ["ywzj_vehicle:vehicle/motorcycle/motorcycle_engine_idle"],
     "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_idle"
   },
   "motorcycle_engine_run": {
-    "sounds": ["ywzj_vehicle:motorcycle/motorcycle_engine_run"],
+    "sounds": ["ywzj_vehicle:vehicle/motorcycle/motorcycle_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.motorcycle_engine_run"
+  },
+  "m1a2_engine_start": {
+    "sounds": ["ywzj_vehicle:vehicle/m1a2/m1a2_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.m1a2_engine_start"
+  },
+  "m1a2_engine_idle": {
+    "sounds": ["ywzj_vehicle:vehicle/m1a2/m1a2_engine_idle"],
+    "subtitle": "ywzj_vehicle.sounds.m1a2_engine_idle"
+  },
+  "m1a2_engine_run": {
+    "sounds": ["ywzj_vehicle:vehicle/m1a2/m1a2_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.m1a2_engine_run"
   }
 }

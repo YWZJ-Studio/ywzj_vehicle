@@ -65,7 +65,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
     @NotNull
     @Override
     public Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller profiler) {
-        var map = scanDirectory(manager, "weapon_units", GsonUtil.GSON);
+        var map = scanDirectory(manager, "weapon", GsonUtil.GSON);
         ImmutableMap.Builder<ResourceLocation, String> builder = ImmutableMap.builder();
         for (var entry : map.entrySet()) {
             builder.put(entry.getKey(), entry.getValue().toString());

@@ -297,8 +297,8 @@ public class LocalVehiclePlayer {
     }
 
     public void thirdPersonCameraAimAt(Vec3 worldPos, AbstractVehicle vehicle) {
-        Vec3 thirdPersonPos = vehicle.relativeRotPos(vehicle.position().add(vehicle.thirdPersonCenterOffset), false);
-        double r = vehicle.thirdPersonDistance;
+        Vec3 thirdPersonPos = vehicle.relativeRotPos(vehicle.position().add(vehicle.getViewInfo().thirdPersonCenterOffset), false);
+        double r = vehicle.getViewInfo().thirdPersonDistance;
         double a = worldPos.distanceTo(thirdPersonPos);
         double c = Math.asin(r / (a / Math.sin(Math.PI * CAMERA_UPWARD_ANGLE / 180)));
         Vec3 dir = thirdPersonPos.subtract(worldPos).normalize();

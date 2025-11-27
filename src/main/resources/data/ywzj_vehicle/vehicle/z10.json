@@ -29,7 +29,7 @@
         "y_rot_max": 90,
         "y_rot_min": -90
       },
-      "operator_offset": [0, 0.6, 1.2],
+      "operator_view_offset": [0, 0.6, 1.2],
       "seat_offset": [0, 2, 0],
       "weapons": [
         "ywzj_vehicle:missile"

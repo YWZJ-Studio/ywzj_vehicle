@@ -28,6 +28,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerVehicleFire;
+import org.ywzj.vehicle.util.DebugUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.structure.OBB;
@@ -60,7 +61,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private final Vec3 opticalSightOffset;
     // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于武器站枢轴的偏移
     private final Vec3 operatorViewOffset;
-    // 操作员视角是否随武器站转动
+    // 操作员是否随武器站转动
     private boolean operatorOnWeaponUnit = true;
     // 开镜类型
     public OpticalSightType opticalSightType;
@@ -78,14 +79,23 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private boolean stabilizer;
     private Vec3 aimLockPosition;
     private Entity aimLockEntity;
-    public boolean parentWeaponUnitAim;
+    private boolean parentWeaponUnitAim;
     // 第三人称准心样式
     public CrosshairStyle crosshairStyle = CrosshairStyle.CIRCLE;
 
+    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs;
+    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs;
+    public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
+    private int currentWeaponIndex = -1;
+
+    public SyncDataHolder<Integer> currentWeaponIndexHolder;
+
     public enum FiringMode {
         // 轮射
+        @SerializedName("ripple")
         RIPPLE,
         // 齐射
+        @SerializedName("salvo")
         SALVO
     }
 
@@ -105,30 +115,33 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public enum CrosshairStyle {
+        @SerializedName("none")
         NONE,
+        @SerializedName("circle")
         CIRCLE,
+        @SerializedName("square")
         SQUARE,
+        @SerializedName("reticle")
         RETICLE
     }
-
-    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs;
-    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs;
-    public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
-    private int currentWeaponIndex = -1;
-
-    public SyncDataHolder<Integer> currentWeaponIndexHolder;
 
     public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
         super(index, vehicle, data);
         this.pivotOffset = data.getPivotOffset();
-        this.bolts.add(new Bolt(Vec3.ZERO, data.getBarrelLength()));
-        this.firingMode = FiringMode.RIPPLE;
-        this.opticalSightOffset = data.getOpticalSightOffset();
-        this.operatorViewOffset = data.getOperatorOffset();
         this.seatOffset = data.getSeatOffset();
-
-        this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
-        this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
+        if (data.getBolts() != null) {
+            this.bolts.addAll(data.getBolts());
+        } else {
+            this.bolts.add(new Bolt(Vec3.ZERO, 0));
+        }
+        this.firingMode = data.getFiringMode();
+        this.parentWeaponUnitAim = data.isParentWeaponUnitAim();
+        this.opticalSightOffset = data.getOpticalSightOffset();
+        this.operatorViewOffset = data.getOperatorViewOffset();
+        this.operatorOnWeaponUnit = data.isOperatorOnWeaponUnit();
+        this.opticalSightType = data.getOpticalSightType();
+        this.zoom = 1;
+        this.zoomMax = data.getZoomMax();
 
         var rotInfo = data.getRotInfo();
         this.xRotSpeed = rotInfo.xRotSpeed;
@@ -137,11 +150,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.xRotMin = rotInfo.xRotMin;
         this.yRotMax = rotInfo.yRotMax;
         this.yRotMin = rotInfo.yRotMin;
-
-        this.zoomMax = data.getZoomMax();
-        this.opticalSightType = data.getOpticalSightType();
-
-        this.zoom = 1;
+        this.xRot = rotInfo.xRot;
+        this.yRot = rotInfo.yRot;
+        this.needPower = rotInfo.needPower;
 
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
@@ -150,6 +161,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 currentWeaponIndex
         );
         currentWeaponIndex = 0;
+
+        this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
+        this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
     }
 
     @Deprecated
@@ -205,14 +219,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         for (var weaponInfo : data.getWeapons()) {
             var index = CommonAssetsManager.vehicleWeaponManager().getIndex(weaponInfo.id).orElse(null);
             if (index != null) {
-                var parent = this;
-                if (weaponInfo.partUnit != null) {
-                    PartUnit<?> basePart = partUnitsView.get(weaponInfo.partUnit);
-                    if (basePart instanceof WeaponUnit weaponUnit) {
-                        parent = weaponUnit;
-                    }
+                WeaponUnit parent = this;
+                AbstractVehicleWeapon<?> weapon;
+                if (weaponInfo.partUnit != null && partUnitsView.get(weaponInfo.partUnit) instanceof WeaponUnit subWeaponUnit) {
+                    subWeaponUnit.setParentWeaponUnit(parent);
+                    parent.addSubWeaponUnit(subWeaponUnit);
+                    weapon = index.create(vehicle, subWeaponUnit, i, weaponInfo.saveId);
+                } else {
+                    weapon = index.create(vehicle, parent, i, weaponInfo.saveId);
                 }
-                var weapon = index.create(vehicle, parent, i, weaponInfo.saveId);
                 this.weapons.add(weapon);
                 weapon.defineSyncData(this.getSyncData());
                 i++;
@@ -283,7 +298,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             rotSelf.rotateY(Math.toRadians(-combineYRot()));
             if (isBarrel) {
                 Vec3 barrelCenterOffset = rotatedOffsetWithSelfRot(unitBedrockCubeOBB.offset());
-                Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitBedrockCubeOBB.boneX / 16, unitBedrockCubeOBB.boneY / 16, unitBedrockCubeOBB.boneZ / 16));
+                Vec3 boltOffset = unitBedrockCubeOBB.offset().subtract(new Vec3(0, 0, unitBedrockCubeOBB.depth / 2));
+                Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(boltOffset);
                 Vec3 rel = barrelCenterOffset.subtract(barrelPivotOffset);
                 double len = rel.length();
                 float xRotR = Math.toRadians(xRot);
@@ -299,6 +315,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
             }
             obb.setRotation(vehicle.rotYXZ().mul(rotSelf));
+
+            if (unitOBBs.size() == 4) {
+                DebugUtil.particle(vehicle.level(), new Vec3(obb.center()));
+            }
+
         }
     }
 
@@ -604,6 +625,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void setBaseWeaponUnit(WeaponUnit baseWeaponUnit) {
         this.baseWeaponUnit = baseWeaponUnit;
+    }
+
+    public boolean isParentWeaponUnitAim() {
+        return parentWeaponUnitAim;
+    }
+
+    public void setParentWeaponUnitAim(boolean parentWeaponUnitAim) {
+        this.parentWeaponUnitAim = parentWeaponUnitAim;
     }
 
     public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {

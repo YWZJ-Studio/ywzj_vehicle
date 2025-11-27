@@ -28,6 +28,7 @@ import org.joml.Vector3d;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.entity.KnockBackModifier;
+import org.ywzj.vehicle.custom.pojo.Explosion;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -49,7 +50,7 @@ public class BulletEntity extends AmmoEntity {
     private float gravity = 0;
     private float friction = 0.01F;
     private float knockback = 0;
-    private boolean explosion = false;
+    private Explosion explosion;
     // 穿透数
     private int pierce = 1;
     // 初始位置
@@ -64,11 +65,11 @@ public class BulletEntity extends AmmoEntity {
         super(type, worldIn);
     }
 
-    public BulletEntity(Level level, LivingEntity throwerIn, Vec3 startPos, boolean explosion) {
+    public BulletEntity(Level level, LivingEntity throwerIn, Vec3 startPos, Explosion explosion) {
         this(level, throwerIn, startPos.x, startPos.y, startPos.z, explosion);
     }
 
-    public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z, boolean explosion) {
+    public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z, Explosion explosion) {
         this(AllEntities.BULLET.get(), level);
         this.setOwner(throwerIn);
         this.explosion = explosion;
@@ -237,8 +238,8 @@ public class BulletEntity extends AmmoEntity {
             performAttack(entity, damage, sources);
         }
 
-        if (explosion) {
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), result.getLocation(), 6, 20);
+        if (explosion.explode) {
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
             vehicleExplosion.explode();
         }
     }
@@ -253,7 +254,7 @@ public class BulletEntity extends AmmoEntity {
         super.onHitBlock(result);
 
         // 穿甲爆破
-        if (explosion) {
+        if (explosion.explode) {
             Level level = level();
             BlockState state = level.getBlockState(pos);
             float destroySpeed = state.getDestroySpeed(level, pos);
@@ -265,7 +266,7 @@ public class BulletEntity extends AmmoEntity {
             if (resultAfterPenetrate.getType() != HitResult.Type.MISS) {
                 explosionAtPos = resultAfterPenetrate.getLocation();
             }
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), explosionAtPos, 6, 30);
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), explosionAtPos, explosion.radius, explosion.damage, explosion.destroyBlock);
             vehicleExplosion.explode();
         }
 

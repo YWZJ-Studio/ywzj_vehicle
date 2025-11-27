@@ -39,10 +39,10 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
 
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.thirdPersonCenterOffset = new Vec3(0, 6, 0);
-        this.thirdPersonDistance = 14;
-        this.soundDistance = 8;
-        this.fuelCapacity = 0.25f;
+//        this.thirdPersonCenterOffset = new Vec3(0, 6, 0);
+//        this.thirdPersonDistance = 14;
+//        this.soundDistance = 8;
+//        this.energyCapacity = 0.25f;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -71,7 +71,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
         if (engineSpeed < 80 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
             SoundEvent engineStopSound = getEngineStopSound();
             if (engineStopSound != null) {
-                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, soundDistance, 1f, false, 50, true, true, this.getId());
+                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
                 engineStopSoundInstance.play();
             }
             if (engineStartSoundInstance != null) {
@@ -94,14 +94,14 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
             if (engineStartSoundInstance == null) {
                 SoundEvent engineStartSound = getEngineStartSound();
                 if (engineStartSound != null) {
-                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, soundDistance, 1f, false, 0, false, false, this.getId());
+                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
                     engineStartSoundInstance.play();
                 }
             }
             if (engineSpeed > 80 && engineRunSoundInstance == null) {
                 SoundEvent engineRunSound = getEngineRunSound();
                 if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
                     engineRunSoundInstance.play();
                 }
             }

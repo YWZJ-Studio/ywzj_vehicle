@@ -27,7 +27,6 @@ public class Motorcycle extends WheeledVehicle {
         maxSpeedBackward= 0.1f;
         turnStep = 2f;
         maxTurn = 4f;
-        lockPassengerYBodyRot = true;
         physicsEngine.lockZRot = true;
     }
 

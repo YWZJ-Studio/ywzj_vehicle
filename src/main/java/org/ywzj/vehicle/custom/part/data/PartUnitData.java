@@ -58,6 +58,9 @@ public class PartUnitData {
     public void initStructureModel(BedrockModel model) {
         if (model != null) {
             var bone = model.getBoneMap().get(this.structureBone);
+            if (bone == null) {
+                return;
+            }
             this.pivotOffset = new Vec3(bone.x / 16, bone.y / 16, bone.z / 16);
             unitBedrockCubeOBBs = collectOBBs(bone);
         }
@@ -76,6 +79,9 @@ public class PartUnitData {
      * @return OBB列表
      */
     public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
+        if (unitBedrockCubeOBBs == null) {
+            return List.of();
+        }
         return unitBedrockCubeOBBs.stream().map(VehicleBedrockCubeOBB::new).collect(Collectors.toList());
     }
 
@@ -116,11 +122,11 @@ public class PartUnitData {
         if (bone == null) return List.of();
         List<VehicleBedrockCubeOBB> obbs = new ArrayList<>();
         bone.cubes.stream()
-                .map(c -> (BedrockCubePerFace) c)
+                .map(cube -> (BedrockCubePerFace) cube)
                 .forEach(cube -> obbs.add(VehicleBedrockCubeOBB.init(bone, cube)));
         bone.getChildren().forEach(child ->
                 child.cubes.stream()
-                        .map(c -> (BedrockCubePerFace) c)
+                        .map(cube -> (BedrockCubePerFace) cube)
                         .forEach(cube -> obbs.add(VehicleBedrockCubeOBB.init(child, cube)))
         );
         return obbs;

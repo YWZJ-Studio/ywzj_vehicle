@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
 
-    @SerializedName("type")
-    private String type = "smoke";
+    @SerializedName("grenade")
+    private String grenade = "smoke";
 
     @SerializedName("life_time")
     private int lifeTime = 600;
@@ -31,8 +31,8 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
     @SerializedName("tail_particles")
     private ParticleOptions tailParticles = ParticleTypes.SMOKE;
 
-    public String getType() {
-        return type;
+    public String getGrenade() {
+        return grenade;
     }
 
     public int getLifeTime() {

@@ -46,8 +46,8 @@ public class Quadcopter extends RotaryWingVehicle {
         this.zRotSpeedMax = 8f;
         this.maxAirSpeed = 2f;
         this.uav = true;
-        this.thirdPersonCenterOffset = new Vec3(0, 3, 0);
-        this.thirdPersonDistance = 7;
+//        this.thirdPersonCenterOffset = new Vec3(0, 3, 0);
+//        this.thirdPersonDistance = 7;
     }
 
     @Override
@@ -100,7 +100,7 @@ public class Quadcopter extends RotaryWingVehicle {
         super.tick();
         if (level().isClientSide()) {
             float cableLength = entityData.get(CABLE_LENGTH);
-            this.thirdPersonDistance = 8 + cableLength * 1.5f;
+            this.viewInfo.thirdPersonDistance = 8 + cableLength * 1.5f;
         } else {
             if (fakeOperatorPos != null) {
                 keepChunkLoaded(fakeOperatorPos);
@@ -116,7 +116,7 @@ public class Quadcopter extends RotaryWingVehicle {
             return;
         }
         setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
-        if (getFuel() == 0) {
+        if (getEnergy() == 0) {
             setPower(0);
         }
     }

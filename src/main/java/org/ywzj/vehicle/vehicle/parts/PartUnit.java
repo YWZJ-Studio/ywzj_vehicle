@@ -40,11 +40,11 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     private final PartUnitSyncData syncData;
 
-    protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
-    protected final Component displayName;
-    protected final String id;
     protected final int index;
+    protected final String id;
+    protected final Component displayName;
     protected final AbstractVehicle vehicle;
+    protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
     protected T data;
 
     protected LivingEntity owner;
@@ -77,10 +77,13 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
-        this.vehicle = vehicle;
-        this.displayName = Component.translatable(data.getName());
         this.id = data.getId();
+        this.displayName = Component.translatable(data.getName());
+        this.vehicle = vehicle;
         this.data = data;
+        this.ownerViewOffset = data.getOwnerViewOffset();
+        this.seatOffset = data.getSeatOffset();
+        this.pivotOffset = data.getPivotOffset();
         this.unitBedrockCubeOBBs = data.getUnitBedrockCubeOBBs();
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
@@ -165,7 +168,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     public Vec3 worldOwnerViewPosition() {
-        float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+        float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
         if (ownerViewOffset == null) {
             return worldPosition(new Vec3(0, eyeHeight, 0));
         }
@@ -173,7 +176,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     public Vec3 worldSeatPosition() {
-        float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+        float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
         Vec3 seatOffset = this.seatOffset;
         if (seatOffset == null) {
             seatOffset = new Vec3(0, eyeHeight, 0);
@@ -266,11 +269,11 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-    }
+    public void deserializeNBT(CompoundTag nbt) {}
 
     @NotNull
     public String getId() {
         return id;
     }
+
 }

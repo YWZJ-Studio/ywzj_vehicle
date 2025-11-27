@@ -45,6 +45,7 @@ import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -59,7 +60,11 @@ import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.custom.pojo.EnergyInfo;
+import org.ywzj.vehicle.custom.pojo.ViewInfo;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -83,7 +88,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
-    public static final EntityDataAccessor<Float> FUEL = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> ENERGY = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
@@ -91,11 +96,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public List<Seat> seats;
     protected final List<PartUnit<?>> partUnits;
     protected Map<String, PartUnit<?>> partUnitMap;
-    public Vec3 thirdPersonCenterOffset;
-    public float thirdPersonDistance;
+    protected ViewInfo viewInfo;
+    public EnergyInfo energyInfo;
     public float curbWeight;
-    public float fuelCapacity;
-    public float fuelConsumptionPerTick;
     private float xRot;
     public float xRotO;
     private float lerpXRot;
@@ -105,13 +108,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     private float zRot;
     public float zRotO;
     private float lerpZRot;
-    public boolean lockPassengerYBodyRot;
-    public int soundDistance;
     public boolean uav;
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     public PhysicsEngine physicsEngine;
-    private boolean dataInitialized;
+    protected boolean dataInitialized;
     public long lastRenderTime;
 
     private ResourceLocation customId;
@@ -123,13 +124,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.controlUnit = new ControlUnit(this);
         this.partUnits = new ArrayList<>();
         this.partUnitMap = Map.of();
-        this.thirdPersonDistance = 8;
-        this.thirdPersonCenterOffset = Vec3.ZERO;
-        this.curbWeight = 1;
-        this.fuelCapacity = 1;
-        this.fuelConsumptionPerTick = 0.00001f;
-        this.soundDistance = 5;
         this.vehicleOBBs = new ArrayList<>();
+        this.curbWeight = 1;
+        this.viewInfo = new ViewInfo();
+        this.energyInfo = new EnergyInfo();
         this.setMaxUpStep(1.0f);
         this.physicsEngine = new PhysicsEngine(this);
     }
@@ -140,7 +138,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.entityData.define(X_ROT, 0f);
         this.entityData.define(Y_ROT, 0f);
         this.entityData.define(Z_ROT, 0f);
-        this.entityData.define(FUEL, 0f);
+        this.entityData.define(ENERGY, 0f);
         this.entityData.define(POWER, 0f);
         this.entityData.define(ENGINE_ON, false);
         this.entityData.define(DESTROYED, false);
@@ -233,6 +231,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
+    @Deprecated
     public void initData(ResourceLocation customId) {
         initPartUnits();
         initOBBs();
@@ -288,7 +287,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                     passenger.stopRiding();
                 }
             }
-            tickFuel();
+            tickEnergy();
             tickPower();
             Vec3 force = tickMove();
             tickPhysics(force);
@@ -297,7 +296,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
-        if (lockPassengerYBodyRot) {
+        if (viewInfo.lockPassengerYBodyRot) {
             getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         }
         if (!this.isRemoved()) {
@@ -305,13 +304,13 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
-    protected void tickFuel() {
+    protected void tickEnergy() {
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             float fuel = cap.getFuel();
-            fuel = Math.max(0, fuel - fuelConsumptionPerTick * getPower() / 100);
+            fuel = Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100);
             physicsEngine.mass = curbWeight + fuel;
-            entityData.set(FUEL, fuel);
-            setFuel(fuel);
+            entityData.set(ENERGY, fuel);
+            setEnergy(fuel);
         });
     }
 
@@ -325,7 +324,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             this.entityData.set(ENGINE_ON, false);
         }
         setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
-        if (getFuel() == 0) {
+        if (getEnergy() == 0) {
             setPower(0);
         }
     }
@@ -369,8 +368,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
         setDeltaMovement(velocity);
 
-//        if (this instanceof Ka50) {
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldBoltPosition());
+//        if (this instanceof M1a2) {
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(2)).ammoSpawnPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).ammoSpawnPosition());
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOwnerViewPosition());
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOpticalSightPosition());
 //            DebugUtil.particle(level(), seats.get(0).partUnit.worldSeatPosition());
@@ -422,19 +422,27 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public SoundEvent getEngineStartSound() {
-        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_start"));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_start"))
+                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_start")));
     }
 
     public SoundEvent getEngineStopSound() {
-        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_stop"));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_stop"))
+                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_stop")));
     }
 
     public SoundEvent getEngineIdleSound() {
-        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_idle"));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_idle"))
+                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_idle")));
     }
 
     public SoundEvent getEngineRunSound() {
-        return SoundEvent.createVariableRangeEvent(new ResourceLocation(YwzjVehicle.MOD_ID, getName().getString() + "_engine_run"));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_run"))
+                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_run")));
     }
 
     public SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {
@@ -705,14 +713,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             Quaternionf q = new Quaternionf();
             q.rotateY(Math.toRadians(-this.getYRot()));
             q.get(axisRollMat);
-            Vector3f rotPos = axisRollMat.transform(thirdPersonCenterOffset.toVector3f());
+            Vector3f rotPos = axisRollMat.transform(viewInfo.thirdPersonCenterOffset.toVector3f());
             Vec3 thirdPersonCenter = this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
             axisRollMat = new Matrix3f();
             q = new Quaternionf();
             q.rotateY(Math.toRadians(-pPassenger.getYRot()));
             q.rotateX(Math.toRadians(pPassenger.getXRot()));
             q.get(axisRollMat);
-            float d = (float) (thirdPersonDistance - pPassenger.getXRot() / 90 * thirdPersonCenterOffset.y);
+            float d = (float) (viewInfo.thirdPersonDistance - pPassenger.getXRot() / 90 * viewInfo.thirdPersonCenterOffset.y);
             Vector3f rotOffset = axisRollMat.transform(new Vector3f(0, 0, -d));
             Vec3 thirdPersonPos = thirdPersonCenter.add(rotOffset.x, rotOffset.y, rotOffset.z);
             Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(0.1);
@@ -738,7 +746,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             super.positionRider(pPassenger, pCallback);
             return;
         }
-        if (lockPassengerYBodyRot) {
+        if (viewInfo.lockPassengerYBodyRot) {
             float vehicleYaw = this.getYRot();
             float delta = Mth.wrapDegrees(pPassenger.getYHeadRot() - vehicleYaw);
             float limit = 45.0F;
@@ -859,32 +867,36 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public abstract void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator);
 
-    public float getFuel() {
-        float amount = entityData.get(FUEL);
+    public float getEnergy() {
+        float amount = entityData.get(ENERGY);
         if (amount == 0 && AllConfigs.common.infiniteFuel.get()) {
             amount = Float.MIN_VALUE;
         }
         return amount;
     }
 
-    public void setFuel(float amount) {
+    public void setEnergy(float amount) {
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             cap.setFuel(amount);
-            entityData.set(FUEL, amount);
+            entityData.set(ENERGY, amount);
             physicsEngine.mass = curbWeight + amount;
         });
     }
 
-    public float addFuel(float amount) {
-        float fuel = getFuel();
-        float space = fuelCapacity - fuel;
+    public float addEnergy(float amount) {
+        float fuel = getEnergy();
+        float space = energyInfo.energyCapacity - fuel;
         if (space > amount) {
-            setFuel(fuel + amount);
+            setEnergy(fuel + amount);
             return 0;
         } else {
-            setFuel(fuelCapacity);
+            setEnergy(energyInfo.energyCapacity);
             return amount - space;
         }
+    }
+
+    public ViewInfo getViewInfo() {
+        return viewInfo;
     }
 
     public float getPower() {

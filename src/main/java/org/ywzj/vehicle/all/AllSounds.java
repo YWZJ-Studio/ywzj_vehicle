@@ -19,6 +19,8 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_SMALL = registerSoundEvent("vehicle_hit_small", new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_hit_small"));
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_MED = registerSoundEvent("vehicle_hit_med", new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_hit_med"));
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_BIG = registerSoundEvent("vehicle_hit_big", new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_hit_big"));
+    public static final RegistryObject<SoundEvent> GUN_12_7MM_SHOT = registerSoundEvent("gun_12.7mm_shot", new ResourceLocation(YwzjVehicle.MOD_ID, "gun_12.7mm_shot"));
+    public static final RegistryObject<SoundEvent> GUN_14_5MM_SHOT = registerSoundEvent("gun_14.5mm_shot", new ResourceLocation(YwzjVehicle.MOD_ID, "gun_14.5mm_shot"));
     public static final RegistryObject<SoundEvent> AUTO_CANNON_SHOT = registerSoundEvent("auto_cannon_shot", new ResourceLocation(YwzjVehicle.MOD_ID, "auto_cannon_shot"));
     public static final RegistryObject<SoundEvent> CANNON_125_MM_SHOT = registerSoundEvent("cannon_125mm_shot", new ResourceLocation(YwzjVehicle.MOD_ID, "cannon_125mm_shot"));
     public static final RegistryObject<SoundEvent> ROCKET_LAUNCH = registerSoundEvent("rocket_launch", new ResourceLocation(YwzjVehicle.MOD_ID, "rocket_launch"));

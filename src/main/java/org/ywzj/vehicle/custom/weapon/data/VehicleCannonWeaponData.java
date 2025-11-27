@@ -1,17 +1,18 @@
 package org.ywzj.vehicle.custom.weapon.data;
 
 import com.google.gson.annotations.SerializedName;
+import org.ywzj.vehicle.custom.pojo.Explosion;
 
 public class VehicleCannonWeaponData extends BaseVehicleWeaponData {
 
     @SerializedName("explosion")
-    private boolean explosion = false;
+    private Explosion explosion = new Explosion();
 
-    public boolean isExplosion() {
+    public Explosion getExplosion() {
         return explosion;
     }
 
-    public void setExplosion(boolean explosion) {
+    public void setExplosion(Explosion explosion) {
         this.explosion = explosion;
     }
 

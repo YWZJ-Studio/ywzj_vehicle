@@ -45,17 +45,21 @@ public class VehicleExplosion {
     private final double z;
     private final float radius;
     private final float damage;
-    private final boolean breakBlocks;
+    private final boolean destroyBlocks;
     private final boolean dropBlocks;
     private final DamageSource damageSource;
     private final ExplosionDamageCalculator damageCalculator;
     private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
 
     public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage) {
-        this(level, source, position, radius, damage, AllConfigs.common.explosionBreakBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
+        this(level, source, position, radius, damage, AllConfigs.common.explosionDestroyBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
     }
 
-    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean breakBlocks, boolean dropBlocks) {
+    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean destroyBlocks) {
+        this(level, source, position, radius, damage, destroyBlocks, AllConfigs.common.explosionDropBlocks.get());
+    }
+
+    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean destroyBlocks, boolean dropBlocks) {
         this.level = level;
         this.source = source;
         this.x = position.x;
@@ -63,8 +67,8 @@ public class VehicleExplosion {
         this.z = position.z;
         this.radius = radius;
         this.damage = damage;
-        this.breakBlocks = breakBlocks;
-        this.dropBlocks = dropBlocks;
+        this.destroyBlocks = destroyBlocks && AllConfigs.common.explosionDestroyBlocks.get();
+        this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlocks.get();
         this.damageSource = level.damageSources().explosion(source, null);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
@@ -89,7 +93,7 @@ public class VehicleExplosion {
     }
 
     private void ruin(Explosion vanillaExplosion) {
-        if (breakBlocks) {
+        if (destroyBlocks) {
             Set<BlockPos> affectedBlocks = new HashSet<>();
             int resolution = 16;
             for (int xEdge = 0; xEdge < resolution; xEdge++) {

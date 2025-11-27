@@ -134,7 +134,7 @@ public class VehicleOverlay implements IGuiOverlay {
             poseStack.translate((float) screenWidth / 2, screenHeight + 5, 0);
             renderHealth(guiGraphics, 0, -20, 120, 10, vehicle, 1);
             poseStack.scale(0.7f, 0.7f, 0.7f);
-            float fuelPercent = vehicle.getFuel() / vehicle.fuelCapacity * 100;
+            float fuelPercent = vehicle.getEnergy() / vehicle.energyInfo.energyCapacity * 100;
             float powerPercent = vehicle.getPower();
             guiGraphics.drawString(Minecraft.getInstance().font,
                     "FUEL:", 90, -40, 0xFFFFFFFF);

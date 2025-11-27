@@ -42,9 +42,9 @@ public class VehicleDebugOverlay implements IGuiOverlay {
                 leftY += 10;
                 guiGraphics.drawString(Minecraft.getInstance().font, "功率: " + vehicle.getPower() + "%", leftX, leftY, 0xFFFFFF);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "油量: " + vehicle.getFuel() + "/" + vehicle.fuelCapacity, leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "油量: " + vehicle.getEnergy() + "/" + vehicle.energyInfo.energyCapacity, leftX, leftY, 0xFFFFFF);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "耗油: " + vehicle.fuelConsumptionPerTick + "/t", leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "耗油: " + vehicle.energyInfo.energyConsumptionPerTick + "/t", leftX, leftY, 0xFFFFFF);
                 leftY += 10;
                 guiGraphics.drawString(Minecraft.getInstance().font, "速度: " + new Vec3(vehicle.physicsEngine.velocity), leftX, leftY, 0xFFFFFF);
                 leftY += 10;

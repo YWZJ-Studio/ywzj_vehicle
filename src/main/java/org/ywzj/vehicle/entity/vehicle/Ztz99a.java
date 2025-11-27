@@ -15,6 +15,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.custom.pojo.Bolt;
+import org.ywzj.vehicle.custom.pojo.Explosion;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
@@ -39,7 +40,7 @@ public class Ztz99a extends TrackedVehicle {
 
     public Ztz99a(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.soundDistance = 7;
+//        this.soundDistance = 7;
     }
 
 //    @Override
@@ -86,7 +87,11 @@ public class Ztz99a extends TrackedVehicle {
         weaponDataCannon.setName("cannon");
         weaponDataCannon.setMaxCapacity(1);
         weaponDataCannon.setDamage(99);
-        weaponDataCannon.setExplosion(true);
+        Explosion explosion = new Explosion();
+        explosion.explode = true;
+        explosion.damage = 30;
+        explosion.radius = 8;
+        weaponDataCannon.setExplosion(explosion);
         weaponDataCannon.setReload(new BaseVehicleWeaponData.Reload(100, Ingredient.of(AllItems.AMMO_ARTILLERY.get())));
         VehicleCannon vehicleCannon = new VehicleCannon(this, turret, 0, weaponDataCannon, "cannon");
         vehicleCannon.defineSyncData(turret.getSyncData());
@@ -197,9 +202,14 @@ public class Ztz99a extends TrackedVehicle {
             Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
             Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-2.5f)).add(v2.scale(-2)).add(0, 1.7, 0);
             Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-2.5f)).add(v2.scale(2)).add(0, 1.7, 0);
-            for (int count = 0; count < velocity / 16 + 1; count++) {
-                level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z, 0, 0, 0);
-                level().addParticle(ParticleTypes.LARGE_SMOKE, true, engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z, 0, 0, 0);
+            for (int count = 0; count < velocity / 32 + 1; count++) {
+                Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
+                level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                        engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z,
+                        engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                        engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z,
+                        engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
             }
         }
     }
@@ -235,7 +245,7 @@ public class Ztz99a extends TrackedVehicle {
                 }
             } else if (partUnitIndex == 2) {
                 // todo: 测试音效
-                this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
+                this.level().playSound(null, this, AllSounds.GUN_14_5MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
             }
         }
     }

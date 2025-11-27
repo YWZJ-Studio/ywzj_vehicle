@@ -52,7 +52,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                         (int) (new Vec3(rotaryWingVehicle.getDeltaMovement().x, 0, rotaryWingVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
                 leftX, leftY + 24, 0x00FF00);
         guiGraphics.drawString(Minecraft.getInstance().font, "燃油: " +
-                        secondsToHms(rotaryWingVehicle.getFuel() / rotaryWingVehicle.fuelConsumptionPerTick / 20),
+                        secondsToHms(rotaryWingVehicle.getEnergy() / rotaryWingVehicle.energyInfo.energyConsumptionPerTick / 20),
                 leftX, leftY + 36, 0x00FF00);
         guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) rotaryWingVehicle.getY(),
                 centerX + 62, leftY + 24, 0x00FF00);

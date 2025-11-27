@@ -1,0 +1,18 @@
+{
+  "type": "ywzj_vehicle:cannon",
+  "name": "120mm_cannon",
+  "damage": 99,
+  "headshot_multiplier": 1.5,
+  "shoot_interval": 400,
+  "max_capacity": 1,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_artillery"
+  },
+  "explosion": {
+    "explode": true,
+    "damage": 50,
+    "radius": 8,
+    "destroy_block": true
+  }
+}

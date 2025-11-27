@@ -31,7 +31,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
         var data = this.getData();
 
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
-            if ("smoke".equals(data.getType())) {
+            if ("smoke".equals(data.getGrenade())) {
                 SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooter, shooter.level());
                 smokeGrenadeEntity.setBaseData(data);
                 smokeGrenadeEntity.setPos(ammoSpawnPosition);

@@ -26,7 +26,7 @@ public class AllConfigs {
 
     public static class CommonConfig {
 
-        public final ForgeConfigSpec.ConfigValue<Boolean> explosionBreakBlocks;
+        public final ForgeConfigSpec.ConfigValue<Boolean> explosionDestroyBlocks;
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlocks;
         public final ForgeConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
         public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
@@ -35,8 +35,8 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> hitIndicator;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
-            explosionBreakBlocks = builder.comment("爆炸是否破坏方块")
-                    .define("explosionBreakBlocks", true);
+            explosionDestroyBlocks = builder.comment("爆炸是否破坏方块")
+                    .define("explosionDestroyBlocks", true);
             explosionDropBlocks = builder.comment("爆炸是否掉落方块")
                     .define("explosionDropBlocks", true);
             vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")

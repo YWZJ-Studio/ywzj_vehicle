@@ -5,11 +5,12 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 public class WeaponInfo {
+
     @SerializedName("id")
     public ResourceLocation id;
 
     /**
-     * 依附的载具部件ID，如果为空则表示依附当前部件
+     * 子武器站的载具部件ID
      */
     @Nullable
     @SerializedName("part_unit")
@@ -23,4 +24,5 @@ public class WeaponInfo {
         this.partUnit = partUnit;
         this.saveId = saveId;
     }
+
 }

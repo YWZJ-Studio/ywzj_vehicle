@@ -5,10 +5,11 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubeP
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
+import org.ywzj.vehicle.custom.pojo.EnergyInfo;
+import org.ywzj.vehicle.custom.pojo.ViewInfo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
@@ -17,45 +18,47 @@ import java.util.*;
 
 public class BaseVehicleData {
 
-    private ResourceLocation structureModel;
-    private List<PartUnitEntry<?, ?>> parts;
-    private VehicleBedrockCubeOBB mainCubeOBB;
-    private final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
+    protected float maxHealth;
+    protected ViewInfo viewInfo;
+    protected EnergyInfo energyInfo;
+    protected ResourceLocation structureModel;
+    protected List<PartUnitEntry<?, ?>> parts;
+    protected VehicleBedrockCubeOBB mainCubeOBB;
+    protected final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
 
-    protected BaseVehicleData() {}
+    public BaseVehicleData() {}
 
     protected static String check(BaseVehicleDataPojo pojo) {
         return "";
     }
 
-    @Nullable
-    public static BaseVehicleData of(BaseVehicleDataPojo pojo) {
+    public void build(BaseVehicleDataPojo pojo) {
         String checkResult = check(pojo);
         if (!StringUtils.isBlank(checkResult)) {
             YwzjVehicle.LOGGER.warn(checkResult);
-            return null;
+            return;
         }
 
-        var data = new BaseVehicleData();
+        this.maxHealth = pojo.maxHealth;
+        this.viewInfo = pojo.viewInfo;
+        this.energyInfo = pojo.energyInfo;
 
-        data.structureModel = pojo.structureModel;
+        this.structureModel = pojo.structureModel;
         var model = CommonAssetsManager.structureModelManager()
                 .getStructureModel(pojo.structureModel).orElseThrow();
 
-        data.parts = pojo.parts;
-        for (var entry : data.parts) {
+        this.parts = pojo.parts;
+        for (var entry : this.parts) {
             var partData = entry.data();
             partData.initStructureModel(model);
         }
-        data.initOBBs(model);
-        return data;
+        this.initOBBs(model);
     }
 
     public record PartUnitsAndSeats(
             Map<String, PartUnit<?>> partUnitMap,
             List<AbstractVehicle.Seat> seats
-    ) {
-    }
+    ) {}
 
     public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
         Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>();
@@ -76,7 +79,6 @@ public class BaseVehicleData {
         for (var partUnit : partUnitMap.values()) {
             partUnit.combineAndInit(view, vehicle);
         }
-
         return new PartUnitsAndSeats(partUnitMap, seats);
     }
 
@@ -85,26 +87,37 @@ public class BaseVehicleData {
         return new VehicleStructObbs(obbs, obbs.get(0));
     }
 
-    public record VehicleStructObbs(List<VehicleBedrockCubeOBB> obbs, VehicleBedrockCubeOBB mainCubeOBB) {
-    }
+    public record VehicleStructObbs(List<VehicleBedrockCubeOBB> obbs, VehicleBedrockCubeOBB mainCubeOBB) {}
 
-    // 缓存
+    /**
+     * 基岩模型构造车体OBB
+     * @param model
+     */
     private void initOBBs(BedrockModel model) {
         BedrockBone bone = model.getBoneMap().get("vehicle_body");
         // 约定取体积最大的块表达车体的物理
         List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-        cubes.sort(Comparator.comparingDouble(cube1 -> cube1.depth() * cube1.width() * cube1.height()));
+        cubes.sort(Comparator.comparingDouble(cube -> cube.depth() * cube.width() * cube.height()));
         mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
         vehicleBodyOBBs.add(mainCubeOBB);
-        for (BedrockCubePerFace cube : cubes) {
-            vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
-        }
-        for (BedrockBone child : bone.getChildren()) {
-            List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-            for (BedrockCubePerFace cube : childCubes) {
-                vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
-            }
-        }
+        cubes.forEach(cube -> vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube)));
+        bone.getChildren().forEach(child ->
+                child.cubes.stream()
+                        .map(cube -> (BedrockCubePerFace) cube)
+                        .forEach(cube -> vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube)))
+        );
+    }
+
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public ViewInfo getViewInfo() {
+        return viewInfo;
+    }
+
+    public EnergyInfo getEnergyInfo() {
+        return energyInfo;
     }
 
 }

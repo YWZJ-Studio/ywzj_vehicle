@@ -5,9 +5,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
-import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
-import org.ywzj.vehicle.custom.vehicle.BaseVehicleDataPojo;
-import org.ywzj.vehicle.custom.vehicle.VehicleDataType;
+import org.ywzj.vehicle.custom.vehicle.*;
 
 public class AllVehicleDataTypes {
     public static final DeferredRegister<VehicleDataType<?>> VEHICLE_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_DATA_TYPE, YwzjVehicle.MOD_ID);
@@ -16,7 +14,19 @@ public class AllVehicleDataTypes {
             "generic",
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDataPojo.class);
-                return BaseVehicleData.of(pojo);
+                BaseVehicleData baseVehicleData = new BaseVehicleData();
+                baseVehicleData.build(pojo);
+                return baseVehicleData;
+            }
+    );
+
+    public static final RegistryObject<VehicleDataType<TrackedVehicleData>> TRACKED_VEHICLE = register(
+            "tracked_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, TrackedVehicleDataPojo.class);
+                TrackedVehicleData trackedVehicleData = new TrackedVehicleData();
+                trackedVehicleData.build(pojo);
+                return trackedVehicleData;
             }
     );
 

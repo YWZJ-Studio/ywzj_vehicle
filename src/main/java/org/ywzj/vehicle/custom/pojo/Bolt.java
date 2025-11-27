@@ -12,5 +12,4 @@ public record Bolt(
         Vec3 offset,
         @SerializedName("barrel_length")
         float barrelLength
-) {
-}
+) {}

@@ -7,6 +7,7 @@ import net.minecraft.world.phys.Vec3;
  * 辅助反序列化载具部件单元的Pojo类
  */
 public class PartUnitPojo {
+
     @SerializedName("id")
     public String id;
 
@@ -24,4 +25,5 @@ public class PartUnitPojo {
 
     @SerializedName("is_seat")
     public boolean isSeat = true;
+
 }

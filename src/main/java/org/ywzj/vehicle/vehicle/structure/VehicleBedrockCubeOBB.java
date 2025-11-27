@@ -52,6 +52,11 @@ public class VehicleBedrockCubeOBB {
         this.initCubePoints();
         this.offset = new Vec3(bone.x / 16, bone.y / 16, bone.z / 16)
                 .add(cube.x() + cube.width() / 2, cube.y() + cube.height() / 2, cube.z() + cube.depth() / 2);
+        BedrockBone parent = bone.parent;
+        while (parent != null) {
+            this.offset = this.offset.add(parent.x / 16, parent.y / 16, parent.z / 16);
+            parent = parent.parent;
+        }
         this.boneX = bone.x;
         this.boneY = bone.y;
         this.boneZ = bone.z;

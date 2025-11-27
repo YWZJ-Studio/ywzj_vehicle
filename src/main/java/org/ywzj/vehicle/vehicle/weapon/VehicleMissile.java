@@ -26,7 +26,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
     public boolean doClientShoot() {
         VehicleMissileWeaponData data = this.getData();
         WeaponUnit missileWeaponUnit = getWeaponUnit();
-        if (missileWeaponUnit.parentWeaponUnitAim) {
+        if (missileWeaponUnit.isParentWeaponUnitAim()) {
             missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
         }
         if (missileWeaponUnit.getXRot() < data.getXRotMin()

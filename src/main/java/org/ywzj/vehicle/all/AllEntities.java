@@ -106,6 +106,8 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Quadcopter>> QUADCOPTER = registerVehicle("quadcopter", Quadcopter::new);
 
+    public static final RegistryObject<EntityType<M1a2>> M1A2 = registerVehicle("m1a2", M1a2::new);
+
     public static <T extends AbstractVehicle> RegistryObject<EntityType<T>> registerVehicle(
             String name, EntityType.EntityFactory<T> factory
     ) {

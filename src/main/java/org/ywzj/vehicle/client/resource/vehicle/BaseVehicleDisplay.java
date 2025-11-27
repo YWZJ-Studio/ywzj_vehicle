@@ -25,7 +25,7 @@ public class BaseVehicleDisplay {
     // todo 临时存这，实际使用需要封装成状态机
     protected Map<String, BedrockAnimation> animations = Map.of();
 
-    protected Map<String, SoundEvent> soundEvents;
+    protected Map<String, SoundEvent> soundEvents = new HashMap<>();
 
     protected BoneHandlers boneHandlers;
 
@@ -104,6 +104,11 @@ public class BaseVehicleDisplay {
         } else {
             this.animations = Map.of();
         }
+
+        if (pojo.sounds != null) {
+            pojo.sounds.forEach((soundName, soundResourceLocation) ->
+                    soundEvents.put(soundName, SoundEvent.createVariableRangeEvent(soundResourceLocation)));
+        }
     }
 
     public ResourceLocation getTexture() {
@@ -116,6 +121,10 @@ public class BaseVehicleDisplay {
 
     public Map<String, BedrockAnimation> getAnimations() {
         return animations;
+    }
+
+    public Map<String, SoundEvent> getSoundEvents() {
+        return soundEvents;
     }
 
     public Script getScript() {

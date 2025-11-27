@@ -120,7 +120,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 // 瞄准落点
                 weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                     WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
-                    if (currentWeaponUnit.parentWeaponUnitAim) {
+                    if (currentWeaponUnit.isParentWeaponUnitAim()) {
                         currentWeaponUnit = currentWeaponUnit.getParentWeaponUnit();
                     }
                     Vec2 rot = currentWeaponUnit.worldRot();

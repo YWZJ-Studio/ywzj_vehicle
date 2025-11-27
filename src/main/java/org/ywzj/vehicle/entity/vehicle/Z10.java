@@ -108,7 +108,7 @@ public class Z10 extends RotaryWingVehicle {
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        missile.parentWeaponUnitAim = true;
+        missile.setParentWeaponUnitAim(true);
         missile.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
         missile.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
         missile.getBolts().clear();
