@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.custom.weapon.data;
 
 import com.google.gson.annotations.SerializedName;
+import org.ywzj.vehicle.custom.pojo.Explosion;
 
 public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
@@ -15,6 +16,12 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
     @SerializedName("y_rot_min")
     private float yRotMin = -10f;
+
+    @SerializedName("max_speed")
+    private float maxSpeed = 5f;
+
+    @SerializedName("explosion")
+    private Explosion explosion = new Explosion();
 
     public float getXRotMax() {
         return xRotMax;
@@ -46,6 +53,18 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
     public void setYRotMin(float yRotMin) {
         this.yRotMin = yRotMin;
+    }
+
+    public float getMaxSpeed() {
+        return maxSpeed;
+    }
+
+    public Explosion getExplosion() {
+        return explosion;
+    }
+
+    public void setExplosion(Explosion explosion) {
+        this.explosion = explosion;
     }
 
 }

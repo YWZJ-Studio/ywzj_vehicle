@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -10,9 +9,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleAerialBombWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 
@@ -27,21 +26,6 @@ public class Mi24 extends RotaryWingVehicle {
         this.xRotSpeedMax = 2f;
         this.yRotSpeedMax = 2f;
         this.zRotSpeedMax = 2f;
-    }
-
-    @Override
-    public SoundEvent getEngineStartSound() {
-        return AllSounds.Z10_ENGINE_START.get();
-    }
-
-    @Override
-    public SoundEvent getEngineStopSound() {
-        return AllSounds.Z10_ENGINE_STOP.get();
-    }
-
-    @Override
-    public SoundEvent getEngineRunSound() {
-        return AllSounds.Z10_ENGINE_RUN.get();
     }
 
     @Override
@@ -85,7 +69,7 @@ public class Mi24 extends RotaryWingVehicle {
         bomb.setYRotSpeed(0);
         bomb.setParentWeaponUnit(sightingSystem);
         sightingSystem.addSubWeaponUnit(bomb);
-        BaseVehicleWeaponData weaponDataBomb = new BaseVehicleWeaponData();
+        VehicleAerialBombWeaponData weaponDataBomb = new VehicleAerialBombWeaponData();
         weaponDataBomb.setName("bomb");
         weaponDataBomb.setMaxCapacity(4);
         weaponDataBomb.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AERIAL_BOMB.get())));

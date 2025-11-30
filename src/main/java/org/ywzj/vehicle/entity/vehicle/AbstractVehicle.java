@@ -50,7 +50,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllItems;
@@ -423,26 +422,22 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public SoundEvent getEngineStartSound() {
         Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
-        return displayOptional.map(display -> display.getSoundEvents().get("engine_start"))
-                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_start")));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_start")).orElse(null);
     }
 
     public SoundEvent getEngineStopSound() {
         Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
-        return displayOptional.map(display -> display.getSoundEvents().get("engine_stop"))
-                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_stop")));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_stop")).orElse(null);
     }
 
     public SoundEvent getEngineIdleSound() {
         Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
-        return displayOptional.map(display -> display.getSoundEvents().get("engine_idle"))
-                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_idle")));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_idle")).orElse(null);
     }
 
     public SoundEvent getEngineRunSound() {
         Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
-        return displayOptional.map(display -> display.getSoundEvents().get("engine_run"))
-                .orElseGet(() -> SoundEvent.createVariableRangeEvent(YwzjVehicle.modLoc(getName().getString() + "_engine_run")));
+        return displayOptional.map(display -> display.getSoundEvents().get("engine_run")).orElse(null);
     }
 
     public SoundEvent getHurtSound(@NotNull DamageSource pDamageSource) {

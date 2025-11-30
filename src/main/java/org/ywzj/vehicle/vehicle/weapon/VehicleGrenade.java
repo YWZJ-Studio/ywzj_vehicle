@@ -1,9 +1,7 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.SmokeGrenadeEntity;
@@ -38,9 +36,8 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 smokeGrenadeEntity.shootFromRotation(this.getVehicle(), ammoXRot, ammoYRot, 0, 1f, 0);
                 smokeGrenadeEntity.setXRot(ammoXRot);
                 smokeGrenadeEntity.setYRot(ammoYRot);
-
-                vehicle.level().playSound(null, vehicle, AllSounds.SMOKE_GRENADE_LAUNCHER.get(), SoundSource.PLAYERS, 16f, 1f);
                 vehicle.level().addFreshEntity(smokeGrenadeEntity);
+                vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
             }
         }
     }

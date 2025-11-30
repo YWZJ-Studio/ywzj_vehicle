@@ -1,12 +1,9 @@
 {
   "model": "ywzj_vehicle:entity/ka50",
   "texture": "ywzj_vehicle:textures/entity/ka50.png",
-//  "animations": "ywzj_vehicle:entity/ztl11_fire.animation",
-  // 音效，需要先去assets/<namespace>/sounds.json注册
   "sounds": {
-    "engine_start": "",
-    "engine_stop": "",
-    "engine_idle": "",
-    "engine_run": ""
+    "engine_start": "ywzj_vehicle:z10_engine_start",
+    "engine_stop": "ywzj_vehicle:z10_engine_stop",
+    "engine_run": "ywzj_vehicle:z10_engine_run"
   }
 }

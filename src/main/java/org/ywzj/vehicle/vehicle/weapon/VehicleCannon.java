@@ -28,11 +28,10 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
             BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, ammoSpawnPosition, getData().getExplosion());
             bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, data.getVelocity(), 0f);
-
             bulletEntity.setDamage(data.getDamage());
             bulletEntity.setHeadShot(data.getHeadshotMultiplier());
-
             vehicle.level().addFreshEntity(bulletEntity);
+            vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }
     }
 

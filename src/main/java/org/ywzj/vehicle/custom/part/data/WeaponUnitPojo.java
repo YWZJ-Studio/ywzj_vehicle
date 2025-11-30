@@ -9,6 +9,7 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import java.util.List;
 
 public class WeaponUnitPojo extends RotatableUnitPojo {
+
     @SerializedName("base")
     public String base = null;
 
@@ -36,6 +37,10 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("zoom_max")
     public float zoomMax;
 
+    @SerializedName("crosshair_style")
+    public WeaponUnit.CrosshairStyle crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
+
     @SerializedName("weapons")
     public List<WeaponInfo> weapons = List.of();
+
 }

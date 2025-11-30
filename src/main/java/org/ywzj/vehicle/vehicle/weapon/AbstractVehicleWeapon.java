@@ -1,10 +1,14 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -24,7 +28,12 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /** 可配置的抽象武器模块<br/>
  * @param <T> 配置数据结构
@@ -35,14 +44,23 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     private final WeaponUnit weaponUnit;
     private final int index;
     private final T data;
+    private final HashMap<String, SoundEvent> soundEvents = new HashMap<>();
     private final String serializeId;
     private Component displayName;
     protected long lastShootTime = 0;
     protected int remainAmmo = 0;
     protected int reloadTime = 0;
-
     protected SyncDataHolder<Integer> remainAmmoHolder;
     protected SyncDataHolder<Integer> reloadTimeHolder;
+    protected final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            3,
+            8,
+            60,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(100),
+            Executors.defaultThreadFactory(),
+            new ThreadPoolExecutor.AbortPolicy()
+    );
 
     /**
      *  你应该尽可能从工厂方法构建一个武器模块，而不是直接调用武器的构造方法<br/>
@@ -54,6 +72,10 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         this.weaponUnit = weaponUnit;
         this.index = index;
         this.data = data;
+        if (data.sounds != null) {
+            data.sounds.forEach((soundName, soundResourceLocation) ->
+                    this.soundEvents.put(soundName, SoundEvent.createVariableRangeEvent(soundResourceLocation)));
+        }
         this.displayName = Component.translatable(data.getName());
         this.serializeId = serializeId;
     }
@@ -110,10 +132,8 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         List<Vec3> ammoSpawnPositions;
         if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
             ammoSpawnPositions = Collections.singletonList(weaponUnit.ammoSpawnPosition());
-            weaponUnit.countFire(1);
         } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
             ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
-            weaponUnit.countFire(ammoSpawnPositions.size());
         } else {
             return false;
         }
@@ -121,6 +141,66 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         lastShootTime = System.currentTimeMillis();
         sendShoot(this.getVehicle(), partUnitIndex, ammoSpawnPositions, rot.x, rot.y);
         return true;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void soundsAndParticles() {
+        Level level = vehicle.level();
+        if (getFireSound() != null) {
+            level.playSound(null, vehicle, getFireSound(), SoundSource.PLAYERS, 16f, 1f);
+            if (getShellSound() != null) {
+                long interval;
+                if (data.getMaxCapacity() == 1) {
+                    interval = Math.min(2000, data.getReload().getTime() / 20 * 1000L / 2);
+                } else {
+                    interval = data.getShootInterval() / 20 * 1000 / 2;
+                }
+                long finalInterval = interval;
+                executor.submit(() -> {
+                    try {
+                        Thread.sleep(finalInterval);
+                    } catch (Exception ignore) {}
+                    Minecraft.getInstance().submit(() -> level.playSound(null, vehicle, getShellSound(), SoundSource.PLAYERS, 16f, 1f));
+                });
+            }
+        }
+        List<Vec3> ammoSpawnPositions;
+        if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
+            ammoSpawnPositions = Collections.singletonList(weaponUnit.ammoSpawnPosition());
+            weaponUnit.countFire(1);
+        } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
+            ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
+            weaponUnit.countFire(ammoSpawnPositions.size());
+        } else {
+            return;
+        }
+        float recoil = data.getRecoil();
+        for (Vec3 muzzlePos : ammoSpawnPositions) {
+            for (int i = 0; i < 20 * recoil; i++) {
+                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
+                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true,
+                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
+                        0.01, 0.01, 0.01);
+            }
+            for (int i = 0; i < 10 * recoil + 1; i++) {
+                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
+                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                level.addParticle(ParticleTypes.FLAME, true,
+                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
+                        0.01, 0.01, 0.01);
+            }
+            for (int i = 0; i < 15 * recoil + 1; i++) {
+                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
+                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                level.addParticle(ParticleTypes.SMOKE, true,
+                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
+                        0.01, 0.01, 0.01);
+            }
+        }
     }
 
     public int getReloadTime() {
@@ -231,6 +311,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                 remainAmmo += toTake;
             }
         }
+        if (getReloadSound() != null) {
+            vehicle.level().playSound(null, vehicle, getReloadSound(), SoundSource.PLAYERS, 2f, 1f);
+        }
     }
 
     public boolean isReloading() {
@@ -272,6 +355,18 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         return displayName;
     }
 
+    public SoundEvent getFireSound() {
+        return this.soundEvents.get("fire");
+    }
+
+    public SoundEvent getShellSound() {
+        return this.soundEvents.get("shell");
+    }
+
+    public SoundEvent getReloadSound() {
+        return this.soundEvents.get("reload");
+    }
+
     public boolean hasSyncData() {
         return true;
     }
@@ -291,4 +386,5 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     public String getSerializeId() {
         return serializeId;
     }
+
 }

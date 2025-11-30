@@ -1,9 +1,12 @@
 package org.ywzj.vehicle.custom.weapon.data;
 
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.ywzj.vehicle.all.AllItems;
+
+import java.util.Map;
 
 public class BaseVehicleWeaponData {
 
@@ -19,6 +22,9 @@ public class BaseVehicleWeaponData {
     @SerializedName("headshot_multiplier")
     private float headshotMultiplier = 1.5f;
 
+    @SerializedName("recoil")
+    private float recoil = 0f;
+
     @SerializedName("shoot_interval")
     private long shootInterval = 100;
 
@@ -27,6 +33,9 @@ public class BaseVehicleWeaponData {
 
     @SerializedName("reload")
     private Reload reload = new Reload(60, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get()));
+
+    @SerializedName("sounds")
+    public Map<String, ResourceLocation> sounds;
 
     public static class Reload {
 
@@ -93,6 +102,14 @@ public class BaseVehicleWeaponData {
 
     public void setHeadshotMultiplier(float headshotMultiplier) {
         this.headshotMultiplier = headshotMultiplier;
+    }
+
+    public float getRecoil() {
+        return recoil;
+    }
+
+    public void setRecoil(float recoil) {
+        this.recoil = recoil;
     }
 
     public long getShootInterval() {

@@ -4,7 +4,6 @@
   "animations": "ywzj_vehicle:entity/m1a2.animation",
   "sounds": {
     "engine_start": "ywzj_vehicle:m1a2_engine_start",
-    "engine_stop": "ywzj_vehicle:m1a2_engine_stop",
     "engine_idle": "ywzj_vehicle:m1a2_engine_idle",
     "engine_run": "ywzj_vehicle:m1a2_engine_run"
   }

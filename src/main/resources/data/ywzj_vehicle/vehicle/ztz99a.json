@@ -1,55 +1,108 @@
 {
-  "structure_model": "ywzj_vehicle:entity/ztz99a",
+  "type": "ywzj_vehicle:tracked_vehicle",
   "attributes": {
-    "max_health": 200
-    // ...
+    "brake_acceleration": 0.025,
+    "forward_acceleration": 0.01,
+    "backward_acceleration": 0.01,
+    "max_speed_forward": 0.5,
+    "max_speed_backward": 0.2,
+    "turn_acceleration": 1,
+    "max_turn": 2
   },
-  "movement": {
-
+  "max_health": 300,
+  "view_info": {
+    "third_person_center_offset": [0, 3, 0],
+    "third_person_distance": 7,
+    "sound_distance": 7
   },
-  "engine": {
-    "max_capacity": 100.0,
-    "consumption_per_tick": 0.1,
-    "type": "liquid",
-    "fuel_types": [
-      "minecraft:lava"
-    ]
+  "energy_info": {
+    "energy_capacity": 1,
+    "energy_consumption_per_tick": 0.00001
   },
+  "structure_model": "ywzj_vehicle:entity/ztz99a",
   "parts": [
     {
-      "id": "ztz99a_turret",
+      "id": "turret",
+      "name": "turret",
       "type": "ywzj_vehicle:weapon",
-      "structure_bone": "ztz99a_turret",
-      "name": "ztz99a_turret",
+      "structure_bone": "turret",
+      "seat_offset": [-0.5, 2.5, 0.375],
       "rot_info": {
         "x_rot_speed": 1.5,
         "y_rot_speed": 1.5,
         "x_rot_max": 5,
         "x_rot_min": -13
       },
-      "seat_offset": [0, 1.5, 0],
-      "optical_sight_offset": [0.75, 0.5, 0.5],
+      "optical_sight_offset": [0.719, 0.883, 0.14],
       "operator_view_offset": [0, 1.5, 0],
+      "optical_sight_type": "crt",
+      "zoom_max": 8,
       "weapons": [
-        "ywzj_vehicle:cannon"
+        "ywzj_vehicle:cannon_125mm",
+        {
+          "id": "ywzj_vehicle:gun_7.62mm",
+          "part_unit": "turret_machine_gun"
+        },
+        {
+          "id": "ywzj_vehicle:launcher_smoke_grenade",
+          "part_unit": "turret_smoke_grenade"
+        }
       ]
     },
     {
-      "id": "ztz99a_commander_machine_gun",
+      "id": "turret_machine_gun",
+      "name": "turret_machine_gun",
       "type": "ywzj_vehicle:weapon",
-      "structure_bone": "ztz99a_commander_machine_gun",
-      "base": "ztz99a_turret",
+      "structure_bone": "turret_machine_gun",
+      "is_seat": false,
+      "base": "turret",
       "rot_info": {
-        "x_rot_speed": 3,
-        "y_rot_speed": 3,
+        "x_rot_speed": 1.5,
+        "y_rot_speed": 0,
+        "x_rot_max": 5,
+        "x_rot_min": -13
+      }
+    },
+    {
+      "id": "turret_smoke_grenade",
+      "name": "turret_smoke_grenade",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "turret_smoke_grenade",
+      "is_seat": false,
+      "base": "turret",
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0,
+        "x_rot": -30
+      }
+    },
+    {
+      "id": "commander_machine_gun",
+      "name": "commander_machine_gun",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "commander_machine_gun",
+      "seat_offset": [0.5, 2.5, 0.275],
+      "operator_on_weapon_unit": false,
+      "base": "turret",
+      "rot_info": {
+        "x_rot_speed": 4.5,
+        "y_rot_speed": 4.5,
         "x_rot_max": 15,
-        "x_rot_min": -18
+        "x_rot_min": -45,
+        "need_power": false
       },
-      "operator_view_offset": [0.5, 0.5, -1],
-      "seat_offset": [0, 1.5, 0],
+      "operator_view_offset": [0, 0.5, 0],
+      "optical_sight_type": "operator",
+      "zoom_max": 2,
       "weapons": [
-        "ywzj_vehicle:cannon"
+        "ywzj_vehicle:gun_14.5mm"
       ]
+    },
+    {
+      "id": "seat",
+      "name": "seat",
+      "type": "ywzj_vehicle:generic",
+      "seat_offset": [0, 2, 0.575]
     }
   ]
 }

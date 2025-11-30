@@ -2,11 +2,9 @@
   "model": "ywzj_vehicle:entity/ztz99a",
   "texture": "ywzj_vehicle:textures/entity/ztz99a.png",
   "animations": "ywzj_vehicle:entity/ztz99a.animation",
-  // 音效，需要先去assets/<namespace>/sounds.json注册
   "sounds": {
-    "engine_start": "",
-    "engine_stop": "",
-    "engine_idle": "",
-    "engine_run": ""
+    "engine_start": "ywzj_vehicle:ztz99a_engine_start",
+    "engine_idle": "ywzj_vehicle:ztz99a_engine_idle",
+    "engine_run": "ywzj_vehicle:ztz99a_engine_run"
   }
 }

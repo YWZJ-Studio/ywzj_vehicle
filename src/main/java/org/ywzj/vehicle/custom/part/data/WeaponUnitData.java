@@ -23,6 +23,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private boolean operatorOnWeaponUnit;
     private WeaponUnit.OpticalSightType opticalSightType;
     private float zoomMax;
+    private WeaponUnit.CrosshairStyle crosshairStyle;
     private List<WeaponInfo> weapons;
 
     private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
@@ -43,6 +44,7 @@ public class WeaponUnitData extends RotatableUnitData {
         this.operatorOnWeaponUnit = pojo.operatorOnWeaponUnit;
         this.opticalSightType = pojo.opticalSightType;
         this.zoomMax = pojo.zoomMax;
+        this.crosshairStyle = pojo.crosshairStyle;
         this.weapons = pojo.weapons;
     }
 
@@ -82,6 +84,10 @@ public class WeaponUnitData extends RotatableUnitData {
         return zoomMax;
     }
 
+    public WeaponUnit.CrosshairStyle getCrosshairStyle() {
+        return crosshairStyle;
+    }
+
     public List<WeaponInfo> getWeapons() {
         return weapons;
     }
@@ -111,17 +117,17 @@ public class WeaponUnitData extends RotatableUnitData {
         var yTurnBone = model.getBoneMap().get(this.structureBone);
         if (yTurnBone != null) {
             this.yTurnUnitOBBs = collectOBBs(yTurnBone);
-        } else if (this.base != null) {
-            yTurnBone = model.getBoneMap().get(this.base);
-            if (yTurnBone == null) {
-                return;
-            }
+            this.pivotOffset = new Vec3(yTurnBone.x / 16, yTurnBone.y / 16, yTurnBone.z / 16);
         } else {
-            return;
+            this.pivotOffset = Vec3.ZERO;
         }
-        this.pivotOffset = new Vec3(yTurnBone.x / 16, yTurnBone.y / 16, yTurnBone.z / 16);
         var xTurnBone = model.getBoneMap().get(this.structureBone + "_barrel");
         if (xTurnBone == null) {
+            // 若未配置炮闩数据且仅有座圈结构模型，取座圈结构块的Z轴正方向的表面中心为唯一炮闩
+            if ((this.bolts == null || this.bolts.isEmpty()) && !yTurnUnitOBBs.isEmpty()) {
+                this.bolts = new ArrayList<>();
+                this.bolts.add(new Bolt(Vec3.ZERO, (float) (yTurnUnitOBBs.get(0).depth / 2)));
+            }
             return;
         }
         this.xTurnUnitOBBs = collectOBBs(xTurnBone);

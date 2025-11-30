@@ -5,7 +5,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -20,9 +19,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllEntities;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.List;
 
@@ -36,58 +33,13 @@ public class Quadcopter extends RotaryWingVehicle {
 
     public Quadcopter(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.physicsEngine.mass = 1f;
-        this.mainRotorForce = 1.2f * physicsEngine.gravityA * physicsEngine.mass;
-        this.xRotSpeedAcceleration = 4f;
-        this.xRotSpeedMax = 8f;
-        this.yRotSpeedAcceleration = 4f;
-        this.yRotSpeedMax = 8f;
-        this.zRotSpeedAcceleration = 4f;
-        this.zRotSpeedMax = 8f;
-        this.maxAirSpeed = 2f;
         this.uav = true;
-//        this.thirdPersonCenterOffset = new Vec3(0, 3, 0);
-//        this.thirdPersonDistance = 7;
     }
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CABLE_LENGTH, 0f);
-    }
-
-    @Override
-    public SoundEvent getEngineStartSound() {
-        return null;
-    }
-
-    @Override
-    public SoundEvent getEngineStopSound() {
-        return null;
-    }
-
-    @Override
-    public SoundEvent getEngineRunSound() {
-        return AllSounds.Z10_ENGINE_RUN.get();
-    }
-
-    @Override
-    public void initPartUnits() {
-        WeaponUnit sightingSystem = new WeaponUnit("sighting_system", 0, this,
-                new Vec3(0f, 0f, 0f),
-                0,
-                new Vec3(0f, 0f, 0.2f),
-                null,
-                new Vec3(0f, 2f, 0.2f),
-                null);
-        sightingSystem.xRotSpeed = 180f / 20;
-        sightingSystem.yRotSpeed = 180f / 20;
-        sightingSystem.xRotMax = 90f;
-        sightingSystem.xRotMin = -13f;
-        sightingSystem.yRotMax = 45f;
-        sightingSystem.yRotMin = -45f;
-        this.partUnits.add(sightingSystem);
-        this.seats.add(new Seat(0, sightingSystem));
     }
 
     @Override

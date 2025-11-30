@@ -1,0 +1,17 @@
+{
+  "type": "ywzj_vehicle:cannon",
+  "name": "7.62mm_gun",
+  "damage": 3,
+  "velocity": 8,
+  "headshot_multiplier": 1.5,
+  "shoot_interval": 80,
+  "max_capacity": 120,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_machine_gun"
+  },
+  "sounds": {
+    "fire": "ywzj_vehicle:gun_7.62mm_shot",
+    "reload": "ywzj_vehicle:gun_reload"
+  }
+}

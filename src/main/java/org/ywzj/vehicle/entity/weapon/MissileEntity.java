@@ -31,7 +31,7 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class MissileEntity extends AmmoEntity {
 
-    public float speed = 5f;
+    public float maxSpeed;
     public Entity targetEntity;
     public Vec3 targetPos;
     public int operatorId;
@@ -107,7 +107,7 @@ public class MissileEntity extends AmmoEntity {
         double dz = this.getZ() + velocity.z;
         this.setPos(dx, dy, dz);
         Vec3 v = this.getLookAngle().normalize();
-        this.setDeltaMovement(v.scale(speed));
+        this.setDeltaMovement(v.scale(maxSpeed));
     }
 
     private void tickHit() {

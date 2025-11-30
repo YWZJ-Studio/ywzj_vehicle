@@ -10,6 +10,7 @@ import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
  * 载具开火事件
  */
 public abstract class VehicleFireEvent extends VehicleEvent {
+
     private final AbstractVehicleWeapon<?> weapon;
     @Nullable
     private final LivingEntity operator;
@@ -54,4 +55,5 @@ public abstract class VehicleFireEvent extends VehicleEvent {
     public LivingEntity getOperator() {
         return operator;
     }
+
 }

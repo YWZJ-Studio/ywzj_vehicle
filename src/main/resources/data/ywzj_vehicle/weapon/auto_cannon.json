@@ -1,0 +1,17 @@
+{
+  "type": "ywzj_vehicle:cannon",
+  "name": "auto_cannon",
+  "damage": 10,
+  "velocity": 8,
+  "headshot_multiplier": 1.5,
+  "shoot_interval": 100,
+  "max_capacity": 120,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_auto_cannon"
+  },
+  "sounds": {
+    "fire": "ywzj_vehicle:auto_cannon_shot",
+    "reload": "ywzj_vehicle:gun_reload"
+  }
+}

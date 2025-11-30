@@ -21,6 +21,7 @@ public record ServerVehicleFire (
         int partUnitIndex,
         int weaponIndex
 ) {
+
     public static void encode(ServerVehicleFire msg, FriendlyByteBuf buf) {
         buf.writeInt(msg.vehicleEntityId);
         buf.writeInt(msg.operatorEntityId);

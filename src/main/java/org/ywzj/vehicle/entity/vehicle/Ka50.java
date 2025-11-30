@@ -1,26 +1,13 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.all.AllItems;
-import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.pojo.Bolt;
-import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
-import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
-import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
-import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
-import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
-import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
 
 import java.util.List;
 
@@ -29,152 +16,6 @@ public class Ka50 extends RotaryWingVehicle {
     public Ka50(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
-
-    @Override
-    public SoundEvent getEngineStartSound() {
-        return AllSounds.Z10_ENGINE_START.get();
-    }
-
-    @Override
-    public SoundEvent getEngineStopSound() {
-        return AllSounds.Z10_ENGINE_STOP.get();
-    }
-
-    @Override
-    public SoundEvent getEngineRunSound() {
-        return AllSounds.Z10_ENGINE_RUN.get();
-    }
-
-    @Override
-    public void initPartUnits() {
-        // 观瞄
-        WeaponUnit sightingSystem = new WeaponUnit("sighting_system",
-                0,
-                this,
-                new Vec3(-0.2d, 1d, 5.3d),
-                3f,
-                new Vec3(0, 0, 0),
-                new Vec3(0, 1.1d, -3d),
-                new Vec3(-0.2d, 2.1d, 2.2d),
-                null);
-        sightingSystem.setXRotSpeed(60f / 20);
-        sightingSystem.setYRotSpeed(60f / 20);
-        sightingSystem.setXRotMax(45f);
-        sightingSystem.setXRotMin(-13f);
-        sightingSystem.setYRotMax(60f);
-        sightingSystem.setYRotMin(-60f);
-        sightingSystem.setOperatorOnWeaponUnit(false);
-        sightingSystem.currentWeaponIndexHolder = sightingSystem.getSyncData().define(
-                SyncDataSerializers.INT,
-                sightingSystem::setCurrentWeaponIndex,
-                sightingSystem::getCurrentWeaponIndex,
-                0
-        );
-        this.partUnits.add(sightingSystem);
-        this.seats.add(new Seat(0, sightingSystem));
-        // 机炮
-        WeaponUnit autoCannon = new WeaponUnit("auto_cannon",
-                1,
-                this,
-                new Vec3(-1.2, 1d, 0d),
-                1f,
-                new Vec3(1, 0d, 5.3d),
-                new Vec3(1, 1.3d, 2.2d),
-                new Vec3(1, 1d, 2.2d),
-                null);
-        autoCannon.crosshairStyle = WeaponUnit.CrosshairStyle.SQUARE;
-        autoCannon.setXRotSpeed(60f / 20);
-        autoCannon.setYRotSpeed(60f / 20);
-        autoCannon.setXRotMax(45f);
-        autoCannon.setXRotMin(0f);
-        autoCannon.setYRotMax(20f);
-        autoCannon.setYRotMin(0f);
-        autoCannon.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(autoCannon);
-        VehicleCannonWeaponData weaponDataAutoCannon = new VehicleCannonWeaponData();
-        weaponDataAutoCannon.setName("auto_cannon");
-        weaponDataAutoCannon.setMaxCapacity(120);
-        weaponDataAutoCannon.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get())));
-        VehicleCannon vehicleCannon = new VehicleCannon(this, autoCannon, 0, weaponDataAutoCannon, "auto_cannon");
-        vehicleCannon.defineSyncData(autoCannon.getSyncData());
-        sightingSystem.weapons.add(vehicleCannon);
-        this.partUnits.add(autoCannon);
-        // 导弹挂架
-        WeaponUnit missile = new WeaponUnit("missile",
-                2,
-                this,
-                new Vec3(0, 1d, 0),
-                0f,
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 2d, 0d),
-                null);
-        missile.setParentWeaponUnitAim(true);
-        missile.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
-        missile.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
-        missile.getBolts().clear();
-        missile.getBolts().add(new Bolt(new Vec3(2.8d, 0, 1d), 0.1f));
-        missile.getBolts().add(new Bolt(new Vec3(-2.8d, 0, 1d), 0.1f));
-        missile.setXRotSpeed(0);
-        missile.setYRotSpeed(0);
-        missile.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(missile);
-        VehicleMissileWeaponData weaponDataMissile = new VehicleMissileWeaponData();
-        weaponDataMissile.setName("missile");
-        weaponDataMissile.setDamage(50);
-        weaponDataMissile.setMaxCapacity(8);
-        weaponDataMissile.setXRotMax(30);
-        weaponDataMissile.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_MISSILE.get())));
-        VehicleMissile vehicleMissile = new VehicleMissile(this, missile, 1, weaponDataMissile, "missile");
-        vehicleMissile.defineSyncData(missile.getSyncData());
-        sightingSystem.weapons.add(vehicleMissile);
-        this.partUnits.add(missile);
-        // 火箭弹挂架
-        WeaponUnit rocket = new WeaponUnit("rocket",
-                3,
-                this,
-                new Vec3(0, 1d, 0),
-                0f,
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 0.6d, 1.2d),
-                new Vec3(0, 2d, 0d),
-                null);
-        rocket.crosshairStyle = WeaponUnit.CrosshairStyle.RETICLE;
-        rocket.setFiringMode(WeaponUnit.FiringMode.SALVO);
-        rocket.getBolts().clear();
-        rocket.getBolts().add(new Bolt(new Vec3(1.8d, 0, 1d), 0.1f));
-        rocket.getBolts().add(new Bolt(new Vec3(-1.8d, 0, 1d), 0.1f));
-        rocket.setXRotSpeed(0);
-        rocket.setYRotSpeed(0);
-        rocket.setParentWeaponUnit(sightingSystem);
-        sightingSystem.addSubWeaponUnit(rocket);
-        BaseVehicleWeaponData weaponDataRocket = new BaseVehicleWeaponData();
-        weaponDataRocket.setName("rocket");
-        weaponDataRocket.setMaxCapacity(32);
-        weaponDataRocket.setReload(new BaseVehicleWeaponData.Reload(20, Ingredient.of(AllItems.AMMO_ROCKET.get())));
-        VehicleRocket vehicleRocket = new VehicleRocket(this, rocket, 2, weaponDataRocket, "rocket");
-        vehicleRocket.defineSyncData(rocket.getSyncData());
-        sightingSystem.weapons.add(vehicleRocket);
-        this.partUnits.add(rocket);
-    }
-
-//    @Override
-//    public void initData() {
-//        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("z10")).ifPresent(data -> {
-//            var struct = data.getVehicleStructObbs();
-//            this.mainCubeOBB = struct.mainCubeOBB();
-//            this.vehicleBodyOBBs = struct.obbs();
-//            var weapons = data.createPartUnits(this);
-//            this.operatorUnits.addAll(weapons.values());
-//            this.partUnits.addAll(weapons.values());
-//        });
-//        this.spotterUnit = new SpotterUnit(this,
-//                new Vec3(0, 4.54d, -0.375d),
-//                new Vec3(0, 0d, -6d),
-//                new Vec3(0, -2.2d, -1.2d),
-//                null);
-//
-//    }
 
     @Override
     protected void tickParticle() {
@@ -196,10 +37,6 @@ public class Ka50 extends RotaryWingVehicle {
     public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
-            //todo: 测试
-            if (weaponUnit.getCurrentWeapon().get().getIndex() == 0) {
-                this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
-            }
         }
     }
 

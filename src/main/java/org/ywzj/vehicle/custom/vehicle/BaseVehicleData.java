@@ -94,18 +94,17 @@ public class BaseVehicleData {
      * @param model
      */
     private void initOBBs(BedrockModel model) {
-        BedrockBone bone = model.getBoneMap().get("vehicle_body");
+        buildVehicleBodyOBBs(model.getBoneMap().get("vehicle_body"));
         // 约定取体积最大的块表达车体的物理
-        List<BedrockCubePerFace> cubes = new ArrayList<>(bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-        cubes.sort(Comparator.comparingDouble(cube -> cube.depth() * cube.width() * cube.height()));
-        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
-        vehicleBodyOBBs.add(mainCubeOBB);
-        cubes.forEach(cube -> vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube)));
-        bone.getChildren().forEach(child ->
-                child.cubes.stream()
-                        .map(cube -> (BedrockCubePerFace) cube)
-                        .forEach(cube -> vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(child, cube)))
-        );
+        vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
+        mainCubeOBB = vehicleBodyOBBs.get(0);
+    }
+
+    private void buildVehicleBodyOBBs(BedrockBone bone) {
+        bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).forEach(cube -> vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube)));
+        for (BedrockBone child : bone.getChildren()) {
+            buildVehicleBodyOBBs(child);
+        }
     }
 
     public float getMaxHealth() {

@@ -1,9 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -11,9 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.custom.pojo.Bolt;
 import org.ywzj.vehicle.custom.pojo.Explosion;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
@@ -24,40 +19,45 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
 
 public class Ztz99a extends TrackedVehicle {
 
-    private TrackAnimationInstance trackAnimationInstance;
-
-    public record ScheduleTask(int tickCount, Runnable task) {
-    }
-
-    private final Queue<ScheduleTask> scheduledTasks = new PriorityQueue<>(Comparator.comparingInt(task -> task.tickCount));
-
     public Ztz99a(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-//        this.soundDistance = 7;
     }
 
-//    @Override
-//    public void initData() {
-//        VehicleDataManager.get().getVehicleData(YwzjVehicle.modLoc("ztz99a")).ifPresent(data -> {
-//            var struct = data.getVehicleStructObbs();
-//            this.mainCubeOBB = struct.mainCubeOBB();
-//            this.vehicleOBBs = struct.obbs();
-//            var weapons = data.createPartUnits(this);
-//            List<PartUnit> weaponUnits = new ArrayList<>(weapons.values());
-//            for (int index = 0; index < weapons.size(); index++) {
-//                this.seats.add(new Seat(index, weaponUnits.get(index)));
-//            }
-//            this.partUnits.addAll(weapons.values());
-//        });
-//    }
+    @Override
+    protected void tickParticle() {
+        super.tickParticle();
+        double velocity = Math.abs(entityData.get(FORWARD_SPEED)) * 20 + Math.abs(entityData.get(TURN_SPEED)) * 5;
+        if ((!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) && hasPower()) {
+            Vec3 v1 = this.getLookAngle();
+            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
+            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-2.5f)).add(v2.scale(-2)).add(0, 1.7, 0);
+            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-2.5f)).add(v2.scale(2)).add(0, 1.7, 0);
+            for (int count = 0; count < velocity / 32 + 1; count++) {
+                Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
+                level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                        engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z,
+                        engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                        engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z,
+                        engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+            }
+        }
+    }
 
+    @Override
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+        if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
+            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
+        }
+    }
+
+    /**
+     * 仅做示例: 如何硬编码构造载具部件
+     */
     @Deprecated
     @Override
     public void initPartUnits() {
@@ -162,92 +162,6 @@ public class Ztz99a extends TrackedVehicle {
         seat.setSeatOffset(new Vec3(0, 2d, 0d));
         this.partUnits.add(seat);
         this.seats.add(new Seat(2, seat));
-    }
-
-    @Override
-    public SoundEvent getEngineStartSound() {
-        return AllSounds.ZTZ99A_ENGINE_START.get();
-    }
-
-    @Override
-    public SoundEvent getEngineIdleSound() {
-        return AllSounds.ZTZ99A_ENGINE_IDLE.get();
-    }
-
-    @Override
-    public SoundEvent getEngineRunSound() {
-        return AllSounds.ZTZ99A_ENGINE_RUN.get();
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        while (!scheduledTasks.isEmpty()) {
-            ScheduleTask scheduleTask = scheduledTasks.peek();
-            if (scheduleTask.tickCount <= this.tickCount) {
-                scheduleTask.task.run();
-                scheduledTasks.poll();
-            } else {
-                break;
-            }
-        }
-    }
-
-    @Override
-    protected void tickParticle() {
-        super.tickParticle();
-        double velocity = Math.abs(entityData.get(FORWARD_SPEED)) * 20 + Math.abs(entityData.get(TURN_SPEED)) * 5;
-        if ((!this.getPassengers().isEmpty() && velocity > 0 || tickCount % 10 == 0) && hasPower()) {
-            Vec3 v1 = this.getLookAngle();
-            Vec3 v2 = new Vec3(-v1.z, 0, v1.x).normalize();
-            Vec3 engineSmokePosLeft = this.position().add(this.getLookAngle().normalize().scale(-2.5f)).add(v2.scale(-2)).add(0, 1.7, 0);
-            Vec3 engineSmokePosRight = this.position().add(this.getLookAngle().normalize().scale(-2.5f)).add(v2.scale(2)).add(0, 1.7, 0);
-            for (int count = 0; count < velocity / 32 + 1; count++) {
-                Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
-                level().addParticle(ParticleTypes.LARGE_SMOKE, true,
-                        engineSmokePosLeft.x, engineSmokePosLeft.y, engineSmokePosLeft.z,
-                        engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
-                level().addParticle(ParticleTypes.LARGE_SMOKE, true,
-                        engineSmokePosRight.x, engineSmokePosRight.y, engineSmokePosRight.z,
-                        engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
-            }
-        }
-    }
-
-    @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
-        if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
-            int currentWeaponIndex = weaponUnit.getCurrentWeaponIndex();
-            if (partUnitIndex == 0 && currentWeaponIndex == 0) {
-                // todo: 测试音效
-                this.level().playSound(null, this, AllSounds.CANNON_125_MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
-                this.scheduledTasks.add(new ScheduleTask(this.tickCount + 20, () -> {
-                    this.level().playSound(null, this, AllSounds.CANNON_SHELL_DROP.get(), SoundSource.PLAYERS, 16f, 1f);
-                }));
-                // todo: 后坐
-                physicsEngine.recoil(weaponUnit);
-                // todo: 测试粒子
-                Vec3 muzzlePos = ammoSpawnPositions.get(0);
-                if (this.level() instanceof ServerLevel serverLevel) {
-                    for (int i = 0; i < 20; i++) {
-                        double dx = (serverLevel.random.nextDouble() - 0.5) * 0.4;
-                        double dy = (serverLevel.random.nextDouble() - 0.5) * 0.2;
-                        double dz = (serverLevel.random.nextDouble() - 0.5) * 0.4;
-                        serverLevel.sendParticles(
-                                ParticleTypes.CAMPFIRE_COSY_SMOKE, // 可换成自定义粒子
-                                muzzlePos.x, muzzlePos.y, muzzlePos.z,
-                                1, dx, dy, dz, 0.01
-                        );
-                    }
-                    serverLevel.sendParticles(ParticleTypes.FLAME, muzzlePos.x, muzzlePos.y, muzzlePos.z, 10, 0.1, 0.1, 0.1, 0.01);
-                    serverLevel.sendParticles(ParticleTypes.SMOKE, muzzlePos.x, muzzlePos.y, muzzlePos.z, 15, 0.2, 0.2, 0.2, 0.01);
-                }
-            } else if (partUnitIndex == 2) {
-                // todo: 测试音效
-                this.level().playSound(null, this, AllSounds.GUN_14_5MM_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
-            }
-        }
     }
 
 }

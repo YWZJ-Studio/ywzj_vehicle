@@ -30,6 +30,16 @@ public class AllVehicleDataTypes {
             }
     );
 
+    public static final RegistryObject<VehicleDataType<RotaryWingVehicleData>> ROTARY_WING_VEHICLE = register(
+            "rotary_wing_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, RotaryWingVehicleDataPojo.class);
+                RotaryWingVehicleData rotaryWingVehicleData = new RotaryWingVehicleData();
+                rotaryWingVehicleData.build(pojo);
+                return rotaryWingVehicleData;
+            }
+    );
+
     private static <D extends BaseVehicleData> RegistryObject<VehicleDataType<D>> register(
             String name,
             VehicleDataType.DataSerializer<D> dataSerializer

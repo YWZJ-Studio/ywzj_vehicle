@@ -38,6 +38,14 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.vehicle_hit_big"
   },
+  "gun_7.62mm_shot": {
+    "sounds": [
+      "ywzj_vehicle:weapon/gun/gun_7.62mm_shot_01",
+      "ywzj_vehicle:weapon/gun/gun_7.62mm_shot_02",
+      "ywzj_vehicle:weapon/gun/gun_7.62mm_shot_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.gun_7.62mm_shot"
+  },
   "gun_12.7mm_shot": {
     "sounds": [
       "ywzj_vehicle:weapon/gun/gun_12.7mm_shot_01",
@@ -55,7 +63,11 @@
     "subtitle": "ywzj_vehicle.sounds.gun_14.5mm_shot"
   },
   "auto_cannon_shot": {
-    "sounds": ["ywzj_vehicle:weapon/auto_cannon/auto_cannon_shot"],
+    "sounds": [
+      "ywzj_vehicle:weapon/auto_cannon/auto_cannon_shot_01",
+      "ywzj_vehicle:weapon/auto_cannon/auto_cannon_shot_02",
+      "ywzj_vehicle:weapon/auto_cannon/auto_cannon_shot_03"
+    ],
     "subtitle": "ywzj_vehicle.sounds.auto_cannon_shot"
   },
   "cannon_125mm_shot": {
@@ -127,6 +139,32 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.smoke_grenade_explosion"
   },
+  "gun_reload": {
+    "sounds": [
+      "ywzj_vehicle:weapon/gun/gun_reload"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.gun_reload"
+  },
+  "auto_cannon_reload": {
+    "sounds": [
+      "ywzj_vehicle:weapon/auto_cannon/auto_cannon_reload"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.auto_cannon_reload"
+  },
+  "artillery_reload": {
+    "sounds": [
+      "ywzj_vehicle:weapon/artillery/artillery_reload_01",
+      "ywzj_vehicle:weapon/artillery/artillery_reload_02",
+      "ywzj_vehicle:weapon/artillery/artillery_reload_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.artillery_reload"
+  },
+  "common_reload": {
+    "sounds": [
+      "ywzj_vehicle:weapon/common/common_reload"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.common_reload"
+  },
   "turret_turn_servo_h": {
     "sounds": ["ywzj_vehicle:misc/turret_turn_servo_h"],
     "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_h"
@@ -182,6 +220,10 @@
   "z10_engine_run": {
     "sounds": ["ywzj_vehicle:vehicle/z10/z10_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.z10_engine_run"
+  },
+  "quadcopter_engine_run": {
+    "sounds": ["ywzj_vehicle:vehicle/quadcopter/quadcopter_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.quadcopter_engine_run"
   },
   "motorcycle_engine_start": {
     "sounds": ["ywzj_vehicle:vehicle/motorcycle/motorcycle_engine_start"],

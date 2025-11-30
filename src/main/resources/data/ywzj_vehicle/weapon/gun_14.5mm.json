@@ -1,0 +1,17 @@
+{
+  "type": "ywzj_vehicle:cannon",
+  "name": "14.5mm_gun",
+  "damage": 7,
+  "velocity": 8,
+  "headshot_multiplier": 1.5,
+  "shoot_interval": 100,
+  "max_capacity": 120,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_machine_gun"
+  },
+  "sounds": {
+    "fire": "ywzj_vehicle:gun_14.5mm_shot",
+    "reload": "ywzj_vehicle:gun_reload"
+  }
+}

@@ -142,6 +142,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.opticalSightType = data.getOpticalSightType();
         this.zoom = 1;
         this.zoomMax = data.getZoomMax();
+        this.crosshairStyle = data.getCrosshairStyle();
 
         var rotInfo = data.getRotInfo();
         this.xRotSpeed = rotInfo.xRotSpeed;
@@ -358,8 +359,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Vec2 aimRot(Vec3 worldPos) {
-        Vec3 pivotWorldPos = worldPivotPosition();
-        Vec3 worldAim = new Vec3(worldPos.x - pivotWorldPos.x, worldPos.y - pivotWorldPos.y, worldPos.z - pivotWorldPos.z);
+        Vec3 fromWorldPos = worldCurrentBoltPosition();
+        Vec3 worldAim = new Vec3(worldPos.x - fromWorldPos.x, worldPos.y - fromWorldPos.y, worldPos.z - fromWorldPos.z);
         return vecToRot(worldAim);
     }
 
@@ -386,6 +387,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Bolt bolt = bolts.get(boltIndex < 0 || boltIndex >= bolts.size() ? currentBoltIndex : boltIndex);
         Vec3 barrelOffset = worldVec().normalize().scale(bolt.barrelLength());
         return worldPosition(pivotOffset.add(bolt.offset())).add(barrelOffset);
+    }
+
+    public Vec3 worldCurrentBoltPosition() {
+        Bolt bolt = bolts.get(currentBoltIndex);
+        return worldPosition(pivotOffset.add(bolt.offset()));
     }
 
     public Vec3 worldPivotPosition() {

@@ -1,12 +1,10 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.client.gui.VehicleScopeOverlay;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -54,10 +52,11 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
 
         for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level());
-            missileEntity.damage = getData().getDamage();
+            missileEntity.damage = data.getDamage();
+            missileEntity.maxSpeed = data.getMaxSpeed();
             missileEntity.shoot(this.getVehicle(), this.getDisplayName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
-            vehicle.level().playSound(null, vehicle, AllSounds.MISSILE_LAUNCH.get(), SoundSource.PLAYERS, 16f, 1f);
             vehicle.level().addFreshEntity(missileEntity);
+            vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }
     }
 

@@ -8,6 +8,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
@@ -21,6 +23,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
+import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.item.VehicleItem;
@@ -110,6 +113,12 @@ public class AllEvents {
             if (event.getObject() instanceof AbstractVehicle) {
                 event.addCapability(new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_capability"), new VehicleCapabilityProvider());
             }
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        @SubscribeEvent
+        public static void onVehicleFire(VehicleFireEvent.Post event) {
+            event.getWeapon().soundsAndParticles();
         }
 
         @SubscribeEvent

@@ -297,7 +297,7 @@ public class PhysicsEngine {
     /**
      * 后坐力影响
      */
-    public void recoil(WeaponUnit weaponUnit) {
+    public void recoil(WeaponUnit weaponUnit, float recoil) {
         Vec3 fireDirection = weaponUnit.worldVec();
         OBB obb = vehicle.getMainCubeOBB().obb();
         Vector3f[] axes = obb.getAxes();
@@ -313,11 +313,11 @@ public class PhysicsEngine {
             localRotAxisStart = axis.normalize().scale(5).toVector3f();
             localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
             checkDirection(forcePointLocal);
-            rotV = 0.05f;
+            rotV = 0.05f * recoil;
             rot(axes);
             // 后坐力产生推移
             force = force.normalize();
-            double motion = force.dot(new Vector3f(0, 0, 1)) * 0.05;
+            double motion = force.dot(new Vector3f(0, 0, 1)) * 0.05 * recoil;
             vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
         }
     }

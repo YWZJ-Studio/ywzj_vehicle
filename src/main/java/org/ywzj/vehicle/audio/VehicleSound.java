@@ -99,6 +99,7 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         } else {
             simulatedPos = calRelativePos(entity.position(), player.position(), scale);
         }
+        simulatedPos = simulatedPos.add(entity.getDeltaMovement());
         this.x = simulatedPos.x;
         this.y = simulatedPos.y;
         this.z = simulatedPos.z;

@@ -5,6 +5,7 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
@@ -14,23 +15,30 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
+import org.ywzj.vehicle.custom.vehicle.RotaryWingVehicleData;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class RotaryWingVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.INT);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
-    public float xRotSpeed;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
-    public float yRotSpeed;
     public float yRotSpeedAcceleration = 1;
     public float yRotSpeedMax = 4;
-    public float zRotSpeed;
     public float zRotSpeedAcceleration = 1;
     public float zRotSpeedMax = 4;
-    public Vec3 airSpeed = new Vec3(0, 0, 0);
     public float maxAirSpeed = 1f;
+    public float xRotSpeed;
+    public float yRotSpeed;
+    public float zRotSpeed;
+    public Vec3 airSpeed = new Vec3(0, 0, 0);
     public float propellerRotation;
     public long lastRenderTime;
     private VehicleSound engineStartSoundInstance;
@@ -39,11 +47,41 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
 
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-//        this.thirdPersonCenterOffset = new Vec3(0, 6, 0);
-//        this.thirdPersonDistance = 14;
-//        this.soundDistance = 8;
-//        this.energyCapacity = 0.25f;
         this.physicsEngine.lockCenterRot = true;
+    }
+
+    @Override
+    public void initData(ResourceLocation customId) {
+        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
+            if (getHealth() < 0) {
+                setMaxHealth(data.getMaxHealth());
+                setHealth(data.getMaxHealth());
+            }
+            if (data instanceof RotaryWingVehicleData rotaryWingVehicleData) {
+                this.mainRotorForce = rotaryWingVehicleData.mainRotorForce;
+                this.xRotSpeedAcceleration = rotaryWingVehicleData.xRotSpeedAcceleration;
+                this.xRotSpeedMax = rotaryWingVehicleData.xRotSpeedMax;
+                this.yRotSpeedAcceleration = rotaryWingVehicleData.yRotSpeedAcceleration;
+                this.yRotSpeedMax = rotaryWingVehicleData.yRotSpeedMax;
+                this.zRotSpeedAcceleration = rotaryWingVehicleData.zRotSpeedAcceleration;
+                this.zRotSpeedMax = rotaryWingVehicleData.zRotSpeedMax;
+                this.maxAirSpeed = rotaryWingVehicleData.maxAirSpeed;
+            }
+            this.viewInfo = data.getViewInfo();
+            this.energyInfo = data.getEnergyInfo();
+            BaseVehicleData.VehicleStructObbs vehicleStruct = data.getVehicleStructObbs();
+            this.mainCubeOBB = vehicleStruct.mainCubeOBB();
+            this.vehicleOBBs = vehicleStruct.obbs();
+            BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
+            this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
+            this.seats.addAll(partUnitsAndSeats.seats());
+        });
+        Map<String, PartUnit<?>> map = new HashMap<>();
+        for (PartUnit<?> partUnit : partUnits) {
+            map.put(partUnit.getId(), partUnit);
+        }
+        this.partUnitMap = map;
+        this.dataInitialized = true;
     }
 
     @Override
@@ -68,7 +106,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
     protected void tickSound() {
         super.tickSound();
         float engineSpeed = getPower();
-        if (engineSpeed < 80 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
+        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
             SoundEvent engineStopSound = getEngineStopSound();
             if (engineStopSound != null) {
                 engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
@@ -88,7 +126,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
                 engineStartSoundInstance = null;
             }
         } else if (engineSpeed > 0) {
-            if (engineSpeed > 80 && engineStopSoundInstance != null) {
+            if (engineSpeed > 50 && engineStopSoundInstance != null) {
                 engineStopSoundInstance = null;
             }
             if (engineStartSoundInstance == null) {
@@ -96,17 +134,24 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
                 if (engineStartSound != null) {
                     engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
                     engineStartSoundInstance.play();
+                } else {
+                    SoundEvent engineRunSound = getEngineRunSound();
+                    if (engineRunSound != null) {
+                        engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
+                        engineRunSoundInstance.play();
+                        engineStartSoundInstance = engineRunSoundInstance;
+                    }
                 }
             }
-            if (engineSpeed > 80 && engineRunSoundInstance == null) {
+            if (engineSpeed > 50 && engineRunSoundInstance == null) {
                 SoundEvent engineRunSound = getEngineRunSound();
                 if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
                     engineRunSoundInstance.play();
                 }
             }
             if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setVolume(Math.max(0.2f, engineSpeed / 100));
+                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
             }
         }
     }
@@ -154,7 +199,7 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
         float yRotSpeedAcceleration = (float) (this.yRotSpeedAcceleration * scale);
         float zRotSpeedAcceleration = (float) (this.zRotSpeedAcceleration * scale);
         if (getDriver() != null) {
-            if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep) {
+            if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep && scale > 0) {
                 float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
                 float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
                 if (yDiff > 0) {
