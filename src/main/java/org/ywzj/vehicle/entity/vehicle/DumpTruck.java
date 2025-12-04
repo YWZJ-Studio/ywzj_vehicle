@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -12,7 +11,6 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
 import java.util.List;
@@ -23,26 +21,6 @@ public class DumpTruck extends WheeledVehicle {
 
     public DumpTruck(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.maxSpeedForward = 0.4f;
-    }
-
-    @Override
-    public void initPartUnits() {
-        RotatableUnit<?> dumpTruckBed = new RotatableUnit<>("dump_truck_bed", 0, this);
-        dumpTruckBed.setYRotMin(0);
-        dumpTruckBed.setYRotMax(0);
-        dumpTruckBed.setXRotMin(-45);
-        dumpTruckBed.setXRotMax(0);
-        dumpTruckBed.setXRotSpeed((float) 15 / 20);
-        dumpTruckBed.setOwnerViewOffset(new Vec3(0.6, 2.5, 3.3));
-        dumpTruckBed.setSeatOffset(new Vec3(0.7, 2.7, 3));
-        this.partUnits.add(dumpTruckBed);
-        this.seats.add(new Seat(0, dumpTruckBed));
-        PartUnit<?> passengerSeat = new PartUnit<>("passenger_seat", 1, this);
-        passengerSeat.setOwnerViewOffset(new Vec3(0.6 - 1.4, 2.5, 3.3));
-        passengerSeat.setSeatOffset(new Vec3(0.7 - 1.4, 2.7, 3));
-        this.partUnits.add(passengerSeat);
-        this.seats.add(new Seat(1, passengerSeat));
     }
 
     @Override
@@ -51,7 +29,7 @@ public class DumpTruck extends WheeledVehicle {
         if (level().isClientSide) {
             if (getDriver() != null) {
                 if (controlUnit.leftYaw || controlUnit.rightYaw) {
-                    RotatableUnit bed = (RotatableUnit) seats.get(0).partUnit;
+                    RotatableUnit bed = (RotatableUnit) partUnits.get(1);
                     if (controlUnit.leftYaw) {
                         bed.setXAimRot(bed.getXAimRot() - 5);
                     } else {
@@ -72,7 +50,7 @@ public class DumpTruck extends WheeledVehicle {
     @Override
     protected void tickSound() {
         super.tickSound();
-        RotatableUnit bed = (RotatableUnit) seats.get(0).partUnit;
+        RotatableUnit bed = (RotatableUnit) partUnits.get(1);
         if (Math.abs(bed.getXAimRot() - bed.getXRot()) > 1 && bed.getXRot() < bed.xRotMax && bed.getXRot() > bed.xRotMin) {
             if (bedTurnSoundInstance == null) {
                 bedTurnSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, 1f, true, 10, true, true, this.getId());
@@ -87,21 +65,6 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
-    public SoundEvent getEngineStartSound() {
-        return AllSounds.LAV150_ENGINE_START.get();
-    }
-
-    @Override
-    public SoundEvent getEngineIdleSound() {
-        return AllSounds.TRUCK_ENGINE_IDLE.get();
-    }
-
-    @Override
-    public SoundEvent getEngineRunSound() {
-        return AllSounds.TRUCK_ENGINE_RUN.get();
-    }
-
-    @Override
     protected void tickParticle() {
         super.tickParticle();
         if (hasPower() && tickCount % 10 == 0) {
@@ -113,13 +76,6 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
-//        if (weaponIndex < operatorUnits.size()) {
-//            if (seats.get(weaponIndex) instanceof WeaponUnit machineGunTurret) {
-//                machineGunTurret.shoot(ammoSpawnPosition, ammoXRot, ammoYRot);
-//                this.level().playSound(null, this, AllSounds.LAV150_SHOOT.get(), SoundSource.PLAYERS, 16f, 1f);
-//            }
-//        }
-    }
+    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {}
 
 }

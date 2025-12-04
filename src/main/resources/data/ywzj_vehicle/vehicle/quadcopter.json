@@ -20,7 +20,7 @@
     "energy_capacity": 0.25,
     "energy_consumption_per_tick": 0.00001
   },
-  "structure_model": "ywzj_vehicle:entity/quadcopter",
+  "structure_model": "ywzj_vehicle:vehicle/quadcopter",
   "parts": [
     {
       "id": "sighting_system",

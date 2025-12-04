@@ -19,7 +19,7 @@
     "energy_capacity": 1,
     "energy_consumption_per_tick": 0.00001
   },
-  "structure_model": "ywzj_vehicle:entity/m1a2",
+  "structure_model": "ywzj_vehicle:vehicle/m1a2",
   "parts": [
     {
       "id": "turret",
@@ -41,11 +41,11 @@
         "ywzj_vehicle:cannon_120mm",
         {
           "id": "ywzj_vehicle:gun_12.7mm",
-          "part_unit": "turret_machine_gun"
+          "part_unit_id": "turret_machine_gun"
         },
         {
           "id": "ywzj_vehicle:launcher_smoke_grenade",
-          "part_unit": "turret_smoke_grenade"
+          "part_unit_id": "turret_smoke_grenade"
         }
       ]
     },

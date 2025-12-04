@@ -1,5 +1,5 @@
 {
-  "structure_model": "ywzj_vehicle:entity/ztl11",
+  "structure_model": "ywzj_vehicle:vehicle/ztl11",
   "attributes": {
     "max_health": 200
     // ...
@@ -31,8 +31,8 @@
       "operator_view_offset": [0, 1.5, 0],
       "seat_offset": [0, 1.5, 0],
       // 声明该组件的武器列表
-      // 一个武器条目由两个属性组成，即调用的武器id和其依附的part_unit
-      // 若该武器本身依附的就是当前part_unit，则可以简写为武器id字符串
+      // 一个武器条目由两个属性组成，即调用的武器id和其依附的part_unit_id
+      // 若该武器本身依附的就是当前part_unit_id，则可以简写为武器id字符串
       // 默认情况下，武器的数据会以id为key存储到part的nbt中
       // 如果你有确实有必要装备多个id相同的武器，必须显示声明save_id，否则可能无法正常保存或读取
       "weapons": [

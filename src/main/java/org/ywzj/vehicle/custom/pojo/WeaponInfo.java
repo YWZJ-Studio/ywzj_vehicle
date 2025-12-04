@@ -13,15 +13,15 @@ public class WeaponInfo {
      * 子武器站的载具部件ID
      */
     @Nullable
-    @SerializedName("part_unit")
-    public String partUnit;
+    @SerializedName("part_unit_id")
+    public String partUnitId;
 
     @SerializedName("save_id")
     public String saveId;
 
-    public WeaponInfo(ResourceLocation id, String saveId, @Nullable String partUnit) {
+    public WeaponInfo(ResourceLocation id, String saveId, @Nullable String partUnitId) {
         this.id = id;
-        this.partUnit = partUnit;
+        this.partUnitId = partUnitId;
         this.saveId = saveId;
     }
 

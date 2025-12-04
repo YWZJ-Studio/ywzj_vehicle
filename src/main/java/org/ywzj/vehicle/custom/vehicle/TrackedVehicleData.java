@@ -1,6 +1,8 @@
 package org.ywzj.vehicle.custom.vehicle;
 
-public class TrackedVehicleData extends BaseVehicleData {
+import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
+
+public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
 
     public float brakeAcceleration;
     public float forwardAcceleration;
@@ -19,6 +21,16 @@ public class TrackedVehicleData extends BaseVehicleData {
         this.maxSpeedBackward = pojo.attributes.maxSpeedBackward;
         this.turnAcceleration = pojo.attributes.turnAcceleration;
         this.maxTurn = pojo.attributes.maxTurn;
+    }
+
+    public void inject(TrackedVehicle vehicle) {
+        vehicle.brakeAcceleration = this.brakeAcceleration;
+        vehicle.forwardAcceleration = this.forwardAcceleration;
+        vehicle.backwardAcceleration = this.backwardAcceleration;
+        vehicle.maxSpeedForward = this.maxSpeedForward;
+        vehicle.maxSpeedBackward = this.maxSpeedBackward;
+        vehicle.turnAcceleration = this.turnAcceleration;
+        vehicle.maxTurn = this.maxTurn;
     }
 
 }

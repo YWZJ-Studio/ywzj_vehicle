@@ -3,7 +3,6 @@ package org.ywzj.vehicle.entity.vehicle;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
@@ -17,14 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
-import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
-import org.ywzj.vehicle.custom.vehicle.TrackedVehicleData;
 import org.ywzj.vehicle.util.EntityUtil;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class TrackedVehicle extends AbstractVehicle {
 
@@ -45,39 +37,6 @@ public abstract class TrackedVehicle extends AbstractVehicle {
 
     public TrackedVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-    }
-
-    @Override
-    public void initData(ResourceLocation customId) {
-        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
-            if (getHealth() < 0) {
-                setMaxHealth(data.getMaxHealth());
-                setHealth(data.getMaxHealth());
-            }
-            if (data instanceof TrackedVehicleData trackedVehicleData) {
-                this.brakeAcceleration = trackedVehicleData.brakeAcceleration;
-                this.forwardAcceleration = trackedVehicleData.forwardAcceleration;
-                this.backwardAcceleration = trackedVehicleData.backwardAcceleration;
-                this.maxSpeedForward = trackedVehicleData.maxSpeedForward;
-                this.maxSpeedBackward = trackedVehicleData.maxSpeedBackward;
-                this.turnAcceleration = trackedVehicleData.turnAcceleration;
-                this.maxTurn = trackedVehicleData.maxTurn;
-            }
-            this.viewInfo = data.getViewInfo();
-            this.energyInfo = data.getEnergyInfo();
-            BaseVehicleData.VehicleStructObbs vehicleStruct = data.getVehicleStructObbs();
-            this.mainCubeOBB = vehicleStruct.mainCubeOBB();
-            this.vehicleOBBs = vehicleStruct.obbs();
-            BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
-            this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
-            this.seats.addAll(partUnitsAndSeats.seats());
-        });
-        Map<String, PartUnit<?>> map = new HashMap<>();
-        for (PartUnit<?> partUnit : partUnits) {
-            map.put(partUnit.getId(), partUnit);
-        }
-        this.partUnitMap = map;
-        this.dataInitialized = true;
     }
 
     @Override

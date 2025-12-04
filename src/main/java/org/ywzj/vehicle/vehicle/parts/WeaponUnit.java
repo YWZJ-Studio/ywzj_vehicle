@@ -222,7 +222,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (index != null) {
                 WeaponUnit parent = this;
                 AbstractVehicleWeapon<?> weapon;
-                if (weaponInfo.partUnit != null && partUnitsView.get(weaponInfo.partUnit) instanceof WeaponUnit subWeaponUnit) {
+                if (weaponInfo.partUnitId != null && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit) {
                     subWeaponUnit.setParentWeaponUnit(parent);
                     parent.addSubWeaponUnit(subWeaponUnit);
                     weapon = index.create(vehicle, subWeaponUnit, i, weaponInfo.saveId);

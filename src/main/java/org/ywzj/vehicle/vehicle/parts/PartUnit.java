@@ -42,21 +42,22 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     protected final int index;
     protected final String id;
-    protected final Component displayName;
+    protected final Component name;
     protected final AbstractVehicle vehicle;
     protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
-    protected T data;
-
     protected LivingEntity owner;
     protected int ownerId;
-    protected Vec3 ownerViewOffset;
-    protected Vec3 seatOffset;
+    protected boolean isSeat;
+    protected Vec3 seatOffset = Vec3.ZERO;
+    protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
+    protected PartUnit<?> parentPartUnit;
+    protected List<PartUnit<?>> subPartUnits = new ArrayList<>();
+    protected T data;
+    public PassengerPose passengerPose;
 
     @Deprecated
     protected BedrockBone unitBone;
-
-    public PassengerPose passengerPose;
 
     /**
      * 你应该尽可能从数据包创建部件，而不是使用此构造函数手动创建部件<br/>
@@ -64,7 +65,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
      */
     @Deprecated
     public PartUnit(String id, int index, AbstractVehicle vehicle) {
-        this.displayName = Component.translatable(id);
+        this.name = Component.translatable(id);
         this.id = id;
         this.index = index;
         this.syncData = new PartUnitSyncData(this);
@@ -78,11 +79,12 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
         this.id = data.getId();
-        this.displayName = Component.translatable(data.getName());
+        this.name = Component.translatable(data.getName());
         this.vehicle = vehicle;
         this.data = data;
-        this.ownerViewOffset = data.getOwnerViewOffset();
+        this.isSeat = data.isSeat();
         this.seatOffset = data.getSeatOffset();
+        this.ownerViewOffset = data.getOwnerViewOffset();
         this.pivotOffset = data.getPivotOffset();
         this.unitBedrockCubeOBBs = data.getUnitBedrockCubeOBBs();
         this.syncData = new PartUnitSyncData(this);
@@ -98,6 +100,13 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
      * @param vehicle 所属载具
      */
     public void combineAndInit(@UnmodifiableView Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
+        for (String subPartUnitId : data.getSubPartUnitIds()) {
+            PartUnit<?> subPartUnit = partUnitsView.get(subPartUnitId);
+            if (subPartUnit != null) {
+                addSubPartUnit(subPartUnit);
+                subPartUnit.setParentPartUnit(this);
+            }
+        }
     }
 
     public void tick() {
@@ -184,8 +193,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)), false);
     }
 
-    public Component getDisplayName() {
-        return displayName;
+    public Component getName() {
+        return name;
     }
 
     public int getIndex() {
@@ -234,6 +243,18 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public void setSeatOffset(Vec3 seatOffset) {
         this.seatOffset = seatOffset;
+    }
+
+    public void setParentPartUnit(PartUnit<?> parentPartUnit) {
+        this.parentPartUnit = parentPartUnit;
+    }
+
+    public void addSubPartUnit(PartUnit<?> partUnit) {
+        this.subPartUnits.add(partUnit);
+    }
+
+    public List<PartUnit<?>> getSubPartUnits() {
+        return subPartUnits;
     }
 
     @OnlyIn(Dist.CLIENT)

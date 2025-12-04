@@ -9,6 +9,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.custom.pojo.EnergyInfo;
+import org.ywzj.vehicle.custom.pojo.PhysicsInfo;
 import org.ywzj.vehicle.custom.pojo.ViewInfo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -16,11 +17,12 @@ import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.*;
 
-public class BaseVehicleData {
+public class BaseVehicleData<T extends AbstractVehicle> {
 
     protected float maxHealth;
     protected ViewInfo viewInfo;
     protected EnergyInfo energyInfo;
+    protected PhysicsInfo physicsInfo;
     protected ResourceLocation structureModel;
     protected List<PartUnitEntry<?, ?>> parts;
     protected VehicleBedrockCubeOBB mainCubeOBB;
@@ -42,6 +44,7 @@ public class BaseVehicleData {
         this.maxHealth = pojo.maxHealth;
         this.viewInfo = pojo.viewInfo;
         this.energyInfo = pojo.energyInfo;
+        this.physicsInfo = pojo.physicsInfo;
 
         this.structureModel = pojo.structureModel;
         var model = CommonAssetsManager.structureModelManager()
@@ -54,6 +57,8 @@ public class BaseVehicleData {
         }
         this.initOBBs(model);
     }
+
+    public void inject(T vehicle) {}
 
     public record PartUnitsAndSeats(
             Map<String, PartUnit<?>> partUnitMap,
@@ -117,6 +122,10 @@ public class BaseVehicleData {
 
     public EnergyInfo getEnergyInfo() {
         return energyInfo;
+    }
+
+    public PhysicsInfo getPhysicsInfo() {
+        return physicsInfo;
     }
 
 }

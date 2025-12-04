@@ -16,13 +16,13 @@ import java.util.stream.Collectors;
 public class PartUnitData {
 
     protected final String id;
-    protected boolean isSeat;
     protected String name;
     protected String structureBone;
-
-    protected Vec3 pivotOffset = Vec3.ZERO;
+    protected boolean isSeat;
     protected Vec3 seatOffset = Vec3.ZERO;
     protected Vec3 ownerViewOffset = null;
+    protected Vec3 pivotOffset = Vec3.ZERO;
+    protected List<String> subPartUnitIds;
 
     protected List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
 
@@ -39,6 +39,9 @@ public class PartUnitData {
         this.name = pojo.name;
         this.structureBone = pojo.structureBone;
         this.isSeat = pojo.isSeat;
+        this.seatOffset = pojo.seatOffset;
+        this.ownerViewOffset = pojo.ownerViewOffset;
+        this.subPartUnitIds = pojo.subPartUnitIds;
         this.initData(pojo);
     }
 
@@ -85,34 +88,6 @@ public class PartUnitData {
         return unitBedrockCubeOBBs.stream().map(VehicleBedrockCubeOBB::new).collect(Collectors.toList());
     }
 
-    public Vec3 getSeatOffset() {
-        return seatOffset;
-    }
-
-    public Vec3 getPivotOffset() {
-        return pivotOffset;
-    }
-
-    public Vec3 getOwnerViewOffset() {
-        return ownerViewOffset;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getStructureBone() {
-        return structureBone;
-    }
-
-    public boolean isSeat() {
-        return isSeat;
-    }
-
     /**
      * 为指定骨骼收集OBB
      * @param bone 骨骼
@@ -131,4 +106,37 @@ public class PartUnitData {
         );
         return obbs;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getStructureBone() {
+        return structureBone;
+    }
+
+    public boolean isSeat() {
+        return isSeat;
+    }
+
+    public Vec3 getSeatOffset() {
+        return seatOffset;
+    }
+
+    public Vec3 getOwnerViewOffset() {
+        return ownerViewOffset;
+    }
+
+    public Vec3 getPivotOffset() {
+        return pivotOffset;
+    }
+
+    public List<String> getSubPartUnitIds() {
+        return subPartUnitIds;
+    }
+
 }

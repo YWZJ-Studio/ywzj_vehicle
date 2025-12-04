@@ -1,6 +1,8 @@
 package org.ywzj.vehicle.custom.vehicle;
 
-public class RotaryWingVehicleData extends BaseVehicleData {
+import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
+
+public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
 
     public float mainRotorForce = 1.4f * 0.7f * 1;
     public float xRotSpeedAcceleration = 1f;
@@ -21,6 +23,17 @@ public class RotaryWingVehicleData extends BaseVehicleData {
         this.zRotSpeedAcceleration = pojo.attributes.zRotSpeedAcceleration;
         this.zRotSpeedMax = pojo.attributes.zRotSpeedMax;
         this.maxAirSpeed = pojo.attributes.maxAirSpeed;
+    }
+
+    public void inject(RotaryWingVehicle vehicle) {
+        vehicle.mainRotorForce = this.mainRotorForce;
+        vehicle.xRotSpeedAcceleration = this.xRotSpeedAcceleration;
+        vehicle.xRotSpeedMax = this.xRotSpeedMax;
+        vehicle.yRotSpeedAcceleration = this.yRotSpeedAcceleration;
+        vehicle.yRotSpeedMax = this.yRotSpeedMax;
+        vehicle.zRotSpeedAcceleration = this.zRotSpeedAcceleration;
+        vehicle.zRotSpeedMax = this.zRotSpeedMax;
+        vehicle.maxAirSpeed = this.maxAirSpeed;
     }
 
 }

@@ -39,8 +39,6 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     public WheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-//        this.thirdPersonCenterOffset = new Vec3(0, 4, 0);
-//        this.thirdPersonDistance = 7;
     }
 
     public float getForwardSpeed() {

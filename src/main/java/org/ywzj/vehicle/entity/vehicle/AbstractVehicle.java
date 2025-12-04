@@ -64,6 +64,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.pojo.EnergyInfo;
 import org.ywzj.vehicle.custom.pojo.ViewInfo;
+import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -230,32 +231,57 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
-    @Deprecated
     public void initData(ResourceLocation customId) {
-        initPartUnits();
-        initOBBs();
+        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
+            if (getHealth() < 0) {
+                setMaxHealth(data.getMaxHealth());
+                setHealth(data.getMaxHealth());
+            }
+            this.viewInfo = data.getViewInfo();
+            this.energyInfo = data.getEnergyInfo();
+            this.physicsEngine.mass = data.getPhysicsInfo().mass;
+            data.inject(this);
+            BaseVehicleData.VehicleStructObbs vehicleStruct = data.getVehicleStructObbs();
+            this.mainCubeOBB = vehicleStruct.mainCubeOBB();
+            this.vehicleOBBs = vehicleStruct.obbs();
+            BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
+            this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
+            this.seats.addAll(partUnitsAndSeats.seats());
+        });
         Map<String, PartUnit<?>> map = new HashMap<>();
         for (PartUnit<?> partUnit : partUnits) {
             map.put(partUnit.getId(), partUnit);
         }
         this.partUnitMap = map;
-
-        //todo: 读数据包配置
-        if (getHealth() < 0) {
-            if (this instanceof Hiace) {
-                this.setMaxHealth(10);
-                this.setHealth(10);
-            } else if (this instanceof Ztz99a) {
-                this.setMaxHealth(300);
-                this.setHealth(300);
-            } else {
-                this.setMaxHealth(100);
-                this.setHealth(100);
-            }
-        }
-
         this.dataInitialized = true;
     }
+
+//    调试用载具构建写法
+//    @Deprecated
+//    public void initData(ResourceLocation customId) {
+//        initPartUnits();
+//        initOBBs();
+//        Map<String, PartUnit<?>> map = new HashMap<>();
+//        for (PartUnit<?> partUnit : partUnits) {
+//            map.put(partUnit.getId(), partUnit);
+//        }
+//        this.partUnitMap = map;
+//
+//        if (getHealth() < 0) {
+//            if (this instanceof Hiace) {
+//                this.setMaxHealth(10);
+//                this.setHealth(10);
+//            } else if (this instanceof Ztz99a) {
+//                this.setMaxHealth(300);
+//                this.setHealth(300);
+//            } else {
+//                this.setMaxHealth(100);
+//                this.setHealth(100);
+//            }
+//        }
+//
+//        this.dataInitialized = true;
+//    }
 
     /**
      * 获取载具自定义配置ID，默认会是载具注册ID

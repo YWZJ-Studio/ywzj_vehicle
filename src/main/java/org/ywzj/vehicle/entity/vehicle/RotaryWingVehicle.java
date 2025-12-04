@@ -5,7 +5,6 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
@@ -15,14 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
-import org.ywzj.vehicle.custom.vehicle.RotaryWingVehicleData;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class RotaryWingVehicle extends AbstractVehicle {
 
@@ -48,40 +40,6 @@ public abstract class RotaryWingVehicle extends AbstractVehicle {
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.physicsEngine.lockCenterRot = true;
-    }
-
-    @Override
-    public void initData(ResourceLocation customId) {
-        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
-            if (getHealth() < 0) {
-                setMaxHealth(data.getMaxHealth());
-                setHealth(data.getMaxHealth());
-            }
-            if (data instanceof RotaryWingVehicleData rotaryWingVehicleData) {
-                this.mainRotorForce = rotaryWingVehicleData.mainRotorForce;
-                this.xRotSpeedAcceleration = rotaryWingVehicleData.xRotSpeedAcceleration;
-                this.xRotSpeedMax = rotaryWingVehicleData.xRotSpeedMax;
-                this.yRotSpeedAcceleration = rotaryWingVehicleData.yRotSpeedAcceleration;
-                this.yRotSpeedMax = rotaryWingVehicleData.yRotSpeedMax;
-                this.zRotSpeedAcceleration = rotaryWingVehicleData.zRotSpeedAcceleration;
-                this.zRotSpeedMax = rotaryWingVehicleData.zRotSpeedMax;
-                this.maxAirSpeed = rotaryWingVehicleData.maxAirSpeed;
-            }
-            this.viewInfo = data.getViewInfo();
-            this.energyInfo = data.getEnergyInfo();
-            BaseVehicleData.VehicleStructObbs vehicleStruct = data.getVehicleStructObbs();
-            this.mainCubeOBB = vehicleStruct.mainCubeOBB();
-            this.vehicleOBBs = vehicleStruct.obbs();
-            BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
-            this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
-            this.seats.addAll(partUnitsAndSeats.seats());
-        });
-        Map<String, PartUnit<?>> map = new HashMap<>();
-        for (PartUnit<?> partUnit : partUnits) {
-            map.put(partUnit.getId(), partUnit);
-        }
-        this.partUnitMap = map;
-        this.dataInitialized = true;
     }
 
     @Override

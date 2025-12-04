@@ -8,6 +8,7 @@ import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.custom.vehicle.*;
 
 public class AllVehicleDataTypes {
+
     public static final DeferredRegister<VehicleDataType<?>> VEHICLE_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_DATA_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<VehicleDataType<BaseVehicleData>> GENERIC_VEHICLE = register(
@@ -17,6 +18,16 @@ public class AllVehicleDataTypes {
                 BaseVehicleData baseVehicleData = new BaseVehicleData();
                 baseVehicleData.build(pojo);
                 return baseVehicleData;
+            }
+    );
+
+    public static final RegistryObject<VehicleDataType<WheeledVehicleData>> WHEELED_VEHICLE = register(
+            "wheeled_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, WheeledVehicleDataPojo.class);
+                WheeledVehicleData wheeledVehicleData = new WheeledVehicleData();
+                wheeledVehicleData.build(pojo);
+                return wheeledVehicleData;
             }
     );
 

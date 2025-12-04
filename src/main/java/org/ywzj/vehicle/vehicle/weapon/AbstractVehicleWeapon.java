@@ -52,7 +52,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     protected int reloadTime = 0;
     protected SyncDataHolder<Integer> remainAmmoHolder;
     protected SyncDataHolder<Integer> reloadTimeHolder;
-    protected final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    protected final ThreadPoolExecutor soundsExecutor = new ThreadPoolExecutor(
             3,
             8,
             60,
@@ -156,7 +156,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                     interval = data.getShootInterval() / 20 * 1000 / 2;
                 }
                 long finalInterval = interval;
-                executor.submit(() -> {
+                soundsExecutor.submit(() -> {
                     try {
                         Thread.sleep(finalInterval);
                     } catch (Exception ignore) {}

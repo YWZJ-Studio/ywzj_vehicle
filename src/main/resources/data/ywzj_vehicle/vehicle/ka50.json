@@ -20,7 +20,7 @@
     "energy_capacity": 0.25,
     "energy_consumption_per_tick": 0.00001
   },
-  "structure_model": "ywzj_vehicle:entity/ka50",
+  "structure_model": "ywzj_vehicle:vehicle/ka50",
   "parts": [
     {
       "id": "sighting_system",
@@ -44,15 +44,15 @@
       "weapons": [
         {
           "id": "ywzj_vehicle:auto_cannon",
-          "part_unit": "auto_cannon"
+          "part_unit_id": "auto_cannon"
         },
         {
           "id": "ywzj_vehicle:missile",
-          "part_unit": "missile"
+          "part_unit_id": "missile"
         },
         {
           "id": "ywzj_vehicle:rocket",
-          "part_unit": "rocket"
+          "part_unit_id": "rocket"
         }
       ]
     },
