@@ -1,8 +1,8 @@
 {
   "type": "ywzj_vehicle:cannon",
   "name": "auto_cannon",
-  "damage": 10,
-  "velocity": 8,
+  "damage": 20,
+  "velocity": 16,
   "headshot_multiplier": 1.5,
   "shoot_interval": 100,
   "max_capacity": 120,

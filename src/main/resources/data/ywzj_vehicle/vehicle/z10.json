@@ -8,7 +8,7 @@
     "y_rot_speed_max": 4.0,
     "z_rot_speed_acceleration": 1.0,
     "z_rot_speed_max": 4.0,
-    "max_air_speed": 1.0
+    "max_air_speed": 1.5
   },
   "max_health": 30,
   "view_info": {

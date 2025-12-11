@@ -26,7 +26,6 @@ import org.ywzj.vehicle.util.VehicleExplosion;
 public class RocketEntity extends AmmoEntity {
 
     public AbstractVehicle vehicle;
-    public float speed = 8f;
     private VehicleSound sound;
 
     public RocketEntity(EntityType<? extends Projectile> entityType, Level level) {
@@ -63,8 +62,6 @@ public class RocketEntity extends AmmoEntity {
         double dy = this.getY() + velocity.y;
         double dz = this.getZ() + velocity.z;
         this.setPos(dx, dy, dz);
-        Vec3 v = this.getLookAngle().normalize();
-        this.setDeltaMovement(v.scale(speed));
     }
 
     private void tickHit() {

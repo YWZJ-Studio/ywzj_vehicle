@@ -25,7 +25,7 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .sized(0.0625F, 0.0625F)
-                    .clientTrackingRange(5)
+                    .clientTrackingRange(16)
                     .updateInterval(5)
                     .setShouldReceiveVelocityUpdates(false)
                     .setCustomClientFactory(BulletEntity::new)
@@ -70,7 +70,7 @@ public class AllEntities {
     public static final RegistryObject<EntityType<SmokeGrenadeEntity>> SMOKE_GRENADE = ENTITIES.register("smoke_grenade",
             () -> EntityType.Builder.<SmokeGrenadeEntity>of(SmokeGrenadeEntity::new, MobCategory.MISC)
             .setShouldReceiveVelocityUpdates(true)
-            .setTrackingRange(64)
+            .setTrackingRange(16)
             .setUpdateInterval(1)
             .setCustomClientFactory(SmokeGrenadeEntity::new)
             .sized(0.3f, 0.3f)
@@ -79,8 +79,8 @@ public class AllEntities {
             .build("smoke_grenade"));
 
     public static final RegistryObject<EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
-            () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.8f, 1.9f)
-                    .clientTrackingRange(4)
+            () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
+                    .clientTrackingRange(16)
                     .build("fake_player"));
 
     public static final RegistryObject<EntityType<CommonWheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("common_wheeled_vehicle",

@@ -25,6 +25,7 @@ import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.Collections;
@@ -147,7 +148,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     public void soundsAndParticles() {
         Level level = vehicle.level();
         if (getFireSound() != null) {
-            level.playSound(null, vehicle, getFireSound(), SoundSource.PLAYERS, 16f, 1f);
+            level.playSound(LocalVehiclePlayer.instance.getPlayer(), vehicle, getFireSound(), SoundSource.PLAYERS, 16f, 1f);
             if (getShellSound() != null) {
                 long interval;
                 if (data.getMaxCapacity() == 1) {
@@ -160,7 +161,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                     try {
                         Thread.sleep(finalInterval);
                     } catch (Exception ignore) {}
-                    Minecraft.getInstance().submit(() -> level.playSound(null, vehicle, getShellSound(), SoundSource.PLAYERS, 16f, 1f));
+                    Minecraft.getInstance().submit(() -> level.playSound(LocalVehiclePlayer.instance.getPlayer(), vehicle, getShellSound(), SoundSource.PLAYERS, 16f, 1f));
                 });
             }
         }

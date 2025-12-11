@@ -1,8 +1,8 @@
 {
   "type": "ywzj_vehicle:cannon",
   "name": "7.62mm_gun",
-  "damage": 3,
-  "velocity": 8,
+  "damage": 8,
+  "velocity": 16,
   "headshot_multiplier": 1.5,
   "shoot_interval": 80,
   "max_capacity": 120,

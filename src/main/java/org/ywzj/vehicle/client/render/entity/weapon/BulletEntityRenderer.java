@@ -37,11 +37,12 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
         {
             float width = 0.025f;
             Vec3 bulletPosition = bullet.getPosition(partialTicks);
+
             double trailLength = 0.85 * bullet.getDeltaMovement().length();
             double disToEye = bulletPosition.distanceTo(bullet.getStartPos());
             trailLength = Math.min(trailLength, disToEye * 0.8);
 
-            width *= (float) Math.max(1.0, disToEye / 3.5);
+            width *= (float) Math.max(1.0, disToEye / 5.5);
             poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTicks, bullet.yRotO, bullet.getYRot()) - 180.0F));
             poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTicks, bullet.xRotO, bullet.getXRot())));
             poseStack.translate(0, 0, trailLength / 2.0);

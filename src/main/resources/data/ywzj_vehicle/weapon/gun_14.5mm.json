@@ -2,7 +2,7 @@
   "type": "ywzj_vehicle:cannon",
   "name": "14.5mm_gun",
   "damage": 7,
-  "velocity": 8,
+  "velocity": 15,
   "headshot_multiplier": 1.5,
   "shoot_interval": 100,
   "max_capacity": 120,

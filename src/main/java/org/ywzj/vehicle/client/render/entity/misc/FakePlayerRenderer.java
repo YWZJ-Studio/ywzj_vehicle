@@ -37,8 +37,10 @@ public class FakePlayerRenderer extends LivingEntityRenderer<FakePlayer, FakePla
     }
 
     @Override
-    public void render(FakePlayer entity, float p_115456_, float p_115457_, PoseStack matrixStack, MultiBufferSource p_115459_, int p_115460_) {
-        super.render(entity, p_115456_, p_115457_, matrixStack, p_115459_, p_115460_);
+    public void render(FakePlayer entity, float pEntityYaw, float pPartialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        float scale = 0.9375f;
+        poseStack.scale(scale, scale, scale);
+        super.render(entity, pEntityYaw, pPartialTicks, poseStack, bufferSource, pPackedLight);
     }
 
     @Override

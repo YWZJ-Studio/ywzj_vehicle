@@ -8,6 +8,7 @@ import org.ywzj.vehicle.custom.pojo.WeaponInfo;
 import java.lang.reflect.Type;
 
 public class WeaponInfoSerializer implements JsonDeserializer<WeaponInfo> {
+
     public WeaponInfo deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx) throws JsonParseException {
         if (GsonHelper.isStringValue(json)) {
             String str = json.getAsString();
@@ -22,18 +23,15 @@ public class WeaponInfoSerializer implements JsonDeserializer<WeaponInfo> {
         } else if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
             ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "id"));
-            String partUnit = GsonHelper.getAsString(obj, "part_unit", null);
-
+            String partUnit = GsonHelper.getAsString(obj, "part_unit_id", null);
             if (id == null) {
                 throw new JsonParseException("Invalid weapon info id in object: " + obj);
             }
-
             String saveId = GsonHelper.getAsString(obj, "save_id", id.toString());
-
             return new WeaponInfo(id, saveId, partUnit);
         } else {
             throw new JsonParseException("Invalid weapon info format: " + json);
         }
-
     }
+
 }
