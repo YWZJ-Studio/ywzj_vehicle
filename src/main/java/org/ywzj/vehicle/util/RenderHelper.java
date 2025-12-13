@@ -1,15 +1,62 @@
 package org.ywzj.vehicle.util;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.HumanoidArm;
 import org.joml.Matrix4f;
 
 public class RenderHelper {
+    public static void renderFirstPersonArm(LocalPlayer player, HumanoidArm hand, PoseStack matrixStack, int combinedLight) {
+        Minecraft mc = Minecraft.getInstance();
+        EntityRenderDispatcher renderManager = mc.getEntityRenderDispatcher();
+        PlayerRenderer renderer = (PlayerRenderer) renderManager.getRenderer(player);
+        MultiBufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+        int oldId = RenderSystem.getShaderTexture(0);
+        RenderSystem.setShaderTexture(0, player.getSkinTextureLocation());
+
+        if (hand == HumanoidArm.RIGHT) {
+            renderRightHand(matrixStack, buffer, combinedLight, player, renderer);
+        } else {
+            renderLeftHand(matrixStack, buffer, combinedLight, player, renderer);
+        }
+        RenderSystem.setShaderTexture(0, oldId);
+    }
+
+    public static void renderRightHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, PlayerRenderer pRenderer) {
+        if(!net.minecraftforge.client.ForgeHooksClient.renderSpecificFirstPersonArm(pPoseStack, pBuffer, pCombinedLight, pPlayer, HumanoidArm.RIGHT))
+            renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, (pRenderer.getModel()).rightArm, (pRenderer.getModel()).rightSleeve, pRenderer);
+    }
+
+    public static void renderLeftHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, PlayerRenderer pRenderer) {
+        if(!net.minecraftforge.client.ForgeHooksClient.renderSpecificFirstPersonArm(pPoseStack, pBuffer, pCombinedLight, pPlayer, HumanoidArm.LEFT))
+            renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, (pRenderer.getModel()).leftArm, (pRenderer.getModel()).leftSleeve, pRenderer);
+    }
+
+
+    private static void renderHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, ModelPart pRendererArm, ModelPart pRendererArmwear, PlayerRenderer pRenderer) {
+        pRendererArm.xRot = 0.0F;
+        pRendererArm.yRot = 0.0F;
+        pRendererArm.zRot = 0.0F;
+        pRendererArm.render(pPoseStack, pBuffer.getBuffer(RenderType.entitySolid(pPlayer.getSkinTextureLocation())), pCombinedLight, OverlayTexture.NO_OVERLAY);
+        pRendererArmwear.xRot = 0.0F;
+        pRendererArmwear.yRot = 0.0F;
+        pRendererArmwear.zRot = 0.0F;
+        pRendererArmwear.render(pPoseStack, pBuffer.getBuffer(RenderType.entityTranslucent(pPlayer.getSkinTextureLocation())), pCombinedLight, OverlayTexture.NO_OVERLAY);
+    }
 
     public static void drawCenteredString(GuiGraphics guiGraphics, Font pFont, String pText, int pX, int pY, int pColor) {
         guiGraphics.drawString(pFont, pText, pX - pFont.width(pText) / 2, pY, pColor, false);

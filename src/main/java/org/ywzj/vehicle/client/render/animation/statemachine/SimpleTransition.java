@@ -1,6 +1,9 @@
-package org.ywzj.vehicle.client.render.animation;
+package org.ywzj.vehicle.client.render.animation.statemachine;
 
+import com.maydaymemory.mae.basic.ArrayPoseBuilder;
 import com.maydaymemory.mae.basic.Pose;
+import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
+import com.maydaymemory.mae.blend.SimpleInterpolatorBlender;
 import com.maydaymemory.mae.control.blend.EasingBlendCurve;
 import com.maydaymemory.mae.control.blend.IBlendCurve;
 import com.maydaymemory.mae.control.statemachine.IAnimationState;
@@ -20,25 +23,31 @@ import java.util.function.Supplier;
  * @param <T>
  */
 public class SimpleTransition<T> implements IAnimationTransition<T> {
+    public static final SimpleInterpolatorBlender TRANSITION_BLENDER =
+            new SimpleInterpolatorBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
+
     private final IAnimationState<T> target;
     private final float duration;
     private final TransferOutStrategy strategy;
     private final Predicate<T> predicate;
     private final Supplier<IBlendCurve> curve;
     private final Consumer<T> afterTrigger;
+    private final InterpolatedPoseFunction<T> interpolatedPoseFunction;
 
     public SimpleTransition(IAnimationState<T> target,
                             float duration,
                             TransferOutStrategy strategy,
                             Predicate<T> predicate,
                             Supplier<IBlendCurve> curve,
-                            Consumer<T> afterTrigger) {
+                            Consumer<T> afterTrigger,
+                            InterpolatedPoseFunction<T> interpolatedPoseFunction) {
         this.target = target;
         this.duration = duration;
         this.strategy = strategy;
         this.predicate = predicate;
         this.curve = curve;
         this.afterTrigger = afterTrigger;
+        this.interpolatedPoseFunction = interpolatedPoseFunction;
     }
 
     @Override
@@ -66,13 +75,20 @@ public class SimpleTransition<T> implements IAnimationTransition<T> {
         return duration;
     }
 
-    @Override public TransferOutStrategy transferOutStrategy() {
+    @Override
+    public TransferOutStrategy transferOutStrategy() {
         return strategy;
     }
 
     @Override
     public Pose getInterpolatedPose(T context, Pose fromPose, Pose toPose, float progress) {
-        return progress < 0.5f ? fromPose : toPose;
+        return interpolatedPoseFunction.getPose(context, fromPose, toPose, progress);
+    }
+
+
+    @FunctionalInterface
+    public interface InterpolatedPoseFunction<T> {
+        Pose getPose(T context, Pose fromPose, Pose toPose, float progress);
     }
 
     public static class Builder<T> {
@@ -83,6 +99,8 @@ public class SimpleTransition<T> implements IAnimationTransition<T> {
         private Predicate<T> predicate = (ctx) -> true;
         private Supplier<IBlendCurve> curve = () -> new EasingBlendCurve(Easing.LINEAR);
         private Consumer<T> afterTrigger = (state) -> {};
+        private InterpolatedPoseFunction<T> interpolatedPoseFunction = (ctx, fromPose, toPose, progress) ->
+                TRANSITION_BLENDER.blend(fromPose, toPose, progress);
 
         @SafeVarargs
         public final Builder<T> from(IAnimationState<T>... target) {
@@ -122,8 +140,16 @@ public class SimpleTransition<T> implements IAnimationTransition<T> {
             return this;
         }
 
+        public Builder<T> interpolatedPose(InterpolatedPoseFunction<T> function) {
+            this.interpolatedPoseFunction = function;
+            return this;
+        }
+
         public SimpleTransition<T> build() {
-            var transition = new SimpleTransition<>(target, duration, strategy, predicate, curve, afterTrigger);
+            var transition = new SimpleTransition<>(
+                    target, duration, strategy, predicate,
+                    curve, afterTrigger, interpolatedPoseFunction
+            );
             for (IAnimationState<T> state : from) {
                 if (state instanceof SimpleAnimationState<T> simpleState) {
                     simpleState.addTransition(transition);

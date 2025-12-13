@@ -14,6 +14,7 @@ import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -25,23 +26,29 @@ public enum ClientAssetsManager {
     private VehicleDisplayManager vehicleDisplayManager;
     private ScriptManager scriptManager;
 
+    private InternalAssets internalAssets;
+
     public void registerListeners(Consumer<PreparableReloadListener> consumer) {
         models = this.create(BedrockModelPOJO.class, "models/bedrock", "BedrockModelPojo", consumer);
         animations = this.create(BedrockAnimationFile.class, "animations/bedrock", "BedrockAnimationPojo", consumer);
         vehicleDisplayManager = new VehicleDisplayManager();
         scriptManager = new ScriptManager();
+        internalAssets = new InternalAssets();
 
         consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
+        consumer.accept(internalAssets);
 
         // 完成加载后清理临时数据
         consumer.accept(new SimplePreparableReloadListener<Void>() {
             @Override
+            @ParametersAreNonnullByDefault
             protected @NotNull Void prepare(ResourceManager pResourceManager, ProfilerFiller pProfiler) {
                 return null;
             }
 
             @Override
+            @ParametersAreNonnullByDefault
             protected void apply(Void pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
                 models.clearData();
                 animations.clearData();
@@ -103,5 +110,9 @@ public enum ClientAssetsManager {
 
     public Optional<Script> getScript(ResourceLocation script) {
         return scriptManager.getScript(script);
+    }
+
+    public InternalAssets getInternalAssets() {
+        return internalAssets;
     }
 }

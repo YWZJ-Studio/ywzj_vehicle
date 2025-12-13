@@ -28,6 +28,8 @@ public class AllItems {
     public static final RegistryObject<Item> AMMO_AERIAL_BOMB = registerItem(AllTabs.Category.MISC, "ammo_aerial_bomb", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AERIAL_BOMB));
     public static final RegistryObject<Item> AMMO_MISSILE = registerItem(AllTabs.Category.MISC, "ammo_missile", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MISSILE));
 
+    public static final RegistryObject<RepairToolItem> REPAIR_TOOL = registerItem(AllTabs.Category.MISC, "repair_tool", RepairToolItem::new);
+
     public static <T extends Item> RegistryObject<T> registerItem(AllTabs.Category category, String name, Supplier<T> item) {
         RegistryObject<T> registryObject = ITEMS.register(name, item);
         if (AllTabs.Category.MISC.equals(category)) {

@@ -1,5 +1,7 @@
 package org.ywzj.vehicle.client.render.animation;
 
+import org.ywzj.vehicle.client.render.animation.statemachine.SimpleAnimationState;
+
 public class VehicleAnimationStates {
 
     public static final SimpleAnimationState<VehicleContext> IDLE_STATE;

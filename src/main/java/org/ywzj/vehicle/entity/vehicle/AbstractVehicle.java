@@ -52,7 +52,6 @@ import org.joml.*;
 import org.joml.Math;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
-import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
@@ -712,10 +711,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
-                if (itemStack.getItem().equals(AllItems.FUEL_TANK.get())) {
-                    return InteractionResult.PASS;
-                }
-                if (itemStack.getItem().equals(AllItems.FIGURE_BOX.get())) {
+                if (!itemStack.isEmpty()) {
                     return InteractionResult.PASS;
                 }
                 if (pPlayer.startRiding(this)) {

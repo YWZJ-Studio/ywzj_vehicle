@@ -256,6 +256,8 @@ public class VehicleOverlay implements IGuiOverlay {
                 RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, 0xFFFFFFFF);
                 if (healthDiff > 0) {
                     RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 1 + barHeight, 0xFFFF0000);
+                } else if (healthDiff < 0 && !vehicle.isDestroyed()) {
+                    RenderHelper.drawCenteredString(guiGraphics, font, "+" + String.format("%.2f", -healthDiff), barWidth / 2, 1 + barHeight, 0xFF00FF00);
                 }
             }
             poseStack.popPose();

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation;
+package org.ywzj.vehicle.client.render.animation.statemachine;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
