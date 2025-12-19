@@ -4,7 +4,9 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,11 +31,18 @@ public abstract class CameraMixin {
 
     @Inject(method = "setup", at = @At("TAIL"))
     public void setupVehicleCamera(BlockGetter pLevel, Entity pEntity, boolean pDetached, boolean pThirdPersonReverse, float pPartialTick, CallbackInfo ci) {
-        if (pEntity.getVehicle() instanceof AbstractVehicle) {
+        if (pEntity.getVehicle() instanceof AbstractVehicle vehicle) {
             if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
                 return;
             }
             LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
+            if (pEntity != localVehiclePlayer.getPlayer()) {
+                if (pEntity instanceof LivingEntity passenger) {
+                    Vec3 pos = vehicle.thirdPersonPosition(passenger, pPartialTick);
+                    this.setPosition(pos.x, pos.y, pos.z);
+                }
+                return;
+            }
             this.setPosition(Mth.lerp(pPartialTick, localVehiclePlayer.cameraXO, localVehiclePlayer.cameraX),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraYO, localVehiclePlayer.cameraY),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraZO, localVehiclePlayer.cameraZ));

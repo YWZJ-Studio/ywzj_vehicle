@@ -17,9 +17,9 @@ public class VehicleRocket extends AbstractVehicleWeapon<VehicleRocketWeaponData
     }
 
     @Override
-    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+    public boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
         if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
-            return;
+            return false;
         }
         this.lastShootTime = System.currentTimeMillis();
 
@@ -33,6 +33,7 @@ public class VehicleRocket extends AbstractVehicleWeapon<VehicleRocketWeaponData
             vehicle.level().addFreshEntity(rocketEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }
+        return true;
     }
 
 }

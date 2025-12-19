@@ -3,6 +3,7 @@
   "name": "120mm_cannon",
   "damage": 99,
   "headshot_multiplier": 1.5,
+  "recoil": 1,
   "shoot_interval": 400,
   "max_capacity": 1,
   "reload": {

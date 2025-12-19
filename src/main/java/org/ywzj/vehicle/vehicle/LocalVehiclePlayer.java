@@ -89,7 +89,7 @@ public class LocalVehiclePlayer {
                 cameraAimRotZO = cameraAimRotZ;
                 if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
                     Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
-                            vehicle.thirdPersonPosition(player) : partUnit.worldOwnerViewPosition();
+                            vehicle.thirdPersonPosition(player, null) : partUnit.worldOwnerViewPosition();
                     cameraX = vehicleCameraPos.x;
                     cameraY = vehicleCameraPos.y;
                     cameraZ = vehicleCameraPos.z;

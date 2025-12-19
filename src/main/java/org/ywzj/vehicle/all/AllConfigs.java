@@ -33,6 +33,7 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
         public final ForgeConfigSpec.ConfigValue<Boolean> hitIndicator;
+        public final ForgeConfigSpec.ConfigValue<Boolean> checkTeamOnEnterVehicle;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
             explosionDestroyBlocks = builder.comment("爆炸是否破坏方块")
@@ -49,6 +50,8 @@ public class AllConfigs {
                     .defineList("fuelNameWhiteList", Arrays.asList("fuel", "gas", "lava"), obj -> obj instanceof String);
             hitIndicator = builder.comment("开启命中提示")
                     .define("hitIndicator", true);
+            checkTeamOnEnterVehicle = builder.comment("载具乘客是否需为同队")
+                    .define("checkTeamOnEnterVehicle", true);
         }
 
     }

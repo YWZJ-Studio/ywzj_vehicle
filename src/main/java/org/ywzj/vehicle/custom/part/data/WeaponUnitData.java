@@ -104,8 +104,8 @@ public class WeaponUnitData extends RotatableUnitData {
     @Override
     public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
         List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs = new ArrayList<>(yTurnUnitOBBs.size() + xTurnUnitOBBs.size());
-        unitBedrockCubeOBBs.addAll(yTurnUnitOBBs);
-        unitBedrockCubeOBBs.addAll(xTurnUnitOBBs);
+        unitBedrockCubeOBBs.addAll(yTurnUnitOBBs.stream().map(VehicleBedrockCubeOBB::new).toList());
+        unitBedrockCubeOBBs.addAll(xTurnUnitOBBs.stream().map(VehicleBedrockCubeOBB::new).toList());
         return unitBedrockCubeOBBs;
     }
 

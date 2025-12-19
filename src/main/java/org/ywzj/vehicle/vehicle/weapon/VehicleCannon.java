@@ -16,9 +16,9 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
     }
 
     @Override
-    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+    public boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
         if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
-            return;
+            return false;
         }
         this.lastShootTime = System.currentTimeMillis();
 
@@ -33,6 +33,7 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
             vehicle.level().addFreshEntity(bulletEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }
+        return true;
     }
 
 }

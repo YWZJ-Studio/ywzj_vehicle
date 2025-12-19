@@ -10,6 +10,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -20,6 +21,7 @@ public class VehicleBedrockCubeOBB {
     private final OBB obb;
     private final Quaternionf selfRot;
     private final List<CubePoint> cubePoints;
+    public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
     private Vec3 offset = Vec3.ZERO;
     public final double boneX;
     public final double boneY;
@@ -103,25 +105,44 @@ public class VehicleBedrockCubeOBB {
         float z1 = -obb.extents().z - gap;
         float z2 = obb.extents().z + gap;
         spaceZ = (z2 - z1) / Math.round(z2 - z1);
+        cubePointsByFace.put(CubeFace.FRONT, new ArrayList<>());
+        cubePointsByFace.put(CubeFace.BACK, new ArrayList<>());
+        cubePointsByFace.put(CubeFace.LEFT, new ArrayList<>());
+        cubePointsByFace.put(CubeFace.RIGHT, new ArrayList<>());
+        cubePointsByFace.put(CubeFace.TOP, new ArrayList<>());
+        cubePointsByFace.put(CubeFace.BOTTOM, new ArrayList<>());
+        CubePoint cubePoint;
         // 前后
         for (float x = x1; x <= x2 + slack; x += spaceX) {
             for (float y = y1; y <= y2 + slack; y += spaceY) {
-                cubePoints.add(new CubePoint(this, new Vector3f(x, y, obb.extents().z + offset), CubeFace.FRONT));
-                cubePoints.add(new CubePoint(this, new Vector3f(x, y, -obb.extents().z - offset), CubeFace.BACK));
+                cubePoint = new CubePoint(this, new Vector3f(x, y, obb.extents().z + offset), CubeFace.FRONT);
+                cubePointsByFace.get(CubeFace.FRONT).add(cubePoint);
+                cubePoints.add(cubePoint);
+                cubePoint = new CubePoint(this, new Vector3f(x, y, -obb.extents().z - offset), CubeFace.BACK);
+                cubePointsByFace.get(CubeFace.BACK).add(cubePoint);
+                cubePoints.add(cubePoint);
             }
         }
         // 左右
         for (float y = y1; y <= y2 + slack; y += spaceY) {
             for (float z = z1; z <= z2 + slack; z += spaceZ) {
-                cubePoints.add(new CubePoint(this, new Vector3f(obb.extents().x + offset, y, z), CubeFace.LEFT));
-                cubePoints.add(new CubePoint(this, new Vector3f(-obb.extents().x - offset, y, z), CubeFace.RIGHT));
+                cubePoint = new CubePoint(this, new Vector3f(obb.extents().x + offset, y, z), CubeFace.LEFT);
+                cubePointsByFace.get(CubeFace.LEFT).add(cubePoint);
+                cubePoints.add(cubePoint);
+                cubePoint = new CubePoint(this, new Vector3f(-obb.extents().x - offset, y, z), CubeFace.RIGHT);
+                cubePointsByFace.get(CubeFace.RIGHT).add(cubePoint);
+                cubePoints.add(cubePoint);
             }
         }
         // 上下
         for (float x = x1; x <= x2 + slack; x += spaceX) {
             for (float z = z1; z <= z2 + slack; z += spaceZ) {
-                cubePoints.add(new CubePoint(this, new Vector3f(x, obb.extents().y + offset, z), CubeFace.TOP));
-                cubePoints.add(new CubePoint(this, new Vector3f(x, -obb.extents().y - offset, z), CubeFace.BOTTOM));
+                cubePoint = new CubePoint(this, new Vector3f(x, obb.extents().y + offset, z), CubeFace.TOP);
+                cubePointsByFace.get(CubeFace.TOP).add(cubePoint);
+                cubePoints.add(cubePoint);
+                cubePoint = new CubePoint(this, new Vector3f(x, -obb.extents().y - offset, z), CubeFace.BOTTOM);
+                cubePointsByFace.get(CubeFace.BOTTOM).add(cubePoint);
+                cubePoints.add(cubePoint);
             }
         }
     }

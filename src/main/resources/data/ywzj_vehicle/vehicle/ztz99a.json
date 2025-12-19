@@ -19,6 +19,9 @@
     "energy_capacity": 1,
     "energy_consumption_per_tick": 0.00001
   },
+  "physics_info": {
+    "can_destroy_block": true
+  },
   "structure_model": "ywzj_vehicle:vehicle/ztz99a",
   "parts": [
     {
@@ -102,7 +105,7 @@
       "id": "seat",
       "name": "seat",
       "type": "ywzj_vehicle:generic",
-      "seat_offset": [0, 2, 0.575]
+      "seat_offset": [0, 1.5, 1.7]
     }
   ]
 }

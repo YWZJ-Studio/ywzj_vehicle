@@ -66,6 +66,17 @@ public class AllEvents {
         public static void onEntityMount(EntityMountEvent event) {
             if (event.isMounting() && event.getEntityBeingMounted() instanceof AbstractVehicle vehicle) {
                 if (event.getEntityMounting() instanceof LivingEntity livingEntity) {
+                    if (livingEntity instanceof ServerPlayer serverPlayer) {
+                        if (AllConfigs.common.checkTeamOnEnterVehicle.get() && serverPlayer.getTeam() != null) {
+                            if (vehicle.getPassengers().stream()
+                                    .anyMatch(entity -> entity instanceof ServerPlayer passenger
+                                            && passenger.getTeam() != null
+                                            && !passenger.getTeam().equals(serverPlayer.getTeam()))) {
+                                event.setCanceled(true);
+                                return;
+                            }
+                        }
+                    }
                     vehicle.onEnterVehicle(livingEntity);
                 }
             }

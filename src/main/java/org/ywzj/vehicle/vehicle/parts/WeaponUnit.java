@@ -243,6 +243,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         super.tick();
         this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
+    }
+
+    @Override
+    public void updateOBBs() {
         updateOBBs(yTurnUnitOBBs, false);
         updateOBBs(xTurnUnitOBBs, true);
     }
@@ -333,26 +337,29 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, weapon, operator))) {
                 return;
             }
-            weapon.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
-            MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
-            int entityId = vehicle.getId();
-            int operatorId = operator == null ? -1 : operator.getId();
-
-            ServerVehicleFire packet = new ServerVehicleFire(entityId, operatorId, index, weapon.getIndex());
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(()-> vehicle), packet);
+            if (weapon.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator)) {
+                MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
+                int entityId = vehicle.getId();
+                int operatorId = operator == null ? -1 : operator.getId();
+                ServerVehicleFire packet = new ServerVehicleFire(entityId, operatorId, index, weapon.getIndex());
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(()-> vehicle), packet);
+            }
         });
     }
 
     public void aim(Vec3 worldPos) {
         Vec2 rot = aimRot(worldPos);
         if (xAimRot != rot.x || yAimRot != rot.y) {
-            if (vehicle.level().isClientSide) {
+            if (vehicle.level().isClientSide()) {
                 ClientVehicleAction control = new ClientVehicleAction();
                 control.vehicleEntityId = vehicle.getId();
                 control.partUnitIndex = index;
                 control.xAimRot = rot.x;
                 control.yAimRot = rot.y;
                 Channel.CHANNEL.sendToServer(control);
+            } else {
+                xAimRot = rot.x;
+                yAimRot = rot.y;
             }
         }
         subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));

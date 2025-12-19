@@ -239,6 +239,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             this.viewInfo = data.getViewInfo();
             this.energyInfo = data.getEnergyInfo();
             this.physicsEngine.mass = data.getPhysicsInfo().mass;
+            this.physicsEngine.canDestroyBlock = data.getPhysicsInfo().canDestroyBlock;
             data.inject(this);
             BaseVehicleData.VehicleStructObbs vehicleStruct = data.getVehicleStructObbs();
             this.mainCubeOBB = vehicleStruct.mainCubeOBB();
@@ -252,6 +253,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             map.put(partUnit.getId(), partUnit);
         }
         this.partUnitMap = map;
+        updateOBBs();
+        partUnits.forEach(PartUnit::updateOBBs);
         this.dataInitialized = true;
     }
 
@@ -597,6 +600,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
             }
         }
+        livingEntity.setSprinting(false);
     }
 
     public void onLeaveVehicle(LivingEntity pPassenger) {
@@ -724,18 +728,32 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     @OnlyIn(Dist.CLIENT)
-    public Vec3 thirdPersonPosition(LivingEntity pPassenger) {
+    public Vec3 thirdPersonPosition(LivingEntity pPassenger, Float partialTick) {
         if (pPassenger != null) {
             Matrix3f axisRollMat = new Matrix3f();
             Quaternionf q = new Quaternionf();
             q.rotateY(Math.toRadians(-this.getYRot()));
             q.get(axisRollMat);
             Vector3f rotPos = axisRollMat.transform(viewInfo.thirdPersonCenterOffset.toVector3f());
-            Vec3 thirdPersonCenter = this.position().add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+            Vec3 p;
+            float yRot;
+            float xRot;
+            if (partialTick == null) {
+                p = this.position();
+                yRot = pPassenger.yHeadRot;
+                xRot = pPassenger.getXRot();
+            } else {
+                p = new Vec3(Mth.lerp(partialTick, xo, getX()),
+                        Mth.lerp(partialTick, yo, getY()),
+                        Mth.lerp(partialTick, zo, getZ()));
+                yRot = Mth.lerp(partialTick, pPassenger.yHeadRotO, pPassenger.yHeadRot);
+                xRot = Mth.lerp(partialTick, pPassenger.xRotO, pPassenger.getXRot());
+            }
+            Vec3 thirdPersonCenter = p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
             axisRollMat = new Matrix3f();
             q = new Quaternionf();
-            q.rotateY(Math.toRadians(-pPassenger.getYRot()));
-            q.rotateX(Math.toRadians(pPassenger.getXRot()));
+            q.rotateY(Math.toRadians(-yRot));
+            q.rotateX(Math.toRadians(xRot));
             q.get(axisRollMat);
             float d = (float) (viewInfo.thirdPersonDistance - pPassenger.getXRot() / 90 * viewInfo.thirdPersonCenterOffset.y);
             Vector3f rotOffset = axisRollMat.transform(new Vector3f(0, 0, -d));

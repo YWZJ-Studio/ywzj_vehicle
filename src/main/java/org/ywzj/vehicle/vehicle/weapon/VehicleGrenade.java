@@ -16,12 +16,12 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
     }
 
     @Override
-    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+    public boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
         if (!check(ammoSpawnPositions, ammoXRot, ammoYRot, shooter)) {
-            return;
+            return false;
         }
         if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
-            return;
+            return false;
         }
         this.lastShootTime = System.currentTimeMillis();
 
@@ -40,6 +40,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
             }
         }
+        return true;
     }
 
 }

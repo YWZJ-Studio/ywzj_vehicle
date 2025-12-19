@@ -17,9 +17,9 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
     }
 
     @Override
-    public void shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+    public boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
         if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
-            return;
+            return false;
         }
         this.lastShootTime = System.currentTimeMillis();
 
@@ -31,6 +31,7 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
             aerialBombEntity.shoot(this.getVehicle(), this.getDisplayName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(aerialBombEntity);
         }
+        return true;
     }
 
 }

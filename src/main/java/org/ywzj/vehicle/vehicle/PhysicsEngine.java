@@ -2,6 +2,7 @@ package org.ywzj.vehicle.vehicle;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -44,6 +45,8 @@ public class PhysicsEngine {
     public Vector3f velocity = new Vector3f(0, 0, 0);
     public boolean lockZRot;
     public boolean lockCenterRot;
+    public boolean canDestroyBlock;
+    public int stuckTick;
 
     public PhysicsEngine(AbstractVehicle vehicle) {
         this.vehicle = vehicle;
@@ -62,7 +65,8 @@ public class PhysicsEngine {
      * 车体底面若有陷地则会施加较大的向上速度
      */
     public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
-        var physicsCube = vehicle.getMainCubeOBB();
+        VehicleBedrockCubeOBB physicsCube = vehicle.getMainCubeOBB();
+        boolean isStuck = false;
 
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
@@ -74,12 +78,16 @@ public class PhysicsEngine {
                 if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT) {
                     if (d > 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
+                        isStuck = true;
+                        destroyBlocks(physicsCube, touchPoint.cubeFace());
                     } else {
                         velocity = velocity.subtract(axesX.scale(d)).add(axesX.scale(-bounce));
                     }
                 } else {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
+                        isStuck = true;
+                        destroyBlocks(physicsCube, touchPoint.cubeFace());
                     } else {
                         velocity = velocity.subtract(axesX.scale(d)).add(axesX.scale(bounce));
                     }
@@ -93,12 +101,16 @@ public class PhysicsEngine {
                 if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT) {
                     if (d > 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 1);
+                        isStuck = true;
+                        destroyBlocks(physicsCube, touchPoint.cubeFace());
                     } else {
                         velocity = velocity.subtract(axesZ.scale(d)).add(axesZ.scale(-bounce));
                     }
                 } else {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 1);
+                        isStuck = true;
+                        destroyBlocks(physicsCube, touchPoint.cubeFace());
                     } else {
                         velocity = velocity.subtract(axesZ.scale(d)).add(axesZ.scale(bounce));
                     }
@@ -127,11 +139,32 @@ public class PhysicsEngine {
                 }
             }
         }
-        if (vehicle.level().getBlockState(BlockPos.containing(new Vec3(physicsCube.obb().center()))).isSolid()) {
-            velocity = new Vec3(velocity.x, 1, velocity.y);
+        if (!isStuck) {
+            stuckTick = Math.max(stuckTick - 1, 0);
         }
         this.velocity = velocity.toVector3f();
         return velocity;
+    }
+
+    private void destroyBlocks(VehicleBedrockCubeOBB physicsCube, VehicleBedrockCubeOBB.CubeFace cubeFace) {
+        stuckTick += 1;
+        if (stuckTick == 10) {
+            if (canDestroyBlock) {
+                Level level = vehicle.level();
+                for (VehicleBedrockCubeOBB.CubePoint cubePoint : vehicle.getMainCubeOBB().cubePointsByFace.get(cubeFace)) {
+                    if (cubePoint.obbLocalPos().y > -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
+                        Vec3 pos = new Vec3(cubePoint.cachedWorldPos());
+                        BlockPos bp = BlockPos.containing(pos);
+                        BlockState state = level.getBlockState(bp);
+                        float hardness = state.getDestroySpeed(level, bp);
+                        if (hardness >= 0 && hardness < 50.0F) {
+                            level.destroyBlock(bp, false, vehicle);
+                        }
+                    }
+                }
+            }
+            stuckTick -= 2;
+        }
     }
 
     /**
@@ -329,6 +362,9 @@ public class PhysicsEngine {
                                 || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK)
                 .toList());
         if (climbPoints.isEmpty()) {
+            return;
+        }
+        if (vehicle.getXRot() < -15) {
             return;
         }
         // 自动爬高
