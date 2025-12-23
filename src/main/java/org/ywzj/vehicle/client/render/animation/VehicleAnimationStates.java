@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.client.render.animation;
 
-import org.ywzj.vehicle.client.render.animation.statemachine.SimpleAnimationState;
+
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.SimpleAnimationState;
 
 public class VehicleAnimationStates {
 

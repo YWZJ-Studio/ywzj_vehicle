@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.client.render.animation.item;
 
 
-import org.ywzj.vehicle.client.render.animation.statemachine.SimpleAnimationState;
-import org.ywzj.vehicle.client.render.animation.statemachine.SimpleTransition;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.SimpleAnimationState;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.SimpleTransition;
 
 public class RepairItemAnimationStates {
     // 主轨道

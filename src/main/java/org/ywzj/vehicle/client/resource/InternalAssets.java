@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.resource;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.model.HandedBedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.BasicAnimation;
 import net.minecraft.resources.ResourceLocation;
@@ -8,7 +9,6 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.client.render.model.HandedBedrockModel;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Map;

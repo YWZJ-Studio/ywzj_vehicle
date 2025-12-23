@@ -1,22 +1,24 @@
 package org.ywzj.vehicle.client.render.item;
 
-import com.maydaymemory.mae.basic.ArrayPoseBuilder;
-import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
-import com.maydaymemory.mae.blend.EulerAdditiveBlender;
-import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.animation.IFPAnimationInstance;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.handler.FirstPersonRenderHandler;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.model.HandedBedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.AbstractGeoItemRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.client.event.ViewportEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
-import org.ywzj.vehicle.client.handler.FirstPersonHandler;
-import org.ywzj.vehicle.client.render.model.HandedBedrockModel;
+import org.joml.Quaternionf;
+import org.ywzj.vehicle.client.render.animation.item.RepairItemAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.InternalAssets;
 
@@ -24,9 +26,6 @@ import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND
 import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
 
 public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockModel> {
-    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
-
-
     @Nullable
     @Override
     public Pair<HandedBedrockModel, RenderType> getModelAndRenderType(ItemStack stack) {
@@ -61,15 +60,39 @@ public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockMod
         super.beforeRender(poseStack, ctx, model, stack, partialTicks);
         model.setRenderHand(ctx.firstPerson());
         if (ctx == FIRST_PERSON_RIGHT_HAND) {
-            if (FirstPersonHandler.instance != null) {
-                model.applyPose(BLENDER.blend(model.getBindPose(), FirstPersonHandler.instance.getCurrentPose()));
+            var ani = FirstPersonRenderHandler.getActiveAnimationInstance();
+            if (ani != null) {
+                model.applyPose(ani.getCachedPose());
                 applyFirstPersonPositioningTransform(poseStack, model);
             }
         }
     }
 
+    @Override
+    public void applyLevelCameraAnimation(ViewportEvent.ComputeCameraAngles event, ItemStack stack, Quaternionf animateRot, float partialTicks) {
+
+    }
+
+    @Override
+    public void applyItemInHandCameraAnimation(PoseStack poseStack, ItemStack stack, Quaternionf animateRot, float partialTicks) {
+
+    }
+
     private static void applyFirstPersonPositioningTransform(PoseStack poseStack, HandedBedrockModel model) {
         Matrix4f idleViewMatrix = new Matrix4f(model.getBone("camera").getGlobalTransform());
         poseStack.mulPoseMatrix(idleViewMatrix.invert());
+    }
+
+    @Override
+    public @Nullable IFPAnimationInstance createAnimationInstance(ItemStack stack, Entity entity) {
+        return new RepairItemAnimationInstance(stack,
+                ClientAssetsManager.INSTANCE.getInternalAssets().getRepairToolAnimations(),
+                ClientAssetsManager.INSTANCE.getInternalAssets().getRepairToolModel()
+        );
+    }
+
+    @Override
+    public long getPutAwayDuration(ItemStack stack) {
+        return 200;
     }
 }
