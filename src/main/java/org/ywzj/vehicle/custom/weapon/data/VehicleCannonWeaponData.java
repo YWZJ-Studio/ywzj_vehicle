@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.custom.weapon.data;
 
 import com.google.gson.annotations.SerializedName;
-import org.ywzj.vehicle.custom.pojo.Explosion;
+import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class VehicleCannonWeaponData extends BaseVehicleWeaponData {
 

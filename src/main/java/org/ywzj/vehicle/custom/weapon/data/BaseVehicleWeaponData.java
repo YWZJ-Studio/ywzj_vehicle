@@ -37,6 +37,9 @@ public class BaseVehicleWeaponData {
     @SerializedName("sounds")
     public Map<String, ResourceLocation> sounds;
 
+    @SerializedName("independent")
+    public boolean independent;
+
     public static class Reload {
 
         @SerializedName("time")

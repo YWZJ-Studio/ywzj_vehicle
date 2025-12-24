@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
@@ -89,7 +90,7 @@ public class Quadcopter extends RotaryWingVehicle {
         }
         this.entityData.set(CABLE_LENGTH, cableLength);
         hookCooldown = Math.max(0, hookCooldown - 1);
-        if (controlUnit.functionalLeft || getDriver() == null) {
+        if (controlUnit.functionalLeft) {
             if (cargo != null) {
                 cargo.fallDistance = 0;
                 cargo = null;
@@ -163,8 +164,6 @@ public class Quadcopter extends RotaryWingVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
-
-    }
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {}
 
 }

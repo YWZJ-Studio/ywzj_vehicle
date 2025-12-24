@@ -3,7 +3,7 @@ package org.ywzj.vehicle.custom.serialize;
 import com.google.gson.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import org.ywzj.vehicle.custom.pojo.WeaponInfo;
+import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 
 import java.lang.reflect.Type;
 

@@ -9,7 +9,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -19,6 +18,7 @@ import net.minecraftforge.common.util.INBTSerializable;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
@@ -27,6 +27,7 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,9 +87,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         this.reloadTimeHolder = syncData.define(SyncDataSerializers.INT, this::setReloadTime, this::getReloadTime, reloadTime);
     }
 
-    public abstract boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter);
+    public abstract boolean shoot(List<AimContext> aimContexts, LivingEntity shooter);
 
-    public boolean check(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+    public boolean check(List<AimContext> aimContexts, LivingEntity shooter) {
         return true;
     }
 
@@ -128,19 +129,18 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
             return false;
         }
 
-        Vec2 rot = weaponUnit.worldRot();
         int partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
-        List<Vec3> ammoSpawnPositions;
-        if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
-            ammoSpawnPositions = Collections.singletonList(weaponUnit.ammoSpawnPosition());
-        } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
-            ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
+        List<AimContext> aimContexts;
+        if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
+            aimContexts = Collections.singletonList(weaponUnit.aimContext());
+        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO) {
+            aimContexts = weaponUnit.aimContexts();
         } else {
             return false;
         }
 
         lastShootTime = System.currentTimeMillis();
-        sendShoot(this.getVehicle(), partUnitIndex, ammoSpawnPositions, rot.x, rot.y);
+        sendShoot(this.getVehicle(), partUnitIndex, getIndex(), aimContexts);
         return true;
     }
 
@@ -165,18 +165,18 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                 });
             }
         }
-        List<Vec3> ammoSpawnPositions;
-        if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
-            ammoSpawnPositions = Collections.singletonList(weaponUnit.ammoSpawnPosition());
+        List<AimContext> aimContexts;
+        if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
+            aimContexts = Collections.singletonList(weaponUnit.aimContext());
             weaponUnit.countFire(1);
-        } else if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.SALVO) {
-            ammoSpawnPositions = weaponUnit.ammoSpawnPositions();
-            weaponUnit.countFire(ammoSpawnPositions.size());
+        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO) {
+            aimContexts = weaponUnit.aimContexts();
+            weaponUnit.countFire(aimContexts.size());
         } else {
             return;
         }
         float recoil = data.getRecoil();
-        for (Vec3 muzzlePos : ammoSpawnPositions) {
+        for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.position).toList()) {
             for (int i = 0; i < 20 * recoil; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
@@ -217,14 +217,13 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void sendShoot(AbstractVehicle abstractVehicle, int weaponIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot) {
+    public static void sendShoot(AbstractVehicle abstractVehicle, int partUnitIndex, int weaponIndex, List<AimContext> aimContexts) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = abstractVehicle.getId();
-        action.partUnitIndex = weaponIndex;
+        action.partUnitIndex = partUnitIndex;
         action.shoot = true;
-        action.ammoSpawnPositions = ammoSpawnPositions;
-        action.ammoXRot = ammoXRot;
-        action.ammoYRot = ammoYRot;
+        action.weaponIndex = weaponIndex;
+        action.aimContexts = aimContexts;
         Channel.CHANNEL.sendToServer(action);
     }
 
@@ -284,7 +283,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public boolean canReload() {
-        return hasStorageAmmo() && !isReloading();
+        return hasStorageAmmo() && !isReloading() && weaponUnit.getOwner() != null;
     }
 
     public void startReload() {
@@ -322,7 +321,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public void tick() {
-        if (vehicle.level().isClientSide()) return;
+        if (vehicle.level().isClientSide()) {
+            return;
+        }
         if (remainAmmo == 0) {
             if (isReloading()) {
                 tickReload();

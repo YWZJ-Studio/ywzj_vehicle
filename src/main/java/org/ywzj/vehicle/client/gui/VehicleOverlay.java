@@ -17,6 +17,7 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -24,9 +25,12 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class VehicleOverlay implements IGuiOverlay {
 
-    public static int color = 0xFF00FF00;
+    public static ConcurrentHashMap<Long, String> tips = new ConcurrentHashMap<>();
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -43,6 +47,7 @@ public class VehicleOverlay implements IGuiOverlay {
             renderCompassBar(guiGraphics, partialTick, screenWidth, vehicle);
         }
         renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
+        renderTips(guiGraphics, screenWidth, screenHeight, vehicle);
     }
 
     /**
@@ -65,7 +70,7 @@ public class VehicleOverlay implements IGuiOverlay {
             if (entity != null) {
                 info = "[" + entity.getDisplayName().getString() + "]";
             }
-            guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, color);
+            guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, Color.GREEN);
             y += 10;
         }
     }
@@ -105,7 +110,7 @@ public class VehicleOverlay implements IGuiOverlay {
                                     int s = x > 180 ? x - 360 : (x < -180 ? x + 360 : x);
                                     renderDirection(guiGraphics, poseStack, font, x, s + "");
                                 } else {
-                                    guiGraphics.vLine(x * 4, 0, 6, color);
+                                    guiGraphics.vLine(x * 4, 0, 6, Color.GREEN);
                                 }
                             }
                         }
@@ -151,6 +156,36 @@ public class VehicleOverlay implements IGuiOverlay {
         poseStack.popPose();
     }
 
+    public void renderTips(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
+        guiGraphics.pose().pushPose();
+        {
+            guiGraphics.pose().translate(centerX, centerY, 0);
+            if (!LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font, "制导中", 0, -45, Color.GREEN);
+                tips.clear();
+            }
+            if (vehicle.warningReceiver != null) {
+                if (vehicle.warningReceiver.missileLaunchWarn) {
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "敌导弹", 0, -55, Color.RED);
+                } else if (vehicle.warningReceiver.radarLockWarn) {
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "敌跟踪", 0, -55, Color.RED);
+                }
+            }
+            if (!tips.isEmpty()) {
+                for (Map.Entry<Long, String> tip : tips.entrySet()) {
+                    if (tip.getKey() + 3000 < System.currentTimeMillis()) {
+                        tips.remove(tip.getKey());
+                        continue;
+                    }
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, tip.getValue(), 0, -45, Color.RED);
+                }
+            }
+        }
+        guiGraphics.pose().popPose();
+    }
+
     private void renderLookAt(GuiGraphics guiGraphics, float partialTick) {
         double showVehicleInfoDistance = AllConfigs.server.showVehicleInfoDistance.get();
         if (showVehicleInfoDistance <= 0) {
@@ -186,8 +221,8 @@ public class VehicleOverlay implements IGuiOverlay {
                     Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                             Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
                             Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
-                    Vec3 posScreen = VectorUtil.worldToScreen(pos);
-                    renderHealth(guiGraphics, posScreen.x, posScreen.y, 90, 5, vehicle, size);
+                    Vec3 screenPos = VectorUtil.worldToScreen(pos);
+                    renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
                 }
                 poseStack.popPose();
             }
@@ -266,9 +301,9 @@ public class VehicleOverlay implements IGuiOverlay {
     }
 
     public static void renderDirection(GuiGraphics graphics, PoseStack poseStack, Font font, int x, String s) {
-        graphics.vLine(x * 4, 0, 8, color);
+        graphics.vLine(x * 4, 0, 8, Color.GREEN);
         poseStack.translate(1f, 0, 0);
-        RenderHelper.drawCenteredString(graphics, font, s, x * 4, 12, color);
+        RenderHelper.drawCenteredString(graphics, font, s, x * 4, 12, Color.GREEN);
         poseStack.translate(-1f, 0, 0);
     }
 

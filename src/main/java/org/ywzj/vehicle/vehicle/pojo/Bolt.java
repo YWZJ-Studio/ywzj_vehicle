@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom.pojo;
+package org.ywzj.vehicle.vehicle.pojo;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.phys.Vec3;
@@ -11,5 +11,9 @@ public record Bolt(
         @SerializedName("offset")
         Vec3 offset,
         @SerializedName("barrel_length")
-        float barrelLength
+        float barrelLength,
+        @SerializedName("x_rot")
+        float xRot,
+        @SerializedName("y_rot")
+        float yRot
 ) {}

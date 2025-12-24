@@ -1,12 +1,12 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.weapon.data.VehicleAerialBombWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.AerialBombEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
@@ -17,8 +17,8 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
     }
 
     @Override
-    public boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
-        if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
+    public boolean shoot(List<AimContext> aimContexts, LivingEntity shooter) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts.size())) {
             return false;
         }
         this.lastShootTime = System.currentTimeMillis();
@@ -26,9 +26,9 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
         var vehicle = getVehicle();
         var data = this.getData();
 
-        for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
+        for (AimContext aimContext : aimContexts) {
             AerialBombEntity aerialBombEntity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level());
-            aerialBombEntity.shoot(this.getVehicle(), this.getDisplayName(), ammoSpawnPosition, ammoXRot, ammoYRot, this.getWeaponUnit().getOwner());
+            aerialBombEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(aerialBombEntity);
         }
         return true;

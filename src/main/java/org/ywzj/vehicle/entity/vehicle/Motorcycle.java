@@ -13,6 +13,7 @@ import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
@@ -113,7 +114,7 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         // 喇叭声
     }
 

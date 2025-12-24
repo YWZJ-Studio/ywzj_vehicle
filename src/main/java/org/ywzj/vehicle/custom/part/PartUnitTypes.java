@@ -4,10 +4,12 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.part.data.*;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.RadarUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class PartUnitTypes {
+
     public static final PartUnitType<PartUnit<PartUnitData>, PartUnitData> GENERIC =
             PartUnitType.Builder.of(YwzjVehicle.modLoc("generic"))
                     .setFactory(PartUnit::new)
@@ -34,4 +36,14 @@ public class PartUnitTypes {
                         return new WeaponUnitData(pojo);
                     })
                     .build();
+
+    public static final PartUnitType<RadarUnit, RadarUnitData> RADAR =
+            PartUnitType.Builder.<RadarUnit, RadarUnitData>of(YwzjVehicle.modLoc("radar"))
+                    .setFactory(RadarUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, RadarUnitPojo.class);
+                        return new RadarUnitData(pojo);
+                    })
+                    .build();
+
 }

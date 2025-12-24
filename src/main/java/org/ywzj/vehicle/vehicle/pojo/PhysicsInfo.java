@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom.pojo;
+package org.ywzj.vehicle.vehicle.pojo;
 
 import com.google.gson.annotations.SerializedName;
 

@@ -5,7 +5,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
@@ -15,6 +14,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -93,15 +93,14 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
+            weaponUnit.shoot(weaponIndex, aimContexts, operator);
         }
     }
 
     public VehicleAnimationInstance getAnimationInstance() {
         return animationInstance;
     }
-
 
 }

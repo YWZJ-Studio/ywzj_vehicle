@@ -20,6 +20,7 @@
     "energy_capacity": 0.25,
     "energy_consumption_per_tick": 0.00001
   },
+  "with_warning_receiver": true,
   "structure_model": "ywzj_vehicle:vehicle/z10",
   "parts": [
     {
@@ -29,6 +30,7 @@
       "structure_bone": "sighting_system",
       "seat_offset": [0, 2, 0],
       "operator_on_weapon_unit": false,
+      "fire_control_lock_type": "aim_hit",
       "rot_info": {
         "x_rot_speed": 3,
         "y_rot_speed": 3,
@@ -40,7 +42,7 @@
       "optical_sight_offset": [0, 0.6, 1.2],
       "operator_view_offset": [0, 0.6, 1.2],
       "optical_sight_type": "crt",
-      "zoom_max": 8,
+      "zoom_max": 12,
       "weapons": [
         {
           "id": "ywzj_vehicle:auto_cannon",
@@ -53,6 +55,10 @@
         {
           "id": "ywzj_vehicle:rocket",
           "part_unit_id": "rocket"
+        },
+        {
+          "id": "ywzj_vehicle:decoy_flare",
+          "part_unit_id": "decoy_flare"
         }
       ]
     },
@@ -92,6 +98,19 @@
       "structure_bone": "rocket",
       "is_seat": false,
       "crosshair_style": "reticle",
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0
+      }
+    },
+    {
+      "id": "decoy_flare",
+      "name": "decoy_flare",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "decoy_flare",
+      "is_seat": false,
+      "crosshair_style": "none",
+      "firing_mode": "salvo",
       "rot_info": {
         "x_rot_speed": 0,
         "y_rot_speed": 0

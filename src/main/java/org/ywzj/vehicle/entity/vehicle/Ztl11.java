@@ -14,6 +14,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -69,11 +70,11 @@ public class Ztl11 extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (partUnitIndex < this.partUnits.size()) {
             this.getPartUnit(partUnitIndex).ifPresent(partUnit -> {
                 if (partUnit instanceof WeaponUnit weaponUnit) {
-                    weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
+                    weaponUnit.shoot(weaponIndex, aimContexts, operator);
                     this.level().playSound(null, this, AllSounds.AUTO_CANNON_SHOT.get(), SoundSource.PLAYERS, 16f, 1f);
                 }
             });

@@ -1,11 +1,11 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
@@ -16,8 +16,8 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
     }
 
     @Override
-    public boolean shoot(List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, LivingEntity shooter) {
-        if (isCoolingDown() || isReloading() || !consumeAmmo(ammoSpawnPositions.size())) {
+    public boolean shoot(List<AimContext> aimContexts, LivingEntity shooter) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts.size())) {
             return false;
         }
         this.lastShootTime = System.currentTimeMillis();
@@ -25,9 +25,9 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
         var vehicle = getVehicle();
         var data = this.getData();
 
-        for (Vec3 ammoSpawnPosition : ammoSpawnPositions) {
-            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, ammoSpawnPosition, getData().getExplosion());
-            bulletEntity.shootFromRotation(vehicle, ammoXRot, ammoYRot, 0, data.getVelocity(), 0f);
+        for (AimContext aimContext : aimContexts) {
+            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), shooter, aimContext.position, getData().getExplosion());
+            bulletEntity.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, data.getVelocity(), 0.6f);
             bulletEntity.setDamage(data.getDamage());
             bulletEntity.setHeadShot(data.getHeadshotMultiplier());
             vehicle.level().addFreshEntity(bulletEntity);

@@ -12,6 +12,7 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
@@ -76,6 +77,6 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {}
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {}
 
 }

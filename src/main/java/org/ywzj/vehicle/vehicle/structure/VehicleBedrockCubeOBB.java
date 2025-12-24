@@ -29,9 +29,9 @@ public class VehicleBedrockCubeOBB {
     public final double height;
     public final double width;
     public final double depth;
-    public float spaceX;
-    public float spaceY;
-    public float spaceZ;
+    public double spaceX;
+    public double spaceY;
+    public double spaceZ;
 
     public VehicleBedrockCubeOBB(OBB obb) {
         this.obb = obb;
@@ -98,13 +98,13 @@ public class VehicleBedrockCubeOBB {
         float offset = 0.001f;
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
-        spaceX = (x2 - x1) / Math.round(x2 - x1);
+        spaceX = (x2 - x1) / Math.ceil(x2 - x1);
         float y1 = -obb.extents().y - gap;
         float y2 = obb.extents().y + gap;
-        spaceY = (y2 - y1) / Math.round(y2 - y1);
+        spaceY = (y2 - y1) / Math.ceil(y2 - y1);
         float z1 = -obb.extents().z - gap;
         float z2 = obb.extents().z + gap;
-        spaceZ = (z2 - z1) / Math.round(z2 - z1);
+        spaceZ = (z2 - z1) / Math.ceil(z2 - z1);
         cubePointsByFace.put(CubeFace.FRONT, new ArrayList<>());
         cubePointsByFace.put(CubeFace.BACK, new ArrayList<>());
         cubePointsByFace.put(CubeFace.LEFT, new ArrayList<>());

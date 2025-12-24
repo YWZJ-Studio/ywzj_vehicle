@@ -78,6 +78,17 @@ public class AllEntities {
             .fireImmune()
             .build("smoke_grenade"));
 
+    public static final RegistryObject<EntityType<DecoyFlareEntity>> DECOY_FLARE = ENTITIES.register("decoy_flare",
+            () -> EntityType.Builder.<DecoyFlareEntity>of(DecoyFlareEntity::new, MobCategory.MISC)
+                    .noSave()
+                    .fireImmune()
+                    .sized(16, 16)
+                    .clientTrackingRange(16)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .setCustomClientFactory(DecoyFlareEntity::new)
+                    .build("decoy_flare"));
+
     public static final RegistryObject<EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
             () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
                     .clientTrackingRange(16)
@@ -107,6 +118,8 @@ public class AllEntities {
     public static final RegistryObject<EntityType<Quadcopter>> QUADCOPTER = registerVehicle("quadcopter", Quadcopter::new);
 
     public static final RegistryObject<EntityType<M1a2>> M1A2 = registerVehicle("m1a2", M1a2::new);
+
+    public static final RegistryObject<EntityType<Cssa5>> CSSA5 = registerVehicle("cssa5", Cssa5::new);
 
     public static <T extends AbstractVehicle> RegistryObject<EntityType<T>> registerVehicle(
             String name, EntityType.EntityFactory<T> factory

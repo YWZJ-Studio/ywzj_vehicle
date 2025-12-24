@@ -1,0 +1,16 @@
+{
+    "credit": "Made with Blockbench",
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "ywzj_vehicle:item/ammo_decoy_flare"
+    },
+    "display": {
+        "gui": {
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        }
+    }
+}

@@ -28,11 +28,11 @@ import org.joml.Vector3d;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.entity.KnockBackModifier;
-import org.ywzj.vehicle.custom.pojo.Explosion;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
+import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 import java.util.Collections;
 import java.util.Comparator;

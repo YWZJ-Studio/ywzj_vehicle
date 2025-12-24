@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.custom.pojo;
+package org.ywzj.vehicle.vehicle.pojo;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -11,10 +11,10 @@ public class RotInfo {
     public float yRotSpeed = 1.0f;
 
     @SerializedName("x_rot_max")
-    public float xRotMax = 18;
+    public float xRotMax = 90;
 
     @SerializedName("x_rot_min")
-    public float xRotMin = -18;
+    public float xRotMin = -90;
 
     @SerializedName("y_rot_max")
     public float yRotMax = Float.MAX_VALUE;

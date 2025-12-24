@@ -9,13 +9,15 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.pojo.Bolt;
-import org.ywzj.vehicle.custom.pojo.Explosion;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
+import org.ywzj.vehicle.vehicle.pojo.Bolt;
+import org.ywzj.vehicle.vehicle.pojo.Explosion;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
 
@@ -49,9 +51,9 @@ public class Ztz99a extends TrackedVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
+            weaponUnit.shoot(weaponIndex, aimContexts, operator);
         }
     }
 
@@ -71,7 +73,7 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0, 1.5d, 0),
                 new Vec3(0, 2, 0),
                 null);
-        turret.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
+        turret.crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
         turret.setXRotSpeed(30f / 20);
         turret.setYRotSpeed(30f / 20);
         turret.setXRotMax(5f);
@@ -108,11 +110,11 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0, 1.5d, 0),
                 new Vec3(0, 2, 0),
                 turret);
-        smokeGrenade.crosshairStyle = WeaponUnit.CrosshairStyle.NONE;
-        smokeGrenade.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        smokeGrenade.crosshairStyle = WeaponUnitData.CrosshairStyle.NONE;
+        smokeGrenade.setFiringMode(WeaponUnitData.FiringMode.RIPPLE);
         smokeGrenade.getBolts().clear();
-        smokeGrenade.getBolts().add(new Bolt(new Vec3(1.5d, 0, 0.5d), 0.1f));
-        smokeGrenade.getBolts().add(new Bolt(new Vec3(-1.5d, 0, 0.5d), 0.1f));
+        smokeGrenade.getBolts().add(new Bolt(new Vec3(1.5d, 0, 0.5d), 0.1f, 0, 0));
+        smokeGrenade.getBolts().add(new Bolt(new Vec3(-1.5d, 0, 0.5d), 0.1f, 0, 0));
         smokeGrenade.setXRot(-30);
         smokeGrenade.setXRotSpeed(0);
         smokeGrenade.setYRotSpeed(0);
@@ -137,8 +139,8 @@ public class Ztz99a extends TrackedVehicle {
                 new Vec3(0, 2d, 0d),
                 turret);
         commanderMachineGun.needPower = false;
-        commanderMachineGun.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
-        commanderMachineGun.opticalSightType = WeaponUnit.OpticalSightType.OPERATOR;
+        commanderMachineGun.crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
+        commanderMachineGun.opticalSightType = WeaponUnitData.OpticalSightType.OPERATOR;
         commanderMachineGun.setOperatorOnWeaponUnit(false);
         commanderMachineGun.setXRotSpeed(60f / 20);
         commanderMachineGun.setYRotSpeed(60f / 20);

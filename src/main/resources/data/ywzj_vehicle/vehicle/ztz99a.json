@@ -38,6 +38,7 @@
       },
       "optical_sight_offset": [0.719, 0.883, 0.14],
       "operator_view_offset": [0, 1.5, 0],
+      "fire_control_lock_type": "aim_hit",
       "optical_sight_type": "crt",
       "zoom_max": 8,
       "weapons": [

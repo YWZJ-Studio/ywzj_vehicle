@@ -15,6 +15,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -61,7 +62,14 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    drawCircle(guiGraphics, 0 ,0, 15, color);
+                    int aimCircleColor = (color & 0x00FFFFFF) | ((int) (0.4f * 255) << 24);
+                    weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                        if (vehicleWeapon.getWeaponUnit().fireControlLockType == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
+                            drawCircle(guiGraphics, 0 ,0, 64, aimCircleColor);
+                        } else {
+                            drawCircle(guiGraphics, 0 ,0, 8, aimCircleColor);
+                        }
+                    });
                     guiGraphics.pose().popPose();
                 }
                 if (showHit) {
@@ -70,10 +78,10 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
                     weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                        WeaponUnit.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
+                        WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
                         if (crosshairStyle != null) {
                             switch (crosshairStyle) {
-                                case CIRCLE -> drawCircle(guiGraphics, 0 ,0, 5, color);
+                                case CIRCLE -> drawCircle(guiGraphics, 0 ,0, 3, color);
                                 case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
                                 case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
                             }
@@ -125,10 +133,10 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     }
                     Vec2 rot = currentWeaponUnit.worldRot();
                     Vec3 screenHitPos;
-                    if (weaponUnit.getFiringMode() == WeaponUnit.FiringMode.RIPPLE) {
-                        screenHitPos = getHitScreenPos(weaponUnit.ammoSpawnPosition(), rot.x, rot.y, player);
+                    if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
+                        screenHitPos = getHitScreenPos(weaponUnit.aimContext().position, rot.x, rot.y, player);
                     } else {
-                        List<Vec3> positions = weaponUnit.ammoSpawnPositions();
+                        List<Vec3> positions = weaponUnit.aimContexts().stream().map(aimContext -> aimContext.position).toList();
                         double x = positions.stream().mapToDouble(v -> v.x).average().orElse(0);
                         double y = positions.stream().mapToDouble(v -> v.y).average().orElse(0);
                         double z = positions.stream().mapToDouble(v -> v.z).average().orElse(0);
@@ -153,6 +161,14 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         var result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 hitPos = result.getLocation();
         return VectorUtil.worldToScreen(hitPos);
+    }
+
+    public static double getScreenAimX() {
+        return screenAimX;
+    }
+
+    public static double getScreenAimY() {
+        return screenAimY;
     }
 
 }

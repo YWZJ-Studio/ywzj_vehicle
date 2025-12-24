@@ -38,6 +38,14 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.vehicle_hit_big"
   },
+  "radar_lock_warn": {
+    "sounds": ["ywzj_vehicle:misc/radar_lock_warn"],
+    "subtitle": "ywzj_vehicle.sounds.radar_lock_warn"
+  },
+  "missile_launch_warn": {
+    "sounds": ["ywzj_vehicle:misc/missile_launch_warn"],
+    "subtitle": "ywzj_vehicle.sounds.missile_launch_warn"
+  },
   "gun_7.62mm_shot": {
     "sounds": [
       "ywzj_vehicle:weapon/gun/gun_7.62mm_shot_01",
@@ -123,13 +131,13 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.cannon_shell_drop"
   },
-  "smoke_grenade_launcher": {
+  "smoke_grenade_launch": {
     "sounds": [
-      "ywzj_vehicle:weapon/grenade/smoke_grenade_launcher_01",
-      "ywzj_vehicle:weapon/grenade/smoke_grenade_launcher_02",
-      "ywzj_vehicle:weapon/grenade/smoke_grenade_launcher_03"
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_launch_01",
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_launch_02",
+      "ywzj_vehicle:weapon/grenade/smoke_grenade_launch_03"
     ],
-    "subtitle": "ywzj_vehicle.sounds.smoke_grenade_launcher"
+    "subtitle": "ywzj_vehicle.sounds.smoke_grenade_launch"
   },
   "smoke_grenade_explosion": {
     "sounds": [
@@ -138,6 +146,22 @@
       "ywzj_vehicle:weapon/grenade/smoke_grenade_explosion_03"
     ],
     "subtitle": "ywzj_vehicle.sounds.smoke_grenade_explosion"
+  },
+  "decoy_flare_launch": {
+    "sounds": [
+      "ywzj_vehicle:weapon/decoy_flare/decoy_flare_launch_01",
+      "ywzj_vehicle:weapon/decoy_flare/decoy_flare_launch_02",
+      "ywzj_vehicle:weapon/decoy_flare/decoy_flare_launch_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.decoy_flare_launch"
+  },
+  "decoy_flare_tail": {
+    "sounds": [
+      "ywzj_vehicle:weapon/decoy_flare/decoy_flare_tail_01",
+      "ywzj_vehicle:weapon/decoy_flare/decoy_flare_tail_02",
+      "ywzj_vehicle:weapon/decoy_flare/decoy_flare_tail_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.decoy_flare_tail"
   },
   "gun_reload": {
     "sounds": [

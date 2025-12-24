@@ -6,10 +6,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -18,7 +15,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
-import org.ywzj.vehicle.api.entity.SightBlockade;
+import org.ywzj.vehicle.api.entity.RadarObstruction;
+import org.ywzj.vehicle.api.entity.SightObstruction;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -88,7 +86,7 @@ public class VectorUtil {
         Vec3 direction = end.subtract(start);
         AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
         return ProjectileUtil.getEntityHitResult(shooter.level(), shooter, start, end, aabb, entity ->
-                (entity.isPickable() || entity instanceof SightBlockade)
+                (entity.isPickable() || entity instanceof SightObstruction || entity instanceof RadarObstruction)
                         && !entity.isSpectator()
                         && entity != shooter
                         && entity != shooter.getVehicle()
@@ -156,6 +154,12 @@ public class VectorUtil {
         float f4 = Mth.cos(f);
         float f5 = Mth.sin(f);
         return new Vec3(f3 * f4, -f5, f2 * f4);
+    }
+
+    public static Vec2 worldVecToRot(Vec3 worldVec) {
+        float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
+        float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
+        return new Vec2(pitch, yaw);
     }
 
     public static double angleBetween(Vec3 a, Vec3 b) {

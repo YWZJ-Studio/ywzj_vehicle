@@ -2,18 +2,24 @@ package org.ywzj.vehicle.vehicle.parts;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Math;
 import org.joml.Quaternionf;
+import org.joml.Vector4d;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.custom.part.data.RotatableUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+
+import java.util.Map;
 
 /**
  * 可旋转运动的载具部件
@@ -36,6 +42,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public float yRotMax = Float.MAX_VALUE;
     public float yRotMin = -Float.MAX_VALUE;
 
+    protected RotatableUnit<?> baseRotatableUnit;
     public boolean needPower = true;
 
     private VehicleSound turnYSoundInstance;
@@ -43,6 +50,18 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public RotatableUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
+
+        var rotInfo = data.getRotInfo();
+        this.xRotSpeed = rotInfo.xRotSpeed;
+        this.yRotSpeed = rotInfo.yRotSpeed;
+        this.xRotMax = rotInfo.xRotMax;
+        this.xRotMin = rotInfo.xRotMin;
+        this.yRotMax = rotInfo.yRotMax;
+        this.yRotMin = rotInfo.yRotMin;
+        this.xRot = rotInfo.xRot;
+        this.yRot = rotInfo.yRot;
+        this.needPower = rotInfo.needPower;
+
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
@@ -54,6 +73,18 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
 
+    @Override
+    public void combineAndInit(@UnmodifiableView Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
+        super.combineAndInit(partUnitsView, vehicle);
+        if (data.getBase() != null) {
+            PartUnit<?> basePart = partUnitsView.get(data.getBase());
+            if (basePart instanceof WeaponUnit base) {
+                this.setBaseRotatableUnit(base);
+            }
+        }
+    }
+
+    @Override
     public void tick() {
         super.tick();
         if (vehicle.level().isClientSide()) {
@@ -62,44 +93,16 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         tickRot();
     }
 
+    @Override
     public void updateOBBs() {
         for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitBedrockCubeOBBs) {
             OBB obb = unitBedrockCubeOBB.obb();
-            Quaternionf rotSelf = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            rotSelf.rotateY(Math.toRadians(-getYRot()));
-            Vec3 centerToPivot = unitBedrockCubeOBB.offset().subtract(this.pivotOffset);
-            Quaternionf rotY = new Quaternionf().rotationY(Math.toRadians(getYRot()));
-            Quaternionf rotX = new Quaternionf().rotationX(Math.toRadians(getXRot()));
-            Quaternionf rotation = new Quaternionf(rotX).mul(rotY);
-            Vec3 centerToPivotRot = new Vec3(rotation.transform(centerToPivot.toVector3f()));
-            obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(this.pivotOffset.add(centerToPivotRot)), false).toVector3f());
-            rotSelf.rotateX(Math.toRadians(180 + getXRot()));
-            obb.setRotation(vehicle.rotYXZ().mul(rotSelf));
-        }
-    }
-
-    protected void tickRot() {
-        this.xRotO = this.getXRot();
-        this.yRotO = this.getYRot();
-        if (vehicle.level().isClientSide()) {
-            this.xAimRot = this.xRemoteAimRot;
-            this.yAimRot = this.yRemoteAimRot;
-        }
-        if (!needPower || vehicle.hasPower()) {
-            float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
-            float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
-            if (Math.abs(xDiff) > getXRotSpeed()) {
-                this.xRot += Math.signum(xDiff) * getXRotSpeed();
-            } else {
-                this.xRot = this.xAimRot;
-            }
-            this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
-            if (Math.abs(yDiff) > getYRotSpeed()) {
-                this.yRot += Math.signum(yDiff) * getYRotSpeed();
-            } else {
-                this.yRot = this.yAimRot;
-            }
-            this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
+            Quaternionf rot = new Quaternionf();
+            rot.rotateY(Math.toRadians(-combineYRot()));
+            rot.rotateX(Math.toRadians(xRot));
+            obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
+            Quaternionf selfRot = new Quaternionf(unitBedrockCubeOBB.selfRot());
+            obb.setRotation(vehicle.rotYXZ().mul(rot).mul(selfRot));
         }
     }
 
@@ -138,6 +141,109 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
                 turnYSoundInstance = null;
             }
         }
+    }
+
+    protected void tickRot() {
+        this.xRotO = this.getXRot();
+        this.yRotO = this.getYRot();
+        if (vehicle.level().isClientSide()) {
+            this.xAimRot = this.xRemoteAimRot;
+            this.yAimRot = this.yRemoteAimRot;
+        }
+        if (!needPower || vehicle.hasPower()) {
+            float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
+            float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
+            if (Math.abs(xDiff) > getXRotSpeed()) {
+                this.xRot += Math.signum(xDiff) * getXRotSpeed();
+            } else {
+                this.xRot = this.xAimRot;
+            }
+            this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
+            if (Math.abs(yDiff) > getYRotSpeed()) {
+                this.yRot += Math.signum(yDiff) * getYRotSpeed();
+            } else {
+                this.yRot = this.yAimRot;
+            }
+            this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
+        }
+    }
+
+    public Vec2 worldRot() {
+        return worldRot(xRot, yRot);
+    }
+
+    public Vec3 worldVec() {
+        return worldVec(xRot, yRot);
+    }
+
+    public Vec2 worldRot(float xRot, float yRot) {
+        Vec3 worldVec = worldVec(xRot, yRot);
+        return VectorUtil.worldVecToRot(worldVec);
+    }
+
+    public Vec3 worldVec(float xRot, float yRot) {
+        return vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, (baseRotatableUnit != null ? baseRotatableUnit.combineYRot() : 0) + yRot), false);
+    }
+
+    public Vec2 vecToRot(Vec3 worldVec) {
+        Vec3 vehicleVec = vehicle.relativeRotDirection(worldVec, true);
+        float pitch = (float) Math.toDegrees(Math.atan2(-vehicleVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
+        float yaw = (float) Math.toDegrees(-Math.atan2(vehicleVec.x, vehicleVec.z));
+        yaw -= combineYRot() - getYRot();
+        return new Vec2(pitch, yaw);
+    }
+
+    public float combineYRot() {
+        if (baseRotatableUnit == null) {
+            return getYRot();
+        }
+        return getYRot() + baseRotatableUnit.combineYRot();
+    }
+
+    /**
+     * 计算车身、部件、附着部件都未旋转时某相对于载具枢轴的偏移xyz在经由车身、部件、附着部件旋转后的实际世界坐标
+     */
+    @Override
+    public Vec3 worldPosition(Vec3 offsetFromVehicle) {
+        if (offsetFromVehicle == null) {
+            return vehicle.position();
+        }
+        return vehicle.relativeRotPos(vehicle.position().add(rotatedOffsetWithSelfRot(offsetFromVehicle)), false);
+    }
+
+    /**
+     * 多层部件站发生依次旋转，计算某相对于载具枢轴的偏移xz因其中某层部件下所有部件旋转而所在的新偏移x'z'
+     * @param rotatableUnit 目标层部件
+     * @param offsetX 相对于载具枢轴的偏移x
+     * @param offsetZ 相对于载具枢轴的偏移z
+     * @return 下一层部件的枢轴偏移xz，本层计算得新偏移xz
+     */
+    public Vector4d rotatedOffsetWithBaseRot(RotatableUnit<?> rotatableUnit, double offsetX, double offsetZ) {
+        if (rotatableUnit.baseRotatableUnit == null) {
+            return new Vector4d(rotatableUnit.pivotOffset.x, rotatableUnit.pivotOffset.z, offsetX, offsetZ);
+        }
+        Vector4d pivotAndTargetOffset = rotatedOffsetWithBaseRot(rotatableUnit.baseRotatableUnit, offsetX, offsetZ);
+        float rot = Math.toRadians(rotatableUnit.baseRotatableUnit.getYRot());
+        float cos = Math.cos(rot);
+        float sin = Math.sin(rot);
+        float dx1 = (float) (rotatableUnit.pivotOffset.x - pivotAndTargetOffset.x);
+        float dy1 = (float) (rotatableUnit.pivotOffset.z - pivotAndTargetOffset.y);
+        float dx2 = (float) (pivotAndTargetOffset.z - pivotAndTargetOffset.x);
+        float dy2 = (float) (pivotAndTargetOffset.w - pivotAndTargetOffset.y);
+        return new Vector4d(pivotAndTargetOffset.x + dx1 * cos - dy1 * sin,
+                pivotAndTargetOffset.y + dx1 * sin + dy1 * cos,
+                pivotAndTargetOffset.x + dx2 * cos - dy2 * sin,
+                pivotAndTargetOffset.y + dx2 * sin + dy2 * cos);
+    }
+
+    public Vec3 rotatedOffsetWithSelfRot(Vec3 offsetFromVehicle) {
+        Vector4d offset = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
+        float rot = Math.toRadians(getYRot());
+        float cos = Math.cos(rot);
+        float sin = Math.sin(rot);
+        float dx = (float) (offset.z - offset.x);
+        float dy = (float) (offset.w - offset.y);
+        return new Vec3(offset.x + dx * cos - dy * sin, offsetFromVehicle.y, offset.y + dx * sin + dy * cos);
     }
 
     @Override
@@ -253,6 +359,14 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public void setYRemoteAimRot(float yRemoteAimRot) {
         this.yRemoteAimRot = yRemoteAimRot;
+    }
+
+    public RotatableUnit<?> getBaseRotatableUnit() {
+        return baseRotatableUnit;
+    }
+
+    public void setBaseRotatableUnit(RotatableUnit<?> baseRotatableUnit) {
+        this.baseRotatableUnit = baseRotatableUnit;
     }
 
 }

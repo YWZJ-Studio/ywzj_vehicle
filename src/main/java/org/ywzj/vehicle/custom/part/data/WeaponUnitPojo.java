@@ -2,22 +2,18 @@ package org.ywzj.vehicle.custom.part.data;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.custom.pojo.Bolt;
-import org.ywzj.vehicle.custom.pojo.WeaponInfo;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.Bolt;
+import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 
 import java.util.List;
 
 public class WeaponUnitPojo extends RotatableUnitPojo {
 
-    @SerializedName("base")
-    public String base = null;
-
     @SerializedName("bolts")
     public List<Bolt> bolts = null;
 
     @SerializedName("firing_mode")
-    public WeaponUnit.FiringMode firingMode = WeaponUnit.FiringMode.RIPPLE;
+    public WeaponUnitData.FiringMode firingMode = WeaponUnitData.FiringMode.RIPPLE;
 
     @SerializedName("parent_weapon_unit_aim")
     public boolean parentWeaponUnitAim = false;
@@ -31,14 +27,20 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("operator_on_weapon_unit")
     public boolean operatorOnWeaponUnit = true;
 
+    @SerializedName("fire_control_lock_type")
+    public WeaponUnitData.FireControlLockType fireControlLockType = WeaponUnitData.FireControlLockType.NONE;
+
     @SerializedName("optical_sight_type")
-    public WeaponUnit.OpticalSightType opticalSightType;
+    public WeaponUnitData.OpticalSightType opticalSightType;
+
+    @SerializedName("zoom_min")
+    public float zoomMin = 1;
 
     @SerializedName("zoom_max")
-    public float zoomMax;
+    public float zoomMax = 8;
 
     @SerializedName("crosshair_style")
-    public WeaponUnit.CrosshairStyle crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
+    public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
 
     @SerializedName("weapons")
     public List<WeaponInfo> weapons = List.of();

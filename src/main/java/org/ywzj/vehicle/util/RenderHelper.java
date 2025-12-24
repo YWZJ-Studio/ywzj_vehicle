@@ -1,12 +1,12 @@
 package org.ywzj.vehicle.util;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.FastColor;
-import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 public class RenderHelper {
@@ -15,37 +15,47 @@ public class RenderHelper {
         guiGraphics.drawString(pFont, pText, pX - pFont.width(pText) / 2, pY, pColor, false);
     }
 
-    public static void drawCircle(GuiGraphics guiGraphics, int x, int y, int r, int color) {
+    public static void drawCircle(GuiGraphics guiGraphics, int cx, int cy, int radius, int color) {
+        float a = ((color >> 24) & 255) / 255.0F;
+        float r = ((color >> 16) & 255) / 255.0F;
+        float g = ((color >> 8) & 255) / 255.0F;
+        float b = (color & 255) / 255.0F;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buf = tesselator.getBuilder();
+        buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
         PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(0.5f, 0.5f, 0.5f);
-            float c = 2 * 3.1415f / 32;
-            for (int i = 0; i < 32; i += 1) {
-                float rx = Mth.cos(c * i) * r;
-                float ry = Mth.sin(c * i) * r;
-                guiGraphics.fill((int) (x + rx), (int) (y + ry), (int) (x + rx) + 1, (int) (y + ry) + 1, color);
-            }
+        for (int i = 0; i <= 64; i++) {
+            double ang = Math.PI * 2 * i / 64;
+            float cos = (float) Math.cos(ang);
+            float sin = (float) Math.sin(ang);
+            // 外圈
+            buf.vertex(poseStack.last().pose(),
+                            cx + cos * radius,
+                            cy + sin * radius,
+                            0)
+                    .color(r, g, b, a)
+                    .endVertex();
+            // 内圈
+            buf.vertex(poseStack.last().pose(),
+                            cx + cos * (radius - 0.5f),
+                            cy + sin * (radius - 0.5f),
+                            0)
+                    .color(r, g, b, a)
+                    .endVertex();
         }
-        poseStack.popPose();
+        tesselator.end();
+        RenderSystem.disableBlend();
     }
 
     public static void drawCross(GuiGraphics guiGraphics, int x, int y, int size, int color) {
         int half = size / 2;
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(0.7f, 0.7f, 0.7f);
-            // 横线
-            for (int i = x - half; i <= x + half; i++) {
-                guiGraphics.fill(i, y, i + 1, y + 1, color);
-            }
-            // 竖线
-            for (int j = y - half; j <= y + half; j++) {
-                guiGraphics.fill(x, j, x + 1, j + 1, color);
-            }
-        }
-        poseStack.popPose();
+        // 横线
+        guiGraphics.hLine(x - half, x + half, y, color);
+        // 竖线
+        guiGraphics.vLine(x, y - half, y + half, color);
     }
 
     public static void drawSquare(GuiGraphics guiGraphics, int x, int y, int size, int color) {
@@ -54,76 +64,68 @@ public class RenderHelper {
         int right = x + half;
         int top = y - half;
         int bottom = y + half;
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(0.7f, 0.7f, 0.7f);
-            for (int i = left; i <= right; i++) {
-                guiGraphics.fill(i, top, i + 1, top + 1, color);
-                guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
-            }
-            for (int j = top; j <= bottom; j++) {
-                guiGraphics.fill(left, j, left + 1, j + 1, color);
-                guiGraphics.fill(right, j, right + 1, j + 1, color);
-            }
-        }
-        poseStack.popPose();
+        // 上下边
+        guiGraphics.hLine(left, right, top, color);
+        guiGraphics.hLine(left, right, bottom, color);
+        // 左右边
+        guiGraphics.vLine(left, top, bottom, color);
+        guiGraphics.vLine(right, top, bottom, color);
+    }
+
+    public static void drawSquareCorners(GuiGraphics guiGraphics, int x, int y, int size, int corner, int color) {
+        int half = size / 2;
+        int left = x - half;
+        int right = x + half;
+        int top = y - half;
+        int bottom = y + half;
+
+        // 左上
+        guiGraphics.hLine(left, left + corner, top, color);
+        guiGraphics.vLine(left, top, top + corner, color);
+
+        // 右上
+        guiGraphics.hLine(right - corner, right, top, color);
+        guiGraphics.vLine(right, top, top + corner, color);
+
+        // 左下
+        guiGraphics.hLine(left, left + corner, bottom, color);
+        guiGraphics.vLine(left, bottom - corner, bottom, color);
+
+        // 右下
+        guiGraphics.hLine(right - corner, right, bottom, color);
+        guiGraphics.vLine(right, bottom - corner, bottom, color);
     }
 
     public static void drawRectByCorner(GuiGraphics guiGraphics, int left, int right, int top, int bottom, int color, float scale) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(scale, scale, scale);
-            // 上边框
-            for (int i = left; i <= right; i++) {
-                guiGraphics.fill(i, top, i + 1, top + 1, color);
-            }
-            // 下边框
-            for (int i = left; i <= right; i++) {
-                guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
-            }
-            // 左边框
-            for (int j = top; j <= bottom; j++) {
-                guiGraphics.fill(left, j, left + 1, j + 1, color);
-            }
-            // 右边框
-            for (int j = top; j <= bottom; j++) {
-                guiGraphics.fill(right, j, right + 1, j + 1, color);
-            }
-        }
-        poseStack.popPose();
+        int cx = (left + right) / 2;
+        int cy = (top + bottom) / 2;
+        int halfW = Math.round((right - left) * 0.5f * scale);
+        int halfH = Math.round((bottom - top) * 0.5f * scale);
+        left = cx - halfW;
+        right = cx + halfW;
+        top = cy - halfH;
+        bottom = cy + halfH;
+        // 上下
+        guiGraphics.hLine(left, right, top, color);
+        guiGraphics.hLine(left, right, bottom, color);
+        // 左右
+        guiGraphics.vLine(left, top, bottom, color);
+        guiGraphics.vLine(right, top, bottom, color);
     }
 
     public static void drawRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int color, float scale) {
-        int halfWidth = width / 2;
-        int halfHeight = height / 2;
-        int left = x - halfWidth;
-        int right = x + halfWidth;
-        int top = y - halfHeight;
-        int bottom = y + halfHeight;
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.scale(scale, scale, scale);
-            // 上边框
-            for (int i = left; i <= right; i++) {
-                guiGraphics.fill(i, top, i + 1, top + 1, color);
-            }
-            // 下边框
-            for (int i = left; i <= right; i++) {
-                guiGraphics.fill(i, bottom, i + 1, bottom + 1, color);
-            }
-            // 左边框
-            for (int j = top; j <= bottom; j++) {
-                guiGraphics.fill(left, j, left + 1, j + 1, color);
-            }
-            // 右边框
-            for (int j = top; j <= bottom; j++) {
-                guiGraphics.fill(right, j, right + 1, j + 1, color);
-            }
-        }
-        poseStack.popPose();
+        int halfW = Math.round(width * 0.5f * scale);
+        int halfH = Math.round(height * 0.5f * scale);
+        int left = x - halfW;
+        int right = x + halfW;
+        int top = y - halfH;
+        int bottom = y + halfH;
+        // 上下边
+        guiGraphics.hLine(left, right, top, color);
+        guiGraphics.hLine(left, right, bottom, color);
+        // 左右边
+        guiGraphics.vLine(left, top, bottom, color);
+        guiGraphics.vLine(right, top, bottom, color);
     }
 
     public static void drawReticle(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {

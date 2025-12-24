@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.custom.weapon.data;
 
 import com.google.gson.annotations.SerializedName;
-import org.ywzj.vehicle.custom.pojo.Explosion;
+import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
@@ -22,6 +22,9 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
     @SerializedName("explosion")
     private Explosion explosion = new Explosion();
+
+    @SerializedName("guidance")
+    private Guidance guidance = Guidance.SACLOS;
 
     public float getXRotMax() {
         return xRotMax;
@@ -59,12 +62,28 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
         return maxSpeed;
     }
 
+    public void setMaxSpeed(float maxSpeed) {
+        this.maxSpeed = maxSpeed;
+    }
+
     public Explosion getExplosion() {
         return explosion;
     }
 
     public void setExplosion(Explosion explosion) {
         this.explosion = explosion;
+    }
+
+    public Guidance getGuidance() {
+        return guidance;
+    }
+
+    public void setGuidance(Guidance guidance) {
+        this.guidance = guidance;
+    }
+
+    public enum Guidance {
+        SACLOS, HOMING, PRESET
     }
 
 }

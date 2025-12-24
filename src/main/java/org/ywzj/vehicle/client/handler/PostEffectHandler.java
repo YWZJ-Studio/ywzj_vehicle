@@ -10,6 +10,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.util.PostPassesGetter;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
@@ -31,7 +32,7 @@ public class PostEffectHandler {
                 return;
             }
             if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE 
-                    && weaponUnit.getOpticalSightType() == WeaponUnit.OpticalSightType.CRT) {
+                    && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
                 if (effect == null || !effect.getName().equals(crtEffectPath)) {
                     Minecraft.getInstance().gameRenderer.loadEffect(SHADER_LOCATION);
                 }

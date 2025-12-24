@@ -61,8 +61,6 @@ import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.custom.pojo.EnergyInfo;
-import org.ywzj.vehicle.custom.pojo.ViewInfo;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.network.Channel;
@@ -76,6 +74,11 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
+import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
+import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
@@ -110,8 +113,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public boolean uav;
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
+    public WarningReceiver warningReceiver;
     public PhysicsEngine physicsEngine;
     protected boolean dataInitialized;
+    private long destroyedTime;
     public long lastRenderTime;
 
     private ResourceLocation customId;
@@ -147,6 +152,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Destroyed", isDestroyed());
+        compound.putLong("DestroyedTime", destroyedTime);
         compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getCustomId().toString());
         compound.put("PartUnits", serializePartUnitsData());
     }
@@ -156,6 +162,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         super.readAdditionalSaveData(compound);
         if (compound.contains("Destroyed", Tag.TAG_ANY_NUMERIC)) {
             entityData.set(DESTROYED, compound.getBoolean("Destroyed"));
+        }
+        if (compound.contains("DestroyedTime", Tag.TAG_ANY_NUMERIC)) {
+            destroyedTime = compound.getLong("DestroyedTime");
         }
         if (compound.contains(ICustomVehicle.TAG_VEHICLE_ID, Tag.TAG_STRING)) {
             ResourceLocation id = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
@@ -247,6 +256,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
             this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
             this.seats.addAll(partUnitsAndSeats.seats());
+            if (data.withWarningReceiver()) {
+                this.warningReceiver = new WarningReceiver();
+            }
         });
         Map<String, PartUnit<?>> map = new HashMap<>();
         for (PartUnit<?> partUnit : partUnits) {
@@ -313,6 +325,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
                     passenger.stopRiding();
                 }
+            }
+            if (isDestroyed() && System.currentTimeMillis() - destroyedTime > 60000) {
+                this.discard();
             }
             tickEnergy();
             tickPower();
@@ -395,8 +410,13 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
         setDeltaMovement(velocity);
 
-//        if (this instanceof M1a2) {
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(2)).ammoSpawnPosition());
+//        if (this instanceof Cssa5) {
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).worldCurrentBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).aimContext().position);
+//
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(0).worldCurrentBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(0).aimContext().position);
+
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).ammoSpawnPosition());
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOwnerViewPosition());
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOpticalSightPosition());
@@ -679,13 +699,16 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public static void onClientVehicleAction(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ServerPlayer player = ctxSupplier.get().getSender();
-        if (message.leaveVehicle) {
-            if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle) {
+        if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            if (message.leaveVehicle) {
                 player.stopRiding();
-            }
-        } else if (message.toggleEngine) {
-            if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            } else if (message.toggleEngine) {
                 vehicle.toggleEngine(null);
+            } else if (message.lockEntity) {
+                PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    weaponUnit.setAimLockEntity(player.level().getEntity(message.lockedEntityId), message.sensorType);
+                }
             }
         }
     }
@@ -900,7 +923,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return new Vec3(d.x, d.y, d.z);
     }
 
-    public abstract void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator);
+    public abstract void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator);
 
     public float getEnergy() {
         float amount = entityData.get(ENERGY);

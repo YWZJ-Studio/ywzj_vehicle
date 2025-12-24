@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.gui;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -8,6 +9,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -16,11 +18,9 @@ import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.parts.RadarUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.ywzj.vehicle.util.RenderHelper.drawRectByCorner;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
@@ -28,8 +28,7 @@ import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 public class VehicleScopeOverlay implements IGuiOverlay {
 
     public static double fov;
-    public static int color = 0xFF00FF00;
-    public static ConcurrentHashMap<Long, String> tips = new ConcurrentHashMap<>();
+    public static int color = Color.GREEN;
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -81,25 +80,11 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         int centerY = screenHeight / 2;
         guiGraphics.pose().pushPose();
         {
-            // 提示信息
             guiGraphics.pose().translate(centerX, centerY, 0);
-            if (!LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font, "激光制导中", 0, -45, color);
-                tips.clear();
-            }
-            if (!tips.isEmpty()) {
-                for (Map.Entry<Long, String> tip : tips.entrySet()) {
-                    if (tip.getKey() + 3000 < System.currentTimeMillis()) {
-                        tips.remove(tip.getKey());
-                        continue;
-                    }
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, tip.getValue(), 0, -45, 0xFFFF0000);
-                }
-            }
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
                 weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                     if (vehicleWeapon instanceof VehicleMissile vehicleMissile) {
-                        VehicleMissileWeaponData vehicleMissileWeaponData = (VehicleMissileWeaponData) vehicleMissile.getData();
+                        VehicleMissileWeaponData vehicleMissileWeaponData = vehicleMissile.getData();
                         guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
                         int baseX = 0;
                         int baseY = 140;
@@ -133,24 +118,51 @@ public class VehicleScopeOverlay implements IGuiOverlay {
 
     public static void renderAimLockTarget(GuiGraphics guiGraphics) {
         WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
-        if (weaponUnit != null && weaponUnit.isStabilizerOn()) {
-            if (weaponUnit.getAimLockEntity() != null) {
-                Entity entity = weaponUnit.getAimLockEntity();
-                AABB aabb = entity.getBoundingBox();
-                Vec3 screenPos = VectorUtil.worldToScreen(aabb.getCenter());
-                guiGraphics.pose().pushPose();
-                {
-                    guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
-                    RenderHelper.drawSquare(guiGraphics, 0, 0, 15, 0xFF00FF00);
-                }
-                guiGraphics.pose().popPose();
+        if (weaponUnit == null) {
+            return;
+        }
+        // 可锁定的目标
+        for (RadarUnit.DetectedObject detectedObject : weaponUnit.getRadarDetectedEntities()) {
+            Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.detectedPosition);
+            if (screenPos.z < 0) {
+                continue;
             }
+            guiGraphics.pose().pushPose();
+            {
+                guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
+                RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 15, 5, Color.GREEN);
+            }
+            guiGraphics.pose().popPose();
+        }
+        // 已锁定的目标
+        if (weaponUnit.getAimLockEntity() != null) {
+            Entity entity = weaponUnit.getAimLockEntity();
+            AABB aabb = entity.getBoundingBox();
+            Vec3 screenPos = VectorUtil.worldToScreen(aabb.getCenter());
+            PoseStack poseStack = guiGraphics.pose();
+            poseStack.pushPose();
+            {
+                poseStack.translate(screenPos.x, screenPos.y, 0);
+                RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+                poseStack.pushPose();
+                {
+                    poseStack.translate(12, -12, 0);
+                    poseStack.scale(0.8f, 0.8f, 0.8f);
+                    double distance = aabb.getCenter().distanceTo(LocalVehiclePlayer.instance.getVehicle().position());
+                    guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f", distance) + "格", 0, 0, Color.GREEN, false);
+                }
+                poseStack.popPose();
+            }
+            poseStack.popPose();
+        }
+        // 稳定器
+        if (weaponUnit.isStabilizerOn()) {
             Vec3 pos = weaponUnit.getAimLockPosition();
             Vec3 screenPos = VectorUtil.worldToScreen(pos);
             guiGraphics.pose().pushPose();
             {
                 guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
-                RenderHelper.drawCross(guiGraphics, 0, 0, 10, 0xFF00FF00);
+                RenderHelper.drawCross(guiGraphics, 0, 0, 10, Color.GREEN);
             }
             guiGraphics.pose().popPose();
         }

@@ -1,9 +1,12 @@
 package org.ywzj.vehicle.custom.part.data;
 
 import com.google.gson.annotations.SerializedName;
-import org.ywzj.vehicle.custom.pojo.RotInfo;
+import org.ywzj.vehicle.vehicle.pojo.RotInfo;
 
 public class RotatableUnitPojo extends PartUnitPojo {
+
+    @SerializedName("base")
+    public String base = null;
 
     @SerializedName("rot_info")
     public RotInfo rotInfo;

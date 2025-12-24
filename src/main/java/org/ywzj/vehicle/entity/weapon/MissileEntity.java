@@ -18,16 +18,21 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ServerVehicleWarn;
 import org.ywzj.vehicle.util.*;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.WarnType;
 
 public class MissileEntity extends AmmoEntity {
 
@@ -35,7 +40,15 @@ public class MissileEntity extends AmmoEntity {
     public Entity targetEntity;
     public Vec3 targetPos;
     public int operatorId;
+    private VehicleMissileWeaponData.Guidance guidance;
+    private WeaponUnit weaponUnit;
     private VehicleSound sound;
+
+    public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData.Guidance guidance, WeaponUnit weaponUnit) {
+        super(entityType, level);
+        this.guidance = guidance;
+        this.weaponUnit = weaponUnit;
+    }
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level) {
         super(entityType, level);
@@ -67,36 +80,48 @@ public class MissileEntity extends AmmoEntity {
     }
 
     private void tickGuidance() {
-        if (targetEntity != null) {
-            this.lookAt(EntityAnchorArgument.Anchor.EYES, targetEntity.position());
-        } else if (targetPos != null) {
-            this.lookAt(EntityAnchorArgument.Anchor.EYES, targetPos);
-        } else if (getOwner() != null) {
-            if (vehicle != null) {
-                if (vehicle.getOwnOperatorUnit((LivingEntity) getOwner()) instanceof WeaponUnit weaponUnit) {
-                    Vec2 rot = weaponUnit.worldRot();
-                    Vec3 start = weaponUnit.worldPivotPosition();
-                    Vec3 dir = VectorUtil.calculateViewVector(rot.x, rot.y).normalize();
-                    Vec3 pos = this.position();
-                    // 计算实体在驾束射线上的投影点
-                    Vec3 startToPos = pos.subtract(start);
-                    double t = startToPos.dot(dir); // 投影系数（沿射线方向的距离）
-                    if (t < 0) t = 0; // 限制在射线范围内
-                    Vec3 proj = start.add(dir.scale(t));
-                    // 当前点逐渐靠近射线（朝投影点移动）
-                    double speed = 0.2;
-                    // 逐步解锁机动
-                    float maneuverability = Math.min((float) tickCount / 20, 1);
-                    // 每 tick 靠近速度
-                    speed *= maneuverability;
-                    Vec3 delta = proj.subtract(pos);
-                    if (delta.length() > speed) {
-                        delta = delta.normalize().scale(speed);
-                    }
-                    this.setPos(pos.add(delta));
-                    this.setRot(Mth.lerp(maneuverability, this.getYRot(), rot.y), Mth.lerp(maneuverability, this.getXRot(), rot.x));
+        if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
+            Entity lastTargetEntity = targetEntity;
+            targetEntity = weaponUnit.getAimLockEntity();
+            // 通知导弹雷达锁定与脱锁给目标载具乘客
+            if (lastTargetEntity != targetEntity) {
+                if (lastTargetEntity != null) {
+                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), lastTargetEntity.getId(), WarnType.MISSILE_LAUNCH, false);
+                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
+                }
+                if (targetEntity != null) {
+                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, true);
+                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
                 }
             }
+            // 比例引导
+            if (targetEntity != null) {
+                this.lookAt(EntityAnchorArgument.Anchor.EYES, targetEntity.position());
+            }
+        } else if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
+            this.lookAt(EntityAnchorArgument.Anchor.EYES, targetPos);
+        } else if (guidance == VehicleMissileWeaponData.Guidance.SACLOS) {
+            Vec2 rot = weaponUnit.worldRot();
+            Vec3 start = weaponUnit.worldPivotPosition();
+            Vec3 dir = VectorUtil.calculateViewVector(rot.x, rot.y).normalize();
+            Vec3 pos = this.position();
+            // 计算实体在驾束射线上的投影点
+            Vec3 startToPos = pos.subtract(start);
+            double t = startToPos.dot(dir); // 投影系数（沿射线方向的距离）
+            if (t < 0) t = 0; // 限制在射线范围内
+            Vec3 proj = start.add(dir.scale(t));
+            // 当前点逐渐靠近射线（朝投影点移动）
+            double speed = 0.2;
+            // 逐步解锁机动
+            float maneuverability = Math.min((float) tickCount / 20, 1);
+            // 每 tick 靠近速度
+            speed *= maneuverability;
+            Vec3 delta = proj.subtract(pos);
+            if (delta.length() > speed) {
+                delta = delta.normalize().scale(speed);
+            }
+            this.setPos(pos.add(delta));
+            this.setRot(Mth.lerp(maneuverability, this.getYRot(), rot.y), Mth.lerp(maneuverability, this.getXRot(), rot.x));
         }
     }
 
@@ -146,6 +171,13 @@ public class MissileEntity extends AmmoEntity {
         super.onRemovedFromWorld();
         if (level().isClientSide()) {
             localRemoveMissile();
+        } else {
+            if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
+                if (targetEntity != null) {
+                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, false);
+                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
+                }
+            }
         }
     }
 

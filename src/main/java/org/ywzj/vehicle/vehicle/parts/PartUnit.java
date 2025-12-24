@@ -273,7 +273,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
         if (entity instanceof AbstractVehicle vehicle && message.partUnitIndex < vehicle.getPartUnits().size()) {
             if (message.shoot) {
-                vehicle.shoot(message.partUnitIndex, message.ammoSpawnPositions, message.ammoXRot, message.ammoYRot, serverPlayer);
+                vehicle.shoot(message.partUnitIndex, message.weaponIndex, message.aimContexts, serverPlayer);
             } else {
                 PartUnit<?> partUnit = vehicle.getPartUnits().get(message.partUnitIndex);
                 if (partUnit instanceof RotatableUnit<?> rotatableUnit) {

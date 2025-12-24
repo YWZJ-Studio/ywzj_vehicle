@@ -1,9 +1,10 @@
 package org.ywzj.vehicle.custom.part.data;
 
-import org.ywzj.vehicle.custom.pojo.RotInfo;
+import org.ywzj.vehicle.vehicle.pojo.RotInfo;
 
 public class RotatableUnitData extends PartUnitData {
 
+    protected String base;
     protected RotInfo rotInfo;
 
     public RotatableUnitData(String id) {
@@ -12,7 +13,12 @@ public class RotatableUnitData extends PartUnitData {
 
     public RotatableUnitData(RotatableUnitPojo pojo) {
         super(pojo);
+        this.base = pojo.base;
         this.rotInfo = pojo.rotInfo;
+    }
+
+    public String getBase() {
+        return base;
     }
 
     public RotInfo getRotInfo() {

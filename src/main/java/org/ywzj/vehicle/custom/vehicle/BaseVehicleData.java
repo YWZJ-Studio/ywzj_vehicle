@@ -8,11 +8,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
-import org.ywzj.vehicle.custom.pojo.EnergyInfo;
-import org.ywzj.vehicle.custom.pojo.PhysicsInfo;
-import org.ywzj.vehicle.custom.pojo.ViewInfo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
+import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
+import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.*;
@@ -23,6 +23,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected ViewInfo viewInfo;
     protected EnergyInfo energyInfo;
     protected PhysicsInfo physicsInfo;
+    protected boolean withWarningReceiver;
     protected ResourceLocation structureModel;
     protected List<PartUnitEntry<?, ?>> parts;
     protected VehicleBedrockCubeOBB mainCubeOBB;
@@ -45,6 +46,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.viewInfo = pojo.viewInfo;
         this.energyInfo = pojo.energyInfo;
         this.physicsInfo = pojo.physicsInfo;
+        this.withWarningReceiver = pojo.withWarningReceiver;
 
         this.structureModel = pojo.structureModel;
         var model = CommonAssetsManager.structureModelManager()
@@ -126,6 +128,10 @@ public class BaseVehicleData<T extends AbstractVehicle> {
 
     public PhysicsInfo getPhysicsInfo() {
         return physicsInfo;
+    }
+
+    public  boolean withWarningReceiver() {
+        return withWarningReceiver;
     }
 
 }

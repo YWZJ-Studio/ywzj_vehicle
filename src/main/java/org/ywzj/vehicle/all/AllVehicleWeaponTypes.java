@@ -10,6 +10,7 @@ import org.ywzj.vehicle.custom.weapon.data.*;
 import org.ywzj.vehicle.vehicle.weapon.*;
 
 public class AllVehicleWeaponTypes {
+
     public static final DeferredRegister<VehicleWeaponType<?, ?>> WEAPON_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_WEAPON_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<VehicleWeaponType<VehicleCannon, VehicleCannonWeaponData>> CANNON = register(
@@ -30,6 +31,10 @@ public class AllVehicleWeaponTypes {
 
     public static final RegistryObject<VehicleWeaponType<VehicleMissile, VehicleMissileWeaponData>> MISSILE = register(
             "missile", json -> GsonUtil.GSON.fromJson(json, VehicleMissileWeaponData.class), VehicleMissile::new
+    );
+
+    public static final RegistryObject<VehicleWeaponType<VehicleDecoyFlare, BaseVehicleWeaponData>> DECOY_FLARE = register(
+            "decoy_flare", json -> GsonUtil.GSON.fromJson(json, BaseVehicleWeaponData.class), VehicleDecoyFlare::new
     );
 
     private static <T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> RegistryObject<VehicleWeaponType<T, D>> register(

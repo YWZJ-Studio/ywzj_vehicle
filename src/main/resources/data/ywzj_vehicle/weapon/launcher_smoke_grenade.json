@@ -10,6 +10,6 @@
     "ammo": "ywzj_vehicle:ammo_grenade"
   },
   "sounds": {
-    "fire": "ywzj_vehicle:smoke_grenade_launcher"
+    "fire": "ywzj_vehicle:smoke_grenade_launch"
   }
 }

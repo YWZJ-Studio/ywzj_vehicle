@@ -27,6 +27,7 @@ public class AllItems {
     public static final RegistryObject<Item> AMMO_ROCKET = registerItem(AllTabs.Category.MISC, "ammo_rocket", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.ROCKET));
     public static final RegistryObject<Item> AMMO_AERIAL_BOMB = registerItem(AllTabs.Category.MISC, "ammo_aerial_bomb", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AERIAL_BOMB));
     public static final RegistryObject<Item> AMMO_MISSILE = registerItem(AllTabs.Category.MISC, "ammo_missile", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MISSILE));
+    public static final RegistryObject<Item> AMMO_DECOY_FLARE = registerItem(AllTabs.Category.MISC, "ammo_decoy_flare", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MISC));
 
     public static final RegistryObject<RepairToolItem> REPAIR_TOOL = registerItem(AllTabs.Category.MISC, "repair_tool", RepairToolItem::new);
 

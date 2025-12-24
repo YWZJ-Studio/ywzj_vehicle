@@ -8,9 +8,9 @@ import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
-import org.ywzj.vehicle.api.entity.SightBlockade;
+import org.ywzj.vehicle.api.entity.SightObstruction;
 
-public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChangeable, SightBlockade {
+public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChangeable, SightObstruction {
 
     public SmokeGrenadeEntity(Entity entity, Level level) {
         super(AllEntities.SMOKE_GRENADE.get(), entity, level);

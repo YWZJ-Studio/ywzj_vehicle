@@ -350,7 +350,7 @@ public class PhysicsEngine {
             rot(axes);
             // 后坐力产生推移
             force = force.normalize();
-            double motion = force.dot(new Vector3f(0, 0, 1)) * 0.05 * recoil;
+            double motion = force.dot(new Vector3f(0, 0, 1)) * 0.03 * recoil;
             vehicle.setDeltaMovement(vehicle.getDeltaMovement().add(new Vec3(axes[2]).scale(motion)));
         }
     }

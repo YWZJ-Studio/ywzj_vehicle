@@ -19,6 +19,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleDecoyFlare;
 
 import static org.ywzj.vehicle.all.AllKeys.*;
 
@@ -73,6 +74,10 @@ public class InputHandler {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
                     }
+                } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
+                    weaponUnit.independentWeapons.stream()
+                            .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleDecoyFlare)
+                            .forEach(AbstractVehicleWeapon::doClientShoot);
                 } else if (DEBUG_GUI.matches(event.getKey(), event.getScanCode())) {
                     debugGui = !debugGui;
                 }
@@ -175,9 +180,9 @@ public class InputHandler {
         }
     }
 
-    private static void sendControl(AbstractVehicle abstractVehicle, ControlUnit controlUnit) {
+    private static void sendControl(AbstractVehicle vehicle, ControlUnit controlUnit) {
         ClientVehicleMoveControl control = new ClientVehicleMoveControl();
-        control.vehicleEntityId = abstractVehicle.getId();
+        control.vehicleEntityId = vehicle.getId();
         control.forward = controlUnit.forward;
         control.backward = controlUnit.backward;
         control.left = controlUnit.left;
@@ -197,23 +202,23 @@ public class InputHandler {
         Channel.CHANNEL.sendToServer(control);
     }
 
-    private static void sendChangeSeat(AbstractVehicle abstractVehicle, int toSeat) {
+    private static void sendChangeSeat(AbstractVehicle vehicle, int toSeat) {
         ClientVehicleChangeSeat changeSeat = new ClientVehicleChangeSeat();
-        changeSeat.vehicleEntityId = abstractVehicle.getId();
+        changeSeat.vehicleEntityId = vehicle.getId();
         changeSeat.toSeat = toSeat;
         Channel.CHANNEL.sendToServer(changeSeat);
     }
 
-    private static void sendLeaveVehicle(AbstractVehicle abstractVehicle) {
+    private static void sendLeaveVehicle(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
-        action.vehicleEntityId = abstractVehicle.getId();
+        action.vehicleEntityId = vehicle.getId();
         action.leaveVehicle = true;
         Channel.CHANNEL.sendToServer(action);
     }
 
-    private static void sendToggleEngine(AbstractVehicle abstractVehicle) {
+    private static void sendToggleEngine(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
-        action.vehicleEntityId = abstractVehicle.getId();
+        action.vehicleEntityId = vehicle.getId();
         action.toggleEngine = true;
         Channel.CHANNEL.sendToServer(action);
     }

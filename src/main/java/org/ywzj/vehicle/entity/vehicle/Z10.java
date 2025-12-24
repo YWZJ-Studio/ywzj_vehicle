@@ -10,12 +10,14 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.custom.pojo.Bolt;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleRocketWeaponData;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
+import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
@@ -45,9 +47,9 @@ public class Z10 extends RotaryWingVehicle {
     }
 
     @Override
-    public void shoot(int partUnitIndex, List<Vec3> ammoSpawnPositions, float ammoXRot, float ammoYRot, @Nullable LivingEntity operator) {
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(ammoSpawnPositions, ammoXRot, ammoYRot, operator);
+            weaponUnit.shoot(weaponIndex, aimContexts, operator);
         }
     }
 
@@ -92,7 +94,7 @@ public class Z10 extends RotaryWingVehicle {
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        autoCannon.crosshairStyle = WeaponUnit.CrosshairStyle.SQUARE;
+        autoCannon.crosshairStyle = WeaponUnitData.CrosshairStyle.SQUARE;
         autoCannon.setXRotSpeed(60f / 20);
         autoCannon.setYRotSpeed(60f / 20);
         autoCannon.setXRotMax(45f);
@@ -120,11 +122,11 @@ public class Z10 extends RotaryWingVehicle {
                 new Vec3(0, 2d, 0d),
                 null);
         missile.setParentWeaponUnitAim(true);
-        missile.crosshairStyle = WeaponUnit.CrosshairStyle.CIRCLE;
-        missile.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        missile.crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
+        missile.setFiringMode(WeaponUnitData.FiringMode.RIPPLE);
         missile.getBolts().clear();
-        missile.getBolts().add(new Bolt(new Vec3(2.5d, 0, 1d), 0.1f));
-        missile.getBolts().add(new Bolt(new Vec3(-2.5d, 0, 1d), 0.1f));
+        missile.getBolts().add(new Bolt(new Vec3(2.5d, 0, 1d), 0.1f, 0, 0));
+        missile.getBolts().add(new Bolt(new Vec3(-2.5d, 0, 1d), 0.1f, 0, 0));
         missile.setXRotSpeed(0);
         missile.setYRotSpeed(0);
         missile.setParentWeaponUnit(sightingSystem);
@@ -147,11 +149,11 @@ public class Z10 extends RotaryWingVehicle {
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        rocket.crosshairStyle = WeaponUnit.CrosshairStyle.RETICLE;
-        rocket.setFiringMode(WeaponUnit.FiringMode.RIPPLE);
+        rocket.crosshairStyle = WeaponUnitData.CrosshairStyle.RETICLE;
+        rocket.setFiringMode(WeaponUnitData.FiringMode.RIPPLE);
         rocket.getBolts().clear();
-        rocket.getBolts().add(new Bolt(new Vec3(1.5d, 0, 1d), 0.1f));
-        rocket.getBolts().add(new Bolt(new Vec3(-1.5d, 0, 1d), 0.1f));
+        rocket.getBolts().add(new Bolt(new Vec3(1.5d, 0, 1d), 0.1f, 0, 0));
+        rocket.getBolts().add(new Bolt(new Vec3(-1.5d, 0, 1d), 0.1f, 0, 0));
         rocket.setXRotSpeed(0);
         rocket.setYRotSpeed(0);
         rocket.setParentWeaponUnit(sightingSystem);

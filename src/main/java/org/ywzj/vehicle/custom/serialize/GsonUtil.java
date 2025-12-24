@@ -13,9 +13,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
-import org.ywzj.vehicle.custom.pojo.WeaponInfo;
+import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 
 public class GsonUtil {
+
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
             .registerTypeAdapter(Vec3.class, new Vec3Serializer())
