@@ -89,6 +89,9 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        url = "https://api.modrinth.com/maven"
+    }
 }
 
 dependencies {
@@ -113,9 +116,11 @@ dependencies {
         jarJar.ranged(it, "[0.3.6,)")
     }
 
+    runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
-    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4.3-1.20.1-alpha')
+//    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4.3-1.20.1-alpha')
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
+    runtimeOnly fg.deobf('libs:oculus:mc1.20.1-1.7.0')
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
