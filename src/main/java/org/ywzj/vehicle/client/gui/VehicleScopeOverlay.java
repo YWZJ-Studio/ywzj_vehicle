@@ -121,19 +121,6 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         if (weaponUnit == null) {
             return;
         }
-        // 可锁定的目标
-        for (RadarUnit.DetectedObject detectedObject : weaponUnit.getRadarDetectedEntities()) {
-            Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.detectedPosition);
-            if (screenPos.z < 0) {
-                continue;
-            }
-            guiGraphics.pose().pushPose();
-            {
-                guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
-                RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 15, 5, Color.GREEN);
-            }
-            guiGraphics.pose().popPose();
-        }
         // 已锁定的目标
         if (weaponUnit.getAimLockEntity() != null) {
             Entity entity = weaponUnit.getAimLockEntity();
@@ -154,6 +141,22 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                 poseStack.popPose();
             }
             poseStack.popPose();
+        }
+        // 可锁定的目标
+        for (RadarUnit.DetectedObject detectedObject : weaponUnit.getRadarDetectedEntities()) {
+            if (detectedObject.entity == weaponUnit.getAimLockEntity()) {
+                continue;
+            }
+            Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.detectedPosition);
+            if (screenPos.z < 0) {
+                continue;
+            }
+            guiGraphics.pose().pushPose();
+            {
+                guiGraphics.pose().translate(screenPos.x, screenPos.y, 0);
+                RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 15, 5, Color.GREEN);
+            }
+            guiGraphics.pose().popPose();
         }
         // 稳定器
         if (weaponUnit.isStabilizerOn()) {

@@ -40,6 +40,7 @@ public class MissileEntity extends AmmoEntity {
     public Entity targetEntity;
     public Vec3 targetPos;
     public int operatorId;
+    public float maxG;
     private VehicleMissileWeaponData.Guidance guidance;
     private WeaponUnit weaponUnit;
     private VehicleSound sound;
@@ -94,9 +95,9 @@ public class MissileEntity extends AmmoEntity {
                     Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
                 }
             }
-            // 比例引导
+            // 截射
             if (targetEntity != null) {
-                this.lookAt(EntityAnchorArgument.Anchor.EYES, targetEntity.position());
+                proportionalGuide(targetEntity);
             }
         } else if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
             this.lookAt(EntityAnchorArgument.Anchor.EYES, targetPos);
@@ -226,6 +227,71 @@ public class MissileEntity extends AmmoEntity {
         if (level().isClientSide()) {
             localAddMissile();
         }
+    }
+
+    public void proportionalGuide(Entity target) {
+        Vec3 missilePos = this.position();
+        Vec3 missileVel = this.getDeltaMovement();
+        Vec3 targetPos = target.position();
+        Vec3 targetVel = target.getDeltaMovement();
+
+        Vec3 relPos = targetPos.subtract(missilePos);
+        Vec3 relVel = targetVel.subtract(missileVel);
+
+        double missileSpeed = missileVel.length();
+        double closingSpeed = missileSpeed - relVel.dot(relPos.normalize());
+        double t = relPos.length() / Math.max(closingSpeed, 0.1);
+
+        Vec3 interceptPos = targetPos.add(targetVel.scale(t));
+
+        Vec3 desiredDir = interceptPos.subtract(missilePos).normalize();
+        Vec3 currentDir = missileVel.lengthSqr() < 1e-4
+                ? desiredDir
+                : missileVel.normalize();
+
+        double N = 1.0; // PN 系数
+        Vec3 steering = desiredDir.subtract(currentDir).scale(N);
+
+        // 截射目的地
+        Vec3 newVel = missileVel.add(steering)
+                .normalize()
+                .scale(missileSpeed);
+        Vec3 finalTargetPos = missilePos.add(newVel);
+
+        double d0 = finalTargetPos.x - missilePos.x;
+        double d1 = finalTargetPos.y - missilePos.y;
+        double d2 = finalTargetPos.z - missilePos.z;
+        double d3 = Math.sqrt(d0 * d0 + d2 * d2);
+        float xRot = Mth.wrapDegrees((float)(-(Mth.atan2(d1, d3) * (double)(180F / (float)Math.PI))));
+        float yRot = Mth.wrapDegrees((float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F);
+
+        // 适配过载限制
+        // 逐步解锁最大过载，再降低
+        double accelNow;
+        if (this.tickCount < 20) {
+            accelNow = this.maxG * Math.pow((double) this.tickCount / 20, 2);
+        } else {
+            accelNow = Math.max(0, this.maxG * (1 - (double) (this.tickCount - 20) / 60));
+        }
+        Vec3 vel = this.getDeltaMovement();
+        double speed = vel.length();
+        if (speed < 1e-4) {
+            return;
+        }
+        double maxOmega = accelNow / speed;
+        if (maxOmega == 0) {
+            return;
+        }
+        double maxAnglePerTick = Math.toDegrees(maxOmega);
+        float curX = this.getXRot();
+        float curY = this.getYRot();
+        float deltaX = Mth.wrapDegrees(xRot - curX);
+        float deltaY = Mth.wrapDegrees(yRot - curY);
+        // 限制转向
+        deltaX = Mth.clamp(deltaX, (float)-maxAnglePerTick, (float)maxAnglePerTick);
+        deltaY = Mth.clamp(deltaY, (float)-maxAnglePerTick, (float)maxAnglePerTick);
+        this.setXRot(curX + deltaX);
+        this.setYRot(curY + deltaY);
     }
 
 }

@@ -14,7 +14,7 @@
   "x_rot_min": -90,
   "y_rot_max": 90,
   "y_rot_min": -90,
-  "max_speed": 0.5,
+  "max_speed": 1,
   "explosion": {
     "explode": true,
     "damage": 30,

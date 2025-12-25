@@ -571,7 +571,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             this.fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
         }
         if (radarUnit != null) {
-            radarUnit.lockedEntity = aimLockEntity;
+            radarUnit.setLockedEntity(aimLockEntity);
         }
         if (vehicle.level().isClientSide()) {
             ClientVehicleAction action = new ClientVehicleAction();

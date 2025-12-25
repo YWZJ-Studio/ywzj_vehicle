@@ -88,6 +88,16 @@ public class CSSA5Renderer extends EntityRenderer<Cssa5> {
             }
         }
 
+        // 雷达与炮管旋转
+        RadarUnit radarUnit = (RadarUnit) (pEntity.getPartUnit(0).get().getSubPartUnits().get(0));
+        float radarRotation = radarUnit.getViewYRot(pPartialTick);
+        float gunBarrelsRotation;
+        if (pEntity.hasPower()) {
+            gunBarrelsRotation = Mth.lerp(pPartialTick, (pEntity.partRotateTick - 1) * 150, pEntity.partRotateTick * 150) % 360;
+        } else {
+            gunBarrelsRotation = pEntity.partRotateTick * 15 % 360;
+        }
+
         // 应用动画
         wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
         wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
@@ -107,14 +117,6 @@ public class CSSA5Renderer extends EntityRenderer<Cssa5> {
         wheel8.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
         turret.rotation.mul(Axis.YN.rotationDegrees(turretYRot));
         cannon.rotation.mul(Axis.XN.rotationDegrees(turretXRot));
-        RadarUnit radarUnit = (RadarUnit) (pEntity.getPartUnit(0).get().getSubPartUnits().get(0));
-        float radarRotation = Mth.lerp(pPartialTick, radarUnit.yRotO, radarUnit.getYRot());
-        float gunBarrelsRotation;
-        if (pEntity.hasPower()) {
-            gunBarrelsRotation = Mth.lerp(pPartialTick, (pEntity.partRotateTick - 1) * 150, pEntity.partRotateTick * 150) % 360;
-        } else {
-            gunBarrelsRotation = pEntity.partRotateTick * 15 % 360;
-        }
         radar.rotation.mul(Axis.YN.rotationDegrees(radarRotation));
         gunBarrels.rotation.mul(Axis.ZN.rotationDegrees(gunBarrelsRotation));
         missileLeft.rotation.mul(Axis.XN.rotationDegrees(missileXRot));

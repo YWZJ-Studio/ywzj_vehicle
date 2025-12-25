@@ -2,6 +2,7 @@ package org.ywzj.vehicle.vehicle.parts;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -12,8 +13,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.custom.part.data.RadarUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.DebugUtil;
-import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
 
 import java.util.Collection;
@@ -25,7 +24,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     private float scanSectorAngle;
     private float maxDistance;
     private final HashMap<Entity, DetectedObject> detectedObjects = new HashMap<>();
-    public Entity lockedEntity;
+    private Entity lockedEntity;
     private boolean yRotAdd = true;
     private boolean xRotAdd = true;
 
@@ -53,13 +52,26 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
     protected void tickRot() {
         if (!vehicle.level().isClientSide()) {
-            yAimRot = yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed);
-            if (yAimRot > yRotMax || yAimRot < yRotMin) {
-                yRotAdd = !yRotAdd;
-            }
-            xAimRot = xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed);
-            if (xAimRot > xRotMax || xAimRot < xRotMin) {
-                xRotAdd = !xRotAdd;
+            if (lockedEntity != null) {
+                Vec3 radarPos = worldPosition(radarOffset);
+                Vec2 rot = vecToRot(lockedEntity.position().subtract(radarPos));
+                if (yRotAdd) {
+                    yAimRot = rot.y + scanSectorAngle / 4;
+                } else {
+                    yAimRot = rot.y - scanSectorAngle / 4;
+                }
+                if (Math.abs(yAimRot - yRot) < yRotSpeed) {
+                    yRotAdd = !yRotAdd;
+                }
+            } else {
+                yAimRot = Mth.wrapDegrees(yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed));
+                if (yAimRot > yRotMax || yAimRot < yRotMin) {
+                    yRotAdd = !yRotAdd;
+                }
+                xAimRot = Mth.wrapDegrees(xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed));
+                if (xAimRot > xRotMax || xAimRot < xRotMin) {
+                    xRotAdd = !xRotAdd;
+                }
             }
         }
         super.tickRot();
@@ -141,6 +153,18 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
     public Collection<DetectedObject> getDetectedEntities() {
         return detectedObjects.values();
+    }
+
+    public Entity getLockedEntity() {
+        return lockedEntity;
+    }
+
+    public void setLockedEntity(Entity lockedEntity) {
+        this.lockedEntity = lockedEntity;
+        if (lockedEntity == null) {
+            yRotAdd = true;
+            xRotAdd = true;
+        }
     }
 
     @OnlyIn(Dist.CLIENT)

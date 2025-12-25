@@ -101,7 +101,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         this.reloadTime = 0;
     }
 
-    protected void setRemainAmmo(int remainAmmo) {
+    public void setRemainAmmo(int remainAmmo) {
         this.remainAmmo = remainAmmo;
     }
 

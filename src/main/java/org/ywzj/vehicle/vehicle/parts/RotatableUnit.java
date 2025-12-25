@@ -144,27 +144,35 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     }
 
     protected void tickRot() {
-        this.xRotO = this.getXRot();
-        this.yRotO = this.getYRot();
+        xRotO = xRot;
+        yRotO = yRot;
         if (vehicle.level().isClientSide()) {
-            this.xAimRot = this.xRemoteAimRot;
-            this.yAimRot = this.yRemoteAimRot;
+            xAimRot = xRemoteAimRot;
+            yAimRot = yRemoteAimRot;
         }
         if (!needPower || vehicle.hasPower()) {
-            float xDiff = Mth.wrapDegrees(this.xAimRot - this.xRot);
-            float yDiff = Mth.wrapDegrees(this.yAimRot - this.yRot);
-            if (Math.abs(xDiff) > getXRotSpeed()) {
-                this.xRot += Math.signum(xDiff) * getXRotSpeed();
+            float xDiff = Mth.wrapDegrees(xAimRot - xRot);
+            float yDiff = Mth.wrapDegrees(yAimRot - yRot);
+            if (Math.abs(xDiff) > xRotSpeed) {
+                xRot += Math.signum(xDiff) * xRotSpeed;
             } else {
-                this.xRot = this.xAimRot;
+                xRot = xAimRot;
             }
-            this.xRot = Math.max(Math.min(this.xRot, getXRotMax()), getXRotMin());
-            if (Math.abs(yDiff) > getYRotSpeed()) {
-                this.yRot += Math.signum(yDiff) * getYRotSpeed();
+            xRot = Mth.wrapDegrees(xRot);
+            xRot = Math.max(Math.min(xRot, xRotMax), xRotMin);
+            if (Math.abs(xRot - xRotO) > 180) {
+                xRotO += Math.signum(xRot - xRotO) * 360;
+            }
+            if (Math.abs(yDiff) > yRotSpeed) {
+                yRot += Math.signum(yDiff) * yRotSpeed;
             } else {
-                this.yRot = this.yAimRot;
+                yRot = yAimRot;
             }
-            this.yRot = Math.max(Math.min(this.yRot, yRotMax), yRotMin);
+            yRot = Mth.wrapDegrees(yRot);
+            yRot = Math.max(Math.min(yRot, yRotMax), yRotMin);
+            if (Math.abs(yRot - yRotO) > 180) {
+                yRotO += Math.signum(yRot - yRotO) * 360;
+            }
         }
     }
 
@@ -263,6 +271,14 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.yRot = nbt.getFloat("yRot");
         this.yRotO = this.yRot;
         this.yAimRot = this.yRot;
+    }
+
+    public float getViewXRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? xRot : Mth.lerp(pPartialTicks, this.xRotO, xRot);
+    }
+
+    public float getViewYRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? yRot : Mth.lerp(pPartialTicks, this.yRotO, yRot);
     }
 
     public float getXRotSpeed() {

@@ -56,6 +56,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data.getGuidance(), weaponUnit);
             missileEntity.damage = data.getDamage();
             missileEntity.maxSpeed = data.getMaxSpeed();
+            missileEntity.maxG = data.getMaxG();
             missileEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(missileEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());

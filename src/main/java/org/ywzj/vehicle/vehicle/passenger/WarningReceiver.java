@@ -30,7 +30,7 @@ public class WarningReceiver {
                         warningReceiver.radarLockWarnSound.stop();
                     }
                     if (message.on) {
-                        warningReceiver.radarLockWarnSound = new VehicleSound(AllSounds.RADAR_LOCK_WARN.get(), 4f, 4f, 1f, true, 50, false, true, toVehicle.getId());
+                        warningReceiver.radarLockWarnSound = new VehicleSound(AllSounds.RADAR_LOCK_WARN.get(), 4f, 1f, 1f, true, 50, false, true, toVehicle.getId());
                         warningReceiver.radarLockWarnSound.play();
                     }
                     warningReceiver.radarLockWarn = message.on;
@@ -39,7 +39,7 @@ public class WarningReceiver {
                         warningReceiver.missileLaunchWarnSound.stop();
                     }
                     if (message.on) {
-                        warningReceiver.missileLaunchWarnSound = new VehicleSound(AllSounds.MISSILE_LAUNCH_WARN.get(), 4f, 4f, 1f, true, 50, false, true, toVehicle.getId());
+                        warningReceiver.missileLaunchWarnSound = new VehicleSound(AllSounds.MISSILE_LAUNCH_WARN.get(), 4f, 1f, 1f, true, 50, false, true, toVehicle.getId());
                         warningReceiver.missileLaunchWarnSound.play();
                     }
                     warningReceiver.missileLaunchWarn = message.on;

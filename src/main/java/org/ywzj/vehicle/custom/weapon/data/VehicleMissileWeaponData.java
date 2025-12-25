@@ -26,6 +26,9 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     @SerializedName("guidance")
     private Guidance guidance = Guidance.SACLOS;
 
+    @SerializedName("max_g")
+    private float maxG = 3 * 9.8f / 20;
+
     public float getXRotMax() {
         return xRotMax;
     }
@@ -80,6 +83,14 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
     public void setGuidance(Guidance guidance) {
         this.guidance = guidance;
+    }
+
+    public float getMaxG() {
+        return maxG;
+    }
+
+    public void setMaxG(float maxG) {
+        this.maxG = maxG;
     }
 
     public enum Guidance {
