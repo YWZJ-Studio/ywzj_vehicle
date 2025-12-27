@@ -109,7 +109,7 @@ dependencies {
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
-    implementation fg.deobf('com.github.mcmodderanchor:tacz:1.20.1-1223-153633-alpha')
+    implementation fg.deobf('com.github.mcmodderanchor:tacz:1.20.1-1.1.7-hotfix-lrl')
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.3.6")) {
