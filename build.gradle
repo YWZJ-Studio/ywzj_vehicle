@@ -101,15 +101,15 @@ dependencies {
         jarJar.ranged(it, "[1.8.0,2.0.0)")
     }
 
-    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.0-forge+mc1.20.1"))) {
-        jarJar.ranged(it, "[2.1.0,)")
+    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.1-forge+mc1.20.1"))) {
+        jarJar.ranged(it, "[2.1.1,)")
     }
     compileOnly("com.maydaymemory:mae:1.1.0") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
-    implementation fg.deobf('xxx:tacz-1.20.1-1.1.6-hotfix-lrl:1')
+    implementation fg.deobf('com.github.mcmodderanchor:tacz:1.20.1-1223-153633-alpha')
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.3.6")) {
@@ -118,7 +118,7 @@ dependencies {
 
     runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
-//    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4.3-1.20.1-alpha')
+    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.8-1.20.1')
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
     runtimeOnly fg.deobf('libs:oculus:mc1.20.1-1.7.0')
     runtimeOnly fg.deobf("curse.maven:create-328085:7178761")

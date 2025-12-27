@@ -24,6 +24,7 @@ import org.ywzj.vehicle.client.resource.InternalAssets;
 
 import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
 import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
+import static org.ywzj.vehicle.client.resource.InternalAssets.REPAIR_TOOL_SLOT_TEXTURE;
 
 public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockModel> {
     @Nullable
@@ -43,7 +44,7 @@ public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockMod
     @Nullable
     @Override
     public ResourceLocation getSlotTexture(ItemStack stack) {
-        return null;
+        return REPAIR_TOOL_SLOT_TEXTURE;
     }
 
     @Override
@@ -66,6 +67,11 @@ public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockMod
                 applyFirstPersonPositioningTransform(poseStack, model);
             }
         }
+    }
+
+    @Override
+    protected void afterRender(PoseStack poseStack, ItemDisplayContext ctx, HandedBedrockModel model, ItemStack stack, MultiBufferSource bufferSource, int light, float partialTicks) {
+        model.applyPose(model.getBindPose());
     }
 
     @Override
@@ -93,6 +99,11 @@ public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockMod
 
     @Override
     public long getPutAwayDuration(ItemStack stack) {
-        return 200;
+        return 215;
+    }
+
+    @Override
+    public boolean blockViewBobbing() {
+        return false;
     }
 }

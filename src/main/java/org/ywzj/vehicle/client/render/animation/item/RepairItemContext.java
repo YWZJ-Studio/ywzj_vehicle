@@ -16,6 +16,7 @@ public class RepairItemContext implements Tickable {
     private final Map<String, BedrockAnimation> animations;
     private AnimationRunner runner;
     private boolean inited = false;
+    private boolean ended = false;
 
     public RepairItemContext(Map<String, BedrockAnimation> animations) {
         this.animations = animations;
@@ -79,5 +80,13 @@ public class RepairItemContext implements Tickable {
     public boolean isUsingItem() {
         Player player = Minecraft.getInstance().player;
         return inited && player != null && player.isUsingItem();
+    }
+
+    public boolean isEnded() {
+        return ended;
+    }
+
+    public void setEnded(boolean ended) {
+        this.ended = ended;
     }
 }

@@ -18,6 +18,7 @@ public class InternalAssets extends SimplePreparableReloadListener<Void> {
     public static final ResourceLocation REPAIR_TOOL_MODEL = YwzjVehicle.modLoc("item/repair_tool");
     public static final ResourceLocation REPAIR_TOOL_TEXTURE = YwzjVehicle.modLoc("textures/bedrock/item/repair_tool.png");
     public static final ResourceLocation REPAIR_TOOL_ANIMATION = YwzjVehicle.modLoc("item/repair_tool.animation");
+    public static final ResourceLocation REPAIR_TOOL_SLOT_TEXTURE = YwzjVehicle.modLoc("textures/item/repair_tool.png");
 
     private HandedBedrockModel repairToolModel;
     private Map<String, BedrockAnimation> repairToolAnimations;
@@ -33,7 +34,11 @@ public class InternalAssets extends SimplePreparableReloadListener<Void> {
     @ParametersAreNonnullByDefault
     protected void apply(Void pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         repairToolModel = ClientAssetsManager.INSTANCE.getModel(REPAIR_TOOL_MODEL)
-                .map(modelPojo -> new HandedBedrockModel(modelPojo, null))
+                .map(modelPojo -> {
+                    var model = new HandedBedrockModel(modelPojo, null);
+                    model.getBone("fire").illuminated = true;
+                    return model;
+                })
                 .orElseThrow(()-> new IllegalStateException("Failed to load repair tool model. The mod may be corrupted."));
 
         repairToolAnimations = ClientAssetsManager.INSTANCE.getAnimation(REPAIR_TOOL_ANIMATION)

@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.item;
 
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -47,6 +46,9 @@ public class RepairToolItem extends Item {
     }
 
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
+        if (pHand == InteractionHand.OFF_HAND) {
+            return InteractionResultHolder.pass(pPlayer.getItemInHand(pHand));
+        }
         return ItemUtils.startUsingInstantly(pLevel, pPlayer, pHand);
     }
 
@@ -57,15 +59,15 @@ public class RepairToolItem extends Item {
             Vec3 viewVector = pLivingEntity.getViewVector(1.0F);
             Vec3 startPos = pLivingEntity.getEyePosition();
             if (pLevel.isClientSide()) {
-                pLevel.addParticle(
-                        ParticleTypes.FLAME,
-                        startPos.x + 0.1 + viewVector.x,
-                        startPos.y - 0.15 + viewVector.y,
-                        startPos.z + viewVector.z,
-                        viewVector.x * 0.2 + pLivingEntity.getDeltaMovement().x + pLivingEntity.getRandom().nextGaussian() * 0.05,
-                        viewVector.y * 0.2,
-                        viewVector.z * 0.2 + pLivingEntity.getDeltaMovement().z + pLivingEntity.getRandom().nextGaussian() * 0.05
-                );
+//                pLevel.addParticle(
+//                        ParticleTypes.FLAME,
+//                        startPos.x + 0.1 + viewVector.x,
+//                        startPos.y - 0.15 + viewVector.y,
+//                        startPos.z + viewVector.z,
+//                        viewVector.x * 0.2 + pLivingEntity.getDeltaMovement().x + pLivingEntity.getRandom().nextGaussian() * 0.05,
+//                        viewVector.y * 0.2,
+//                        viewVector.z * 0.2 + pLivingEntity.getDeltaMovement().z + pLivingEntity.getRandom().nextGaussian() * 0.05
+//                );
             } else {
                 Vec3 endPos = startPos.add(viewVector.scale(3.0));
                 var result = pLevel.clip(new ClipContext(startPos, endPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, pLivingEntity));
@@ -84,5 +86,10 @@ public class RepairToolItem extends Item {
             }
         }
 
+    }
+
+    @Override
+    public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+        return true;
     }
 }

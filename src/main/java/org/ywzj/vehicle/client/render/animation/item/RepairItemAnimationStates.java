@@ -50,7 +50,11 @@ public class RepairItemAnimationStates {
                 .afterTrigger(ctx ->{
                     ctx.playAnimation("turn_to_use");
                 })
-                .duration(0.5f)
+                .duration(0.4f)
+                .build();
+
+        public static final SimpleAnimationState<RepairItemContext> FINAL = new SimpleAnimationState.Builder<RepairItemContext>()
+                .evaluatePose(RepairItemContext::evaluatePose)
                 .build();
 
         public static final SimpleTransition<RepairItemContext> END_USE = new SimpleTransition.Builder<RepairItemContext>()
@@ -60,7 +64,17 @@ public class RepairItemAnimationStates {
                 .afterTrigger(ctx ->{
                     ctx.playAnimation("turn_to_idle");
                 })
-                .duration(0.5f)
+                .duration(0.4f)
+                .build();
+
+        public static final SimpleTransition<RepairItemContext> TO_FINAL = new SimpleTransition.Builder<RepairItemContext>()
+                .from(STATIC_IDLE_STATE, USING_STATE)
+                .target(FINAL)
+                .predicate(RepairItemContext::isEnded)
+                .afterTrigger(ctx ->{
+                    ctx.playAnimation("put_away");
+                })
+                .duration(0.2f)
                 .build();
     }
 }
