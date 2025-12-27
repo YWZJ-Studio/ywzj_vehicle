@@ -69,6 +69,10 @@ public class VectorUtil {
         EntityHitResult entityHit = hitEntity(shooter, start, end);
         Vec3 hitPoint = blockHitPos;
         if (entityHit != null) {
+            Entity entity = entityHit.getEntity();
+            if (entity instanceof SightObstruction || entity instanceof RadarObstruction) {
+                return hitPoint;
+            }
             AABB targetBox = entityHit.getEntity().getBoundingBox();
             Optional<Vec3> intersectOptional = targetBox.clip(start, end);
             if (intersectOptional.isPresent()) {

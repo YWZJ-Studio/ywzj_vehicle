@@ -126,21 +126,23 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             Entity entity = weaponUnit.getAimLockEntity();
             AABB aabb = entity.getBoundingBox();
             Vec3 screenPos = VectorUtil.worldToScreen(aabb.getCenter());
-            PoseStack poseStack = guiGraphics.pose();
-            poseStack.pushPose();
-            {
-                poseStack.translate(screenPos.x, screenPos.y, 0);
-                RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+            if (screenPos.z >= 0) {
+                PoseStack poseStack = guiGraphics.pose();
                 poseStack.pushPose();
                 {
-                    poseStack.translate(12, -12, 0);
-                    poseStack.scale(0.8f, 0.8f, 0.8f);
-                    double distance = aabb.getCenter().distanceTo(LocalVehiclePlayer.instance.getVehicle().position());
-                    guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f", distance) + "格", 0, 0, Color.GREEN, false);
+                    poseStack.translate(screenPos.x, screenPos.y, 0);
+                    RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+                    poseStack.pushPose();
+                    {
+                        poseStack.translate(12, -12, 0);
+                        poseStack.scale(0.8f, 0.8f, 0.8f);
+                        double distance = aabb.getCenter().distanceTo(LocalVehiclePlayer.instance.getVehicle().position());
+                        guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f", distance) + "格", 0, 0, Color.GREEN, false);
+                    }
+                    poseStack.popPose();
                 }
                 poseStack.popPose();
             }
-            poseStack.popPose();
         }
         // 可锁定的目标
         for (RadarUnit.DetectedObject detectedObject : weaponUnit.getRadarDetectedEntities()) {

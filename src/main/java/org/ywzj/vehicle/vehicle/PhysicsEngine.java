@@ -43,6 +43,7 @@ public class PhysicsEngine {
     public float gravityA = 1f / 20;
     public float gravityVMax = 0.7f;
     public Vector3f velocity = new Vector3f(0, 0, 0);
+    public Vector3f velocityO = new Vector3f(0, 0, 0);
     public boolean lockZRot;
     public boolean lockCenterRot;
     public boolean canDestroyBlock;
@@ -188,9 +189,14 @@ public class PhysicsEngine {
     public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vector3f force, Vector3f velocity) {
         var physicsCube = vehicle.getMainCubeOBB();
         try {
+            // 加速度使得重心偏移
+            Vector3f a = new Vector3f(velocity).sub(this.velocityO);
+            gravityCenter.add(a.negate().mul((float) (physicsCube.height * 8)));
+
             // 升力影响
             if (force.y >= gravityA * mass) {
                 velocity.y -= gravityA;
+                vehicle.setOnGround(false);
                 return new Vec3(velocity);
             }
 
@@ -199,8 +205,11 @@ public class PhysicsEngine {
                 centerRot(gravityCenter, axes);
                 rotV = Math.max(0, rotV - rotA / 3);
                 velocity.y -= gravityA;
+                vehicle.setOnGround(false);
                 return new Vec3(velocity);
             }
+
+            vehicle.setOnGround(true);
 
             // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
             List<VehicleBedrockCubeOBB.CubeFace> faces = new ArrayList<>();
@@ -271,7 +280,7 @@ public class PhysicsEngine {
                         rotTick -= 1;
                     }
                     if (AllConfigs.common.selfRighting.get()) {
-                        if (Mth.abs(vehicle.getXRot()) >= 90 || Mth.abs(vehicle.getZRot()) >= 90) {
+                        if (Mth.abs(vehicle.getXRot()) >= 75 || Mth.abs(vehicle.getZRot()) >= 75) {
                             vehicle.setXRot(0);
                             vehicle.setZRot(0);
                         }

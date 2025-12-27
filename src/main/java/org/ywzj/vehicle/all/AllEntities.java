@@ -121,6 +121,8 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Cssa5>> CSSA5 = registerVehicle("cssa5", Cssa5::new);
 
+    public static final RegistryObject<EntityType<Ah64d>> AH64D = registerVehicle("ah64d", Ah64d::new);
+
     public static <T extends AbstractVehicle> RegistryObject<EntityType<T>> registerVehicle(
             String name, EntityType.EntityFactory<T> factory
     ) {

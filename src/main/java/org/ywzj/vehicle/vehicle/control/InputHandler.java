@@ -75,9 +75,11 @@ public class InputHandler {
                         weaponUnit.fireControlLock();
                     }
                 } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
-                    weaponUnit.independentWeapons.stream()
-                            .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleDecoyFlare)
-                            .forEach(AbstractVehicleWeapon::doClientShoot);
+                    if (weaponUnit != null) {
+                        weaponUnit.independentWeapons.stream()
+                                .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleDecoyFlare)
+                                .forEach(AbstractVehicleWeapon::doClientShoot);
+                    }
                 } else if (DEBUG_GUI.matches(event.getKey(), event.getScanCode())) {
                     debugGui = !debugGui;
                 }

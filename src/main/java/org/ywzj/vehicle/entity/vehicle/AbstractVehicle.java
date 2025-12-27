@@ -407,6 +407,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
         // 重力与旋转
         velocity = physicsEngine.rotAndFallByGravity(touchPoints, new Vector3f(0, 0, 0), axes, force.toVector3f(), velocity.toVector3f());
+        physicsEngine.velocityO = physicsEngine.velocity;
 
         setDeltaMovement(velocity);
 

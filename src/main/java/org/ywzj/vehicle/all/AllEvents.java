@@ -10,6 +10,7 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
@@ -30,6 +31,7 @@ import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.Iterator;
 
@@ -51,6 +53,14 @@ public class AllEvents {
                 if (player.isPassenger() && player.getVehicle() instanceof AbstractVehicle) {
                     player.stopRiding();
                 }
+            }
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        @SubscribeEvent
+        public static void onInteractionKeyMappingTriggered(InputEvent.InteractionKeyMappingTriggered event) {
+            if (LocalVehiclePlayer.instance.onVehicle()) {
+                event.setCanceled(true);
             }
         }
 
