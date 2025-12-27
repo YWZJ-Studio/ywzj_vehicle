@@ -7,6 +7,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -65,7 +66,7 @@ public class ThermalHandler implements ResourceManagerReloadListener {
         if (!isActive) return;
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick());
+            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick(), event.getFrustum(), event.getCamera());
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             applyPostProcess(event.getPartialTick());
         }
@@ -93,9 +94,9 @@ public class ThermalHandler implements ResourceManagerReloadListener {
         return true;
     }
 
-    private static void prepareAndRenderEntities(PoseStack poseStack, float partialTick) {
+    private static void prepareAndRenderEntities(PoseStack poseStack, float partialTick, Frustum frustum, Camera camera) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
+        if (mc.level == null || mc.player == null) {
             return;
         }
 
@@ -124,7 +125,6 @@ public class ThermalHandler implements ResourceManagerReloadListener {
         }
         thermalBuffer.bindWrite(true);
 
-        Camera camera = mc.gameRenderer.getMainCamera();
         Vec3 cameraPos = camera.getPosition();
 
         poseStack.pushPose();
@@ -133,7 +133,7 @@ public class ThermalHandler implements ResourceManagerReloadListener {
         RenderSystem.polygonOffset(-1.0F, -1.0F);
         mc.getEntityRenderDispatcher().setRenderShadow(false);
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (isHotEntity(entity)) {
+            if (isHotEntity(entity) && mc.getEntityRenderDispatcher().shouldRender(entity, frustum, cameraPos.x(), cameraPos.y(), cameraPos.z()) || entity.hasIndirectPassenger(mc.player)) {
                 double lerpX = Mth.lerp(partialTick, entity.xo, entity.getX());
                 double lerpY = Mth.lerp(partialTick, entity.yo, entity.getY());
                 double lerpZ = Mth.lerp(partialTick, entity.zo, entity.getZ());

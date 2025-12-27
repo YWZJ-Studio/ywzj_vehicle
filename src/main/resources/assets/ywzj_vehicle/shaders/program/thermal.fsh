@@ -92,7 +92,7 @@ void main() {
             objectColor = mix(colMid, colHot, (heat - 0.5) * 2.0);
         }
 
-        finalColor = objectColor;
+        finalColor = mix(finalColor, objectColor, thermalColor.a);
     }
 
     fragColor = vec4(finalColor, 1.0);

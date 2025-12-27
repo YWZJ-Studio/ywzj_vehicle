@@ -121,6 +121,7 @@ dependencies {
 //    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.4.3-1.20.1-alpha')
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
     runtimeOnly fg.deobf('libs:oculus:mc1.20.1-1.7.0')
+    runtimeOnly fg.deobf("curse.maven:create-328085:7178761")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

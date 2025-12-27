@@ -15,6 +15,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -25,7 +26,8 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.List;
 
-import static org.ywzj.vehicle.util.RenderHelper.*;
+import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
+import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleCrossHairOverlay implements IGuiOverlay {
@@ -65,9 +67,9 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     int aimCircleColor = (color & 0x00FFFFFF) | ((int) (0.4f * 255) << 24);
                     weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                         if (vehicleWeapon.getWeaponUnit().fireControlLockType == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
-                            drawCircle(guiGraphics, 0 ,0, 64, aimCircleColor);
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.015f, 0, 0);
                         } else {
-                            drawCircle(guiGraphics, 0 ,0, 8, aimCircleColor);
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
                         }
                     });
                     guiGraphics.pose().popPose();
@@ -81,7 +83,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                         WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
                         if (crosshairStyle != null) {
                             switch (crosshairStyle) {
-                                case CIRCLE -> drawCircle(guiGraphics, 0 ,0, 3, color);
+                                case CIRCLE -> GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 3, color, 0.05f, 0, 0);
                                 case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
                                 case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
                             }

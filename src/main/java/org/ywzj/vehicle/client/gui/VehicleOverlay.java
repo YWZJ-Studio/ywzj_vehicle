@@ -147,7 +147,7 @@ public class VehicleOverlay implements IGuiOverlay {
                     String.format("%.1f%%", fuelPercent),
                     118, -40, fuelPercent < 5 ? 0xFFFF0000 : 0xFFFFFFFF);
             guiGraphics.drawString(Minecraft.getInstance().font,
-                    String.format("POWER:", powerPercent),
+                    "POWER:",
                     90, -30, 0xFFFFFFFF);
             guiGraphics.drawString(Minecraft.getInstance().font,
                     String.format("%.1f%%", powerPercent),
