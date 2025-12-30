@@ -15,8 +15,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
-import org.ywzj.vehicle.api.entity.RadarObstruction;
 import org.ywzj.vehicle.api.entity.SightObstruction;
+import org.ywzj.vehicle.api.entity.TargetObstruction;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public class VectorUtil {
         Vec3 hitPoint = blockHitPos;
         if (entityHit != null) {
             Entity entity = entityHit.getEntity();
-            if (entity instanceof SightObstruction || entity instanceof RadarObstruction) {
+            if (entity instanceof SightObstruction || entity instanceof TargetObstruction) {
                 return hitPoint;
             }
             AABB targetBox = entityHit.getEntity().getBoundingBox();
@@ -90,7 +90,7 @@ public class VectorUtil {
         Vec3 direction = end.subtract(start);
         AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
         return ProjectileUtil.getEntityHitResult(shooter.level(), shooter, start, end, aabb, entity ->
-                (entity.isPickable() || entity instanceof SightObstruction || entity instanceof RadarObstruction)
+                (entity.isPickable() || entity instanceof SightObstruction || entity instanceof TargetObstruction)
                         && !entity.isSpectator()
                         && entity != shooter
                         && entity != shooter.getVehicle()

@@ -12,10 +12,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec2;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
@@ -24,7 +21,10 @@ import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.api.entity.SightObstruction;
+import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
@@ -82,19 +82,7 @@ public class MissileEntity extends AmmoEntity {
 
     private void tickGuidance() {
         if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
-            Entity lastTargetEntity = targetEntity;
-            targetEntity = weaponUnit.getAimLockEntity();
-            // 通知导弹雷达锁定与脱锁给目标载具乘客
-            if (lastTargetEntity != targetEntity) {
-                if (lastTargetEntity != null) {
-                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), lastTargetEntity.getId(), WarnType.MISSILE_LAUNCH, false);
-                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-                }
-                if (targetEntity != null) {
-                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, true);
-                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-                }
-            }
+            tickTrack();
             // 截射
             if (targetEntity != null) {
                 proportionalGuide(targetEntity);
@@ -134,6 +122,47 @@ public class MissileEntity extends AmmoEntity {
         this.setPos(dx, dy, dz);
         Vec3 v = this.getLookAngle().normalize();
         this.setDeltaMovement(v.scale(maxSpeed));
+    }
+
+    private void tickTrack() {
+        Entity lastTargetEntity = targetEntity;
+        if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
+            // 雷达下持续从载机获取目标
+            targetEntity = weaponUnit.getAimLockEntity();
+        } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+            // 红外下若丢失目标，则从载机获取目标
+            if (targetEntity == null) {
+                targetEntity = weaponUnit.getAimLockEntity();
+                if (targetEntity == null) {
+                    return;
+                }
+            }
+            Vec3 checkStart = this.position();
+            Vec3 checkEnd = targetEntity.position();
+            EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, checkStart, checkEnd);
+            if (entityHit != null) {
+                Entity entity = entityHit.getEntity();
+                // 锁定实体是否被视觉遮挡
+                if (entity instanceof SightObstruction) {
+                    targetEntity = null;
+                }
+                // 锁定实体是否被干扰
+                if (entity instanceof TargetObstruction) {
+                    targetEntity = entity;
+                }
+            }
+        }
+        // 通知导弹锁定与脱锁给目标载具乘客
+        if (lastTargetEntity != targetEntity) {
+            if (lastTargetEntity != null) {
+                ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), lastTargetEntity.getId(), WarnType.MISSILE_LAUNCH, false);
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
+            }
+            if (targetEntity != null) {
+                ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, true);
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
+            }
+        }
     }
 
     private void tickHit() {
@@ -203,14 +232,14 @@ public class MissileEntity extends AmmoEntity {
     @OnlyIn(Dist.CLIENT)
     public void localAddMissile() {
         if (operatorId == LocalVehiclePlayer.instance.getPlayer().getId()) {
-            LocalVehiclePlayer.instance.controllingMissileIds.add(this.getId());
+            LocalVehiclePlayer.instance.controllingMissiles.add(this);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     public void localRemoveMissile() {
         if (operatorId == LocalVehiclePlayer.instance.getPlayer().getId()) {
-            LocalVehiclePlayer.instance.controllingMissileIds.remove(this.getId());
+            LocalVehiclePlayer.instance.controllingMissiles.remove(this);
         }
     }
 

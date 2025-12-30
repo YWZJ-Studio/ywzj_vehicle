@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -10,12 +11,17 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
+
+import java.util.List;
 
 public abstract class WheeledVehicle extends AbstractVehicle {
 
@@ -66,6 +72,13 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     public void onLeaveVehicle(LivingEntity entity) {
         super.onLeaveVehicle(entity);
         this.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE);
+    }
+
+    @Override
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
+        if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
+            weaponUnit.shoot(weaponIndex, aimContexts, operator);
+        }
     }
 
     @Override
@@ -137,6 +150,7 @@ public abstract class WheeledVehicle extends AbstractVehicle {
     @Override
     protected void tickParticle() {
         super.tickParticle();
+        // 履带印
         trackLength += getDeltaMovement().length();
         if (trackLength >= 0.5) {
             trackLength = 0;
@@ -151,6 +165,25 @@ public abstract class WheeledVehicle extends AbstractVehicle {
                 this.level().addParticle(AllParticleTypes.TRACK.get(), true,
                         trackRightPos.x, trackRightPos.y, trackRightPos.z,  0.1f, this.getYRot(), 0
                 );
+            }
+        }
+        // 引擎烟
+        if (hasPower()) {
+            double velocity = Math.abs(entityData.get(FORWARD_SPEED));
+            if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
+                energyInfo.engineParticleOffsets.forEach(offset -> {
+                    Vec3 engineSmokePos = this.position().add(offset);
+                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
+                    engineSmokePos = relativeRotPos(engineSmokePos, false);
+                    for (int count = 0; count < velocity / 16 + 1; count++) {
+                        level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                                engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
+                                engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                    }
+                });
+                engineParticleTick = 0;
+            } else {
+                engineParticleTick += 1;
             }
         }
     }

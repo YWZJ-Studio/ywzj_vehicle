@@ -13,11 +13,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.api.entity.RadarObstruction;
+import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.util.BlockRayTrace;
 
-public class DecoyFlareEntity extends AmmoEntity implements RadarObstruction {
+public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
 
     public static final int LIFE = 200;
     private VehicleSound tailSound;

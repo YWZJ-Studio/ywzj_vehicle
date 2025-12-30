@@ -10,6 +10,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.client.render.util.Color;
+import org.ywzj.vehicle.client.render.util.GuiHelper;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -131,15 +133,22 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                 poseStack.pushPose();
                 {
                     poseStack.translate(screenPos.x, screenPos.y, 0);
-                    RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
-                    poseStack.pushPose();
-                    {
-                        poseStack.translate(12, -12, 0);
-                        poseStack.scale(0.8f, 0.8f, 0.8f);
-                        double distance = aabb.getCenter().distanceTo(LocalVehiclePlayer.instance.getVehicle().position());
-                        guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f", distance) + "格", 0, 0, Color.GREEN, false);
+                    WeaponUnitData.FireControlSensorType sensorType = weaponUnit.getFireControlSensorType();
+                    if (sensorType == WeaponUnitData.FireControlSensorType.IR) {
+                        GuiHelper.drawCircle(poseStack, 0, 0, 15, Color.RED, 0.05f, 0, 0);
+                    } else {
+                        RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+                        if (sensorType == WeaponUnitData.FireControlSensorType.RF) {
+                            poseStack.pushPose();
+                            {
+                                poseStack.translate(12, -12, 0);
+                                poseStack.scale(0.8f, 0.8f, 0.8f);
+                                double distance = aabb.getCenter().distanceTo(LocalVehiclePlayer.instance.getVehicle().position());
+                                guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f", distance) + "格", 0, 0, Color.GREEN, false);
+                            }
+                            poseStack.popPose();
+                        }
                     }
-                    poseStack.popPose();
                 }
                 poseStack.popPose();
             }

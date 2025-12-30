@@ -38,6 +38,10 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.vehicle_hit_big"
   },
+  "ir_track_alarm": {
+    "sounds": ["ywzj_vehicle:misc/ir_track_alarm"],
+    "subtitle": "ywzj_vehicle.sounds.ir_track_alarm"
+  },
   "radar_lock_warn": {
     "sounds": ["ywzj_vehicle:misc/radar_lock_warn"],
     "subtitle": "ywzj_vehicle.sounds.radar_lock_warn"

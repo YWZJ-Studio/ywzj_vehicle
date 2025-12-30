@@ -117,6 +117,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public PhysicsEngine physicsEngine;
     protected boolean dataInitialized;
     private long destroyedTime;
+    protected int engineParticleTick;
     public long lastRenderTime;
 
     private ResourceLocation customId;
@@ -411,12 +412,18 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
         setDeltaMovement(velocity);
 
-//        if (this instanceof Cssa5) {
+//        if (this instanceof Ztz99a) {
 //            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).worldCurrentBoltPosition());
 //            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).aimContext().position);
 //
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(0).worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(0).aimContext().position);
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(2).worldCurrentBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(2).aimContext().position);
+
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).weapons.get(2).getWeaponUnit().worldCurrentBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).weapons.get(2).getWeaponUnit().aimContext().position);
+
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getCurrentWeapon().get().getWeaponUnit().worldCurrentBoltPosition());
+//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getCurrentWeapon().get().getWeaponUnit().aimContext().position);
 
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).ammoSpawnPosition());
 //            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOwnerViewPosition());
@@ -458,6 +465,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                     vehicleExplosion.explode(Collections.singletonList(this));
                     entityData.set(DESTROYED, true);
                     this.setHealth(this.getMaxHealth());
+                    destroyedTime = System.currentTimeMillis();
                 }
             }
             this.markHurt();
@@ -708,7 +716,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             } else if (message.lockEntity) {
                 PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
                 if (partUnit instanceof WeaponUnit weaponUnit) {
-                    weaponUnit.setAimLockEntity(player.level().getEntity(message.lockedEntityId), message.sensorType);
+                    weaponUnit.setAimLockEntity(player.level().getEntity(message.lockedEntityId));
                 }
             }
         }

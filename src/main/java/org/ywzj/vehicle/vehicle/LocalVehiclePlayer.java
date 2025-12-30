@@ -13,6 +13,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
+import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.control.InputHandler;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -45,7 +46,7 @@ public class LocalVehiclePlayer {
     public float scopeAimRotY;
     public double aimLocationDistance;
     public boolean outOfRangeFinding;
-    public HashSet<Integer> controllingMissileIds = new HashSet<>();
+    public HashSet<MissileEntity> controllingMissiles = new HashSet<>();
     private boolean mouseTurnedAfterScope;
     public ViewType viewType = ViewType.THIRD_PERSON;
     private final ReentrantLock lock = new ReentrantLock();

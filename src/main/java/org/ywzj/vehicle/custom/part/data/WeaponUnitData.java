@@ -25,6 +25,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private OpticalSightType opticalSightType;
     private float zoomMin;
     private float zoomMax;
+    private FireControlSensorType fireControlSensorType;
     private FireControlLockType fireControlLockType;
     private CrosshairStyle crosshairStyle;
     private List<WeaponInfo> weapons;
@@ -44,6 +45,7 @@ public class WeaponUnitData extends RotatableUnitData {
         this.opticalSightOffset = pojo.opticalSightOffset;
         this.operatorViewOffset = pojo.operatorViewOffset;
         this.operatorOnWeaponUnit = pojo.operatorOnWeaponUnit;
+        this.fireControlSensorType = pojo.fireControlSensorType;
         this.fireControlLockType = pojo.fireControlLockType;
         this.opticalSightType = pojo.opticalSightType;
         this.zoomMin = pojo.zoomMin;
@@ -74,6 +76,10 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public boolean isOperatorOnWeaponUnit() {
         return operatorOnWeaponUnit;
+    }
+
+    public FireControlSensorType getFireControlSensorType() {
+        return fireControlSensorType;
     }
 
     public FireControlLockType getFireControlLockType() {
@@ -148,11 +154,20 @@ public class WeaponUnitData extends RotatableUnitData {
 
     private void buildBolts(BedrockBone bone) {
         for (BedrockCube cube : bone.cubes) {
-            // 以单个Cube描述一根炮管
-            Vec3 boltOffset = new Vec3(bone.x / 16 + cube.x() + cube.width() / 2 - pivotOffset.x,
-                    bone.y / 16 + cube.y() + cube.height() / 2 - pivotOffset.y,
-                    bone.z / 16 - pivotOffset.z);
-            float barrelLength = cube.z() + cube.depth();
+            // 使用单个Cube来描述一根炮管：
+            // 以Cube的Z轴正方向作为炮管轴线，起始端对应炮闩位置，终止端对应炮口位置，Cube在该方向上的整体长度即为炮管长度。
+            double x = bone.x / 16 + cube.x() + cube.width() / 2 - pivotOffset.x;
+            double y = bone.y / 16 + cube.y() + cube.height() / 2 - pivotOffset.y;
+            double z = bone.z / 16 + cube.z() - pivotOffset.z;
+            BedrockBone parent = bone.parent;
+            while (parent != null) {
+                x += parent.x / 16;
+                y += parent.y / 16;
+                z += parent.z / 16;
+                parent = parent.parent;
+            }
+            Vec3 boltOffset = new Vec3(x, y, z);
+            float barrelLength = cube.depth();
             Vector3f selfRot = new Vector3f();
             bone.rotation.getEulerAnglesYXZ(selfRot);
             this.bolts.add(new Bolt(boltOffset, barrelLength, (float) Math.toDegrees(selfRot.x), (float) Math.toDegrees(selfRot.y)));
@@ -188,11 +203,17 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public enum FireControlSensorType {
         // 未启用
+        @SerializedName("none")
         NONE,
         // 红外
+        @SerializedName("ir")
         IR,
         // 雷达
-        RF
+        @SerializedName("rf")
+        RF,
+        // 光电
+        @SerializedName("eo")
+        EO
     }
 
     public enum FireControlLockType {

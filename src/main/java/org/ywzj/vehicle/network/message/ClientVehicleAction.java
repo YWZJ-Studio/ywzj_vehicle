@@ -4,7 +4,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
-import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
@@ -20,7 +19,6 @@ public class ClientVehicleAction {
     public boolean toggleEngine;
     public boolean lockEntity;
     public int lockedEntityId;
-    public WeaponUnitData.FireControlSensorType sensorType;
     public int partUnitIndex;
     public boolean shoot;
     public int weaponIndex;
@@ -44,7 +42,6 @@ public class ClientVehicleAction {
         control.lockEntity = buf.readBoolean();
         if (control.lockEntity) {
             control.lockedEntityId = buf.readInt();
-            control.sensorType = buf.readEnum(WeaponUnitData.FireControlSensorType.class);
             return control;
         }
         control.partUnitIndex = buf.readInt();
@@ -78,7 +75,6 @@ public class ClientVehicleAction {
         buf.writeBoolean(lockEntity);
         if (lockEntity) {
             buf.writeInt(lockedEntityId);
-            buf.writeEnum(sensorType);
             return;
         }
         buf.writeInt(partUnitIndex);

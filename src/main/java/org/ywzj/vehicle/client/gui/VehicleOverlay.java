@@ -162,7 +162,7 @@ public class VehicleOverlay implements IGuiOverlay {
         guiGraphics.pose().pushPose();
         {
             guiGraphics.pose().translate(centerX, centerY, 0);
-            if (!LocalVehiclePlayer.instance.controllingMissileIds.isEmpty()) {
+            if (LocalVehiclePlayer.instance.controllingMissiles.stream().anyMatch(Entity::isAlive)) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, "制导中", 0, -45, Color.GREEN);
                 tips.clear();
             }

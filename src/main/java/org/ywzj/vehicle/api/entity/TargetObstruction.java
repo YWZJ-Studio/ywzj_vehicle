@@ -1,3 +1,3 @@
 package org.ywzj.vehicle.api.entity;
 
-public interface RadarObstruction {}
+public interface TargetObstruction {}

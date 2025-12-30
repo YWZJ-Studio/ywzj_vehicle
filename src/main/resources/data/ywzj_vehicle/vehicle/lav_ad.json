@@ -18,16 +18,16 @@
   "energy_info": {
     "energy_capacity": 1,
     "energy_consumption_per_tick": 0.00001,
-    "engine_particle_offsets": [[-1.563, 1.875, 1.375]]
+    "engine_particle_offsets": [[-1.672, 1.778, -1.245]]
   },
-  "structure_model": "ywzj_vehicle:vehicle/cssa5",
+  "structure_model": "ywzj_vehicle:vehicle/lav_ad",
   "parts": [
     {
       "id": "turret",
       "name": "turret",
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "turret",
-      "seat_offset": [-0.5, 2.5, 0],
+      "seat_offset": [-0.5, 2.5, -1],
       "crosshair_style": "circle",
       "rot_info": {
         "x_rot_speed": 3,
@@ -35,15 +35,14 @@
         "x_rot_max": 4,
         "x_rot_min": -85
       },
-      "optical_sight_offset": [0.719, 0.883, 0.14],
+      "optical_sight_offset": [-0.565, 0.678, 0.705],
       "operator_view_offset": [0, 1.5, 0],
       "optical_sight_type": "crt",
       "zoom_max": 12,
-      "sub_part_unit_ids": ["radar"],
       "weapons": [
-        "ywzj_vehicle:pgz_625",
+        "ywzj_vehicle:gau_12u",
         {
-          "id": "ywzj_vehicle:fb_10",
+          "id": "ywzj_vehicle:fim_92",
           "part_unit_id": "turret_missile"
         },
         {
@@ -57,7 +56,7 @@
       "name": "turret_missile",
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "turret_missile",
-      "fire_control_sensor_type": "rf",
+      "fire_control_sensor_type": "ir",
       "fire_control_lock_type": "aim_frustum",
       "crosshair_style": "none",
       "is_seat": false,
@@ -80,21 +79,6 @@
         "x_rot_speed": 0,
         "y_rot_speed": 0
       }
-    },
-    {
-      "id": "radar",
-      "name": "radar",
-      "type": "ywzj_vehicle:radar",
-      "structure_bone": "radar",
-      "is_seat": false,
-      "base": "turret",
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 15,
-        "x_rot": -45
-      },
-      "scan_sector_angle": 80,
-      "max_distance": 256
     }
   ]
 }

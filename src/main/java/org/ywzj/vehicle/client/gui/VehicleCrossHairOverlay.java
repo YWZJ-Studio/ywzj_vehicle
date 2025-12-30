@@ -64,14 +64,19 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    int aimCircleColor = (color & 0x00FFFFFF) | ((int) (0.4f * 255) << 24);
-                    weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                        if (vehicleWeapon.getWeaponUnit().fireControlLockType == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
-                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.015f, 0, 0);
-                        } else {
-                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
+                    float alpha = 0.4f;
+                    // 导引头冷却提示
+                    if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                        if (weaponUnit.isIrSensorOn()) {
+                            alpha += (float) Math.sin((double) weaponUnit.getIrCoolingTick() / 5 * Math.PI) * 0.2f;
                         }
-                    });
+                    }
+                    int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
+                    if (weaponUnit.getFireControlLockType() == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
+                        GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.01f, 0, 0);
+                    } else {
+                        GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
+                    }
                     guiGraphics.pose().popPose();
                 }
                 if (showHit) {

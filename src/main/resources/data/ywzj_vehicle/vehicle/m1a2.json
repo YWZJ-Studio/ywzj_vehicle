@@ -17,7 +17,8 @@
   },
   "energy_info": {
     "energy_capacity": 1,
-    "energy_consumption_per_tick": 0.00001
+    "energy_consumption_per_tick": 0.00001,
+    "engine_particle_offsets": [[0.2, 1.7, -4.2]]
   },
   "physics_info": {
     "can_destroy_block": true
@@ -75,8 +76,7 @@
       "base": "turret",
       "rot_info": {
         "x_rot_speed": 0,
-        "y_rot_speed": 0,
-        "x_rot": -30
+        "y_rot_speed": 0
       }
     },
     {

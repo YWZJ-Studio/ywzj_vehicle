@@ -17,7 +17,8 @@
   },
   "energy_info": {
     "energy_capacity": 1,
-    "energy_consumption_per_tick": 0.00001
+    "energy_consumption_per_tick": 0.00001,
+    "engine_particle_offsets": [[-0.5, 0.5, -3]]
   },
   "structure_model": "ywzj_vehicle:vehicle/hiace",
   "parts": [

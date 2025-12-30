@@ -27,6 +27,9 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("operator_on_weapon_unit")
     public boolean operatorOnWeaponUnit = true;
 
+    @SerializedName("fire_control_sensor_type")
+    public WeaponUnitData.FireControlSensorType fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
+
     @SerializedName("fire_control_lock_type")
     public WeaponUnitData.FireControlLockType fireControlLockType = WeaponUnitData.FireControlLockType.NONE;
 

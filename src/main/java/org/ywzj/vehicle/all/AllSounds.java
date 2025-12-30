@@ -19,6 +19,7 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_SMALL = registerSoundEvent("vehicle_hit_small", new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_hit_small"));
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_MED = registerSoundEvent("vehicle_hit_med", new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_hit_med"));
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_BIG = registerSoundEvent("vehicle_hit_big", new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_hit_big"));
+    public static final RegistryObject<SoundEvent> IR_TRACK_ALARM = registerSoundEvent("ir_track_alarm", new ResourceLocation(YwzjVehicle.MOD_ID, "ir_track_alarm"));
     public static final RegistryObject<SoundEvent> RADAR_LOCK_WARN = registerSoundEvent("radar_lock_warn", new ResourceLocation(YwzjVehicle.MOD_ID, "radar_lock_warn"));
     public static final RegistryObject<SoundEvent> MISSILE_LAUNCH_WARN = registerSoundEvent("missile_launch_warn", new ResourceLocation(YwzjVehicle.MOD_ID, "missile_launch_warn"));
     public static final RegistryObject<SoundEvent> GUN_7_62MM_SHOT = registerSoundEvent("gun_7.62mm_shot", new ResourceLocation(YwzjVehicle.MOD_ID, "gun_7.62mm_shot"));
