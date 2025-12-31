@@ -2,6 +2,11 @@ package org.ywzj.vehicle.client.render.entity.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.maydaymemory.mae.basic.ArrayPoseBuilder;
+import com.maydaymemory.mae.basic.Pose;
+import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
+import com.maydaymemory.mae.blend.EulerAdditiveBlender;
+import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -12,12 +17,14 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.M1a2;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class M1a2Renderer extends VehicleRender<M1a2> {
+    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
 
     public M1a2Renderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -37,48 +44,39 @@ public class M1a2Renderer extends VehicleRender<M1a2> {
             BedrockModel model = display.getModel();
             VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
-//            TrackAnimationInstance instance = pEntity.getTrackAnimationInstance();
-//            if (instance == null) {
-//                var animations = display.getAnimations();
-//                instance = new TrackAnimationInstance(animations.get("tread_l_move"), animations.get("tread_r_move"));
-//                pEntity.setTrackAnimationInstance(instance);
-//            }
-//
-//            float deltaTime = (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000f;
-//
-//            float vf = pEntity.getEntityData().get(Ztz99a.FORWARD_SPEED); // 线速度
-//            float omega = pEntity.getEntityData().get(Ztz99a.TURN_SPEED); // 角速度
-//            float trackWidth = 3.0f / 20f;
-//
-//            float leftTrackSpeed = vf + omega * trackWidth / 2;
-//            float rightTrackSpeed = vf - omega * trackWidth / 2;
-//
-//            leftTrackSpeed *= 20f; // 转换为米/秒
-//            rightTrackSpeed *= 20f; // 转换为米/秒
-//
-//            instance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime, 0.25f);
-//
-//            Pose bindPose = model.getBindPose();
-//            Pose blended = BLENDER.blend(bindPose, instance.evaluate());
-//            model.applyPose(blended);
-//
-//            for (int i = 0; i < 13; i++) {
-//                String boneName = "hull_big_" + i;
-//                BedrockBone bone = model.getBoneMap().get(boneName);
-//                if (bone != null) {
-//                    float angle = i < 7 ? instance.leftWheelDegrees(0.375f) : instance.rightWheelDegrees(0.375f);
-//                    bone.rotation.mul(Axis.XP.rotationDegrees(angle));
-//                }
-//            }
-//
-//            for (int i = 0; i < 5; i++) {
-//                String boneName = "hull_small_" + i;
-//                BedrockBone bone = model.getBoneMap().get(boneName);
-//                if (bone != null) {
-//                    float angle = i < 3 ? instance.leftWheelDegrees(0.28f) : instance.rightWheelDegrees(0.28f);
-//                    bone.rotation.mul(Axis.XP.rotationDegrees(angle));
-//                }
-//            }
+            TrackAnimationInstance instance = pEntity.getTrackAnimationInstance();
+            if (instance == null) {
+                var animations = display.getAnimations();
+                instance = new TrackAnimationInstance(animations.get("tread_l_move"), animations.get("tread_r_move"));
+                pEntity.setTrackAnimationInstance(instance);
+            }
+
+            float deltaTime = (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000f;
+
+            float vf = pEntity.getEntityData().get(M1a2.FORWARD_SPEED); // 线速度
+            float omega = pEntity.getEntityData().get(M1a2.TURN_SPEED); // 角速度
+            float trackWidth = 3.0f / 20f;
+
+            float leftTrackSpeed = vf + omega * trackWidth / 2;
+            float rightTrackSpeed = vf - omega * trackWidth / 2;
+
+            leftTrackSpeed *= 20f; // 转换为米/秒
+            rightTrackSpeed *= 20f; // 转换为米/秒
+
+            instance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime, 0.25f);
+
+            Pose bindPose = model.getBindPose();
+            Pose blended = BLENDER.blend(bindPose, instance.evaluate());
+            model.applyPose(blended);
+
+            for (int i = 0; i < 19; i++) {
+                String boneName = "wheel" + i;
+                BedrockBone bone = model.getBoneMap().get(boneName);
+                if (bone != null) {
+                    float angle = i < 10 ? instance.leftWheelDegrees(0.3125f) : instance.rightWheelDegrees(0.3125f);
+                    bone.rotation.mul(Axis.XP.rotationDegrees(angle));
+                }
+            }
 
             BedrockBone turret = model.getBoneMap().get("turret");
             BedrockBone cannon = model.getBoneMap().get("cannon");
