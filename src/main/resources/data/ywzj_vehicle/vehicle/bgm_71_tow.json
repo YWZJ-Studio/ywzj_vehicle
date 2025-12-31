@@ -1,0 +1,41 @@
+{
+  "type": "ywzj_vehicle:generic",
+  "attributes": {},
+  "max_health": 10,
+  "view_info": {
+    "third_person_center_offset": [0, 2, 0],
+    "third_person_distance": 2,
+    "sound_distance": 3
+  },
+  "energy_info": {
+    "energy_capacity": 1,
+    "energy_consumption_per_tick": 0.00001
+  },
+  "structure_model": "ywzj_vehicle:vehicle/bgm_71_tow",
+  "parts": [
+    {
+      "id": "tow",
+      "name": "tow",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "tow",
+      "seat_offset": [0, 2, -1],
+      "fire_control_sensor_type": "ir",
+      "fire_control_lock_type": "aim_frustum",
+      "crosshair_style": "circle",
+      "rot_info": {
+        "x_rot_speed": 3,
+        "y_rot_speed": 3,
+        "x_rot_max": 4,
+        "x_rot_min": -30
+      },
+      "optical_sight_offset": [0, 1, 1],
+      "operator_view_offset": [0, 1.5, 0],
+      "operator_on_weapon_unit": false,
+      "optical_sight_type": "crt",
+      "zoom_max": 4,
+      "weapons": [
+        "ywzj_vehicle:tow"
+      ]
+    }
+  ]
+}

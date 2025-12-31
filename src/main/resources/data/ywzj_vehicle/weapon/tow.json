@@ -1,0 +1,29 @@
+{
+  "type": "ywzj_vehicle:missile",
+  "name": "missile",
+  "damage": 999,
+  "headshot_multiplier": 1.5,
+  "recoil": 0.6,
+  "shoot_interval": 1000,
+  "max_capacity": 1,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_missile"
+  },
+  "x_rot_max": 90,
+  "x_rot_min": -90,
+  "y_rot_max": 180,
+  "y_rot_min": -180,
+  "max_speed": 3,
+  "explosion": {
+    "explode": true,
+    "damage": 30,
+    "radius": 8,
+    "destroy_block": true
+  },
+  "guidance": "HOMING",
+  "sounds": {
+    "fire": "ywzj_vehicle:missile_launch",
+    "reload": "ywzj_vehicle:common_reload"
+  }
+}
