@@ -254,7 +254,11 @@ public class LocalVehiclePlayer {
     }
 
     public boolean onVehicle() {
-        return getPlayer().getVehicle() instanceof AbstractVehicle;
+        Player player = getPlayer();
+        if (player == null) {
+            return false;
+        }
+        return player.getVehicle() instanceof AbstractVehicle;
     }
 
     public AbstractVehicle getVehicle() {
