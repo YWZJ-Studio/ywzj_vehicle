@@ -123,7 +123,7 @@ public class CSSA5Renderer extends EntityRenderer<Cssa5> {
         missileRight.rotation.mul(Axis.XN.rotationDegrees(missileXRot));
 
         pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
         Quaternionf reset = new Quaternionf(0, 0, 0, 1);
         wheel1.rotation.set(reset);

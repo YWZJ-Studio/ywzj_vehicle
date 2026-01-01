@@ -281,6 +281,23 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     setAimLockEntity(entity);
                 }
             }
+            // 若为红外锁定，目标是否仍在锁定框内
+            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                double x = VehicleCrossHairOverlay.getScreenAimX();
+                double y = VehicleCrossHairOverlay.getScreenAimY();
+                Vec3 screenPos = VectorUtil.worldToScreen(aimLockEntity.getBoundingBox().getCenter());
+                if (screenPos.z < 0) {
+                    setAimLockEntity(null);
+                    return;
+                }
+                double dx = screenPos.x - x;
+                double dy = screenPos.y - y;
+                double distSq = dx * dx + dy * dy;
+                if (distSq > 64 * 64) {
+                    setAimLockEntity(null);
+                    return;
+                }
+            }
             // 锁定实体是否已消失
             if (aimLockEntity != null) {
                 if (!aimLockEntity.isAlive()) {
@@ -290,34 +307,44 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         // 红外导引头开启并冷却后搜索并锁定目标
-        else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR && isIrSensorOn()) {
-            irCoolingTick += 1;
-            if (irCoolingTick > 30) {
-                Minecraft minecraft = Minecraft.getInstance();
-                Camera camera = minecraft.gameRenderer.getMainCamera();
-                for (Entity entity : minecraft.level.entitiesForRendering()) {
-                    // 基础校验
-                    if (entity == camera.getEntity()
-                            || entity.getVehicle() != null
-                            || entity == this.vehicle
-                            || !entity.isAlive()
-                            || entity.isSpectator()
-                            || entity.getBoundingBox().getSize() < 1
-                            || entity.distanceTo(vehicle) > 128) {
-                        continue;
-                    }
-                    // 在锁定框内
+        else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+            if (isIrSensorOn()) {
+                irCoolingTick += 1;
+                if (irCoolingTick > 30) {
+                    Minecraft minecraft = Minecraft.getInstance();
+                    Camera camera = minecraft.gameRenderer.getMainCamera();
+                    Entity bestEntity = null;
+                    double minDistSq = Double.MAX_VALUE;
                     double x = VehicleCrossHairOverlay.getScreenAimX();
                     double y = VehicleCrossHairOverlay.getScreenAimY();
-                    Vec3 screenPos = VectorUtil.worldToScreen(entity.getBoundingBox().getCenter());
-                    if (screenPos.z >= 0) {
+                    for (Entity entity : minecraft.level.entitiesForRendering()) {
+                        // 基础校验
+                        if (entity == camera.getEntity()
+                                || entity.getVehicle() != null
+                                || entity == this.vehicle
+                                || !entity.isAlive()
+                                || entity.isSpectator()
+                                || entity.getBoundingBox().getSize() < 1
+                                || entity.distanceTo(vehicle) > 256) {
+                            continue;
+                        }
+                        Vec3 screenPos = VectorUtil.worldToScreen(entity.getBoundingBox().getCenter());
+                        if (screenPos.z < 0) {
+                            continue;
+                        }
                         double dx = screenPos.x - x;
                         double dy = screenPos.y - y;
-                        if (dx * dx + dy * dy < 64 * 64) {
-                            setAimLockEntity(entity);
-                            irSensorOn = false;
-                            irCoolingTick = 0;
+                        double distSq = dx * dx + dy * dy;
+                        // 在锁定框内
+                        if (distSq < 64 * 64 && distSq < minDistSq) {
+                            minDistSq = distSq;
+                            bestEntity = entity;
                         }
+                    }
+                    if (bestEntity != null) {
+                        setAimLockEntity(bestEntity);
+                        irSensorOn = false;
+                        irCoolingTick = 0;
                     }
                 }
             }
@@ -622,7 +649,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     irTrackAlarmSound = null;
                 }
                 if (irTrackAlarmSound == null && aimLockEntity != null) {
-                    irTrackAlarmSound = new VehicleSound(AllSounds.IR_TRACK_ALARM.get(), 4f, 1f, 1f, true, 50, false, false, vehicle.getId());
+                    irTrackAlarmSound = new VehicleSound(AllSounds.IR_TRACK_ALARM.get(), 1f, 1f, 1f, true, 50, false, false, vehicle.getId());
                     irTrackAlarmSound.play();
                 }
             }

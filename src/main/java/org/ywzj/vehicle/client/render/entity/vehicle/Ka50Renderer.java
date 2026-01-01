@@ -91,7 +91,7 @@ public class Ka50Renderer extends EntityRenderer<Ka50> {
         zjg.rotation.mul(Axis.XN.rotationDegrees(-(float) pEntity.getCollectivePitch() / 100 * 20));
 
         pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
         Quaternionf reset = new Quaternionf(0, 0, 0, 1);
         propeller.rotation.set(reset);

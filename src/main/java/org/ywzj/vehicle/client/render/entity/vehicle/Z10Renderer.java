@@ -76,7 +76,7 @@ public class Z10Renderer extends EntityRenderer<Z10> {
         camera.rotation.mul(Axis.XN.rotationDegrees(-cameraXRot));
 
         pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
         Quaternionf reset = new Quaternionf(0, 0, 0, 1);
         propeller.rotation.set(reset);

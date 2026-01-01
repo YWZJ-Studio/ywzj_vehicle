@@ -1,6 +1,9 @@
 package org.ywzj.vehicle.item;
 
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +24,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import java.util.function.Consumer;
 
 public class RepairToolItem extends Item {
+
     public RepairToolItem() {
         super(new Properties().stacksTo(1));
     }
@@ -55,31 +59,31 @@ public class RepairToolItem extends Item {
     @Override
     public void onUseTick(Level pLevel, LivingEntity pLivingEntity, ItemStack pStack, int pRemainingUseDuration) {
         super.onUseTick(pLevel, pLivingEntity, pStack, pRemainingUseDuration);
+        if (pLevel.isClientSide() && pLivingEntity.tickCount % 4 == 0) {
+            pLevel.playSound(pLivingEntity, pLivingEntity.blockPosition(),
+                    SoundEvents.FIRE_EXTINGUISH,
+                    SoundSource.PLAYERS,
+                    0.15F,
+                    1.5F);
+        }
         if (pLivingEntity.tickCount % 2 == 0 && pLivingEntity.getTicksUsingItem() > 8) {
             Vec3 viewVector = pLivingEntity.getViewVector(1.0F);
             Vec3 startPos = pLivingEntity.getEyePosition();
-            if (pLevel.isClientSide()) {
-//                pLevel.addParticle(
-//                        ParticleTypes.FLAME,
-//                        startPos.x + 0.1 + viewVector.x,
-//                        startPos.y - 0.15 + viewVector.y,
-//                        startPos.z + viewVector.z,
-//                        viewVector.x * 0.2 + pLivingEntity.getDeltaMovement().x + pLivingEntity.getRandom().nextGaussian() * 0.05,
-//                        viewVector.y * 0.2,
-//                        viewVector.z * 0.2 + pLivingEntity.getDeltaMovement().z + pLivingEntity.getRandom().nextGaussian() * 0.05
-//                );
-            } else {
-                Vec3 endPos = startPos.add(viewVector.scale(3.0));
-                var result = pLevel.clip(new ClipContext(startPos, endPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, pLivingEntity));
-                if (result.getType() != HitResult.Type.MISS) {
-                    endPos = result.getLocation();
-                }
-                var hitEntity = ProjectileUtil.getEntityHitResult(
-                        pLivingEntity, startPos, endPos,
-                        pLivingEntity.getBoundingBox().expandTowards(viewVector.scale(6.0)).inflate(1.0),
-                        e -> e instanceof AbstractVehicle vehicle && !vehicle.isDestroyed(), 50
-                );
-                if (hitEntity != null && hitEntity.getEntity() instanceof AbstractVehicle vehicle) {
+            Vec3 endPos = startPos.add(viewVector.scale(3.0));
+            var result = pLevel.clip(new ClipContext(startPos, endPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, pLivingEntity));
+            if (result.getType() != HitResult.Type.MISS) {
+                endPos = result.getLocation();
+            }
+            var hitResult = ProjectileUtil.getEntityHitResult(
+                    pLivingEntity, startPos, endPos,
+                    pLivingEntity.getBoundingBox().expandTowards(viewVector.scale(6.0)).inflate(1.0),
+                    e -> e instanceof AbstractVehicle vehicle && !vehicle.isDestroyed(), 50
+            );
+            if (hitResult != null && hitResult.getEntity() instanceof AbstractVehicle vehicle) {
+                if (pLevel.isClientSide()) {
+                    Vec3 pos = hitResult.getLocation();
+                    pLevel.addParticle(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 0, 0, 0);
+                } else {
                     float h = Math.min(vehicle.getHealth() + 2.0f, vehicle.getMaxHealth());
                     vehicle.setHealth(h);
                 }
@@ -92,4 +96,5 @@ public class RepairToolItem extends Item {
     public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
         return true;
     }
+
 }

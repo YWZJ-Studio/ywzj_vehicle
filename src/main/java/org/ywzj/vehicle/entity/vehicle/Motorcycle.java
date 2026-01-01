@@ -1,6 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import net.minecraft.sounds.SoundEvent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -8,7 +8,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -22,37 +21,13 @@ public class Motorcycle extends WheeledVehicle {
     public Motorcycle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         physicsEngine.friction = 0.003f;
-        forwardForce = 0.013f;
-        backwardForce = 0.013f;
-        maxSpeedForward = 0.8f;
-        maxSpeedBackward= 0.1f;
-        turnStep = 2f;
-        maxTurn = 4f;
         physicsEngine.lockZRot = true;
     }
 
     @Override
-    public SoundEvent getEngineStartSound() {
-        return AllSounds.MOTORCYCLE_ENGINE_START.get();
-    }
-
-    @Override
-    public SoundEvent getEngineIdleSound() {
-        return AllSounds.MOTORCYCLE_ENGINE_IDLE.get();
-    }
-
-    @Override
-    public SoundEvent getEngineRunSound() {
-        return AllSounds.MOTORCYCLE_ENGINE_RUN.get();
-    }
-
-    @Override
-    public void initPartUnits() {
-        PartUnit passengerSeat = new PartUnit("passenger_seat", 0, this);
-        passengerSeat.setOwnerViewOffset(new Vec3(0,1.7, 0));
-        passengerSeat.setSeatOffset(new Vec3(0,1.7, -0.3));
-        this.partUnits.add(passengerSeat);
-        this.seats.add(new Seat(0, passengerSeat));
+    public void initData(ResourceLocation customId) {
+        super.initData(customId);
+        PartUnit<?> passengerSeat = partUnits.get(0);
         passengerSeat.passengerPose = new PassengerPose();
         passengerSeat.passengerPose.leftArmRotX = -1.5f;
         passengerSeat.passengerPose.rightArmRotX= -1.5f;

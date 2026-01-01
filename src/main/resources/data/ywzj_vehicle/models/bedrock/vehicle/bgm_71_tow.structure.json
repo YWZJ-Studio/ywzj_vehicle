@@ -1,0 +1,71 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 16,
+				"texture_height": 16,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "vehicle_body",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-11.3, 0, -10.725],
+							"size": [23.125, 14.55, 21.7],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [23.125, 14.55]},
+								"east": {"uv": [0.525, 0], "uv_size": [21.7, 14.55]},
+								"south": {"uv": [1.125, 0], "uv_size": [23.125, 14.55]},
+								"west": {"uv": [0, 0], "uv_size": [21.7, 14.55]},
+								"up": {"uv": [24.25, 21.7], "uv_size": [-23.125, -21.7]},
+								"down": {"uv": [24.25, 22.225], "uv_size": [-23.125, -21.7]}
+							}
+						}
+					]
+				},
+				{
+					"name": "tow",
+					"pivot": [-2.25, 15.875, 0.2125],
+					"cubes": [
+						{
+							"origin": [-5.875, 14.575, -3.1],
+							"size": [7.25, 2.6, 6.625],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [7.25, 2.6]},
+								"east": {"uv": [0, 0], "uv_size": [6.625, 2.6]},
+								"south": {"uv": [0, 0], "uv_size": [7.25, 2.6]},
+								"west": {"uv": [0, 0], "uv_size": [6.625, 2.6]},
+								"up": {"uv": [7.25, 6.625], "uv_size": [-7.25, -6.625]},
+								"down": {"uv": [7.25, 6.625], "uv_size": [-7.25, -6.625]}
+							}
+						}
+					]
+				},
+				{
+					"name": "tow_barrel",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-3.775, 16.95, -14.875],
+							"size": [4.475, 4.45, 36.425],
+							"uv": {
+								"north": {"uv": [1, 0], "uv_size": [4.475, 3.775]},
+								"east": {"uv": [0, 0], "uv_size": [36.425, 3.775]},
+								"south": {"uv": [0.3, 0], "uv_size": [4.475, 3.775]},
+								"west": {"uv": [0, 0], "uv_size": [36.425, 3.775]},
+								"up": {"uv": [4.775, 36.425], "uv_size": [-4.475, -36.425]},
+								"down": {"uv": [4.775, 36.425], "uv_size": [-4.475, -36.425]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

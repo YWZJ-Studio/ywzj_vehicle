@@ -78,7 +78,7 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
         rope.y -= diffY;
 
         pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
         Quaternionf reset = new Quaternionf(0, 0, 0, 1);
         propellerUp1.rotation.set(reset);
