@@ -18,6 +18,7 @@ public class SyncDataHolder<T> {
     private final Supplier<T> getter;
     private final int index;
     private boolean isDirty = true;
+    private int version = 0;
 
     /**
      * 最后记录的值
@@ -40,6 +41,10 @@ public class SyncDataHolder<T> {
 
     @SuppressWarnings("unchecked")
     protected void onUpdate(SyncDataEntry<?> entry) {
+        if (entry.version() <= this.version) {
+            return;
+        }
+        this.version = entry.version();
         this.value = (T) entry.value();
         this.setter.accept(this.value);
     }
@@ -51,6 +56,7 @@ public class SyncDataHolder<T> {
         }
         this.value = currentValue;
         this.isDirty = true;
+        this.version++;
     }
 
     public T get() {
@@ -66,6 +72,6 @@ public class SyncDataHolder<T> {
     }
 
     public SyncDataEntry<T> createEntry() {
-        return new SyncDataEntry<>(index, serializer, value);
+        return new SyncDataEntry<>(index, serializer, value, version);
     }
 }

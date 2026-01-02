@@ -11,6 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -121,6 +122,14 @@ public class SyncDataManager {
                         new ServerEntityDataUpdate(vehicle.getId(), partUnit.getIndex(), entries)
                 );
             });
+        }
+    }
+
+    @SubscribeEvent
+    @OnlyIn(Dist.CLIENT)
+    public static void onClientLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) {
+            PENDING_MESSAGES.clear();
         }
     }
 

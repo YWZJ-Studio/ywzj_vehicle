@@ -259,7 +259,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     @OnlyIn(Dist.CLIENT)
     public void onUpdateReceived(List<SyncDataEntry<?>> entries) {
-        this.syncData.onUpdateReceived(entries);
+        syncData.onUpdateReceived(entries);
     }
 
     public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {

@@ -88,14 +88,23 @@ public class PartUnitSyncData {
 
     public List<SyncDataEntry<?>> packDirty(boolean force) {
         List<SyncDataEntry<?>> dirtyEntries = new ArrayList<>();
+        List<SyncDataHolder<?>> holdersToClean = new ArrayList<>();
+
         for (SyncDataHolder<?> holder : dataHolders) {
             holder.refresh();
 
-            if (force || holder.isDirty()) {
+            if (force) {
                 dirtyEntries.add(holder.createEntry());
-                holder.setDirty(false);
+            } else if (holder.isDirty()) {
+                dirtyEntries.add(holder.createEntry());
+                holdersToClean.add(holder);
             }
         }
+
+        for (SyncDataHolder<?> holder : holdersToClean) {
+            holder.setDirty(false);
+        }
+
         return dirtyEntries;
     }
 }

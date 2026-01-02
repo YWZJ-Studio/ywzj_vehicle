@@ -14,8 +14,9 @@ public interface SyncDataSerializer<T> {
     boolean compare(T a, T b);
 
     static <T> SyncDataEntry<?> readEntry(FriendlyByteBuf buf, SyncDataSerializer<T> serializer, int index) {
+        int version = buf.readVarInt();
         T value = serializer.read(buf);
-        return new SyncDataEntry<>(index, serializer, value);
+        return new SyncDataEntry<>(index, serializer, value, version);
     }
 
     static <T> SyncDataSerializer<T> create(
