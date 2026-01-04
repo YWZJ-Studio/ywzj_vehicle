@@ -49,6 +49,7 @@ public class LocalVehiclePlayer {
     public HashSet<MissileEntity> controllingMissiles = new HashSet<>();
     private boolean mouseTurnedAfterScope;
     public ViewType viewType = ViewType.THIRD_PERSON;
+    public int tickCount;
     private final ReentrantLock lock = new ReentrantLock();
     static {
         instance = new LocalVehiclePlayer();
@@ -67,6 +68,11 @@ public class LocalVehiclePlayer {
     }
 
     public void tick() {
+        if (onVehicle()) {
+            tickCount += 1;
+        } else {
+            tickCount = 0;
+        }
         tickAim();
     }
 
@@ -303,8 +309,10 @@ public class LocalVehiclePlayer {
     }
 
     public void thirdPersonCameraAimAt(Vec3 worldPos, AbstractVehicle vehicle) {
-        Vec3 thirdPersonPos = vehicle.relativeRotPos(vehicle.position().add(vehicle.getViewInfo().thirdPersonCenterOffset), false);
-        double r = vehicle.getViewInfo().thirdPersonDistance;
+        Vec3 offset = vehicle.isViewZoomed() ? vehicle.getViewInfo().thirdPersonCenterOffsetZoomed : vehicle.getViewInfo().thirdPersonCenterOffset;
+        double distance = vehicle.isViewZoomed() ? vehicle.getViewInfo().thirdPersonDistanceZoomed : vehicle.getViewInfo().thirdPersonDistance;
+        Vec3 thirdPersonPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
+        double r = distance;
         double a = worldPos.distanceTo(thirdPersonPos);
         double c = Math.asin(r / (a / Math.sin(Math.PI * CAMERA_UPWARD_ANGLE / 180)));
         Vec3 dir = thirdPersonPos.subtract(worldPos).normalize();

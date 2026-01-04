@@ -99,6 +99,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     protected final List<PartUnit<?>> partUnits;
     protected Map<String, PartUnit<?>> partUnitMap;
     protected ViewInfo viewInfo;
+    protected boolean viewZoomed;
     public EnergyInfo energyInfo;
     public float curbWeight;
     private float xRot;
@@ -114,6 +115,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     protected List<VehicleBedrockCubeOBB> vehicleOBBs;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     public WarningReceiver warningReceiver;
+    public boolean protectPassenger;
     public PhysicsEngine physicsEngine;
     protected boolean dataInitialized;
     private long destroyedTime;
@@ -257,9 +259,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
             this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
             this.seats.addAll(partUnitsAndSeats.seats());
-            if (data.withWarningReceiver()) {
+            if (data.isWithWarningReceiver()) {
                 this.warningReceiver = new WarningReceiver();
             }
+            this.protectPassenger = data.isProtectPassenger();
         });
         Map<String, PartUnit<?>> map = new HashMap<>();
         for (PartUnit<?> partUnit : partUnits) {
@@ -460,7 +463,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                     this.discard();
                 } else {
                     this.getPassengers().forEach(Entity::stopRiding);
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this.position(),
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this, this.position(),
                             (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
                     vehicleExplosion.explode(Collections.singletonList(this));
                     entityData.set(DESTROYED, true);
@@ -762,11 +765,13 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @OnlyIn(Dist.CLIENT)
     public Vec3 thirdPersonPosition(LivingEntity pPassenger, Float partialTick) {
         if (pPassenger != null) {
+            Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
+            double distance = isViewZoomed() ? getViewInfo().thirdPersonDistanceZoomed : getViewInfo().thirdPersonDistance;
             Matrix3f axisRollMat = new Matrix3f();
             Quaternionf q = new Quaternionf();
             q.rotateY(Math.toRadians(-this.getYRot()));
             q.get(axisRollMat);
-            Vector3f rotPos = axisRollMat.transform(viewInfo.thirdPersonCenterOffset.toVector3f());
+            Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
             Vec3 p;
             float yRot;
             float xRot;
@@ -787,11 +792,16 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             q.rotateY(Math.toRadians(-yRot));
             q.rotateX(Math.toRadians(xRot));
             q.get(axisRollMat);
-            float d = (float) (viewInfo.thirdPersonDistance - pPassenger.getXRot() / 90 * viewInfo.thirdPersonCenterOffset.y);
+            float d;
+            if (isViewZoomed()) {
+                d = (float) distance;
+            } else {
+                d = (float) Math.max(0, distance - pPassenger.getXRot() / 90 * offset.y);
+            }
             Vector3f rotOffset = axisRollMat.transform(new Vector3f(0, 0, -d));
             Vec3 thirdPersonPos = thirdPersonCenter.add(rotOffset.x, rotOffset.y, rotOffset.z);
             Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(0.1);
-            while (level().getBlockState(BlockPos.containing(thirdPersonPos)).isSolid() && thirdPersonPos.distanceTo(thirdPersonCenter) > 1) {
+            while (level().getBlockState(BlockPos.containing(thirdPersonPos)).isSolid()) {
                 thirdPersonPos = thirdPersonPos.add(step);
             }
             return thirdPersonPos;
@@ -964,6 +974,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public ViewInfo getViewInfo() {
         return viewInfo;
+    }
+
+    public boolean isViewZoomed() {
+        return viewZoomed;
+    }
+
+    public void toggleViewZoom() {
+        viewZoomed = !viewZoomed;
     }
 
     public float getPower() {

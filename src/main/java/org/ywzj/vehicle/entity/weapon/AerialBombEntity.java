@@ -63,13 +63,15 @@ public class AerialBombEntity extends AmmoEntity {
         }
     }
 
-    private void tickHit() {
+    protected void tickHit() {
         if (onGround()) {
             if (fuseDelay > 0) {
                 fuseDelay -= 1;
             } else {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), position(), 16, 20);
-                vehicleExplosion.explode();
+                if (explosion != null && explosion.explode) {
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    vehicleExplosion.explode();
+                }
                 this.kill();
             }
         }

@@ -62,7 +62,7 @@ public record ServerVehicleFire (
             if (!(partUnit instanceof WeaponUnit weaponUnit)) {
                 return;
             }
-            if (message.weaponIndex < 0 || message.weaponIndex >= weaponUnit.weapons.size()) {
+            if (message.weaponIndex < 0 || message.weaponIndex >= weaponUnit.indexedWeapons.size()) {
                 return;
             }
             LivingEntity operator = null;
@@ -75,7 +75,7 @@ public record ServerVehicleFire (
             MinecraftForge.EVENT_BUS.post(
                     new VehicleFireEvent.Post(
                             vehicle,
-                            weaponUnit.weapons.get(message.weaponIndex),
+                            weaponUnit.indexedWeapons.get(message.weaponIndex),
                             operator
                     )
             );

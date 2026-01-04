@@ -24,6 +24,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected EnergyInfo energyInfo;
     protected PhysicsInfo physicsInfo;
     protected boolean withWarningReceiver;
+    protected boolean protectPassenger;
     protected ResourceLocation structureModel;
     protected List<PartUnitEntry<?, ?>> parts;
     protected VehicleBedrockCubeOBB mainCubeOBB;
@@ -47,6 +48,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.energyInfo = pojo.energyInfo;
         this.physicsInfo = pojo.physicsInfo;
         this.withWarningReceiver = pojo.withWarningReceiver;
+        this.protectPassenger = pojo.protectPassenger;
 
         this.structureModel = pojo.structureModel;
         var model = CommonAssetsManager.structureModelManager()
@@ -130,8 +132,12 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         return physicsInfo;
     }
 
-    public  boolean withWarningReceiver() {
+    public boolean isWithWarningReceiver() {
         return withWarningReceiver;
+    }
+
+    public boolean isProtectPassenger() {
+        return protectPassenger;
     }
 
 }

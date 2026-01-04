@@ -28,6 +28,8 @@ public class VehicleRocket extends AbstractVehicleWeapon<VehicleRocketWeaponData
 
         for (AimContext aimContext : aimContexts) {
             RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level());
+            rocketEntity.damage = data.getDamage();
+            rocketEntity.explosion = data.getExplosion();
             rocketEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
             rocketEntity.setDeltaMovement(rocketEntity.getLookAngle().scale(data.getVelocity()).add(getVehicle().getDeltaMovement()));
             vehicle.level().addFreshEntity(rocketEntity);

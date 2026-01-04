@@ -96,10 +96,15 @@ public class InputHandler {
         }
         if (event.getAction() == 0) {
             if (LocalVehiclePlayer.instance.onVehicle()) {
-                AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-                if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                    if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                        weaponUnit.switchZoom();
+                if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.tickCount > 5) {
+                    AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+                    if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+                        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                            weaponUnit.switchZoom();
+                        }
+                    }
+                    if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                        vehicle.toggleViewZoom();
                     }
                 }
             }

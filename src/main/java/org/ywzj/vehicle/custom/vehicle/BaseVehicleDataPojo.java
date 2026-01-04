@@ -26,6 +26,9 @@ public class BaseVehicleDataPojo {
     @SerializedName("with_warning_receiver")
     public boolean withWarningReceiver = false;
 
+    @SerializedName("protect_passenger")
+    public boolean protectPassenger = true;
+
     @SerializedName("structure_model")
     public ResourceLocation structureModel = null;
 

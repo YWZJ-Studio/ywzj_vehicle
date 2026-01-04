@@ -30,6 +30,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.HashSet;
 import java.util.List;
@@ -51,15 +52,15 @@ public class VehicleExplosion {
     private final ExplosionDamageCalculator damageCalculator;
     private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
 
-    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage) {
-        this(level, source, position, radius, damage, AllConfigs.common.explosionDestroyBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
+    public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage) {
+        this(level, source, vehicle, position, radius, damage, AllConfigs.common.explosionDestroyBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
     }
 
-    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean destroyBlocks) {
-        this(level, source, position, radius, damage, destroyBlocks, AllConfigs.common.explosionDropBlocks.get());
+    public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage, boolean destroyBlocks) {
+        this(level, source, vehicle, position, radius, damage, destroyBlocks && AllConfigs.common.explosionDestroyBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
     }
 
-    public VehicleExplosion(Level level, Entity source, Vec3 position, float radius, float damage, boolean destroyBlocks, boolean dropBlocks) {
+    public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage, boolean destroyBlocks, boolean dropBlocks) {
         this.level = level;
         this.source = source;
         this.x = position.x;
@@ -69,7 +70,7 @@ public class VehicleExplosion {
         this.damage = damage;
         this.destroyBlocks = destroyBlocks && AllConfigs.common.explosionDestroyBlocks.get();
         this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlocks.get();
-        this.damageSource = level.damageSources().explosion(source, null);
+        this.damageSource = level.damageSources().explosion(source, vehicle);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
 
@@ -195,14 +196,16 @@ public class VehicleExplosion {
             ServerLevel serverLevel = (ServerLevel) level;
             level.playSound(source, BlockPos.containing(new Vec3(x, y, z)), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
             for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceTo(source) < 256)) {
+                double spread = radius * 0.3;
+                int count = (int)(radius * radius * 2);
                 serverLevel.sendParticles(
                         player,
-                        ParticleTypes.EXPLOSION_EMITTER,
+                        ParticleTypes.EXPLOSION,
                         true,
                         x, y, z,
-                        3,
-                        0.5, 0.5, 0.5,
-                        0.1
+                        count,
+                        spread, spread, spread,
+                        0.15
                 );
             }
         }

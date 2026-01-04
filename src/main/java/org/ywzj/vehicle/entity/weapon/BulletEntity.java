@@ -5,6 +5,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -20,14 +21,19 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.PlayMessages;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.entity.KnockBackModifier;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ServerVehicleHurtEntity;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -50,7 +56,6 @@ public class BulletEntity extends AmmoEntity {
     private float gravity = 0;
     private float friction = 0.01F;
     private float knockback = 0;
-    private Explosion explosion;
     // 穿透数
     private int pierce = 1;
     // 初始位置
@@ -65,13 +70,14 @@ public class BulletEntity extends AmmoEntity {
         super(type, worldIn);
     }
 
-    public BulletEntity(Level level, LivingEntity throwerIn, Vec3 startPos, Explosion explosion) {
-        this(level, throwerIn, startPos.x, startPos.y, startPos.z, explosion);
+    public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion) {
+        this(level, vehicle, shooter, startPos.x, startPos.y, startPos.z, explosion);
     }
 
-    public BulletEntity(Level level, LivingEntity throwerIn, double x, double y, double z, Explosion explosion) {
+    public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, double x, double y, double z, Explosion explosion) {
         this(AllEntities.BULLET.get(), level);
-        this.setOwner(throwerIn);
+        this.vehicle = vehicle;
+        this.setOwner(shooter);
         this.explosion = explosion;
         this.setPos(x, y, z);
         this.startPos = this.position();
@@ -237,9 +243,12 @@ public class BulletEntity extends AmmoEntity {
             // 创建伤害
             performAttack(entity, damage, sources);
         }
+        if (owner instanceof ServerPlayer serverPlayer) {
+            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId()));
+        }
 
         if (explosion.explode) {
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
             vehicleExplosion.explode();
         }
     }
@@ -258,7 +267,7 @@ public class BulletEntity extends AmmoEntity {
             Level level = level();
             BlockState state = level.getBlockState(pos);
             float destroySpeed = state.getDestroySpeed(level, pos);
-            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50) {
+            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50 && explosion.destroyBlock && AllConfigs.common.explosionDestroyBlocks.get()) {
                 level().destroyBlock(pos, false);
             }
             Vec3 explosionAtPos = hitVec.add(endVec.subtract(startVec).normalize().scale(getDeltaMovement().length()));
@@ -266,7 +275,7 @@ public class BulletEntity extends AmmoEntity {
             if (resultAfterPenetrate.getType() != HitResult.Type.MISS) {
                 explosionAtPos = resultAfterPenetrate.getLocation();
             }
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), explosionAtPos, explosion.radius, explosion.damage, explosion.destroyBlock);
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, explosionAtPos, explosion.radius, explosion.damage, explosion.destroyBlock);
             vehicleExplosion.explode();
         }
 

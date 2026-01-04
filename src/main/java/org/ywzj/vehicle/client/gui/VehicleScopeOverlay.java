@@ -135,9 +135,10 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                     poseStack.translate(screenPos.x, screenPos.y, 0);
                     WeaponUnitData.FireControlSensorType sensorType = weaponUnit.getFireControlSensorType();
                     if (sensorType == WeaponUnitData.FireControlSensorType.IR) {
-                        GuiHelper.drawCircle(poseStack, 0, 0, 15, Color.RED, 0.05f, 0, 0);
+                        GuiHelper.drawCircle(poseStack, 0, 0, 15, Color.RED, 0.03f, 0, 0);
                     } else {
                         RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+                        // 雷达锁定则显示详细的目标信息
                         if (sensorType == WeaponUnitData.FireControlSensorType.RF) {
                             poseStack.pushPose();
                             {

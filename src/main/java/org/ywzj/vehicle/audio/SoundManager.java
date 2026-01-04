@@ -2,6 +2,7 @@ package org.ywzj.vehicle.audio;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -53,6 +54,11 @@ public class SoundManager {
             SOUND_INSTANCE.get(message.entityId).get(message.soundName).stop();
             SOUND_INSTANCE.get(message.entityId).remove(message.soundName);
         }
+    }
+
+    public static void play(SoundEvent soundEvent) {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, 1.0F, 1.0F));
     }
 
 }

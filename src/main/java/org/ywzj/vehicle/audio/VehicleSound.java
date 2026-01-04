@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.audio;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.resources.sounds.TickableSoundInstance;
@@ -81,12 +80,12 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     }
 
     private void updateRelativePos() {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) {
+        Entity cameraEntity = Minecraft.getInstance().cameraEntity;
+        if (cameraEntity == null) {
             return;
         }
         if (entity == null) {
-            entity = player.level().getEntity(entityId);
+            entity = cameraEntity.level().getEntity(entityId);
             return;
         }
         if (entity.isRemoved()) {
@@ -94,10 +93,10 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
             return;
         }
         Vec3 simulatedPos;
-        if (entity.equals(player.getVehicle())) {
+        if (entity.equals(cameraEntity.getVehicle())) {
             simulatedPos = calRelativePos(entity.position(), Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(), 0.7);
         } else {
-            simulatedPos = calRelativePos(entity.position(), player.position(), scale);
+            simulatedPos = calRelativePos(entity.position(), cameraEntity.position(), scale);
         }
         simulatedPos = simulatedPos.add(entity.getDeltaMovement());
         this.x = simulatedPos.x;

@@ -11,8 +11,8 @@
   },
   "explosion": {
     "explode": true,
-    "damage": 20,
-    "radius": 8,
+    "damage": 99,
+    "radius": 5,
     "destroy_block": true
   },
   "sounds": {

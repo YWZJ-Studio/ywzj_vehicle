@@ -33,7 +33,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooter, shooter.level());
                 smokeGrenadeEntity.setBaseData(data);
                 smokeGrenadeEntity.setPos(aimContext.position);
-                smokeGrenadeEntity.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, 0);
+                smokeGrenadeEntity.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 smokeGrenadeEntity.setXRot(aimContext.direction.x);
                 smokeGrenadeEntity.setYRot(aimContext.direction.y);
                 vehicle.level().addFreshEntity(smokeGrenadeEntity);

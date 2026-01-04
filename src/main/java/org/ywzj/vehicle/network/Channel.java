@@ -77,6 +77,11 @@ public class Channel {
                 ServerVehicleWarn::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
+        CHANNEL.registerMessage(PacketId.S_VEHICLE_HURT_ENTITY.value(), ServerVehicleHurtEntity.class,
+                ServerVehicleHurtEntity::encode, ServerVehicleHurtEntity::decode,
+                ServerVehicleHurtEntity::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
         CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
@@ -94,6 +99,7 @@ enum PacketId {
     C_VEHICLE_SWITCH_WEAPON(104),
     S_VEHICLE_FIRE(105),
     S_VEHICLE_WARN(106),
+    S_VEHICLE_HURT_ENTITY(107),
 
     S_SLICED_PACKET(110),
 

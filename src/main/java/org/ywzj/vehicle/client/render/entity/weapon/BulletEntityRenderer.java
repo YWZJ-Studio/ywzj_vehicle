@@ -35,14 +35,11 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
         var model = BedrockModelLoader.getModel(DEFAULT_BULLET_MODEL);
         poseStack.pushPose();
         {
-            float width = 0.025f;
+            float width = 0.2f;
             Vec3 bulletPosition = bullet.getPosition(partialTicks);
-
-            double trailLength = 0.85 * bullet.getDeltaMovement().length();
+            double trailLength = 0.3 * bullet.getDeltaMovement().length();
             double disToEye = bulletPosition.distanceTo(bullet.getStartPos());
             trailLength = Math.min(trailLength, disToEye * 0.8);
-
-            width *= (float) Math.max(1.0, disToEye / 5.5);
             poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTicks, bullet.yRotO, bullet.getYRot()) - 180.0F));
             poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTicks, bullet.xRotO, bullet.getXRot())));
             poseStack.translate(0, 0, trailLength / 2.0);

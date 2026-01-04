@@ -17,9 +17,9 @@
   "max_speed": 3,
   "explosion": {
     "explode": true,
-    "damage": 30,
+    "damage": 99,
     "radius": 8,
-    "destroy_block": true
+    "destroy_block": false
   },
   "guidance": "HOMING",
   "sounds": {

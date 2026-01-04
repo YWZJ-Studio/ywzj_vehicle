@@ -73,6 +73,11 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     }
                     int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
                     if (weaponUnit.getFireControlLockType() == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
+                        // 导引头小圈
+                        if (weaponUnit.getAimLockEntity() == null && weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 15, aimCircleColor, 0.03f, 0, 0);
+                        }
+                        // 导引头/雷达大圈
                         GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.01f, 0, 0);
                     } else {
                         GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
@@ -107,9 +112,6 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         if (event.phase == TickEvent.Phase.END) {
             return;
         }
-        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-            return;
-        }
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || !player.isAlive()) {
@@ -119,8 +121,9 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                 // 瞄准位置
                 Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+                float upward = LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE ? 0 : LocalVehiclePlayer.CAMERA_UPWARD_ANGLE;
                 Vec3 aimScreenPos = getHitScreenPos(camera.getPosition(),
-                        LocalVehiclePlayer.instance.cameraAimRotX - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE,
+                        LocalVehiclePlayer.instance.cameraAimRotX - upward,
                         LocalVehiclePlayer.instance.cameraAimRotY,
                         player);
                 if (aimScreenPos.z >= 0) {

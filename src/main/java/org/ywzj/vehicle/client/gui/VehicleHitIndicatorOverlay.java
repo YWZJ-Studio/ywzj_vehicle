@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.gui;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -10,13 +11,20 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.joml.Math;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
@@ -27,10 +35,24 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import java.util.ArrayList;
 import java.util.List;
 
+@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleHitIndicatorOverlay implements IGuiOverlay {
 
+    private static final ResourceLocation HIT_COMMON = new ResourceLocation(YwzjVehicle.MOD_ID, "textures/ui/hit_common.png");
+    private static final ResourceLocation HIT_VEHICLE = new ResourceLocation(YwzjVehicle.MOD_ID, "textures/ui/hit_vehicle.png");
+    private static final float MAX_OFFSET = 0.6f;
+    private static final long KEEP_TIME = 300;
+    private static boolean hitVehicle;
+    private static long hitTimestamp = -1L;
     public static List<ServerHitVehicleEvent> events = new ArrayList<>();
     public static long lastHitTime = System.currentTimeMillis();
+
+    @SubscribeEvent(receiveCanceled = true)
+    public static void onRenderOverlay(RenderGuiOverlayEvent.Pre event) {
+        if (event.getOverlay().id().equals(VanillaGuiOverlay.CROSSHAIR.id())) {
+            renderHitMarker(event.getGuiGraphics());
+        }
+    }
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -122,6 +144,68 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
                         .endVertex();
             }
         }
+    }
+
+    private static void renderHitMarker(GuiGraphics graphics) {
+        long remainHitTime = System.currentTimeMillis() - hitTimestamp;
+        if (remainHitTime > KEEP_TIME) {
+            return;
+        }
+        float progress = remainHitTime / (float) KEEP_TIME;
+        progress = Math.min(progress, 1.0f);
+        float eased = 1.0f - (float) java.lang.Math.pow(1.0f - progress, 3);
+        float offset = eased * MAX_OFFSET;
+        float alpha = 1.0f - (float) java.lang.Math.pow(progress, 1.5);
+
+        double x = VehicleCrossHairOverlay.getScreenAimX() - 8;
+        double y = VehicleCrossHairOverlay.getScreenAimY() - 8;
+
+        PoseStack poseStack = graphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.translate(x, y, 0);
+
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(
+                    GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+            );
+            RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
+
+            ResourceLocation hitMarker = hitVehicle ? HIT_VEHICLE : HIT_COMMON;
+
+            // 左上
+            poseStack.pushPose();
+            poseStack.translate(-offset, -offset, 0);
+            graphics.blit(hitMarker, 0, 0, 0, 0, 8, 8, 16, 16);
+            poseStack.popPose();
+
+            // 右上
+            poseStack.pushPose();
+            poseStack.translate(8 + offset, -offset, 0);
+            graphics.blit(hitMarker, 0, 0, 8, 0, 8, 8, 16, 16);
+            poseStack.popPose();
+
+            // 左下
+            poseStack.pushPose();
+            poseStack.translate(-offset, 8 + offset, 0);
+            graphics.blit(hitMarker, 0, 0, 0, 8, 8, 8, 16, 16);
+            poseStack.popPose();
+
+            // 右下
+            poseStack.pushPose();
+            poseStack.translate(8 + offset, 8 + offset, 0);
+            graphics.blit(hitMarker, 0, 0, 8, 8, 8, 8, 16, 16);
+            poseStack.popPose();
+
+            RenderSystem.disableBlend();
+        }
+        poseStack.popPose();
+    }
+
+    public static void markHitTimestamp(boolean hitVehicle) {
+        VehicleHitIndicatorOverlay.hitTimestamp = System.currentTimeMillis();
+        VehicleHitIndicatorOverlay.hitVehicle = hitVehicle;
     }
 
 }

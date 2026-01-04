@@ -16,6 +16,9 @@ public class BaseVehicleWeaponData {
     @SerializedName("velocity")
     private float velocity = 10f;
 
+    @SerializedName("inaccuracy")
+    private float inaccuracy = 0.5f;
+
     @SerializedName("damage")
     private float damage = 5.0f;
 
@@ -75,6 +78,14 @@ public class BaseVehicleWeaponData {
 
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public float getVelocity() {
         return velocity;
     }
@@ -83,12 +94,12 @@ public class BaseVehicleWeaponData {
         this.velocity = velocity;
     }
 
-    public String getName() {
-        return name;
+    public float getInaccuracy() {
+        return inaccuracy;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setInaccuracy(float inaccuracy) {
+        this.inaccuracy = inaccuracy;
     }
 
     public float getDamage() {

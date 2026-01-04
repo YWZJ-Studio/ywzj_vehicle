@@ -5,6 +5,8 @@
   "view_info": {
     "third_person_center_offset": [0, 2, 0],
     "third_person_distance": 2,
+    "third_person_center_offset_zoomed": [0, 1.9, 0],
+    "third_person_distance_zoomed": 0,
     "sound_distance": 3
   },
   "energy_info": {
