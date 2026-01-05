@@ -157,8 +157,12 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         float offset = eased * MAX_OFFSET;
         float alpha = 1.0f - (float) java.lang.Math.pow(progress, 1.5);
 
-        double x = VehicleCrossHairOverlay.getScreenAimX() - 8;
-        double y = VehicleCrossHairOverlay.getScreenAimY() - 8;
+        float scale = 1.5f;
+        int size = (int) (16 * scale);
+        int sizeHalf = size / 2;
+
+        double x = VehicleCrossHairOverlay.getScreenAimX() - sizeHalf;
+        double y = VehicleCrossHairOverlay.getScreenAimY() - sizeHalf;
 
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();
@@ -177,25 +181,25 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             // 左上
             poseStack.pushPose();
             poseStack.translate(-offset, -offset, 0);
-            graphics.blit(hitMarker, 0, 0, 0, 0, 8, 8, 16, 16);
+            graphics.blit(hitMarker, 0, 0, 0, 0, sizeHalf, sizeHalf, size, size);
             poseStack.popPose();
 
             // 右上
             poseStack.pushPose();
-            poseStack.translate(8 + offset, -offset, 0);
-            graphics.blit(hitMarker, 0, 0, 8, 0, 8, 8, 16, 16);
+            poseStack.translate(sizeHalf + offset, -offset, 0);
+            graphics.blit(hitMarker, 0, 0, sizeHalf, 0, sizeHalf, sizeHalf, size, size);
             poseStack.popPose();
 
             // 左下
             poseStack.pushPose();
-            poseStack.translate(-offset, 8 + offset, 0);
-            graphics.blit(hitMarker, 0, 0, 0, 8, 8, 8, 16, 16);
+            poseStack.translate(-offset, sizeHalf + offset, 0);
+            graphics.blit(hitMarker, 0, 0, 0, sizeHalf, sizeHalf, sizeHalf, size, size);
             poseStack.popPose();
 
             // 右下
             poseStack.pushPose();
-            poseStack.translate(8 + offset, 8 + offset, 0);
-            graphics.blit(hitMarker, 0, 0, 8, 8, 8, 8, 16, 16);
+            poseStack.translate(sizeHalf + offset, sizeHalf + offset, 0);
+            graphics.blit(hitMarker, 0, 0, sizeHalf, sizeHalf, sizeHalf, sizeHalf, size, size);
             poseStack.popPose();
 
             RenderSystem.disableBlend();
