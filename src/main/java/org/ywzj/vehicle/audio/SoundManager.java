@@ -56,6 +56,7 @@ public class SoundManager {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void play(SoundEvent soundEvent) {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, 1.0F, 1.0F));

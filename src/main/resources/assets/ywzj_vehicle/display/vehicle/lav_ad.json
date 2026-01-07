@@ -1,6 +1,8 @@
 {
+  "type": "ywzj_vehicle:wheeled_vehicle",
   "model": "ywzj_vehicle:entity/lav_ad",
   "texture": "ywzj_vehicle:textures/entity/lav_ad.png",
+  "script": "ywzj_vehicle:lav_ad",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:truck_engine_idle",

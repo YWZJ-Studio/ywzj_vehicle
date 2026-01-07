@@ -26,8 +26,7 @@ import java.util.Optional;
 @OnlyIn(Dist.CLIENT)
 public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLocation, Script>> {
 
-    private final FileToIdConverter filetoidconverter = new FileToIdConverter("ywzj_scripts", ".js");
-
+    private final FileToIdConverter filetoidconverter = new FileToIdConverter("scripts", ".js");
     private Map<ResourceLocation, Script> scripts = Map.of();
 
     @NotNull
@@ -63,4 +62,5 @@ public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLo
     public Optional<Script> getScript(ResourceLocation resourcelocation) {
         return Optional.ofNullable(scripts.get(resourcelocation));
     }
+
 }

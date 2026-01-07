@@ -1,8 +1,12 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
@@ -39,6 +43,18 @@ public class DumpTruck extends WheeledVehicle {
                 }
             }
         }
+    }
+
+    @Override
+    public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
+        super.interact(pPlayer, pHand);
+        if (!this.level().isClientSide()) {
+            if (pPlayer.getVehicle() != this) {
+                Vec3 bedPos = relativeRotPos(position().add(0, 5, 0), true);
+                pPlayer.teleportTo(bedPos.x, bedPos.y, bedPos.z);
+            }
+        }
+        return InteractionResult.PASS;
     }
 
     @Override

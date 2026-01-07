@@ -118,6 +118,7 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
 
         pEntity.lastRenderTime = System.currentTimeMillis();
         model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+        super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
 
         Quaternionf reset = new Quaternionf(0, 0, 0, 1);
         wheel1.rotation.set(reset);

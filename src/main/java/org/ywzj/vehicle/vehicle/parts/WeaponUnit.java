@@ -549,6 +549,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         stabilizer = !stabilizer;
         if (stabilizer) {
             fireControlLock();
+        } else {
+            setAimLockEntity(null);
         }
     }
 

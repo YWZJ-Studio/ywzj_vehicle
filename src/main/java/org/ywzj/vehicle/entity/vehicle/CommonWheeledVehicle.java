@@ -9,16 +9,11 @@ import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
-import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay.EMPTY_ARGS;
 
@@ -38,8 +33,6 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
 
     private ResourceLocation customId = ICustomVehicle.EMPTY_ID;
 
-    private VehicleAnimationInstance animationInstance;
-
     public CommonWheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
@@ -48,33 +41,33 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
         this(TYPE, level);
     }
 
-    @Override
-    public void initData(ResourceLocation customId) {
-        this.setMaxHealth(100);
-        this.setHealth(this.getMaxHealth());
-        this.customId = customId;
-        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
-            var struct = data.getVehicleStructObbs();
-            this.mainCubeOBB = struct.mainCubeOBB();
-            this.vehicleOBBs = struct.obbs();
-            var weapons = data.createPartUnits(this);
-            this.partUnits.addAll(weapons.partUnitMap().values());
-            this.seats.addAll(weapons.seats());
-        });
-        Map<String, PartUnit<?>> map = new HashMap<>();
-        for (PartUnit<?> partUnit : partUnits) {
-            map.put(partUnit.getId(), partUnit);
-        }
-        this.partUnitMap = map;
-        if (this.level().isClientSide()) {
-            this.animationInstance = new VehicleAnimationInstance(this);
-        }
-    }
+//    @Override
+//    public void initData(ResourceLocation customId) {
+//        this.setMaxHealth(100);
+//        this.setHealth(this.getMaxHealth());
+//        this.customId = customId;
+//        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
+//            var struct = data.getVehicleStructObbs();
+//            this.mainCubeOBB = struct.mainCubeOBB();
+//            this.vehicleOBBs = struct.obbs();
+//            var weapons = data.createPartUnits(this);
+//            this.partUnits.addAll(weapons.partUnitMap().values());
+//            this.seats.addAll(weapons.seats());
+//        });
+//        Map<String, PartUnit<?>> map = new HashMap<>();
+//        for (PartUnit<?> partUnit : partUnits) {
+//            map.put(partUnit.getId(), partUnit);
+//        }
+//        this.partUnitMap = map;
+//        if (this.level().isClientSide()) {
+//            this.animationInstance = new VehicleAnimationInstance(this);
+//        }
+//    }
 
     @Override
     protected void tickParticle() {
         ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getCustomId()).ifPresent(display -> {
-            display.getVehicleContext().updateLogic(this);
+            display.getVehicleScriptContext().updateLogic(this);
             var func = display.getTickParticleFunction();
             if (func != null) {
                 try (var ctx = ScriptContextFactory.get().enterContext()) {
@@ -85,22 +78,10 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
     }
 
     @Override
-    public void tick() {
-        super.tick();
-        if (this.level().isClientSide() && animationInstance != null) {
-            animationInstance.tick();
-        }
-    }
-
-    @Override
     public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(weaponIndex, aimContexts, operator);
         }
-    }
-
-    public VehicleAnimationInstance getAnimationInstance() {
-        return animationInstance;
     }
 
 }

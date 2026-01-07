@@ -81,9 +81,19 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 // 攻击者
                 LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
                 DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation());
+                boolean kill = false;
+                boolean destroyedBeforeHurt = false;
+                if (entity instanceof AbstractVehicle vehicle) {
+                    destroyedBeforeHurt = vehicle.isDestroyed();
+                }
                 entity.hurt(source, damage);
+                if (entity instanceof AbstractVehicle vehicle) {
+                    kill = !destroyedBeforeHurt && vehicle.isDestroyed();
+                } else if (entity instanceof LivingEntity livingEntity) {
+                    kill = livingEntity.isDeadOrDying();
+                }
                 if (owner instanceof ServerPlayer serverPlayer) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId()));
+                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill));
                 }
                 if (explosion != null) {
                     VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);

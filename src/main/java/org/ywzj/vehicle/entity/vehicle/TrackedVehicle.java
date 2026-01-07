@@ -44,6 +44,14 @@ public abstract class TrackedVehicle extends AbstractVehicle {
         super(pEntityType, pLevel);
     }
 
+    public float getForwardSpeed() {
+        return this.entityData.get(FORWARD_SPEED);
+    }
+
+    public float getTurnSpeed() {
+        return this.entityData.get(TURN_SPEED);
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();

@@ -6,9 +6,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.mozillaa.javascript.*;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
-import org.ywzj.vehicle.api.scripts.bedrock.BoneHandlers;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.scripts.vehicle.WheeledVehicleContext;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.scripts.VehicleScriptContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,24 +18,23 @@ import java.util.Map;
  * 基础载具效果配置实例
  */
 public class BaseVehicleDisplay {
-    public static final Object[] EMPTY_ARGS = new Object[0];
 
+    public static final Object[] EMPTY_ARGS = new Object[0];
     protected BedrockModel model;
     protected ResourceLocation texture;
     // todo 临时存这，实际使用需要封装成状态机
     protected Map<String, BedrockAnimation> animations = Map.of();
-
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
-
-    protected BoneHandlers boneHandlers;
-
     protected Scriptable scope;
     protected Script script;
     protected Function prepareBonesFunction;
     protected Function tickParticleFunction;
-    protected WheeledVehicleContext vehicleScriptContext;
+    protected VehicleScriptContext<? extends AbstractVehicle> vehicleScriptContext;
 
-    public BaseVehicleDisplay() {
+    public BaseVehicleDisplay() {}
+
+    public VehicleScriptContext<? extends AbstractVehicle> buildVehicleScriptContext() {
+        return new VehicleScriptContext<>(null, model);
     }
 
     /**
@@ -46,23 +45,13 @@ public class BaseVehicleDisplay {
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.model = modelPojo.map(BedrockModel::new).orElseThrow();
 
-        this.boneHandlers = new BoneHandlers(model);
-        if (pojo.specialBones != null) {
-            for (var boneName : pojo.specialBones) {
-                var bone = model.getBone(boneName);
-                if (bone != null) {
-                    boneHandlers.addSpecialBone(boneName);
-                }
-            }
-        }
-
         if (pojo.script != null) {
             this.script = ClientAssetsManager.INSTANCE.getScript(pojo.script).orElse(null);
             if (this.script != null) {
-                try (var ctx = ScriptContextFactory.get().enterContext()) {
-                    this.scope = ScriptContextFactory.get().createScope(ctx);
+                try (var context = ScriptContextFactory.get().enterContext()) {
+                    this.scope = ScriptContextFactory.get().createScope(context);
 
-                    script.exec(ctx, this.scope);
+                    script.exec(context, this.scope);
 
                     var func = this.scope.get("prepareBones", this.scope);
                     if (func instanceof Function function) {
@@ -74,17 +63,9 @@ public class BaseVehicleDisplay {
                         this.tickParticleFunction = function;
                     }
 
-                    Object bonesJs = Context.javaToJS(this.boneHandlers, this.scope);
-                    ScriptableObject.defineProperty(this.scope, "boneHandlers", bonesJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
-
-                    this.vehicleScriptContext = new WheeledVehicleContext(null);
-                    Object vehicleContextJs = Context.javaToJS(this.vehicleScriptContext, this.scope);
-                    ScriptableObject.defineProperty(this.scope, "vehicleContext", vehicleContextJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
-
-                    var initBonesFunc = this.scope.get("initBones", this.scope);
-                    if (initBonesFunc instanceof Function function) {
-                        function.call(ctx, this.scope, function, EMPTY_ARGS);
-                    }
+                    this.vehicleScriptContext = buildVehicleScriptContext();
+                    Object vehicleScriptContextJs = Context.javaToJS(this.vehicleScriptContext, this.scope);
+                    ScriptableObject.defineProperty(this.scope, "context", vehicleScriptContextJs, ScriptableObject.READONLY | ScriptableObject.PERMANENT);
                 }
             }
         }
@@ -93,9 +74,9 @@ public class BaseVehicleDisplay {
 
         if (pojo.animations != null) {
             var animationPojo = ClientAssetsManager.INSTANCE.getAnimation(pojo.animations);
-            var animations = animationPojo.map(animationPOJO -> {
-                return BedrockAnimation.createAnimation(animationPOJO, model);
-            }).orElse(List.of());
+            var animations = animationPojo
+                    .map(animationPOJO -> BedrockAnimation.createAnimation(animationPOJO, model))
+                    .orElse(List.of());
             var map = new HashMap<String, BedrockAnimation>();
             for (var anim : animations) {
                 map.put(anim.getName(), anim);
@@ -131,11 +112,6 @@ public class BaseVehicleDisplay {
         return script;
     }
 
-
-    public BoneHandlers getBoneHandlers() {
-        return boneHandlers;
-    }
-
     public Function getPrepareBonesFunction() {
         return prepareBonesFunction;
     }
@@ -148,7 +124,7 @@ public class BaseVehicleDisplay {
         return scope;
     }
 
-    public WheeledVehicleContext getVehicleContext() {
+    public VehicleScriptContext getVehicleScriptContext() {
         return vehicleScriptContext;
     }
 

@@ -1,6 +1,8 @@
 {
+  "type": "ywzj_vehicle:wheeled_vehicle",
   "model": "ywzj_vehicle:entity/hiace",
   "texture": "ywzj_vehicle:textures/entity/hiace.png",
+  "script": "ywzj_vehicle:hiace",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:lav150_engine_idle",

@@ -35,4 +35,5 @@ public class VehicleAnimationInstance {
     public Pose getCurrentPose() {
         return stateMachine.getPose();
     }
+
 }

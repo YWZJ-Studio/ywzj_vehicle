@@ -10,7 +10,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -54,8 +53,7 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
         {
             double length;
             if (entity instanceof AbstractVehicle vehicle) {
-                AABB aabb = vehicle.getBoundingBox();
-                length = aabb.maxZ - aabb.minZ;
+                length = vehicle.getMainCubeOBB().depth;
             } else {
                 length = entity.getBbHeight() * 2;
             }

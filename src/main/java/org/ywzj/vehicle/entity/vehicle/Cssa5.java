@@ -5,20 +5,8 @@ import net.minecraft.world.level.Level;
 
 public class Cssa5 extends WheeledVehicle {
 
-    public int partRotateTick;
-
     public Cssa5(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        if (level().isClientSide) {
-            if (hasPower()) {
-                partRotateTick += 1;
-            }
-        }
     }
 
 }

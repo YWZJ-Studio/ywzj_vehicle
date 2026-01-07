@@ -1,6 +1,8 @@
 {
+  "type": "ywzj_vehicle:wheeled_vehicle",
   "model": "ywzj_vehicle:entity/motorcycle",
   "texture": "ywzj_vehicle:textures/entity/motorcycle.png",
+  "script": "ywzj_vehicle:motorcycle",
   "sounds": {
     "engine_start": "ywzj_vehicle:motorcycle_engine_start",
     "engine_idle": "ywzj_vehicle:motorcycle_engine_idle",

@@ -57,12 +57,15 @@ import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
+import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
+import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
+import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
@@ -117,6 +120,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public WarningReceiver warningReceiver;
     public boolean protectPassenger;
     public PhysicsEngine physicsEngine;
+    private final ScriptCache scriptCache = new ScriptCache(null);
+    private VehicleAnimationInstance animationInstance;
     protected boolean dataInitialized;
     private long destroyedTime;
     protected int engineParticleTick;
@@ -271,6 +276,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.partUnitMap = map;
         updateOBBs();
         partUnits.forEach(PartUnit::updateOBBs);
+        if (this.level().isClientSide()) {
+            this.animationInstance = new VehicleAnimationInstance(this);
+        }
         this.dataInitialized = true;
     }
 
@@ -324,6 +332,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (level().isClientSide()) {
             tickSound();
             tickParticle();
+            if (animationInstance != null) {
+                animationInstance.tick();
+            }
         } else {
             if (tickCount == 1) {
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
@@ -366,8 +377,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             setPower(0);
             return;
         }
+        if (isDestroyed()) {
+            setPower(0);
+            return;
+        }
         if (getDriver() == null) {
-            this.entityData.set(ENGINE_ON, false);
+            toggleEngine(false);
         }
         setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
         if (getEnergy() == 0) {
@@ -750,7 +765,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             if (pHand == InteractionHand.MAIN_HAND) {
                 ItemStack itemStack = pPlayer.getItemInHand(pHand);
-                if (!itemStack.isEmpty()) {
+                if (itemStack.getItem() instanceof VehicleItem) {
                     return InteractionResult.PASS;
                 }
                 if (pPlayer.startRiding(this)) {
@@ -874,6 +889,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public VehicleBedrockCubeOBB getMainCubeOBB() {
         return mainCubeOBB;
+    }
+
+    public ScriptCache getScriptCache() {
+        return scriptCache;
+    }
+
+    public VehicleAnimationInstance getAnimationInstance() {
+        return animationInstance;
     }
 
     public float getXRot() {

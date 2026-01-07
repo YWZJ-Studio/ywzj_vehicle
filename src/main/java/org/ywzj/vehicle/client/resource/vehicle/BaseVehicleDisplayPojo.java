@@ -3,13 +3,13 @@ package org.ywzj.vehicle.client.resource.vehicle;
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * 基础载具效果配置实例
  */
 public class BaseVehicleDisplayPojo {
+
     @SerializedName("model")
     public ResourceLocation model;
 
@@ -19,12 +19,10 @@ public class BaseVehicleDisplayPojo {
     @SerializedName("animations")
     public ResourceLocation animations;
 
-    @SerializedName("sounds")
-    public Map<String, ResourceLocation> sounds;
-
     @SerializedName("script")
     public ResourceLocation script;
 
-    @SerializedName("special_bones")
-    public List<String> specialBones;
+    @SerializedName("sounds")
+    public Map<String, ResourceLocation> sounds;
+
 }

@@ -24,7 +24,7 @@ import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.CommonWheeledVehicle;
 
-
+@Deprecated
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehicle> {
     private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
@@ -61,7 +61,7 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
 
             ArrayPoseBuilder poseBuilder = new ArrayPoseBuilder();
 
-            display.getVehicleContext().updateRenderer(pPartialTick, pEntity);
+            display.getVehicleScriptContext().updateRenderer(pPartialTick, pEntity);
             var func = display.getPrepareBonesFunction();
             if (func != null) {
                 try (var ctx = ScriptContextFactory.get().enterContext()) {

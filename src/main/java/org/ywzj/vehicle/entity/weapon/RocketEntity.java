@@ -18,7 +18,6 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 public class RocketEntity extends AmmoEntity {
 
-    public AbstractVehicle vehicle;
     private VehicleSound sound;
 
     public RocketEntity(EntityType<? extends Projectile> entityType, Level level) {

@@ -12,30 +12,34 @@ public class ServerVehicleHurtEntity {
 
     public int vehicleEntityId;
     public int entityId;
+    public boolean kill;
 
     public ServerVehicleHurtEntity() {}
 
-    public ServerVehicleHurtEntity(int vehicleEntityId, int entityId) {
+    public ServerVehicleHurtEntity(int vehicleEntityId, int entityId, boolean kill) {
         this.vehicleEntityId = vehicleEntityId;
         this.entityId = entityId;
+        this.kill = kill;
     }
 
     public static void encode(ServerVehicleHurtEntity msg, FriendlyByteBuf buf) {
         buf.writeInt(msg.vehicleEntityId);
         buf.writeInt(msg.entityId);
+        buf.writeBoolean(msg.kill);
     }
 
     public static ServerVehicleHurtEntity decode(FriendlyByteBuf buf) {
         ServerVehicleHurtEntity serverVehicleHurtEntity = new ServerVehicleHurtEntity();
         serverVehicleHurtEntity.vehicleEntityId = buf.readInt();
         serverVehicleHurtEntity.entityId = buf.readInt();
+        serverVehicleHurtEntity.kill = buf.readBoolean();
         return serverVehicleHurtEntity;
     }
 
     public static void onServerMessageReceived(ServerVehicleHurtEntity message, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
         if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(Minecraft.getInstance().level.getEntity(message.entityId) instanceof AbstractVehicle));
+            context.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(Minecraft.getInstance().level.getEntity(message.entityId) instanceof AbstractVehicle, message.kill));
         }
         context.setPacketHandled(true);
     }

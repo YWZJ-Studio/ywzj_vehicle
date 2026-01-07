@@ -14,7 +14,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -53,6 +52,10 @@ public abstract class WheeledVehicle extends AbstractVehicle {
 
     public float getTurnAngle() {
         return this.entityData.get(TURN_ANGLE);
+    }
+
+    public float getSpeed() {
+        return (float) getDeltaMovement().length();
     }
 
     @Override
@@ -299,13 +302,4 @@ public abstract class WheeledVehicle extends AbstractVehicle {
         return Vec3.ZERO;
     }
 
-    public float getSpeed() {
-        return (float) getDeltaMovement().length();
-    }
-
-    private final ScriptCache scriptCache = new ScriptCache(null);
-
-    public ScriptCache getScriptCache() {
-        return scriptCache;
-    }
 }

@@ -230,6 +230,13 @@ public class BulletEntity extends AmmoEntity {
                 AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation()),
                 AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation())
         );
+
+        boolean kill = false;
+        boolean destroyedBeforeHurt = false;
+        if (entity instanceof AbstractVehicle vehicle) {
+            destroyedBeforeHurt = vehicle.isDestroyed();
+        }
+
         // 对 LivingEntity 进行击退强度的自定义
         if (entity instanceof LivingEntity livingCore) {
             // 取消击退效果，设定自己的击退强度
@@ -243,8 +250,15 @@ public class BulletEntity extends AmmoEntity {
             // 创建伤害
             performAttack(entity, damage, sources);
         }
+
+        if (entity instanceof AbstractVehicle vehicle) {
+            kill = !destroyedBeforeHurt && vehicle.isDestroyed();
+        } else if (entity instanceof LivingEntity livingEntity) {
+            kill = livingEntity.isDeadOrDying();
+        }
+
         if (owner instanceof ServerPlayer serverPlayer) {
-            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId()));
+            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill));
         }
 
         if (explosion.explode) {

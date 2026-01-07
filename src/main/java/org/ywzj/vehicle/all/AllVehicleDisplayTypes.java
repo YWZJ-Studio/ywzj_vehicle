@@ -4,12 +4,11 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplayPojo;
-import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplayType;
+import org.ywzj.vehicle.client.resource.vehicle.*;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 public class AllVehicleDisplayTypes {
+
     public static final DeferredRegister<VehicleDisplayType<?>> VEHICLE_DISPLAY_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_DISPLAY_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<VehicleDisplayType<BaseVehicleDisplay>> GENERIC_VEHICLE = register(
@@ -17,6 +16,30 @@ public class AllVehicleDisplayTypes {
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
                 return new BaseVehicleDisplay(pojo);
+            }
+    );
+
+    public static final RegistryObject<VehicleDisplayType<WheeledVehicleDisplay>> WHEELED_VEHICLE = register(
+            "wheeled_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
+                return new WheeledVehicleDisplay(pojo);
+            }
+    );
+
+    public static final RegistryObject<VehicleDisplayType<TrackedVehicleDisplay>> TRACKED_VEHICLE = register(
+            "tracked_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
+                return new TrackedVehicleDisplay(pojo);
+            }
+    );
+
+    public static final RegistryObject<VehicleDisplayType<RotaryWingVehicleDisplay>> ROTARY_WING_VEHICLE = register(
+            "rotary_wing_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
+                return new RotaryWingVehicleDisplay(pojo);
             }
     );
 

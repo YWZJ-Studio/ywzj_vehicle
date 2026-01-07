@@ -70,6 +70,8 @@
       "name": "auto_cannon",
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "auto_cannon",
+      "fire_control_sensor_type": "eo",
+      "fire_control_lock_type": "aim_hit",
       "is_seat": false,
       "crosshair_style": "square",
       "rot_info": {
@@ -86,6 +88,8 @@
       "name": "missile",
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "missile",
+      "fire_control_sensor_type": "eo",
+      "fire_control_lock_type": "aim_hit",
       "is_seat": false,
       "parent_weapon_unit_aim": true,
       "crosshair_style": "circle",

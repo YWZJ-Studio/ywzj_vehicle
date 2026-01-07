@@ -165,7 +165,7 @@
 				},
 				{
 					"name": "anti_aircraft_machine_gun_barrel",
-					"pivot": [0, 0.625, 8.875],
+					"pivot": [-14.3978, 39.25, -3.3137],
 					"cubes": [
 						{
 							"origin": [-14.375, 42.525, -1.2],

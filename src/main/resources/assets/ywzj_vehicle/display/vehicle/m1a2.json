@@ -1,7 +1,9 @@
 {
+  "type": "ywzj_vehicle:tracked_vehicle",
   "model": "ywzj_vehicle:entity/m1a2",
   "texture": "ywzj_vehicle:textures/entity/m1a2.png",
   "animations": "ywzj_vehicle:entity/m1a2.animation",
+  "script": "ywzj_vehicle:m1a2",
   "sounds": {
     "engine_start": "ywzj_vehicle:m1a2_engine_start",
     "engine_idle": "ywzj_vehicle:m1a2_engine_idle",

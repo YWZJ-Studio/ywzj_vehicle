@@ -44,6 +44,7 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
     private static final long KEEP_TIME = 300;
     private static boolean hitVehicle;
     private static long hitTimestamp = -1L;
+    private static long killTimestamp = -1L;
     public static List<ServerHitVehicleEvent> events = new ArrayList<>();
     public static long lastHitTime = System.currentTimeMillis();
 
@@ -148,16 +149,28 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
 
     private static void renderHitMarker(GuiGraphics graphics) {
         long remainHitTime = System.currentTimeMillis() - hitTimestamp;
-        if (remainHitTime > KEEP_TIME) {
-            return;
+        long remainKillTime = System.currentTimeMillis() - killTimestamp;
+        float fadeTime;
+        float diffusion = 1f;
+        boolean kill = false;
+        if (remainKillTime > KEEP_TIME) {
+            if (remainHitTime > KEEP_TIME) {
+                return;
+            } else {
+                fadeTime = remainHitTime;
+            }
+        } else {
+            fadeTime = remainKillTime;
+            diffusion = 2f;
+            kill = true;
         }
-        float progress = remainHitTime / (float) KEEP_TIME;
+        float progress = fadeTime / ((float) KEEP_TIME * diffusion);
         progress = Math.min(progress, 1.0f);
         float eased = 1.0f - (float) java.lang.Math.pow(1.0f - progress, 3);
-        float offset = eased * MAX_OFFSET;
+        float offset = eased * MAX_OFFSET * diffusion;
         float alpha = 1.0f - (float) java.lang.Math.pow(progress, 1.5);
 
-        float scale = 1.5f;
+        float scale = 2f;
         int size = (int) (16 * scale);
         int sizeHalf = size / 2;
 
@@ -174,7 +187,11 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
                     GlStateManager.SourceFactor.SRC_ALPHA,
                     GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
             );
-            RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
+            if (kill) {
+                RenderSystem.setShaderColor(1F, 0f, 0f, alpha);
+            } else {
+                RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
+            }
 
             ResourceLocation hitMarker = hitVehicle ? HIT_VEHICLE : HIT_COMMON;
 
@@ -207,8 +224,12 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         poseStack.popPose();
     }
 
-    public static void markHitTimestamp(boolean hitVehicle) {
-        VehicleHitIndicatorOverlay.hitTimestamp = System.currentTimeMillis();
+    public static void markHitTimestamp(boolean hitVehicle, boolean kill) {
+        if (kill) {
+            VehicleHitIndicatorOverlay.killTimestamp = System.currentTimeMillis();
+        } else {
+            VehicleHitIndicatorOverlay.hitTimestamp = System.currentTimeMillis();
+        }
         VehicleHitIndicatorOverlay.hitVehicle = hitVehicle;
     }
 

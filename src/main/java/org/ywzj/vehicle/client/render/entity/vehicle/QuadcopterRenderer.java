@@ -29,70 +29,68 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
 
     @Override
     public void render(Quadcopter pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        pPoseStack.pushPose();
-
-        Vec3 root = new Vec3(0, 0, 0);
-
-        pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.QUADCOPTER.getId()).orElse(null);
         if (display == null || display.getModel() == null) {
             return;
         }
+        pPoseStack.pushPose();
+        {
+            BedrockModel model = display.getModel();
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
-        BedrockModel model = display.getModel();
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
+            BedrockBone propellerUp1 = model.getBoneMap().get("wing1_up");
+            BedrockBone propellerDown1 = model.getBoneMap().get("wing1_down");
+            BedrockBone propellerUp2 = model.getBoneMap().get("wing2_up");
+            BedrockBone propellerDown2 = model.getBoneMap().get("wing2_down");
+            BedrockBone propellerUp3 = model.getBoneMap().get("wing3_up");
+            BedrockBone propellerDown3 = model.getBoneMap().get("wing3_down");
+            BedrockBone propellerUp4 = model.getBoneMap().get("wing4_up");
+            BedrockBone propellerDown4 = model.getBoneMap().get("wing4_down");
+            BedrockBone ropeConnect = model.getBoneMap().get("rope_connect");
+            BedrockBone rope = model.getBoneMap().get("rope");
 
-        BedrockBone propellerUp1 = model.getBoneMap().get("wing1_up");
-        BedrockBone propellerDown1 = model.getBoneMap().get("wing1_down");
-        BedrockBone propellerUp2 = model.getBoneMap().get("wing2_up");
-        BedrockBone propellerDown2 = model.getBoneMap().get("wing2_down");
-        BedrockBone propellerUp3 = model.getBoneMap().get("wing3_up");
-        BedrockBone propellerDown3 = model.getBoneMap().get("wing3_down");
-        BedrockBone propellerUp4 = model.getBoneMap().get("wing4_up");
-        BedrockBone propellerDown4 = model.getBoneMap().get("wing4_down");
-        BedrockBone ropeConnect = model.getBoneMap().get("rope_connect");
-        BedrockBone rope = model.getBoneMap().get("rope");
+            float cableLength = pEntity.getEntityData().get(CABLE_LENGTH);
+            pEntity.propellerRotation += pEntity.getPower() / 5;
+            pEntity.propellerRotation %= 360;
 
-        float cableLength = pEntity.getEntityData().get(CABLE_LENGTH);
-        pEntity.propellerRotation += pEntity.getPower() / 5;
-        pEntity.propellerRotation %= 360;
+            propellerUp1.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
+            propellerUp4.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
+            propellerDown2.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
+            propellerDown3.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
+            propellerDown1.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
+            propellerDown4.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
+            propellerUp2.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
+            propellerUp3.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
 
-        propellerUp1.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-        propellerUp4.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-        propellerDown2.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-        propellerDown3.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-        propellerDown1.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
-        propellerDown4.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
-        propellerUp2.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
-        propellerUp3.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
+            float d = 16 * cableLength;
+            ropeConnect.y -= d;
+            BedrockCube cube = rope.getChildren().get(0).cubes.get(0);
+            float scale = (cube.height() + cableLength) / cube.height();
+            rope.yScale = scale;
+            float diffY = (cube.y() * scale - cube.y()) * 1.8f;
+            rope.y -= diffY;
 
-        float d = 16 * cableLength;
-        ropeConnect.y -= d;
-        BedrockCube cube = rope.getChildren().get(0).cubes.get(0);
-        float scale = (cube.height() + cableLength) / cube.height();
-        rope.yScale = scale;
-        float diffY = (cube.y() * scale - cube.y()) * 1.8f;
-        rope.y -= diffY;
+            super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+            Vec3 root = new Vec3(0, 0, 0);
+            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
+            pEntity.lastRenderTime = System.currentTimeMillis();
+            model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
-        pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-
-        Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-        propellerUp1.rotation.set(reset);
-        propellerUp2.rotation.set(reset);
-        propellerUp3.rotation.set(reset);
-        propellerUp4.rotation.set(reset);
-        propellerDown1.rotation.set(reset);
-        propellerDown2.rotation.set(reset);
-        propellerDown3.rotation.set(reset);
-        propellerDown4.rotation.set(reset);
-        ropeConnect.y += d;
-        rope.yScale = 1;
-        rope.y += diffY;
-
+            Quaternionf reset = new Quaternionf(0, 0, 0, 1);
+            propellerUp1.rotation.set(reset);
+            propellerUp2.rotation.set(reset);
+            propellerUp3.rotation.set(reset);
+            propellerUp4.rotation.set(reset);
+            propellerDown1.rotation.set(reset);
+            propellerDown2.rotation.set(reset);
+            propellerDown3.rotation.set(reset);
+            propellerDown4.rotation.set(reset);
+            ropeConnect.y += d;
+            rope.yScale = 1;
+            rope.y += diffY;
+        }
         pPoseStack.popPose();
     }
 
