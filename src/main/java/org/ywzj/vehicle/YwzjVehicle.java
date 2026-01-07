@@ -1,14 +1,18 @@
 package org.ywzj.vehicle;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ywzj.vehicle.all.*;
 import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.resource.VehiclePackLoader;
 
 @Mod(YwzjVehicle.MOD_ID)
 public class YwzjVehicle {
@@ -20,6 +24,9 @@ public class YwzjVehicle {
 
     @SuppressWarnings("removal")
     public YwzjVehicle() {
+        Dist side = FMLLoader.getDist();
+        VehiclePackLoader.INSTANCE.packType = side.isClient() ? PackType.CLIENT_RESOURCES : PackType.SERVER_DATA;
+
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         AllConfigs.register(ModLoadingContext.get());
         IEventBus modEventBus = context.getModEventBus();
