@@ -368,25 +368,26 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public void updateOBBs(List<VehicleBedrockCubeOBB> unitOBBs, boolean isBarrel) {
-        for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitOBBs) {
-            OBB obb = unitBedrockCubeOBB.obb();
-            Quaternionf rot = new Quaternionf();
-            rot.rotateY(Math.toRadians(-combineYRot()));
+        Quaternionf rot = new Quaternionf()
+                .rotateY(Math.toRadians(-combineYRot()));
+        if (isBarrel) {
+            rot.rotateX(Math.toRadians(xRot));
+        }
+        Quaternionf vehicleRot = vehicle.rotYXZ();
+        for (VehicleBedrockCubeOBB unitOBB : unitOBBs) {
+            OBB obb = unitOBB.obb();
             if (isBarrel) {
-                rot.rotateX(Math.toRadians(xRot));
-                Vec3 barrelCenterOffset = rotatedOffsetWithSelfRot(unitBedrockCubeOBB.offset());
-                Vec3 barrelPivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitBedrockCubeOBB.offset().x, unitBedrockCubeOBB.boneY / 16, unitBedrockCubeOBB.boneZ / 16));
-                Vec3 rel = barrelCenterOffset.subtract(barrelPivotOffset);
-                Vec2 ro = VectorUtil.worldVecToRot(rel);
-                Vec2 r = new Vec2(ro.x + xRot, ro.y);
-                Vec3 v = VectorUtil.calculateViewVector(r.x, r.y);
-                v = v.scale(rel.length());
-                obb.setCenter(vehicle.relativeRotPos(vehicle.position().add(barrelPivotOffset).add(new Vec3(v.x, v.y, v.z)), false).toVector3f());
+                Vec3 centerOffset = rotatedOffsetWithSelfRot(unitOBB.offset());
+                Vec3 pivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitOBB.offset().x, unitOBB.boneY / 16.0, unitOBB.boneZ / 16.0));
+                Vec3 rel = centerOffset.subtract(pivotOffset);
+                Vec2 relRot = VectorUtil.worldVecToRot(rel);
+                Vec3 dir = VectorUtil.calculateViewVector(relRot.x + xRot, relRot.y).scale(rel.length());
+                Vec3 worldCenter = vehicle.relativeRotPos(vehicle.position().add(pivotOffset).add(dir), false);
+                obb.setCenter(worldCenter.toVector3f());
             } else {
-                obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
+                obb.setCenter(worldPosition(unitOBB.offset()).toVector3f());
             }
-            Quaternionf selfRot = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            obb.setRotation(vehicle.rotYXZ().mul(rot).mul(selfRot));
+            obb.setRotation(new Quaternionf(vehicleRot).mul(rot).mul(unitOBB.selfRot()));
         }
     }
 

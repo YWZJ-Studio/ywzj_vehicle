@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
@@ -31,11 +32,22 @@ import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
+import org.ywzj.vehicle.resource.VehiclePackLoader;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.Iterator;
 
 public class AllEvents {
+
+    @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    public static class AllModEvents {
+
+        @SubscribeEvent
+        public static void onAddPackFinders(AddPackFindersEvent event) {
+            event.addRepositorySource(VehiclePackLoader.INSTANCE);
+        }
+
+    }
 
     @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
     public static class AllForgeEvents {

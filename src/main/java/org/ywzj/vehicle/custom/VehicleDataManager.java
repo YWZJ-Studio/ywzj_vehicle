@@ -93,7 +93,7 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
     @NotNull
     @Override
     public Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller profiler) {
-        var map = scanDirectory(manager, "vehicle", GsonUtil.GSON);
+        var map = scanDirectory(manager, "vehicles", GsonUtil.GSON);
         ImmutableMap.Builder<ResourceLocation, String> builder = ImmutableMap.builder();
         for (var entry : map.entrySet()) {
             builder.put(entry.getKey(), entry.getValue().toString());
@@ -103,8 +103,8 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
     }
 
     @Override
-    public void apply(Map<ResourceLocation, JsonElement> map, ResourceManager manager, ProfilerFiller profiler) {
-        indexes = parseIndexes(map);
+    public void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager manager, ProfilerFiller profiler) {
+        indexes = parseIndexes(resources);
     }
 
     public static void fromNetwork(Map<ResourceLocation, String> map) {

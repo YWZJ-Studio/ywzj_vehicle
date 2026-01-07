@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Math;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.joml.Vector4d;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
@@ -95,14 +96,18 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     @Override
     public void updateOBBs() {
-        for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitBedrockCubeOBBs) {
-            OBB obb = unitBedrockCubeOBB.obb();
-            Quaternionf rot = new Quaternionf();
-            rot.rotateY(Math.toRadians(-combineYRot()));
-            rot.rotateX(Math.toRadians(xRot));
-            obb.setCenter(worldPosition(unitBedrockCubeOBB.offset()).toVector3f());
-            Quaternionf selfRot = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            obb.setRotation(vehicle.rotYXZ().mul(rot).mul(selfRot));
+        Quaternionf rot = new Quaternionf()
+                .rotateY(Math.toRadians(-combineYRot()))
+                .rotateX(Math.toRadians(xRot));
+        Quaternionf vehicleRot = vehicle.rotYXZ();
+        for (VehicleBedrockCubeOBB unitOBB : unitBedrockCubeOBBs) {
+            OBB obb = unitOBB.obb();
+            Vector3f offset = unitOBB.offset()
+                    .subtract(pivotOffset)
+                    .toVector3f();
+            rot.transform(offset);
+            obb.setCenter(worldPosition(new Vec3(offset).add(pivotOffset)).toVector3f());
+            obb.setRotation(new Quaternionf(vehicleRot).mul(rot).mul(unitOBB.selfRot()));
         }
     }
 

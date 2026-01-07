@@ -107,8 +107,6 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Z10>> Z10 = registerVehicle("z10", Z10::new);
 
-    public static final RegistryObject<EntityType<Mi24>> MI24 = registerVehicle("mi24", Mi24::new);
-
     public static final RegistryObject<EntityType<Ka50>> KA50 = registerVehicle("ka50", Ka50::new);
 
     public static final RegistryObject<EntityType<Motorcycle>> MOTORCYCLE = registerVehicle("motorcycle", Motorcycle::new);
