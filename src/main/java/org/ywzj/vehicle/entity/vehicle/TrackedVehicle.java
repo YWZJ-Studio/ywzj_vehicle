@@ -23,7 +23,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public abstract class TrackedVehicle extends AbstractVehicle {
+public class TrackedVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);

@@ -4,11 +4,15 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.StringUtils;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
@@ -31,6 +35,13 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
 
     public BaseVehicleData() {}
+
+    public void summon(ResourceLocation customId, Level level, Vec3 position) {
+        NoneVehicle noneVehicle = new NoneVehicle(AllEntities.NONE_VEHICLE.get(), level);
+        noneVehicle.setCustomId(customId);
+        noneVehicle.setPos(position);
+        level.addFreshEntity(noneVehicle);
+    }
 
     protected static String check(BaseVehicleDataPojo pojo) {
         return "";

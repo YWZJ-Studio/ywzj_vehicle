@@ -10,7 +10,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public abstract class NoneVehicle extends AbstractVehicle {
+public class NoneVehicle extends AbstractVehicle {
 
     public NoneVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);

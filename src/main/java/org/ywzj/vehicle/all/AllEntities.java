@@ -94,8 +94,40 @@ public class AllEntities {
                     .clientTrackingRange(16)
                     .build("fake_player"));
 
-    public static final RegistryObject<EntityType<CommonWheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("common_wheeled_vehicle",
-            () -> CommonWheeledVehicle.TYPE);
+    public static final RegistryObject<EntityType<NoneVehicle>> NONE_VEHICLE = ENTITIES.register("none_vehicle",
+            () -> EntityType.Builder.of(NoneVehicle::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(16)
+                    .build("none_vehicle"));
+
+    public static final RegistryObject<EntityType<WheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("wheeled_vehicle",
+            () -> EntityType.Builder.of(WheeledVehicle::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(16)
+                    .build("wheeled_vehicle"));
+
+    public static final RegistryObject<EntityType<TrackedVehicle>> TRACKED_VEHICLE = ENTITIES.register("tracked_vehicle",
+            () -> EntityType.Builder.of(TrackedVehicle::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(16)
+                    .build("tracked_vehicle"));
+
+    public static final RegistryObject<EntityType<RotaryWingVehicle>> ROTARY_WING_VEHICLE = ENTITIES.register("rotary_wing_vehicle",
+            () -> EntityType.Builder.of(RotaryWingVehicle::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(16)
+                    .build("rotary_wing_vehicle"));
+
+//    public static final RegistryObject<EntityType<CommonWheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("common_wheeled_vehicle",
+//            () -> CommonWheeledVehicle.TYPE);
 
     public static final RegistryObject<EntityType<DumpTruck>> DUMP_TRUCK = registerVehicle("dump_truck", DumpTruck::new);
 

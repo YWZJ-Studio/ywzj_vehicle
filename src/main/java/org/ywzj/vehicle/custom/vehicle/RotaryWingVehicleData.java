@@ -1,5 +1,9 @@
 package org.ywzj.vehicle.custom.vehicle;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 
 public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
@@ -12,6 +16,14 @@ public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
     public float zRotSpeedAcceleration = 1;
     public float zRotSpeedMax = 4;
     public float maxAirSpeed = 1f;
+
+    @Override
+    public void summon(ResourceLocation customId, Level level, Vec3 position) {
+        RotaryWingVehicle rotaryWingVehicle = new RotaryWingVehicle(AllEntities.ROTARY_WING_VEHICLE.get(), level);
+        rotaryWingVehicle.setCustomId(customId);
+        rotaryWingVehicle.setPos(position);
+        level.addFreshEntity(rotaryWingVehicle);
+    }
 
     public void build(RotaryWingVehicleDataPojo pojo) {
         super.build(pojo);

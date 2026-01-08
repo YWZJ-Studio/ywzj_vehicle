@@ -28,7 +28,8 @@
         "x_rot_speed": 3,
         "y_rot_speed": 3,
         "x_rot_max": 4,
-        "x_rot_min": -30
+        "x_rot_min": -30,
+        "need_power": false
       },
       "optical_sight_offset": [0, 1, 1],
       "operator_view_offset": [0, 1.5, 0],

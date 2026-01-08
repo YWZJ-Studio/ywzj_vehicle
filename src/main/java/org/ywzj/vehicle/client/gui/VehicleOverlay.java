@@ -19,6 +19,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -46,7 +47,9 @@ public class VehicleOverlay implements IGuiOverlay {
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             renderCompassBar(guiGraphics, partialTick, screenWidth, vehicle);
         }
-        renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
+        if (!(vehicle instanceof NoneVehicle)) {
+            renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
+        }
         renderTips(guiGraphics, screenWidth, screenHeight, vehicle);
     }
 

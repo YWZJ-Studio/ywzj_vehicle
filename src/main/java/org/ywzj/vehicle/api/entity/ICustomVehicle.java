@@ -3,6 +3,7 @@ package org.ywzj.vehicle.api.entity;
 import net.minecraft.resources.ResourceLocation;
 
 public interface ICustomVehicle {
+
     String TAG_VEHICLE_ID = "CustomVehicleId";
 
     String TAG_DISPLAY_ID = "CustomVehicleDisplayId";

@@ -22,7 +22,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public abstract class RotaryWingVehicle extends AbstractVehicle {
+public class RotaryWingVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.INT);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;

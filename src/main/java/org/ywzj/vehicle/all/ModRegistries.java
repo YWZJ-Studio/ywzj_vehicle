@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 
 @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModRegistries {
+
     public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE = ResourceKey.createRegistryKey(
             new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_weapon_type")
     );
@@ -46,4 +47,5 @@ public class ModRegistries {
         VEHICLE_DISPLAY_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleDisplayType<?>>()
                 .disableSync().setName(VEHICLE_DISPLAY_TYPE.location()));
     }
+
 }

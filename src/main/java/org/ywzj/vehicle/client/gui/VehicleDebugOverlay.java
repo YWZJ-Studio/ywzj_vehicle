@@ -8,9 +8,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.ywzj.vehicle.command.sub.DebugCommand;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.control.InputHandler;
 
 import java.util.UUID;
 
@@ -18,7 +18,7 @@ public class VehicleDebugOverlay implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (!LocalVehiclePlayer.instance.onVehicle() || !InputHandler.debugGui) {
+        if (!LocalVehiclePlayer.instance.onVehicle() || !DebugCommand.DEBUG) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();

@@ -26,7 +26,6 @@ public class YwzjVehicle {
     public YwzjVehicle() {
         Dist side = FMLLoader.getDist();
         VehiclePackLoader.INSTANCE.packType = side.isClient() ? PackType.CLIENT_RESOURCES : PackType.SERVER_DATA;
-
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         AllConfigs.register(ModLoadingContext.get());
         IEventBus modEventBus = context.getModEventBus();

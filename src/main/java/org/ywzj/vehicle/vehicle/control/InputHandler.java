@@ -27,7 +27,6 @@ import static org.ywzj.vehicle.all.AllKeys.*;
 public class InputHandler {
 
     public static boolean freeCamera;
-    public static boolean debugGui;
     public static float xRotO;
     public static float yRotO;
 
@@ -80,8 +79,6 @@ public class InputHandler {
                                 .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleDecoyFlare)
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
-                } else if (DEBUG_GUI.matches(event.getKey(), event.getScanCode())) {
-                    debugGui = !debugGui;
                 }
             }
         }

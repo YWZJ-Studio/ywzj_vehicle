@@ -11,4 +11,5 @@ public interface IVehicleDataManager {
     Map<ResourceLocation, BaseVehicleData> getVehicleData();
 
     Optional<BaseVehicleData> getVehicleData(ResourceLocation id);
+
 }
