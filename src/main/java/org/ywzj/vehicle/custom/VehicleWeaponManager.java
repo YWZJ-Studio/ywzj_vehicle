@@ -27,8 +27,7 @@ import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 
 @Mod.EventBusSubscriber
 @ParametersAreNonnullByDefault
-public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>>
-        implements IVehicleWeaponManager {
+public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IVehicleWeaponManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");
 
@@ -141,4 +140,5 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
         }
         return builder.build();
     }
+
 }

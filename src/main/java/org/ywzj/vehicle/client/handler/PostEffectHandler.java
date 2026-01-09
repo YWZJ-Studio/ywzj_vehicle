@@ -18,7 +18,7 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 public class PostEffectHandler {
 
     private static final String crtEffectPath = "ywzj_vehicle:shaders/post/crt.json";
-    public static final ResourceLocation SHADER_LOCATION = new ResourceLocation(crtEffectPath);
+    public static final ResourceLocation SHADER_LOCATION = YwzjVehicle.resourceLocation(crtEffectPath);
 
     @SubscribeEvent
     public static void onTick(TickEvent.PlayerTickEvent event) {

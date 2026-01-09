@@ -85,8 +85,14 @@ public class LocalVehiclePlayer {
             Player player = getPlayer();
             PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
             if (partUnit instanceof WeaponUnit weaponUnit) {
-                weaponHitPosO = weaponHitPos;
-                weaponHitPos = weaponUnit.aimHitPosition();
+                weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                    WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
+                    if (currentWeaponUnit.isParentWeaponUnitAim()) {
+                        currentWeaponUnit = currentWeaponUnit.getParentWeaponUnit();
+                    }
+                    weaponHitPosO = weaponHitPos;
+                    weaponHitPos = currentWeaponUnit.aimHitPosition();
+                });
             }
             if (partUnit != null) {
                 cameraXO = cameraX;

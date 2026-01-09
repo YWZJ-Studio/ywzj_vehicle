@@ -31,7 +31,7 @@ public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLo
 
     @NotNull
     @Override
-    protected Map<ResourceLocation, Script> prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
+    public Map<ResourceLocation, Script> prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         Map<ResourceLocation, Script> output = Maps.newHashMap();
         try (Context ctx = ContextFactory.getGlobal().enterContext()) {
             ctx.setInterpretedMode(false);
@@ -51,7 +51,7 @@ public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLo
     }
 
     @Override
-    protected void apply(@NotNull Map<ResourceLocation, Script> map, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
+    public void apply(@NotNull Map<ResourceLocation, Script> map, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         scripts = ImmutableMap.copyOf(map);
     }
 

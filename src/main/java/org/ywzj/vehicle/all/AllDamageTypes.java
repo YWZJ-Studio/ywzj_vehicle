@@ -4,7 +4,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
@@ -17,8 +16,8 @@ public class AllDamageTypes {
     public static final ResourceKey<DamageType> VEHICLE_COLLISION;
 
     static {
-        BULLET = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(YwzjVehicle.MOD_ID, "bullet"));
-        VEHICLE_COLLISION = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_collision"));
+        BULLET = ResourceKey.create(Registries.DAMAGE_TYPE, YwzjVehicle.modLocation("bullet"));
+        VEHICLE_COLLISION = ResourceKey.create(Registries.DAMAGE_TYPE, YwzjVehicle.modLocation("vehicle_collision"));
     }
 
     public static class Sources {

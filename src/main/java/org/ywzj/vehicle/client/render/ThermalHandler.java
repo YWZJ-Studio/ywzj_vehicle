@@ -18,11 +18,12 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.ywzj.vehicle.YwzjVehicle;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ThermalHandler implements ResourceManagerReloadListener {
 
-    private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation("ywzj_vehicle", "shaders/post/thermal.json");
+    private static final ResourceLocation THERMAL_EFFECT = YwzjVehicle.resourceLocation("ywzj_vehicle:shaders/post/thermal.json");
     private static boolean isActive = false;
     private static PostChain thermalChain;
     private static int lastWidth = 0;

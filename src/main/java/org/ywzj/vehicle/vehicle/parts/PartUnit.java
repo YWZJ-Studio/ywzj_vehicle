@@ -56,26 +56,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected T data;
     public PassengerPose passengerPose;
 
-    @Deprecated
-    protected BedrockBone unitBone;
-
-    /**
-     * 你应该尽可能从数据包创建部件，而不是使用此构造函数手动创建部件<br/>
-     * 仅供测试使用
-     */
-    @Deprecated
-    public PartUnit(String id, int index, AbstractVehicle vehicle) {
-        this.name = Component.translatable(id);
-        this.id = id;
-        this.index = index;
-        this.syncData = new PartUnitSyncData(this);
-        this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
-        this.vehicle = vehicle;
-        this.unitBedrockCubeOBBs = new ArrayList<>();
-        this.initStructureModel(id);
-        this.initOBBs();
-    }
-
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
         this.id = data.getId();
@@ -118,34 +98,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public PartUnitSyncData getSyncData() {
         return syncData;
-    }
-
-    @Deprecated
-    protected void initStructureModel(String name) {
-        CommonAssetsManager.structureModelManager().getStructureModel(vehicle.getStructureModel()).ifPresent(
-                model -> {
-                    this.unitBone = model.getBoneMap().get(name);
-                    if (unitBone != null) {
-                        this.pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
-                    }
-                }
-        );
-    }
-
-    @Deprecated
-    protected void initOBBs() {
-        if (unitBone != null) {
-            List<BedrockCubePerFace> cubes = new ArrayList<>(unitBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-            for (BedrockCubePerFace cube : cubes) {
-                unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(unitBone, cube));
-            }
-            for (BedrockBone child : unitBone.getChildren()) {
-                List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
-                for (BedrockCubePerFace cube : childCubes) {
-                    unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
-                }
-            }
-        }
     }
 
     public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
@@ -295,6 +247,54 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     @NotNull
     public String getId() {
         return id;
+    }
+
+    @Deprecated
+    protected BedrockBone unitBone;
+
+    /**
+     * 你应该尽可能从数据包创建部件，而不是使用此构造函数手动创建部件<br/>
+     * 仅供测试使用
+     */
+    @Deprecated
+    public PartUnit(String id, int index, AbstractVehicle vehicle) {
+        this.name = Component.translatable(id);
+        this.id = id;
+        this.index = index;
+        this.syncData = new PartUnitSyncData(this);
+        this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
+        this.vehicle = vehicle;
+        this.unitBedrockCubeOBBs = new ArrayList<>();
+        this.initStructureModel(id);
+        this.initOBBs();
+    }
+
+    @Deprecated
+    protected void initStructureModel(String name) {
+        CommonAssetsManager.structureModelManager().getStructureModel(vehicle.getStructureModel()).ifPresent(
+                model -> {
+                    this.unitBone = model.getBoneMap().get(name);
+                    if (unitBone != null) {
+                        this.pivotOffset = new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16);
+                    }
+                }
+        );
+    }
+
+    @Deprecated
+    protected void initOBBs() {
+        if (unitBone != null) {
+            List<BedrockCubePerFace> cubes = new ArrayList<>(unitBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
+            for (BedrockCubePerFace cube : cubes) {
+                unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(unitBone, cube));
+            }
+            for (BedrockBone child : unitBone.getChildren()) {
+                List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
+                for (BedrockCubePerFace cube : childCubes) {
+                    unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
+                }
+            }
+        }
     }
 
 }

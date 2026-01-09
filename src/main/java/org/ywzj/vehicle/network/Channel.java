@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.network;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkRegistry;
@@ -17,7 +16,7 @@ import static net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER;
 public class Channel {
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
-            .named(new ResourceLocation(YwzjVehicle.MOD_ID, YwzjVehicle.CHANNEL))
+            .named(YwzjVehicle.modLocation(YwzjVehicle.CHANNEL))
             .networkProtocolVersion(() -> YwzjVehicle.PROTOCOL)
             .clientAcceptedVersions(YwzjVehicle.PROTOCOL::equals)
             .serverAcceptedVersions(YwzjVehicle.PROTOCOL::equals)

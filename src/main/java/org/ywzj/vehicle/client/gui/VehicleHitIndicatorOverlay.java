@@ -38,8 +38,8 @@ import java.util.List;
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleHitIndicatorOverlay implements IGuiOverlay {
 
-    private static final ResourceLocation HIT_COMMON = new ResourceLocation(YwzjVehicle.MOD_ID, "textures/ui/hit_common.png");
-    private static final ResourceLocation HIT_VEHICLE = new ResourceLocation(YwzjVehicle.MOD_ID, "textures/ui/hit_vehicle.png");
+    private static final ResourceLocation HIT_COMMON = YwzjVehicle.modLocation("textures/ui/hit_common.png");
+    private static final ResourceLocation HIT_VEHICLE = YwzjVehicle.modLocation("textures/ui/hit_vehicle.png");
     private static final float MAX_OFFSET = 0.6f;
     private static final long KEEP_TIME = 300;
     private static boolean hitVehicle;

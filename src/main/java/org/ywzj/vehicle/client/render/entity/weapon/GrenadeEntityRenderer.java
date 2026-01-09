@@ -30,8 +30,8 @@ public class GrenadeEntityRenderer extends EntityRenderer<GrenadeEntity> {
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
-            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("entity/grenade_40mm"));
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/grenade_40mm.png")));
+            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLocation("entity/grenade_40mm"));
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLocation("textures/entity/grenade_40mm.png")));
 
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
         }

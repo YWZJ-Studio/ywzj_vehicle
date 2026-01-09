@@ -15,6 +15,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -45,7 +46,7 @@ public class FuelTankItem extends VehicleItem {
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         Fluid fluid = Fluids.WATER;
         if (stack.hasTag() && stack.getTag().contains("Fluid")) {
-            ResourceLocation fluidId = new ResourceLocation(stack.getTag().getCompound("Fluid").getString("FluidName"));
+            ResourceLocation fluidId = YwzjVehicle.resourceLocation(stack.getTag().getCompound("Fluid").getString("FluidName"));
             fluid = ForgeRegistries.FLUIDS.getValue(fluidId);
             if (fluid == null) {
                 fluid = Fluids.WATER;

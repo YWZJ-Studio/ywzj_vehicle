@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.all;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -151,7 +150,7 @@ public class AllEvents {
         @SubscribeEvent
         public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
             if (event.getObject() instanceof AbstractVehicle) {
-                event.addCapability(new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_capability"), new VehicleCapabilityProvider());
+                event.addCapability(YwzjVehicle.modLocation("vehicle_capability"), new VehicleCapabilityProvider());
             }
         }
 

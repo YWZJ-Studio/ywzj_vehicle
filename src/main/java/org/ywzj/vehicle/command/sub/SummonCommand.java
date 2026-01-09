@@ -23,8 +23,8 @@ public class SummonCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> get() {
         LiteralArgumentBuilder<CommandSourceStack> summonCommand = Commands.literal(SUMMON_NAME);
-        RequiredArgumentBuilder<CommandSourceStack, ResourceLocation> enable = Commands.argument(CUSTOM_ID_NAME, ResourceLocationArgument.id()).suggests(SummonCommand::suggestCustomIds);
-        summonCommand.then(enable.executes(SummonCommand::setValue));
+        RequiredArgumentBuilder<CommandSourceStack, ResourceLocation> summon = Commands.argument(CUSTOM_ID_NAME, ResourceLocationArgument.id()).suggests(SummonCommand::suggestCustomIds);
+        summonCommand.then(summon.executes(SummonCommand::setValue));
         return summonCommand;
     }
 

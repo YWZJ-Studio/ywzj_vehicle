@@ -19,8 +19,9 @@ import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
-    public static final ResourceLocation DEFAULT_BULLET_MODEL = YwzjVehicle.modLoc("entity/basic_bullet");
-    public static final ResourceLocation DEFAULT_BULLET_TEXTURE = YwzjVehicle.modLoc("textures/entity/basic_bullet.png");
+
+    public static final ResourceLocation DEFAULT_BULLET_MODEL = YwzjVehicle.modLocation("entity/basic_bullet");
+    public static final ResourceLocation DEFAULT_BULLET_TEXTURE = YwzjVehicle.modLocation("textures/entity/basic_bullet.png");
 
     public BulletEntityRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);

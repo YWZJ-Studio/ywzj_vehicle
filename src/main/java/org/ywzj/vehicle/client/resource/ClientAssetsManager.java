@@ -2,6 +2,8 @@ package org.ywzj.vehicle.client.resource;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.BedrockAnimationFile;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.BedrockModelPOJO;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -11,7 +13,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.mozillaa.javascript.Script;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -20,21 +24,23 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public enum ClientAssetsManager {
+
     INSTANCE;
     private JsonDataManager<BedrockModelPOJO> models;
     private JsonDataManager<BedrockAnimationFile> animations;
     private VehicleDisplayManager vehicleDisplayManager;
     private ScriptManager scriptManager;
-
     private InternalAssets internalAssets;
 
     public void registerListeners(Consumer<PreparableReloadListener> consumer) {
-        models = this.create(BedrockModelPOJO.class, "models/bedrock", "BedrockModelPojo", consumer);
-        animations = this.create(BedrockAnimationFile.class, "animations/bedrock", "BedrockAnimationPojo", consumer);
+        models = new JsonDataManager<>(BedrockModelPOJO.class, GsonUtil.GSON, "models/bedrock", "BedrockModelPojo");
+        animations = new JsonDataManager<>(BedrockAnimationFile.class, GsonUtil.GSON, "animations/bedrock", "BedrockAnimationPojo");
         vehicleDisplayManager = new VehicleDisplayManager();
         scriptManager = new ScriptManager();
         internalAssets = new InternalAssets();
 
+        consumer.accept(models);
+        consumer.accept(animations);
         consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
         consumer.accept(internalAssets);
@@ -56,10 +62,16 @@ public enum ClientAssetsManager {
         });
     }
 
-    public <T> JsonDataManager<T> create(Class<T> clazz, String folder, String marker, Consumer<PreparableReloadListener> consumer) {
-        JsonDataManager<T> manager = new JsonDataManager<>(clazz, GsonUtil.GSON, folder, marker);
-        consumer.accept(manager);
-        return manager;
+    public void reload(ResourceManager resourceManager) {
+        models.apply(models.prepare(resourceManager, null), null, null);
+        animations.apply(animations.prepare(resourceManager, null), null, null);
+        vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
+        scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
+        for (ResourceLocation customId : CommonAssetsManager.vehicleDataManager().getVehicleData().keySet()) {
+            ResourceLocation textureLocation = YwzjVehicle.resourceLocation(customId.getNamespace() + ":textures/entity/" + customId.getPath() + ".png");
+            SimpleTexture texture = new SimpleTexture(textureLocation);
+            Minecraft.getInstance().textureManager.register(textureLocation, texture);
+        }
     }
 
     @UnmodifiableView

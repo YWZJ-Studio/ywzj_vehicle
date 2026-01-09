@@ -6,7 +6,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
@@ -23,8 +22,6 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
-
-import java.util.List;
 
 import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
@@ -141,17 +138,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     if (currentWeaponUnit.isParentWeaponUnitAim()) {
                         currentWeaponUnit = currentWeaponUnit.getParentWeaponUnit();
                     }
-                    Vec2 rot = currentWeaponUnit.worldRot();
-                    Vec3 screenHitPos;
-                    if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
-                        screenHitPos = getHitScreenPos(weaponUnit.aimContext().position, rot.x, rot.y, player);
-                    } else {
-                        List<Vec3> positions = weaponUnit.aimContexts().stream().map(aimContext -> aimContext.position).toList();
-                        double x = positions.stream().mapToDouble(v -> v.x).average().orElse(0);
-                        double y = positions.stream().mapToDouble(v -> v.y).average().orElse(0);
-                        double z = positions.stream().mapToDouble(v -> v.z).average().orElse(0);
-                        screenHitPos = getHitScreenPos(new Vec3(x, y, z), rot.x, rot.y, player);
-                    }
+                    Vec3 screenHitPos = VectorUtil.worldToScreen(currentWeaponUnit.aimHitPosition());
                     if (screenHitPos.z >= 0) {
                         screenHitXO = screenHitX;
                         screenHitYO = screenHitY;

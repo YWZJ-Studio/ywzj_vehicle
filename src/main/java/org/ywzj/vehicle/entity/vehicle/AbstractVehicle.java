@@ -10,6 +10,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
@@ -45,11 +46,11 @@ import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllSounds;
@@ -126,8 +127,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     private long destroyedTime;
     protected int engineParticleTick;
     public long lastRenderTime;
-
     private ResourceLocation customId;
+    private String displayName;
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -253,6 +254,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 setMaxHealth(data.getMaxHealth());
                 setHealth(data.getMaxHealth());
             }
+            this.displayName = customId.getNamespace() + "." + customId.getPath();
             this.viewInfo = data.getViewInfo();
             this.energyInfo = data.getEnergyInfo();
             this.physicsEngine.mass = data.getPhysicsInfo().mass;
@@ -324,6 +326,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     @Override
+    public Component getDisplayName() {
+        if (displayName == null) {
+            return super.getDisplayName();
+        }
+        return Component.translatable(displayName);
+    }
+
+    @Override
     public void tick() {
         super.tick();
         tickRot();
@@ -380,9 +390,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (isDestroyed()) {
             setPower(0);
             return;
-        }
-        if (getDriver() == null) {
-            toggleEngine(false);
         }
         setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
         if (getEnergy() == 0) {
@@ -496,22 +503,22 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public SoundEvent getEngineStartSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
         return displayOptional.map(display -> display.getSoundEvents().get("engine_start")).orElse(null);
     }
 
     public SoundEvent getEngineStopSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
         return displayOptional.map(display -> display.getSoundEvents().get("engine_stop")).orElse(null);
     }
 
     public SoundEvent getEngineIdleSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
         return displayOptional.map(display -> display.getSoundEvents().get("engine_idle")).orElse(null);
     }
 
     public SoundEvent getEngineRunSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(ForgeRegistries.ENTITY_TYPES.getKey(this.getType()));
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
         return displayOptional.map(display -> display.getSoundEvents().get("engine_run")).orElse(null);
     }
 
@@ -567,33 +574,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     protected void tickParts() {
         partUnits.forEach(PartUnit::tick);
-    }
-
-    @Deprecated
-    protected void initOBBs() {
-        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(this.getStructureModel()).orElse(null);
-        BedrockBone bone = model.getBoneMap().get("vehicle_body");
-        // 约定取体积最大的块计算物理
-        List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
-        cubes.sort((cube1, cube2) -> (int) -(cube1.depth() * cube1.width() * cube1.height() - cube2.depth() * cube2.width() * cube2.height()));
-        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
-        vehicleOBBs.add(mainCubeOBB);
-        for (BedrockCube cube : cubes) {
-            vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
-        }
-        for (BedrockBone child : bone.getChildren()) {
-            List<BedrockCube> childCubes = new ArrayList<>(child.cubes.stream().toList());
-            for (BedrockCube cube : childCubes) {
-                vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
-            }
-        }
-    }
-
-    @Deprecated
-    @Nullable
-    public ResourceLocation getStructureModel() {
-        ResourceLocation id = this.getCustomId();
-        return new ResourceLocation(id.getNamespace(), "entity/" + id.getPath());
     }
 
     @Override
@@ -1237,6 +1217,33 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             this.passengerId = -1;
         }
 
+    }
+
+    @Deprecated
+    protected void initOBBs() {
+        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(this.getStructureModel()).orElse(null);
+        BedrockBone bone = model.getBoneMap().get("vehicle_body");
+        // 约定取体积最大的块计算物理
+        List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
+        cubes.sort((cube1, cube2) -> (int) -(cube1.depth() * cube1.width() * cube1.height() - cube2.depth() * cube2.width() * cube2.height()));
+        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
+        vehicleOBBs.add(mainCubeOBB);
+        for (BedrockCube cube : cubes) {
+            vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
+        }
+        for (BedrockBone child : bone.getChildren()) {
+            List<BedrockCube> childCubes = new ArrayList<>(child.cubes.stream().toList());
+            for (BedrockCube cube : childCubes) {
+                vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
+            }
+        }
+    }
+
+    @Deprecated
+    @Nullable
+    public ResourceLocation getStructureModel() {
+        ResourceLocation id = this.getCustomId();
+        return YwzjVehicle.resourceLocation(id.getNamespace() + ":entity/" + id.getPath());
     }
 
 }

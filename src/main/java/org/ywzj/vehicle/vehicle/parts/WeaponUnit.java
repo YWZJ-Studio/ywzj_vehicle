@@ -138,33 +138,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
     }
 
-    @Deprecated
-    public WeaponUnit(String id, int index, AbstractVehicle vehicle,
-                      Vec3 pivotOffset, float barrelLength,
-                      Vec3 opticalSightOffset, Vec3 operatorViewOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
-        super(id, index, vehicle);
-
-        this.zoomMin = 1;
-        this.zoomMax = 8;
-        this.zoom = this.zoomMin;
-        this.opticalSightType = WeaponUnitData.OpticalSightType.CRT;
-        this.firingMode = WeaponUnitData.FiringMode.RIPPLE;
-
-        if (pivotOffset != null) {
-            this.pivotOffset = pivotOffset;
-        }
-        this.bolts.add(new Bolt(Vec3.ZERO, barrelLength, 0f, 0f));
-        this.opticalSightOffset = opticalSightOffset;
-        this.operatorViewOffset = operatorViewOffset;
-        this.seatOffset = seatOffset;
-        this.baseRotatableUnit = baseWeaponUnit;
-
-        this.fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
-        this.fireControlLockType = WeaponUnitData.FireControlLockType.NONE;
-
-        currentWeaponIndex = 0;
-    }
-
     public void switchWeapon(boolean next) {
         int size = weapons.size();
         this.getCurrentWeapon().ifPresent(
@@ -413,6 +386,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void aim(Vec3 worldPos) {
         Vec2 rot = aimRot(worldPos);
+        Bolt bolt = getCurrentBolt();
+        rot = new Vec2(rot.x - bolt.xRot(), rot.y + bolt.yRot());
         if (xAimRot != rot.x || yAimRot != rot.y) {
             if (vehicle.level().isClientSide()) {
                 ClientVehicleAction control = new ClientVehicleAction();
@@ -436,9 +411,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Vec3 aimHitPosition() {
-        Vec3 start = worldPivotPosition();
-        Vec3 direction = worldVec().normalize();
-        Vec3 end = start.add(direction.scale(256));
+        List<Vec3> positions = aimContexts().stream().map(context -> context.position).toList();
+        double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+        double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+        double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+        AimContext aimContext = aimContext();
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = start.add(VectorUtil.calculateViewVector(aimContext.direction.x, aimContext.direction.y).normalize().scale(256));
         return VectorUtil.hitPosition(vehicle, start, end);
     }
 
@@ -764,6 +743,61 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return currentWeaponIndex;
     }
 
+    @Override
+    public CompoundTag serializeNBT() {
+        CompoundTag tag = super.serializeNBT();
+        tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
+        CompoundTag weaponTag = new CompoundTag();
+        this.weapons.forEach(weapon -> {
+            CompoundTag tag1 = weapon.serializeNBT();
+            if (tag1.isEmpty()) {
+                return;
+            }
+            weaponTag.put(weapon.getSerializeId(), tag1);
+        });
+        tag.put("WeaponTag", weaponTag);
+        return tag;
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        super.deserializeNBT(nbt);
+        this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
+        CompoundTag weaponTag = nbt.getCompound("WeaponTag");
+        this.weapons.forEach(weapon -> {
+            if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
+                weapon.deserializeNBT(weaponTag.getCompound(weapon.getSerializeId()));
+            }
+        });
+    }
+
+    @Deprecated
+    public WeaponUnit(String id, int index, AbstractVehicle vehicle,
+                      Vec3 pivotOffset, float barrelLength,
+                      Vec3 opticalSightOffset, Vec3 operatorViewOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
+        super(id, index, vehicle);
+
+        this.zoomMin = 1;
+        this.zoomMax = 8;
+        this.zoom = this.zoomMin;
+        this.opticalSightType = WeaponUnitData.OpticalSightType.CRT;
+        this.firingMode = WeaponUnitData.FiringMode.RIPPLE;
+
+        if (pivotOffset != null) {
+            this.pivotOffset = pivotOffset;
+        }
+        this.bolts.add(new Bolt(Vec3.ZERO, barrelLength, 0f, 0f));
+        this.opticalSightOffset = opticalSightOffset;
+        this.operatorViewOffset = operatorViewOffset;
+        this.seatOffset = seatOffset;
+        this.baseRotatableUnit = baseWeaponUnit;
+
+        this.fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
+        this.fireControlLockType = WeaponUnitData.FireControlLockType.NONE;
+
+        currentWeaponIndex = 0;
+    }
+
     @Deprecated
     @Override
     public void initStructureModel(String name) {
@@ -796,34 +830,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     protected void initOBBs() {
         this.unitBedrockCubeOBBs.addAll(xTurnUnitOBBs);
         this.unitBedrockCubeOBBs.addAll(yTurnUnitOBBs);
-    }
-
-    @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag tag = super.serializeNBT();
-        tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
-        CompoundTag weaponTag = new CompoundTag();
-        this.weapons.forEach(weapon -> {
-            CompoundTag tag1 = weapon.serializeNBT();
-            if (tag1.isEmpty()) {
-                return;
-            }
-            weaponTag.put(weapon.getSerializeId(), tag1);
-        });
-        tag.put("WeaponTag", weaponTag);
-        return tag;
-    }
-
-    @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
-        this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
-        CompoundTag weaponTag = nbt.getCompound("WeaponTag");
-        this.weapons.forEach(weapon -> {
-            if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
-                weapon.deserializeNBT(weaponTag.getCompound(weapon.getSerializeId()));
-            }
-        });
     }
 
 }

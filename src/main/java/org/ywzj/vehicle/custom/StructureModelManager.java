@@ -22,8 +22,8 @@ import java.util.Optional;
 import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 
 @ParametersAreNonnullByDefault
-public class StructureModelManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>>
-        implements IStructureModelManager {
+public class StructureModelManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IStructureModelManager {
+
     private final FileToIdConverter filetoidconverter = new FileToIdConverter("models/bedrock", ".structure.json");
     private Map<ResourceLocation, BedrockModel> structureModels = Map.of();
     private Map<ResourceLocation, String> cache = Map.of();
@@ -59,7 +59,7 @@ public class StructureModelManager extends SimplePreparableReloadListener<Map<Re
 
     @NotNull
     @Override
-    protected Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller pProfiler) {
+    public Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller pProfiler) {
         var map = scanDirectory(manager, filetoidconverter, GsonUtil.GSON);
         ImmutableMap.Builder<ResourceLocation, String> builder = ImmutableMap.builder();
         for (var entry : map.entrySet()) {
@@ -84,7 +84,7 @@ public class StructureModelManager extends SimplePreparableReloadListener<Map<Re
     }
 
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> map, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    public void apply(Map<ResourceLocation, JsonElement> map, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         structureModels = parseIndexes(map);
     }
 
@@ -105,4 +105,5 @@ public class StructureModelManager extends SimplePreparableReloadListener<Map<Re
     public static void fromNetwork(Map<ResourceLocation, String> map) {
         ClientCache.INSTANCE.fromNetwork(map);
     }
+
 }

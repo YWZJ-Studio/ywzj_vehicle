@@ -14,7 +14,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllEntities;
@@ -56,19 +55,6 @@ public class Quadcopter extends RotaryWingVehicle {
             if (fakeOperatorPos != null) {
                 keepChunkLoaded(fakeOperatorPos);
             }
-        }
-    }
-
-    @Override
-    protected void tickPower() {
-        FluidState fluidState = level().getFluidState(BlockPos.containing(new Vec3(mainCubeOBB.obb().center())));
-        if (!fluidState.isEmpty()) {
-            setPower(0);
-            return;
-        }
-        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
-        if (getEnergy() == 0) {
-            setPower(0);
         }
     }
 

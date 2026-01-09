@@ -30,12 +30,12 @@ public class VehicleDisplayManager extends SimplePreparableReloadListener<Map<Re
 
     @NotNull
     @Override
-    protected Map<ResourceLocation, JsonElement> prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
+    public Map<ResourceLocation, JsonElement> prepare(@NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         return ResourceScanner.scanDirectory(manager, "display/vehicle", GsonUtil.GSON);
     }
 
     @Override
-    protected void apply(@NotNull Map<ResourceLocation, JsonElement> resources, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
+    public void apply(@NotNull Map<ResourceLocation, JsonElement> resources, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         ImmutableMap.Builder<ResourceLocation, BaseVehicleDisplay> builder = ImmutableMap.builder();
         for (var entry : resources.entrySet()) {
             try {
@@ -70,4 +70,5 @@ public class VehicleDisplayManager extends SimplePreparableReloadListener<Map<Re
     public Map<ResourceLocation, BaseVehicleDisplay> getDisplayMap() {
         return displayMap;
     }
+
 }

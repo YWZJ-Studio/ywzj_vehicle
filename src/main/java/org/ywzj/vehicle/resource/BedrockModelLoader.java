@@ -31,11 +31,11 @@ public class BedrockModelLoader {
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(RegisterBedrockModelEvent event) {
         // 通用模型直接走sbm自带的加载器
-        event.register(YwzjVehicle.modLoc("entity/basic_bullet"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLoc("entity/grenade_40mm"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLoc("entity/rocket_57mm"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLoc("entity/aerial_bomb"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLoc("entity/missile_akd10"), COMMON_LOADER);
+        event.register(YwzjVehicle.modLocation("entity/basic_bullet"), COMMON_LOADER);
+        event.register(YwzjVehicle.modLocation("entity/grenade_40mm"), COMMON_LOADER);
+        event.register(YwzjVehicle.modLocation("entity/rocket_57mm"), COMMON_LOADER);
+        event.register(YwzjVehicle.modLocation("entity/aerial_bomb"), COMMON_LOADER);
+        event.register(YwzjVehicle.modLocation("entity/missile_akd10"), COMMON_LOADER);
     }
 
     public static BedrockModel getModel(ResourceLocation location) {

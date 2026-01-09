@@ -75,7 +75,7 @@ public class DecoyFlareEntityRenderer extends EntityRenderer<DecoyFlareEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(DecoyFlareEntity pEntity) {
-        return new ResourceLocation(YwzjVehicle.MOD_ID, "textures/entity/decoy_flare.png");
+        return YwzjVehicle.modLocation("textures/entity/decoy_flare.png");
     }
 
 }

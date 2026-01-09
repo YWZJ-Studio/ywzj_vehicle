@@ -15,10 +15,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class InternalAssets extends SimplePreparableReloadListener<Void> {
-    public static final ResourceLocation REPAIR_TOOL_MODEL = YwzjVehicle.modLoc("item/repair_tool");
-    public static final ResourceLocation REPAIR_TOOL_TEXTURE = YwzjVehicle.modLoc("textures/bedrock/item/repair_tool.png");
-    public static final ResourceLocation REPAIR_TOOL_ANIMATION = YwzjVehicle.modLoc("item/repair_tool.animation");
-    public static final ResourceLocation REPAIR_TOOL_SLOT_TEXTURE = YwzjVehicle.modLoc("textures/item/repair_tool.png");
+
+    public static final ResourceLocation REPAIR_TOOL_MODEL = YwzjVehicle.modLocation("item/repair_tool");
+    public static final ResourceLocation REPAIR_TOOL_TEXTURE = YwzjVehicle.modLocation("textures/bedrock/item/repair_tool.png");
+    public static final ResourceLocation REPAIR_TOOL_ANIMATION = YwzjVehicle.modLocation("item/repair_tool.animation");
+    public static final ResourceLocation REPAIR_TOOL_SLOT_TEXTURE = YwzjVehicle.modLocation("textures/item/repair_tool.png");
 
     private HandedBedrockModel repairToolModel;
     private Map<String, BedrockAnimation> repairToolAnimations;

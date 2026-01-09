@@ -43,7 +43,7 @@ public class AllVehicleWeaponTypes {
             VehicleWeaponType.WeaponUnitFactory<T, D> factory
     ) {
         return WEAPON_TYPES.register(name,
-                () -> VehicleWeaponType.Builder.<T, D>of(YwzjVehicle.modLoc(name))
+                () -> VehicleWeaponType.Builder.<T, D>of(YwzjVehicle.modLocation(name))
                         .setDataSerializer(dataSerializer)
                         .setFactory(factory)
                         .build()

@@ -2,6 +2,7 @@ package org.ywzj.vehicle.custom;
 
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -17,11 +18,11 @@ import org.ywzj.vehicle.network.SliceReassembler;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CommonAssetsManager {
-    private static CommonAssetsManager INSTANCE;
 
-    private final VehicleDataManager vehicleDataManager = new VehicleDataManager();
-    private final VehicleWeaponManager vehicleWeaponManager = new VehicleWeaponManager();
+    public static CommonAssetsManager INSTANCE;
     private final StructureModelManager structureModelManager = new StructureModelManager();
+    private final VehicleWeaponManager vehicleWeaponManager = new VehicleWeaponManager();
+    private final VehicleDataManager vehicleDataManager = new VehicleDataManager();
 
     @SubscribeEvent
     public static void onReload(AddReloadListenerEvent event) {
@@ -40,6 +41,12 @@ public class CommonAssetsManager {
         if (INSTANCE == null) {
             INSTANCE = manager;
         }
+    }
+
+    public void reload(ResourceManager resourceManager) {
+        structureModelManager.apply(structureModelManager.prepare(resourceManager, null), null, null);
+        vehicleWeaponManager.apply(vehicleWeaponManager.prepare(resourceManager, null), null, null);
+        vehicleDataManager.apply(vehicleDataManager.prepare(resourceManager, null), null, null);
     }
 
     @SubscribeEvent
@@ -89,15 +96,16 @@ public class CommonAssetsManager {
         }
     }
 
-    public static IVehicleDataManager vehicleDataManager() {
-        return INSTANCE != null ? INSTANCE.vehicleDataManager : VehicleDataManager.ClientCache.INSTANCE;
+    public static IStructureModelManager structureModelManager() {
+        return INSTANCE != null ? INSTANCE.structureModelManager : StructureModelManager.ClientCache.INSTANCE;
     }
 
     public static IVehicleWeaponManager vehicleWeaponManager() {
         return INSTANCE != null ? INSTANCE.vehicleWeaponManager : VehicleWeaponManager.ClientCache.INSTANCE;
     }
 
-    public static IStructureModelManager structureModelManager() {
-        return INSTANCE != null ? INSTANCE.structureModelManager : StructureModelManager.ClientCache.INSTANCE;
+    public static IVehicleDataManager vehicleDataManager() {
+        return INSTANCE != null ? INSTANCE.vehicleDataManager : VehicleDataManager.ClientCache.INSTANCE;
     }
+
 }

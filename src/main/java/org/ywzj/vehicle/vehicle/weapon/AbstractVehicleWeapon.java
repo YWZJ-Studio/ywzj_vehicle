@@ -26,6 +26,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.parts.AutoWeaponUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -283,7 +284,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public boolean canReload() {
-        return hasStorageAmmo() && !isReloading() && weaponUnit.getOwner() != null;
+        return hasStorageAmmo() && !isReloading() && (weaponUnit.getOwner() != null || weaponUnit instanceof AutoWeaponUnit);
     }
 
     public void startReload() {

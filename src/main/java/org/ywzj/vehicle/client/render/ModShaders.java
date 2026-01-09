@@ -17,7 +17,7 @@ import java.io.IOException;
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModShaders {
 
-    private static final ResourceLocation CIRCLE_SHADER_LOCATION = new ResourceLocation(YwzjVehicle.MOD_ID, "circle");
+    private static final ResourceLocation CIRCLE_SHADER_LOCATION = YwzjVehicle.modLocation("circle");
     private static ShaderInstance circleShader;
 
     public static final VertexFormat HUD_CIRCLE = new VertexFormat(

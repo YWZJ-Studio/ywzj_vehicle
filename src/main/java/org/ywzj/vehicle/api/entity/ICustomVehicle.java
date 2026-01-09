@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.api.entity;
 
 import net.minecraft.resources.ResourceLocation;
+import org.ywzj.vehicle.YwzjVehicle;
 
 public interface ICustomVehicle {
 
@@ -8,7 +9,7 @@ public interface ICustomVehicle {
 
     String TAG_DISPLAY_ID = "CustomVehicleDisplayId";
 
-    ResourceLocation EMPTY_ID = new ResourceLocation("ywzj_vehicle", "empty");
+    ResourceLocation EMPTY_ID = YwzjVehicle.modLocation("empty");
 
     ResourceLocation getCustomId();
 

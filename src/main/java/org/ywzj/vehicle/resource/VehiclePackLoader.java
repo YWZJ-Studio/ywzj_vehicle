@@ -53,13 +53,13 @@ public enum VehiclePackLoader implements RepositorySource {
 
     @Override
     public void loadPacks(Consumer<Pack> pOnLoad) {
-        Pack extensionsPack = discoverExtensions();
-        if (extensionsPack != null) {
+        for (Pack extensionsPack : discoverExtensions()) {
             pOnLoad.accept(extensionsPack);
         }
     }
 
-    public Pack discoverExtensions() {
+    public List<Pack> discoverExtensions() {
+        List<Pack> packs = new ArrayList<>();
         Path resourcePacksPath = FMLPaths.GAMEDIR.get().resolve("vehicle");
         File folder = resourcePacksPath.toFile();
         if (!folder.isDirectory()) {
@@ -90,7 +90,7 @@ public enum VehiclePackLoader implements RepositorySource {
         List<PathPackResources> extensionPacks = new ArrayList<>();
 
         for (VehiclePack vehiclePack : vehiclePacks) {
-            PathPackResources packResources = new PathPackResources(vehiclePack.name, false, vehiclePack.path) {
+            PathPackResources packResources = new PathPackResources(vehiclePack.namespace, false, vehiclePack.path) {
                 private final SecureJar secureJar = SecureJar.from(vehiclePack.path);
 
                 @NotNull
@@ -111,21 +111,19 @@ public enum VehiclePackLoader implements RepositorySource {
                 }
             };
             extensionPacks.add(packResources);
+            Pack pack = Pack.readMetaAndCreate("ywzj_vehicle_resources_" + vehiclePack.namespace, Component.translatable(vehiclePack.title), true, (id) ->
+                    new DelegatingPackResources(id, false, new PackMetadataSection(Component.translatable(vehiclePack.description),
+                            SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
+                        public IoSupplier<InputStream> getRootResource(String... paths) {
+                            if (paths.length == 1 && paths[0].equals("pack.png")) {
+                                return packResources.getRootResource("pack.png");
+                            }
+                            return null;
+                        }
+                    }, packType, Pack.Position.BOTTOM, PackSource.BUILT_IN);
+            packs.add(pack);
         }
-
-        return Pack.readMetaAndCreate("ywzj_vehicle_resources", Component.literal("YWZJ Vehicle Resources"), true, (id) -> 
-                new DelegatingPackResources(id, false, new PackMetadataSection(Component.translatable("ywzj_vehicle.resources.modresources"),
-                SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
-            public IoSupplier<InputStream> getRootResource(String... paths) {
-                if (paths.length == 1 && paths[0].equals("pack.png")) {
-                    Path logoPath = getModIcon("ywzj_vehicle");
-                    if (logoPath != null) {
-                        return IoSupplier.create(logoPath);
-                    }
-                }
-                return null;
-            }
-        }, packType, Pack.Position.BOTTOM, PackSource.BUILT_IN);
+        return packs;
     }
 
     public static @Nullable Path getModIcon(String modId) {
@@ -134,7 +132,7 @@ public enum VehiclePackLoader implements RepositorySource {
             IModInfo mod = m.get().getModInfo();
             IModFile file = mod.getOwningFile().getFile();
             if (file != null) {
-                Path logoPath = file.findResource("icon.png");
+                Path logoPath = file.findResource("logo.png");
                 if (Files.exists(logoPath)) {
                     return logoPath;
                 }
@@ -154,12 +152,22 @@ public enum VehiclePackLoader implements RepositorySource {
                 return null;
             }
 
-            if (info.getDependencies() !=null && !modVersionAllMatch(info)) {
+            if (info.getTitle() == null) {
+                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read title: {}", path.getFileName());
+                return null;
+            }
+
+            if (info.getDependencies() != null && !modVersionAllMatch(info)) {
                 YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", packInfoFilePath.getFileName());
                 return null;
             }
 
-            return new VehiclePack(path, info.getName());
+            String description = "";
+            if (info.getDescription() != null) {
+                description = info.getDescription();
+            }
+
+            return new VehiclePack(path, info.getNamespace(), info.getTitle(), description);
         } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException exception) {
             YwzjVehicle.LOGGER.warn(MARKER, "Failed to read info json: {}", packInfoFilePath.getFileName());
             YwzjVehicle.LOGGER.warn(exception.getMessage());
@@ -183,12 +191,22 @@ public enum VehiclePackLoader implements RepositorySource {
                     return null;
                 }
 
-                if (info.getDependencies() !=null && !modVersionAllMatch(info)) {
+                if (info.getTitle() == null) {
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read title: {}", path.getFileName());
+                    return null;
+                }
+
+                if (info.getDependencies() != null && !modVersionAllMatch(info)) {
                     YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", path.getFileName());
                     return null;
                 }
 
-                return new VehiclePack(path, info.getName());
+                String description = "";
+                if (info.getDescription() != null) {
+                    description = info.getDescription();
+                }
+
+                return new VehiclePack(path, info.getNamespace(), info.getTitle(), description);
             } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException e) {
                 YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), e);
                 return null;
@@ -211,7 +229,7 @@ public enum VehiclePackLoader implements RepositorySource {
                     vehiclePack = fromZipPath(entry);
                 }
                 if (vehiclePack != null) {
-                    YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.name);
+                    YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.namespace);
                     vehiclePacks.add(vehiclePack);
                 }
             }
@@ -240,6 +258,6 @@ public enum VehiclePackLoader implements RepositorySource {
         }).orElse(false);
     }
 
-    public record VehiclePack(Path path, String name) {}
+    public record VehiclePack(Path path, String namespace, String title, String description) {}
 
 }

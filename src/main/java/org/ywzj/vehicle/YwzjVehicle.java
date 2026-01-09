@@ -43,8 +43,14 @@ public class YwzjVehicle {
         modEventBus.register(Channel.class);
     }
 
-    public static ResourceLocation modLoc(String name) {
+    @SuppressWarnings("removal")
+    public static ResourceLocation modLocation(String name) {
         return new ResourceLocation(MOD_ID, name);
+    }
+
+    @SuppressWarnings("removal")
+    public static ResourceLocation resourceLocation(String location) {
+        return new ResourceLocation(location);
     }
 
 }

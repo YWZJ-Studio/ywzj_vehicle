@@ -30,8 +30,8 @@ public class AerialBombEntityRenderer extends EntityRenderer<AerialBombEntity> {
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
-            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLoc("entity/aerial_bomb"));
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLoc("textures/entity/aerial_bomb.png")));
+            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLocation("entity/aerial_bomb"));
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLocation("textures/entity/aerial_bomb.png")));
 
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
         }

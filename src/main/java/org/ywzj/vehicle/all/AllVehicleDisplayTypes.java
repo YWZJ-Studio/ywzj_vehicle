@@ -48,7 +48,7 @@ public class AllVehicleDisplayTypes {
             VehicleDisplayType.DataSerializer<D> dataSerializer
     ) {
         return VEHICLE_DISPLAY_TYPES.register(name,
-                () -> VehicleDisplayType.Builder.<D>of(YwzjVehicle.modLoc(name))
+                () -> VehicleDisplayType.Builder.<D>of(YwzjVehicle.modLocation(name))
                         .setDataSerializer(dataSerializer)
                         .build()
         );

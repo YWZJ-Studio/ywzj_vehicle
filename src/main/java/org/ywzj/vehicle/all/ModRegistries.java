@@ -2,7 +2,6 @@ package org.ywzj.vehicle.all;
 
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -20,22 +19,22 @@ import java.util.function.Supplier;
 public class ModRegistries {
 
     public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE = ResourceKey.createRegistryKey(
-            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_weapon_type")
+            YwzjVehicle.modLocation("vehicle_weapon_type")
     );
     public static Supplier<IForgeRegistry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE_SUPPLIER;
 
     public static final ResourceKey<Registry<PartUnitType<?, ?>>> PART_UNIT_TYPE = ResourceKey.createRegistryKey(
-            new ResourceLocation(YwzjVehicle.MOD_ID, "part_unit_type")
+            YwzjVehicle.modLocation("part_unit_type")
     );
     public static Supplier<IForgeRegistry<PartUnitType<?, ?>>> PART_UNIT_TYPE_SUPPLIER;
 
     public static final ResourceKey<Registry<VehicleDataType<?>>> VEHICLE_DATA_TYPE = ResourceKey.createRegistryKey(
-            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_data_type")
+            YwzjVehicle.modLocation("vehicle_data_type")
     );
     public static Supplier<IForgeRegistry<VehicleDataType<?>>> VEHICLE_DATA_TYPE_SUPPLIER;
 
     public static final ResourceKey<Registry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE = ResourceKey.createRegistryKey(
-            new ResourceLocation(YwzjVehicle.MOD_ID, "vehicle_display_type")
+            YwzjVehicle.modLocation("vehicle_display_type")
     );
     public static Supplier<IForgeRegistry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE_SUPPLIER;
 

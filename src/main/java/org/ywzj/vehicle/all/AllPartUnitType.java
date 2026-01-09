@@ -10,12 +10,10 @@ import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.RadarUnitData;
 import org.ywzj.vehicle.custom.part.data.RotatableUnitData;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.RadarUnit;
-import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.*;
 
 public class AllPartUnitType {
+
     public static final DeferredRegister<PartUnitType<?, ?>> WEAPON_TYPES = DeferredRegister.create(ModRegistries.PART_UNIT_TYPE, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<PartUnitType<PartUnit<PartUnitData>, PartUnitData>> GENERIC = register(PartUnitTypes.GENERIC);
@@ -23,6 +21,8 @@ public class AllPartUnitType {
     public static final RegistryObject<PartUnitType<RotatableUnit<RotatableUnitData>, RotatableUnitData>> ROTATABLE = register(PartUnitTypes.ROTATABLE);
 
     public static final RegistryObject<PartUnitType<WeaponUnit, WeaponUnitData>> WEAPON = register(PartUnitTypes.WEAPON);
+
+    public static final RegistryObject<PartUnitType<AutoWeaponUnit, WeaponUnitData>> AUTO_WEAPON = register(PartUnitTypes.AUTO_WEAPON);
 
     public static final RegistryObject<PartUnitType<RadarUnit, RadarUnitData>> RADAR = register(PartUnitTypes.RADAR);
 
@@ -35,4 +35,5 @@ public class AllPartUnitType {
     public static void register(IEventBus eventBus) {
         WEAPON_TYPES.register(eventBus);
     }
+
 }

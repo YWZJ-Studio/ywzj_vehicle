@@ -56,7 +56,7 @@ public class AllVehicleDataTypes {
             VehicleDataType.DataSerializer<D> dataSerializer
     ) {
         return VEHICLE_TYPES.register(name,
-                () -> VehicleDataType.Builder.<D>of(YwzjVehicle.modLoc(name))
+                () -> VehicleDataType.Builder.<D>of(YwzjVehicle.modLocation(name))
                         .setDataSerializer(dataSerializer)
                         .build()
         );

@@ -78,6 +78,17 @@ public class AllEntities {
             .fireImmune()
             .build("smoke_grenade"));
 
+    public static final RegistryObject<EntityType<ActiveProtectionGrenadeEntity>> APS_GRENADE = ENTITIES.register("aps_grenade",
+            () -> EntityType.Builder.<ActiveProtectionGrenadeEntity>of(ActiveProtectionGrenadeEntity::new, MobCategory.MISC)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .setTrackingRange(16)
+                    .setUpdateInterval(1)
+                    .setCustomClientFactory(ActiveProtectionGrenadeEntity::new)
+                    .sized(1f, 1f)
+                    .noSave()
+                    .fireImmune()
+                    .build("aps_grenade"));
+
     public static final RegistryObject<EntityType<DecoyFlareEntity>> DECOY_FLARE = ENTITIES.register("decoy_flare",
             () -> EntityType.Builder.<DecoyFlareEntity>of(DecoyFlareEntity::new, MobCategory.MISC)
                     .noSave()
@@ -139,8 +150,6 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Z10>> Z10 = registerVehicle("z10", Z10::new);
 
-    public static final RegistryObject<EntityType<Ka50>> KA50 = registerVehicle("ka50", Ka50::new);
-
     public static final RegistryObject<EntityType<Motorcycle>> MOTORCYCLE = registerVehicle("motorcycle", Motorcycle::new);
 
     public static final RegistryObject<EntityType<Hiace>> HIACE = registerVehicle("hiace", Hiace::new);
@@ -166,7 +175,7 @@ public class AllEntities {
                 .updateInterval(1)
                 .clientTrackingRange(16)
                 .build(name));
-        AllTabs.VEHICLE_ENTITY_IDS.add(YwzjVehicle.modLoc(name).toString());
+        AllTabs.VEHICLE_ENTITY_IDS.add(YwzjVehicle.modLocation(name).toString());
         return entityTypeRegistryObject;
     }
 

@@ -28,7 +28,7 @@ public class Ztl11 extends WheeledVehicle {
 
     @Override
     public void initData(ResourceLocation customId) {
-        CommonAssetsManager.vehicleDataManager().getVehicleData(YwzjVehicle.modLoc("ztl11")).ifPresent(data -> {
+        CommonAssetsManager.vehicleDataManager().getVehicleData(YwzjVehicle.modLocation("ztl11")).ifPresent(data -> {
             var struct = data.getVehicleStructObbs();
             this.mainCubeOBB = struct.mainCubeOBB();
             this.vehicleOBBs = struct.obbs();

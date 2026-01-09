@@ -81,56 +81,45 @@ public class TrackedVehicle extends AbstractVehicle {
     @Override
     protected void tickSound() {
         super.tickSound();
-        if (getDriver() == null) {
-            if (engineIdleSoundInstance != null) {
-                engineIdleSoundInstance.stop();
-                engineIdleSoundInstance = null;
+        if (getEnergy() != 0 && getPower() == 5 && isEngineOn()) {
+            SoundEvent engineStartSound = getEngineStartSound();
+            if (engineStartSound != null) {
+                new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();
             }
+        }
+        float vf = entityData.get(FORWARD_SPEED);
+        float vt = entityData.get(TURN_SPEED);
+        if (vf == 0 && vt == 0) {
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
             }
-        } else {
-            if (getEnergy() != 0 && getPower() == 5 && isEngineOn()) {
-                SoundEvent engineStartSound = getEngineStartSound();
-                if (engineStartSound != null) {
-                    new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();
-                }
-            }
-            float vf = entityData.get(FORWARD_SPEED);
-            float vt = entityData.get(TURN_SPEED);
-            if (vf == 0 && vt == 0) {
-                if (engineRunSoundInstance != null) {
-                    engineRunSoundInstance.stop();
-                    engineRunSoundInstance = null;
-                }
-                if (!hasPower()) {
-                    if (engineIdleSoundInstance != null) {
-                        engineIdleSoundInstance.stop();
-                        engineIdleSoundInstance = null;
-                    }
-                } else if (engineIdleSoundInstance == null) {
-                    SoundEvent engineIdleSound = getEngineIdleSound();
-                    if (engineIdleSound != null) {
-                        engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                        engineIdleSoundInstance.play();
-                    }
-                }
-            } else {
+            if (!hasPower()) {
                 if (engineIdleSoundInstance != null) {
                     engineIdleSoundInstance.stop();
                     engineIdleSoundInstance = null;
                 }
-                float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
-                if (engineRunSoundInstance == null) {
-                    SoundEvent engineRunSound = getEngineRunSound();
-                    if (engineRunSound != null) {
-                        engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                        engineRunSoundInstance.play();
-                    }
-                } else {
-                    engineRunSoundInstance.setPitch(pitch);
+            } else if (engineIdleSoundInstance == null) {
+                SoundEvent engineIdleSound = getEngineIdleSound();
+                if (engineIdleSound != null) {
+                    engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineIdleSoundInstance.play();
                 }
+            }
+        } else {
+            if (engineIdleSoundInstance != null) {
+                engineIdleSoundInstance.stop();
+                engineIdleSoundInstance = null;
+            }
+            float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
+            if (engineRunSoundInstance == null) {
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
+            } else {
+                engineRunSoundInstance.setPitch(pitch);
             }
         }
     }
