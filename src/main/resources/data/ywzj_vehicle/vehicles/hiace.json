@@ -4,7 +4,7 @@
     "brake_force": 0.02,
     "forward_force": 0.03,
     "backward_force": 0.05,
-    "max_speed_forward": 1.2,
+    "max_speed_forward": 0.8,
     "max_speed_backward": 0.2,
     "turn_step": 1,
     "max_turn": 3

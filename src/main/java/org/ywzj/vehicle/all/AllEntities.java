@@ -169,14 +169,12 @@ public class AllEntities {
     public static <T extends AbstractVehicle> RegistryObject<EntityType<T>> registerVehicle(
             String name, EntityType.EntityFactory<T> factory
     ) {
-        RegistryObject<EntityType<T>> entityTypeRegistryObject = ENTITIES.register(name, () -> EntityType.Builder
+        return ENTITIES.register(name, () -> EntityType.Builder
                 .of(factory, MobCategory.MISC)
                 .sized(1f, 1f)
                 .updateInterval(1)
                 .clientTrackingRange(16)
                 .build(name));
-        AllTabs.VEHICLE_ENTITY_IDS.add(YwzjVehicle.modLocation(name).toString());
-        return entityTypeRegistryObject;
     }
 
     @SubscribeEvent

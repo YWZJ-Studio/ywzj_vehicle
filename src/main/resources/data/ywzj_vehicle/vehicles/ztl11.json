@@ -1,61 +1,111 @@
 {
-  "structure_model": "ywzj_vehicle:vehicle/ztl11",
+  "type": "ywzj_vehicle:wheeled_vehicle",
   "attributes": {
-    "max_health": 200
-    // ...
+    "brake_force": 0.025,
+    "forward_force": 0.02,
+    "backward_force": 0.02,
+    "max_speed_forward": 0.8,
+    "max_speed_backward": 0.2,
+    "turn_step": 0.4,
+    "max_turn": 2
   },
-  "movement": {
-
+  "max_health": 100,
+  "view_info": {
+    "third_person_center_offset": [0, 4, 0],
+    "third_person_distance": 7,
+    "third_person_center_offset_zoomed": [0, 5, 0],
+    "third_person_distance_zoomed": 0,
+    "sound_distance": 3
   },
-  "engine": {
-    "max_capacity": 100.0,
-    "consumption_per_tick": 0.1,
-    "type": "liquid",
-    "fuel_types": [
-      "minecraft:lava"
-    ]
+  "energy_info": {
+    "energy_capacity": 1,
+    "energy_consumption_per_tick": 0.00001,
+    "engine_particle_offsets": [[-1.6, 2, -2]]
   },
+  "structure_model": "ywzj_vehicle:vehicle/ztl11",
   "parts": [
     {
-      "id": "ztl11_turret",
+      "id": "turret",
+      "name": "turret",
       "type": "ywzj_vehicle:weapon",
-      "structure_bone": "ztl11_turret",
-      "seat": true,
-      "name": "xxx.xxx",
+      "structure_bone": "turret",
+      "seat_offset": [0.5, 2.5, 0],
+      "crosshair_style": "circle",
       "rot_info": {
         "x_rot_speed": 1.105,
         "y_rot_speed": 1.105,
         "x_rot_max": 5,
         "x_rot_min": -18
       },
+      "optical_sight_offset": [0.62, 0.677, 1.112],
       "operator_view_offset": [0, 1.5, 0],
-      "seat_offset": [0, 1.5, 0],
-      // 声明该组件的武器列表
-      // 一个武器条目由两个属性组成，即调用的武器id和其依附的part_unit_id
-      // 若该武器本身依附的就是当前part_unit_id，则可以简写为武器id字符串
-      // 默认情况下，武器的数据会以id为key存储到part的nbt中
-      // 如果你有确实有必要装备多个id相同的武器，必须显示声明save_id，否则可能无法正常保存或读取
+      "optical_sight_type": "crt",
+      "zoom_max": 8,
       "weapons": [
-        "ywzj_vehicle:cannon"
+        "ywzj_vehicle:cannon_105mm",
+        {
+          "id": "ywzj_vehicle:gun_7.62mm",
+          "part_unit_id": "turret_machine_gun"
+        },
+        {
+          "id": "ywzj_vehicle:launcher_smoke_grenade",
+          "part_unit_id": "turret_smoke_grenade"
+        }
       ]
     },
     {
-      "id": "ztl11_commander_machine_gun",
+      "id": "turret_machine_gun",
+      "name": "turret_machine_gun",
       "type": "ywzj_vehicle:weapon",
-      "structure_bone": "ztl11_commander_machine_gun",
-      "seat": true,
-      "base": "ztl11_turret",
+      "structure_bone": "turret_machine_gun",
+      "is_seat": false,
+      "base": "turret",
       "rot_info": {
-        "x_rot_speed": 3,
-        "y_rot_speed": 3,
+        "x_rot_speed": 1.5,
+        "y_rot_speed": 0,
+        "x_rot_max": 5,
+        "x_rot_min": -13
+      }
+    },
+    {
+      "id": "turret_smoke_grenade",
+      "name": "turret_smoke_grenade",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "turret_smoke_grenade",
+      "is_seat": false,
+      "base": "turret",
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0
+      }
+    },
+    {
+      "id": "commander_machine_gun",
+      "name": "commander_machine_gun",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "commander_machine_gun",
+      "seat_offset": [-0.5, 2.5, 0],
+      "operator_on_weapon_unit": false,
+      "base": "turret",
+      "rot_info": {
+        "x_rot_speed": 4.5,
+        "y_rot_speed": 4.5,
         "x_rot_max": 15,
-        "x_rot_min": -18
+        "x_rot_min": -45,
+        "need_power": false
       },
       "operator_view_offset": [0.5, 0.5, -1],
-      "seat_offset": [0, 1.5, 0],
+      "optical_sight_type": "operator",
+      "zoom_max": 2,
       "weapons": [
-        "ywzj_vehicle:cannon"
+        "ywzj_vehicle:gun_14.5mm"
       ]
+    },
+    {
+      "id": "seat",
+      "name": "seat",
+      "type": "ywzj_vehicle:generic",
+      "seat_offset": [0.5, 1.8, 1.7]
     }
   ]
 }

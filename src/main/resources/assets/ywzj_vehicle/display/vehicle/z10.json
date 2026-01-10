@@ -2,6 +2,7 @@
   "type": "ywzj_vehicle:rotary_wing_vehicle",
   "model": "ywzj_vehicle:entity/z10",
   "texture": "ywzj_vehicle:textures/entity/z10.png",
+  "slot_texture": "ywzj_vehicle:textures/slot/z10.png",
   "script": "ywzj_vehicle:z10",
   "sounds": {
     "engine_start": "ywzj_vehicle:z10_engine_start",

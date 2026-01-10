@@ -36,7 +36,7 @@ public class SummonCommand {
         if (context.getSource().getEntity() instanceof ServerPlayer serverPlayer) {
             ResourceLocation customId = context.getArgument(CUSTOM_ID_NAME, ResourceLocation.class);
             CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data ->
-                    data.summon(customId, serverPlayer.level(), serverPlayer.position()));
+                    data.summon(customId, serverPlayer.level(), serverPlayer.position(), 0, serverPlayer.getYRot()));
         }
         return Command.SINGLE_SUCCESS;
     }

@@ -70,7 +70,11 @@ public enum ClientAssetsManager {
         for (ResourceLocation customId : CommonAssetsManager.vehicleDataManager().getVehicleData().keySet()) {
             ResourceLocation textureLocation = YwzjVehicle.resourceLocation(customId.getNamespace() + ":textures/entity/" + customId.getPath() + ".png");
             SimpleTexture texture = new SimpleTexture(textureLocation);
-            Minecraft.getInstance().textureManager.register(textureLocation, texture);
+            try {
+                Minecraft.getInstance().textureManager.register(textureLocation, texture);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
         }
     }
 

@@ -28,112 +28,111 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
 
     @Override
     public void render(Ztl11 pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        pPoseStack.pushPose();
-
-        Vec3 root = new Vec3(0, 0, 0);
-
-        pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.ZTL11.getId()).orElse(null);
         if (display == null || display.getModel() == null) {
             return;
         }
+        pPoseStack.pushPose();
+        {
+            Vec3 root = new Vec3(0, 0, 0);
 
-        BedrockModel model = display.getModel();
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
+            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-        BedrockBone wheel1 = model.getBoneMap().get("wheel1");
-        BedrockBone wheel2 = model.getBoneMap().get("wheel2");
-        BedrockBone wheel3 = model.getBoneMap().get("wheel3");
-        BedrockBone wheel4 = model.getBoneMap().get("wheel4");
-        BedrockBone wheel5 = model.getBoneMap().get("wheel5");
-        BedrockBone wheel6 = model.getBoneMap().get("wheel6");
-        BedrockBone wheel7 = model.getBoneMap().get("wheel7");
-        BedrockBone wheel8 = model.getBoneMap().get("wheel8");
-        BedrockBone turret = model.getBoneMap().get("turret");
-        BedrockBone cannon = model.getBoneMap().get("canno");
-        BedrockBone machineGunBase = model.getBoneMap().get("machine_gun");
-        BedrockBone machineGun = model.getBoneMap().get("bone17");
+            BedrockModel model = display.getModel();
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
-        // 轮子转速
-        float vf = pEntity.getEntityData().get(Ztl11.FORWARD_SPEED);
-        float t = (float) (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000 * 20;
-        float s = t * vf;
-        float l = (float) 20 / 16;
-        float r = s / (l * 3.1415f) * 360;
-        pEntity.wheelRotation += r;
-        pEntity.wheelRotation %= 360;
+            BedrockBone wheel1 = model.getBoneMap().get("wheel1");
+            BedrockBone wheel2 = model.getBoneMap().get("wheel2");
+            BedrockBone wheel3 = model.getBoneMap().get("wheel3");
+            BedrockBone wheel4 = model.getBoneMap().get("wheel4");
+            BedrockBone wheel5 = model.getBoneMap().get("wheel5");
+            BedrockBone wheel6 = model.getBoneMap().get("wheel6");
+            BedrockBone wheel7 = model.getBoneMap().get("wheel7");
+            BedrockBone wheel8 = model.getBoneMap().get("wheel8");
+            BedrockBone turret = model.getBoneMap().get("turret");
+            BedrockBone cannon = model.getBoneMap().get("canno");
+            BedrockBone machineGunBase = model.getBoneMap().get("machine_gun");
+            BedrockBone machineGun = model.getBoneMap().get("bone17");
 
-        // 轮子转向幅度
-        float vt = pEntity.getEntityData().get(Ztl11.TURN_ANGLE);
-        float turnRotation = vt * 16;
+            // 轮子转速
+            float vf = pEntity.getEntityData().get(Ztl11.FORWARD_SPEED);
+            float t = (float) (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000 * 20;
+            float s = t * vf;
+            float l = (float) 20 / 16;
+            float r = s / (l * 3.1415f) * 360;
+            pEntity.wheelRotation += r;
+            pEntity.wheelRotation %= 360;
 
-        // 炮塔旋转
-        float turretYRot = 0;
-        // 炮塔俯仰
-        float turretXRot = 0;
-        if (!pEntity.seats.isEmpty()) {
-            PartUnit partUnit = pEntity.seats.get(0).partUnit;
-            if (partUnit instanceof WeaponUnit weaponUnit) {
-                turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
-                turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+            // 轮子转向幅度
+            float vt = pEntity.getEntityData().get(Ztl11.TURN_ANGLE);
+            float turnRotation = vt * 16;
+
+            // 炮塔旋转
+            float turretYRot = 0;
+            // 炮塔俯仰
+            float turretXRot = 0;
+            if (!pEntity.seats.isEmpty()) {
+                PartUnit partUnit = pEntity.seats.get(0).partUnit;
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    turretYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+                    turretXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+                }
             }
-        }
 
-        // 车长机枪旋转
-        float machineGunYRot = 0;
-        // 车长机枪俯仰
-        float machineGunXRot = 0;
-        if (!pEntity.seats.isEmpty()) {
-            PartUnit partUnit = pEntity.seats.get(1).partUnit;
-            if (partUnit instanceof WeaponUnit weaponUnit) {
-                machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
-                machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+            // 车长机枪旋转
+            float machineGunYRot = 0;
+            // 车长机枪俯仰
+            float machineGunXRot = 0;
+            if (!pEntity.seats.isEmpty()) {
+                PartUnit partUnit = pEntity.seats.get(1).partUnit;
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+                    machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+                }
             }
+
+            // 应用动画
+            wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+            wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+            wheel3.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 0.5f));
+            wheel5.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 0.5f));
+            wheel6.rotation.mul(Axis.YN.rotationDegrees(-turnRotation * 0.5f));
+            wheel4.rotation.mul(Axis.YN.rotationDegrees(-turnRotation * 0.5f));
+            wheel8.rotation.mul(Axis.YN.rotationDegrees(-turnRotation));
+            wheel7.rotation.mul(Axis.YN.rotationDegrees(-turnRotation));
+            wheel1.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel2.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel3.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel4.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel5.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel6.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel7.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            wheel8.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+            turret.rotation.mul(Axis.YN.rotationDegrees(turretYRot));
+            cannon.rotation.mul(Axis.XN.rotationDegrees(180 + turretXRot));
+            machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
+            machineGun.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
+
+            pEntity.lastRenderTime = System.currentTimeMillis();
+            model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+
+            Quaternionf reset = new Quaternionf(0, 0, 0, 1);
+            wheel1.rotation.set(reset);
+            wheel2.rotation.set(reset);
+            wheel3.rotation.set(reset);
+            wheel4.rotation.set(reset);
+            wheel5.rotation.set(reset);
+            wheel6.rotation.set(reset);
+            wheel7.rotation.set(reset);
+            wheel8.rotation.set(reset);
+            turret.rotation.set(reset);
+            cannon.rotation.set(reset);
+            machineGunBase.rotation.set(reset);
+            machineGun.rotation.set(reset);
         }
-
-        // 应用动画
-        wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-        wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-        wheel3.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 0.5f));
-        wheel5.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 0.5f));
-        wheel6.rotation.mul(Axis.YN.rotationDegrees(-turnRotation * 0.5f));
-        wheel4.rotation.mul(Axis.YN.rotationDegrees(-turnRotation * 0.5f));
-        wheel8.rotation.mul(Axis.YN.rotationDegrees(-turnRotation));
-        wheel7.rotation.mul(Axis.YN.rotationDegrees(-turnRotation));
-        wheel1.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel2.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel3.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel4.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel5.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel6.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel7.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel8.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        turret.rotation.mul(Axis.YN.rotationDegrees(turretYRot));
-        cannon.rotation.mul(Axis.XN.rotationDegrees(180 + turretXRot));
-        machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
-        machineGun.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
-
-        pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-        super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-
-        Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-        wheel1.rotation.set(reset);
-        wheel2.rotation.set(reset);
-        wheel3.rotation.set(reset);
-        wheel4.rotation.set(reset);
-        wheel5.rotation.set(reset);
-        wheel6.rotation.set(reset);
-        wheel7.rotation.set(reset);
-        wheel8.rotation.set(reset);
-        turret.rotation.set(reset);
-        cannon.rotation.set(reset);
-        machineGunBase.rotation.set(reset);
-        machineGun.rotation.set(reset);
-
         pPoseStack.popPose();
     }
 

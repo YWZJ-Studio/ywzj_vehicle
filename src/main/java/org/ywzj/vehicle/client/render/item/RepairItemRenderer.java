@@ -27,6 +27,7 @@ import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAN
 import static org.ywzj.vehicle.client.resource.InternalAssets.REPAIR_TOOL_SLOT_TEXTURE;
 
 public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockModel> {
+
     @Nullable
     @Override
     public Pair<HandedBedrockModel, RenderType> getModelAndRenderType(ItemStack stack) {
@@ -106,4 +107,5 @@ public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockMod
     public boolean blockViewBobbing() {
         return false;
     }
+
 }

@@ -16,6 +16,9 @@ public class BaseVehicleDisplayPojo {
     @SerializedName("texture")
     public ResourceLocation texture;
 
+    @SerializedName("slot_texture")
+    public ResourceLocation slotTexture;
+
     @SerializedName("animations")
     public ResourceLocation animations;
 

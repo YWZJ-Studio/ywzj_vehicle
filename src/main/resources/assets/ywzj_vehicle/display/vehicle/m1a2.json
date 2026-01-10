@@ -2,6 +2,7 @@
   "type": "ywzj_vehicle:tracked_vehicle",
   "model": "ywzj_vehicle:entity/m1a2",
   "texture": "ywzj_vehicle:textures/entity/m1a2.png",
+  "slot_texture": "ywzj_vehicle:textures/slot/m1a2.png",
   "animations": "ywzj_vehicle:entity/m1a2.animation",
   "script": "ywzj_vehicle:m1a2",
   "sounds": {

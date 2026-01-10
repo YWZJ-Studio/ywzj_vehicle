@@ -49,9 +49,11 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         pPoseStack.pushPose();
         {
             try {
-                vehicle.getAnimationInstance().tick();
-                var pose = vehicle.getAnimationInstance().getCurrentPose();
-                model.applyPose(BLENDER.blend(model.getBindPose(), pose));
+                if (vehicle.getAnimationInstance() != null) {
+                    vehicle.getAnimationInstance().tick();
+                    var pose = vehicle.getAnimationInstance().getCurrentPose();
+                    model.applyPose(BLENDER.blend(model.getBindPose(), pose));
+                }
                 display.getVehicleScriptContext().updateRenderer(pPartialTick, vehicle);
                 var func = display.getPrepareBonesFunction();
                 if (func != null) {

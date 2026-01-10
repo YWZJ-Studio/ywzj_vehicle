@@ -1,12 +1,11 @@
 {
   "model": "ywzj_vehicle:entity/ztl11",
   "texture": "ywzj_vehicle:textures/entity/ztl11.png",
-//  "animations": "ywzj_vehicle:entity/ztl11_fire.animation",
-  // 音效，需要先去assets/<namespace>/sounds.json注册
+  "slot_texture": "ywzj_vehicle:textures/slot/ztl11.png",
+  "script": "ywzj_vehicle:ztl11",
   "sounds": {
-    "engine_start": "",
-    "engine_stop": "",
-    "engine_idle": "",
-    "engine_run": ""
+    "engine_start": "ywzj_vehicle:lav150_engine_start",
+    "engine_idle": "ywzj_vehicle:truck_engine_idle",
+    "engine_run": "ywzj_vehicle:truck_engine_run"
   }
 }

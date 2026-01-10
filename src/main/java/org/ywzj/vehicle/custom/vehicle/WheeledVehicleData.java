@@ -17,11 +17,14 @@ public class WheeledVehicleData extends BaseVehicleData<WheeledVehicle> {
     public float maxTurn;
 
     @Override
-    public void summon(ResourceLocation customId, Level level, Vec3 position) {
+    public WheeledVehicle summon(ResourceLocation customId, Level level, Vec3 position, float xRot, float yRot) {
         WheeledVehicle wheeledVehicle = new WheeledVehicle(AllEntities.TRACKED_VEHICLE.get(), level);
         wheeledVehicle.setCustomId(customId);
         wheeledVehicle.setPos(position);
+        wheeledVehicle.setXRot(xRot);
+        wheeledVehicle.setYRot(yRot);
         level.addFreshEntity(wheeledVehicle);
+        return wheeledVehicle;
     }
 
     public void build(WheeledVehicleDataPojo pojo) {

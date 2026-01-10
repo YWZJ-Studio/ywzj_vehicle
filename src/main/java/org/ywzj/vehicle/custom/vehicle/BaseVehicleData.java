@@ -36,11 +36,14 @@ public class BaseVehicleData<T extends AbstractVehicle> {
 
     public BaseVehicleData() {}
 
-    public void summon(ResourceLocation customId, Level level, Vec3 position) {
+    public AbstractVehicle summon(ResourceLocation customId, Level level, Vec3 position, float xRot, float yRot) {
         NoneVehicle noneVehicle = new NoneVehicle(AllEntities.NONE_VEHICLE.get(), level);
         noneVehicle.setCustomId(customId);
         noneVehicle.setPos(position);
+        noneVehicle.setXRot(xRot);
+        noneVehicle.setYRot(yRot);
         level.addFreshEntity(noneVehicle);
+        return noneVehicle;
     }
 
     protected static String check(BaseVehicleDataPojo pojo) {

@@ -3,11 +3,14 @@ package org.ywzj.vehicle.all;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.resource.VehiclePackLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +19,6 @@ import java.util.function.Supplier;
 public class AllTabs {
 
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, YwzjVehicle.MOD_ID);
-
-    public static final List<String> VEHICLE_ENTITY_IDS = new ArrayList<>();
     public static final List<Supplier<? extends ItemLike>> MISC_ITEMS = new ArrayList<>();
 
     public static final RegistryObject<CreativeModeTab> TAB_VEHICLE = TABS.register("tab_vehicle", () ->
@@ -26,8 +27,10 @@ public class AllTabs {
                     .title(Component.translatable("tab.vehicle"))
                     .icon(AllItems.FIGURE_BOX.get()::getDefaultInstance)
                     .displayItems((displayParams, output) ->
-                            VEHICLE_ENTITY_IDS.forEach(vehicleEntityId ->
-                                    output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().getInstance(vehicleEntityId))))
+                            CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
+                                    .filter(customId -> customId.getNamespace().equals(YwzjVehicle.MOD_ID))
+                                    .sorted()
+                                    .forEach(customId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(customId))))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> TAB_MISC = TABS.register("tab_misc", () ->
@@ -39,13 +42,33 @@ public class AllTabs {
                             MISC_ITEMS.forEach(itemLike -> output.accept(itemLike.get())))
                     .build());
 
+    public static void addVehicleTab(String name, Component title, Supplier<ItemStack> iconSupplier, String namespace) {
+        TABS.register(name, () ->
+                CreativeModeTab
+                        .builder()
+                        .title(title)
+                        .icon(iconSupplier)
+                        .displayItems((displayParams, output) ->
+                                CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
+                                        .filter(customId -> customId.getNamespace().equals(namespace))
+                                        .sorted()
+                                        .forEach(customId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(customId))))
+                        .build());
+    }
+
     public static void register(IEventBus eventBus) {
+        VehiclePackLoader.INSTANCE.getVehiclePacks().forEach(vehiclePack ->
+                addVehicleTab("tab_" + vehiclePack.namespace(),
+                        Component.translatable(vehiclePack.title()),
+                        () -> AllItems.PLAIN_TEXTURE_ITEM.get().createInstance(YwzjVehicle.resourceLocation(vehiclePack.namespace() + ":textures/tab.png")),
+                        vehiclePack.namespace()));
         TABS.register(eventBus);
     }
 
     public enum Category {
         VEHICLE,
-        MISC
+        MISC,
+        NONE
     }
 
 }

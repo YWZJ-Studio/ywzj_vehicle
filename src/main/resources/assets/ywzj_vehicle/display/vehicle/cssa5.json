@@ -2,6 +2,7 @@
   "type": "ywzj_vehicle:wheeled_vehicle",
   "model": "ywzj_vehicle:entity/cssa5",
   "texture": "ywzj_vehicle:textures/entity/cssa5.png",
+  "slot_texture": "ywzj_vehicle:textures/slot/cssa5.png",
   "script": "ywzj_vehicle:cssa5",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",

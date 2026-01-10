@@ -465,11 +465,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public Vec3 worldOwnerViewPosition() {
-        if (!operatorOnWeaponUnit) {
-            Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
-            Vector4d offsetWithBaseRot = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
-            return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)), false);
-        }
         if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
             return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));

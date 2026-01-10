@@ -26,6 +26,7 @@ public class YwzjVehicle {
     public YwzjVehicle() {
         Dist side = FMLLoader.getDist();
         VehiclePackLoader.INSTANCE.packType = side.isClient() ? PackType.CLIENT_RESOURCES : PackType.SERVER_DATA;
+        VehiclePackLoader.INSTANCE.scanVehiclePacks();
         FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         AllConfigs.register(ModLoadingContext.get());
         IEventBus modEventBus = context.getModEventBus();
@@ -34,12 +35,12 @@ public class YwzjVehicle {
         AllEntities.register(modEventBus);
         AllBlockEntities.register(modEventBus);
         AllSounds.register(modEventBus);
-        AllTabs.register(modEventBus);
         AllPartUnitType.register(modEventBus);
         AllVehicleWeaponTypes.register(modEventBus);
         AllVehicleDataTypes.register(modEventBus);
         AllParticleTypes.register(modEventBus);
         AllVehicleDisplayTypes.register(modEventBus);
+        AllTabs.register(modEventBus);
         modEventBus.register(Channel.class);
     }
 

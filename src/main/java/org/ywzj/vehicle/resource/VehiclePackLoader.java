@@ -12,11 +12,8 @@ import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.server.packs.resources.IoSupplier;
-import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.forgespi.language.IModInfo;
-import net.minecraftforge.forgespi.locating.IModFile;
 import net.minecraftforge.resource.DelegatingPackResources;
 import net.minecraftforge.resource.PathPackResources;
 import org.apache.logging.log4j.Marker;
@@ -25,7 +22,6 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
@@ -40,7 +36,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -50,27 +45,33 @@ public enum VehiclePackLoader implements RepositorySource {
     INSTANCE;
     private static final Marker MARKER = MarkerManager.getMarker("VehiclePackFinder");
     public PackType packType;
-
-    @Override
-    public void loadPacks(Consumer<Pack> pOnLoad) {
-        for (Pack extensionsPack : discoverExtensions()) {
-            pOnLoad.accept(extensionsPack);
-        }
-    }
-
-    public List<Pack> discoverExtensions() {
-        List<Pack> packs = new ArrayList<>();
-        Path resourcePacksPath = FMLPaths.GAMEDIR.get().resolve("vehicle");
-        File folder = resourcePacksPath.toFile();
+    private static final Path VEHICLE_PACKS_PATH = FMLPaths.GAMEDIR.get().resolve("vehicle");
+    private List<VehiclePack> vehiclePacks;
+    static {
+        File folder = VEHICLE_PACKS_PATH.toFile();
         if (!folder.isDirectory()) {
             try {
                 Files.createDirectories(folder.toPath());
             } catch (Exception e) {
                 YwzjVehicle.LOGGER.warn(MARKER, "Failed to init vehicle resource directory...", e);
-                return null;
             }
         }
+    }
 
+    @Override
+    public void loadPacks(@NotNull Consumer<Pack> pOnLoad) {
+        for (Pack pack : vehiclePacksAsResource()) {
+            pOnLoad.accept(pack);
+        }
+    }
+
+    public void scanVehiclePacks() {
+        YwzjVehicle.LOGGER.info(MARKER, "Start scanning for vehicle packs in {}", VEHICLE_PACKS_PATH);
+        vehiclePacks = scanVehiclePacks(VEHICLE_PACKS_PATH);
+        YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s) and added them to resource set.", vehiclePacks.size());
+    }
+
+    private List<Pack> vehiclePacksAsResource() {
 //        // 确保配置文件加载，这个阶段将比标准的forge配置文件加载早
 //        PreLoadConfig.load(resourcePacksPath);
 //
@@ -83,14 +84,11 @@ public enum VehiclePackLoader implements RepositorySource {
 //            }
 //            firstLoad = false;
 //        }
-
-        YwzjVehicle.LOGGER.info(MARKER, "Start scanning for vehicle packs in {}", resourcePacksPath);
-        List<VehiclePack> vehiclePacks = scanExtensions(resourcePacksPath);
-        YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s) and added them to resource set.", vehiclePacks.size());
+        List<Pack> packs = new ArrayList<>();
         List<PathPackResources> extensionPacks = new ArrayList<>();
-
         for (VehiclePack vehiclePack : vehiclePacks) {
             PathPackResources packResources = new PathPackResources(vehiclePack.namespace, false, vehiclePack.path) {
+
                 private final SecureJar secureJar = SecureJar.from(vehiclePack.path);
 
                 @NotNull
@@ -109,37 +107,25 @@ public enum VehiclePackLoader implements RepositorySource {
                 public void listResources(PackType type, String namespace, String path, ResourceOutput resourceOutput) {
                     super.listResources(type, namespace, path, resourceOutput);
                 }
+
             };
             extensionPacks.add(packResources);
-            Pack pack = Pack.readMetaAndCreate("ywzj_vehicle_resources_" + vehiclePack.namespace, Component.translatable(vehiclePack.title), true, (id) ->
-                    new DelegatingPackResources(id, false, new PackMetadataSection(Component.translatable(vehiclePack.description),
-                            SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
-                        public IoSupplier<InputStream> getRootResource(String... paths) {
-                            if (paths.length == 1 && paths[0].equals("pack.png")) {
-                                return packResources.getRootResource("pack.png");
-                            }
-                            return null;
-                        }
-                    }, packType, Pack.Position.BOTTOM, PackSource.BUILT_IN);
+            Pack pack = Pack.readMetaAndCreate("ywzj_vehicle_resources_" + vehiclePack.namespace,
+                    Component.translatable(vehiclePack.title),
+                    true,
+                    (id) -> new DelegatingPackResources(id,
+                            false,
+                            new PackMetadataSection(Component.translatable(vehiclePack.description), SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
+                                public IoSupplier<InputStream> getRootResource(String... paths) {
+                                    if (paths.length == 1 && paths[0].equals("pack.png")) {
+                                        return packResources.getRootResource("pack.png");
+                                    }
+                                    return null;
+                                }
+                            }, packType, Pack.Position.BOTTOM, PackSource.BUILT_IN);
             packs.add(pack);
         }
         return packs;
-    }
-
-    public static @Nullable Path getModIcon(String modId) {
-        Optional<? extends ModContainer> m = ModList.get().getModContainerById(modId);
-        if (m.isPresent()) {
-            IModInfo mod = m.get().getModInfo();
-            IModFile file = mod.getOwningFile().getFile();
-            if (file != null) {
-                Path logoPath = file.findResource("logo.png");
-                if (Files.exists(logoPath)) {
-                    return logoPath;
-                }
-            }
-        }
-
-        return null;
     }
 
     private static VehiclePack fromDirPath(Path path) throws IOException {
@@ -217,10 +203,10 @@ public enum VehiclePackLoader implements RepositorySource {
         }
     }
 
-    private static List<VehiclePack> scanExtensions(Path extensionsPath) {
+    private static List<VehiclePack> scanVehiclePacks(Path path) {
         List<VehiclePack> vehiclePacks = new ArrayList<>();
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(extensionsPath)){
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)){
             for (Path entry : stream) {
                 VehiclePack vehiclePack = null;
                 if (Files.isDirectory(entry)) {
@@ -234,7 +220,7 @@ public enum VehiclePackLoader implements RepositorySource {
                 }
             }
         } catch (IOException e) {
-            YwzjVehicle.LOGGER.error(MARKER, "Failed to scan extensions from {}. Error: {}", extensionsPath, e);
+            YwzjVehicle.LOGGER.error(MARKER, "Failed to scan extensions from {}. Error: {}", path, e);
         }
 
         return vehiclePacks;
@@ -256,6 +242,10 @@ public enum VehiclePackLoader implements RepositorySource {
             ArtifactVersion modVersion = mod.getModInfo().getVersion();
             return versionRange.containsVersion(modVersion);
         }).orElse(false);
+    }
+
+    public List<VehiclePack> getVehiclePacks() {
+        return vehiclePacks;
     }
 
     public record VehiclePack(Path path, String namespace, String title, String description) {}

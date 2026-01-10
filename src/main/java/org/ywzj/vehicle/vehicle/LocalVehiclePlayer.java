@@ -250,12 +250,12 @@ public class LocalVehiclePlayer {
                     Vec3 pos = cameraAimHit((float) pXRot, (float) pYRot);
                     weaponUnit.setAimLockPosition(pos);
                 } else {
-                    float t1 = Mth.abs(weaponUnit.getXAimRot() - weaponUnit.getXRot()) / weaponUnit.getXRotSpeed();
+                    float t1 = Mth.abs(weaponUnit.getXAimRot() - weaponUnit.getXRot()) % 360 / weaponUnit.getXRotSpeed();
                     float v1 = Math.min(weaponUnit.getXRotSpeed() / 15, 1 / t1 / 10);
                     if ((pXRot > 0 && weaponUnit.getXAimRot() < weaponUnit.xRotMax) || (pXRot < 0 && weaponUnit.getXAimRot() > weaponUnit.xRotMin)) {
                         scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
                     }
-                    float t2 = Mth.abs(weaponUnit.getYAimRot() - weaponUnit.getYRot()) / weaponUnit.getYRotSpeed();
+                    float t2 = Mth.abs(weaponUnit.getYAimRot() - weaponUnit.getYRot()) % 360 / weaponUnit.getYRotSpeed();
                     float v2 = Math.min(weaponUnit.getYRotSpeed() / 15, 1 / t2 / 10);
                     if ((pYRot > 0 && weaponUnit.getYAimRot() < weaponUnit.yRotMax) || (pYRot < 0 && weaponUnit.getYAimRot() > weaponUnit.yRotMin)) {
                         scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);

@@ -22,6 +22,7 @@ public class BaseVehicleDisplay {
     public static final Object[] EMPTY_ARGS = new Object[0];
     protected BedrockModel model;
     protected ResourceLocation texture;
+    protected ResourceLocation slotTexture;
     // todo 临时存这，实际使用需要封装成状态机
     protected Map<String, BedrockAnimation> animations = Map.of();
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
@@ -71,6 +72,7 @@ public class BaseVehicleDisplay {
         }
 
         this.texture = pojo.texture;
+        this.slotTexture = pojo.slotTexture;
 
         if (pojo.animations != null) {
             var animationPojo = ClientAssetsManager.INSTANCE.getAnimation(pojo.animations);
@@ -94,6 +96,10 @@ public class BaseVehicleDisplay {
 
     public ResourceLocation getTexture() {
         return texture;
+    }
+
+    public ResourceLocation getSlotTexture() {
+        return slotTexture;
     }
 
     public BedrockModel getModel() {

@@ -1,6 +1,7 @@
 {
   "model": "ywzj_vehicle:entity/dump_truck",
   "texture": "ywzj_vehicle:textures/entity/dump_truck.png",
+  "slot_texture": "ywzj_vehicle:textures/slot/dump_truck.png",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:truck_engine_idle",

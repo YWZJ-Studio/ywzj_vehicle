@@ -5,11 +5,12 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.UseAnim;
@@ -23,7 +24,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.function.Consumer;
 
-public class RepairToolItem extends Item {
+public class RepairToolItem extends VehicleItem {
 
     public RepairToolItem() {
         super(new Properties().stacksTo(1));
@@ -95,6 +96,11 @@ public class RepairToolItem extends Item {
     @Override
     public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
         return true;
+    }
+
+    @Override
+    public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand pHand) {
+        return null;
     }
 
 }

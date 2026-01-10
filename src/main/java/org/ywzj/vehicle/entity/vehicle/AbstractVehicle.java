@@ -249,28 +249,33 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public void initData(ResourceLocation customId) {
-        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
-            if (getHealth() < 0) {
-                setMaxHealth(data.getMaxHealth());
-                setHealth(data.getMaxHealth());
-            }
-            this.displayName = customId.getNamespace() + "." + customId.getPath();
-            this.viewInfo = data.getViewInfo();
-            this.energyInfo = data.getEnergyInfo();
-            this.physicsEngine.mass = data.getPhysicsInfo().mass;
-            this.physicsEngine.canDestroyBlock = data.getPhysicsInfo().canDestroyBlock;
-            data.inject(this);
-            BaseVehicleData.VehicleStructObbs vehicleStruct = data.getVehicleStructObbs();
-            this.mainCubeOBB = vehicleStruct.mainCubeOBB();
-            this.vehicleOBBs = vehicleStruct.obbs();
-            BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = data.createPartUnits(this);
-            this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
-            this.seats.addAll(partUnitsAndSeats.seats());
-            if (data.isWithWarningReceiver()) {
-                this.warningReceiver = new WarningReceiver();
-            }
-            this.protectPassenger = data.isProtectPassenger();
-        });
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(customId);
+        if (vehicleDataOptional.isEmpty()) {
+            YwzjVehicle.LOGGER.error("No vehicle data found for {}", customId);
+            this.discard();
+            return;
+        }
+        BaseVehicleData vehicleData = vehicleDataOptional.get();
+        if (getHealth() < 0) {
+            setMaxHealth(vehicleData.getMaxHealth());
+            setHealth(vehicleData.getMaxHealth());
+        }
+        this.displayName = customId.getNamespace() + "." + customId.getPath();
+        this.viewInfo = vehicleData.getViewInfo();
+        this.energyInfo = vehicleData.getEnergyInfo();
+        this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
+        this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
+        vehicleData.inject(this);
+        BaseVehicleData.VehicleStructObbs vehicleStruct = vehicleData.getVehicleStructObbs();
+        this.mainCubeOBB = vehicleStruct.mainCubeOBB();
+        this.vehicleOBBs = vehicleStruct.obbs();
+        BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
+        this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
+        this.seats.addAll(partUnitsAndSeats.seats());
+        if (vehicleData.isWithWarningReceiver()) {
+            this.warningReceiver = new WarningReceiver();
+        }
+        this.protectPassenger = vehicleData.isProtectPassenger();
         Map<String, PartUnit<?>> map = new HashMap<>();
         for (PartUnit<?> partUnit : partUnits) {
             map.put(partUnit.getId(), partUnit);
