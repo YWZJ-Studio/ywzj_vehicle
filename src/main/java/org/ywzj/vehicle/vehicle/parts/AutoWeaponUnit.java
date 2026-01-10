@@ -40,7 +40,7 @@ public class AutoWeaponUnit extends WeaponUnit {
     public boolean shouldAim(Entity entity) {
         return entity.isAlive()
                 && entity != vehicle
-                && !(entity instanceof Projectile projectile && projectile.getOwner() == vehicle)
+                && !(entity instanceof Projectile projectile && (projectile.getOwner() == vehicle || vehicle.getPassengers().contains(projectile.getOwner())))
                 && !(entity instanceof ItemEntity)
                 && entity.getDeltaMovement().length() > 1;
     }

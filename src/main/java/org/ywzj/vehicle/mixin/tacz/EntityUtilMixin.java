@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.mixin.tacz;
 
-import com.tacz.guns.api.event.common.HitBodyPartEvent;
 import com.tacz.guns.entity.EntityKineticBullet;
 import com.tacz.guns.util.EntityUtil;
 import net.minecraft.world.entity.Entity;
@@ -23,7 +22,7 @@ public class EntityUtilMixin {
         if (entity instanceof AbstractVehicle) {
             Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, startVec, endVec);
             if (closestHitPos != null) {
-                cir.setReturnValue(new EntityKineticBullet.EntityResult(entity, closestHitPos, false, HitBodyPartEvent.BodyPart.TORSO));
+                cir.setReturnValue(new EntityKineticBullet.EntityResult(entity, closestHitPos, false));
             } else {
                 cir.setReturnValue(null);
             }
