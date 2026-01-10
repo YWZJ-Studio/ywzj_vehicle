@@ -91,4 +91,9 @@ public class RepairItemAnimationInstance implements IFPAnimationInstance {
     public void triggerPutAway() {
         ctx.setEnded(true);
     }
+
+    @Override
+    public boolean shouldRenderHand() {
+        return true;
+    }
 }
