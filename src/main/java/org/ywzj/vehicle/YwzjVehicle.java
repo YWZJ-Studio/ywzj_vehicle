@@ -41,6 +41,7 @@ public class YwzjVehicle {
         AllParticleTypes.register(modEventBus);
         AllVehicleDisplayTypes.register(modEventBus);
         AllTabs.register(modEventBus);
+        AllRecipe.register(modEventBus);
         modEventBus.register(Channel.class);
     }
 

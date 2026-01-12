@@ -1,0 +1,19 @@
+{
+  "type": "ywzj_vehicle:vehicle_printing",
+  "materials": [
+    {
+      "tag": "forge:ingots/copper",
+      "count": 10
+    },
+    {
+      "tag": "forge:gunpowder",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "ywzj_vehicle:vehicle_spawn_item",
+    "nbt": {
+      "customId": "ywzj_vehicle:ztz99a"
+    }
+  }
+}

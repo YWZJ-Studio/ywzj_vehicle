@@ -12,7 +12,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.custom.VehicleWeaponManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
+import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
 import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 
 public class GsonUtil {
@@ -27,6 +29,7 @@ public class GsonUtil {
             .registerTypeAdapter(Vector3f.class, new Vector3fSerializer())
             .registerTypeAdapter(AnimationKeyframes.class, new AnimationKeyframesSerializer())
             .registerTypeAdapter(SoundEffectKeyframes.class, new SoundEffectKeyframesSerializer())
+            .registerTypeAdapter(VehicleWeaponManager.class, new VehiclePrintingIngredient.Deserializer())
             .create();
 
 }
