@@ -211,7 +211,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     public void tickStabilizer() {
-        if (stabilizer && aimLockPosition != null) {
+        if (stabilizer && aimLockPosition != null && owner == LocalVehiclePlayer.instance.getPlayer()) {
             if (aimLockEntity != null) {
                 AABB aabb = aimLockEntity.getBoundingBox();
                 aimLockPosition = aabb.getCenter();
@@ -465,6 +465,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public Vec3 worldOwnerViewPosition() {
+        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
+            Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
+            Vector4d offsetWithBaseRot = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
+            return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)), false);
+        }
         if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
             return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));

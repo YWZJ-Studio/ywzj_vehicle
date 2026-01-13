@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -21,6 +22,8 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
+import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.List;
 
@@ -33,6 +36,9 @@ public class FigureBoxItem extends VehicleItem {
     @Override
     public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand hand) {
         if (!player.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
+            if (target instanceof ServerPlayer) {
+                return InteractionResult.PASS;
+            }
             CompoundTag tag = itemStack.getOrCreateTag();
             if (tag.contains("entityData")) {
                 player.displayClientMessage(Component.translatable("tips.figure_box_has_entity"), true);
@@ -60,8 +66,22 @@ public class FigureBoxItem extends VehicleItem {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
-        CompoundTag tag = itemStack.getTag();
-        if (tag == null || !tag.contains("entityData")) {
+        CompoundTag tag = itemStack.getOrCreateTag();
+        if (!tag.contains("entityData")) {
+            // 若右击打印机方块
+            if (level.getBlockEntity(new BlockPos(context.getClickedPos())) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {
+                if (machineMaxBlockEntity.hasProduct()) {
+                    AbstractVehicle vehicle = machineMaxBlockEntity.takeProduct();
+                    CompoundTag entityData = new CompoundTag();
+                    vehicle.saveWithoutId(entityData);
+                    tag.put("entityData", entityData);
+                    tag.putString("entityId", EntityType.getKey(vehicle.getType()).toString());
+                    itemStack.setTag(tag);
+                    player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
+                    player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
+                    return InteractionResult.SUCCESS;
+                }
+            }
             player.displayClientMessage(Component.translatable("tips.figure_box_empty"), true);
             return InteractionResult.FAIL;
         }
@@ -73,6 +93,7 @@ public class FigureBoxItem extends VehicleItem {
             Entity entity = type.create(level);
             entity.load(entityData);
             if (player.isShiftKeyDown()) {
+                // 仅放置方块
                 player.level().setBlock(pos, AllBlocks.FIGURE_BOX_BLOCK.get().defaultBlockState()
                         .setValue(FigureBoxBlock.FACING, Direction.fromYRot(player.getYRot()).getOpposite()),
                         1);
@@ -84,6 +105,7 @@ public class FigureBoxItem extends VehicleItem {
                     return InteractionResult.SUCCESS;
                 }
             } else {
+                // 释放内容物
                 entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
                 level.addFreshEntity(entity);
                 tag.remove("entityData");

@@ -3,9 +3,13 @@ package org.ywzj.vehicle.custom.vehicle;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllEntities;
@@ -23,6 +27,8 @@ import java.util.*;
 
 public class BaseVehicleData<T extends AbstractVehicle> {
 
+    protected ResourceLocation customId;
+    protected Component name;
     protected float maxHealth;
     protected ViewInfo viewInfo;
     protected EnergyInfo energyInfo;
@@ -30,20 +36,42 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected boolean withWarningReceiver;
     protected boolean protectPassenger;
     protected ResourceLocation structureModel;
+    protected double structureLength;
     protected List<PartUnitEntry<?, ?>> parts;
     protected VehicleBedrockCubeOBB mainCubeOBB;
     protected final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
 
     public BaseVehicleData() {}
 
-    public AbstractVehicle summon(ResourceLocation customId, Level level, Vec3 position, float xRot, float yRot) {
-        NoneVehicle noneVehicle = new NoneVehicle(AllEntities.NONE_VEHICLE.get(), level);
-        noneVehicle.setCustomId(customId);
-        noneVehicle.setPos(position);
-        noneVehicle.setXRot(xRot);
-        noneVehicle.setYRot(yRot);
-        level.addFreshEntity(noneVehicle);
-        return noneVehicle;
+    public AbstractVehicle construct(Level level, Vec3 position, float xRot, float yRot) {
+        AbstractVehicle vehicle = fromRegistries(level, position, xRot, yRot);
+        if (vehicle != null) {
+            return vehicle;
+        }
+        vehicle = fromCustom(level);
+        vehicle.setCustomId(customId);
+        vehicle.setPos(position);
+        vehicle.setXRot(xRot);
+        vehicle.setYRot(yRot);
+        return vehicle;
+    }
+
+    protected AbstractVehicle fromRegistries(Level level, Vec3 position, float xRot, float yRot) {
+        if (ForgeRegistries.ENTITY_TYPES.containsKey(customId)) {
+            EntityType<?> vehicleType = ForgeRegistries.ENTITY_TYPES.getValue(customId);
+            Entity entity = vehicleType.create(level);
+            if (entity instanceof AbstractVehicle vehicle) {
+                vehicle.setPos(position);
+                vehicle.setXRot(xRot);
+                vehicle.setYRot(yRot);
+                return vehicle;
+            }
+        }
+        return null;
+    }
+
+    protected AbstractVehicle fromCustom(Level level) {
+        return new NoneVehicle(AllEntities.NONE_VEHICLE.get(), level);
     }
 
     protected static String check(BaseVehicleDataPojo pojo) {
@@ -121,6 +149,23 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         // 约定取体积最大的块表达车体的物理
         vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
         mainCubeOBB = vehicleBodyOBBs.get(0);
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        List<VehicleBedrockCubeOBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs);
+        for (PartUnitEntry<?, ?> partUnitEntry : parts) {
+            vehicleOBBs.addAll(partUnitEntry.data().getUnitBedrockCubeOBBs());
+        }
+        for (VehicleBedrockCubeOBB vehicleOBB : vehicleOBBs) {
+            double z1 = vehicleOBB.offset().z + vehicleOBB.getDepth() / 2;
+            double z2 = vehicleOBB.offset().z - vehicleOBB.getDepth() / 2;
+            if (maxZ < z1) {
+                maxZ = z1;
+            }
+            if (minZ > z2) {
+                minZ = z2;
+            }
+        }
+        structureLength = maxZ - minZ;
     }
 
     private void buildVehicleBodyOBBs(BedrockBone bone) {
@@ -128,6 +173,26 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         for (BedrockBone child : bone.getChildren()) {
             buildVehicleBodyOBBs(child);
         }
+    }
+
+    public ResourceLocation getCustomId() {
+        return customId;
+    }
+
+    public void setCustomId(ResourceLocation customId) {
+        this.customId = customId;
+    }
+
+    public Component getName() {
+        return name;
+    }
+
+    public void setName(Component name) {
+        this.name = name;
+    }
+
+    public double getStructureLength() {
+        return structureLength;
     }
 
     public float getMaxHealth() {

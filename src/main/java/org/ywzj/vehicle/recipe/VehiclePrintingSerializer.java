@@ -20,6 +20,7 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class VehiclePrintingSerializer implements RecipeSerializer<VehiclePrintingRecipe> {
+
     @NotNull
     @Override
     public VehiclePrintingRecipe fromJson(ResourceLocation id, JsonObject jsonObject) {
@@ -32,8 +33,9 @@ public class VehiclePrintingSerializer implements RecipeSerializer<VehiclePrinti
             VehiclePrintingIngredient ingredient = GsonUtil.GSON.fromJson(inputsJson.get(i), VehiclePrintingIngredient.class);
             inputs.add(ingredient);
         }
+        int printingTime = GsonHelper.getAsInt(jsonObject, "printingTime");
 
-        return new VehiclePrintingRecipe(id, result, inputs);
+        return new VehiclePrintingRecipe(id, result, inputs, printingTime);
     }
 
     @Nullable
@@ -48,8 +50,9 @@ public class VehiclePrintingSerializer implements RecipeSerializer<VehiclePrinti
             int count = buffer.readInt();
             inputs.add(new VehiclePrintingIngredient(ingredient, count));
         }
+        int printingTime = buffer.readInt();
 
-        return new VehiclePrintingRecipe(recipeId, result, inputs);
+        return new VehiclePrintingRecipe(recipeId, result, inputs, printingTime);
     }
 
     @Override
@@ -62,5 +65,7 @@ public class VehiclePrintingSerializer implements RecipeSerializer<VehiclePrinti
             input.ingredient().toNetwork(buffer);
             buffer.writeInt(input.count());
         }
+        buffer.writeInt(recipe.getPrintingTime());
     }
+
 }

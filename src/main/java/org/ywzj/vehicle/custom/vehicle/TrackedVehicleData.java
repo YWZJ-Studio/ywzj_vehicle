@@ -1,8 +1,6 @@
 package org.ywzj.vehicle.custom.vehicle;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
@@ -18,14 +16,8 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
     public float maxTurn;
 
     @Override
-    public AbstractVehicle summon(ResourceLocation customId, Level level, Vec3 position, float xRot, float yRot) {
-        TrackedVehicle trackedVehicle = new TrackedVehicle(AllEntities.TRACKED_VEHICLE.get(), level);
-        trackedVehicle.setCustomId(customId);
-        trackedVehicle.setPos(position);
-        trackedVehicle.setXRot(xRot);
-        trackedVehicle.setYRot(yRot);
-        level.addFreshEntity(trackedVehicle);
-        return trackedVehicle;
+    public AbstractVehicle fromCustom(Level level) {
+        return new TrackedVehicle(AllEntities.TRACKED_VEHICLE.get(), level);
     }
 
     public void build(TrackedVehicleDataPojo pojo) {

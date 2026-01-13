@@ -12,8 +12,12 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class SummonCommand {
@@ -35,8 +39,12 @@ public class SummonCommand {
     private static int setValue(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getEntity() instanceof ServerPlayer serverPlayer) {
             ResourceLocation customId = context.getArgument(CUSTOM_ID_NAME, ResourceLocation.class);
-            CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data ->
-                    data.summon(customId, serverPlayer.level(), serverPlayer.position(), 0, serverPlayer.getYRot()));
+            Level level = serverPlayer.level();
+            Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(customId);
+            if (vehicleDataOptional.isPresent()) {
+                Entity vehicle = vehicleDataOptional.get().construct(level, serverPlayer.position(), 0, serverPlayer.getYRot());
+                level.addFreshEntity(vehicle);
+            }
         }
         return Command.SINGLE_SUCCESS;
     }

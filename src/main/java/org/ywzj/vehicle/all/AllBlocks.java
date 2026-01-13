@@ -11,6 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.block.FigureBoxBlock;
+import org.ywzj.vehicle.block.MachineMaxBlock;
 
 import java.util.function.Supplier;
 
@@ -20,6 +21,9 @@ public class AllBlocks {
 
     public static final RegistryObject<Block> FIGURE_BOX_BLOCK = registerBlock(AllTabs.Category.MISC, "figure_box_block",
             () -> new FigureBoxBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).noOcclusion()), false);
+
+    public static final RegistryObject<Block> MACHINE_MAX_BLOCK = registerBlock(AllTabs.Category.MISC, "machine_max_block",
+            () -> new MachineMaxBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).noOcclusion()), true);
 
     public static <T extends Block> RegistryObject<Block> registerBlock(AllTabs.Category category, String name, Supplier<T> block, boolean hasBlockItem) {
         RegistryObject<Block> toReturn = BLOCKS.register(name, block);

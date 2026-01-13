@@ -101,11 +101,11 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
 
             guiGraphics.pose().mulPoseMatrix((new Matrix4f()).scaling(scale, scale, -scale));
             Lighting.setupForEntityInInventory();
-            EntityRenderDispatcher entityrenderdispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+            EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
 
-            entityrenderdispatcher.setRenderShadow(false);
+            entityRenderDispatcher.setRenderShadow(false);
             RenderSystem.runAsFancy(() -> {
-                entityrenderdispatcher.render(entity, 0, 0,0, entity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
+                entityRenderDispatcher.render(entity, 0, 0,0, entity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
                 for (ServerHitVehicleEvent hitVehicleEvent : events) {
                     Vec3 start;
                     Vec3 end;
@@ -120,7 +120,7 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
                 }
             });
             guiGraphics.flush();
-            entityrenderdispatcher.setRenderShadow(true);
+            entityRenderDispatcher.setRenderShadow(true);
         }
         guiGraphics.pose().popPose();
         Lighting.setupFor3DItems();

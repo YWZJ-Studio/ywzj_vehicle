@@ -73,6 +73,10 @@
   "tips.figure_box_entity_generate_failed": "无法生成实体！",
   "tips.figure_box_with_entity": "包含实体: ",
   "tips.active_protection_system_intercept": "主动防御系统拦截了攻击",
+  "tips.no_recipe": "未知配方",
+  "tips.machine_max_product": "使用手办盒取出产品",
+
+  "button.printing": "打印",
 
   "message.vehicle.damage_system.critical": "致命",
   "message.vehicle.damage_system.hurt": "伤害",

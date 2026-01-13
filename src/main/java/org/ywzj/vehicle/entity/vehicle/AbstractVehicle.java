@@ -98,6 +98,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
+    private ResourceLocation customId;
+    private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
     protected final List<PartUnit<?>> partUnits;
@@ -127,8 +129,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     private long destroyedTime;
     protected int engineParticleTick;
     public long lastRenderTime;
-    private ResourceLocation customId;
-    private String displayName;
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -176,9 +176,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             destroyedTime = compound.getLong("DestroyedTime");
         }
         if (compound.contains(ICustomVehicle.TAG_VEHICLE_ID, Tag.TAG_STRING)) {
-            ResourceLocation id = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
-            if (id != null) {
-                this.customId = id;
+            ResourceLocation customId = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
+            if (customId != null) {
+                this.customId = customId;
             }
         }
         this.initData(this.getCustomId());
@@ -260,7 +260,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             setMaxHealth(vehicleData.getMaxHealth());
             setHealth(vehicleData.getMaxHealth());
         }
-        this.displayName = customId.getNamespace() + "." + customId.getPath();
+        this.name = vehicleData.getName();
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
         this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
@@ -332,10 +332,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     public Component getDisplayName() {
-        if (displayName == null) {
-            return super.getDisplayName();
-        }
-        return Component.translatable(displayName);
+        return name;
     }
 
     @Override

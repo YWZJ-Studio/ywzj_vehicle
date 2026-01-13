@@ -2,12 +2,8 @@
   "type": "ywzj_vehicle:vehicle_printing",
   "materials": [
     {
-      "tag": "forge:ingots/copper",
-      "count": 64
-    },
-    {
-      "tag": "forge:gunpowder",
-      "count": 2
+      "tag": "forge:ingots/iron",
+      "count": 8
     }
   ],
   "result": {
@@ -16,5 +12,5 @@
       "customId": "ywzj_vehicle:ztz99a"
     }
   },
-  "printingTime": 600
+  "printingTime": 100
 }

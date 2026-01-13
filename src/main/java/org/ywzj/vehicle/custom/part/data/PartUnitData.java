@@ -23,7 +23,6 @@ public class PartUnitData {
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected List<String> subPartUnitIds;
-
     protected List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
 
     /**

@@ -28,4 +28,7 @@ public class BaseVehicleDisplayPojo {
     @SerializedName("sounds")
     public Map<String, ResourceLocation> sounds;
 
+    @SerializedName("description")
+    public String description;
+
 }

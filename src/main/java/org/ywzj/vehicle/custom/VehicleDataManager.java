@@ -2,6 +2,7 @@ package org.ywzj.vehicle.custom;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonElement;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -58,30 +59,34 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
 
     private static Map<ResourceLocation, BaseVehicleData> parseIndexes(Map<ResourceLocation, JsonElement> jsonMap) {
         ImmutableMap.Builder<ResourceLocation, BaseVehicleData> builder = ImmutableMap.builder();
-        for (var ele : jsonMap.entrySet()) {
+        for (var customIdAndVehicleDataJson : jsonMap.entrySet()) {
+            ResourceLocation customId = customIdAndVehicleDataJson.getKey();
+            JsonElement vehicleDataJson = customIdAndVehicleDataJson.getValue();
             try {
-                var obj = GsonHelper.convertToJsonObject(ele.getValue(), "vehicle data");
+                var obj = GsonHelper.convertToJsonObject(vehicleDataJson, "vehicle data");
                 String type = GsonHelper.getAsString(obj, "type", "ywzj_vehicle:generic");
                 ResourceLocation typeId = ResourceLocation.tryParse(type);
                 if (typeId == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, invalid type id {}", ele.getKey(), type);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, invalid type id {}", customId, type);
                     continue;
                 }
 
                 var dataType = ModRegistries.VEHICLE_DATA_TYPE_SUPPLIER.get().getValue(typeId);
                 if (dataType == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", ele.getKey(), typeId);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", customId, typeId);
                     continue;
                 }
 
-                var data = dataType.parse(ele.getValue());
+                var data = dataType.parse(vehicleDataJson);
                 if (data == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle data: {}", ele.getKey());
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle data: {}", customId);
                     continue;
                 }
-                builder.put(ele.getKey(), data);
+                data.setCustomId(customId);
+                data.setName(Component.translatable("entity." + customId.getNamespace() + "." + customId.getPath()));
+                builder.put(customId, data);
             } catch (Exception e) {
-                YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle data: {}", ele.getKey(), e);
+                YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle data: {}", customId, e);
             }
         }
         return builder.build();

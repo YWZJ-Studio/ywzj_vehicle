@@ -17,14 +17,17 @@ import java.util.List;
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class VehiclePrintingRecipe implements Recipe<Inventory> {
+
     private final ResourceLocation id;
     private final ItemStack result;
     private final List<VehiclePrintingIngredient> inputs;
+    private final int printingTime;
 
-    public VehiclePrintingRecipe(ResourceLocation id, ItemStack result, List<VehiclePrintingIngredient> inputs) {
+    public VehiclePrintingRecipe(ResourceLocation id, ItemStack result, List<VehiclePrintingIngredient> inputs, int printingTime) {
         this.id = id;
         this.result = result;
         this.inputs = inputs;
+        this.printingTime = printingTime;
     }
 
     @Override
@@ -67,4 +70,9 @@ public class VehiclePrintingRecipe implements Recipe<Inventory> {
     public List<VehiclePrintingIngredient> getInputs() {
         return inputs;
     }
+
+    public int getPrintingTime() {
+        return this.printingTime;
+    }
+
 }

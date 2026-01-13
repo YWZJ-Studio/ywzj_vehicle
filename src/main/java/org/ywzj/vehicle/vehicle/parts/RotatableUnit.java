@@ -114,7 +114,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         if (!needPower || vehicle.hasPower()) {
-            if (yRotSpeed != 0 && Math.abs(yAimRot - yRot) > 1 && yRot < yRotMax && yRot > yRotMin) {
+            if (yRotSpeed != 0 && Math.abs((yAimRot - yRot) % 360) > 1 && yRot < yRotMax && yRot > yRotMin) {
                 if (turnYSoundInstance == null) {
                     turnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, 1f, true, 10, true, true, vehicle.getId());
                     turnYSoundInstance.play();
@@ -125,7 +125,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
                     turnYSoundInstance = null;
                 }
             }
-            if (xRotSpeed != 0 && Math.abs(xAimRot - xRot) > 1 && xRot < xRotMax && xRot > xRotMin) {
+            if (xRotSpeed != 0 && Math.abs((xAimRot - xRot) % 360) > 1 && xRot < xRotMax && xRot > xRotMin) {
                 if (turnXSoundInstance == null) {
                     turnXSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_V.get(), 1f, 1f, 1f, true, 10, true, true, vehicle.getId());
                     turnXSoundInstance.play();

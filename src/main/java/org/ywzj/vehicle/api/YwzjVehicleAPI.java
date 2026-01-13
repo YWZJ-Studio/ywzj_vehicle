@@ -1,10 +1,19 @@
 package org.ywzj.vehicle.api;
 
+import net.minecraft.resources.ResourceLocation;
 import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
+
+import java.util.Map;
 
 public class YwzjVehicleAPI {
+
+    public static Map<ResourceLocation, BaseVehicleData> getAllVehicleData() {
+        return CommonAssetsManager.vehicleDataManager().getVehicleData();
+    }
+
     /**
      * 获取载具武器管理器<br/>
      * 在单人模式或是作为服务端时，返回原始的载具武器管理器实例；<br/>

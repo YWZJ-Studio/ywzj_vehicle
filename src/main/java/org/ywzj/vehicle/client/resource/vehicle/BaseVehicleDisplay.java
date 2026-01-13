@@ -28,6 +28,7 @@ public class BaseVehicleDisplay {
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
     protected Scriptable scope;
     protected Script script;
+    protected String description;
     protected Function prepareBonesFunction;
     protected Function tickParticleFunction;
     protected VehicleScriptContext<? extends AbstractVehicle> vehicleScriptContext;
@@ -92,6 +93,8 @@ public class BaseVehicleDisplay {
             pojo.sounds.forEach((soundName, soundResourceLocation) ->
                     soundEvents.put(soundName, SoundEvent.createVariableRangeEvent(soundResourceLocation)));
         }
+
+        this.description = pojo.description;
     }
 
     public ResourceLocation getTexture() {
@@ -132,6 +135,10 @@ public class BaseVehicleDisplay {
 
     public VehicleScriptContext getVehicleScriptContext() {
         return vehicleScriptContext;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
 }

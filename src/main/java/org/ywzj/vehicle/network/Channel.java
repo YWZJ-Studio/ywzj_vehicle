@@ -81,6 +81,11 @@ public class Channel {
                 ServerVehicleHurtEntity::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
+        CHANNEL.registerMessage(PacketId.C_MACHINE_MAX_ACTION.value(), ClientMachineMaxAction.class,
+                ClientMachineMaxAction::encode, ClientMachineMaxAction::decode,
+                ClientMachineMaxAction::onClientMessageReceived,
+                Optional.of(PLAY_TO_SERVER));
+
         CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
@@ -99,6 +104,7 @@ enum PacketId {
     S_VEHICLE_FIRE(105),
     S_VEHICLE_WARN(106),
     S_VEHICLE_HURT_ENTITY(107),
+    C_MACHINE_MAX_ACTION(108),
 
     S_SLICED_PACKET(110),
 

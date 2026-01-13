@@ -7,6 +7,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
+import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 
 
 public class AllBlockEntities {
@@ -16,6 +17,10 @@ public class AllBlockEntities {
     public static final RegistryObject<BlockEntityType<FigureBoxBlockEntity>> FIGURE_BOX_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("figure_box_block_entity", () ->
                     BlockEntityType.Builder.of(FigureBoxBlockEntity::new, AllBlocks.FIGURE_BOX_BLOCK.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineMaxBlockEntity>> MACHINE_MAX_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("machine_max_block_entity", () ->
+                    BlockEntityType.Builder.of(MachineMaxBlockEntity::new, AllBlocks.MACHINE_MAX_BLOCK.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

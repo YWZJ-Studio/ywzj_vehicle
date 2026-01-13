@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -16,12 +15,12 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.item.VehicleSpawnItemRenderer;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class VehicleSpawnItem extends Item {
@@ -65,22 +64,12 @@ public class VehicleSpawnItem extends Item {
         ItemStack itemStack = player.getItemInHand(context.getHand());
         CompoundTag tag = itemStack.getTag();
         ResourceLocation customId = YwzjVehicle.resourceLocation(tag.getString("customId"));
-        if (ForgeRegistries.ENTITY_TYPES.containsKey(customId)) {
-            EntityType<?> vehicleType = ForgeRegistries.ENTITY_TYPES.getValue(customId);
-            Entity vehicle = vehicleType.create(level);
-            if (vehicle == null) {
-                return InteractionResult.PASS;
-            }
-            vehicle.setYRot(player.getYRot());
-            vehicle.setPos(position);
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(customId);
+        if (vehicleDataOptional.isPresent()) {
+            Entity vehicle = vehicleDataOptional.get().construct(level, position, 0, player.getYRot());
             level.addFreshEntity(vehicle);
-        } else {
-            CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
-                AbstractVehicle vehicle = data.summon(customId, level, position, 0, player.getYRot());
-                vehicle.setYRot(player.getYRot());
-            });
+            itemStack.shrink(1);
         }
-        itemStack.shrink(1);
         return InteractionResult.SUCCESS;
     }
 
