@@ -32,8 +32,8 @@ public class VehicleSpawnItemRenderer extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(@Nonnull ItemStack itemStack, @Nonnull ItemDisplayContext transformType, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
         if (itemStack.getItem() instanceof VehicleSpawnItem) {
             CompoundTag tag = itemStack.getOrCreateTag();
-            ResourceLocation customId = YwzjVehicle.resourceLocation(tag.getString("customId"));
-            var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId).orElse(null);
+            ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString("vehicleId"));
+            var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
             poseStack.pushPose();
             {
                 if (display != null) {

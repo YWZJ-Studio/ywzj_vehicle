@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 public class ClientMachineMaxAction {
 
     public BlockPos blockPos;
-    public ResourceLocation craftingCustomId;
+    public ResourceLocation craftingVehicleId;
     public Action action;
 
     public ClientMachineMaxAction() {}
@@ -28,14 +28,14 @@ public class ClientMachineMaxAction {
     public static ClientMachineMaxAction decode(FriendlyByteBuf buf) {
         ClientMachineMaxAction clientMachineMaxAction = new ClientMachineMaxAction();
         clientMachineMaxAction.blockPos = buf.readBlockPos();
-        clientMachineMaxAction.craftingCustomId = buf.readResourceLocation();
+        clientMachineMaxAction.craftingVehicleId = buf.readResourceLocation();
         clientMachineMaxAction.action = buf.readEnum(Action.class);
         return clientMachineMaxAction;
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeBlockPos(blockPos);
-        buf.writeResourceLocation(craftingCustomId);
+        buf.writeResourceLocation(craftingVehicleId);
         buf.writeEnum(action);
     }
 
@@ -54,14 +54,14 @@ public class ClientMachineMaxAction {
                     if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
                         return;
                     }
-                    Optional<? extends Recipe<?>> recipeOptional = level.getRecipeManager().byKey(message.craftingCustomId);
+                    Optional<? extends Recipe<?>> recipeOptional = level.getRecipeManager().byKey(message.craftingVehicleId);
                     if (!recipeOptional.isPresent()) {
                         return;
                     }
                     if (recipeOptional.get() instanceof VehiclePrintingRecipe vehiclePrintingRecipe) {
                         if (hasIngredients(serverPlayer, vehiclePrintingRecipe)) {
                             consumeIngredients(serverPlayer, vehiclePrintingRecipe);
-                            machineMaxBlockEntity.craft(message.craftingCustomId, vehiclePrintingRecipe);
+                            machineMaxBlockEntity.craft(message.craftingVehicleId, vehiclePrintingRecipe);
                         }
                     }
                 }

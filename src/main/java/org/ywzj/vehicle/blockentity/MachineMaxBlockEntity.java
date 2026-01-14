@@ -31,7 +31,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
     private boolean hasProduct;
     public float progress;
     public float step;
-    public ResourceLocation craftingCustomId;
+    public ResourceLocation craftingVehicleId;
     public BaseVehicleDisplay vehicleDisplay;
     public BaseVehicleData vehicleData;
     public List<MachineMaxBlockRenderer.BedrockBoneWrapper> bedrockBoneWrappers = new ArrayList<>();
@@ -40,8 +40,8 @@ public class MachineMaxBlockEntity extends BlockEntity {
         super(AllBlockEntities.MACHINE_MAX_BLOCK_ENTITY.get(), pos, state);
     }
 
-    public void craft(ResourceLocation craftingCustomId, VehiclePrintingRecipe vehiclePrintingRecipe) {
-        this.craftingCustomId = craftingCustomId;
+    public void craft(ResourceLocation craftingVehicleId, VehiclePrintingRecipe vehiclePrintingRecipe) {
+        this.craftingVehicleId = craftingVehicleId;
         this.progress = 0;
         this.crafting = true;
         this.hasProduct = false;
@@ -54,8 +54,8 @@ public class MachineMaxBlockEntity extends BlockEntity {
             return null;
         }
         AbstractVehicle vehicle = CommonAssetsManager.vehicleDataManager().getVehicleData()
-                .get(craftingCustomId).construct(level, Vec3.ZERO, 0, 0);
-        this.craftingCustomId = null;
+                .get(craftingVehicleId).construct(level, Vec3.ZERO, 0, 0);
+        this.craftingVehicleId = null;
         this.progress = 0;
         this.hasProduct = false;
         sync();
@@ -100,8 +100,8 @@ public class MachineMaxBlockEntity extends BlockEntity {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        if (craftingCustomId != null) {
-            tag.putString("craftingCustomId", craftingCustomId.toString());
+        if (craftingVehicleId != null) {
+            tag.putString("craftingVehicleId", craftingVehicleId.toString());
         }
         tag.putBoolean("crafting", crafting);
         tag.putBoolean("hasProduct", hasProduct);
@@ -112,13 +112,13 @@ public class MachineMaxBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains("craftingCustomId")) {
-            craftingCustomId = YwzjVehicle.resourceLocation(tag.getString("craftingCustomId"));
+        if (tag.contains("craftingVehicleId")) {
+            craftingVehicleId = YwzjVehicle.resourceLocation(tag.getString("craftingVehicleId"));
             if (level != null && level.isClientSide()) {
                 prepareAnimation();
             }
         } else {
-            craftingCustomId = null;
+            craftingVehicleId = null;
         }
         if (tag.contains("crafting")) {
             crafting = tag.getBoolean("crafting");
@@ -145,7 +145,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
 
     private void prepareAnimation() {
         if (bedrockBoneWrappers.isEmpty()) {
-            vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(craftingCustomId).orElse(null);
+            vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(craftingVehicleId).orElse(null);
             if (vehicleDisplay == null) {
                 return;
             }
@@ -153,7 +153,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
             if (model == null) {
                 return;
             }
-            Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(craftingCustomId);
+            Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(craftingVehicleId);
             if (!vehicleDataOptional.isPresent()) {
                 return;
             }

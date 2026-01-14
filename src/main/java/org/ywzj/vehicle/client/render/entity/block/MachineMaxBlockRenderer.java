@@ -21,7 +21,7 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
 
     @Override
     public void render(MachineMaxBlockEntity machineMaxBlockEntity, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        if (machineMaxBlockEntity.craftingCustomId == null) {
+        if (machineMaxBlockEntity.craftingVehicleId == null) {
             return;
         }
         machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bedrockBone.visible = bedrockBoneWrapper.visible);

@@ -98,7 +98,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
-    private ResourceLocation customId;
+    private ResourceLocation vehicleId;
+    private ResourceLocation displayId;
     private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -132,7 +133,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.customId = EntityType.getKey(pEntityType);
+        this.vehicleId = EntityType.getKey(pEntityType);
         this.seats = new ArrayList<>();
         this.controlUnit = new ControlUnit(this);
         this.partUnits = new ArrayList<>();
@@ -162,7 +163,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Destroyed", isDestroyed());
         compound.putLong("DestroyedTime", destroyedTime);
-        compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getCustomId().toString());
+        compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getVehicleId().toString());
+        compound.putString(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID, this.getDisplayId().toString());
         compound.put("PartUnits", serializePartUnitsData());
     }
 
@@ -176,12 +178,18 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             destroyedTime = compound.getLong("DestroyedTime");
         }
         if (compound.contains(ICustomVehicle.TAG_VEHICLE_ID, Tag.TAG_STRING)) {
-            ResourceLocation customId = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
-            if (customId != null) {
-                this.customId = customId;
+            ResourceLocation vehicleId = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
+            if (vehicleId != null) {
+                this.vehicleId = vehicleId;
             }
         }
-        this.initData(this.getCustomId());
+        if (compound.contains(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID, Tag.TAG_STRING)) {
+            ResourceLocation displayId = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID));
+            if (displayId != null) {
+                this.displayId = displayId;
+            }
+        }
+        this.initData(this.getVehicleId());
         if (compound.contains("PartUnits", Tag.TAG_COMPOUND)) {
             deserializePartUnitsData(compound.getCompound("PartUnits"));
         }
@@ -195,7 +203,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeResourceLocation(this.getCustomId());
+        buffer.writeResourceLocation(this.getVehicleId());
+        buffer.writeResourceLocation(this.getDisplayId());
         buffer.writeNbt(serializePartUnitsData());
         buffer.writeInt(seats.size());
         for (Seat seat : seats) {
@@ -205,8 +214,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     public void readSpawnData(FriendlyByteBuf buffer) {
-        this.customId = buffer.readResourceLocation();;
-        this.initData(this.getCustomId());
+        this.vehicleId = buffer.readResourceLocation();
+        this.displayId = buffer.readResourceLocation();
+        this.initData(this.getVehicleId());
         deserializePartUnitsData(buffer.readNbt());
         int[] passengerIdsBySeat = new int[buffer.readInt()];
         for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
@@ -243,15 +253,15 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         super.onAddedToWorld();
         if (!level().isClientSide()) {
             if (!dataInitialized) {
-                this.initData(getCustomId());
+                this.initData(getVehicleId());
             }
         }
     }
 
-    public void initData(ResourceLocation customId) {
-        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(customId);
+    public void initData(ResourceLocation vehicleId) {
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isEmpty()) {
-            YwzjVehicle.LOGGER.error("No vehicle data found for {}", customId);
+            YwzjVehicle.LOGGER.error("No vehicle data found for {}", vehicleId);
             this.discard();
             return;
         }
@@ -291,7 +301,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
 //    调试用载具构建写法
 //    @Deprecated
-//    public void initData(ResourceLocation customId) {
+//    public void initData(ResourceLocation vehicleId) {
 //        initPartUnits();
 //        initOBBs();
 //        Map<String, PartUnit<?>> map = new HashMap<>();
@@ -321,13 +331,26 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
      */
     @NotNull
     @Override
-    public ResourceLocation getCustomId() {
-        return this.customId;
+    public ResourceLocation getVehicleId() {
+        return this.vehicleId;
     }
 
     @Override
-    public void setCustomId(@NotNull ResourceLocation customId) {
-        this.customId = customId;
+    public void setVehicleId(@NotNull ResourceLocation vehicleId) {
+        this.vehicleId = vehicleId;
+    }
+
+    @Override
+    public ResourceLocation getDisplayId() {
+        if (this.displayId == null) {
+            return this.vehicleId;
+        }
+        return this.displayId;
+    }
+
+    @Override
+    public void setDisplayId(ResourceLocation displayId) {
+        this.displayId = displayId;
     }
 
     @Override
@@ -505,22 +528,22 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public SoundEvent getEngineStartSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_start")).orElse(null);
     }
 
     public SoundEvent getEngineStopSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_stop")).orElse(null);
     }
 
     public SoundEvent getEngineIdleSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_idle")).orElse(null);
     }
 
     public SoundEvent getEngineRunSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId);
+        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_run")).orElse(null);
     }
 
@@ -1244,7 +1267,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Deprecated
     @Nullable
     public ResourceLocation getStructureModel() {
-        ResourceLocation id = this.getCustomId();
+        ResourceLocation id = this.getVehicleId();
         return YwzjVehicle.resourceLocation(id.getNamespace() + ":entity/" + id.getPath());
     }
 

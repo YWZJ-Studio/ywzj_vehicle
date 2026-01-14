@@ -72,8 +72,8 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         Entity entity = type.create(Minecraft.getInstance().level);
                         entity.load(entityData);
                         if (entity instanceof AbstractVehicle vehicle && isGui) {
-                            ResourceLocation customId = vehicle.getCustomId();
-                            BaseVehicleDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId).orElse(null);
+                            ResourceLocation vehicleId = vehicle.getVehicleId();
+                            BaseVehicleDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
                             if (display != null) {
                                 ResourceLocation slotTexture = display.getSlotTexture();
                                 if (slotTexture != null) {

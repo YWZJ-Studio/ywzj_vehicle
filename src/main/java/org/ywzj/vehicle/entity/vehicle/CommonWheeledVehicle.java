@@ -31,7 +31,7 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
             .setCustomClientFactory(CommonWheeledVehicle::new)
             .build("common_wheeled_vehicle");
 
-    private ResourceLocation customId = ICustomVehicle.EMPTY_ID;
+    private ResourceLocation vehicleId = ICustomVehicle.EMPTY_ID;
 
     public CommonWheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -42,11 +42,11 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
     }
 
 //    @Override
-//    public void initData(ResourceLocation customId) {
+//    public void initData(ResourceLocation vehicleId) {
 //        this.setMaxHealth(100);
 //        this.setHealth(this.getMaxHealth());
-//        this.customId = customId;
-//        CommonAssetsManager.vehicleDataManager().getVehicleData(customId).ifPresent(data -> {
+//        this.vehicleId = vehicleId;
+//        CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId).ifPresent(data -> {
 //            var struct = data.getVehicleStructObbs();
 //            this.mainCubeOBB = struct.mainCubeOBB();
 //            this.vehicleOBBs = struct.obbs();
@@ -66,7 +66,7 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
 
     @Override
     protected void tickParticle() {
-        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getCustomId()).ifPresent(display -> {
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getVehicleId()).ifPresent(display -> {
             display.getVehicleScriptContext().updateLogic(this);
             var func = display.getTickParticleFunction();
             if (func != null) {

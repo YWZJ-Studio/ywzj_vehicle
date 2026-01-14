@@ -25,8 +25,8 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public void initData(ResourceLocation customId) {
-        super.initData(customId);
+    public void initData(ResourceLocation vehicleId) {
+        super.initData(vehicleId);
         PartUnit<?> passengerSeat = partUnits.get(0);
         passengerSeat.passengerPose = new PassengerPose();
         passengerSeat.passengerPose.leftArmRotX = -1.5f;

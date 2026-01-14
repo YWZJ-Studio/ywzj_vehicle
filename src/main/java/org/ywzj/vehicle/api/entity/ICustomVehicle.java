@@ -5,22 +5,18 @@ import org.ywzj.vehicle.YwzjVehicle;
 
 public interface ICustomVehicle {
 
-    String TAG_VEHICLE_ID = "CustomVehicleId";
+    String TAG_VEHICLE_ID = "VehicleId";
 
-    String TAG_DISPLAY_ID = "CustomVehicleDisplayId";
+    String TAG_VEHICLE_DISPLAY_ID = "VehicleDisplayId";
 
     ResourceLocation EMPTY_ID = YwzjVehicle.modLocation("empty");
 
-    ResourceLocation getCustomId();
+    ResourceLocation getVehicleId();
 
-    void setCustomId(ResourceLocation customId);
+    void setVehicleId(ResourceLocation vehicleId);
 
-    default ResourceLocation getCustomDisplayId() {
-        return this.getCustomId();
-    }
+    ResourceLocation getDisplayId();
 
-    default void setCustomDisplayId(ResourceLocation customDisplayId) {
-        // do nothing
-    }
+    void setDisplayId(ResourceLocation displayId);
 
 }

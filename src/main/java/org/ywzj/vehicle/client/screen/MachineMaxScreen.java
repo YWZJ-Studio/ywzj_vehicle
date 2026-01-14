@@ -217,18 +217,18 @@ public class MachineMaxScreen extends Screen {
             return;
         }
 
-        ResourceLocation customId;
-        if (machineMaxBlockEntity.craftingCustomId != null) {
-            customId = machineMaxBlockEntity.craftingCustomId;
+        ResourceLocation vehicleId;
+        if (machineMaxBlockEntity.craftingVehicleId != null) {
+            vehicleId = machineMaxBlockEntity.craftingVehicleId;
         } else {
-            customId = filteredVehicleList.get(selectedIndex).getKey();
+            vehicleId = filteredVehicleList.get(selectedIndex).getKey();
         }
-        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(customId);
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (!vehicleDataOptional.isPresent()) {
             return;
         }
         AbstractVehicle vehicle = vehicleDataOptional.get().construct(Minecraft.getInstance().level, Vec3.ZERO, 0, tickCount);
-        vehicle.initData(customId);
+        vehicle.initData(vehicleId);
 
         double length = vehicleDataOptional.get().getStructureLength();
         float scale = (float) (1 / Math.max(length, 3) * 100);
@@ -258,7 +258,7 @@ public class MachineMaxScreen extends Screen {
             );
         }
         poseStack.popPose();
-        BaseVehicleDisplay vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(customId).get();
+        BaseVehicleDisplay vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).get();
         // 介绍
         if (vehicleDisplay.getDescription() != null) {
             poseStack.pushPose();
@@ -293,8 +293,8 @@ public class MachineMaxScreen extends Screen {
         if (selectedIndex < 0 || selectedIndex >= filteredVehicleList.size()) {
             return;
         }
-        ResourceLocation customId = filteredVehicleList.get(selectedIndex).getKey();
-        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(customId);
+        ResourceLocation vehicleId = filteredVehicleList.get(selectedIndex).getKey();
+        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
         if (!recipeOptional.isPresent()) {
             gui.drawString(font, Component.translatable("tips.no_recipe"), x, y, 0xFFFFFF);
             return;
@@ -351,11 +351,11 @@ public class MachineMaxScreen extends Screen {
         return true;
     }
 
-    private void onVehicleSelected(ResourceLocation customId) {
+    private void onVehicleSelected(ResourceLocation vehicleId) {
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }
-        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(customId);
+        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
         if (!recipeOptional.isPresent()) {
             printingButton.visible = false;
             return;
@@ -366,8 +366,8 @@ public class MachineMaxScreen extends Screen {
     private void onCraft() {
         ClientMachineMaxAction clientMachineMaxAction = new ClientMachineMaxAction();
         if (selectedIndex >= 0 && selectedIndex < filteredVehicleList.size()) {
-            clientMachineMaxAction.craftingCustomId = filteredVehicleList.get(selectedIndex).getKey();
-            if (clientMachineMaxAction.craftingCustomId == null) {
+            clientMachineMaxAction.craftingVehicleId = filteredVehicleList.get(selectedIndex).getKey();
+            if (clientMachineMaxAction.craftingVehicleId == null) {
                 return;
             }
             clientMachineMaxAction.blockPos = machineMaxBlockEntity.getBlockPos();

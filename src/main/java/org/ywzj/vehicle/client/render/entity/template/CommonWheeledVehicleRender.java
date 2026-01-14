@@ -37,7 +37,7 @@ public class CommonWheeledVehicleRender extends EntityRenderer<CommonWheeledVehi
 
     @Override
     public void render(CommonWheeledVehicle pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        ResourceLocation displayId = pEntity.getCustomDisplayId();
+        ResourceLocation displayId = pEntity.getDisplayId();
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(displayId).orElse(null);
         if (display == null) {
             return;

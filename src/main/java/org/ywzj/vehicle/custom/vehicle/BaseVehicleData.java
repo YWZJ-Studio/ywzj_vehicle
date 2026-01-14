@@ -27,7 +27,7 @@ import java.util.*;
 
 public class BaseVehicleData<T extends AbstractVehicle> {
 
-    protected ResourceLocation customId;
+    protected ResourceLocation vehicleId;
     protected Component name;
     protected float maxHealth;
     protected ViewInfo viewInfo;
@@ -49,7 +49,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             return vehicle;
         }
         vehicle = fromCustom(level);
-        vehicle.setCustomId(customId);
+        vehicle.setVehicleId(vehicleId);
         vehicle.setPos(position);
         vehicle.setXRot(xRot);
         vehicle.setYRot(yRot);
@@ -57,8 +57,8 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     }
 
     protected AbstractVehicle fromRegistries(Level level, Vec3 position, float xRot, float yRot) {
-        if (ForgeRegistries.ENTITY_TYPES.containsKey(customId)) {
-            EntityType<?> vehicleType = ForgeRegistries.ENTITY_TYPES.getValue(customId);
+        if (ForgeRegistries.ENTITY_TYPES.containsKey(vehicleId)) {
+            EntityType<?> vehicleType = ForgeRegistries.ENTITY_TYPES.getValue(vehicleId);
             Entity entity = vehicleType.create(level);
             if (entity instanceof AbstractVehicle vehicle) {
                 vehicle.setPos(position);
@@ -175,12 +175,12 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         }
     }
 
-    public ResourceLocation getCustomId() {
-        return customId;
+    public ResourceLocation getVehicleId() {
+        return vehicleId;
     }
 
-    public void setCustomId(ResourceLocation customId) {
-        this.customId = customId;
+    public void setVehicleId(ResourceLocation vehicleId) {
+        this.vehicleId = vehicleId;
     }
 
     public Component getName() {

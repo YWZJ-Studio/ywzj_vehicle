@@ -67,8 +67,8 @@ public enum ClientAssetsManager {
         animations.apply(animations.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
         scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
-        for (ResourceLocation customId : CommonAssetsManager.vehicleDataManager().getVehicleData().keySet()) {
-            ResourceLocation textureLocation = YwzjVehicle.resourceLocation(customId.getNamespace() + ":textures/entity/" + customId.getPath() + ".png");
+        for (ResourceLocation vehicleId : CommonAssetsManager.vehicleDataManager().getVehicleData().keySet()) {
+            ResourceLocation textureLocation = YwzjVehicle.resourceLocation(vehicleId.getNamespace() + ":textures/entity/" + vehicleId.getPath() + ".png");
             SimpleTexture texture = new SimpleTexture(textureLocation);
             try {
                 Minecraft.getInstance().textureManager.register(textureLocation, texture);

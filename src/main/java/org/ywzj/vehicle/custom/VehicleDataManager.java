@@ -59,34 +59,34 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
 
     private static Map<ResourceLocation, BaseVehicleData> parseIndexes(Map<ResourceLocation, JsonElement> jsonMap) {
         ImmutableMap.Builder<ResourceLocation, BaseVehicleData> builder = ImmutableMap.builder();
-        for (var customIdAndVehicleDataJson : jsonMap.entrySet()) {
-            ResourceLocation customId = customIdAndVehicleDataJson.getKey();
-            JsonElement vehicleDataJson = customIdAndVehicleDataJson.getValue();
+        for (var vehicleIdAndVehicleDataJson : jsonMap.entrySet()) {
+            ResourceLocation vehicleId = vehicleIdAndVehicleDataJson.getKey();
+            JsonElement vehicleDataJson = vehicleIdAndVehicleDataJson.getValue();
             try {
                 var obj = GsonHelper.convertToJsonObject(vehicleDataJson, "vehicle data");
                 String type = GsonHelper.getAsString(obj, "type", "ywzj_vehicle:generic");
                 ResourceLocation typeId = ResourceLocation.tryParse(type);
                 if (typeId == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, invalid type id {}", customId, type);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, invalid type id {}", vehicleId, type);
                     continue;
                 }
 
                 var dataType = ModRegistries.VEHICLE_DATA_TYPE_SUPPLIER.get().getValue(typeId);
                 if (dataType == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", customId, typeId);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", vehicleId, typeId);
                     continue;
                 }
 
                 var data = dataType.parse(vehicleDataJson);
                 if (data == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle data: {}", customId);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle data: {}", vehicleId);
                     continue;
                 }
-                data.setCustomId(customId);
-                data.setName(Component.translatable("entity." + customId.getNamespace() + "." + customId.getPath()));
-                builder.put(customId, data);
+                data.setVehicleId(vehicleId);
+                data.setName(Component.translatable("entity." + vehicleId.getNamespace() + "." + vehicleId.getPath()));
+                builder.put(vehicleId, data);
             } catch (Exception e) {
-                YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle data: {}", customId, e);
+                YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle data: {}", vehicleId, e);
             }
         }
         return builder.build();

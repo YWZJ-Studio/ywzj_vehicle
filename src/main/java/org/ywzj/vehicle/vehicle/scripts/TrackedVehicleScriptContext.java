@@ -24,7 +24,7 @@ public class TrackedVehicleScriptContext extends VehicleScriptContext<TrackedVeh
     public void advanceProgress(String leftTrack, String rightTrack, float leftTrackSpeed, float rightTrackSpeed, float deltaTime, float moduleLength) {
         TrackAnimationInstance instance = entity.getTrackAnimationInstance();
         if (instance == null) {
-            var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(entity.getCustomDisplayId()).orElse(null);
+            var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(entity.getDisplayId()).orElse(null);
             if (display == null) {
                 return;
             }

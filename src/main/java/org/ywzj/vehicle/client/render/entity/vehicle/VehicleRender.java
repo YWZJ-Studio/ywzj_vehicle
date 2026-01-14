@@ -37,7 +37,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
 
     @Override
     public void render(T vehicle, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        ResourceLocation displayId = vehicle.getCustomDisplayId();
+        ResourceLocation displayId = vehicle.getDisplayId();
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(displayId).orElse(null);
         if (display == null) {
             return;

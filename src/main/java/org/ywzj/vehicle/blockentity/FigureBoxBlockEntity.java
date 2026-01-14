@@ -45,7 +45,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
                 entity.load(entityData);
                 setEntity(entity);
                 if (entity instanceof AbstractVehicle vehicle) {
-                    vehicle.initData(vehicle.getCustomId());
+                    vehicle.initData(vehicle.getVehicleId());
                 }
             }
         }

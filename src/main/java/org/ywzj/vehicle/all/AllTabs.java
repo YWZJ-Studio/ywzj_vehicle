@@ -28,9 +28,9 @@ public class AllTabs {
                     .icon(AllItems.FIGURE_BOX.get()::getDefaultInstance)
                     .displayItems((displayParams, output) ->
                             CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
-                                    .filter(customId -> customId.getNamespace().equals(YwzjVehicle.MOD_ID))
+                                    .filter(vehicleId -> vehicleId.getNamespace().equals(YwzjVehicle.MOD_ID))
                                     .sorted()
-                                    .forEach(customId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(customId))))
+                                    .forEach(vehicleId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleId))))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> TAB_MISC = TABS.register("tab_misc", () ->
@@ -50,9 +50,9 @@ public class AllTabs {
                         .icon(iconSupplier)
                         .displayItems((displayParams, output) ->
                                 CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
-                                        .filter(customId -> customId.getNamespace().equals(namespace))
+                                        .filter(vehicleId -> vehicleId.getNamespace().equals(namespace))
                                         .sorted()
-                                        .forEach(customId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(customId))))
+                                        .forEach(vehicleId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleId))))
                         .build());
     }
 

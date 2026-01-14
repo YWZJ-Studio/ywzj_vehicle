@@ -23,17 +23,19 @@ import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static org.ywzj.vehicle.api.entity.ICustomVehicle.TAG_VEHICLE_ID;
+
 public class VehicleSpawnItem extends Item {
 
     public VehicleSpawnItem(Properties pProperties) {
         super(pProperties);
     }
 
-    public ItemStack createInstance(ResourceLocation customId) {
+    public ItemStack createInstance(ResourceLocation vehicleId) {
         ItemStack itemStack = new ItemStack(this);
         CompoundTag tag = itemStack.getOrCreateTag();
-        tag.putString("customId", customId.toString());
-        itemStack.setHoverName(Component.translatable(customId.getNamespace() + "." + customId.getPath()));
+        tag.putString(TAG_VEHICLE_ID, vehicleId.toString());
+        itemStack.setHoverName(Component.translatable(vehicleId.getNamespace() + "." + vehicleId.getPath()));
         itemStack.setTag(tag);
         return itemStack;
     }
@@ -63,8 +65,8 @@ public class VehicleSpawnItem extends Item {
         Vec3 position = new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ());
         ItemStack itemStack = player.getItemInHand(context.getHand());
         CompoundTag tag = itemStack.getTag();
-        ResourceLocation customId = YwzjVehicle.resourceLocation(tag.getString("customId"));
-        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(customId);
+        ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString(TAG_VEHICLE_ID));
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isPresent()) {
             Entity vehicle = vehicleDataOptional.get().construct(level, position, 0, player.getYRot());
             level.addFreshEntity(vehicle);
