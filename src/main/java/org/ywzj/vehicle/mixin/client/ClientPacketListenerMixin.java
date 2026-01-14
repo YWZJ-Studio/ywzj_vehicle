@@ -25,7 +25,8 @@ public class ClientPacketListenerMixin {
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/network/chat/Component;translatable(Ljava/lang/String;[Ljava/lang/Object;)Lnet/minecraft/network/chat/MutableComponent;"
-            )
+            ),
+            require = 0
     )
     private MutableComponent redirectMountMessage(String pKey, Object[] pArgs, ClientboundSetPassengersPacket packet) {
         Entity vehicle = this.minecraft.level.getEntity(packet.getVehicle());

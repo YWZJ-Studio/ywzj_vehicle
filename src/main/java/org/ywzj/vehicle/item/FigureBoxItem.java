@@ -1,5 +1,7 @@
 package org.ywzj.vehicle.item;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,20 +19,34 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
+import org.ywzj.vehicle.client.render.item.FigureBoxItemRenderer;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class FigureBoxItem extends VehicleItem {
 
     public FigureBoxItem(Properties pProperties) {
         super(pProperties);
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                Minecraft minecraft = Minecraft.getInstance();
+                return new FigureBoxItemRenderer(minecraft.getBlockEntityRenderDispatcher(), minecraft.getEntityModels());
+            }
+        });
     }
 
     @Override

@@ -10,9 +10,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBlockEntity> {
@@ -30,14 +30,16 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
         }
 
         Entity entity = figureBoxBlockEntity.getEntity();
-        Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
-        float yaw;
-        switch (facing) {
-            case NORTH -> yaw = 180f;
-            case SOUTH -> yaw = 0f;
-            case WEST -> yaw = 90f;
-            case EAST -> yaw = -90f;
-            default -> yaw = 0f;
+        float yaw = 0;
+        if (!figureBoxBlockEntity.getBlockState().isAir()) {
+            Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
+            switch (facing) {
+                case NORTH -> yaw = 180f;
+                case SOUTH -> yaw = 0f;
+                case WEST -> yaw = 90f;
+                case EAST -> yaw = -90f;
+                default -> yaw = 0f;
+            }
         }
         yaw += 45;
         entity.moveTo(figureBoxBlockEntity.getBlockPos().getX() + 0.5,
@@ -54,8 +56,7 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
         {
             double length;
             if (entity instanceof AbstractVehicle vehicle) {
-                AABB aabb = vehicle.getAABB();
-                length = aabb.maxZ - aabb.minZ;
+                length = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicle.getCustomId()).get().getStructureLength();
             } else {
                 length = entity.getBbHeight() * 2;
             }
