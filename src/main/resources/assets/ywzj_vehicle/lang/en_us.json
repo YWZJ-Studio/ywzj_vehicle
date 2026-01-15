@@ -76,7 +76,15 @@
   "tips.no_recipe": "未知配方",
   "tips.machine_max_product": "使用手办盒取出产品",
 
-  "button.printing": "打印",
+  "button.machine_max.printing": "打印",
+  "check_box.figure_box.open": "打开玻璃罩",
+  "edit_box.figure_box.scale": "缩放比例",
+  "edit_box.figure_box.x_shift": "X 轴偏移",
+  "edit_box.figure_box.y_shift": "Y 轴偏移",
+  "edit_box.figure_box.z_shift": "Z 轴偏移",
+  "edit_box.figure_box.x_rot": "X 轴旋转",
+  "edit_box.figure_box.y_rot": "Y 轴旋转",
+  "button.figure_box.done": "完成",
 
   "message.vehicle.damage_system.critical": "致命",
   "message.vehicle.damage_system.hurt": "伤害",

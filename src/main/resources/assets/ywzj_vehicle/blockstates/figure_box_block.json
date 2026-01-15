@@ -1,19 +1,15 @@
 {
   "variants": {
-    "facing=east": {
-      "model": "ywzj_vehicle:block/figure_box_block",
-      "y": 90
-    },
-    "facing=north": {
-      "model": "ywzj_vehicle:block/figure_box_block"
-    },
-    "facing=south": {
-      "model": "ywzj_vehicle:block/figure_box_block",
-      "y": 180
-    },
-    "facing=west": {
-      "model": "ywzj_vehicle:block/figure_box_block",
-      "y": 270
-    }
+    "facing=north,open=false": { "model": "ywzj_vehicle:block/figure_box_block" },
+    "facing=north,open=true":  { "model": "ywzj_vehicle:block/figure_box_block_open" },
+
+    "facing=east,open=false":  { "model": "ywzj_vehicle:block/figure_box_block", "y": 90 },
+    "facing=east,open=true":   { "model": "ywzj_vehicle:block/figure_box_block_open", "y": 90 },
+
+    "facing=south,open=false": { "model": "ywzj_vehicle:block/figure_box_block", "y": 180 },
+    "facing=south,open=true":  { "model": "ywzj_vehicle:block/figure_box_block_open", "y": 180 },
+
+    "facing=west,open=false":  { "model": "ywzj_vehicle:block/figure_box_block", "y": 270 },
+    "facing=west,open=true":   { "model": "ywzj_vehicle:block/figure_box_block_open", "y": 270 }
   }
 }

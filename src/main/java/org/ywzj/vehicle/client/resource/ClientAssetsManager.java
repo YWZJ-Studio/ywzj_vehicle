@@ -13,9 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.mozillaa.javascript.Script;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
-import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -67,15 +65,14 @@ public enum ClientAssetsManager {
         animations.apply(animations.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
         scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
-        for (ResourceLocation vehicleId : CommonAssetsManager.vehicleDataManager().getVehicleData().keySet()) {
-            ResourceLocation textureLocation = YwzjVehicle.resourceLocation(vehicleId.getNamespace() + ":textures/entity/" + vehicleId.getPath() + ".png");
-            SimpleTexture texture = new SimpleTexture(textureLocation);
+        vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
             try {
-                Minecraft.getInstance().textureManager.register(textureLocation, texture);
+                Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
+                Minecraft.getInstance().textureManager.register(vehicleDisplay.getSlotTexture(), new SimpleTexture(vehicleDisplay.getSlotTexture()));
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
-        }
+        });
     }
 
     @UnmodifiableView

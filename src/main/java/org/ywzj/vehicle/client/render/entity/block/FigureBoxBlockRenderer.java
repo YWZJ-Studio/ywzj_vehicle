@@ -1,16 +1,20 @@
 package org.ywzj.vehicle.client.render.entity.block;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.core.Direction;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
@@ -31,30 +35,15 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
         if (figureBoxBlockEntity.getEntity() == null) {
             return;
         }
+        renderEntity(poseStack, figureBoxBlockEntity, bufferSource, packedLight);
+    }
 
+    public static void renderEntity(PoseStack poseStack, FigureBoxBlockEntity figureBoxBlockEntity, MultiBufferSource bufferSource, int packedLight) {
         Entity entity = figureBoxBlockEntity.getEntity();
-        float yaw = 0;
-        if (!figureBoxBlockEntity.getBlockState().isAir()) {
-            Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
-            switch (facing) {
-                case NORTH -> yaw = 180f;
-                case SOUTH -> yaw = 0f;
-                case WEST -> yaw = 90f;
-                case EAST -> yaw = -90f;
-                default -> yaw = 0f;
-            }
-        }
-        yaw += 45;
         entity.moveTo(figureBoxBlockEntity.getBlockPos().getX() + 0.5,
                 figureBoxBlockEntity.getBlockPos().getY(),
                 figureBoxBlockEntity.getBlockPos().getZ() + 0.5,
-                yaw, 0);
-        if (entity instanceof LivingEntity) {
-            entity.setYRot(yaw);
-            entity.setYBodyRot(yaw);
-            entity.setYHeadRot(yaw);
-        }
-
+                0, 0);
         poseStack.pushPose();
         {
             double length = 1f;
@@ -68,9 +57,20 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
             }
             poseStack.translate(0.5, 0.2, 0.5);
             float scale = (float) (1 / length / 1.2);
+            scale *= figureBoxBlockEntity.scale;
+            poseStack.translate(figureBoxBlockEntity.xShift, figureBoxBlockEntity.yShift, figureBoxBlockEntity.zShift);
             poseStack.scale(scale, scale, scale);
+            poseStack.mulPose(Axis.YP.rotationDegrees(figureBoxBlockEntity.yRot));
+            poseStack.mulPose(Axis.XP.rotationDegrees(figureBoxBlockEntity.xRot));
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-            dispatcher.render(entity, 0.0, 0.0, 0.0, entity.getYRot(), 1, poseStack, bufferSource, packedLight);
+            if (entity instanceof ItemEntity itemEntity) {
+                ItemStack itemStack = itemEntity.getItem();
+                ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
+                BakedModel bakedmodel = itemRenderer.getModel(itemStack, entity.level(), null, entity.getId());
+                itemRenderer.render(itemEntity.getItem(), ItemDisplayContext.GROUND, false, poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY, bakedmodel);
+            } else {
+                dispatcher.render(entity, 0.0, 0.0, 0.0, 0, 0, poseStack, bufferSource, packedLight);
+            }
         }
         poseStack.popPose();
     }

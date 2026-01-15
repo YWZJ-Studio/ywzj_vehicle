@@ -161,7 +161,7 @@ public class AllEvents {
         }
 
         @SubscribeEvent
-        public static void onHitVehicleEvent(HitVehicleEvent event) {
+        public static void onHitVehicle(HitVehicleEvent event) {
             ServerPlayer serverPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(event.shooterUuid);
             if (serverPlayer != null) {
                 Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerHitVehicleEvent(event));

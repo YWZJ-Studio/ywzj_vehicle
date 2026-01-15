@@ -74,7 +74,7 @@ public class MachineMaxScreen extends Screen {
         this.searchBox.active = true;
         this.searchBox.setTextColor(0xFFFFFF);
         this.addRenderableWidget(searchBox);
-        this.printingButton = Button.builder(Component.translatable("button.printing"), button -> onCraft())
+        this.printingButton = Button.builder(Component.translatable("button.machine_max.printing"), button -> onCraft())
                 .pos(width - 60, topPos + 145)
                 .size(50, 20)
                 .build();

@@ -46,7 +46,6 @@ public class ClientMachineMaxAction {
             if (serverPlayer == null) {
                 return;
             }
-
             context.setPacketHandled(true);
             Level level = serverPlayer.level();
             if (level.getBlockEntity(message.blockPos) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {

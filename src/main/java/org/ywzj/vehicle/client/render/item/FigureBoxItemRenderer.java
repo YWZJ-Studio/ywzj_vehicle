@@ -42,6 +42,7 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     public FigureBoxItemRenderer(BlockEntityRenderDispatcher pBlockEntityRenderDispatcher, EntityModelSet pEntityModelSet) {
         super(pBlockEntityRenderDispatcher, pEntityModelSet);
+        figureBoxBlockEntity.yRot = 45;
     }
 
     @Override

@@ -20,6 +20,8 @@ import org.ywzj.vehicle.item.VehicleSpawnItem;
 
 import javax.annotation.Nonnull;
 
+import static org.ywzj.vehicle.api.entity.ICustomVehicle.TAG_VEHICLE_ID;
+
 public class VehicleSpawnItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static final SlotModel VEHICLE_SPAWN_ITEM_MODEL = new SlotModel();
@@ -32,7 +34,7 @@ public class VehicleSpawnItemRenderer extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(@Nonnull ItemStack itemStack, @Nonnull ItemDisplayContext transformType, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
         if (itemStack.getItem() instanceof VehicleSpawnItem) {
             CompoundTag tag = itemStack.getOrCreateTag();
-            ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString("vehicleId"));
+            ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString(TAG_VEHICLE_ID));
             var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
             poseStack.pushPose();
             {

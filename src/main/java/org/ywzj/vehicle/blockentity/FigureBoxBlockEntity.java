@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
@@ -20,9 +21,24 @@ public class FigureBoxBlockEntity extends BlockEntity {
     private Entity entity;
     private String entityId;
     private CompoundTag entityData;
+    public boolean open;
+    public float scale = 1f;
+    public float xShift;
+    public float yShift;
+    public float zShift;
+    public float xRot;
+    public float yRot;
 
     public FigureBoxBlockEntity(BlockPos pos, BlockState state) {
         super(AllBlockEntities.FIGURE_BOX_BLOCK_ENTITY.get(), pos, state);
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        AABB baseBox = super.getRenderBoundingBox();
+        return baseBox.inflate(scale + Math.abs(xShift),
+                scale + Math.abs(yShift),
+                scale + Math.abs(zShift));
     }
 
     public Entity getEntity() {
@@ -60,6 +76,13 @@ public class FigureBoxBlockEntity extends BlockEntity {
             tag.putString("entityId", EntityType.getKey(entity.getType()).toString());
             tag.put("entityData", entityData);
         }
+        tag.putBoolean("open", open);
+        tag.putFloat("scale", scale);
+        tag.putFloat("xShift", xShift);
+        tag.putFloat("yShift", yShift);
+        tag.putFloat("zShift", zShift);
+        tag.putFloat("xRot", xRot);
+        tag.putFloat("yRot", yRot);
     }
 
     @Override
@@ -69,6 +92,13 @@ public class FigureBoxBlockEntity extends BlockEntity {
             entityId = tag.getString("entityId");
             entityData = tag.getCompound("entityData");
         }
+        open = tag.getBoolean("open");
+        scale = tag.getFloat("scale");
+        xShift = tag.getFloat("xShift");
+        yShift = tag.getFloat("yShift");
+        zShift = tag.getFloat("zShift");
+        xRot = tag.getFloat("xRot");
+        yRot = tag.getFloat("yRot");
         updateEntity();
     }
 
