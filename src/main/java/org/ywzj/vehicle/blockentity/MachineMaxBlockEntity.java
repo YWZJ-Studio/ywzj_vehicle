@@ -3,6 +3,7 @@ package org.ywzj.vehicle.blockentity;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
@@ -35,6 +36,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
     public BaseVehicleDisplay vehicleDisplay;
     public BaseVehicleData vehicleData;
     public List<MachineMaxBlockRenderer.BedrockBoneWrapper> bedrockBoneWrappers = new ArrayList<>();
+    public MachineMaxBlockRenderer.BedrockBoneWrapper printingBoneWrapper;
 
     public MachineMaxBlockEntity(BlockPos pos, BlockState state) {
         super(AllBlockEntities.MACHINE_MAX_BLOCK_ENTITY.get(), pos, state);
@@ -74,6 +76,21 @@ public class MachineMaxBlockEntity extends BlockEntity {
             }
         } else {
             blockEntity.tickAnimation();
+            if (blockEntity.crafting) {
+                if (level.random.nextFloat() < 0.2F) {
+                    Vec3 worldPos = pos.getCenter();
+                    double x = worldPos.x;
+                    double y = worldPos.y + 1D;
+                    double z = worldPos.z;
+                    double xOffset = (level.random.nextDouble() - 0.5D) * 0.5D;
+                    double zOffset = (level.random.nextDouble() - 0.5D) * 0.5D;
+                    level.addParticle(
+                            ParticleTypes.POOF,
+                            x + xOffset, y, z + zOffset,
+                            0.0D, 0.1D, 0.0D
+                    );
+                }
+            }
         }
     }
 
@@ -140,6 +157,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
         visibleCount = Math.min(visibleCount, total);
         for (int index = 0; index < visibleCount; index++) {
             bedrockBoneWrappers.get(index).appear();
+            printingBoneWrapper = bedrockBoneWrappers.get(index);
         }
     }
 

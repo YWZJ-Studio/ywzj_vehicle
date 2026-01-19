@@ -10,6 +10,7 @@ import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
@@ -121,7 +122,18 @@ public class FigureBoxScreen extends Screen {
             float scale = 64 / figureBoxBlockEntity.scale;
             poseStack.scale(scale, -scale, scale);
             poseStack.mulPose(Axis.XP.rotationDegrees(30));
-            poseStack.mulPose(Axis.YP.rotationDegrees(45));
+            float yRot = 0f;
+            if (!figureBoxBlockEntity.getBlockState().isAir()) {
+                Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
+                switch (facing) {
+                    case NORTH -> yRot = 180f;
+                    case SOUTH -> yRot = 0f;
+                    case WEST -> yRot = -90f;
+                    case EAST -> yRot = 90f;
+                    default -> yRot = 0f;
+                }
+            }
+            poseStack.mulPose(Axis.YP.rotationDegrees(-15 - yRot));
             poseStack.translate(-0.5, -0.5, -0.5);
             blockDispatcher.renderSingleBlock(
                     state,

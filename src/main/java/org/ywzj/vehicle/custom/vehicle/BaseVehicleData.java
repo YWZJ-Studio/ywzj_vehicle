@@ -18,6 +18,7 @@ import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
@@ -33,6 +34,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected ViewInfo viewInfo;
     protected EnergyInfo energyInfo;
     protected PhysicsInfo physicsInfo;
+    protected DefenseStats defenseStats;
     protected boolean withWarningReceiver;
     protected boolean protectPassenger;
     protected ResourceLocation structureModel;
@@ -89,6 +91,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.viewInfo = pojo.viewInfo;
         this.energyInfo = pojo.energyInfo;
         this.physicsInfo = pojo.physicsInfo;
+        this.defenseStats = pojo.defenseStats;
         this.withWarningReceiver = pojo.withWarningReceiver;
         this.protectPassenger = pojo.protectPassenger;
 
@@ -209,6 +212,10 @@ public class BaseVehicleData<T extends AbstractVehicle> {
 
     public PhysicsInfo getPhysicsInfo() {
         return physicsInfo;
+    }
+
+    public DefenseStats getDefenseStats() {
+        return defenseStats;
     }
 
     public boolean isWithWarningReceiver() {

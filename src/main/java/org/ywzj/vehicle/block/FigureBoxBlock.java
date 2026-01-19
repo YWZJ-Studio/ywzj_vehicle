@@ -8,7 +8,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -19,11 +18,15 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
+
+import java.util.List;
 
 public class FigureBoxBlock extends HorizontalEntityBlock {
 
@@ -48,9 +51,13 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
                 openScreen(figureBoxBlockEntity);
                 return InteractionResult.SUCCESS;
             }
-            if (!player.isShiftKeyDown()) {
-                return InteractionResult.PASS;
-            }
+        }
+        return InteractionResult.PASS;
+    }
+
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        if (builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
             ItemStack itemStack = AllItems.FIGURE_BOX.get().getDefaultInstance().copy();
             Entity entity = figureBoxBlockEntity.getEntity();
             if (entity != null) {
@@ -61,12 +68,9 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
                 tag.putString("entityId", EntityType.getKey(entity.getType()).toString());
                 itemStack.setTag(tag);
             }
-            ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, itemStack);
-            level.addFreshEntity(itemEntity);
-            level.removeBlock(pos, false);
-            return InteractionResult.SUCCESS;
+            return List.of(itemStack);
         }
-        return InteractionResult.PASS;
+        return List.of();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -83,12 +87,12 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
             switch (facing) {
                 case NORTH -> yRot = 180f;
                 case SOUTH -> yRot = 0f;
-                case WEST -> yRot = 90f;
-                case EAST -> yRot = -90f;
+                case WEST -> yRot = -90f;
+                case EAST -> yRot = 90f;
                 default -> yRot = 0f;
             }
         }
-        yRot += 45;
+        yRot -= 45;
         figureBoxBlockEntity.yRot = yRot;
         return figureBoxBlockEntity;
     }

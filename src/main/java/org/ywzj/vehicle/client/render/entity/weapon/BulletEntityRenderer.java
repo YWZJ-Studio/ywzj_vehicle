@@ -36,7 +36,7 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
         var model = BedrockModelLoader.getModel(DEFAULT_BULLET_MODEL);
         poseStack.pushPose();
         {
-            float width = 0.2f;
+            float width = Math.min(0.04f * bullet.getCaliber() / 7.62f, 0.2f);
             Vec3 bulletPosition = bullet.getPosition(partialTicks);
             double trailLength = 0.3 * bullet.getDeltaMovement().length();
             double disToEye = bulletPosition.distanceTo(bullet.getStartPos());
@@ -50,7 +50,7 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
             if (bullet.tickCount >= 5 || bulletDistance > 2) {
                 RenderType type = RenderType.energySwirl(DEFAULT_BULLET_TEXTURE, 15, 15);
                 VertexConsumer builder = bufferSource.getBuffer(type);
-                model.renderToBuffer(poseStack, builder, packedLight, OverlayTexture.NO_OVERLAY, 0.7f, 0.5f, 0.1f, 1);
+                model.renderToBuffer(poseStack, builder, packedLight, OverlayTexture.NO_OVERLAY, bullet.getTracerR(), bullet.getTracerG(), bullet.getTracerB(), 1);
             }
         }
         poseStack.popPose();

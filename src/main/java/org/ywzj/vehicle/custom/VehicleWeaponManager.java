@@ -107,35 +107,38 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
         }
 
         ImmutableMap.Builder<ResourceLocation, VehicleWeaponIndex<?, ?>> builder = ImmutableMap.builder();
-        for (var entry : map.entrySet()) {
+        for (var weaponIdAndWeaponDataJson : map.entrySet()) {
             try {
-                if (!entry.getValue().isJsonObject()) {
-                    YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: Not a Json Object", entry.getKey());
+                if (!weaponIdAndWeaponDataJson.getValue().isJsonObject()) {
+                    YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: Not a Json Object", weaponIdAndWeaponDataJson.getKey());
                     continue;
                 }
 
-                ResourceLocation id = entry.getKey();
-                JsonObject object = entry.getValue().getAsJsonObject();
-                String rawType = GsonHelper.getAsString(object, "type");
+                ResourceLocation weaponId = weaponIdAndWeaponDataJson.getKey();
+                JsonObject weaponData = weaponIdAndWeaponDataJson.getValue().getAsJsonObject();
+                String rawType = GsonHelper.getAsString(weaponData, "type");
                 if (!rawType.contains(":")) {
                     rawType = YwzjVehicle.MOD_ID + ":" + rawType;
                 }
                 var typeId = ResourceLocation.tryParse(rawType);
                 if (typeId == null) {
-                    YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: invalid weapon type id: {}", id, rawType);
+                    YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: invalid weapon type weaponId: {}", weaponId, rawType);
                     continue;
                 }
                 var weaponType = registry.getValue(typeId);
                 if (weaponType != null) {
-                    var index = weaponType.parseAndLoad(id, object);
+                    VehicleWeaponIndex index = weaponType.parseAndLoad(weaponId, weaponData);
                     if (index != null) {
-                        builder.put(id, index);
+                        if (index.data().getWeaponId() == null) {
+                            index.data().setWeaponId(weaponId);
+                        }
+                        builder.put(weaponId, index);
                     }
                 } else {
-                    YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: unknown weapon type: {}", id, typeId);
+                    YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: unknown weapon type: {}", weaponId, typeId);
                 }
             } catch (Exception e) {
-                YwzjVehicle.LOGGER.error(MARKER, "Error loading vehicle weapon data {}", entry.getKey(), e);
+                YwzjVehicle.LOGGER.error(MARKER, "Error loading vehicle weapon data {}", weaponIdAndWeaponDataJson.getKey(), e);
             }
         }
         return builder.build();

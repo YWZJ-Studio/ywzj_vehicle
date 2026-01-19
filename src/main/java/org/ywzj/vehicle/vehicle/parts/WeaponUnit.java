@@ -211,7 +211,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     public void tickStabilizer() {
-        if (stabilizer && aimLockPosition != null && owner == LocalVehiclePlayer.instance.getPlayer()) {
+        if (stabilizer && aimLockPosition != null && getOwner() == LocalVehiclePlayer.instance.getPlayer()) {
             if (aimLockEntity != null) {
                 AABB aabb = aimLockEntity.getBoundingBox();
                 aimLockPosition = aabb.getCenter();

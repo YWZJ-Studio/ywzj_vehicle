@@ -7,6 +7,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.MinecraftForge;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -30,8 +31,7 @@ public class DamageSystem {
         if (damageSource.getDirectEntity() instanceof Projectile) {
             hitPos = damageSource.getDirectEntity().position();
         }
-        //todo: 细化击穿伤害
-        if (amount < 50) {
+        if (amount < vehicle.defenseStats.damageThreshold) {
             scale = 0.1;
             amount = 1f;
         } else {
@@ -81,6 +81,12 @@ public class DamageSystem {
         }
         YwzjVehicle.LOGGER.debug("{} damaged by {} with amount: {}", vehicle, damageSource, amount);
         vehicle.setHealth(vehicle.getHealth() - amount);
+    }
+
+    public static void impactHurt(double velocityDiff, AbstractVehicle vehicle) {
+        velocityDiff *= 20;
+        float damage = (float) (0.5 * vehicle.physicsEngine.mass * velocityDiff * velocityDiff * vehicle.defenseStats.impactKineticDamageCoefficient);
+        vehicle.hurt(AllDamageTypes.Sources.vehicleCollision(vehicle.level().registryAccess(), vehicle, vehicle.getDriver(), null), damage);
     }
 
 }

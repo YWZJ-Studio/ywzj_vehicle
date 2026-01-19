@@ -1,6 +1,10 @@
 {
   "type": "ywzj_vehicle:cannon",
   "name": "7.62mm_gun",
+  "caliber": 7.62,
+  "tracer_r": 0.7,
+  "tracer_g": 0.5,
+  "tracer_b": 0.1,
   "damage": 8,
   "velocity": 16,
   "headshot_multiplier": 1.5,

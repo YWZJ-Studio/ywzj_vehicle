@@ -10,6 +10,8 @@ import java.util.Map;
 
 public class BaseVehicleWeaponData {
 
+    private ResourceLocation weaponId;
+
     @SerializedName("name")
     private String name = "vehicle.weapon.unknown";
 
@@ -76,6 +78,14 @@ public class BaseVehicleWeaponData {
             return ammo.test(stack);
         }
 
+    }
+
+    public ResourceLocation getWeaponId() {
+        return weaponId;
+    }
+
+    public void setWeaponId(ResourceLocation weaponId) {
+        this.weaponId = weaponId;
     }
 
     public String getName() {

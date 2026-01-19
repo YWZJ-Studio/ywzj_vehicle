@@ -1,11 +1,14 @@
 package org.ywzj.vehicle.vehicle.scripts;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
+
+import java.util.Map;
 
 public class TrackedVehicleScriptContext extends VehicleScriptContext<TrackedVehicle> {
 
@@ -28,7 +31,10 @@ public class TrackedVehicleScriptContext extends VehicleScriptContext<TrackedVeh
             if (display == null) {
                 return;
             }
-            var animations = display.getAnimations();
+            Map<String, BedrockAnimation> animations = display.getAnimations();
+            if (animations.isEmpty()) {
+                return;
+            }
             instance = new TrackAnimationInstance(animations.get(leftTrack), animations.get(rightTrack));
             entity.setTrackAnimationInstance(instance);
         }

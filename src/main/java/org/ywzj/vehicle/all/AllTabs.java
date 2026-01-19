@@ -58,10 +58,10 @@ public class AllTabs {
 
     public static void register(IEventBus eventBus) {
         VehiclePackLoader.INSTANCE.getVehiclePacks().forEach(vehiclePack ->
-                addVehicleTab("tab_" + vehiclePack.namespace(),
-                        Component.translatable(vehiclePack.title()),
-                        () -> AllItems.PLAIN_TEXTURE_ITEM.get().createInstance(YwzjVehicle.resourceLocation(vehiclePack.namespace() + ":textures/tab.png")),
-                        vehiclePack.namespace()));
+                addVehicleTab("tab_" + vehiclePack.meta().getNamespace(),
+                        Component.translatable(vehiclePack.meta().getTitle()),
+                        () -> AllItems.PLAIN_TEXTURE_ITEM.get().createInstance(YwzjVehicle.resourceLocation(vehiclePack.meta().getNamespace() + ":textures/tab.png")),
+                        vehiclePack.meta().getNamespace()));
         TABS.register(eventBus);
     }
 

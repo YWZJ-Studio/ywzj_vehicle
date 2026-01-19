@@ -69,6 +69,7 @@ public class PhysicsEngine {
         VehicleBedrockCubeOBB physicsCube = vehicle.getMainCubeOBB();
         boolean isStuck = false;
 
+        double velocityO = velocity.length();
         for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
             if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
                 if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
@@ -144,6 +145,10 @@ public class PhysicsEngine {
             stuckTick = Math.max(stuckTick - 1, 0);
         }
         this.velocity = velocity.toVector3f();
+        double velocityDiff = velocityO - velocity.length();
+        if (velocityDiff > 0.5) {
+            DamageSystem.impactHurt(velocityDiff, vehicle);
+        }
         return velocity;
     }
 

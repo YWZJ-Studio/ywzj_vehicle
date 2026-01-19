@@ -26,7 +26,7 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
         var data = this.getData();
 
         for (AimContext aimContext : aimContexts) {
-            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), vehicle, shooter, aimContext.position, getData().getExplosion());
+            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), vehicle, shooter, aimContext.position, getData().getExplosion(), data.getWeaponId());
             bulletEntity.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, data.getVelocity(), data.getInaccuracy());
             bulletEntity.setDamage(data.getDamage());
             bulletEntity.setHeadShot(data.getHeadshotMultiplier());

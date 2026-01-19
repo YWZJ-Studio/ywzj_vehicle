@@ -25,7 +25,9 @@ public class VehicleAnimationInstance {
     }
 
     public void tick() {
-        stateMachine.tick();
+        if (stateMachine != null) {
+            stateMachine.tick();
+        }
     }
 
     public void onFire() {

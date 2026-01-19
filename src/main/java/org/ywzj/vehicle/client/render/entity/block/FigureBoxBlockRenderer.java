@@ -50,7 +50,7 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
             if (entity instanceof AbstractVehicle vehicle) {
                 Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicle.getVehicleId());
                 if (vehicleDataOptional.isPresent()) {
-                    length = vehicleDataOptional.get().getStructureLength();
+                    length = Math.max(4, vehicleDataOptional.get().getStructureLength());
                 }
             } else {
                 length = entity.getBbHeight() * 2;

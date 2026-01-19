@@ -81,6 +81,7 @@ import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
+import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
 import org.ywzj.vehicle.vehicle.structure.OBB;
@@ -108,6 +109,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     protected ViewInfo viewInfo;
     protected boolean viewZoomed;
     public EnergyInfo energyInfo;
+    public DefenseStats defenseStats;
     public float curbWeight;
     private float xRot;
     public float xRotO;
@@ -275,6 +277,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.energyInfo = vehicleData.getEnergyInfo();
         this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
         this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
+        this.defenseStats = vehicleData.getDefenseStats();
         vehicleData.inject(this);
         BaseVehicleData.VehicleStructObbs vehicleStruct = vehicleData.getVehicleStructObbs();
         this.mainCubeOBB = vehicleStruct.mainCubeOBB();
@@ -510,12 +513,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                     this.discard();
                 } else {
                     this.getPassengers().forEach(Entity::stopRiding);
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this, this.position(),
-                            (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
-                    vehicleExplosion.explode(Collections.singletonList(this));
                     entityData.set(DESTROYED, true);
                     this.setHealth(this.getMaxHealth());
                     destroyedTime = System.currentTimeMillis();
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this, this.position(),
+                            (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
+                    vehicleExplosion.explode(Collections.singletonList(this));
                 }
             }
             this.markHurt();

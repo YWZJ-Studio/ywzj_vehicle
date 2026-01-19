@@ -3,6 +3,7 @@ package org.ywzj.vehicle.custom.vehicle;
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
+import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
@@ -22,6 +23,9 @@ public class BaseVehicleDataPojo {
 
     @SerializedName("physics_info")
     public PhysicsInfo physicsInfo = new PhysicsInfo();
+
+    @SerializedName("defense_stats")
+    public DefenseStats defenseStats = new DefenseStats();
 
     @SerializedName("with_warning_receiver")
     public boolean withWarningReceiver = false;

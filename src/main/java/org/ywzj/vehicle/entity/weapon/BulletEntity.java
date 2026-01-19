@@ -5,6 +5,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -31,6 +32,9 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.entity.KnockBackModifier;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
+import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleHurtEntity;
@@ -50,7 +54,7 @@ import java.util.function.Function;
  */
 public class BulletEntity extends AmmoEntity {
 
-    private float damage;
+    private ResourceLocation weaponId;
     private int life = 200;
     private float speed = 1;
     private float gravity = 0;
@@ -62,6 +66,11 @@ public class BulletEntity extends AmmoEntity {
     private Vec3 startPos;
     private float armorIgnore;
     private float headShot;
+    // 曳光
+    private float caliber = 7.62f;
+    private float tracerR = 1f;
+    private float tracerG = 1f;
+    private float tracerB = 1f;;
 
     // 返回一个距离-伤害乘数
     private Function<Double, Float> distanceDamageFunction = (distance) -> 1.0f;
@@ -70,8 +79,9 @@ public class BulletEntity extends AmmoEntity {
         super(type, worldIn);
     }
 
-    public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion) {
+    public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion, ResourceLocation weaponId) {
         this(level, vehicle, shooter, startPos.x, startPos.y, startPos.z, explosion);
+        this.weaponId = weaponId;
     }
 
     public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, double x, double y, double z, Explosion explosion) {
@@ -345,6 +355,7 @@ public class BulletEntity extends AmmoEntity {
         buffer.writeInt(this.life);
         buffer.writeFloat(this.speed);
         buffer.writeFloat(this.friction);
+        buffer.writeResourceLocation(this.weaponId);
     }
 
     @Override
@@ -356,11 +367,19 @@ public class BulletEntity extends AmmoEntity {
         if (entity != null) {
             this.setOwner(entity);
         }
+        this.startPos = this.position();
         this.gravity = additionalData.readFloat();
         this.life = additionalData.readInt();
         this.speed = additionalData.readFloat();
         this.friction = additionalData.readFloat();
-        this.startPos = this.position();
+        this.weaponId = additionalData.readResourceLocation();
+        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
+        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
+            this.caliber = data.getCaliber();
+            this.tracerR = data.getTracerR();
+            this.tracerG = data.getTracerG();
+            this.tracerB = data.getTracerB();
+        }
     }
 
     public Vec3 getStartPos() {
@@ -385,6 +404,22 @@ public class BulletEntity extends AmmoEntity {
 
     public float getHeadShot() {
         return headShot;
+    }
+
+    public float getCaliber() {
+        return caliber;
+    }
+
+    public float getTracerR() {
+        return tracerR;
+    }
+
+    public float getTracerG() {
+        return tracerG;
+    }
+
+    public float getTracerB() {
+        return tracerB;
     }
 
     public void setDistanceDamageFunction(Function<Double, Float> distanceDamageFunction) {

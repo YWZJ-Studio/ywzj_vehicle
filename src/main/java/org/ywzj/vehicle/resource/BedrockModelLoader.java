@@ -36,6 +36,7 @@ public class BedrockModelLoader {
         event.register(YwzjVehicle.modLocation("entity/rocket_57mm"), COMMON_LOADER);
         event.register(YwzjVehicle.modLocation("entity/aerial_bomb"), COMMON_LOADER);
         event.register(YwzjVehicle.modLocation("entity/missile_akd10"), COMMON_LOADER);
+        event.register(YwzjVehicle.modLocation("block/machine_max_block"), COMMON_LOADER);
     }
 
     public static BedrockModel getModel(ResourceLocation location) {

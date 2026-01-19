@@ -18,7 +18,7 @@
   "energy_info": {
     "energy_capacity": 1,
     "energy_consumption_per_tick": 0.00001,
-    "engine_particle_offsets": [[-1.6, 3, 2]]
+    "engine_particle_offsets": [[1.6, 3, 2]]
   },
   "structure_model": "ywzj_vehicle:vehicle/dump_truck",
   "parts": [

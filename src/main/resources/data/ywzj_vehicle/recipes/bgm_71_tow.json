@@ -3,13 +3,13 @@
   "materials": [
     {
       "tag": "forge:ingots/iron",
-      "count": 64
+      "count": 32
     }
   ],
   "result": {
     "item": "ywzj_vehicle:vehicle_spawn_item",
     "nbt": {
-      "YwzjVehicleId": "ywzj_vehicle:ztz99a"
+      "YwzjVehicleId": "ywzj_vehicle:bgm_71_tow"
     }
   },
   "printingTime": 100

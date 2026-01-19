@@ -33,9 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -68,7 +66,7 @@ public enum VehiclePackLoader implements RepositorySource {
     public void scanVehiclePacks() {
         YwzjVehicle.LOGGER.info(MARKER, "Start scanning for vehicle packs in {}", VEHICLE_PACKS_PATH);
         vehiclePacks = scanVehiclePacks(VEHICLE_PACKS_PATH);
-        YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s) and added them to resource set.", vehiclePacks.size());
+        YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s)", vehiclePacks.size());
     }
 
     private List<Pack> vehiclePacksAsResource() {
@@ -87,7 +85,7 @@ public enum VehiclePackLoader implements RepositorySource {
         List<Pack> packs = new ArrayList<>();
         List<PathPackResources> extensionPacks = new ArrayList<>();
         for (VehiclePack vehiclePack : vehiclePacks) {
-            PathPackResources packResources = new PathPackResources(vehiclePack.namespace, false, vehiclePack.path) {
+            PathPackResources packResources = new PathPackResources(vehiclePack.meta.getNamespace(), false, vehiclePack.path) {
 
                 private final SecureJar secureJar = SecureJar.from(vehiclePack.path);
 
@@ -110,12 +108,12 @@ public enum VehiclePackLoader implements RepositorySource {
 
             };
             extensionPacks.add(packResources);
-            Pack pack = Pack.readMetaAndCreate("ywzj_vehicle_resources_" + vehiclePack.namespace,
-                    Component.translatable(vehiclePack.title),
+            Pack pack = Pack.readMetaAndCreate("ywzj_vehicle_resources_" + vehiclePack.meta.getNamespace(),
+                    Component.translatable(vehiclePack.meta.getTitle()),
                     true,
                     (id) -> new DelegatingPackResources(id,
                             false,
-                            new PackMetadataSection(Component.translatable(vehiclePack.description), SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
+                            new PackMetadataSection(Component.translatable(vehiclePack.meta.getDescription()), SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
                                 public IoSupplier<InputStream> getRootResource(String... paths) {
                                     if (paths.length == 1 && paths[0].equals("pack.png")) {
                                         return packResources.getRootResource("pack.png");
@@ -129,33 +127,28 @@ public enum VehiclePackLoader implements RepositorySource {
     }
 
     private static VehiclePack fromDirPath(Path path) throws IOException {
-        Path packInfoFilePath = path.resolve("vehicle_pack.meta.json");
-        try (InputStream stream = Files.newInputStream(packInfoFilePath)) {
-            PackMeta info = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
+        Path packMetaPath = path.resolve("vehicle_pack.meta.json");
+        try (InputStream stream = Files.newInputStream(packMetaPath)) {
+            PackMeta packMeta = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
 
-            if (info == null) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read info json: {}", packInfoFilePath.getFileName());
+            if (packMeta == null) {
+                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read packMeta json: {}", path.getFileName());
                 return null;
             }
 
-            if (info.getTitle() == null) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read title: {}", path.getFileName());
+            if (packMeta.getNamespace() == null) {
+                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read namespace: {}", path.getFileName());
                 return null;
             }
 
-            if (info.getDependencies() != null && !modVersionAllMatch(info)) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", packInfoFilePath.getFileName());
+            if (packMeta.getDependencies() != null && !modVersionAllMatch(packMeta)) {
+                YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", path.getFileName());
                 return null;
             }
 
-            String description = "";
-            if (info.getDescription() != null) {
-                description = info.getDescription();
-            }
-
-            return new VehiclePack(path, info.getNamespace(), info.getTitle(), description);
+            return new VehiclePack(path, packMeta);
         } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException exception) {
-            YwzjVehicle.LOGGER.warn(MARKER, "Failed to read info json: {}", packInfoFilePath.getFileName());
+            YwzjVehicle.LOGGER.warn(MARKER, "Failed to read info json: {}", path.getFileName());
             YwzjVehicle.LOGGER.warn(exception.getMessage());
         }
         return null;
@@ -163,36 +156,31 @@ public enum VehiclePackLoader implements RepositorySource {
 
     private static VehiclePack fromZipPath(Path path)  {
         try(ZipFile zipFile = new ZipFile(path.toFile())){
-            ZipEntry extDescriptorEntry = zipFile.getEntry("vehicle_pack.meta.json");
-            if (extDescriptorEntry == null) {
+            ZipEntry packMetaEntry = zipFile.getEntry("vehicle_pack.meta.json");
+            if (packMetaEntry == null) {
                 YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), "No vehicle_pack.meta.json found");
                 return null;
             }
 
-            try (InputStream stream = zipFile.getInputStream(extDescriptorEntry)) {
-                PackMeta info = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
+            try (InputStream stream = zipFile.getInputStream(packMetaEntry)) {
+                PackMeta packMeta = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
 
-                if (info == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read info json: {}", path.getFileName());
+                if (packMeta == null) {
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read packMeta json: {}", path.getFileName());
                     return null;
                 }
 
-                if (info.getTitle() == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read title: {}", path.getFileName());
+                if (packMeta.getNamespace() == null) {
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read namespace: {}", path.getFileName());
                     return null;
                 }
 
-                if (info.getDependencies() != null && !modVersionAllMatch(info)) {
+                if (packMeta.getDependencies() != null && !modVersionAllMatch(packMeta)) {
                     YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", path.getFileName());
                     return null;
                 }
 
-                String description = "";
-                if (info.getDescription() != null) {
-                    description = info.getDescription();
-                }
-
-                return new VehiclePack(path, info.getNamespace(), info.getTitle(), description);
+                return new VehiclePack(path, packMeta);
             } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException e) {
                 YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), e);
                 return null;
@@ -205,6 +193,7 @@ public enum VehiclePackLoader implements RepositorySource {
 
     private static List<VehiclePack> scanVehiclePacks(Path path) {
         List<VehiclePack> vehiclePacks = new ArrayList<>();
+        Set<String> namespaces = new HashSet<>();
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)){
             for (Path entry : stream) {
@@ -215,7 +204,12 @@ public enum VehiclePackLoader implements RepositorySource {
                     vehiclePack = fromZipPath(entry);
                 }
                 if (vehiclePack != null) {
-                    YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.namespace);
+                    if (namespaces.contains(vehiclePack.meta().getNamespace())) {
+                        YwzjVehicle.LOGGER.error(MARKER, "- {}, Duplicated namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
+                        continue;
+                    }
+                    namespaces.add(vehiclePack.meta().getNamespace());
+                    YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
                     vehiclePacks.add(vehiclePack);
                 }
             }
@@ -248,6 +242,6 @@ public enum VehiclePackLoader implements RepositorySource {
         return vehiclePacks;
     }
 
-    public record VehiclePack(Path path, String namespace, String title, String description) {}
+    public record VehiclePack(Path path, PackMeta meta) {}
 
 }
