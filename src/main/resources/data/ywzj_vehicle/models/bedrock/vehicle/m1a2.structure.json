@@ -49,6 +49,7 @@
 				},
 				{
 					"name": "turret_barrel",
+					"parent": "turret",
 					"pivot": [-0.65, 30.25, 28.3625],
 					"cubes": [
 						{
@@ -67,6 +68,7 @@
 				},
 				{
 					"name": "turret_machine_gun_barrel",
+					"parent": "turret",
 					"pivot": [-1.075, 20.5, -0.425],
 					"cubes": [
 						{
@@ -85,6 +87,7 @@
 				},
 				{
 					"name": "turret_smoke_grenade_barrel",
+					"parent": "turret",
 					"pivot": [17.325, 4.675, -15.85],
 					"cubes": [
 						{
@@ -119,6 +122,7 @@
 				},
 				{
 					"name": "anti_aircraft_machine_gun",
+					"parent": "turret",
 					"pivot": [-14.66667, 38.7125, -3.3875],
 					"cubes": [
 						{
@@ -165,6 +169,7 @@
 				},
 				{
 					"name": "anti_aircraft_machine_gun_barrel",
+					"parent": "anti_aircraft_machine_gun",
 					"pivot": [-14.3978, 39.25, -3.3137],
 					"cubes": [
 						{

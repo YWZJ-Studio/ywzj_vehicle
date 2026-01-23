@@ -121,7 +121,7 @@ public class LocalVehiclePlayer {
                         } else {
                             float xRot = player.getXRot() - vehicle.getXRot();
                             float yRot = player.getYRot() - vehicle.getYRot();
-                            Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.calculateViewVector(xRot, yRot), false);
+                            Vec3 worldVec = vehicle.relativeRotDirection(VectorUtil.rotToVec(xRot, yRot), false);
                             cameraAimRotX = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
                             cameraAimRotY = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
                             cameraAimRotZ = vehicle.getZRot();
@@ -140,9 +140,9 @@ public class LocalVehiclePlayer {
                     Vec3 hitPosition = Vec3.ZERO;
                     try {
                         Quaternionf rot = new Quaternionf();
-                        rot.rotateY((float) Math.toRadians(-weaponUnit.combineYRot()));
+                        rot.rotateY((float) Math.toRadians(-weaponUnit.getYRot()));
                         rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
-                        rot = vehicle.rotYXZ().mul(rot);
+                        rot = weaponUnit.baseRot().mul(rot);
                         Vector3f eulerAngles = new Vector3f();
                         rot.getEulerAnglesYXZ(eulerAngles);
                         cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
@@ -291,7 +291,7 @@ public class LocalVehiclePlayer {
     }
 
     public Vec3 weaponAimScopeHit(WeaponUnit weaponUnit) {
-        Vec3 worldVec = weaponUnit.getVehicle().relativeRotDirection(VectorUtil.calculateViewVector(scopeAimRotX, scopeAimRotY), false);
+        Vec3 worldVec = weaponUnit.getVehicle().relativeRotDirection(VectorUtil.rotToVec(scopeAimRotX, scopeAimRotY), false);
         cameraAimRotX = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
         cameraAimRotY = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
         getPlayer().setXRot(cameraAimRotX);
@@ -345,7 +345,7 @@ public class LocalVehiclePlayer {
     public Vec3 cameraAimHit(float xRot, float yRot) {
         Vec3 start = new Vec3(cameraX, cameraY, cameraZ);
         Vec3 end = start.add(VectorUtil
-                .calculateViewVector(getPlayer().getXRot() + xRot, getPlayer().getYRot() + yRot)
+                .rotToVec(getPlayer().getXRot() + xRot, getPlayer().getYRot() + yRot)
                 .normalize()
                 .scale(renderDistance()));
         return VectorUtil.hitPosition(getPlayer(), start, end);

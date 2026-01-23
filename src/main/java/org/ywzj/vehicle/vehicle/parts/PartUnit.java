@@ -15,7 +15,6 @@ import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.network.NetworkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
-import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
@@ -25,7 +24,8 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.OBB;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,13 +38,12 @@ import java.util.function.Supplier;
  */
 public class PartUnit<T extends PartUnitData> implements INBTSerializable<CompoundTag> {
 
-    private final PartUnitSyncData syncData;
-
     protected final int index;
     protected final String id;
     protected final Component name;
     protected final AbstractVehicle vehicle;
-    protected final List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
+    protected final VehicleCubeGroup structureGroup;
+    protected final List<VehicleCubeOBB> partCubeOBBs;
     protected LivingEntity owner;
     protected int ownerId;
     protected boolean isSeat;
@@ -54,6 +53,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected PartUnit<?> parentPartUnit;
     protected List<PartUnit<?>> subPartUnits = new ArrayList<>();
     protected T data;
+    private final PartUnitSyncData syncData;
     public PassengerPose passengerPose;
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
@@ -66,7 +66,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.seatOffset = data.getSeatOffset();
         this.ownerViewOffset = data.getOwnerViewOffset();
         this.pivotOffset = data.getPivotOffset();
-        this.unitBedrockCubeOBBs = data.getUnitBedrockCubeOBBs();
+        this.structureGroup = data.getStructureGroup();
+        this.partCubeOBBs = data.getPartCubeOBBs();
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
     }
@@ -90,7 +91,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     public void tick() {
-        updateOBBs();
         if (!this.getVehicle().level().isClientSide()) {
             syncData.tick();
         }
@@ -100,22 +100,12 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return syncData;
     }
 
-    public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
-        return unitBedrockCubeOBBs;
+    public List<VehicleCubeOBB> getPartCubeOBBs() {
+        return partCubeOBBs;
     }
 
     public List<OBB> getOBBs() {
-        return unitBedrockCubeOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList();
-    }
-
-    public void updateOBBs() {
-        for (VehicleBedrockCubeOBB unitBedrockCubeOBB : unitBedrockCubeOBBs) {
-            OBB obb = unitBedrockCubeOBB.obb();
-            Vec3 center = unitBedrockCubeOBB.center(this.vehicle);
-            Quaternionf selfRot = new Quaternionf(unitBedrockCubeOBB.selfRot());
-            obb.setCenter(vehicle.relativeRotPos(center, false).toVector3f());
-            obb.setRotation(vehicle.rotYXZ().mul(selfRot));
-        }
+        return partCubeOBBs.stream().map(VehicleCubeOBB::obb).toList();
     }
 
     /**
@@ -264,7 +254,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
         this.vehicle = vehicle;
-        this.unitBedrockCubeOBBs = new ArrayList<>();
+        this.structureGroup = null;
+        this.partCubeOBBs = new ArrayList<>();
         this.initStructureModel(id);
         this.initOBBs();
     }
@@ -284,14 +275,16 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     @Deprecated
     protected void initOBBs() {
         if (unitBone != null) {
+            VehicleCubeGroup parentGroup = new VehicleCubeGroup(null, unitBone.rotation, new Vec3(unitBone.x / 16, unitBone.y / 16, unitBone.z / 16));
             List<BedrockCubePerFace> cubes = new ArrayList<>(unitBone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
             for (BedrockCubePerFace cube : cubes) {
-                unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(unitBone, cube));
+                partCubeOBBs.add(VehicleCubeOBB.init(parentGroup, cube));
             }
             for (BedrockBone child : unitBone.getChildren()) {
                 List<BedrockCubePerFace> childCubes = new ArrayList<>(child.cubes.stream().map(cube -> (BedrockCubePerFace) cube).toList());
                 for (BedrockCubePerFace cube : childCubes) {
-                    unitBedrockCubeOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
+                    VehicleCubeGroup group = new VehicleCubeGroup(parentGroup, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
+                    partCubeOBBs.add(VehicleCubeOBB.init(group, cube));
                 }
             }
         }

@@ -8,11 +8,12 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 public class WeaponUnitData extends RotatableUnitData {
 
@@ -29,9 +30,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private FireControlLockType fireControlLockType;
     private CrosshairStyle crosshairStyle;
     private List<WeaponInfo> weapons;
-
-    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs = List.of();
-    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs = List.of();
+    private VehicleCubeGroup xTurnGroup;
 
     public WeaponUnitData(String id) {
         super(id);
@@ -106,36 +105,39 @@ public class WeaponUnitData extends RotatableUnitData {
         return weapons;
     }
 
-    // 两个轴上的载具结构块的副本
-    public List<VehicleBedrockCubeOBB> getYTurnUnitOBBs() {
-        return yTurnUnitOBBs.stream().map(VehicleBedrockCubeOBB::new).collect(Collectors.toList());
-    }
-
-    public List<VehicleBedrockCubeOBB> getXTurnUnitOBBs() {
-        return xTurnUnitOBBs.stream().map(VehicleBedrockCubeOBB::new).collect(Collectors.toList());
+    public VehicleCubeGroup getXTurnGroup() {
+        return xTurnGroup;
     }
 
     @Override
-    public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
-        List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs = new ArrayList<>(yTurnUnitOBBs.size() + xTurnUnitOBBs.size());
-        unitBedrockCubeOBBs.addAll(yTurnUnitOBBs.stream().map(VehicleBedrockCubeOBB::new).toList());
-        unitBedrockCubeOBBs.addAll(xTurnUnitOBBs.stream().map(VehicleBedrockCubeOBB::new).toList());
-        return unitBedrockCubeOBBs;
-    }
-
-    @Override
-    public void initStructureModel(BedrockModel model) {
+    public void initStructureModel(BedrockModel model, Map<BedrockBone, VehicleCubeGroup> vehiclePartGroups) {
         if (model == null) {
             return;
         }
         var yTurnBone = model.getBoneMap().get(this.structureBone);
+        List<VehicleCubeOBB> yTurnUnitOBBs = new ArrayList<>();
         if (yTurnBone != null) {
-            this.yTurnUnitOBBs = collectOBBs(yTurnBone);
+            VehicleCubeGroup yTurnGroup = vehiclePartGroups.get(yTurnBone);
+            if (yTurnGroup != null) {
+                this.structureGroup = yTurnGroup;
+                yTurnUnitOBBs.addAll(yTurnGroup.cubeOBBs);
+            }
             this.pivotOffset = new Vec3(yTurnBone.x / 16, yTurnBone.y / 16, yTurnBone.z / 16);
         } else {
             this.pivotOffset = Vec3.ZERO;
         }
         var xTurnBone = model.getBoneMap().get(this.structureBone + "_barrel");
+        List<VehicleCubeOBB> xTurnUnitOBBs = new ArrayList<>();
+        if (xTurnBone != null) {
+            VehicleCubeGroup xTurnGroup = vehiclePartGroups.get(xTurnBone);
+            if (xTurnGroup != null) {
+                this.xTurnGroup = xTurnGroup;
+                xTurnUnitOBBs.addAll(xTurnGroup.cubeOBBs);
+            }
+        }
+        partCubeOBBs = new ArrayList<>();
+        partCubeOBBs.addAll(xTurnUnitOBBs);
+        partCubeOBBs.addAll(yTurnUnitOBBs);
         if (xTurnBone == null) {
             // 若未配置炮闩数据且仅有座圈结构模型，取座圈结构块的Z轴正方向的表面中心为唯一炮闩
             if ((this.bolts == null || this.bolts.isEmpty()) && !yTurnUnitOBBs.isEmpty()) {
@@ -144,7 +146,6 @@ public class WeaponUnitData extends RotatableUnitData {
             }
             return;
         }
-        this.xTurnUnitOBBs = collectOBBs(xTurnBone);
         // 若未配置炮闩数据，则从结构模型中推算
         if (this.bolts == null || this.bolts.isEmpty()) {
             this.bolts = new ArrayList<>();
@@ -154,19 +155,12 @@ public class WeaponUnitData extends RotatableUnitData {
 
     private void buildBolts(BedrockBone bone) {
         for (BedrockCube cube : bone.cubes) {
-            // 使用单个Cube来描述一根炮管：
+            // 使用单个Cube来描述一根炮管
             // 以Cube的Z轴正方向作为炮管轴线，起始端对应炮闩位置，终止端对应炮口位置，Cube在该方向上的整体长度即为炮管长度。
-            double x = bone.x / 16 + cube.x() + cube.width() / 2 - pivotOffset.x;
-            double y = bone.y / 16 + cube.y() + cube.height() / 2 - pivotOffset.y;
-            double z = bone.z / 16 + cube.z() - pivotOffset.z;
-            BedrockBone parent = bone.parent;
-            while (parent != null) {
-                x += parent.x / 16;
-                y += parent.y / 16;
-                z += parent.z / 16;
-                parent = parent.parent;
-            }
-            Vec3 boltOffset = new Vec3(x, y, z);
+            float x = cube.x() + cube.width() / 2;
+            float y = cube.y() + cube.height() / 2;
+            float z = cube.z();
+            Vec3 boltOffset = new Vec3(bone.rotation.transform(new Vector3f(x, y, z)));
             float barrelLength = cube.depth();
             Vector3f selfRot = new Vector3f();
             bone.rotation.getEulerAnglesYXZ(selfRot);

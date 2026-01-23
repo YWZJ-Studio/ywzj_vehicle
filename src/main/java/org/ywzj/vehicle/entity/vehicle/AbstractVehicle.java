@@ -1,8 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -85,7 +82,8 @@ import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
 import org.ywzj.vehicle.vehicle.structure.OBB;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -121,8 +119,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public float zRotO;
     private float lerpZRot;
     public boolean uav;
-    protected List<VehicleBedrockCubeOBB> vehicleOBBs;
-    protected VehicleBedrockCubeOBB mainCubeOBB;
+    protected List<VehicleCubeOBB> vehicleCubeOBBs;
+    protected VehicleCubeOBB mainCubeOBB;
     public WarningReceiver warningReceiver;
     public boolean protectPassenger;
     public PhysicsEngine physicsEngine;
@@ -140,7 +138,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.controlUnit = new ControlUnit(this);
         this.partUnits = new ArrayList<>();
         this.partUnitMap = Map.of();
-        this.vehicleOBBs = new ArrayList<>();
+        this.vehicleCubeOBBs = new ArrayList<>();
         this.curbWeight = 1;
         this.viewInfo = new ViewInfo();
         this.energyInfo = new EnergyInfo();
@@ -279,9 +277,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
         this.defenseStats = vehicleData.getDefenseStats();
         vehicleData.inject(this);
-        BaseVehicleData.VehicleStructObbs vehicleStruct = vehicleData.getVehicleStructObbs();
+        VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
         this.mainCubeOBB = vehicleStruct.mainCubeOBB();
-        this.vehicleOBBs = vehicleStruct.obbs();
+        this.vehicleCubeOBBs = vehicleStruct.obbs();
         BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
         this.seats.addAll(partUnitsAndSeats.seats());
@@ -295,7 +293,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
         this.partUnitMap = map;
         updateOBBs();
-        partUnits.forEach(PartUnit::updateOBBs);
         if (this.level().isClientSide()) {
             this.animationInstance = new VehicleAnimationInstance(this);
         }
@@ -428,11 +425,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     protected void tickPhysics(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
-        List<VehicleBedrockCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
+        List<VehicleCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
         // 接触方块的采样点
-        List<VehicleBedrockCubeOBB.CubePoint> touchPoints = new ArrayList<>();
+        List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
 
-        for (VehicleBedrockCubeOBB.CubePoint point : surfacePoints) {
+        for (VehicleCubeOBB.CubePoint point : surfacePoints) {
             Vector3f worldPos = point.worldPos(axes);
             BlockPos blockPos = BlockPos.containing(new Vec3(worldPos));
 
@@ -606,7 +603,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     public List<OBB> getOBBs() {
-        List<OBB> vehicleOBBs = new ArrayList<>(this.vehicleOBBs.stream().map(VehicleBedrockCubeOBB::obb).toList());
+        List<OBB> vehicleOBBs = new ArrayList<>(this.vehicleCubeOBBs.stream().map(VehicleCubeOBB::obb).toList());
         for (PartUnit<?> partUnit : partUnits) {
             vehicleOBBs.addAll(partUnit.getOBBs());
         }
@@ -615,13 +612,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     public void updateOBBs() {
-        for (VehicleBedrockCubeOBB vehicleBedrockCubeOBB : vehicleOBBs) {
-            OBB obb = vehicleBedrockCubeOBB.obb();
-            Vec3 center = vehicleBedrockCubeOBB.center(this);
-            Quaternionf rot = vehicleBedrockCubeOBB.selfRot();
-            obb.setCenter(relativeRotPos(center, false).toVector3f());
-            obb.setRotation(rotYXZ().mul(rot));
+        List<VehicleCubeOBB> allCubeOBBS = new ArrayList<>(this.vehicleCubeOBBs);
+        for (PartUnit<?> partUnit : partUnits) {
+            allCubeOBBS.addAll(partUnit.getPartCubeOBBs());
         }
+        allCubeOBBS.forEach(cubeOBB -> cubeOBB.update(this));
     }
 
     public AABB getAABB() {
@@ -895,7 +890,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return Optional.ofNullable(partUnitMap.get(id));
     }
 
-    public VehicleBedrockCubeOBB getMainCubeOBB() {
+    public VehicleCubeOBB getMainCubeOBB() {
         return mainCubeOBB;
     }
 
@@ -1056,7 +1051,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             return;
         }
         if (pEntity instanceof AbstractVehicle vehicle) {
-            VehicleBedrockCubeOBB bodyCube = vehicle.getMainCubeOBB();
+            VehicleCubeOBB bodyCube = vehicle.getMainCubeOBB();
             if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
                 return;
             }
@@ -1247,25 +1242,25 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     }
 
-    @Deprecated
-    protected void initOBBs() {
-        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(this.getStructureModel()).orElse(null);
-        BedrockBone bone = model.getBoneMap().get("vehicle_body");
-        // 约定取体积最大的块计算物理
-        List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
-        cubes.sort((cube1, cube2) -> (int) -(cube1.depth() * cube1.width() * cube1.height() - cube2.depth() * cube2.width() * cube2.height()));
-        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
-        vehicleOBBs.add(mainCubeOBB);
-        for (BedrockCube cube : cubes) {
-            vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
-        }
-        for (BedrockBone child : bone.getChildren()) {
-            List<BedrockCube> childCubes = new ArrayList<>(child.cubes.stream().toList());
-            for (BedrockCube cube : childCubes) {
-                vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
-            }
-        }
-    }
+//    @Deprecated
+//    protected void initOBBs() {
+//        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(this.getStructureModel()).orElse(null);
+//        BedrockBone bone = model.getBoneMap().get("vehicle_body");
+//        // 约定取体积最大的块计算物理
+//        List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
+//        cubes.sort((cube1, cube2) -> (int) -(cube1.depth() * cube1.width() * cube1.height() - cube2.depth() * cube2.width() * cube2.height()));
+//        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
+//        vehicleOBBs.add(mainCubeOBB);
+//        for (BedrockCube cube : cubes) {
+//            vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
+//        }
+//        for (BedrockBone child : bone.getChildren()) {
+//            List<BedrockCube> childCubes = new ArrayList<>(child.cubes.stream().toList());
+//            for (BedrockCube cube : childCubes) {
+//                vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
+//            }
+//        }
+//    }
 
     @Deprecated
     @Nullable

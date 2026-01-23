@@ -22,7 +22,9 @@ import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
 
@@ -40,8 +42,9 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected ResourceLocation structureModel;
     protected double structureLength;
     protected List<PartUnitEntry<?, ?>> parts;
-    protected VehicleBedrockCubeOBB mainCubeOBB;
-    protected final List<VehicleBedrockCubeOBB> vehicleBodyOBBs = new ArrayList<>();
+    protected VehicleCubeOBB mainCubeOBB;
+    protected final List<VehicleCubeOBB> vehicleBodyOBBs = new ArrayList<>();
+    protected final Map<BedrockBone, VehicleCubeGroup> vehiclePartGroups = new HashMap<>();
 
     public BaseVehicleData() {}
 
@@ -98,13 +101,35 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.structureModel = pojo.structureModel;
         var model = CommonAssetsManager.structureModelManager()
                 .getStructureModel(pojo.structureModel).orElseThrow();
-
+        // 构建OBB
+        buildOBBs(model);
+        // 构建部件结构
         this.parts = pojo.parts;
         for (var entry : this.parts) {
             var partData = entry.data();
-            partData.initStructureModel(model);
+            partData.initStructureModel(model, vehiclePartGroups);
         }
-        this.initOBBs(model);
+        // 取车体中体积最大的OBB表达车体的物理
+        vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
+        mainCubeOBB = vehicleBodyOBBs.get(0);
+        // 计算载具参考长度
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        List<VehicleCubeOBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs);
+        for (PartUnitEntry<?, ?> partUnitEntry : parts) {
+            vehicleOBBs.addAll(partUnitEntry.data().getPartCubeOBBs());
+        }
+        for (VehicleCubeOBB vehicleOBB : vehicleOBBs) {
+            double z1 = vehicleOBB.offset().z + vehicleOBB.getDepth() / 2;
+            double z2 = vehicleOBB.offset().z - vehicleOBB.getDepth() / 2;
+            if (maxZ < z1) {
+                maxZ = z1;
+            }
+            if (minZ > z2) {
+                minZ = z2;
+            }
+        }
+        structureLength = maxZ - minZ;
     }
 
     public void inject(T vehicle) {}
@@ -136,46 +161,58 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         return new PartUnitsAndSeats(partUnitMap, seats);
     }
 
-    public VehicleStructObbs getVehicleStructObbs() {
-        var obbs = vehicleBodyOBBs.stream().map(VehicleBedrockCubeOBB::new).toList();
-        return new VehicleStructObbs(obbs, obbs.get(0));
+    private void buildOBBs(BedrockModel model) {
+        for (Map.Entry<String, BedrockBone> boneEntry : model.getBoneMap().entrySet()) {
+            BedrockBone bone = boneEntry.getValue();
+            // 车体单独构建
+            if (boneEntry.getKey().equals("vehicle_body")) {
+                VehicleCubeGroup group = new VehicleCubeGroup(null, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
+                buildVehicleBodyOBBs(bone, group);
+            } else {
+                // 从基岩模型最外层的各组构建
+                if (bone.parent != null && bone.parent.parent == null) {
+                    VehicleCubeGroup group = new VehicleCubeGroup(null, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
+                    buildPartUnitsOBBs(bone, group, new HashSet<>(model.getBoneMap().values()));
+                }
+            }
+        }
     }
 
-    public record VehicleStructObbs(List<VehicleBedrockCubeOBB> obbs, VehicleBedrockCubeOBB mainCubeOBB) {}
+    private void buildVehicleBodyOBBs(BedrockBone bone, VehicleCubeGroup group) {
+        bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).forEach(cube -> vehicleBodyOBBs.add(VehicleCubeOBB.init(group, cube)));
+        bone.getChildren().forEach(child -> {
+            VehicleCubeGroup childGroup = new VehicleCubeGroup(group, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
+            buildVehicleBodyOBBs(child, childGroup);
+        });
+    }
 
     /**
-     * 基岩模型构造车体OBB
-     * @param model
+     * 从基岩Bone递归构建载具部件的结构OBB组
+     * 每个结构OBB组持有其Bone以及匿名子Bone下所有的块
      */
-    private void initOBBs(BedrockModel model) {
-        buildVehicleBodyOBBs(model.getBoneMap().get("vehicle_body"));
-        // 约定取体积最大的块表达车体的物理
-        vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
-        mainCubeOBB = vehicleBodyOBBs.get(0);
-        double minZ = Double.POSITIVE_INFINITY;
-        double maxZ = Double.NEGATIVE_INFINITY;
-        List<VehicleBedrockCubeOBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs);
-        for (PartUnitEntry<?, ?> partUnitEntry : parts) {
-            vehicleOBBs.addAll(partUnitEntry.data().getUnitBedrockCubeOBBs());
+    public void buildPartUnitsOBBs(BedrockBone bone, VehicleCubeGroup group, Set<BedrockBone> namedBones) {
+        if (bone == null) {
+            return;
         }
-        for (VehicleBedrockCubeOBB vehicleOBB : vehicleOBBs) {
-            double z1 = vehicleOBB.offset().z + vehicleOBB.getDepth() / 2;
-            double z2 = vehicleOBB.offset().z - vehicleOBB.getDepth() / 2;
-            if (maxZ < z1) {
-                maxZ = z1;
-            }
-            if (minZ > z2) {
-                minZ = z2;
-            }
-        }
-        structureLength = maxZ - minZ;
+        bone.cubes.stream()
+                .map(cube -> (BedrockCubePerFace) cube)
+                .forEach(cube -> VehicleCubeOBB.init(group, cube));
+        vehiclePartGroups.put(bone, group);
+        bone.getChildren().forEach(child -> {
+            VehicleCubeGroup childGroup = new VehicleCubeGroup(group, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
+            buildPartUnitsOBBs(child, childGroup, namedBones);
+            // 合并匿名组的块
+            child.getChildren().forEach(subChild -> {
+                if (!namedBones.contains(subChild)) {
+                    vehiclePartGroups.get(subChild).cubeOBBs.forEach(childGroup::addCubeOBB);
+                }
+            });
+        });
     }
 
-    private void buildVehicleBodyOBBs(BedrockBone bone) {
-        bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).forEach(cube -> vehicleBodyOBBs.add(VehicleBedrockCubeOBB.init(bone, cube)));
-        for (BedrockBone child : bone.getChildren()) {
-            buildVehicleBodyOBBs(child);
-        }
+    public VehicleStructOBBs getVehicleStructObbs() {
+        var obbs = vehicleBodyOBBs.stream().map(VehicleCubeOBB::new).toList();
+        return new VehicleStructOBBs(obbs, obbs.get(0));
     }
 
     public ResourceLocation getVehicleId() {

@@ -167,6 +167,7 @@
 				},
 				{
 					"name": "auto_cannon_barrel",
+					"parent": "auto_cannon",
 					"pivot": [-3.5313, 13.7964, 75.3485],
 					"cubes": [
 						{

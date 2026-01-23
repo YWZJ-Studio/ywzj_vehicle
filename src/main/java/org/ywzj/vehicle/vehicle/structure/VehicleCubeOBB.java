@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.vehicle.structure;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,16 +15,16 @@ import java.util.List;
 /**
  * 使用基岩模型描述的载具结构块
  */
-public class VehicleBedrockCubeOBB {
+public class VehicleCubeOBB {
 
     private final OBB obb;
-    private final Quaternionf selfRot;
+    private VehicleCubeGroup group;
     private final List<CubePoint> cubePoints;
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
     private Vec3 offset = Vec3.ZERO;
-    public final double boneX;
-    public final double boneY;
-    public final double boneZ;
+    public final double x;
+    public final double y;
+    public final double z;
     public final double height;
     public final double width;
     public final double depth;
@@ -33,63 +32,77 @@ public class VehicleBedrockCubeOBB {
     public double spaceY;
     public double spaceZ;
 
-    public VehicleBedrockCubeOBB(OBB obb) {
+    public VehicleCubeOBB(OBB obb) {
         this.obb = obb;
-        this.selfRot = new Quaternionf();
         this.cubePoints = new ArrayList<>();
         this.initCubePoints();
         this.offset = Vec3.ZERO;
-        this.boneX = 0;
-        this.boneY = 0;
-        this.boneZ = 0;
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
         this.height = obb.extents().y * 2;
         this.width = obb.extents().x * 2;
         this.depth = obb.extents().z * 2;
     }
 
-    public VehicleBedrockCubeOBB(OBB obb, BedrockBone bone, BedrockCube cube) {
+    public VehicleCubeOBB(OBB obb, VehicleCubeGroup group, BedrockCube cube) {
         this.obb = obb;
-        this.selfRot = new Quaternionf(bone.rotation);
+        this.group = group;
         this.cubePoints = new ArrayList<>();
         this.initCubePoints();
-        this.offset = new Vec3(bone.x / 16, bone.y / 16, bone.z / 16)
+        Vec3 pivot = group.pivot;
+        this.offset = new Vec3(pivot.x, pivot.y, pivot.z)
                 .add(cube.x() + cube.width() / 2, cube.y() + cube.height() / 2, cube.z() + cube.depth() / 2);
-        BedrockBone parent = bone.parent;
+        group.addCubeOBB(this);
+        VehicleCubeGroup parent = group.parent;
         while (parent != null) {
-            this.offset = this.offset.add(parent.x / 16, parent.y / 16, parent.z / 16);
+            pivot = parent.pivot;
+            this.offset = this.offset.add(pivot.x, pivot.y, pivot.z);
             parent = parent.parent;
         }
-        this.boneX = bone.x;
-        this.boneY = bone.y;
-        this.boneZ = bone.z;
+        this.x = cube.x();
+        this.y = cube.y();
+        this.z = cube.z();
         this.height = cube.height();
         this.width = cube.width();
         this.depth = cube.depth();
     }
 
-    public VehicleBedrockCubeOBB(VehicleBedrockCubeOBB origin) {
+    public VehicleCubeOBB(VehicleCubeOBB origin) {
         this.obb = origin.obb.copy();
-        this.selfRot = new Quaternionf(origin.selfRot);
+        this.group = origin.group;
         this.cubePoints = new ArrayList<>();
         this.initCubePoints();
         this.offset = origin.offset;
-        this.boneX = origin.boneX;
-        this.boneY = origin.boneY;
-        this.boneZ = origin.boneZ;
+        this.x = origin.x;
+        this.y = origin.y;
+        this.z = origin.z;
         this.height = origin.height;
         this.width = origin.width;
         this.depth = origin.depth;
     }
 
-    public static VehicleBedrockCubeOBB init(BedrockBone bone, BedrockCube cube) {
+    public static VehicleCubeOBB init(VehicleCubeGroup group, BedrockCube cube) {
         OBB obb = new OBB(Vec3.ZERO.toVector3f(),
                 new Vector3f(cube.width() / 2, cube.height() / 2, cube.depth() / 2),
-                new Quaternionf(bone.rotation));
-        return new VehicleBedrockCubeOBB(obb, bone, cube);
+                new Quaternionf(group.rotation));
+        return new VehicleCubeOBB(obb, group, cube);
     }
 
-    public static VehicleBedrockCubeOBB defaultCube() {
-        return new VehicleBedrockCubeOBB(new OBB(Vec3.ZERO.toVector3f(), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf()));
+    public void update(AbstractVehicle vehicle) {
+        VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
+        Quaternionf rotation = globalTransform.rotation();
+        Quaternionf vehicleRotation = vehicle.rotYXZ();
+        Vector3f centerOffset = new Vector3f((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
+        rotation.transform(centerOffset);
+        Vec3 pivot = globalTransform.pivot();
+        Vector3f center = vehicleRotation.transform(pivot.add(centerOffset.x, centerOffset.y, centerOffset.z).toVector3f());
+        obb.setCenter(vehicle.position().add(center.x, center.y, center.z).toVector3f());
+        obb.setRotation(vehicleRotation.mul(rotation));
+    }
+
+    public static VehicleCubeOBB defaultCube() {
+        return new VehicleCubeOBB(new OBB(Vec3.ZERO.toVector3f(), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf()));
     }
 
     public void initCubePoints() {
@@ -160,23 +173,23 @@ public class VehicleBedrockCubeOBB {
     }
 
     public Quaternionf selfRot() {
-        return selfRot;
+        return group.rotation;
     }
 
     public List<CubePoint> cubePoints() {
         return cubePoints;
     }
 
-    public double getBoneX() {
-        return boneX;
+    public double getX() {
+        return x;
     }
 
-    public double getBoneY() {
-        return boneY;
+    public double getY() {
+        return y;
     }
 
-    public double getBoneZ() {
-        return boneZ;
+    public double getZ() {
+        return z;
     }
 
     public double getHeight() {
@@ -193,14 +206,14 @@ public class VehicleBedrockCubeOBB {
 
     public static class CubePoint {
 
-        private final VehicleBedrockCubeOBB vehicleBedrockCubeOBB;
+        private final VehicleCubeOBB vehicleCubeOBB;
         private final Vector3f obbLocalPos;
         private Vector3f worldPos;
         private final CubeFace cubeFace;
         public CubePointContext cubePointContext;
 
-        public CubePoint(VehicleBedrockCubeOBB vehicleBedrockCubeOBB, Vector3f obbLocalPos, CubeFace cubeFace) {
-            this.vehicleBedrockCubeOBB = vehicleBedrockCubeOBB;
+        public CubePoint(VehicleCubeOBB vehicleCubeOBB, Vector3f obbLocalPos, CubeFace cubeFace) {
+            this.vehicleCubeOBB = vehicleCubeOBB;
             this.obbLocalPos = obbLocalPos;
             this.cubeFace = cubeFace;
             this.cubePointContext = new CubePointContext();
@@ -211,7 +224,7 @@ public class VehicleBedrockCubeOBB {
         }
 
         public Vector3f worldPos(Vector3f[] axes) {
-            worldPos = vehicleBedrockCubeOBB.obb.localToWorld(obbLocalPos, axes == null ? vehicleBedrockCubeOBB.obb.getAxes() : axes);
+            worldPos = vehicleCubeOBB.obb.localToWorld(obbLocalPos, axes == null ? vehicleCubeOBB.obb.getAxes() : axes);
             return worldPos;
         }
 

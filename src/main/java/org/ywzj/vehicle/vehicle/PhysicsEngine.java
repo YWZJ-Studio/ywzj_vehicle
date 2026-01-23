@@ -16,7 +16,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.*;
 import java.util.function.Function;
@@ -53,7 +53,7 @@ public class PhysicsEngine {
         this.vehicle = vehicle;
     }
 
-    public VehicleBedrockCubeOBB physicsCube() {
+    public VehicleCubeOBB physicsCube() {
         return vehicle.getMainCubeOBB();
     }
 
@@ -65,19 +65,19 @@ public class PhysicsEngine {
      * 为助于攀爬方块，一定车体高度下的方块碰撞会被忽略
      * 车体底面若有陷地则会施加较大的向上速度
      */
-    public Vec3 motionByImpact(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
-        VehicleBedrockCubeOBB physicsCube = vehicle.getMainCubeOBB();
+    public Vec3 motionByImpact(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
+        VehicleCubeOBB physicsCube = vehicle.getMainCubeOBB();
         boolean isStuck = false;
 
         double velocityO = velocity.length();
-        for (VehicleBedrockCubeOBB.CubePoint touchPoint : touchPoints) {
-            if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.RIGHT) {
+        for (VehicleCubeOBB.CubePoint touchPoint : touchPoints) {
+            if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.LEFT || touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.RIGHT) {
                 if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
                     continue;
                 }
                 Vec3 axesX = new Vec3(axes[0]).normalize();
                 double d = velocity.dot(axesX);
-                if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.LEFT) {
+                if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.LEFT) {
                     if (d > 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 1, 2);
                         isStuck = true;
@@ -94,13 +94,13 @@ public class PhysicsEngine {
                         velocity = velocity.subtract(axesX.scale(d)).add(axesX.scale(bounce));
                     }
                 }
-            } else if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK) {
+            } else if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.FRONT || touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.BACK) {
                 if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
                     continue;
                 }
                 Vec3 axesZ = new Vec3(axes[2]).normalize();
                 double d = velocity.dot(axesZ);
-                if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT) {
+                if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.FRONT) {
                     if (d > 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 1);
                         isStuck = true;
@@ -117,10 +117,10 @@ public class PhysicsEngine {
                         velocity = velocity.subtract(axesZ.scale(d)).add(axesZ.scale(bounce));
                     }
                 }
-            } else if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.TOP || touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BOTTOM) {
+            } else if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP || touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM) {
                 Vec3 axesY = new Vec3(axes[1]).normalize();
                 double d = velocity.dot(axesY);
-                if (touchPoint.cubeFace() == VehicleBedrockCubeOBB.CubeFace.TOP) {
+                if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP) {
                     if (d > 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
                     } else {
@@ -152,12 +152,12 @@ public class PhysicsEngine {
         return velocity;
     }
 
-    private void destroyBlocks(VehicleBedrockCubeOBB physicsCube, VehicleBedrockCubeOBB.CubeFace cubeFace) {
+    private void destroyBlocks(VehicleCubeOBB physicsCube, VehicleCubeOBB.CubeFace cubeFace) {
         stuckTick += 1;
         if (stuckTick == 10) {
             if (canDestroyBlock) {
                 Level level = vehicle.level();
-                for (VehicleBedrockCubeOBB.CubePoint cubePoint : vehicle.getMainCubeOBB().cubePointsByFace.get(cubeFace)) {
+                for (VehicleCubeOBB.CubePoint cubePoint : vehicle.getMainCubeOBB().cubePointsByFace.get(cubeFace)) {
                     if (cubePoint.obbLocalPos().y > -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
                         Vec3 pos = new Vec3(cubePoint.cachedWorldPos());
                         BlockPos bp = BlockPos.containing(pos);
@@ -176,7 +176,7 @@ public class PhysicsEngine {
     /**
      * 阻力影响
      */
-    public Vec3 decelerationByFriction(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
+    public Vec3 decelerationByFriction(List<VehicleCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
         if (!touchPoints.isEmpty()) {
             // 接触摩擦力
             velocity = velocity.normalize().scale(Math.max(0, velocity.length() - friction / mass));
@@ -191,7 +191,7 @@ public class PhysicsEngine {
     /**
      * 受重力影响下的自由落体与三轴滚动
      */
-    public Vec3 rotAndFallByGravity(List<VehicleBedrockCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vector3f force, Vector3f velocity) {
+    public Vec3 rotAndFallByGravity(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vector3f force, Vector3f velocity) {
         var physicsCube = vehicle.getMainCubeOBB();
         try {
             // 加速度使得重心偏移
@@ -217,22 +217,22 @@ public class PhysicsEngine {
             vehicle.setOnGround(true);
 
             // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
-            List<VehicleBedrockCubeOBB.CubeFace> faces = new ArrayList<>();
+            List<VehicleCubeOBB.CubeFace> faces = new ArrayList<>();
             Vector3f gWorldDirection = new Vector3f(0, -1, 0);
             if (gWorldDirection.dot(axes[0]) > 0) {
-                faces.add(VehicleBedrockCubeOBB.CubeFace.LEFT);
+                faces.add(VehicleCubeOBB.CubeFace.LEFT);
             } else if (gWorldDirection.dot(axes[0]) < 0) {
-                faces.add(VehicleBedrockCubeOBB.CubeFace.RIGHT);
+                faces.add(VehicleCubeOBB.CubeFace.RIGHT);
             }
             if (gWorldDirection.dot(axes[1]) > 0) {
-                faces.add(VehicleBedrockCubeOBB.CubeFace.TOP);
+                faces.add(VehicleCubeOBB.CubeFace.TOP);
             }  else if (gWorldDirection.dot(axes[1]) < 0) {
-                faces.add(VehicleBedrockCubeOBB.CubeFace.BOTTOM);
+                faces.add(VehicleCubeOBB.CubeFace.BOTTOM);
             }
             if (gWorldDirection.dot(axes[2]) > 0) {
-                faces.add(VehicleBedrockCubeOBB.CubeFace.FRONT);
+                faces.add(VehicleCubeOBB.CubeFace.FRONT);
             }  else if (gWorldDirection.dot(axes[2]) < 0) {
-                faces.add(VehicleBedrockCubeOBB.CubeFace.BACK);
+                faces.add(VehicleCubeOBB.CubeFace.BACK);
             }
             List<Vector3f> localForcePoints = touchPoints.stream()
                     .filter(touchPoint -> faces.contains(touchPoint.cubeFace()))
@@ -243,7 +243,7 @@ public class PhysicsEngine {
                         }
                         return true;
                     })
-                    .map(VehicleBedrockCubeOBB.CubePoint::obbLocalPos)
+                    .map(VehicleCubeOBB.CubePoint::obbLocalPos)
                     .toList();
 
             // 重力方向在局部坐标系下的向量
@@ -369,11 +369,11 @@ public class PhysicsEngine {
         }
     }
 
-    public void climb(List<VehicleBedrockCubeOBB.CubePoint> touchPoints) {
-        List<VehicleBedrockCubeOBB.CubePoint> climbPoints = new ArrayList<>(touchPoints.stream().filter(p ->
-                        p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.FRONT
-                                || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BOTTOM
-                                || p.cubeFace() == VehicleBedrockCubeOBB.CubeFace.BACK)
+    public void climb(List<VehicleCubeOBB.CubePoint> touchPoints) {
+        List<VehicleCubeOBB.CubePoint> climbPoints = new ArrayList<>(touchPoints.stream().filter(p ->
+                        p.cubeFace() == VehicleCubeOBB.CubeFace.FRONT
+                                || p.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM
+                                || p.cubeFace() == VehicleCubeOBB.CubeFace.BACK)
                 .toList());
         if (climbPoints.isEmpty()) {
             return;
@@ -392,7 +392,7 @@ public class PhysicsEngine {
         }
         if (yRange >= vehicle.getMainCubeOBB().spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
             climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
-            VehicleBedrockCubeOBB.CubePoint liftPoint = climbPoints.get(0);
+            VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
             double liftHeight = liftPoint.cubePointContext.blockPos().getY() + (isHalfBlock(liftPoint) ? 0.55f : 1f);
             double toLift = liftHeight - vehicle.position().y;
             vehicle.setPos(new Vec3(vehicle.position().x, vehicle.position().y + Mth.clamp(toLift, 0, vehicle.maxUpStep()), vehicle.position().z));
@@ -511,7 +511,7 @@ public class PhysicsEngine {
         return new Vector2f(projected.dot(planeU), projected.dot(planeV));
     }
 
-    private boolean isHalfBlock(VehicleBedrockCubeOBB.CubePoint cubePoint) {
+    private boolean isHalfBlock(VehicleCubeOBB.CubePoint cubePoint) {
         return cubePoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
                 || cubePoint.cubePointContext.blockState().getBlock() instanceof SlabBlock;
     }

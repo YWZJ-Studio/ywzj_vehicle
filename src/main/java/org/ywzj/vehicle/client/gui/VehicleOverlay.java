@@ -205,7 +205,7 @@ public class VehicleOverlay implements IGuiOverlay {
         float yRot = camera.getYRot();
         Vec3 start = camera.getPosition();
         Vec3 end = start.add(VectorUtil
-                .calculateViewVector(xRot, yRot)
+                .rotToVec(xRot, yRot)
                 .normalize()
                 .scale(LocalVehiclePlayer.renderDistance()));
         Pair<Entity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);

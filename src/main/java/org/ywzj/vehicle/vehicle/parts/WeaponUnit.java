@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.vehicle.parts;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -16,9 +17,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Math;
 import org.joml.Quaternionf;
-import org.joml.Vector4d;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.entity.SightObstruction;
@@ -27,7 +27,6 @@ import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.gui.VehicleCrossHairOverlay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
@@ -41,8 +40,7 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
-import org.ywzj.vehicle.vehicle.structure.OBB;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 import java.util.*;
@@ -94,8 +92,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     // 第三人称准心样式
     public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
     // OBB结构
-    private List<VehicleBedrockCubeOBB> yTurnUnitOBBs;
-    private List<VehicleBedrockCubeOBB> xTurnUnitOBBs;
+    private VehicleCubeGroup xTurnGroup;
     // 武器与选射
     public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> independentWeapons = new ArrayList<>();
@@ -134,8 +131,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         );
         currentWeaponIndex = 0;
 
-        this.yTurnUnitOBBs = data.getYTurnUnitOBBs();
-        this.xTurnUnitOBBs = data.getXTurnUnitOBBs();
+        this.xTurnGroup = data.getXTurnGroup();
     }
 
     public void switchWeapon(boolean next) {
@@ -204,9 +200,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public void updateOBBs() {
-        updateOBBs(yTurnUnitOBBs, false);
-        updateOBBs(xTurnUnitOBBs, true);
+    public void updateRot() {
+        if (structureGroup != null) {
+            structureGroup.rotation = new Quaternionf(structureGroup.baseRotation).mul(Axis.YN.rotationDegrees(yRot));
+        }
+        if (xTurnGroup != null) {
+            xTurnGroup.rotation = new Quaternionf(xTurnGroup.baseRotation).mul(Axis.XP.rotationDegrees(xRot));
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -324,46 +324,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
-    @Override
-    public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
-        List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs = new ArrayList<>(yTurnUnitOBBs.size() + xTurnUnitOBBs.size());
-        unitBedrockCubeOBBs.addAll(yTurnUnitOBBs);
-        unitBedrockCubeOBBs.addAll(xTurnUnitOBBs);
-        return unitBedrockCubeOBBs;
-    }
-
-    @Override
-    public List<OBB> getOBBs() {
-        List<OBB> unitOBBs = new ArrayList<>(yTurnUnitOBBs.size() + xTurnUnitOBBs.size());
-        yTurnUnitOBBs.forEach(unitOBB -> unitOBBs.add(unitOBB.obb()));
-        xTurnUnitOBBs.forEach(unitOBB -> unitOBBs.add(unitOBB.obb()));
-        return unitOBBs;
-    }
-
-    public void updateOBBs(List<VehicleBedrockCubeOBB> unitOBBs, boolean isBarrel) {
-        Quaternionf rot = new Quaternionf()
-                .rotateY(Math.toRadians(-combineYRot()));
-        if (isBarrel) {
-            rot.rotateX(Math.toRadians(xRot));
-        }
-        Quaternionf vehicleRot = vehicle.rotYXZ();
-        for (VehicleBedrockCubeOBB unitOBB : unitOBBs) {
-            OBB obb = unitOBB.obb();
-            if (isBarrel) {
-                Vec3 centerOffset = rotatedOffsetWithSelfRot(unitOBB.offset());
-                Vec3 pivotOffset = rotatedOffsetWithSelfRot(new Vec3(unitOBB.offset().x, unitOBB.boneY / 16.0, unitOBB.boneZ / 16.0));
-                Vec3 rel = centerOffset.subtract(pivotOffset);
-                Vec2 relRot = VectorUtil.worldVecToRot(rel);
-                Vec3 dir = VectorUtil.calculateViewVector(relRot.x + xRot, relRot.y).scale(rel.length());
-                Vec3 worldCenter = vehicle.relativeRotPos(vehicle.position().add(pivotOffset).add(dir), false);
-                obb.setCenter(worldCenter.toVector3f());
-            } else {
-                obb.setCenter(worldPosition(unitOBB.offset()).toVector3f());
-            }
-            obb.setRotation(new Quaternionf(vehicleRot).mul(rot).mul(unitOBB.selfRot()));
-        }
-    }
-
     public Bolt getCurrentBolt() {
         return bolts.get(currentBoltIndex);
     }
@@ -404,9 +364,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));
     }
 
-    public Vec2 aimRot(Vec3 worldPos) {
-        Vec3 fromWorldPos = worldCurrentBoltPosition();
-        Vec3 worldAim = new Vec3(worldPos.x - fromWorldPos.x, worldPos.y - fromWorldPos.y, worldPos.z - fromWorldPos.z);
+    public Vec2 aimRot(Vec3 worldPosition) {
+        Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().pivot()), false);
+        Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
         return vecToRot(worldAim);
     }
 
@@ -417,43 +377,54 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
         AimContext aimContext = aimContext();
         Vec3 start = new Vec3(x, y, z);
-        Vec3 end = start.add(VectorUtil.calculateViewVector(aimContext.direction.x, aimContext.direction.y).normalize().scale(256));
+        Vec3 end = start.add(VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize().scale(256));
         return VectorUtil.hitPosition(vehicle, start, end);
     }
 
     public List<AimContext> aimContexts() {
         List<AimContext> positions = new ArrayList<>();
-        for (int boltIndex = 0; boltIndex < bolts.size(); boltIndex += 1) {
-            positions.add(aimContext(boltIndex));
+        for (Bolt bolt : bolts) {
+            positions.add(aimContext(bolt));
         }
         return positions;
     }
 
     public AimContext aimContext() {
-        return aimContext(currentBoltIndex);
+        return aimContext(getCurrentBolt());
     }
 
-    public AimContext aimContext(int boltIndex) {
-        Bolt bolt = bolts.get(boltIndex < 0 || boltIndex >= bolts.size() ? currentBoltIndex : boltIndex);
-        Vec2 direction = worldRot(xRot + bolt.xRot(), yRot - bolt.yRot());
-        Vec3 worldVec = VectorUtil.calculateViewVector(direction.x, direction.y);
-        Vec3 barrelOffset = worldVec.normalize().scale(bolt.barrelLength());
-        Vec3 position = worldPosition(pivotOffset.add(bolt.offset())).add(barrelOffset);
+    public AimContext aimContext(Bolt bolt) {
+        VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
+        Quaternionf rotation = globalTransform.rotation();
+        Quaternionf vehicleRotation = vehicle.rotYXZ();
+        Vec3 boltPosition = worldBoltPosition(bolt, vehicleRotation, globalTransform);
+        Vector3f worldRot = new Vector3f();
+        vehicleRotation.mul(rotation).getEulerAnglesYXZ(worldRot);
         AimContext aimContext = new AimContext();
-        aimContext.position = position;
-        aimContext.direction = direction;
+        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x), (float) Math.toDegrees(-worldRot.y));
+        Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
+        aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength()));
         return aimContext;
     }
 
     public Vec3 worldCurrentBoltPosition() {
-        Bolt bolt = bolts.get(currentBoltIndex);
-        return worldPosition(pivotOffset.add(bolt.offset()));
+        Bolt bolt = getCurrentBolt();
+        VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
+        Quaternionf vehicleRotation = vehicle.rotYXZ();
+        return worldBoltPosition(bolt, vehicleRotation, globalTransform);
+    }
+
+    public Vec3 worldBoltPosition(Bolt bolt, Quaternionf vehicleRotation, VehicleCubeGroup.GlobalTransform globalTransform) {
+        Quaternionf rotation = globalTransform.rotation();
+        Vector3f boltOffset = new Vector3f((float) bolt.offset().x, (float) bolt.offset().y, (float) bolt.offset().z);
+        rotation.transform(boltOffset);
+        Vec3 pivot = globalTransform.pivot();
+        Vector3f rotatedBoltOffset = vehicleRotation.transform(pivot.add(boltOffset.x, boltOffset.y, boltOffset.z).toVector3f());
+        return vehicle.position().add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
     }
 
     public Vec3 worldPivotPosition() {
-        Vector4d offset = rotatedOffsetWithBaseRot(this, this.pivotOffset.x, this.pivotOffset.z);
-        Vec3 boltPosition = vehicle.position().add(new Vec3(offset.x, pivotOffset.y, offset.y));
-        return vehicle.relativeRotPos(boltPosition, false);
+        return worldPositionWithBaseRot(pivotOffset);
     }
 
     public Vec3 worldOpticalSightPosition() {
@@ -466,9 +437,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @Override
     public Vec3 worldOwnerViewPosition() {
         if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-            Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
-            Vector4d offsetWithBaseRot = rotatedOffsetWithBaseRot(this, offsetFromVehicle.x, offsetFromVehicle.z);
-            return vehicle.relativeRotPos(vehicle.position().add(new Vec3(offsetWithBaseRot.z, offsetFromVehicle.y, offsetWithBaseRot.w)), false);
+            return worldPositionWithBaseRot(pivotOffset.add(operatorViewOffset));
         }
         if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
@@ -481,11 +450,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public Vec3 worldSeatPosition() {
         float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
         if (!operatorOnWeaponUnit) {
-            Vector4d offset = rotatedOffsetWithBaseRot(this, seatOffset.x, seatOffset.z);
-            return vehicle.relativeRotPos(vehicle.position().add(offset.z, seatOffset.y - eyeHeight, offset.w), false);
+            return worldPositionWithBaseRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
         }
-        Vec3 offset = rotatedOffsetWithSelfRot(this.seatOffset);
-        return vehicle.relativeRotPos(vehicle.position().add(offset.x, seatOffset.y - eyeHeight, offset.z), false);
+        return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
     }
 
     public List<Bolt> getBolts() {
@@ -821,15 +788,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 //                ).length();
 //            }
         }
-        this.yTurnUnitOBBs = PartUnitData.collectOBBs(yTurnBone);
-        this.xTurnUnitOBBs = PartUnitData.collectOBBs(xTurnBone);
+//        this.yTurnUnitOBBs = PartUnitData.collectOBBs(yTurnBone);
+//        this.xTurnUnitOBBs = PartUnitData.collectOBBs(xTurnBone);
     }
 
     @Deprecated
     @Override
     protected void initOBBs() {
-        this.unitBedrockCubeOBBs.addAll(xTurnUnitOBBs);
-        this.unitBedrockCubeOBBs.addAll(yTurnUnitOBBs);
+//        this.partCubeOBBs.addAll(xTurnUnitOBBs);
+//        this.partCubeOBBs.addAll(yTurnUnitOBBs);
     }
 
 }

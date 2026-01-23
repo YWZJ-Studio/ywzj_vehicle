@@ -49,6 +49,7 @@
 				},
 				{
 					"name": "turret_barrel",
+					"parent": "turret",
 					"pivot": [-3.475, 46.6, -25.475],
 					"cubes": [
 						{
@@ -67,6 +68,7 @@
 				},
 				{
 					"name": "turret_missile_barrel",
+					"parent": "turret",
 					"pivot": [9.5, 45.075, -25],
 					"cubes": [
 						{
@@ -97,6 +99,7 @@
 				},
 				{
 					"name": "turret_smoke_grenade_barrel",
+					"parent": "turret",
 					"pivot": [4.8, 1.275, -11.525],
 					"cubes": [
 						{

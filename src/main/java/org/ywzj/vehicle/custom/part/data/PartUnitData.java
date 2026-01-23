@@ -1,13 +1,13 @@
 package org.ywzj.vehicle.custom.part.data;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.vehicle.structure.VehicleBedrockCubeOBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -23,7 +23,8 @@ public class PartUnitData {
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected List<String> subPartUnitIds;
-    protected List<VehicleBedrockCubeOBB> unitBedrockCubeOBBs;
+    protected VehicleCubeGroup structureGroup;
+    protected List<VehicleCubeOBB> partCubeOBBs;
 
     /**
      * 供子类使用，需要手动完成数据初始化流程
@@ -57,53 +58,41 @@ public class PartUnitData {
      * 尝试根据载具的结构模型初始化部件的结构数据，在初始化载具数据流程中手动调用
      * @param model 结构模型
      */
-    public void initStructureModel(BedrockModel model) {
+    public void initStructureModel(BedrockModel model, Map<BedrockBone, VehicleCubeGroup> vehiclePartGroups) {
         if (model != null) {
             var bone = model.getBoneMap().get(this.structureBone);
             if (bone == null) {
                 return;
             }
+            structureGroup = vehiclePartGroups.get(bone);
+            if (structureGroup != null) {
+                partCubeOBBs = structureGroup.cubeOBBs;
+            }
             this.pivotOffset = new Vec3(bone.x / 16, bone.y / 16, bone.z / 16);
-            unitBedrockCubeOBBs = collectOBBs(bone);
         }
     }
 
+    public VehicleCubeGroup getStructureGroup() {
+        return structureGroup;
+    }
+
     /**
-     * 获取原始OBB列表，你不应该直接修改它，而是使用 {@link #getUnitBedrockCubeOBBs()} 获取副本
+     * 获取原始OBB列表，你不应该直接修改它，而是使用 {@link #getPartCubeOBBs()} 获取副本
      * @return 原始OBB列表
      */
-    public List<VehicleBedrockCubeOBB> getRawUnitBedrockCubeOBBs() {
-        return unitBedrockCubeOBBs;
+    public List<VehicleCubeOBB> getRawPartCubeOBBs() {
+        return partCubeOBBs;
     }
 
     /**
      * 获取OBB的副本
      * @return OBB列表
      */
-    public List<VehicleBedrockCubeOBB> getUnitBedrockCubeOBBs() {
-        if (unitBedrockCubeOBBs == null) {
+    public List<VehicleCubeOBB> getPartCubeOBBs() {
+        if (partCubeOBBs == null) {
             return List.of();
         }
-        return unitBedrockCubeOBBs.stream().map(VehicleBedrockCubeOBB::new).collect(Collectors.toList());
-    }
-
-    /**
-     * 为指定骨骼收集OBB
-     * @param bone 骨骼
-     * @return OBB列表
-     */
-    public static List<VehicleBedrockCubeOBB> collectOBBs(BedrockBone bone) {
-        if (bone == null) return List.of();
-        List<VehicleBedrockCubeOBB> obbs = new ArrayList<>();
-        bone.cubes.stream()
-                .map(cube -> (BedrockCubePerFace) cube)
-                .forEach(cube -> obbs.add(VehicleBedrockCubeOBB.init(bone, cube)));
-        bone.getChildren().forEach(child ->
-                child.cubes.stream()
-                        .map(cube -> (BedrockCubePerFace) cube)
-                        .forEach(cube -> obbs.add(VehicleBedrockCubeOBB.init(child, cube)))
-        );
-        return obbs;
+        return partCubeOBBs.stream().map(VehicleCubeOBB::new).collect(Collectors.toList());
     }
 
     public String getId() {

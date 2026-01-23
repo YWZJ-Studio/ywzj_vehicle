@@ -150,7 +150,7 @@ public class VectorUtil {
         return new Vec3(d.x, d.y, d.z);
     }
 
-    public static Vec3 calculateViewVector(float pXRot, float pYRot) {
+    public static Vec3 rotToVec(float pXRot, float pYRot) {
         float f = pXRot * ((float)Math.PI / 180F);
         float f1 = -pYRot * ((float)Math.PI / 180F);
         float f2 = Mth.cos(f1);
@@ -160,9 +160,9 @@ public class VectorUtil {
         return new Vec3(f3 * f4, -f5, f2 * f4);
     }
 
-    public static Vec2 worldVecToRot(Vec3 worldVec) {
-        float pitch = (float) Math.toDegrees(Math.atan2(-worldVec.y, Math.sqrt(worldVec.x * worldVec.x + worldVec.z * worldVec.z)));
-        float yaw = (float) Math.toDegrees(-Math.atan2(worldVec.x, worldVec.z));
+    public static Vec2 vecToRot(Vec3 vec) {
+        float pitch = (float) Math.toDegrees(Math.atan2(-vec.y, Math.sqrt(vec.x * vec.x + vec.z * vec.z)));
+        float yaw = (float) Math.toDegrees(-Math.atan2(vec.x, vec.z));
         return new Vec2(pitch, yaw);
     }
 

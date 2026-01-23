@@ -154,7 +154,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
     }
 
     private static @NotNull Vec3 getHitScreenPos(Vec3 start, float xRot, float yRot, Player player) {
-        Vec3 end = start.add(VectorUtil.calculateViewVector(xRot, yRot).normalize().scale(128));
+        Vec3 end = start.add(VectorUtil.rotToVec(xRot, yRot).normalize().scale(128));
         var result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         Vec3 hitPos = result.getLocation();
         return VectorUtil.worldToScreen(hitPos);
