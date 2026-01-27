@@ -10,6 +10,7 @@ import java.util.List;
 public class VehicleCubeGroup {
 
     public VehicleCubeGroup parent;
+    public List<VehicleCubeGroup> children = new ArrayList<>();
     public Quaternionf baseRotation;
     public Quaternionf rotation;
     public Vec3 pivot;
@@ -17,9 +18,16 @@ public class VehicleCubeGroup {
 
     public VehicleCubeGroup(VehicleCubeGroup parent, Quaternionf rotation, Vec3 pivot) {
         this.parent = parent;
+        if (this.parent != null) {
+            this.parent.addChild(this);
+        }
         this.baseRotation = rotation;
         this.rotation = rotation;
         this.pivot = pivot;
+    }
+
+    public void addChild(VehicleCubeGroup child) {
+        this.children.add(child);
     }
 
     public void addCubeOBB(VehicleCubeOBB cubeOBB) {

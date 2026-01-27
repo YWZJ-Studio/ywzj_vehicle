@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * 具有结构模型的载具部件基类<br/>
@@ -42,11 +43,12 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected final String id;
     protected final Component name;
     protected final AbstractVehicle vehicle;
-    protected final VehicleCubeGroup structureGroup;
-    protected final List<VehicleCubeOBB> partCubeOBBs;
+    protected VehicleCubeGroup structureGroup;
+    protected List<VehicleCubeOBB> partCubeOBBs;
     protected LivingEntity owner;
     protected int ownerId;
     protected boolean isSeat;
+    protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
@@ -63,13 +65,18 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.vehicle = vehicle;
         this.data = data;
         this.isSeat = data.isSeat();
+        this.seatRot = data.getSeatRot();
         this.seatOffset = data.getSeatOffset();
         this.ownerViewOffset = data.getOwnerViewOffset();
         this.pivotOffset = data.getPivotOffset();
-        this.structureGroup = data.getStructureGroup();
-        this.partCubeOBBs = data.getPartCubeOBBs();
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
+    }
+
+    public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
+        this.partCubeOBBs = data.getRawPartCubeOBBs().stream().map(VehicleCubeOBB::new).collect(Collectors.toList());
+        this.partCubeOBBs.forEach(cubeOBB -> cubeOBB.group = vehicleCubeGroupCopy.get(cubeOBB.group));
+        this.structureGroup = vehicleCubeGroupCopy.get(data.getRawStructureGroup());
     }
 
     /**
@@ -177,6 +184,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public void setOwnerViewOffset(Vec3 ownerViewOffset) {
         this.ownerViewOffset = ownerViewOffset;
+    }
+
+    public float getSeatRot() {
+        return seatRot;
     }
 
     public Vec3 getSeatOffset() {

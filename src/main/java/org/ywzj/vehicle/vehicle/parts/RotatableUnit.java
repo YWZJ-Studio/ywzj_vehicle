@@ -59,7 +59,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.yRotMax = rotInfo.yRotMax;
         this.yRotMin = rotInfo.yRotMin;
         this.xRot = rotInfo.xRot;
+        this.xAimRot = this.xRot;
         this.yRot = rotInfo.yRot;
+        this.yAimRot = this.yRot;
         this.needPower = rotInfo.needPower;
 
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);

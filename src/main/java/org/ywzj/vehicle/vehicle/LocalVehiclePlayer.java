@@ -131,36 +131,40 @@ public class LocalVehiclePlayer {
                     } finally {
                         fixLerp();
                     }
-                } else if (viewType == ViewType.SCOPE && partUnit instanceof WeaponUnit weaponUnit) {
-                    Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
-                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
-                    cameraX = worldScopePosition.x;
-                    cameraY = worldScopePosition.y;
-                    cameraZ = worldScopePosition.z;
-                    Vec3 hitPosition = Vec3.ZERO;
-                    try {
-                        Quaternionf rot = new Quaternionf();
-                        rot.rotateY((float) Math.toRadians(-weaponUnit.getYRot()));
-                        rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
-                        rot = weaponUnit.baseRot().mul(rot);
-                        Vector3f eulerAngles = new Vector3f();
-                        rot.getEulerAnglesYXZ(eulerAngles);
-                        cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
-                        if (lastWeaponUnit != weaponUnit) {
-                            lastWeaponUnit = weaponUnit;
-                            hitPosition = scopeAimWeaponHit(weaponUnit);
-                            return;
+                } else if (viewType == ViewType.SCOPE) {
+                    if (partUnit instanceof WeaponUnit weaponUnit) {
+                        Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
+                                weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
+                        cameraX = worldScopePosition.x;
+                        cameraY = worldScopePosition.y;
+                        cameraZ = worldScopePosition.z;
+                        Vec3 hitPosition = Vec3.ZERO;
+                        try {
+                            Quaternionf rot = new Quaternionf();
+                            rot.rotateY((float) Math.toRadians(-weaponUnit.getYRot()));
+                            rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
+                            rot = weaponUnit.baseRot().mul(rot);
+                            Vector3f eulerAngles = new Vector3f();
+                            rot.getEulerAnglesYXZ(eulerAngles);
+                            cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
+                            if (lastWeaponUnit != weaponUnit) {
+                                lastWeaponUnit = weaponUnit;
+                                hitPosition = scopeAimWeaponHit(weaponUnit);
+                                return;
+                            }
+                            if (weaponUnit.isStabilizerOn() || !mouseTurnedAfterScope) {
+                                hitPosition = scopeAimWeaponHit(weaponUnit);
+                            } else {
+                                hitPosition = weaponAimScopeHit(weaponUnit);
+                            }
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
+                        } finally {
+                            rangeFinding(hitPosition);
+                            fixLerp();
                         }
-                        if (weaponUnit.isStabilizerOn() || !mouseTurnedAfterScope) {
-                            hitPosition = scopeAimWeaponHit(weaponUnit);
-                        } else {
-                            hitPosition = weaponAimScopeHit(weaponUnit);
-                        }
-                    } catch (Exception exception) {
-                        exception.printStackTrace();
-                    } finally {
-                        rangeFinding(hitPosition);
-                        fixLerp();
+                    } else {
+                        switchViewType(ViewType.OPERATOR);
                     }
                 }
             } else {
@@ -251,12 +255,12 @@ public class LocalVehiclePlayer {
                     weaponUnit.setAimLockPosition(pos);
                 } else {
                     float t1 = Mth.abs(weaponUnit.getXAimRot() - weaponUnit.getXRot()) % 360 / weaponUnit.getXRotSpeed();
-                    float v1 = Math.min(weaponUnit.getXRotSpeed() / 15, 1 / t1 / 10);
+                    float v1 = Math.min(weaponUnit.getXRotSpeed() / 16, weaponUnit.getXRotSpeed() / (t1 * 10));
                     if ((pXRot > 0 && weaponUnit.getXAimRot() < weaponUnit.xRotMax) || (pXRot < 0 && weaponUnit.getXAimRot() > weaponUnit.xRotMin)) {
                         scopeAimRotX = (float) (scopeAimRotX + pXRot * v1);
                     }
                     float t2 = Mth.abs(weaponUnit.getYAimRot() - weaponUnit.getYRot()) % 360 / weaponUnit.getYRotSpeed();
-                    float v2 = Math.min(weaponUnit.getYRotSpeed() / 15, 1 / t2 / 10);
+                    float v2 = Math.min(weaponUnit.getYRotSpeed() / 16, weaponUnit.getYRotSpeed() / (t2 * 10));
                     if ((pYRot > 0 && weaponUnit.getYAimRot() < weaponUnit.yRotMax) || (pYRot < 0 && weaponUnit.getYAimRot() > weaponUnit.yRotMin)) {
                         scopeAimRotY = (float) (scopeAimRotY + pYRot * v2);
                     }

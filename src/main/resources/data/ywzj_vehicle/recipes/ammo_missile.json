@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:redstone" }
+  ],
+  "result": {
+    "item": "ywzj_vehicle:ammo_missile",
+    "count": 4
+  }
+}

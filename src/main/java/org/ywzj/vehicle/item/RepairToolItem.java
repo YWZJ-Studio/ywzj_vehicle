@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 public class RepairToolItem extends VehicleItem {
 
     public RepairToolItem() {
-        super(new Properties().stacksTo(1));
+        super(new Properties().durability(100));
     }
 
     @Override
@@ -78,17 +78,23 @@ public class RepairToolItem extends VehicleItem {
             var hitResult = ProjectileUtil.getEntityHitResult(
                     pLivingEntity, startPos, endPos,
                     pLivingEntity.getBoundingBox().expandTowards(viewVector.scale(6.0)).inflate(1.0),
-                    e -> e instanceof AbstractVehicle vehicle && !vehicle.isDestroyed(), 50
+                    Entity::isAlive, 50
             );
-            if (hitResult != null && hitResult.getEntity() instanceof AbstractVehicle vehicle) {
-                if (pLevel.isClientSide()) {
-                    Vec3 pos = hitResult.getLocation();
-                    pLevel.addParticle(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 0, 0, 0);
-                } else {
-                    float h = Math.min(vehicle.getHealth() + 2.0f, vehicle.getMaxHealth());
-                    vehicle.setHealth(h);
+            if (hitResult != null) {
+                if (hitResult.getEntity() instanceof AbstractVehicle vehicle) {
+                    if (pLevel.isClientSide()) {
+                        Vec3 pos = hitResult.getLocation();
+                        pLevel.addParticle(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 0, 0, 0);
+                    } else {
+                        float h = Math.min(vehicle.getHealth() + 2.0f, vehicle.getMaxHealth());
+                        vehicle.setHealth(h);
+                    }
+                } else if (hitResult.getEntity() instanceof LivingEntity livingEntity) {
+                    livingEntity.hurt(pLevel.damageSources().playerAttack((Player) pLivingEntity), 2.0F);
+                    livingEntity.setSecondsOnFire(3);
                 }
             }
+            pStack.hurtAndBreak(2, pLivingEntity, e -> e.broadcastBreakEvent(e.getUsedItemHand()));
         }
 
     }

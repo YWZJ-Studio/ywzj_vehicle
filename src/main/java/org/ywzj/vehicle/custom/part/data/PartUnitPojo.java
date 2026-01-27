@@ -23,6 +23,9 @@ public class PartUnitPojo {
     @SerializedName("is_seat")
     public boolean isSeat = true;
 
+    @SerializedName("seat_rot")
+    public float seatRot;
+
     @SerializedName("seat_offset")
     public Vec3 seatOffset = Vec3.ZERO;
 

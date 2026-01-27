@@ -17,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
@@ -51,7 +50,7 @@ public class MachineMaxScreen extends Screen {
     private EditBox searchBox;
     private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
     private final List<Map.Entry<ResourceLocation, BaseVehicleData>> vehicleList =
-            new ArrayList<>(YwzjVehicleAPI.getAllVehicleData().entrySet());
+            new ArrayList<>(CommonAssetsManager.vehicleDataManager().getVehicleData().entrySet());
     private final MachineMaxBlockEntity machineMaxBlockEntity;
 
     public MachineMaxScreen(MachineMaxBlockEntity machineMaxBlockEntity) {

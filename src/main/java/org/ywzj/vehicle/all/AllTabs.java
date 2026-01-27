@@ -25,7 +25,7 @@ public class AllTabs {
             CreativeModeTab
                     .builder()
                     .title(Component.translatable("tab.vehicle"))
-                    .icon(AllItems.FIGURE_BOX.get()::getDefaultInstance)
+                    .icon(() -> AllItems.PLAIN_TEXTURE_ITEM.get().createInstance(YwzjVehicle.modLocation("textures/tab.png")))
                     .displayItems((displayParams, output) ->
                             CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
                                     .filter(vehicleId -> vehicleId.getNamespace().equals(YwzjVehicle.MOD_ID))
@@ -37,7 +37,7 @@ public class AllTabs {
             CreativeModeTab
                     .builder()
                     .title(Component.translatable("tab.misc"))
-                    .icon(AllItems.FUEL_TANK.get()::getDefaultInstance)
+                    .icon(AllItems.FIGURE_BOX.get()::getDefaultInstance)
                     .displayItems((displayParams, output) ->
                             MISC_ITEMS.forEach(itemLike -> output.accept(itemLike.get())))
                     .build());

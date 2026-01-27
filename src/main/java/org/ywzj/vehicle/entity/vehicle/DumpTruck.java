@@ -49,7 +49,7 @@ public class DumpTruck extends WheeledVehicle {
     public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         super.interact(pPlayer, pHand);
         if (!this.level().isClientSide()) {
-            if (pPlayer.getVehicle() != this) {
+            if (pPlayer.isShiftKeyDown()) {
                 Vec3 bedPos = relativeRotPos(position().add(0, 5, 0), true);
                 pPlayer.teleportTo(bedPos.x, bedPos.y, bedPos.z);
             }

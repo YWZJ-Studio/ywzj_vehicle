@@ -44,18 +44,13 @@ public class AllKeys {
     public static final KeyMapping LEAVE_VEHICLE = key("leave_vehicle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J);
 
     // 座位切换
-    public static final KeyMapping CHANGE_SEAT_1 = key("change_seat_1", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_1);
-    public static final KeyMapping CHANGE_SEAT_2 = key("change_seat_2", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_2);
-    public static final KeyMapping CHANGE_SEAT_3 = key("change_seat_3", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_3);
-    public static final KeyMapping CHANGE_SEAT_4 = key("change_seat_4", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_4);
-    public static final KeyMapping CHANGE_SEAT_5 = key("change_seat_5", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_5);
-    public static final KeyMapping CHANGE_SEAT_6 = key("change_seat_6", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_6);
+    public static final KeyMapping CHANGE_SEAT = key("change_seat", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_GRAVE_ACCENT);
 
     private static final KeyMapping[] ALL_KEYS = {
             FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT, TOGGLE_ENGINE,
             FIRE_CONTROL_STABILIZER, FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, MAGNIFICATION_CHANGE, DECOY_FLARE_LAUNCH,
             SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
-            CHANGE_SEAT_1, CHANGE_SEAT_2, CHANGE_SEAT_3, CHANGE_SEAT_4, CHANGE_SEAT_5, CHANGE_SEAT_6
+            CHANGE_SEAT
     };
 
     private static KeyMapping key(String name, InputConstants.Type type, int key) {

@@ -161,6 +161,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
+        compound.putBoolean("Engine", isEngineOn());
+        compound.putFloat("Power", getPower());
         compound.putBoolean("Destroyed", isDestroyed());
         compound.putLong("DestroyedTime", destroyedTime);
         compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getVehicleId().toString());
@@ -171,6 +173,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         super.readAdditionalSaveData(compound);
+        if (compound.contains("Engine")) {
+            toggleEngine(compound.getBoolean("Engine"));
+        }
+        if (compound.contains("Power")) {
+            setPower(compound.getFloat("Power"));
+        }
         if (compound.contains("Destroyed", Tag.TAG_ANY_NUMERIC)) {
             entityData.set(DESTROYED, compound.getBoolean("Destroyed"));
         }
@@ -638,6 +646,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public void onEnterVehicle(LivingEntity livingEntity) {
         if (!level().isClientSide()) {
+            ServerLevel serverLevel = (ServerLevel) level();
             Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
             if (emptySeatOptional.isPresent()) {
                 Seat seat = emptySeatOptional.get();
@@ -647,22 +656,26 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 }
                 seat.partUnit.setOwner(livingEntity);
                 seat.passengerId = livingEntity.getId();
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+                for (ServerPlayer serverPlayer : serverLevel.players()) {
+                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
+                }
             }
         }
         livingEntity.setSprinting(false);
     }
 
     public void onLeaveVehicle(LivingEntity pPassenger) {
-        Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
-        if (ownSeat.isPresent()) {
-            Seat seat = ownSeat.get();
-            if (seat.seatIndex == 0) {
-                controlUnit.setOperator(null);
+        if (!level().isClientSide()) {
+            Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
+            if (ownSeat.isPresent()) {
+                Seat seat = ownSeat.get();
+                if (seat.seatIndex == 0) {
+                    controlUnit.setOperator(null);
+                }
+                seat.partUnit.setOwner(null);
+                seat.passengerId = -1;
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
             }
-            seat.partUnit.setOwner(null);
-            seat.passengerId = -1;
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
@@ -684,6 +697,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             toSeat.partUnit.setOwner(pPassenger);
             toSeat.passengerId = pPassenger.getId();
+            float takeSeatRot = toSeat.partUnit.getSeatRot() + getYRot();
+            pPassenger.setYRot(takeSeatRot);
+            pPassenger.setYBodyRot(takeSeatRot);
+            pPassenger.setYHeadRot(takeSeatRot);
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
             return true;
         }
@@ -710,6 +727,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 }
                 seat.partUnit.setOwnerId(id);
                 seat.passengerId = id;
+                if (seat.passengerId == player.getId()) {
+                    float takeSeatRot = seat.partUnit.getSeatRot() + getYRot();
+                    player.setYRot(takeSeatRot);
+                    player.setYBodyRot(takeSeatRot);
+                    player.setYHeadRot(takeSeatRot);
+                }
             } else {
                 if (index == 0) {
                     controlUnit.setOperator(null);
@@ -831,7 +854,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Override
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
         PartUnit<?> partUnit = getOwnOperatorUnit(pPassenger);
-        onLeaveVehicle(pPassenger);
         return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
     }
 

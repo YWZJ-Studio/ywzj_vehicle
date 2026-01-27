@@ -23,7 +23,7 @@ public class AllBlocks {
             () -> new FigureBoxBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).noOcclusion()), false);
 
     public static final RegistryObject<Block> MACHINE_MAX_BLOCK = registerBlock(AllTabs.Category.MISC, "machine_max_block",
-            () -> new MachineMaxBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).noOcclusion()), true);
+            () -> new MachineMaxBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).noOcclusion()), false);
 
     public static <T extends Block> RegistryObject<Block> registerBlock(AllTabs.Category category, String name, Supplier<T> block, boolean hasBlockItem) {
         RegistryObject<Block> toReturn = BLOCKS.register(name, block);

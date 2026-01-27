@@ -99,7 +99,7 @@ public class FigureBoxScreen extends Screen {
         this.renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         int centerX = this.width / 2;
-        int leftShift = 100;
+        int leftShift = 105;
         int startY = 10;
         int spacing = 24;
         guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.scale"), centerX - leftShift, startY + spacing + 5, 0xFFFFFF);

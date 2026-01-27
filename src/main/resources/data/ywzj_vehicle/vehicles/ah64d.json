@@ -31,7 +31,7 @@
       "name": "sighting_system",
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "sighting_system",
-      "seat_offset": [0, 3, 5.13],
+      "seat_offset": [0, 2.5, 5.13],
       "operator_on_weapon_unit": false,
       "fire_control_lock_type": "aim_hit",
       "rot_info": {

@@ -18,7 +18,7 @@ import java.util.List;
 public class VehicleCubeOBB {
 
     private final OBB obb;
-    private VehicleCubeGroup group;
+    public VehicleCubeGroup group;
     private final List<CubePoint> cubePoints;
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
     private Vec3 offset = Vec3.ZERO;

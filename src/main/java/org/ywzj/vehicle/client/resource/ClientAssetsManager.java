@@ -62,9 +62,9 @@ public enum ClientAssetsManager {
 
     public void reload(ResourceManager resourceManager) {
         models.apply(models.prepare(resourceManager, null), null, null);
+        scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
         animations.apply(animations.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
-        scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
             try {
                 Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));

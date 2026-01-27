@@ -1,17 +1,27 @@
 package org.ywzj.vehicle.api;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-import java.util.Map;
+import java.util.Optional;
 
 public class YwzjVehicleAPI {
 
-    public static Map<ResourceLocation, BaseVehicleData> getAllVehicleData() {
-        return CommonAssetsManager.vehicleDataManager().getVehicleData();
+    public static void summon(Level level, Vec3 position, float yRot, ResourceLocation vehicleId, ResourceLocation displayId) {
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
+        if (vehicleDataOptional.isPresent()) {
+            AbstractVehicle vehicle = vehicleDataOptional.get().construct(level, position, 0, yRot);
+            try {
+                vehicle.setDisplayId(displayId);
+            } catch (IllegalArgumentException ignore) {}
+            level.addFreshEntity(vehicle);
+        }
     }
 
     /**
@@ -27,4 +37,5 @@ public class YwzjVehicleAPI {
     public static IVehicleDataManager getVehicleDataManager() {
         return CommonAssetsManager.vehicleDataManager();
     }
+
 }

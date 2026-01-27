@@ -43,7 +43,7 @@ public enum VehiclePackLoader implements RepositorySource {
     INSTANCE;
     private static final Marker MARKER = MarkerManager.getMarker("VehiclePackFinder");
     public PackType packType;
-    private static final Path VEHICLE_PACKS_PATH = FMLPaths.GAMEDIR.get().resolve("vehicle");
+    private static final Path VEHICLE_PACKS_PATH = FMLPaths.GAMEDIR.get().resolve("limitless_vehicle");
     private List<VehiclePack> vehiclePacks;
     static {
         File folder = VEHICLE_PACKS_PATH.toFile();

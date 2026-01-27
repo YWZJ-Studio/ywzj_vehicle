@@ -1,6 +1,7 @@
 {
   "type": "ywzj_vehicle:cannon",
   "name": "auto_cannon",
+  "caliber": 20,
   "damage": 10,
   "velocity": 16,
   "recoil": 0.3,

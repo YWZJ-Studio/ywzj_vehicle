@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot" },
+    { "item": "minecraft:fire_charge" }
+  ],
+  "result": {
+    "item": "ywzj_vehicle:repair_tool",
+    "count": 1
+  }
+}

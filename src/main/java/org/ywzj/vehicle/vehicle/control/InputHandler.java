@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.control;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -29,6 +30,7 @@ public class InputHandler {
     public static boolean freeCamera;
     public static float xRotO;
     public static float yRotO;
+    private static long waitSwitchSeatTime;
 
     @SubscribeEvent
     public static void onKey(InputEvent.Key event) {
@@ -53,18 +55,6 @@ public class InputHandler {
                     Minecraft.getInstance().player.sendOpenInventory();
                 } else if (TOGGLE_ENGINE.matches(event.getKey(), event.getScanCode())) {
                     sendToggleEngine(vehicle);
-                } else if (CHANGE_SEAT_1.matches(event.getKey(), event.getScanCode())) {
-                    sendChangeSeat(vehicle, 0);
-                } else if (CHANGE_SEAT_2.matches(event.getKey(), event.getScanCode())) {
-                    sendChangeSeat(vehicle, 1);
-                } else if (CHANGE_SEAT_3.matches(event.getKey(), event.getScanCode())) {
-                    sendChangeSeat(vehicle, 2);
-                } else if (CHANGE_SEAT_4.matches(event.getKey(), event.getScanCode())) {
-                    sendChangeSeat(vehicle, 3);
-                } else if (CHANGE_SEAT_5.matches(event.getKey(), event.getScanCode())) {
-                    sendChangeSeat(vehicle, 4);
-                } else if (CHANGE_SEAT_6.matches(event.getKey(), event.getScanCode())) {
-                    sendChangeSeat(vehicle, 5);
                 } else if (FIRE_CONTROL_STABILIZER.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.switchStabilizer();
@@ -121,6 +111,30 @@ public class InputHandler {
             if (LEAVE_VEHICLE.isDown()) {
                 sendLeaveVehicle(vehicle);
                 return;
+            }
+            if (CHANGE_SEAT.isDown()) {
+                long window = Minecraft.getInstance().getWindow().getWindow();
+                for (int seatIndex = 0; seatIndex < 9; seatIndex++) {
+                    int key = GLFW.GLFW_KEY_1 + seatIndex;
+                    if (InputConstants.isKeyDown(window, key)) {
+                        sendChangeSeat(vehicle, seatIndex);
+                        waitSwitchSeatTime = System.currentTimeMillis();
+                        return;
+                    }
+                }
+                if (System.currentTimeMillis() - waitSwitchSeatTime > 500) {
+                    int seatsCount = vehicle.seats.size();
+                    for (int seatIndex = (vehicle.getOwnOperatorUnit(player).getIndex() + 1) % seatsCount; seatIndex < seatsCount; seatIndex++) {
+                        if (vehicle.seats.get(seatIndex).partUnit.getOwner() == null) {
+                            sendChangeSeat(vehicle, seatIndex);
+                            waitSwitchSeatTime = System.currentTimeMillis();
+                            return;
+                        }
+                    }
+                }
+            }
+            if (!CHANGE_SEAT.isDown()) {
+                waitSwitchSeatTime = System.currentTimeMillis();
             }
             if (player.equals(vehicle.controlUnit.getOperator())) {
                 ControlUnit controlUnit = new ControlUnit(vehicle);

@@ -117,7 +117,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         double maxZ = Double.NEGATIVE_INFINITY;
         List<VehicleCubeOBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs);
         for (PartUnitEntry<?, ?> partUnitEntry : parts) {
-            vehicleOBBs.addAll(partUnitEntry.data().getPartCubeOBBs());
+            vehicleOBBs.addAll(partUnitEntry.data().getRawPartCubeOBBs());
         }
         for (VehicleCubeOBB vehicleOBB : vehicleOBBs) {
             double z1 = vehicleOBB.offset().z + vehicleOBB.getDepth() / 2;
@@ -139,21 +139,26 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             List<AbstractVehicle.Seat> seats
     ) {}
 
+    /**
+     * 为载具实例构造部件
+     */
     public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
         Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>();
         List<AbstractVehicle.Seat> seats = new ArrayList<>();
-        int i = 0;
-        // 从data创建
+        HashMap<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy = vehicleCubeGroupsCopy();
+        int index = 0;
+        // 部件数据初始化
         for (var partData : parts) {
-            var partUnit = partData.create(i, vehicle);
-            partUnitMap.put(partData.data().getId(), partUnit);
+            var partUnit = partData.create(index, vehicle);
+            partUnit.buildStructure(vehicleCubeGroupCopy);
             if (partData.data().isSeat()) {
                 int seatIndex = seats.size();
                 seats.add(new AbstractVehicle.Seat(seatIndex, partUnit));
             }
-            i++;
+            partUnitMap.put(partData.data().getId(), partUnit);
+            index++;
         }
-        // 额外操作
+        // 部件之间的组织
         var view = Collections.unmodifiableMap(partUnitMap);
         for (var partUnit : partUnitMap.values()) {
             partUnit.combineAndInit(view, vehicle);
@@ -179,7 +184,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     }
 
     private void buildVehicleBodyOBBs(BedrockBone bone, VehicleCubeGroup group) {
-        bone.cubes.stream().map(cube -> (BedrockCubePerFace) cube).forEach(cube -> vehicleBodyOBBs.add(VehicleCubeOBB.init(group, cube)));
+        bone.cubes.forEach(cube -> vehicleBodyOBBs.add(VehicleCubeOBB.init(group, cube)));
         bone.getChildren().forEach(child -> {
             VehicleCubeGroup childGroup = new VehicleCubeGroup(group, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
             buildVehicleBodyOBBs(child, childGroup);
@@ -208,6 +213,21 @@ public class BaseVehicleData<T extends AbstractVehicle> {
                 }
             });
         });
+    }
+
+    /**
+     * 所有载具实例的结构OBB组森林都是独立的拷贝副本
+     */
+    public HashMap<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupsCopy() {
+        HashMap<VehicleCubeGroup, VehicleCubeGroup> clone = new HashMap<>();
+        vehiclePartGroups.values().stream().filter(vehicleCubeGroup -> vehicleCubeGroup.parent == null)
+                .forEach(parentGroup -> vehicleCubeGroupsClone(clone, parentGroup));
+        return clone;
+    }
+
+    private void vehicleCubeGroupsClone(HashMap<VehicleCubeGroup, VehicleCubeGroup> clone, VehicleCubeGroup parentGroup) {
+        clone.put(parentGroup, new VehicleCubeGroup(parentGroup.parent == null ? null : clone.get(parentGroup.parent), parentGroup.rotation, parentGroup.pivot));
+        parentGroup.children.forEach(childGroup -> vehicleCubeGroupsClone(clone, childGroup));
     }
 
     public VehicleStructOBBs getVehicleStructObbs() {

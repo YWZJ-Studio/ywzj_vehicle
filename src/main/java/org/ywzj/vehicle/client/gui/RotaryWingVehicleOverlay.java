@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -21,7 +22,8 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-        if (!(vehicle instanceof RotaryWingVehicle rotaryWingVehicle)) {
+        if (!(vehicle instanceof RotaryWingVehicle rotaryWingVehicle)
+                || !LocalVehiclePlayer.instance.getPlayer().equals(rotaryWingVehicle.getDriver())) {
             return;
         }
         int centerX = screenWidth / 2;
@@ -30,8 +32,19 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         renderMainInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
         renderHeightInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
         if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON || viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-            renderSpeedInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
-            renderRollInfo(guiGraphics, centerX, centerY, rotaryWingVehicle, viewType);
+            PoseStack pose = guiGraphics.pose();
+            pose.pushPose();
+            {
+                if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                    pose.translate(centerX, centerY, 0);
+                } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                    pose.translate(centerX + 75, centerY + 50, 0);
+                    pose.scale(0.7f, 0.7f, 0.7f);
+                }
+                renderSpeedInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
+                renderRollInfo(guiGraphics, centerX, centerY, rotaryWingVehicle, viewType);
+            }
+            pose.popPose();
         }
     }
 
@@ -42,19 +55,23 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         int leftX = centerX - 120;
         int leftY = centerY - 21;
         // 信息
-        guiGraphics.drawString(Minecraft.getInstance().font, "转速: " +
-                        (int) rotaryWingVehicle.getPower(),
+        var font = Minecraft.getInstance().font;
+        guiGraphics.drawString(font,
+                Component.translatable("ui.vehicle_rotary_wing.rpm", (int) rotaryWingVehicle.getPower()),
                 leftX, leftY, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "总距: " +
-                        rotaryWingVehicle.getCollectivePitch(),
+        guiGraphics.drawString(font,
+                Component.translatable("ui.vehicle_rotary_wing.collective_pitch", rotaryWingVehicle.getCollectivePitch()),
                 leftX, leftY + 12, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "速度: " +
-                        (int) (new Vec3(rotaryWingVehicle.getDeltaMovement().x, 0, rotaryWingVehicle.getDeltaMovement().z).length() * 20 * 3600 / 1000),
+        int speed = (int) (new Vec3(rotaryWingVehicle.getDeltaMovement().x, 0, rotaryWingVehicle.getDeltaMovement().z).length() * 72); // 20 * 3.6 = 72
+        guiGraphics.drawString(font,
+                Component.translatable("ui.vehicle_rotary_wing.speed", speed),
                 leftX, leftY + 24, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "燃油: " +
-                        secondsToHms(rotaryWingVehicle.getEnergy() / rotaryWingVehicle.energyInfo.energyConsumptionPerTick / 20),
+        String fuelTime = secondsToHms(rotaryWingVehicle.getEnergy() / rotaryWingVehicle.energyInfo.energyConsumptionPerTick / 20);
+        guiGraphics.drawString(font,
+                Component.translatable("ui.vehicle_rotary_wing.fuel", fuelTime),
                 leftX, leftY + 36, 0x00FF00);
-        guiGraphics.drawString(Minecraft.getInstance().font, "高度: " + (int) rotaryWingVehicle.getY(),
+        guiGraphics.drawString(font,
+                Component.translatable("ui.vehicle_rotary_wing.altitude", (int) rotaryWingVehicle.getY()),
                 centerX + 62, leftY + 24, 0x00FF00);
     }
 
@@ -108,7 +125,6 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-            pose.translate(centerX, centerY, 0);
             pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
             pose.mulPose(Axis.ZP.rotation((float) Math.atan2(-v.x, v.z)));
 
@@ -142,7 +158,6 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         pose.pushPose();
         {
             if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                pose.translate(centerX, centerY, 0);
                 guiGraphics.fill(-17, 0, -13, 1, 0xFF00FF00);
                 guiGraphics.fill(-12, 0, -8, 1, 0xFF00FF00);
                 guiGraphics.fill(-7, 0, -3, 1, 0xFF00FF00);
@@ -158,7 +173,6 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
                 pose.pushPose();
                 {
-                    pose.translate(centerX, centerY, 0);
                     float arrowSize = 6.0f;
                     RenderSystem.enableBlend();
                     RenderSystem.defaultBlendFunc();
@@ -172,15 +186,15 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                     RenderSystem.disableBlend();
                 }
                 pose.popPose();
-                int xRot = (int) -rotaryWingVehicle.getXRot();
+                double xRot = -rotaryWingVehicle.getXRot();
                 int range = 45;
                 float interval = 5;
                 float gap = 9;
                 int baseY = -range;
-                float value = xRot + range / gap * interval;
+                double value = xRot + range / gap * interval;
                 int rot = (int) (Math.floor(value / interval) * interval);
-                float mod = ((xRot % interval) + interval) % interval;
-                pose.translate(centerX, centerY + mod / interval * gap, 0);
+                double mod = ((xRot % interval) + interval) % interval;
+                pose.translate(0, mod / interval * gap, 0);
                 pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
                 while (baseY <= 45) {
                     guiGraphics.fill(-17, baseY, -13, baseY + 1, 0xFF00FF00);

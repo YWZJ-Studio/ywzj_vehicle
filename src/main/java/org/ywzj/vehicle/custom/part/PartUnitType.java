@@ -39,6 +39,7 @@ public record PartUnitType<T extends PartUnit<D>, D extends PartUnitData>(
     }
 
     public static class Builder<T extends PartUnit<D>, D extends PartUnitData> {
+
         private final ResourceLocation id;
         private DataSerializer<D> dataSerializer;
         private PartUnitFactory<T, D> factory;
@@ -61,9 +62,10 @@ public record PartUnitType<T extends PartUnit<D>, D extends PartUnitData>(
             return this;
         }
 
-
         public PartUnitType<T, D> build() {
             return new PartUnitType<>(id, dataSerializer, factory);
         }
+
     }
+
 }

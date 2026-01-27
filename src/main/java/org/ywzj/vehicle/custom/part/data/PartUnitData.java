@@ -8,7 +8,6 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 预初始化的载具部件数据
@@ -19,6 +18,7 @@ public class PartUnitData {
     protected String name;
     protected String structureBone;
     protected boolean isSeat;
+    protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
@@ -39,6 +39,7 @@ public class PartUnitData {
         this.name = pojo.name;
         this.structureBone = pojo.structureBone;
         this.isSeat = pojo.isSeat;
+        this.seatRot = pojo.seatRot;
         this.seatOffset = pojo.seatOffset;
         this.ownerViewOffset = pojo.ownerViewOffset;
         this.subPartUnitIds = pojo.subPartUnitIds;
@@ -72,27 +73,15 @@ public class PartUnitData {
         }
     }
 
-    public VehicleCubeGroup getStructureGroup() {
-        return structureGroup;
-    }
-
-    /**
-     * 获取原始OBB列表，你不应该直接修改它，而是使用 {@link #getPartCubeOBBs()} 获取副本
-     * @return 原始OBB列表
-     */
     public List<VehicleCubeOBB> getRawPartCubeOBBs() {
-        return partCubeOBBs;
-    }
-
-    /**
-     * 获取OBB的副本
-     * @return OBB列表
-     */
-    public List<VehicleCubeOBB> getPartCubeOBBs() {
         if (partCubeOBBs == null) {
             return List.of();
         }
-        return partCubeOBBs.stream().map(VehicleCubeOBB::new).collect(Collectors.toList());
+        return partCubeOBBs;
+    }
+
+    public VehicleCubeGroup getRawStructureGroup() {
+        return structureGroup;
     }
 
     public String getId() {
@@ -109,6 +98,10 @@ public class PartUnitData {
 
     public boolean isSeat() {
         return isSeat;
+    }
+
+    public float getSeatRot() {
+        return seatRot;
     }
 
     public Vec3 getSeatOffset() {

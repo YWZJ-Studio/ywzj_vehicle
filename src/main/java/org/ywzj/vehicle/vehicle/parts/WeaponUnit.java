@@ -130,8 +130,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 currentWeaponIndex
         );
         currentWeaponIndex = 0;
+    }
 
-        this.xTurnGroup = data.getXTurnGroup();
+    @Override
+    public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
+        super.buildStructure(vehicleCubeGroupCopy);
+        this.xTurnGroup = vehicleCubeGroupCopy.get(data.getRawXTurnGroup());
     }
 
     public void switchWeapon(boolean next) {
@@ -203,6 +207,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void updateRot() {
         if (structureGroup != null) {
             structureGroup.rotation = new Quaternionf(structureGroup.baseRotation).mul(Axis.YN.rotationDegrees(yRot));
+            if (xTurnGroup == structureGroup) {
+                structureGroup.rotation = structureGroup.rotation.mul(Axis.XP.rotationDegrees(xRot));
+                return;
+            }
         }
         if (xTurnGroup != null) {
             xTurnGroup.rotation = new Quaternionf(xTurnGroup.baseRotation).mul(Axis.XP.rotationDegrees(xRot));
@@ -394,14 +402,19 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public AimContext aimContext(Bolt bolt) {
+        AimContext aimContext = new AimContext();
+        if (xTurnGroup == null) {
+            aimContext.position = this.vehicle.position();
+            aimContext.direction = new Vec2(this.vehicle.getXRot(), this.vehicle.getYRot());
+            return aimContext;
+        }
         VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
         Quaternionf rotation = globalTransform.rotation();
         Quaternionf vehicleRotation = vehicle.rotYXZ();
         Vec3 boltPosition = worldBoltPosition(bolt, vehicleRotation, globalTransform);
         Vector3f worldRot = new Vector3f();
         vehicleRotation.mul(rotation).getEulerAnglesYXZ(worldRot);
-        AimContext aimContext = new AimContext();
-        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x), (float) Math.toDegrees(-worldRot.y));
+        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot(), (float) Math.toDegrees(-worldRot.y) + bolt.yRot());
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
         aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength()));
         return aimContext;
@@ -448,7 +461,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public Vec3 worldSeatPosition() {
-        float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+        float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
         if (!operatorOnWeaponUnit) {
             return worldPositionWithBaseRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
         }

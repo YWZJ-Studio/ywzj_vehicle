@@ -22,8 +22,8 @@ import java.util.List;
 
 public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBlockEntity> {
 
-    private static final ResourceLocation MACHINE_MAX_BLOCK_MODEL = YwzjVehicle.modLocation("block/machine_max_block");
-    private static final ResourceLocation MACHINE_MAX_BLOCK_TEXTURE = YwzjVehicle.modLocation("textures/block/machine_max_block.png");
+    public static final ResourceLocation MACHINE_MAX_BLOCK_MODEL = YwzjVehicle.modLocation("block/machine_max_block");
+    public static final ResourceLocation MACHINE_MAX_BLOCK_TEXTURE = YwzjVehicle.modLocation("textures/block/machine_max_block.png");
 
     public MachineMaxBlockRenderer(BlockEntityRendererProvider.Context context) {}
 

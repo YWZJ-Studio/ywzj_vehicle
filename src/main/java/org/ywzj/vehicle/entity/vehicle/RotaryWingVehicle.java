@@ -3,6 +3,7 @@ package org.ywzj.vehicle.entity.vehicle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -52,6 +54,20 @@ public class RotaryWingVehicle extends AbstractVehicle {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(COLLECTIVE_PITCH, 0);
+    }
+
+    @Override
+    public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        compound.putInt("CollectivePitch", getCollectivePitch());
+    }
+
+    @Override
+    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        if (compound.contains("CollectivePitch")) {
+            entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getInt("CollectivePitch"), 0, 100));
+        }
     }
 
     @Override

@@ -111,7 +111,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public boolean isCoolingDown() {
-        return System.currentTimeMillis() - lastShootTime < this.getShootInterval();
+        return System.currentTimeMillis() - lastShootTime < (this.getShootInterval() - (vehicle.level().isClientSide() ? 0 : 20));
     }
 
     public long getShootInterval() {

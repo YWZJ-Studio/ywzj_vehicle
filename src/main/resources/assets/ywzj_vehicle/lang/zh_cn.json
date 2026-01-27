@@ -2,13 +2,25 @@
   "tab.vehicle": "永无止境: 载具",
   "tab.misc": "永无止境: 载具 - 杂项",
 
+  "ywzj_vehicle.dump_truck": "自卸卡车",
+  "ywzj_vehicle.lav150": "LAV-150 装甲车",
+  "ywzj_vehicle.ztl11": "ZTL-11 轮式突击炮",
+  "ywzj_vehicle.ztz99a": "ZTZ-99A 主战坦克",
+  "ywzj_vehicle.z10": "Z-10 武装直升机",
+  "ywzj_vehicle.motorcycle": "摩托车",
+  "ywzj_vehicle.hiace": "海狮面包车",
+  "ywzj_vehicle.quadcopter": "四旋翼无人机",
+  "ywzj_vehicle.m1a2": "M1A2 主战坦克",
+  "ywzj_vehicle.cssa5": "CS/SA5 防空导弹车",
+  "ywzj_vehicle.ah64d": "AH-64D 阿帕奇",
+  "ywzj_vehicle.lav_ad": "LAV-AD 防空装甲车",
+  "ywzj_vehicle.bgm_71_tow": "BGM-71 TOW 反坦克导弹",
+
   "entity.ywzj_vehicle.dump_truck": "自卸卡车",
   "entity.ywzj_vehicle.lav150": "LAV-150 装甲车",
   "entity.ywzj_vehicle.ztl11": "ZTL-11 轮式突击炮",
   "entity.ywzj_vehicle.ztz99a": "ZTZ-99A 主战坦克",
   "entity.ywzj_vehicle.z10": "Z-10 武装直升机",
-  "entity.ywzj_vehicle.mi24": "米-24 武装直升机",
-  "entity.ywzj_vehicle.ka50": "卡-50 武装直升机",
   "entity.ywzj_vehicle.motorcycle": "摩托车",
   "entity.ywzj_vehicle.hiace": "海狮面包车",
   "entity.ywzj_vehicle.quadcopter": "四旋翼无人机",
@@ -30,8 +42,8 @@
   "item.ywzj_vehicle.ammo_missile": "导弹弹药",
   "item.ywzj_vehicle.ammo_decoy_flare": "热诱弹弹药",
 
-  "item_group.ywzj_vehicle.name": "Example",
-  "block.ywzj_vehicle.test_block": "Example Block",
+  "block.ywzj_vehicle.figure_box_block": "手办盒",
+  "block.ywzj_vehicle.machine_max_block": "3D打印机",
 
   "key.category.ywzj_vehicle": "永无止境：载具",
   "key.ywzj_vehicle.forward.desc": "前进",
@@ -57,15 +69,14 @@
   "key.ywzj_vehicle.open_inventory.desc": "打开载具容器",
   "key.ywzj_vehicle.free_camera.desc": "自由视角",
   "key.ywzj_vehicle.leave_vehicle.desc": "离开载具",
-  "key.ywzj_vehicle.change_seat_1.desc": "1号座位",
-  "key.ywzj_vehicle.change_seat_2.desc": "2号座位",
-  "key.ywzj_vehicle.change_seat_3.desc": "3号座位",
-  "key.ywzj_vehicle.change_seat_4.desc": "4号座位",
-  "key.ywzj_vehicle.change_seat_5.desc": "5号座位",
-  "key.ywzj_vehicle.change_seat_6.desc": "6号座位",
+  "key.ywzj_vehicle.change_seat.desc": "座位切换（可配合数字键指定座位）",
   "key.ywzj_vehicle.debug_gui.desc": "调试信息",
 
   "tips.spotter": "未装备武器",
+  "tips.uav_controller": "绑定无人机: %s",
+  "tips.uav_controller.uav_at": "位于: %s",
+  "tips.uav_controller.paired": "绑定了无人机",
+  "tips.uav_controller.reconnect": "尝试重连中...",
   "tips.figure_box_has_entity": "这个手办盒已经有实体了！",
   "tips.figure_box_entity_saved": "实体已经被成功收纳！",
   "tips.figure_box_empty": "这个手办盒是空的！",
@@ -75,6 +86,12 @@
   "tips.active_protection_system_intercept": "主动防御系统拦截了攻击",
   "tips.no_recipe": "未知配方",
   "tips.machine_max_product": "使用手办盒取出产品",
+
+  "ui.vehicle_rotary_wing.rpm": "转速: %d",
+  "ui.vehicle_rotary_wing.collective_pitch": "总距: %.2f",
+  "ui.vehicle_rotary_wing.speed": "速度: %d",
+  "ui.vehicle_rotary_wing.fuel": "燃油: %s",
+  "ui.vehicle_rotary_wing.altitude": "高度: %d",
 
   "button.machine_max.printing": "打印",
   "check_box.figure_box.open": "打开玻璃罩",
@@ -92,9 +109,5 @@
 
   "commands.vehicle.reload.success": "§a§l[YWZJ]§r 所有载具包已重新加载！耗时: %.3f ms",
 
-  "spotter": "乘员",
-
-  "lav150_main_gun_turret": "炮塔",
-  "ztl11_turret": "主炮",
-  "ztl11_commander_machine_gun": "车长机枪"
+  "spotter": "乘员"
 }

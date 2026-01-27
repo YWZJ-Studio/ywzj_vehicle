@@ -92,9 +92,16 @@ public class AllEvents {
 
         @SubscribeEvent
         public static void onEntityMount(EntityMountEvent event) {
-            if (event.isMounting() && event.getEntityBeingMounted() instanceof AbstractVehicle vehicle) {
-                if (event.getEntityMounting() instanceof LivingEntity livingEntity) {
+            if (event.isCanceled()) {
+                return;
+            }
+            if (event.getEntityBeingMounted() instanceof AbstractVehicle vehicle && event.getEntityMounting() instanceof LivingEntity livingEntity) {
+                if (event.isMounting()) {
                     if (livingEntity instanceof ServerPlayer serverPlayer) {
+                        if (serverPlayer.isShiftKeyDown()) {
+                            event.setCanceled(true);
+                            return;
+                        }
                         if (AllConfigs.common.checkTeamOnEnterVehicle.get() && serverPlayer.getTeam() != null) {
                             if (vehicle.getPassengers().stream()
                                     .anyMatch(entity -> entity instanceof ServerPlayer passenger
@@ -106,6 +113,8 @@ public class AllEvents {
                         }
                     }
                     vehicle.onEnterVehicle(livingEntity);
+                } else {
+                    vehicle.onLeaveVehicle(livingEntity);
                 }
             }
         }

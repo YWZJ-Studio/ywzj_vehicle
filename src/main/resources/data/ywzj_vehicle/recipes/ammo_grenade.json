@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:copper_ingot" },
+    { "item": "minecraft:copper_ingot" },
+    { "item": "minecraft:iron_ingot" },
+    { "item": "minecraft:gunpowder" }
+  ],
+  "result": {
+    "item": "ywzj_vehicle:ammo_grenade",
+    "count": 8
+  }
+}

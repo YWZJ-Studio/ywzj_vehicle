@@ -1,10 +1,15 @@
 {
   "type": "ywzj_vehicle:cannon",
   "name": "12.7mm_gun",
+  "caliber": 12.7,
+  "tracer_r": 0.9,
+  "tracer_g": 0.4,
+  "tracer_b": 0.1,
   "damage": 10,
   "velocity": 16,
+  "inaccuracy": 0,
   "headshot_multiplier": 1.5,
-  "shoot_interval": 100,
+  "shoot_interval": 60,
   "max_capacity": 120,
   "reload": {
     "time": 100,

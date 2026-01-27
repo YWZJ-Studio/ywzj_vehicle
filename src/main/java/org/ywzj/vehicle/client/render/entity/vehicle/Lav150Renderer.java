@@ -1,24 +1,11 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
-import org.ywzj.vehicle.all.AllEntities;
-import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.Lav150;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 public class Lav150Renderer extends EntityRenderer<Lav150> {
 
@@ -28,79 +15,79 @@ public class Lav150Renderer extends EntityRenderer<Lav150> {
 
     @Override
     public void render(Lav150 pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        pPoseStack.pushPose();
-
-        Vec3 root = new Vec3(0, 0, 0);
-
-        pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-
-        pPoseStack.rotateAround(Axis.YP.rotationDegrees(180), (float) root.x, (float) root.y, (float) root.z);
-
-        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.LAV150.getId()).orElse(null);
-        if (display == null || display.getModel() == null) {
-            return;
-        }
-
-        BedrockModel model = display.getModel();
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
-
-        BedrockBone wheel1 = model.getBoneMap().get("wheel1");
-        BedrockBone wheel2 = model.getBoneMap().get("wheel2");
-        BedrockBone wheel3 = model.getBoneMap().get("wheel3");
-        BedrockBone wheel4 = model.getBoneMap().get("wheel4");
-        BedrockBone cannon = model.getBoneMap().get("canno");
-        BedrockBone barrel = model.getBoneMap().get("barrel");
-
-        // 轮子转速
-        float vf = pEntity.getEntityData().get(Lav150.FORWARD_SPEED);
-        float t = (float) (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000 * 20;
-        float s = t * vf;
-        float l = (float) 20 / 16;
-        float r = s / (l * 3.1415f) * 360;
-        pEntity.wheelRotation += r;
-        pEntity.wheelRotation %= 360;
-
-        // 轮子转向幅度
-        float vt = pEntity.getEntityData().get(Lav150.TURN_ANGLE);
-        float turnRotation = vt * 16;
-
-        // 炮塔旋转
-        float machineGunYRot = 0;
-        // 炮塔俯仰
-        float machineGunXRot = 0;
-        if (!pEntity.seats.isEmpty()) {
-            PartUnit partUnit = pEntity.seats.get(0).partUnit;
-            if (partUnit instanceof WeaponUnit weaponUnit) {
-                machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
-                machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
-            }
-        }
-
-        // 应用动画
-        wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-        wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-        wheel1.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel2.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel3.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        wheel4.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
-        cannon.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
-        barrel.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
-
-        pEntity.lastRenderTime = System.currentTimeMillis();
-        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-        super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-
-        Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-        wheel1.rotation.set(reset);
-        wheel2.rotation.set(reset);
-        wheel3.rotation.set(reset);
-        wheel4.rotation.set(reset);
-        cannon.rotation.set(reset);
-        barrel.rotation.set(reset);
-
-        pPoseStack.popPose();
+//        pPoseStack.pushPose();
+//
+//        Vec3 root = new Vec3(0, 0, 0);
+//
+//        pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+//        pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+//        pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
+//
+//        pPoseStack.rotateAround(Axis.YP.rotationDegrees(180), (float) root.x, (float) root.y, (float) root.z);
+//
+//        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.LAV150.getId()).orElse(null);
+//        if (display == null || display.getModel() == null) {
+//            return;
+//        }
+//
+//        BedrockModel model = display.getModel();
+//        VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
+//
+//        BedrockBone wheel1 = model.getBoneMap().get("wheel1");
+//        BedrockBone wheel2 = model.getBoneMap().get("wheel2");
+//        BedrockBone wheel3 = model.getBoneMap().get("wheel3");
+//        BedrockBone wheel4 = model.getBoneMap().get("wheel4");
+//        BedrockBone cannon = model.getBoneMap().get("canno");
+//        BedrockBone barrel = model.getBoneMap().get("barrel");
+//
+//        // 轮子转速
+//        float vf = pEntity.getEntityData().get(Lav150.FORWARD_SPEED);
+//        float t = (float) (System.currentTimeMillis() - pEntity.lastRenderTime) / 1000 * 20;
+//        float s = t * vf;
+//        float l = (float) 20 / 16;
+//        float r = s / (l * 3.1415f) * 360;
+//        pEntity.wheelRotation += r;
+//        pEntity.wheelRotation %= 360;
+//
+//        // 轮子转向幅度
+//        float vt = pEntity.getEntityData().get(Lav150.TURN_ANGLE);
+//        float turnRotation = vt * 16;
+//
+//        // 炮塔旋转
+//        float machineGunYRot = 0;
+//        // 炮塔俯仰
+//        float machineGunXRot = 0;
+//        if (!pEntity.seats.isEmpty()) {
+//            PartUnit partUnit = pEntity.seats.get(0).partUnit;
+//            if (partUnit instanceof WeaponUnit weaponUnit) {
+//                machineGunYRot = Mth.rotLerp(pPartialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+//                machineGunXRot = Mth.rotLerp(pPartialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+//            }
+//        }
+//
+//        // 应用动画
+//        wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+//        wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
+//        wheel1.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+//        wheel2.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+//        wheel3.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+//        wheel4.rotation.mul(Axis.XN.rotationDegrees(pEntity.wheelRotation));
+//        cannon.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
+//        barrel.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
+//
+//        pEntity.lastRenderTime = System.currentTimeMillis();
+//        model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+//        super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+//
+//        Quaternionf reset = new Quaternionf(0, 0, 0, 1);
+//        wheel1.rotation.set(reset);
+//        wheel2.rotation.set(reset);
+//        wheel3.rotation.set(reset);
+//        wheel4.rotation.set(reset);
+//        cannon.rotation.set(reset);
+//        barrel.rotation.set(reset);
+//
+//        pPoseStack.popPose();
     }
 
     @Override

@@ -62,6 +62,19 @@ public class VehicleScriptContext<T extends AbstractVehicle> extends EntityConte
         bone.rotation.mul(q);
     }
 
+    public void setBone(String boneName, float xRot, float yRot, float zRot) {
+        BedrockBone bone = model.getBone(boneName);
+        if (bone == null) {
+            return;
+        }
+        Quaternionf q = new Quaternionf().rotateZYX(
+                (float) Math.toRadians(zRot),
+                (float) Math.toRadians(yRot),
+                (float) Math.toRadians(xRot)
+        );
+        bone.rotation.set(q);
+    }
+
     public float getXRot() {
         return entity.getXRot();
     }
