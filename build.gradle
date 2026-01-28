@@ -97,10 +97,11 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    jarJar(minecraftLibrary("xxx:rhino-1.8.1-SNAPSHOT:1")) {
+    // JS支持
+    jarJar(minecraftLibrary("ywzj:rhino-1.8.1-SNAPSHOT:1")) {
         jarJar.ranged(it, "[1.8.0,2.0.0)")
     }
-
+    // SBM
     jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.4-forge+mc1.20.1"))) {
         jarJar.ranged(it, "[2.1.4,)")
     }
@@ -109,19 +110,18 @@ dependencies {
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
-    implementation fg.deobf('com.github.mcmodderanchor:tacz:1.20.1-1.1.7-hotfix-lrl-r2')
-
+    // TaCZ
+    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626")
+    // mixinextras
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.3.6")) {
         jarJar.ranged(it, "[0.3.6,)")
     }
-
+    // 各类模组的兼容性测试
     runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
+    //    runtimeOnly fg.deobf('libs:oculus:mc1.20.1-1.7.0')
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
-    runtimeOnly fg.deobf('com.github.argon4w:acceleratedrendering:1.0.8-1.20.1')
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
-//    runtimeOnly fg.deobf('libs:oculus:mc1.20.1-1.7.0')
-    runtimeOnly fg.deobf("curse.maven:create-328085:7178761")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
