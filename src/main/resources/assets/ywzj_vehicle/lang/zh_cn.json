@@ -33,6 +33,7 @@
   "item.ywzj_vehicle.fuel_tank": "燃油桶",
   "item.ywzj_vehicle.uav_controller": "无人机遥控器",
   "item.ywzj_vehicle.figure_box": "手办盒",
+  "item.ywzj_vehicle.repair_tool": "焊枪",
   "item.ywzj_vehicle.ammo_machine_gun": "机枪弹药",
   "item.ywzj_vehicle.ammo_auto_cannon": "机炮弹药",
   "item.ywzj_vehicle.ammo_grenade": "榴弹弹药",
@@ -87,6 +88,7 @@
   "tips.no_recipe": "未知配方",
   "tips.machine_max_product": "使用手办盒取出产品",
 
+  "ui.stabilizer_on": "稳定器开",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",
   "ui.vehicle_rotary_wing.collective_pitch": "总距: %.2f",
   "ui.vehicle_rotary_wing.speed": "速度: %d",

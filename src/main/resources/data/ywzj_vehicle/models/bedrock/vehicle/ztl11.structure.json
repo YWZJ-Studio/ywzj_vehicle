@@ -67,6 +67,25 @@
 					]
 				},
 				{
+					"name": "turret_machine_gun_barrel",
+					"parent": "turret",
+					"pivot": [4.05, 40.225, 16.4],
+					"cubes": [
+						{
+							"origin": [3.05, 39.225, 21.375],
+							"size": [2, 2, 5.25],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [2, 2]},
+								"east": {"uv": [0, 0], "uv_size": [5.25, 2]},
+								"south": {"uv": [0, 0], "uv_size": [2, 2]},
+								"west": {"uv": [0, 0], "uv_size": [2, 2]},
+								"up": {"uv": [2, 2], "uv_size": [-2, -2]},
+								"down": {"uv": [2, 5.25], "uv_size": [-2, -5.25]}
+							}
+						}
+					]
+				},
+				{
 					"name": "commander_machine_gun",
 					"parent": "turret",
 					"pivot": [9.5029, 53.2426, 1.6308],

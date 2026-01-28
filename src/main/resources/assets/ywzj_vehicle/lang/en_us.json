@@ -46,7 +46,7 @@
   "block.ywzj_vehicle.figure_box_block": "Figure Display Box",
   "block.ywzj_vehicle.machine_max_block": "3D Printer",
 
-  "key.category.ywzj_vehicle": "Endless: Vehicles",
+  "key.category.ywzj_vehicle": "Limitless Vehicle",
   "key.ywzj_vehicle.forward.desc": "Forward",
   "key.ywzj_vehicle.backward.desc": "Backward",
   "key.ywzj_vehicle.left.desc": "Turn Left",
@@ -88,6 +88,7 @@
   "tips.no_recipe": "Unknown Recipe",
   "tips.machine_max_product": "Take By Figure Box",
 
+  "ui.stabilizer_on": "STAB ON",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",
   "ui.vehicle_rotary_wing.collective_pitch": "COL:  %.2f",
   "ui.vehicle_rotary_wing.speed": "SPD:  %d",

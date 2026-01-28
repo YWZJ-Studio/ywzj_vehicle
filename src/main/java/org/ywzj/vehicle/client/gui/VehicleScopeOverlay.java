@@ -3,6 +3,7 @@ package org.ywzj.vehicle.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
@@ -63,9 +64,9 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                 guiGraphics.fill(32, 0, 8, 1, color);
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                         (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
-                                + (int) LocalVehiclePlayer.instance.aimLocationDistance + " 格", 0, 40, color);
+                                + (int) LocalVehiclePlayer.instance.aimLocationDistance + " m", 0, 40, color);
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.isStabilizerOn() ? "稳定器开" : "", 36, 28, color);
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.isStabilizerOn() ? Component.translatable("ui.stabilizer_on").getString() : "", 36, 28, color);
             }
             guiGraphics.pose().popPose();
         }
@@ -145,7 +146,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                                 poseStack.translate(12, -12, 0);
                                 poseStack.scale(0.8f, 0.8f, 0.8f);
                                 double distance = aabb.getCenter().distanceTo(LocalVehiclePlayer.instance.getVehicle().position());
-                                guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f", distance) + "格", 0, 0, Color.GREEN, false);
+                                guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f m", distance), 0, 0, Color.GREEN, false);
                             }
                             poseStack.popPose();
                         }
