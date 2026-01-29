@@ -40,6 +40,7 @@
       "optical_sight_offset": [-0.75, 1, 0.4],
       "operator_view_offset": [0, 1.5, 0],
       "optical_sight_type": "crt",
+      "with_stabilizer": true,
       "zoom_max": 8,
       "weapons": [
         "ywzj_vehicle:cannon_120mm",

@@ -139,6 +139,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         } else {
             return false;
         }
+        aimContexts.forEach(aimContext -> aimContext.position = aimContext.position.add(vehicle.getDeltaMovement()));
 
         lastShootTime = System.currentTimeMillis();
         sendShoot(this.getVehicle(), partUnitIndex, getIndex(), aimContexts);

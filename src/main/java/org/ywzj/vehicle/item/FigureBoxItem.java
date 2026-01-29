@@ -63,7 +63,7 @@ public class FigureBoxItem extends VehicleItem {
         tag.put("entityData", entityData);
         tag.putString("entityId", EntityType.getKey(target.getType()).toString());
         itemStack.setTag(tag);
-        target.remove(Entity.RemovalReason.DISCARDED);
+        target.discard();
         player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
         player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
         return InteractionResult.SUCCESS;

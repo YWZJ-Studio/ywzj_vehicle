@@ -3,6 +3,7 @@ package org.ywzj.vehicle.vehicle.parts;
 import com.mojang.math.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -17,8 +18,11 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.custom.part.data.RotatableUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,6 +47,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public float yRotMin = -Float.MAX_VALUE;
 
     protected RotatableUnit<?> baseRotatableUnit;
+    protected List<RotatableUnit<?>> subRotatableUnits = new ArrayList<>();
     public boolean needPower = true;
 
     private VehicleSound turnYSoundInstance;
@@ -80,8 +85,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         super.combineAndInit(partUnitsView, vehicle);
         if (data.getBase() != null) {
             PartUnit<?> basePart = partUnitsView.get(data.getBase());
-            if (basePart instanceof WeaponUnit base) {
+            if (basePart instanceof RotatableUnit<?> base) {
                 this.setBaseRotatableUnit(base);
+                base.addSubRotatableUnits(this);
             }
         }
     }
@@ -142,7 +148,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     protected void tickRot() {
         xRotO = xRot;
         yRotO = yRot;
-        if (vehicle.level().isClientSide()) {
+        if (vehicle.level().isClientSide() && getOwner() != LocalVehiclePlayer.instance.getPlayer()) {
             xAimRot = xRemoteAimRot;
             yAimRot = yRemoteAimRot;
         }
@@ -220,7 +226,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
         Quaternionf rotation = globalTransform.rotation();
         Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vec3 offsetFromPivot = offsetFromVehicle.subtract(group.pivot);
+        Vec3 offsetFromPivot = offsetFromVehicle.subtract(group.pivotOffset);
         Vector3f rotatedOffsetFromPivot = new Vector3f((float) offsetFromPivot.x, (float) offsetFromPivot.y, (float) offsetFromPivot.z);
         rotation.transform(rotatedOffsetFromPivot);
         Vec3 pivot = globalTransform.pivot();
@@ -260,6 +266,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.yRotO = this.yRot;
         this.yAimRot = this.yRot;
     }
+
+    @Override
+    public void applySeatRot(LivingEntity passenger) {}
 
     public float getViewXRot(float pPartialTicks) {
         return pPartialTicks == 1.0F ? xRot : Mth.lerp(pPartialTicks, this.xRotO, xRot);
@@ -371,6 +380,14 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public void setBaseRotatableUnit(RotatableUnit<?> baseRotatableUnit) {
         this.baseRotatableUnit = baseRotatableUnit;
+    }
+
+    public void addSubRotatableUnits(RotatableUnit<?> rotatableUnit) {
+        this.subRotatableUnits.add(rotatableUnit);
+    }
+
+    public List<RotatableUnit<?>> getSubRotatableUnits() {
+        return subRotatableUnits;
     }
 
 }

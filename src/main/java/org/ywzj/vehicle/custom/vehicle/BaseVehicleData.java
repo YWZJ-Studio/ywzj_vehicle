@@ -186,7 +186,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     private void buildVehicleBodyOBBs(BedrockBone bone, VehicleCubeGroup group) {
         bone.cubes.forEach(cube -> vehicleBodyOBBs.add(VehicleCubeOBB.init(group, cube)));
         bone.getChildren().forEach(child -> {
-            VehicleCubeGroup childGroup = new VehicleCubeGroup(group, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
+            VehicleCubeGroup childGroup = new VehicleCubeGroup(group, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
             buildVehicleBodyOBBs(child, childGroup);
         });
     }
@@ -226,7 +226,9 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     }
 
     private void vehicleCubeGroupsClone(HashMap<VehicleCubeGroup, VehicleCubeGroup> clone, VehicleCubeGroup parentGroup) {
-        clone.put(parentGroup, new VehicleCubeGroup(parentGroup.parent == null ? null : clone.get(parentGroup.parent), parentGroup.rotation, parentGroup.pivot));
+        VehicleCubeGroup cloneVehicleCubeGroup = new VehicleCubeGroup(parentGroup.parent == null ? null : clone.get(parentGroup.parent), parentGroup.rotation, parentGroup.pivot);
+        cloneVehicleCubeGroup.baseRotation = parentGroup.baseRotation;
+        clone.put(parentGroup, cloneVehicleCubeGroup);
         parentGroup.children.forEach(childGroup -> vehicleCubeGroupsClone(clone, childGroup));
     }
 

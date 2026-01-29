@@ -142,6 +142,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)), false);
     }
 
+    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot) {}
+
     public Component getName() {
         return name;
     }
@@ -153,6 +155,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     @NotNull
     public AbstractVehicle getVehicle() {
         return vehicle;
+    }
+
+    public VehicleCubeGroup getStructureGroup() {
+        return structureGroup;
+    }
+
+    public boolean isSeat() {
+        return isSeat;
     }
 
     public LivingEntity getOwner() {
@@ -182,12 +192,19 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return ownerViewOffset;
     }
 
+    public Vec3 getPivotOffset() {
+        return pivotOffset;
+    }
+
     public void setOwnerViewOffset(Vec3 ownerViewOffset) {
         this.ownerViewOffset = ownerViewOffset;
     }
 
-    public float getSeatRot() {
-        return seatRot;
+    public void applySeatRot(LivingEntity passenger) {
+        float takeSeatRot = vehicle.getYRot() + seatRot;
+        passenger.setYRot(takeSeatRot);
+        passenger.setYBodyRot(takeSeatRot);
+        passenger.setYHeadRot(takeSeatRot);
     }
 
     public Vec3 getSeatOffset() {

@@ -32,7 +32,7 @@
 
   "item.ywzj_vehicle.fuel_tank": "Fuel Tank",
   "item.ywzj_vehicle.uav_controller": "UAV Controller",
-  "item.ywzj_vehicle.figure_box": "Figure Display Box",
+  "item.ywzj_vehicle.figure_box": "Figure Box",
   "item.ywzj_vehicle.repair_tool": "Welding Torch",
   "item.ywzj_vehicle.ammo_machine_gun": "Machine Gun Ammo",
   "item.ywzj_vehicle.ammo_auto_cannon": "Autocannon Ammo",
@@ -43,7 +43,7 @@
   "item.ywzj_vehicle.ammo_missile": "Missile Ammo",
   "item.ywzj_vehicle.ammo_decoy_flare": "Decoy Flare Ammo",
 
-  "block.ywzj_vehicle.figure_box_block": "Figure Display Box",
+  "block.ywzj_vehicle.figure_box_block": "Figure Box",
   "block.ywzj_vehicle.machine_max_block": "3D Printer",
 
   "key.category.ywzj_vehicle": "Limitless Vehicle",
@@ -60,7 +60,6 @@
   "key.ywzj_vehicle.functional_left.desc": "Function Left",
   "key.ywzj_vehicle.functional_right.desc": "Function Right",
   "key.ywzj_vehicle.toggle_engine.desc": "Toggle Engine",
-  "key.ywzj_vehicle.fire_control_stabilizer.desc": "FCS Stabilizer",
   "key.ywzj_vehicle.fire_control_lock.desc": "FCS Lock",
   "key.ywzj_vehicle.main_weapon_shoot.desc": "Fire Main Weapon",
   "key.ywzj_vehicle.magnification_change.desc": "Change Zoom",

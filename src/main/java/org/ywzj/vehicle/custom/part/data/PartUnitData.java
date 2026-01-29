@@ -70,6 +70,11 @@ public class PartUnitData {
                 partCubeOBBs = structureGroup.cubeOBBs;
             }
             this.pivotOffset = new Vec3(bone.x / 16, bone.y / 16, bone.z / 16);
+            BedrockBone parent = bone.parent;
+            while (parent != null) {
+                this.pivotOffset = this.pivotOffset.add(parent.x / 16, parent.y / 16, parent.z / 16);
+                parent = parent.parent;
+            }
         }
     }
 

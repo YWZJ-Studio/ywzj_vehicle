@@ -55,10 +55,6 @@ public class InputHandler {
                     Minecraft.getInstance().player.sendOpenInventory();
                 } else if (TOGGLE_ENGINE.matches(event.getKey(), event.getScanCode())) {
                     sendToggleEngine(vehicle);
-                } else if (FIRE_CONTROL_STABILIZER.matches(event.getKey(), event.getScanCode())) {
-                    if (weaponUnit != null) {
-                        weaponUnit.switchStabilizer();
-                    }
                 } else if (FIRE_CONTROL_LOCK.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();

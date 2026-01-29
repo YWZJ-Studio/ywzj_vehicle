@@ -41,6 +41,7 @@
       "operator_view_offset": [0, 1.5, 0],
       "fire_control_lock_type": "aim_hit",
       "optical_sight_type": "crt",
+      "with_stabilizer": true,
       "zoom_max": 8,
       "weapons": [
         "ywzj_vehicle:cannon_125mm",
@@ -95,7 +96,7 @@
         "x_rot_min": -45,
         "need_power": false
       },
-      "operator_view_offset": [0, 0.5, 0],
+      "operator_view_offset": [0.5, 0.5, -0.5],
       "optical_sight_type": "operator",
       "zoom_max": 2,
       "weapons": [

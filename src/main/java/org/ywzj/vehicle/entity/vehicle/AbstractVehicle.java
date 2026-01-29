@@ -121,6 +121,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public boolean uav;
     protected List<VehicleCubeOBB> vehicleCubeOBBs;
     protected VehicleCubeOBB mainCubeOBB;
+    protected double structureLength;
     public WarningReceiver warningReceiver;
     public boolean protectPassenger;
     public PhysicsEngine physicsEngine;
@@ -286,8 +287,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.defenseStats = vehicleData.getDefenseStats();
         vehicleData.inject(this);
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
-        this.mainCubeOBB = vehicleStruct.mainCubeOBB();
         this.vehicleCubeOBBs = vehicleStruct.obbs();
+        this.mainCubeOBB = vehicleStruct.mainCubeOBB();
+        this.structureLength = vehicleData.getStructureLength();
         BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
         this.seats.addAll(partUnitsAndSeats.seats());
@@ -370,6 +372,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public void tick() {
         super.tick();
         tickRot();
+        if (!this.isRemoved()) {
+            this.aiStep();
+        }
         tickParts();
         updateOBBs();
         if (level().isClientSide()) {
@@ -389,18 +394,15 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             tickEnergy();
             tickPower();
-            Vec3 force = tickMove();
-            tickPhysics(force);
+            tickPhysics(tickMove());
             if (uav) {
                 keepChunkLoaded(position());
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
+        tickVehicleRot();
         if (viewInfo.lockPassengerYBodyRot) {
             getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
-        }
-        if (!this.isRemoved()) {
-            this.aiStep();
         }
     }
 
@@ -609,6 +611,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         partUnits.forEach(PartUnit::tick);
     }
 
+    protected void tickVehicleRot() {
+        float dXRot = xRot - xRotO;
+        float dYRot = yRot - yRotO;
+        if (dXRot != 0 || dYRot != 0) {
+            partUnits.forEach(partUnit -> partUnit.withVehicleRot(dXRot, dYRot));
+        }
+    }
+
     @Override
     public List<OBB> getOBBs() {
         List<OBB> vehicleOBBs = new ArrayList<>(this.vehicleCubeOBBs.stream().map(VehicleCubeOBB::obb).toList());
@@ -697,10 +707,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             toSeat.partUnit.setOwner(pPassenger);
             toSeat.passengerId = pPassenger.getId();
-            float takeSeatRot = toSeat.partUnit.getSeatRot() + getYRot();
-            pPassenger.setYRot(takeSeatRot);
-            pPassenger.setYBodyRot(takeSeatRot);
-            pPassenger.setYHeadRot(takeSeatRot);
+            toSeat.partUnit.applySeatRot(pPassenger);
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
             return true;
         }
@@ -728,10 +735,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 seat.partUnit.setOwnerId(id);
                 seat.passengerId = id;
                 if (seat.passengerId == player.getId()) {
-                    float takeSeatRot = seat.partUnit.getSeatRot() + getYRot();
-                    player.setYRot(takeSeatRot);
-                    player.setYBodyRot(takeSeatRot);
-                    player.setYHeadRot(takeSeatRot);
+                    seat.partUnit.applySeatRot(player);
                 }
             } else {
                 if (index == 0) {
@@ -912,8 +916,16 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return Optional.ofNullable(partUnitMap.get(id));
     }
 
+    public List<VehicleCubeOBB> getVehicleCubeOBBs() {
+        return vehicleCubeOBBs;
+    }
+
     public VehicleCubeOBB getMainCubeOBB() {
         return mainCubeOBB;
+    }
+
+    public double getStructureLength() {
+        return structureLength;
     }
 
     public ScriptCache getScriptCache() {
@@ -929,10 +941,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public void setXRot(float rot) {
-        this.xRot = rot;
         if (!level().isClientSide()) {
-            this.entityData.set(X_ROT, this.xRot, true);
+            this.entityData.set(X_ROT, rot, true);
         }
+        this.xRot = rot;
     }
 
     public float getYRot() {
@@ -940,10 +952,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public void setYRot(float rot) {
-        this.yRot = rot;
         if (!level().isClientSide()) {
-            this.entityData.set(Y_ROT, this.yRot, true);
+            this.entityData.set(Y_ROT, rot, true);
         }
+        this.yRot = rot;
     }
 
     public float getZRot() {
@@ -1211,12 +1223,12 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
                 double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
                 double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot());
-                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot());
-                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot());
-                this.setXRot(this.getXRot() + dXRot / this.lerpSteps);
-                this.setYRot(this.getYRot() + dYRot / this.lerpSteps);
-                this.setZRot(this.getZRot() + dZRot / this.lerpSteps);
+                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot()) / this.lerpSteps;
+                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot()) / this.lerpSteps;
+                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot()) / this.lerpSteps;
+                this.setXRot(this.getXRot() + dXRot);
+                this.setYRot(this.getYRot() + dYRot);
+                this.setZRot(this.getZRot() + dZRot);
                 this.lerpSteps -= 1;
                 this.setPos(dX, dY, dZ);
             }

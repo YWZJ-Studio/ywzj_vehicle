@@ -11,9 +11,14 @@ public class VehicleCubeGroup {
 
     public VehicleCubeGroup parent;
     public List<VehicleCubeGroup> children = new ArrayList<>();
+    // 组旋转的默认值
     public Quaternionf baseRotation;
+    // 组旋转的实际值
     public Quaternionf rotation;
+    // 相对于父组枢轴
     public Vec3 pivot;
+    // 相对于载具枢轴
+    public Vec3 pivotOffset;
     public List<VehicleCubeOBB> cubeOBBs = new ArrayList<>();
 
     public VehicleCubeGroup(VehicleCubeGroup parent, Quaternionf rotation, Vec3 pivot) {
@@ -24,6 +29,11 @@ public class VehicleCubeGroup {
         this.baseRotation = rotation;
         this.rotation = rotation;
         this.pivot = pivot;
+        this.pivotOffset = this.pivot;
+        while (parent != null) {
+            this.pivotOffset = this.pivotOffset.add(parent.pivot);
+            parent = parent.parent;
+        }
     }
 
     public void addChild(VehicleCubeGroup child) {

@@ -26,6 +26,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private Vec3 operatorViewOffset;
     private boolean operatorOnWeaponUnit;
     private OpticalSightType opticalSightType;
+    private boolean withStabilizer;
     private float zoomMin;
     private float zoomMax;
     private FireControlSensorType fireControlSensorType;
@@ -49,6 +50,7 @@ public class WeaponUnitData extends RotatableUnitData {
         this.fireControlSensorType = pojo.fireControlSensorType;
         this.fireControlLockType = pojo.fireControlLockType;
         this.opticalSightType = pojo.opticalSightType;
+        this.withStabilizer = pojo.withStabilizer;
         this.zoomMin = pojo.zoomMin;
         this.zoomMax = pojo.zoomMax;
         this.crosshairStyle = pojo.crosshairStyle;
@@ -91,6 +93,10 @@ public class WeaponUnitData extends RotatableUnitData {
         return opticalSightType;
     }
 
+    public boolean withStabilizer() {
+        return withStabilizer;
+    }
+
     public float getZoomMin() {
         return zoomMin;
     }
@@ -125,6 +131,11 @@ public class WeaponUnitData extends RotatableUnitData {
                 yTurnUnitOBBs.addAll(yTurnGroup.cubeOBBs);
             }
             this.pivotOffset = new Vec3(yTurnBone.x / 16, yTurnBone.y / 16, yTurnBone.z / 16);
+            BedrockBone parent = yTurnBone.parent;
+            while (parent != null) {
+                this.pivotOffset = this.pivotOffset.add(parent.x / 16, parent.y / 16, parent.z / 16);
+                parent = parent.parent;
+            }
         } else {
             this.pivotOffset = Vec3.ZERO;
         }

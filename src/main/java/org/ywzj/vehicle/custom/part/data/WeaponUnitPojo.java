@@ -36,6 +36,9 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("optical_sight_type")
     public WeaponUnitData.OpticalSightType opticalSightType;
 
+    @SerializedName("with_stabilizer")
+    public boolean withStabilizer = false;
+
     @SerializedName("zoom_min")
     public float zoomMin = 1;
 

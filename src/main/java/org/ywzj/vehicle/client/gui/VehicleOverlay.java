@@ -23,8 +23,6 @@ import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +43,7 @@ public class VehicleOverlay implements IGuiOverlay {
         int centerY = screenHeight / 2;
         renderCrew(guiGraphics, centerX, centerY, vehicle);
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-            renderCompassBar(guiGraphics, partialTick, screenWidth, vehicle);
+            renderCompassBar(guiGraphics, screenWidth);
         }
         if (!(vehicle instanceof NoneVehicle)) {
             renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
@@ -81,58 +79,53 @@ public class VehicleOverlay implements IGuiOverlay {
     /**
      * 罗盘
      */
-    public static void renderCompassBar(GuiGraphics guiGraphics, float partialTick, int screenWidth, AbstractVehicle vehicle) {
-        PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer());
-        if (partUnit instanceof WeaponUnit weaponUnit) {
-            float y = weaponUnit.worldRot().y;
-            float yO = weaponUnit.worldRot(weaponUnit.xRotO, weaponUnit.yRotO).y;
-            float yaw = Mth.lerp(partialTick, yO, y);
-            Font font = Minecraft.getInstance().font;
-            PoseStack poseStack = guiGraphics.pose();
+    public static void renderCompassBar(GuiGraphics guiGraphics, int screenWidth) {
+        float yaw = Minecraft.getInstance().gameRenderer.getMainCamera().getYRot();
+        Font font = Minecraft.getInstance().font;
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            RenderSystem.enableBlend();
+            float centerX = screenWidth / 2f;
+            poseStack.translate(centerX - 0.5f, 12, 0);
             poseStack.pushPose();
             {
-                RenderSystem.enableBlend();
-                float centerX = screenWidth / 2f;
-                poseStack.translate(centerX - 0.5f, 12, 0);
-                poseStack.pushPose();
-                {
-                    guiGraphics.enableScissor((int) (centerX - 120), 0, (int) (centerX + 120), 40);
-                    poseStack.translate(-yaw * 4, 0, 0);
-                    for (int x = -225; x <= 225; x += 5) {
-                        switch (x) {
-                            case -135, 225 -> renderDirection(guiGraphics, poseStack, font, x, "NE");
-                            case -90 -> renderDirection(guiGraphics, poseStack, font, x, "E");
-                            case -45 -> renderDirection(guiGraphics, poseStack, font, x, "SE");
-                            case 0 -> renderDirection(guiGraphics, poseStack, font, x, "S");
-                            case 45 -> renderDirection(guiGraphics, poseStack, font, x, "SW");
-                            case 90 -> renderDirection(guiGraphics, poseStack, font, x, "W");
-                            case 135, -225 -> renderDirection(guiGraphics, poseStack, font, x, "NW");
-                            case 180, -180 -> renderDirection(guiGraphics, poseStack, font, x, "N");
-                            default -> {
-                                if (x % 15 == 0) {
-                                    int s = x > 180 ? x - 360 : (x < -180 ? x + 360 : x);
-                                    renderDirection(guiGraphics, poseStack, font, x, s + "");
-                                } else {
-                                    guiGraphics.vLine(x * 4, 0, 6, Color.GREEN);
-                                }
+                guiGraphics.enableScissor((int) (centerX - 120), 0, (int) (centerX + 120), 40);
+                poseStack.translate(-yaw * 4, 0, 0);
+                for (int x = -225; x <= 225; x += 5) {
+                    switch (x) {
+                        case -135, 225 -> renderDirection(guiGraphics, poseStack, font, x, "NE");
+                        case -90 -> renderDirection(guiGraphics, poseStack, font, x, "E");
+                        case -45 -> renderDirection(guiGraphics, poseStack, font, x, "SE");
+                        case 0 -> renderDirection(guiGraphics, poseStack, font, x, "S");
+                        case 45 -> renderDirection(guiGraphics, poseStack, font, x, "SW");
+                        case 90 -> renderDirection(guiGraphics, poseStack, font, x, "W");
+                        case 135, -225 -> renderDirection(guiGraphics, poseStack, font, x, "NW");
+                        case 180, -180 -> renderDirection(guiGraphics, poseStack, font, x, "N");
+                        default -> {
+                            if (x % 15 == 0) {
+                                int s = x > 180 ? x - 360 : (x < -180 ? x + 360 : x);
+                                renderDirection(guiGraphics, poseStack, font, x, s + "");
+                            } else {
+                                guiGraphics.vLine(x * 4, 0, 6, Color.GREEN);
                             }
                         }
                     }
-                    guiGraphics.disableScissor();
                 }
-                poseStack.popPose();
-                RenderSystem.defaultBlendFunc();
-                RenderSystem.setShader(GameRenderer::getPositionColorShader);
-                BufferBuilder buf = Tesselator.getInstance().getBuilder();
-                buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-                buf.vertex(poseStack.last().pose(), 0, 23, 0).color(0, 255, 0, 255).endVertex();
-                buf.vertex(poseStack.last().pose(), -3, 29, 0).color(0, 255, 0, 255).endVertex();
-                buf.vertex(poseStack.last().pose(), 3, 29, 0).color(0, 255, 0, 255).endVertex();
-                Tesselator.getInstance().end();
-                RenderSystem.disableBlend();
+                guiGraphics.disableScissor();
             }
             poseStack.popPose();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+            BufferBuilder buf = Tesselator.getInstance().getBuilder();
+            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.vertex(poseStack.last().pose(), 0, 23, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(poseStack.last().pose(), -3, 29, 0).color(0, 255, 0, 255).endVertex();
+            buf.vertex(poseStack.last().pose(), 3, 29, 0).color(0, 255, 0, 255).endVertex();
+            Tesselator.getInstance().end();
+            RenderSystem.disableBlend();
         }
+        poseStack.popPose();
     }
 
     private void renderBaseInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
