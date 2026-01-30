@@ -34,6 +34,7 @@ public class YwzjVehicle {
         AllItems.register(modEventBus);
         AllEntities.register(modEventBus);
         AllBlockEntities.register(modEventBus);
+        AllFluids.register(modEventBus);
         AllSounds.register(modEventBus);
         AllPartUnitType.register(modEventBus);
         AllVehicleWeaponTypes.register(modEventBus);

@@ -45,6 +45,7 @@
 
   "block.ywzj_vehicle.figure_box_block": "Figure Box",
   "block.ywzj_vehicle.machine_max_block": "3D Printer",
+  "block.ywzj_vehicle.fuel": "Fuel",
 
   "key.category.ywzj_vehicle": "Limitless Vehicle",
   "key.ywzj_vehicle.forward.desc": "Forward",

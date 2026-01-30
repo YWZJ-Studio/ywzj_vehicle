@@ -45,6 +45,7 @@
 
   "block.ywzj_vehicle.figure_box_block": "手办盒",
   "block.ywzj_vehicle.machine_max_block": "3D打印机",
+  "block.ywzj_vehicle.fuel": "燃油",
 
   "key.category.ywzj_vehicle": "永无止境：载具",
   "key.ywzj_vehicle.forward.desc": "前进",

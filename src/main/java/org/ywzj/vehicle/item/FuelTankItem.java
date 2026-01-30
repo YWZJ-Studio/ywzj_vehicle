@@ -8,7 +8,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
@@ -17,6 +16,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.all.AllFluids;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
@@ -44,12 +44,12 @@ public class FuelTankItem extends VehicleItem {
 
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        Fluid fluid = Fluids.WATER;
+        Fluid fluid = AllFluids.FUEL_SOURCE.get();
         if (stack.hasTag() && stack.getTag().contains("Fluid")) {
             ResourceLocation fluidId = YwzjVehicle.resourceLocation(stack.getTag().getCompound("Fluid").getString("FluidName"));
             fluid = ForgeRegistries.FLUIDS.getValue(fluidId);
             if (fluid == null) {
-                fluid = Fluids.WATER;
+                fluid = AllFluids.FUEL_SOURCE.get();
             }
         }
         int capacity = stack.getMaxDamage();
