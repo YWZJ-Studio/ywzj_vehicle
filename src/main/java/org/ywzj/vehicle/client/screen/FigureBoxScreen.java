@@ -118,7 +118,7 @@ public class FigureBoxScreen extends Screen {
         poseStack.pushPose();
         {
             Lighting.setupForEntityInInventory();
-            poseStack.translate((float) width / 2 + 115, (float) height / 2 - 25, 512);
+            poseStack.translate((float) width / 2 + 110, 100, 512);
             float scale = 64 / figureBoxBlockEntity.scale;
             poseStack.scale(scale, -scale, scale);
             poseStack.mulPose(Axis.XP.rotationDegrees(30));

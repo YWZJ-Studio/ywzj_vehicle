@@ -19,6 +19,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.time.StopWatch;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -52,6 +53,7 @@ public class ReloadCommand {
         watch.stop();
         double time = watch.getTime(TimeUnit.MICROSECONDS) / 1000.0;
         context.getSource().sendSystemMessage(Component.translatable("commands.vehicle.reload.success", time));
+        AllConfigs.loadExternal();
         return Command.SINGLE_SUCCESS;
     }
 

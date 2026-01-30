@@ -204,7 +204,7 @@ public class VehicleOverlay implements IGuiOverlay {
         Pair<Entity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);
         if (hitResult != null) {
             Entity entity = hitResult.getLeft();
-            if (entity instanceof AbstractVehicle vehicle) {
+            if (entity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
                 double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
                 if (distance > showVehicleInfoDistance) {
                     return;

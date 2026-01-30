@@ -4,8 +4,13 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -14,6 +19,7 @@ public class AllConfigs {
 
     public static CommonConfig common;
     public static ServerConfig server;
+    public static List<String> figureBoxCaptureBlacklist = new ArrayList<>();
 
     public static void register(ModLoadingContext context) {
         Pair<CommonConfig, ForgeConfigSpec> specPairCommon = new ForgeConfigSpec.Builder().configure(CommonConfig::new);
@@ -22,6 +28,27 @@ public class AllConfigs {
         Pair<ServerConfig, ForgeConfigSpec> specPairServer = new ForgeConfigSpec.Builder().configure(ServerConfig::new);
         server = specPairServer.getLeft();
         context.registerConfig(ModConfig.Type.SERVER, specPairServer.getRight());
+        loadExternal();
+    }
+
+    public static void loadExternal() {
+        Path configDir = FMLPaths.CONFIGDIR.get().resolve("limitless_vehicle");
+        Path filePath = configDir.resolve("figure_box_capture_blacklist.txt");
+        try {
+            if (Files.notExists(configDir)) Files.createDirectories(configDir);
+            if (Files.notExists(filePath)) {
+                List<String> defaultLines = Arrays.asList(
+                        "minecraft:ender_dragon",
+                        "corpse:corpse"
+                );
+                Files.write(filePath, defaultLines);
+            }
+            figureBoxCaptureBlacklist.clear();
+            figureBoxCaptureBlacklist = Files.readAllLines(filePath);
+            figureBoxCaptureBlacklist.removeIf(line -> line.startsWith("#") || line.trim().isEmpty());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static class CommonConfig {
@@ -34,6 +61,7 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
         public final ForgeConfigSpec.ConfigValue<Boolean> hitIndicator;
         public final ForgeConfigSpec.ConfigValue<Boolean> checkTeamOnEnterVehicle;
+        public final ForgeConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
             explosionDestroyBlocks = builder.comment("爆炸是否破坏方块")
@@ -52,6 +80,8 @@ public class AllConfigs {
                     .define("hitIndicator", true);
             checkTeamOnEnterVehicle = builder.comment("载具乘客是否需为同队")
                     .define("checkTeamOnEnterVehicle", true);
+            figureBoxOnlyCaptureVehicle = builder.comment("手办盒是否只能收纳载具")
+                    .define("figureBoxOnlyCaptureVehicle", false);
         }
 
     }

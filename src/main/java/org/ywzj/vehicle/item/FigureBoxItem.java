@@ -25,6 +25,7 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlocks;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
@@ -73,6 +74,13 @@ public class FigureBoxItem extends VehicleItem {
     public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand hand) {
         if (!player.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
             if (target instanceof ServerPlayer) {
+                return InteractionResult.PASS;
+            }
+            if (AllConfigs.common.figureBoxOnlyCaptureVehicle.get() && !(target instanceof AbstractVehicle)) {
+                return InteractionResult.PASS;
+            }
+            String entityId = EntityType.getKey(target.getType()).toString();
+            if (AllConfigs.figureBoxCaptureBlacklist.contains(entityId)) {
                 return InteractionResult.PASS;
             }
             return capture(itemStack, player, target);
