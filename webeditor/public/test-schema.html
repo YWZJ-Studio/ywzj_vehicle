@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monaco Editor Schema 测试</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .info {
+      background: #2d2d30;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border-left: 3px solid #007acc;
+    }
+
+    .test-cases {
+      background: #252526;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .test-case {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #2d2d30;
+      border-radius: 4px;
+    }
+
+    .test-case h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #4ec9b0;
+    }
+
+    .test-case pre {
+      background: #1e1e1e;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+
+    .expected {
+      color: #4fc1ff;
+      font-size: 14px;
+    }
+
+    #editor {
+      height: 500px;
+      border: 1px solid #3e3e42;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+
+    .button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    .button:hover {
+      background: #1177bb;
+    }
+
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2d2d30;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    .success { color: #4ec9b0; }
+    .error { color: #f48771; }
+    .warning { color: #dcdcaa; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Monaco Editor JSON Schema 测试</h1>
+
+  <div class="info">
+    <strong>测试目的:</strong> 验证 vehicle_pack.meta.json 的 JSON Schema 验证是否正常工作
+    <br><br>
+    <strong>使用方法:</strong>
+    <ol>
+      <li>点击下方的测试按钮加载不同的测试用例</li>
+      <li>观察编辑器中是否出现红色波浪线（错误）或黄色波浪线（警告）</li>
+      <li>鼠标悬停在波浪线上查看错误信息</li>
+      <li>按 Ctrl+Space 测试智能提示是否工作</li>
+    </ol>
+  </div>
+
+  <div class="test-cases">
+    <h2>测试用例</h2>
+
+    <div class="test-case">
+      <h3>✅ 测试 1: 正确的配置</h3>
+      <button class="button" onclick="loadTest1()">加载测试 1</button>
+      <div class="expected">预期: 无错误，无警告</div>
+    </div>
+
+    <div class="test-case">
+      <h3>❌ 测试 2: 命名空间格式错误</h3>
+      <button class="button" onclick="loadTest2()">加载测试 2</button>
+      <div class="expected">预期: namespace 有红色波浪线，提示 "String does not match pattern"</div>
+    </div>
+
+    <div class="test-case">
+      <h3>⚠️ 测试 3: 缺少必填字段</h3>
+      <button class="button" onclick="loadTest3()">加载测试 3</button>
+      <div class="expected">预期: 黄色警告，提示 "Missing required property 'namespace'"</div>
+    </div>
+
+    <div class="test-case">
+      <h3>❌ 测试 4: 版本号格式错误</h3>
+      <button class="button" onclick="loadTest4()">加载测试 4</button>
+      <div class="expected">预期: version 有红色波浪线，提示 "String does not match pattern"</div>
+    </div>
+
+    <div class="test-case">
+      <h3>❌ 测试 5: 类型错误</h3>
+      <button class="button" onclick="loadTest5()">加载测试 5</button>
+      <div class="expected">预期: authors 有红色波浪线，提示 "Incorrect type. Expected 'array'"</div>
+    </div>
+  </div>
+
+  <div id="editor"></div>
+
+  <div class="status" id="status">
+    <div>准备就绪。点击上方按钮加载测试用例。</div>
+  </div>
+
+  <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <script>
+    let editor;
+
+    const vehiclePackMetaSchema = {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle Pack Metadata",
+      "type": "object",
+      "required": ["namespace"],
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "载具包命名空间（仅小写字母、数字和下划线）"
+        },
+        "title": {
+          "type": "string",
+          "default": "unknown",
+          "description": "载具包标题"
+        },
+        "description": {
+          "type": "string",
+          "default": "",
+          "description": "载具包描述"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "default": "1.0.0",
+          "description": "版本号（遵循语义化版本）"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "default": "2026-01-01",
+          "description": "发布日期"
+        },
+        "license": {
+          "type": "string",
+          "default": "All Rights Reserved",
+          "description": "许可证"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "作者列表"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "项目网址"
+        },
+        "dependencies": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "description": "模组依赖（模组ID: 版本范围）"
+        }
+      }
+    };
+
+    require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
+
+    require(['vs/editor/editor.main'], function() {
+      // 配置 JSON Schema
+      monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+        validate: true,
+        allowComments: true,
+        schemas: [{
+          uri: 'http://myserver/vehicle-pack-meta-schema.json',
+          fileMatch: ['*vehicle_pack.meta.json'],
+          schema: vehiclePackMetaSchema
+        }]
+      });
+
+      updateStatus('success', 'Monaco Editor 已加载，Schema 已配置');
+
+      // 创建编辑器
+      const uri = monaco.Uri.parse('file:///vehicle_pack.meta.json');
+      const model = monaco.editor.createModel('', 'json', uri);
+
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        model: model,
+        theme: 'vs-dark',
+        fontSize: 14,
+        minimap: { enabled: false },
+        automaticLayout: true
+      });
+
+      // 监听验证变化
+      monaco.editor.onDidChangeMarkers(([resource]) => {
+        const markers = monaco.editor.getModelMarkers({ resource });
+        if (markers.length > 0) {
+          updateStatus('error', `检测到 ${markers.length} 个问题:\n` +
+            markers.map(m => `  [${m.severity === 8 ? '错误' : '警告'}] 行 ${m.startLineNumber}: ${m.message}`).join('\n'));
+        } else {
+          updateStatus('success', '✅ 无错误');
+        }
+      });
+
+      loadTest1();
+    });
+
+    function updateStatus(type, message) {
+      const status = document.getElementById('status');
+      status.innerHTML = `<div class="${type}">${message.replace(/\n/g, '<br>')}</div>`;
+    }
+
+    function loadTest1() {
+      const code = `{
+  "namespace": "my_vehicle_pack",
+  "title": "我的载具包",
+  "description": "一个示例载具包",
+  "version": "1.0.0",
+  "date": "2026-01-30",
+  "license": "MIT",
+  "authors": ["张三", "李四"],
+  "url": "https://example.com",
+  "dependencies": {
+    "ywzj_vehicle": "[0.0.1,)"
+  }
+}`;
+      editor.setValue(code);
+      updateStatus('warning', '测试 1 已加载，等待验证...');
+    }
+
+    function loadTest2() {
+      const code = `{
+  "namespace": "My-Vehicle-Pack",
+  "title": "错误的命名空间"
+}`;
+      editor.setValue(code);
+      updateStatus('warning', '测试 2 已加载，应该看到 namespace 的错误...');
+    }
+
+    function loadTest3() {
+      const code = `{
+  "title": "缺少 namespace",
+  "version": "1.0.0"
+}`;
+      editor.setValue(code);
+      updateStatus('warning', '测试 3 已加载，应该看到缺少必填字段的警告...');
+    }
+
+    function loadTest4() {
+      const code = `{
+  "namespace": "test_pack",
+  "version": "1.0"
+}`;
+      editor.setValue(code);
+      updateStatus('warning', '测试 4 已加载，应该看到 version 的错误...');
+    }
+
+    function loadTest5() {
+      const code = `{
+  "namespace": "test_pack",
+  "authors": "应该是数组而不是字符串"
+}`;
+      editor.setValue(code);
+      updateStatus('warning', '测试 5 已加载，应该看到 authors 的类型错误...');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vehicle Pack Metadata",
+  "type": "object",
+  "required": ["namespace"],
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "载具包命名空间（仅小写字母、数字和下划线）"
+    },
+    "title": {
+      "type": "string",
+      "default": "unknown",
+      "description": "载具包标题"
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "description": "载具包描述"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0",
+      "description": "版本号（遵循语义化版本）"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "default": "2026-01-01",
+      "description": "发布日期"
+    },
+    "license": {
+      "type": "string",
+      "default": "All Rights Reserved",
+      "description": "许可证"
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "作者列表"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "项目网址"
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "description": "模组依赖（模组ID: 版本范围）"
+    }
+  }
+}

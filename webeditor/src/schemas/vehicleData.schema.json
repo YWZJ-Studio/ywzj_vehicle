@@ -1,0 +1,233 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vehicle Data Configuration",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "ywzj_vehicle:wheeled_vehicle",
+        "ywzj_vehicle:tracked_vehicle"
+      ],
+      "description": "载具类型"
+    },
+    "attributes": {
+      "type": "object",
+      "description": "载具属性",
+      "properties": {
+        "brake_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.015,
+          "description": "制动力"
+        },
+        "forward_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.015,
+          "description": "前进推力"
+        },
+        "backward_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.01,
+          "description": "后退推力"
+        },
+        "max_speed_forward": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "最大前进速度"
+        },
+        "max_speed_backward": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.2,
+          "description": "最大后退速度"
+        },
+        "turn_step": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.5,
+          "description": "转向步长"
+        },
+        "max_turn": {
+          "type": "number",
+          "minimum": 0,
+          "default": 5.0,
+          "description": "最大转向角度"
+        }
+      }
+    },
+    "max_health": {
+      "type": "number",
+      "minimum": 1,
+      "default": 100,
+      "description": "最大生命值"
+    },
+    "view_info": {
+      "type": "object",
+      "description": "视角信息",
+      "properties": {
+        "third_person_center_offset": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "default": [0, 0, 0],
+          "description": "第三人称中心偏移 [x, y, z]"
+        },
+        "third_person_distance": {
+          "type": "number",
+          "minimum": 0,
+          "default": 8.0,
+          "description": "第三人称距离"
+        },
+        "sound_distance": {
+          "type": "number",
+          "minimum": 0,
+          "default": 5.0,
+          "description": "声音距离"
+        },
+        "lock_passenger_y_body_rot": {
+          "type": "boolean",
+          "default": true,
+          "description": "锁定乘客Y轴旋转"
+        }
+      }
+    },
+    "energy_info": {
+      "type": "object",
+      "description": "能源信息",
+      "properties": {
+        "energy_capacity": {
+          "type": "number",
+          "minimum": 0,
+          "default": 100.0,
+          "description": "能源容量"
+        },
+        "energy_consumption_per_tick": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.01,
+          "description": "每刻能源消耗"
+        }
+      }
+    },
+    "physics_info": {
+      "type": "object",
+      "description": "物理信息",
+      "properties": {
+        "gravity": {
+          "type": "number",
+          "default": -0.08,
+          "description": "重力"
+        },
+        "drag": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.05,
+          "description": "阻力"
+        }
+      }
+    },
+    "defense_stats": {
+      "type": "object",
+      "description": "防御属性",
+      "properties": {
+        "armor": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "护甲值"
+        },
+        "armor_toughness": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "护甲韧性"
+        }
+      }
+    },
+    "with_warning_receiver": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否带有预警接收器"
+    },
+    "protect_passenger": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否保护乘客"
+    },
+    "structure_model": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/]+$",
+      "description": "结构模型资源位置"
+    },
+    "parts": {
+      "type": "array",
+      "description": "部件列表",
+      "items": {
+        "$ref": "#/definitions/partUnit"
+      },
+      "default": []
+    }
+  },
+  "definitions": {
+    "partUnit": {
+      "type": "object",
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "部件ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "部件名称"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+:[a-z0-9_]+$",
+          "description": "部件类型"
+        },
+        "is_seat": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否为座位"
+        },
+        "seat_offset": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "座位偏移 [x, y, z]"
+        },
+        "owner_view_offset": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "拥有者视角偏移 [x, y, z]"
+        },
+        "sub_part_unit_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "子部件ID列表"
+        }
+      }
+    }
+  }
+}

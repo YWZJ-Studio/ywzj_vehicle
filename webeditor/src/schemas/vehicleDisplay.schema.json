@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vehicle Display Configuration",
+  "type": "object",
+  "required": ["type", "model", "texture"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "ywzj_vehicle:generic",
+        "ywzj_vehicle:wheeled_vehicle",
+        "ywzj_vehicle:tracked_vehicle"
+      ],
+      "description": "载具显示类型"
+    },
+    "model": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/]+$",
+      "description": "模型资源位置 (如 ywzj_vehicle:entity/cssa5)",
+      "x-completion": {
+        "packType": "assets",
+        "category": "models/bedrock"
+      }
+    },
+    "texture": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/.]+$",
+      "description": "纹理资源位置 (如 ywzj_vehicle:textures/entity/cssa5.png)",
+      "x-completion": {
+        "packType": "assets",
+        "category": "textures"
+      }
+    },
+    "slot_texture": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/.]+$",
+      "description": "槽位纹理资源位置",
+      "x-completion": {
+        "packType": "assets",
+        "category": "textures"
+      }
+    },
+    "animations": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/.]+$",
+      "description": "动画资源位置",
+      "x-completion": {
+        "packType": "assets",
+        "category": "models/bedrock"
+      }
+    },
+    "script": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/.]+$",
+      "description": "脚本资源位置",
+      "x-completion": {
+        "packType": "assets",
+        "category": "display"
+      }
+    },
+    "sounds": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z0-9_]+:[a-z0-9_/]+$"
+      },
+      "description": "音效映射 (事件名: 音效资源位置)",
+      "properties": {
+        "engine_start": {
+          "type": "string",
+          "description": "引擎启动音效",
+          "x-completion": {
+            "packType": "assets",
+            "category": "sound_events"
+          }
+        },
+        "engine_idle": {
+          "type": "string",
+          "description": "引擎怠速音效",
+          "x-completion": {
+            "packType": "assets",
+            "category": "sound_events"
+          }
+        },
+        "engine_run": {
+          "type": "string",
+          "description": "引擎运行音效",
+          "x-completion": {
+            "packType": "assets",
+            "category": "sound_events"
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "载具描述"
+    }
+  }
+}
