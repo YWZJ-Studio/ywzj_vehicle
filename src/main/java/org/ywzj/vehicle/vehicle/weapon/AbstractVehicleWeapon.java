@@ -233,12 +233,17 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         return remainAmmo > 0;
     }
 
-    public boolean consumeAmmo(int count) {
-        if (remainAmmo >= count) {
-            remainAmmo -= count;
+    public boolean consumeAmmo(List<AimContext> aimContexts) {
+        if (remainAmmo == 0) {
+            return false;
+        }
+        if (remainAmmo >= aimContexts.size()) {
+            remainAmmo -= aimContexts.size();
             return true;
         }
-        return false;
+        aimContexts.subList(remainAmmo, aimContexts.size()).clear();
+        remainAmmo = 0;
+        return true;
     }
 
     /**

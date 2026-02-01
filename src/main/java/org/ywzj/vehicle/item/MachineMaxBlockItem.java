@@ -19,11 +19,18 @@ public class MachineMaxBlockItem extends BlockItem {
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
+
+            private MachineMaxBlockItemRenderer renderer;
+
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 Minecraft minecraft = Minecraft.getInstance();
-                return new MachineMaxBlockItemRenderer(minecraft.getBlockEntityRenderDispatcher(), minecraft.getEntityModels());
+                if (renderer == null) {
+                    renderer = new MachineMaxBlockItemRenderer(minecraft.getBlockEntityRenderDispatcher(), minecraft.getEntityModels());
+                }
+                return renderer;
             }
+
         });
     }
 

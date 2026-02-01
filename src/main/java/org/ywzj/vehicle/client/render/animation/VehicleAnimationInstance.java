@@ -10,7 +10,7 @@ public class VehicleAnimationInstance {
     private AnimationStateMachine<VehicleContext> stateMachine;
 
     public VehicleAnimationInstance(AbstractVehicle vehicle) {
-        ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getVehicleId())
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId())
                 .ifPresent(display -> {
                     this.stateMachine = new AnimationStateMachine<>(
                             VehicleAnimationStates.IDLE_STATE,

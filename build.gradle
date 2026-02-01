@@ -127,9 +127,12 @@ dependencies {
     compileOnly(fg.deobf("mezz.jei:jei-1.20.1-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-1.20.1-forge:15.20.0.104"))
     // 各类模组的兼容性测试
-    runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
+    if (!project.gradle.startParameter.taskNames.any { it.contains("runServer") }) {
+        runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
+        runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
+    }
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

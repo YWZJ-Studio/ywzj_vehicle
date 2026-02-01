@@ -49,6 +49,7 @@
 				},
 				{
 					"name": "tow_barrel",
+					"parent": "tow",
 					"pivot": [0, 0, 0],
 					"cubes": [
 						{

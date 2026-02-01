@@ -49,23 +49,17 @@ public class VehicleCubeOBB {
         this.obb = obb;
         this.group = group;
         this.cubePoints = new ArrayList<>();
-        this.initCubePoints();
-        Vec3 pivot = group.pivot;
-        this.offset = new Vec3(pivot.x, pivot.y, pivot.z)
-                .add(cube.x() + cube.width() / 2, cube.y() + cube.height() / 2, cube.z() + cube.depth() / 2);
-        group.addCubeOBB(this);
-        VehicleCubeGroup parent = group.parent;
-        while (parent != null) {
-            pivot = parent.pivot;
-            this.offset = this.offset.add(pivot.x, pivot.y, pivot.z);
-            parent = parent.parent;
-        }
+        this.offset = group
+                .globalTransform(new Vec3(cube.x() + cube.width() / 2, cube.y() + cube.height() / 2, cube.z() + cube.depth() / 2), false)
+                .offset();
         this.x = cube.x();
         this.y = cube.y();
         this.z = cube.z();
         this.height = cube.height();
         this.width = cube.width();
         this.depth = cube.depth();
+        group.addCubeOBB(this);
+        this.initCubePoints();
     }
 
     public VehicleCubeOBB(VehicleCubeOBB origin) {
@@ -92,11 +86,10 @@ public class VehicleCubeOBB {
     public void update(AbstractVehicle vehicle) {
         VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
         Quaternionf rotation = globalTransform.rotation();
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
         Vector3f centerOffset = new Vector3f((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
         rotation.transform(centerOffset);
-        Vec3 pivot = globalTransform.pivot();
-        Vector3f center = vehicleRotation.transform(pivot.add(centerOffset.x, centerOffset.y, centerOffset.z).toVector3f());
+        Quaternionf vehicleRotation = vehicle.rotYXZ();
+        Vector3f center = vehicleRotation.transform(globalTransform.offset().add(centerOffset.x, centerOffset.y, centerOffset.z).toVector3f());
         obb.setCenter(vehicle.position().add(center.x, center.y, center.z).toVector3f());
         obb.setRotation(vehicleRotation.mul(rotation));
     }

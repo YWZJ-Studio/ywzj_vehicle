@@ -18,7 +18,7 @@ public class VehicleRocket extends AbstractVehicleWeapon<VehicleRocketWeaponData
 
     @Override
     public boolean shoot(List<AimContext> aimContexts, LivingEntity shooter) {
-        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts.size())) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts)) {
             return false;
         }
         this.lastShootTime = System.currentTimeMillis();

@@ -98,6 +98,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private int currentWeaponIndex = -1;
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private VehicleSound irTrackAlarmSound;
+    private int ignoreRemoteRotTick;
 
     public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
         super(index, vehicle, data);
@@ -198,6 +199,19 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         super.tick();
         this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
         independentWeapons.forEach(AbstractVehicleWeapon::tick);
+    }
+
+    @Override
+    protected void tickRemoteRot() {
+        if (vehicle.level().isClientSide() && ignoreRemoteRotTick > 0) {
+            if (Math.abs(xRemoteAimRot - xAimRot) < 5 && Math.abs(yRemoteAimRot - yAimRot) < 5) {
+                ignoreRemoteRotTick -= 1;
+                return;
+            } else {
+                ignoreRemoteRotTick = 0;
+            }
+        }
+        super.tickRemoteRot();
     }
 
     @Override
@@ -361,7 +375,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Vec2 aimRot(Vec3 worldPosition) {
-        Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().pivot()), false);
+        Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().offset()), false);
         Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
         return vecToRot(worldAim);
     }
@@ -419,7 +433,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Quaternionf rotation = globalTransform.rotation();
         Vector3f boltOffset = new Vector3f((float) bolt.offset().x, (float) bolt.offset().y, (float) bolt.offset().z);
         rotation.transform(boltOffset);
-        Vec3 pivot = globalTransform.pivot();
+        Vec3 pivot = globalTransform.offset();
         Vector3f rotatedBoltOffset = vehicleRotation.transform(pivot.add(boltOffset.x, boltOffset.y, boltOffset.z).toVector3f());
         return vehicle.position().add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
     }
@@ -432,17 +446,21 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (opticalSightOffset == null) {
             return worldOwnerViewPosition();
         }
-        return worldPosition(pivotOffset.add(opticalSightOffset));
+        Vec3 offsetFromVehicle = pivotOffset.add(opticalSightOffset);
+        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
+            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup);
+        }
+        return worldPosition(offsetFromVehicle);
     }
 
     @Override
     public Vec3 worldOwnerViewPosition() {
-        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-            return worldPositionWithBaseRot(pivotOffset.add(operatorViewOffset));
-        }
         if (operatorViewOffset == null) {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
             return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));
+        }
+        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
+            return worldPositionWithBaseRot(pivotOffset.add(operatorViewOffset));
         }
         return worldPosition(pivotOffset.add(operatorViewOffset));
     }
@@ -457,12 +475,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot) {
+    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
         if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
             Quaternionf rotationO = new Quaternionf();
             rotationO.rotateY(org.joml.Math.toRadians(-(vehicle.getYRot() - dVehicleYRot)))
                     .rotateX(org.joml.Math.toRadians(vehicle.getXRot() - dVehicleXRot))
-                    .rotateZ(org.joml.Math.toRadians(vehicle.getZRot()));
+                    .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
             if (structureGroup != null) {
                 rotationO.mul(structureGroup.baseRotation);
             }
@@ -473,12 +491,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             Quaternionf relativeRot = baseRot().invert().mul(rotationO);
             Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
             Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
-            setXAimRot(targetRot.x);
             setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
             if (org.joml.Math.abs(xRot - xRotO) > 180) {
                 xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
             }
-            setYAimRot(targetRot.y);
+            if (vehicle.level().isClientSide()) {
+                setXAimRot(targetRot.x);
+                setYAimRot(targetRot.y);
+                ignoreRemoteRotTick = 1;
+            }
             setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
             if (org.joml.Math.abs(yRot - yRotO) > 180) {
                 yRotO += org.joml.Math.signum(yRot - yRotO) * 360;

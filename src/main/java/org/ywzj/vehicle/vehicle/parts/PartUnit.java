@@ -142,7 +142,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)), false);
     }
 
-    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot) {}
+    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {}
 
     public Component getName() {
         return name;

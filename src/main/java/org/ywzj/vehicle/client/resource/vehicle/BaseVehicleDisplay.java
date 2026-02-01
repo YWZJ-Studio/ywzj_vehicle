@@ -20,6 +20,8 @@ import java.util.Map;
 public class BaseVehicleDisplay {
 
     public static final Object[] EMPTY_ARGS = new Object[0];
+    protected ResourceLocation displayId;
+    protected ResourceLocation modelPath;
     protected BedrockModel model;
     protected ResourceLocation texture;
     protected ResourceLocation slotTexture;
@@ -45,6 +47,7 @@ public class BaseVehicleDisplay {
      */
     public BaseVehicleDisplay(BaseVehicleDisplayPojo pojo) {
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
+        this.modelPath = pojo.model;
         this.model = modelPojo.map(BedrockModel::new).orElseThrow();
 
         if (pojo.script != null) {
@@ -95,6 +98,18 @@ public class BaseVehicleDisplay {
         }
 
         this.description = pojo.description;
+    }
+
+    public ResourceLocation getDisplayId() {
+        return displayId;
+    }
+
+    public void setDisplayId(ResourceLocation displayId) {
+        this.displayId = displayId;
+    }
+
+    public ResourceLocation getModelPath() {
+        return modelPath;
     }
 
     public ResourceLocation getTexture() {

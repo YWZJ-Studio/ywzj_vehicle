@@ -129,15 +129,8 @@ public class WeaponUnitData extends RotatableUnitData {
             if (yTurnGroup != null) {
                 this.structureGroup = yTurnGroup;
                 yTurnUnitOBBs.addAll(yTurnGroup.cubeOBBs);
+                this.pivotOffset = yTurnGroup.globalTransform().offset();
             }
-            this.pivotOffset = new Vec3(yTurnBone.x / 16, yTurnBone.y / 16, yTurnBone.z / 16);
-            BedrockBone parent = yTurnBone.parent;
-            while (parent != null) {
-                this.pivotOffset = this.pivotOffset.add(parent.x / 16, parent.y / 16, parent.z / 16);
-                parent = parent.parent;
-            }
-        } else {
-            this.pivotOffset = Vec3.ZERO;
         }
         var xTurnBone = model.getBoneMap().get(this.structureBone + "_barrel");
         List<VehicleCubeOBB> xTurnUnitOBBs = new ArrayList<>();

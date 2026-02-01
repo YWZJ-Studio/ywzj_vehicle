@@ -42,7 +42,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         if (!check(aimContexts, shooter)) {
             return false;
         }
-        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts.size())) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts)) {
             return false;
         }
         this.lastShootTime = System.currentTimeMillis();

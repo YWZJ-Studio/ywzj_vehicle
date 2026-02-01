@@ -29,11 +29,7 @@ public class VehicleCubeGroup {
         this.baseRotation = rotation;
         this.rotation = rotation;
         this.pivot = pivot;
-        this.pivotOffset = this.pivot;
-        while (parent != null) {
-            this.pivotOffset = this.pivotOffset.add(parent.pivot);
-            parent = parent.parent;
-        }
+        this.pivotOffset = globalTransform().offset;
     }
 
     public void addChild(VehicleCubeGroup child) {
@@ -45,8 +41,13 @@ public class VehicleCubeGroup {
     }
 
     public VehicleCubeGroup.GlobalTransform globalTransform() {
+        return globalTransform(Vec3.ZERO, false);
+    }
+
+    public VehicleCubeGroup.GlobalTransform globalTransform(Vec3 offset, boolean withSelfRotation) {
         Quaternionf globalRotation = new Quaternionf(rotation);
-        Vector3f globalPivot = pivot.toVector3f();
+        Vector3f globalPivot = pivot.toVector3f()
+                .add(withSelfRotation ? rotation.transform(offset.toVector3f()) : offset.toVector3f());
         VehicleCubeGroup parentGroup = parent;
         while (parentGroup != null) {
             parentGroup.rotation.transform(globalPivot);
@@ -57,6 +58,6 @@ public class VehicleCubeGroup {
         return new VehicleCubeGroup.GlobalTransform(new Vec3(globalPivot), globalRotation);
     }
 
-    public record GlobalTransform(Vec3 pivot, Quaternionf rotation) {}
+    public record GlobalTransform(Vec3 offset, Quaternionf rotation) {}
 
 }

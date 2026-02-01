@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.client.render.entity.block;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -12,6 +13,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
@@ -54,7 +57,7 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
             BedrockBoneWrapper printingBoneWrapper = machineMaxBlockEntity.printingBoneWrapper;
             // 打印机三轴
             if (printingBoneWrapper != null) {
-                float r = scale * 500;
+                float r = scale * 1280;
                 boneX.x = (float) (boneX.x - 3f + printingBoneWrapper.x / r);
                 boneZ.z = (float) (boneZ.z - 3f + printingBoneWrapper.z / r);
                 dy = (float) (printingBoneWrapper.y / r);
@@ -71,11 +74,11 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
                 poseStack.scale(scale, scale, scale);
                 Vec3 root = new Vec3(0, 0, 0);
                 poseStack.rotateAround(Axis.YP.rotationDegrees(135), (float) root.x, (float) root.y, (float) root.z);
-                machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bedrockBone.visible = bedrockBoneWrapper.visible);
+                machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = bedrockBoneWrapper.visible);
                 BedrockModel vehicleModel = machineMaxBlockEntity.vehicleDisplay.getModel();
                 vehicleModel.applyPose(vehicleModel.getBindPose());
                 vehicleModel.renderToBuffer(poseStack, bufferSource.getBuffer(RenderType.entityCutout(machineMaxBlockEntity.vehicleDisplay.getTexture())), packedLight, OverlayTexture.NO_OVERLAY);
-                machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bedrockBone.visible = true);
+                machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = true);
             }
             poseStack.popPose();
         } else {
@@ -96,25 +99,45 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
 
     public static class BedrockBoneWrapper {
 
-        public BedrockBone bedrockBone;
+        public BedrockBone bone;
         public boolean visible;
         public double x;
         public double y;
         public double z;
         public BedrockBoneWrapper parentWrapper;
 
-        public BedrockBoneWrapper(BedrockBone bedrockBone, BedrockBoneWrapper parentWrapper) {
-            this.bedrockBone = bedrockBone;
-            this.x = bedrockBone.x;
-            this.y = bedrockBone.y;
-            this.z = bedrockBone.z;
-            BedrockBone parent = bedrockBone.parent;
+        public BedrockBoneWrapper(BedrockBone bone, BedrockBoneWrapper parentWrapper) {
+            this.bone = bone;
+            Vector3f globalPivot = new Vector3f(bone.x, bone.y, bone.z);
+            if (!bone.cubes.isEmpty()) {
+                Vector3f centerOffset = new Vector3f();
+                double totalX = 0;
+                double totalY = 0;
+                double totalZ = 0;
+                int count = bone.cubes.size();
+                for (BedrockCube cube : bone.cubes) {
+                    totalX += cube.x() * 16 + cube.width() * 16 / 2.0;
+                    totalY += cube.y() * 16 + cube.height() * 16 / 2.0;
+                    totalZ += cube.z() * 16 + cube.depth() * 16 / 2.0;
+                }
+                centerOffset.x += (float) (totalX / count);
+                centerOffset.y += (float) (totalY / count);
+                centerOffset.z += (float) (totalZ / count);
+                bone.rotation.transform(centerOffset);
+                globalPivot.add(centerOffset);
+            }
+            BedrockBone parent = bone.parent;
             while (parent != null) {
-                this.x += parent.x;
-                this.y += parent.y;
-                this.z += parent.z;
+                parent.rotation.transform(globalPivot);
+                globalPivot.add(parent.x, parent.y, parent.z);
                 parent = parent.parent;
             }
+            Quaternionf rotation = new Quaternionf();
+            rotation.rotateY((float) Math.toRadians(135));
+            rotation.transform(globalPivot);
+            this.x = globalPivot.x;
+            this.y = globalPivot.y;
+            this.z = globalPivot.z;
             this.parentWrapper = parentWrapper;
         }
 

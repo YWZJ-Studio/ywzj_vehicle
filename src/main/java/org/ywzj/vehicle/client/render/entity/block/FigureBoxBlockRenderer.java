@@ -16,11 +16,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
-import org.ywzj.vehicle.custom.CommonAssetsManager;
-import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-
-import java.util.Optional;
 
 public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBlockEntity> {
 
@@ -46,12 +42,9 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
                 0, 0);
         poseStack.pushPose();
         {
-            double length = 1f;
+            double length;
             if (entity instanceof AbstractVehicle vehicle) {
-                Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicle.getVehicleId());
-                if (vehicleDataOptional.isPresent()) {
-                    length = Math.max(4, vehicleDataOptional.get().getStructureLength());
-                }
+                length = vehicle.getStructureLength();
             } else {
                 length = entity.getBbHeight() * 2;
             }

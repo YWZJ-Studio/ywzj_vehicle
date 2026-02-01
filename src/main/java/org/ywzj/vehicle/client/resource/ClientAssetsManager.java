@@ -17,6 +17,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -110,6 +111,11 @@ public enum ClientAssetsManager {
     }
 
     @NotNull
+    public List<BaseVehicleDisplay> getVariableDisplay(ResourceLocation model) {
+        return vehicleDisplayManager.getModelWithVariableDisplay().get(model);
+    }
+
+    @NotNull
     public Optional<BaseVehicleDisplay> getVehicleDisplay(ResourceLocation id) {
         if (vehicleDisplayManager == null) {
             return Optional.empty();
@@ -128,4 +134,5 @@ public enum ClientAssetsManager {
     public InternalAssets getInternalAssets() {
         return internalAssets;
     }
+
 }

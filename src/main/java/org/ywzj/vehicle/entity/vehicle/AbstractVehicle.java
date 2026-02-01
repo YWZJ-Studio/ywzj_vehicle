@@ -65,10 +65,7 @@ import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
-import org.ywzj.vehicle.network.message.ServerSoundEvent;
-import org.ywzj.vehicle.network.message.ServerVehicleSeatsChange;
+import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -131,6 +128,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     private long destroyedTime;
     protected int engineParticleTick;
     public long lastRenderTime;
+    private boolean finalRotUpdate;
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -361,6 +359,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @Override
     public void setDisplayId(ResourceLocation displayId) {
         this.displayId = displayId;
+        if (!level().isClientSide()) {
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleChangeDisplay(this.getId(), displayId));
+        } else {
+            this.animationInstance = new VehicleAnimationInstance(this);
+        }
     }
 
     @Override
@@ -373,7 +376,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         super.tick();
         tickRot();
         if (!this.isRemoved()) {
-            this.aiStep();
+            aiStep();
         }
         tickParts();
         updateOBBs();
@@ -400,7 +403,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
-        tickVehicleRot();
+        partsWithVehicleRot();
         if (viewInfo.lockPassengerYBodyRot) {
             getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         }
@@ -602,20 +605,44 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     protected abstract Vec3 tickMove();
 
     protected void tickRot() {
+        if (!level().isClientSide()) {
+            if (this.xRotO == this.xRot && this.yRotO == this.yRot && !finalRotUpdate) {
+                triggerRotUpdate();
+                finalRotUpdate = true;
+            } else {
+                finalRotUpdate = false;
+            }
+        }
         this.xRotO = this.xRot;
         this.yRotO = this.yRot;
         this.zRotO = this.zRot;
+        if (level().isClientSide()) {
+            if (this.lerpSteps > 0) {
+                double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
+                double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
+                double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
+                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot()) / this.lerpSteps;
+                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot()) / this.lerpSteps;
+                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot()) / this.lerpSteps;
+                this.setXRot(this.getXRot() + dXRot);
+                this.setYRot(this.getYRot() + dYRot);
+                this.setZRot(this.getZRot() + dZRot);
+                this.lerpSteps -= 1;
+                this.setPos(dX, dY, dZ);
+            }
+        }
     }
 
     protected void tickParts() {
         partUnits.forEach(PartUnit::tick);
     }
 
-    protected void tickVehicleRot() {
+    protected void partsWithVehicleRot() {
         float dXRot = xRot - xRotO;
         float dYRot = yRot - yRotO;
+        float dZRot = zRot - zRotO;
         if (dXRot != 0 || dYRot != 0) {
-            partUnits.forEach(partUnit -> partUnit.withVehicleRot(dXRot, dYRot));
+            partUnits.forEach(partUnit -> partUnit.withVehicleRot(dXRot, dYRot, dZRot));
         }
     }
 
@@ -1218,22 +1245,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public void aiStep() {
-        if (level().isClientSide()) {
-            if (this.lerpSteps > 0) {
-                double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
-                double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
-                double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot()) / this.lerpSteps;
-                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot()) / this.lerpSteps;
-                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot()) / this.lerpSteps;
-                this.setXRot(this.getXRot() + dXRot);
-                this.setYRot(this.getYRot() + dYRot);
-                this.setZRot(this.getZRot() + dZRot);
-                this.lerpSteps -= 1;
-                this.setPos(dX, dY, dZ);
-            }
-        }
-
         Vec3 v = this.getDeltaMovement();
         double dx = v.x;
         double dy = v.y;

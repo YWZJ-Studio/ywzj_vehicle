@@ -19,14 +19,17 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.util.ResourceScanner;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class VehicleDisplayManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> {
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleDisplayManager");
-
     private Map<ResourceLocation, BaseVehicleDisplay> displayMap = Map.of();
+    private final Map<ResourceLocation, List<BaseVehicleDisplay>> modelWithVariableDisplay = new ConcurrentHashMap<>();
 
     @NotNull
     @Override
@@ -36,39 +39,45 @@ public class VehicleDisplayManager extends SimplePreparableReloadListener<Map<Re
 
     @Override
     public void apply(@NotNull Map<ResourceLocation, JsonElement> resources, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
-        ImmutableMap.Builder<ResourceLocation, BaseVehicleDisplay> builder = ImmutableMap.builder();
-        for (var entry : resources.entrySet()) {
+        ImmutableMap.Builder<ResourceLocation, BaseVehicleDisplay> displayMapBuilder = ImmutableMap.builder();
+        for (var displayIdAndDataJson : resources.entrySet()) {
             try {
-                var obj = GsonHelper.convertToJsonObject(entry.getValue(), "vehicle display");
+                var obj = GsonHelper.convertToJsonObject(displayIdAndDataJson.getValue(), "vehicle display");
                 String type = GsonHelper.getAsString(obj, "type", "ywzj_vehicle:generic");
                 ResourceLocation typeId = ResourceLocation.tryParse(type);
                 if (typeId == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle display: {}, invalid type id {}", entry.getKey(), type);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle display: {}, invalid type id {}", displayIdAndDataJson.getKey(), type);
                     continue;
                 }
 
                 var dataType = ModRegistries.VEHICLE_DISPLAY_TYPE_SUPPLIER.get().getValue(typeId);
                 if (dataType == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle display: {}, unknown type {}", entry.getKey(), typeId);
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle display: {}, unknown type {}", displayIdAndDataJson.getKey(), typeId);
                     continue;
                 }
 
-                var data = dataType.parse(entry.getValue());
+                var data = dataType.parse(displayIdAndDataJson.getValue());
                 if (data == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle display: {}", entry.getKey());
+                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to parse vehicle display: {}", displayIdAndDataJson.getKey());
                     continue;
                 }
-                builder.put(entry.getKey(), data);
+                displayMapBuilder.put(displayIdAndDataJson.getKey(), data);
+                data.setDisplayId(displayIdAndDataJson.getKey());
+                modelWithVariableDisplay.computeIfAbsent(data.getModelPath(), k -> new ArrayList<>()).add(data);
             } catch (Exception e) {
-                YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle display: {}", entry.getKey(), e);
+                YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle display: {}", displayIdAndDataJson.getKey(), e);
             }
         }
-        displayMap = builder.build();
+        displayMap = displayMapBuilder.build();
     }
 
     @UnmodifiableView
     public Map<ResourceLocation, BaseVehicleDisplay> getDisplayMap() {
         return displayMap;
+    }
+
+    public Map<ResourceLocation, List<BaseVehicleDisplay>> getModelWithVariableDisplay() {
+        return modelWithVariableDisplay;
     }
 
 }

@@ -97,7 +97,6 @@ public class FigureBoxScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
         int centerX = this.width / 2;
         int leftShift = 105;
         int startY = 10;
@@ -109,6 +108,7 @@ public class FigureBoxScreen extends Screen {
         guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, 0xFFFFFF);
         guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, 0xFFFFFF);
         renderFigureBox(guiGraphics);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void renderFigureBox(GuiGraphics guiGraphics) {
@@ -118,7 +118,7 @@ public class FigureBoxScreen extends Screen {
         poseStack.pushPose();
         {
             Lighting.setupForEntityInInventory();
-            poseStack.translate((float) width / 2 + 110, 100, 512);
+            poseStack.translate((float) width / 2 + 110, 90, 512);
             float scale = 64 / figureBoxBlockEntity.scale;
             poseStack.scale(scale, -scale, scale);
             poseStack.mulPose(Axis.XP.rotationDegrees(30));
@@ -147,6 +147,16 @@ public class FigureBoxScreen extends Screen {
             FigureBoxBlockRenderer.renderEntity(poseStack, figureBoxBlockEntity, guiGraphics.bufferSource(), 15728880);
         }
         poseStack.popPose();
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return true;
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
 }

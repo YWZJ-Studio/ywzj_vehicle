@@ -129,7 +129,8 @@ public class LocalVehiclePlayer {
                         fixLerp();
                     }
                 } else if (viewType == ViewType.SCOPE) {
-                    if (partUnit instanceof WeaponUnit weaponUnit) {
+                    if (partUnit instanceof WeaponUnit weaponUnit
+                            && weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.NONE) {
                         Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
                                 weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
                         cameraX = worldScopePosition.x;
@@ -184,18 +185,22 @@ public class LocalVehiclePlayer {
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
                         if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
-                            return;
+                            toViewType = ViewType.OPERATOR;
+                        } else {
+                            toViewType = ViewType.SCOPE;
                         }
-                        toViewType = ViewType.SCOPE;
                     } else if (viewType == ViewType.SCOPE) {
                         toViewType = ViewType.OPERATOR;
                     } else if (viewType == ViewType.OPERATOR) {
                         toViewType = ViewType.THIRD_PERSON;
                     }
                 }
-                if (toViewType == ViewType.THIRD_PERSON) {
+                if (toViewType == ViewType.THIRD_PERSON && weaponUnit.getYRotSpeed() > 0) {
                     thirdPersonCameraAimAt(weaponUnit.aimHitPosition(), vehicle);
                 } else if (toViewType == ViewType.SCOPE) {
+                    if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
+                        return;
+                    }
                     Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
                             weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
                     cameraX = worldScopePosition.x;

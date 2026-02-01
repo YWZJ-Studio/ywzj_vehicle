@@ -57,6 +57,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
         }
         AbstractVehicle vehicle = CommonAssetsManager.vehicleDataManager().getVehicleData()
                 .get(craftingVehicleId).construct(level, Vec3.ZERO, 0, 0);
+        vehicle.initData(craftingVehicleId);
         this.craftingVehicleId = null;
         this.progress = 0;
         this.hasProduct = false;

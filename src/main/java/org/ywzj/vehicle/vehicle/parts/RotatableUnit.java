@@ -96,16 +96,11 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public void tick() {
         super.tick();
         if (vehicle.level().isClientSide()) {
+            tickRemoteRot();
             tickSound();
         }
         tickRot();
         updateRot();
-    }
-
-    public void updateRot() {
-        if (structureGroup != null) {
-            structureGroup.rotation = new Quaternionf(structureGroup.baseRotation).mul(Axis.YN.rotationDegrees(yRot).mul(Axis.XP.rotationDegrees(xRot)));
-        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -145,13 +140,17 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         }
     }
 
-    protected void tickRot() {
-        xRotO = xRot;
-        yRotO = yRot;
-        if (vehicle.level().isClientSide() && getOwner() != LocalVehiclePlayer.instance.getPlayer()) {
+    protected void tickRemoteRot() {
+        if (vehicle.level().isClientSide()
+                && getOwner() != LocalVehiclePlayer.instance.getPlayer()) {
             xAimRot = xRemoteAimRot;
             yAimRot = yRemoteAimRot;
         }
+    }
+
+    protected void tickRot() {
+        xRotO = xRot;
+        yRotO = yRot;
         if (!needPower || vehicle.hasPower()) {
             float xDiff = Mth.wrapDegrees(xAimRot - xRot);
             float yDiff = Mth.wrapDegrees(yAimRot - yRot);
@@ -175,6 +174,12 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
             if (Math.abs(yRot - yRotO) > 180) {
                 yRotO += Math.signum(yRot - yRotO) * 360;
             }
+        }
+    }
+
+    public void updateRot() {
+        if (structureGroup != null) {
+            structureGroup.rotation = new Quaternionf(structureGroup.baseRotation).mul(Axis.YN.rotationDegrees(yRot).mul(Axis.XP.rotationDegrees(xRot)));
         }
     }
 
@@ -223,14 +228,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     }
 
     public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group) {
-        VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
-        Quaternionf rotation = globalTransform.rotation();
         Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vec3 offsetFromPivot = offsetFromVehicle.subtract(group.pivotOffset);
-        Vector3f rotatedOffsetFromPivot = new Vector3f((float) offsetFromPivot.x, (float) offsetFromPivot.y, (float) offsetFromPivot.z);
-        rotation.transform(rotatedOffsetFromPivot);
-        Vec3 pivot = globalTransform.pivot();
-        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(pivot.add(rotatedOffsetFromPivot.x, rotatedOffsetFromPivot.y, rotatedOffsetFromPivot.z).toVector3f());
+        Vector3f rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset().toVector3f();
+        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts);
         return vehicle.position().add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
     }
 

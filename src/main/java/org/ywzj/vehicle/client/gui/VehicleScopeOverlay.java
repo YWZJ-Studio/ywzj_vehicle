@@ -51,7 +51,8 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         // 准心
-        if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+        if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit
+                && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
             RenderHelper.drawRect(guiGraphics, centerX, centerY, 15, 15, color, 1f);
             guiGraphics.pose().pushPose();
             {

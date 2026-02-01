@@ -33,10 +33,17 @@ public class RepairToolItem extends VehicleItem {
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
+
+            private RepairItemRenderer renderer;
+
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return new RepairItemRenderer();
+                if (renderer == null) {
+                    renderer = new RepairItemRenderer();
+                }
+                return renderer;
             }
+
         });
     }
 

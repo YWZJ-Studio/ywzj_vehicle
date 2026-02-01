@@ -17,10 +17,14 @@ public class YwzjVehicleAPI {
         Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isPresent()) {
             AbstractVehicle vehicle = vehicleDataOptional.get().construct(level, position, 0, yRot);
-            try {
-                vehicle.setDisplayId(displayId);
-            } catch (IllegalArgumentException ignore) {}
+            vehicle.setDisplayId(displayId);
             level.addFreshEntity(vehicle);
+        }
+    }
+
+    public static void changeDisplay(AbstractVehicle vehicle, ResourceLocation displayId) {
+        if (vehicle != null) {
+            vehicle.setDisplayId(displayId);
         }
     }
 

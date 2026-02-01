@@ -31,6 +31,10 @@ public class VehicleScriptContext<T extends AbstractVehicle> extends EntityConte
         this.entity = vehicle;
     }
 
+    public boolean hasOwner(String id) {
+        return entity.getPartUnit(id).map(part -> part.getOwner() != null).orElse(false);
+    }
+
     public float getPartXRot(String id) {
         return entity.getPartUnit(id).map(part -> {
             if (part instanceof RotatableUnit<?> rotatable) {

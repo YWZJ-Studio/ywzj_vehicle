@@ -22,7 +22,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
         if (!check(aimContexts, shooter)) {
             return false;
         }
-        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts.size())) {
+        if (isCoolingDown() || isReloading() || !consumeAmmo(aimContexts)) {
             return false;
         }
         this.lastShootTime = System.currentTimeMillis();

@@ -24,7 +24,6 @@ public class Channel {
 
     @SubscribeEvent
     public static void onCommonSetupEvent(FMLCommonSetupEvent event) {
-
         CHANNEL.registerMessage(PacketId.C_VEHICLE_CONTROL.value(), ClientVehicleMoveControl.class,
                 ClientVehicleMoveControl::encode, ClientVehicleMoveControl::decode,
                 ClientVehicleMoveControl::onClientMessageReceived,
@@ -54,7 +53,6 @@ public class Channel {
                 ServerHitVehicleEvent::encode, ServerHitVehicleEvent::decode,
                 ServerHitVehicleEvent::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
-
 
         CHANNEL.registerMessage(PacketId.S_ENTITY_SYNC_DATA.value(), ServerEntityDataUpdate.class,
                 ServerEntityDataUpdate::encode, ServerEntityDataUpdate::decode,
@@ -91,6 +89,16 @@ public class Channel {
                 ClientFigureBoxUpdate::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
+        CHANNEL.registerMessage(PacketId.S_VEHICLE_CHANGE_DISPLAY.value(), ServerVehicleChangeDisplay.class,
+                ServerVehicleChangeDisplay::encode, ServerVehicleChangeDisplay::decode,
+                ServerVehicleChangeDisplay::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.C_VEHICLE_CHANGE_DISPLAY.value(), ClientVehicleChangeDisplay.class,
+                ClientVehicleChangeDisplay::encode, ClientVehicleChangeDisplay::decode,
+                ClientVehicleChangeDisplay::onClientMessageReceived,
+                Optional.of(PLAY_TO_SERVER));
+
         CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
@@ -105,21 +113,18 @@ enum PacketId {
     C_WEAPON_UNIT_CONTROL(101),
     S_VEHICLE_SEATS_CHANGE(102),
     C_VEHICLE_CHANGE_SEAT(103),
-    C_VEHICLE_SWITCH_WEAPON(104),
-    S_VEHICLE_FIRE(105),
-    S_VEHICLE_WARN(106),
-    S_VEHICLE_HURT_ENTITY(107),
-    C_MACHINE_MAX_ACTION(108),
-    C_FIGURE_BOX_UPDATE(109),
-
-    S_SLICED_PACKET(110),
-
-    S_ENTITY_SYNC_DATA(120),
-
-    S_SYNC_WEAPON_DATA(150),
-    S_SYNC_VEHICLE_DATA(151),
-    S_SOUND_EVENT(201),
-    S_HIT_VEHICLE_EVENT(202);
+    S_SOUND_EVENT(104),
+    S_HIT_VEHICLE_EVENT(105),
+    S_ENTITY_SYNC_DATA(106),
+    C_VEHICLE_SWITCH_WEAPON(107),
+    S_VEHICLE_FIRE(108),
+    S_VEHICLE_WARN(109),
+    S_VEHICLE_HURT_ENTITY(110),
+    C_MACHINE_MAX_ACTION(111),
+    C_FIGURE_BOX_UPDATE(112),
+    S_VEHICLE_CHANGE_DISPLAY(113),
+    C_VEHICLE_CHANGE_DISPLAY(114),
+    S_SLICED_PACKET(200);
 
     private final int id;
 

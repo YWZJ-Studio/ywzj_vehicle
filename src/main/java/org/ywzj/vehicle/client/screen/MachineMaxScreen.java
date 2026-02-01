@@ -10,8 +10,10 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -48,10 +50,13 @@ public class MachineMaxScreen extends Screen {
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private Button printingButton;
     private EditBox searchBox;
-    private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
     private final List<Map.Entry<ResourceLocation, BaseVehicleData>> vehicleList =
             new ArrayList<>(CommonAssetsManager.vehicleDataManager().getVehicleData().entrySet());
+    private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
     private final MachineMaxBlockEntity machineMaxBlockEntity;
+    private AbstractVehicle vehicle;
+    private float yRot;
+    private float yRotO;
 
     public MachineMaxScreen(MachineMaxBlockEntity machineMaxBlockEntity) {
         super(Component.literal("Machine Max"));
@@ -85,29 +90,30 @@ public class MachineMaxScreen extends Screen {
 
     @Override
     public void tick() {
-        tickCount++;
+        yRotO = yRot;
+        yRot += 2;
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }
     }
 
     @Override
-    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
-        renderBackground(gui);
-        drawMainBackground(gui);
-        drawVehicleList(gui, mouseX, mouseY);
-        drawPreviewPanel(gui);
-        drawProgressBar(gui);
-        drawReceipt(gui, mouseX, mouseY);
-        super.render(gui, mouseX, mouseY, partialTick);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(guiGraphics);
+        drawMainBackground(guiGraphics);
+        drawVehicleList(guiGraphics, mouseX, mouseY);
+        drawPreviewPanel(guiGraphics, partialTick);
+        drawProgressBar(guiGraphics);
+        drawReceipt(guiGraphics, mouseX, mouseY);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         if (!this.hoveredStack.isEmpty()) {
-            gui.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
+            guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
         }
     }
 
-    private void drawMainBackground(GuiGraphics gui) {
+    private void drawMainBackground(GuiGraphics guiGraphics) {
         // 整体背景
-        gui.fill(
+        guiGraphics.fill(
                 leftPos,
                 topPos,
                 leftPos + imageWidth,
@@ -115,7 +121,7 @@ public class MachineMaxScreen extends Screen {
                 0xFF1C1C1C
         );
         // 预览框背景
-        gui.fill(
+        guiGraphics.fill(
                 leftPos + ITEM_WIDTH + 25,
                 topPos + 10,
                 leftPos + imageWidth - 10,
@@ -131,11 +137,11 @@ public class MachineMaxScreen extends Screen {
         this.scrollOffset = 0;
     }
 
-    private void drawVehicleList(GuiGraphics gui, int mouseX, int mouseY) {
+    private void drawVehicleList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         int x = leftPos + 10;
         int y = topPos + 10 + ITEM_HEIGHT;
 
-        gui.fill(x, y, x + ITEM_WIDTH, y + 180, 0xFF252525);
+        guiGraphics.fill(x, y, x + ITEM_WIDTH, y + 180, 0xFF252525);
 
         int start = scrollOffset;
         int end = Math.min(start + VISIBLE_ITEMS, filteredVehicleList.size());
@@ -158,7 +164,7 @@ public class MachineMaxScreen extends Screen {
                 bgColor = 0xFF303030;
             }
 
-            gui.fill(
+            guiGraphics.fill(
                     x + 2,
                     itemY + 2,
                     x + ITEM_WIDTH,
@@ -166,7 +172,7 @@ public class MachineMaxScreen extends Screen {
                     bgColor
             );
 
-            gui.drawString(
+            guiGraphics.drawString(
                     font,
                     filteredVehicleList.get(i).getValue().getName(),
                     x + 6,
@@ -175,16 +181,16 @@ public class MachineMaxScreen extends Screen {
             );
         }
 
-        drawScrollBar(gui, x + 90, y);
+        drawScrollBar(guiGraphics, x + 90, y);
     }
 
-    private void drawScrollBar(GuiGraphics gui, int x, int y) {
+    private void drawScrollBar(GuiGraphics guiGraphics, int x, int y) {
         int barX = x + 44;
         int barY = y;
         int barWidth = 6;
         int barHeight = VISIBLE_ITEMS * ITEM_HEIGHT;
 
-        gui.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFF3A3A3A);
+        guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFF3A3A3A);
 
         if (filteredVehicleList.size() <= VISIBLE_ITEMS) {
             return;
@@ -197,7 +203,7 @@ public class MachineMaxScreen extends Screen {
         int movable = barHeight - knobHeight;
         int knobY = barY + (int) (movable * (scrollOffset / (float) maxScroll));
 
-        gui.fill(
+        guiGraphics.fill(
                 barX,
                 knobY,
                 barX + barWidth,
@@ -206,34 +212,26 @@ public class MachineMaxScreen extends Screen {
         );
     }
 
-    private void drawPreviewPanel(GuiGraphics gui) {
+    private void drawPreviewPanel(GuiGraphics guiGraphics, float partialTick) {
         int x = leftPos + ITEM_WIDTH + 30;
         int y = topPos + 15;
 
-        gui.fill(x, y, x + 110, y + 90, 0xFF111111);
+        guiGraphics.fill(x, y, x + 110, y + 90, 0xFF111111);
 
         if (selectedIndex < 0 || selectedIndex >= filteredVehicleList.size()) {
             return;
         }
 
-        ResourceLocation vehicleId;
-        if (machineMaxBlockEntity.craftingVehicleId != null) {
-            vehicleId = machineMaxBlockEntity.craftingVehicleId;
-        } else {
-            vehicleId = filteredVehicleList.get(selectedIndex).getKey();
-        }
-        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
-        if (!vehicleDataOptional.isPresent()) {
+        if (vehicle == null) {
             return;
         }
-        AbstractVehicle vehicle = vehicleDataOptional.get().construct(Minecraft.getInstance().level, Vec3.ZERO, 0, tickCount);
-        vehicle.initData(vehicleId);
+        vehicle.setYRot(Mth.lerp(partialTick, yRotO, yRot));
 
-        double length = vehicleDataOptional.get().getStructureLength();
+        double length = vehicle.getStructureLength();
         float scale = (float) (1 / Math.max(length, 3) * 100);
 
         // 模型预览
-        PoseStack poseStack = gui.pose();
+        PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
             poseStack.translate(x + 55, y + 60, 512);
@@ -251,41 +249,44 @@ public class MachineMaxScreen extends Screen {
                             vehicle.getYRot(),
                             1.0F,
                             poseStack,
-                            gui.bufferSource(),
+                            guiGraphics.bufferSource(),
                             15728880
                     )
             );
         }
         poseStack.popPose();
-        BaseVehicleDisplay vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).get();
-        // 介绍
-        if (vehicleDisplay.getDescription() != null) {
-            poseStack.pushPose();
-            {
-                int maxWidth = 135;
-                poseStack.translate(x + 116, topPos + 20, 0);
-                poseStack.scale(0.95f, 0.95f, 0.95f);
-                var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
-                for (int i = 0; i < lines.size(); i++) {
-                    gui.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
+        Optional<BaseVehicleDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+        if (vehicleDisplayOptional.isPresent()) {
+            BaseVehicleDisplay vehicleDisplay = vehicleDisplayOptional.get();
+            // 介绍
+            if (vehicleDisplay.getDescription() != null) {
+                poseStack.pushPose();
+                {
+                    int maxWidth = 135;
+                    poseStack.translate(x + 116, topPos + 20, 0);
+                    poseStack.scale(0.95f, 0.95f, 0.95f);
+                    var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
+                    for (int i = 0; i < lines.size(); i++) {
+                        guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
+                    }
                 }
+                poseStack.popPose();
             }
-            poseStack.popPose();
         }
         if (machineMaxBlockEntity.hasProduct()) {
-            gui.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, 0xFFFFFFFF);
+            guiGraphics.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, 0xFFFFFFFF);
         }
     }
 
-    private void drawProgressBar(GuiGraphics gui) {
+    private void drawProgressBar(GuiGraphics guiGraphics) {
         int x = leftPos + ITEM_WIDTH + 30;
         int y = topPos + 110;
 
-        gui.fill(x, y, x + 110, y + 10, 0xFF3A3A3A);
-        gui.fill(x, y, x + (int) (110 * machineMaxBlockEntity.progress), y + 10, 0xFF4CAF50);
+        guiGraphics.fill(x, y, x + 110, y + 10, 0xFF3A3A3A);
+        guiGraphics.fill(x, y, x + (int) (110 * machineMaxBlockEntity.progress), y + 10, 0xFF4CAF50);
     }
 
-    private void drawReceipt(GuiGraphics gui, int mouseX, int mouseY) {
+    private void drawReceipt(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         int x = leftPos + ITEM_WIDTH + 30;
         int y = topPos + 140;
         this.hoveredStack = ItemStack.EMPTY;
@@ -295,7 +296,7 @@ public class MachineMaxScreen extends Screen {
         ResourceLocation vehicleId = filteredVehicleList.get(selectedIndex).getKey();
         Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
         if (!recipeOptional.isPresent()) {
-            gui.drawString(font, Component.translatable("tips.no_recipe"), x, y, 0xFFFFFF);
+            guiGraphics.drawString(font, Component.translatable("tips.no_recipe"), x, y, 0xFFFFFF);
             return;
         }
         recipeOptional.ifPresent(recipe -> {
@@ -310,9 +311,9 @@ public class MachineMaxScreen extends Screen {
                     if (input.ingredient().getItems().length > 0) {
                         ItemStack stack = input.ingredient().getItems()[0];
                         int count = input.count();
-                        gui.renderFakeItem(stack, currentX, currentY);
+                        guiGraphics.renderFakeItem(stack, currentX, currentY);
                         String text = stack.getHoverName().getString() + " * " + count;
-                        gui.drawString(font, text, currentX + 20, currentY + 4, 0xFFFFFF);
+                        guiGraphics.drawString(font, text, currentX + 20, currentY + 4, 0xFFFFFF);
                         if (mouseX >= currentX && mouseX <= currentX + 16 &&
                                 mouseY >= currentY && mouseY <= currentY + 16) {
                             this.hoveredStack = stack;
@@ -351,6 +352,15 @@ public class MachineMaxScreen extends Screen {
     }
 
     private void onVehicleSelected(ResourceLocation vehicleId) {
+        if (machineMaxBlockEntity.craftingVehicleId != null) {
+            vehicleId = machineMaxBlockEntity.craftingVehicleId;
+        }
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
+        if (!vehicleDataOptional.isPresent()) {
+            return;
+        }
+        vehicle = vehicleDataOptional.get().construct(Minecraft.getInstance().level, Vec3.ZERO, 0, 0);
+        vehicle.initData(vehicleId);
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }
@@ -360,6 +370,7 @@ public class MachineMaxScreen extends Screen {
             return;
         }
         printingButton.visible = true;
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
     private void onCraft() {
