@@ -459,10 +459,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
             return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));
         }
+        Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
         if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-            return worldPositionWithBaseRot(pivotOffset.add(operatorViewOffset));
+            return worldPositionWithBaseRot(offsetFromVehicle);
         }
-        return worldPosition(pivotOffset.add(operatorViewOffset));
+        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
+            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup);
+        }
+        return worldPosition(offsetFromVehicle);
     }
 
     @Override
