@@ -55,6 +55,8 @@ public class InputHandler {
                     Minecraft.getInstance().player.sendOpenInventory();
                 } else if (TOGGLE_ENGINE.matches(event.getKey(), event.getScanCode())) {
                     sendToggleEngine(vehicle);
+                } else if (TOGGLE_LANDING_GEAR.matches(event.getKey(), event.getScanCode())) {
+                    sendToggleLandingGear(vehicle);
                 } else if (FIRE_CONTROL_LOCK.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
@@ -234,6 +236,13 @@ public class InputHandler {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleEngine = true;
+        Channel.CHANNEL.sendToServer(action);
+    }
+
+    private static void sendToggleLandingGear(AbstractVehicle vehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = vehicle.getId();
+        action.toggleLandingGear = true;
         Channel.CHANNEL.sendToServer(action);
     }
 

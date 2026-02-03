@@ -22,12 +22,12 @@ public class VehicleCubeOBB {
     private final List<CubePoint> cubePoints;
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
     private Vec3 offset = Vec3.ZERO;
-    public final double x;
-    public final double y;
-    public final double z;
-    public final double height;
-    public final double width;
-    public final double depth;
+    public double x;
+    public double y;
+    public double z;
+    public double height;
+    public double width;
+    public double depth;
     public double spaceX;
     public double spaceY;
     public double spaceZ;
@@ -81,6 +81,14 @@ public class VehicleCubeOBB {
                 new Vector3f(cube.width() / 2, cube.height() / 2, cube.depth() / 2),
                 new Quaternionf(group.rotation));
         return new VehicleCubeOBB(obb, group, cube);
+    }
+
+    public void rebuild() {
+        offset = group
+                .globalTransform(new Vec3(x + width / 2, y + height / 2, z + depth / 2), false)
+                .offset();
+        obb.setExtents(new Vector3f((float) (width / 2), (float) (height / 2), (float) (depth / 2)));
+        initCubePoints();
     }
 
     public void update(AbstractVehicle vehicle) {

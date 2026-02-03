@@ -3,6 +3,7 @@
   "model": "ywzj_vehicle:entity/hiace",
   "texture": "ywzj_vehicle:textures/entity/hiace.png",
   "slot_texture": "ywzj_vehicle:textures/slot/hiace.png",
+  "animations": "ywzj_vehicle:entity/hiace.animation",
   "script": "ywzj_vehicle:hiace",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",

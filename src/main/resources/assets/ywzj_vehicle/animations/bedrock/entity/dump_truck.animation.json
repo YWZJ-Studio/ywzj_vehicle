@@ -1,0 +1,27 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"door_left": {
+			"animation_length": 0.5,
+			"bones": {
+				"door_left": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.5": [0, 45, 0]
+					}
+				}
+			}
+		},
+		"door_right": {
+			"animation_length": 0.5,
+			"bones": {
+				"door_right": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.5": [0, -45, 0]
+					}
+				}
+			}
+		}
+	}
+}

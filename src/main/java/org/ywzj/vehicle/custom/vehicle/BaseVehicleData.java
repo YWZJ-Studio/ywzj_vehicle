@@ -207,6 +207,9 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             VehicleCubeGroup childGroup = new VehicleCubeGroup(group, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
             buildPartUnitsOBBs(child, childGroup, namedBones);
             // 合并匿名组的块
+            if (!namedBones.contains(child)) {
+                childGroup.cubeOBBs.forEach(group::addCubeOBB);
+            }
             child.getChildren().forEach(subChild -> {
                 if (!namedBones.contains(subChild)) {
                     vehiclePartGroups.get(subChild).cubeOBBs.forEach(childGroup::addCubeOBB);

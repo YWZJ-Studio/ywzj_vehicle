@@ -1,6 +1,9 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
@@ -26,7 +29,18 @@ public class ClientVehicleChangeSeat {
     }
 
     public static void onClientMessageReceived(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ctxSupplier.get().enqueueWork(() -> AbstractVehicle.onClientVehicleChangeSeat(message, ctxSupplier));
+        ctxSupplier.get().enqueueWork(() -> {
+            ServerPlayer player = ctxSupplier.get().getSender();
+            if (player == null) {
+                return;
+            }
+            Level level = player.level();
+            Entity entity = level.getEntity(message.vehicleEntityId);
+            if (!(entity instanceof AbstractVehicle vehicle)) {
+                return;
+            }
+            vehicle.onClientVehicleChangeSeat(message, player);
+        });
     }
 
 }

@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.render.entity.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.maydaymemory.mae.basic.ArrayPoseBuilder;
+import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
 import com.maydaymemory.mae.blend.EulerAdditiveBlender;
 import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
@@ -23,7 +24,6 @@ import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.CommonWheeledVehicle;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> {
@@ -49,20 +49,24 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         pPoseStack.pushPose();
         {
             try {
-                if (vehicle.getAnimationInstance() != null) {
-                    vehicle.getAnimationInstance().tick();
-                    var pose = vehicle.getAnimationInstance().getCurrentPose();
-                    model.applyPose(BLENDER.blend(model.getBindPose(), pose));
-                }
                 if (display.getVehicleScriptContext() != null) {
                     display.getVehicleScriptContext().updateRenderer(pPartialTick, vehicle);
                 }
+                Pose pose = null;
                 if (display.getPrepareBonesFunction() != null) {
                     var func = display.getPrepareBonesFunction();
                     if (func != null) {
                         try (var context = ScriptContextFactory.get().enterContext()) {
+                            model.applyPose(model.getBindPose());
                             func.call(context, display.getScope(), func, EMPTY_ARGS);
+                            pose = model.getPose();
                         }
+                    }
+                }
+                if (pose != null) {
+                    if (vehicle.getAnimationInstance() != null) {
+                        vehicle.getAnimationInstance().tick();
+                        model.applyPose(BLENDER.blend(pose, vehicle.getAnimationInstance().getCurrentPose()));
                     }
                 }
                 super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
@@ -73,6 +77,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
                 vehicle.lastRenderTime = System.currentTimeMillis();
                 VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
                 model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                model.applyPose(model.getBindPose());
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
@@ -83,10 +88,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
     @SubscribeEvent
     public static void onFire(VehicleFireEvent.Post event) {
         if (event.isClientSide()) {
-            var vehicle = event.getVehicle();
-            if (vehicle instanceof CommonWheeledVehicle commonWheeledVehicle) {
-                commonWheeledVehicle.getAnimationInstance().onFire();
-            }
+            event.getVehicle().getAnimationInstance().onFire(event.getWeapon());
         }
     }
 

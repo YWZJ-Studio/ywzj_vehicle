@@ -28,6 +28,7 @@ public class AllKeys {
     public static final KeyMapping FUNCTIONAL_LEFT = key("functional_left", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT);
     public static final KeyMapping FUNCTIONAL_RIGHT = key("functional_right", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT);
     public static final KeyMapping TOGGLE_ENGINE = key("toggle_engine", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I);
+    public static final KeyMapping TOGGLE_LANDING_GEAR = key("toggle_landing_gear", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G);
 
     // 武器控制类
     public static final KeyMapping FIRE_CONTROL_LOCK = key("fire_control_lock", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R);
@@ -46,7 +47,7 @@ public class AllKeys {
     public static final KeyMapping CHANGE_SEAT = key("change_seat", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_GRAVE_ACCENT);
 
     private static final KeyMapping[] ALL_KEYS = {
-            FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT, TOGGLE_ENGINE,
+            FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT, TOGGLE_ENGINE, TOGGLE_LANDING_GEAR,
             FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, MAGNIFICATION_CHANGE, DECOY_FLARE_LAUNCH,
             SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
             CHANGE_SEAT

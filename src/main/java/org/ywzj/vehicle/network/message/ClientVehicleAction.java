@@ -1,11 +1,13 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ public class ClientVehicleAction {
     public int vehicleEntityId;
     public boolean leaveVehicle;
     public boolean toggleEngine;
+    public boolean toggleLandingGear;
     public boolean lockEntity;
     public int lockedEntityId;
     public int partUnitIndex;
@@ -37,6 +40,10 @@ public class ClientVehicleAction {
         }
         control.toggleEngine = buf.readBoolean();
         if (control.toggleEngine) {
+            return control;
+        }
+        control.toggleLandingGear = buf.readBoolean();
+        if (control.toggleLandingGear) {
             return control;
         }
         control.lockEntity = buf.readBoolean();
@@ -72,6 +79,10 @@ public class ClientVehicleAction {
         if (toggleEngine) {
             return;
         }
+        buf.writeBoolean(toggleLandingGear);
+        if (toggleLandingGear) {
+            return;
+        }
         buf.writeBoolean(lockEntity);
         if (lockEntity) {
             buf.writeInt(lockedEntityId);
@@ -99,10 +110,19 @@ public class ClientVehicleAction {
 
     public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
         ctxSupplier.get().enqueueWork(() -> {
-            if (message.leaveVehicle || message.toggleEngine || message.lockEntity) {
-                AbstractVehicle.onClientVehicleAction(message, ctxSupplier);
-            } else {
-                PartUnit.onClientMessageReceived(message, ctxSupplier);
+            ServerPlayer player = ctxSupplier.get().getSender();
+            if (player == null) {
+                return;
+            }
+            Level level = player.level();
+            Entity entity = level.getEntity(message.vehicleEntityId);
+            if (!(entity instanceof AbstractVehicle vehicle)) {
+                return;
+            }
+            if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.lockEntity) {
+                vehicle.onClientVehicleAction(message, player);
+            } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
+                vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);
             }
         });
     }

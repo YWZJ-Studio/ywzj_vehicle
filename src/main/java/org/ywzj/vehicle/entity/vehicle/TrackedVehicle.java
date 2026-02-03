@@ -5,7 +5,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -57,18 +56,6 @@ public class TrackedVehicle extends AbstractVehicle {
         super.defineSynchedData();
         this.entityData.define(FORWARD_SPEED, 0f);
         this.entityData.define(TURN_SPEED, 0f);
-    }
-
-    @Override
-    public void onEnterVehicle(LivingEntity pPlayer) {
-        super.onEnterVehicle(pPlayer);
-        this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN);
-    }
-
-    @Override
-    public void onLeaveVehicle(LivingEntity entity) {
-        super.onLeaveVehicle(entity);
-        this.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE);
     }
 
     @Override

@@ -69,6 +69,35 @@
       "is_seat": true,
       "seat_offset": [-0.5, 2, -1.3],
       "owner_view_offset": [-0.5, 2, -1.3]
+    },
+    {
+      "id": "front_door_left",
+      "name": "front_door_left",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "front_door_left",
+      "is_seat": false,
+      "door_for_seat_id": "passenger_seat0"
+    },
+    {
+      "id": "front_door_right",
+      "name": "front_door_right",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "front_door_right",
+      "is_seat": false
+    },
+    {
+      "id": "side_door_left",
+      "name": "side_door_left",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "side_door_left",
+      "is_seat": false
+    },
+    {
+      "id": "side_door_right",
+      "name": "side_door_right",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "side_door_right",
+      "is_seat": false
     }
   ]
 }

@@ -4,6 +4,7 @@ import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.statemachine.AnimationStateMachine;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 public class VehicleAnimationInstance {
 
@@ -30,8 +31,8 @@ public class VehicleAnimationInstance {
         }
     }
 
-    public void onFire() {
-        stateMachine.getContext().setShouldShoot(true);
+    public void onFire(AbstractVehicleWeapon<?> weapon) {
+        stateMachine.getContext().offerAnimation(weapon.getWeaponUnit().getId() + "_shoot");
     }
 
     public Pose getCurrentPose() {

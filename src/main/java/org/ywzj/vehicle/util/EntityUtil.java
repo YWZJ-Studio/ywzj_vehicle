@@ -94,9 +94,10 @@ public class EntityUtil {
             Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, startVec, endVec);
             if (closestHitPos != null) {
                 return new BulletHitResult(bulletEntity, closestHitPos, false);
+            } else {
+                return null;
             }
         }
-
         AABB boundingBox = HitboxHelper.getFixedBoundingBox(entity, bulletEntity.getOwner());
         // 计算射线与实体 boundingBox 的交点
         Vec3 hitPos = boundingBox.clip(startVec, endVec).orElse(null);

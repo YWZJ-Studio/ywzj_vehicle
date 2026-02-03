@@ -62,6 +62,7 @@
   "key.ywzj_vehicle.functional_left.desc": "功能左",
   "key.ywzj_vehicle.functional_right.desc": "功能右",
   "key.ywzj_vehicle.toggle_engine.desc": "引擎开关",
+  "key.ywzj_vehicle.toggle_landing_gear.desc": "起落架升降",
   "key.ywzj_vehicle.fire_control_lock.desc": "火控锁定",
   "key.ywzj_vehicle.main_weapon_shoot.desc": "主武器射击",
   "key.ywzj_vehicle.magnification_change.desc": "倍率变化",
@@ -88,6 +89,7 @@
   "tips.active_protection_system_intercept": "主动防御系统拦截了攻击",
   "tips.no_recipe": "未知配方",
   "tips.machine_max_product": "使用手办盒取出产品",
+  "tips.no_landing_gear": "无起落架相关设置",
 
   "ui.stabilizer_on": "稳定器开",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",

@@ -381,21 +381,24 @@ public class PhysicsEngine {
         if (vehicle.getXRot() < -15) {
             return;
         }
+        VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
         // 自动爬高
         DoubleSummaryStatistics stats = climbPoints.stream()
                 .mapToDouble(p -> p.obbLocalPos().y)
                 .summaryStatistics();
         double yRange = stats.getMax() - stats.getMin();
-        double liftLimit = vehicle.getMainCubeOBB().spaceY * 2;
+        double liftLimit = mainCubeOBB.spaceY * 2;
         if (yRange >= liftLimit) {
             return;
         }
-        if (yRange >= vehicle.getMainCubeOBB().spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
+        if (yRange >= mainCubeOBB.spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
             climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
             VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
             double liftHeight = liftPoint.cubePointContext.blockPos().getY() + (isHalfBlock(liftPoint) ? 0.55f : 1f);
-            double toLift = liftHeight - vehicle.position().y;
-            vehicle.setPos(new Vec3(vehicle.position().x, vehicle.position().y + Mth.clamp(toLift, 0, vehicle.maxUpStep()), vehicle.position().z));
+            Vec3 offset = mainCubeOBB.offset().subtract(0, mainCubeOBB.height / 2, 0);
+            Vec3 bottomPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
+            double toLift = Mth.clamp(liftHeight - bottomPos.y, 0, vehicle.maxUpStep());
+            vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
         }
     }
 

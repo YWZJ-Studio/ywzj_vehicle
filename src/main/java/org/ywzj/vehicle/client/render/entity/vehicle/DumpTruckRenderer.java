@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.render.entity.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.maydaymemory.mae.basic.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -70,7 +71,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
                 bedXRot = Mth.lerp(pPartialTick, rotatableUnit.xRotO, rotatableUnit.getXRot());
             }
 
-            // 应用动画
+            // 应用程序动画
             wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
             wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
             control.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 15 - 90));
@@ -94,6 +95,16 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             wheel5.rotation.mul(Axis.XN.rotationDegrees(vehicle.wheelRotation));
             wheel6.rotation.mul(Axis.XN.rotationDegrees(vehicle.wheelRotation));
 
+            // 应用基岩动画
+            if (display.getVehicleScriptContext() != null) {
+                display.getVehicleScriptContext().updateRenderer(pPartialTick, vehicle);
+            }
+            Pose pose = model.getPose();
+            if (vehicle.getAnimationInstance() != null) {
+                vehicle.getAnimationInstance().tick();
+                model.applyPose(VehicleRender.BLENDER.blend(pose, vehicle.getAnimationInstance().getCurrentPose()));
+            }
+
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             Vec3 root = new Vec3(0, 0, 0);
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
@@ -102,16 +113,9 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             vehicle.lastRenderTime = System.currentTimeMillis();
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
+            model.applyPose(model.getBindPose());
             Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-            wheel1.rotation.set(reset);
-            wheel2.rotation.set(reset);
-            wheel3.rotation.set(reset);
-            wheel4.rotation.set(reset);
-            wheel5.rotation.set(reset);
-            wheel6.rotation.set(reset);
             control.rotation.set(reset);
-            bed.rotation.set(reset);
-            bedDoor.rotation.set(reset);
             lift.rotation.set(reset);
         }
         pPoseStack.popPose();

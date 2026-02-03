@@ -40,7 +40,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -71,6 +70,7 @@ import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
+import org.ywzj.vehicle.vehicle.parts.DoorUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
@@ -83,7 +83,6 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
 
@@ -277,6 +276,9 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             setMaxHealth(vehicleData.getMaxHealth());
             setHealth(vehicleData.getMaxHealth());
         }
+        if (this.level().isClientSide()) {
+            this.animationInstance = new VehicleAnimationInstance(this);
+        }
         this.name = vehicleData.getName();
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
@@ -301,9 +303,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
         this.partUnitMap = map;
         updateOBBs();
-        if (this.level().isClientSide()) {
-            this.animationInstance = new VehicleAnimationInstance(this);
-        }
         this.dataInitialized = true;
     }
 
@@ -690,6 +689,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 if (seat.seatIndex == 0) {
                     controlUnit.setOperator(livingEntity);
                     toggleEngine(true);
+                    partUnits.forEach(partUnit -> {
+                        if (partUnit instanceof DoorUnit doorUnit) {
+                            doorUnit.setOpen(false);
+                        }
+                    });
                 }
                 seat.partUnit.setOwner(livingEntity);
                 seat.passengerId = livingEntity.getId();
@@ -774,15 +778,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
-    public static void onClientVehicleChangeSeat(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ServerPlayer player = ctxSupplier.get().getSender();
-        if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-            vehicle.changeSeat(player, message.toSeat);
-        }
+    public void onClientVehicleChangeSeat(ClientVehicleChangeSeat message, Player player) {
+        changeSeat(player, message.toSeat);
     }
 
-    public static void onClientVehicleAction(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ServerPlayer player = ctxSupplier.get().getSender();
+    public void onClientVehicleAction(ClientVehicleAction message, Player player) {
         if (player != null && player.level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
             if (message.leaveVehicle) {
                 player.stopRiding();
@@ -937,6 +937,25 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             return Optional.of(partUnits.get(index));
         }
         return Optional.empty();
+    }
+
+    public DoorUnit getNearestDoorUnit(LivingEntity livingEntity) {
+        PartUnit<?> seatUnit = getOwnOperatorUnit(livingEntity);
+        double minDistance = Double.MAX_VALUE;
+        DoorUnit nearestDoorUnit = null;
+        for (PartUnit<?> partUnit : getPartUnits()) {
+            if (partUnit instanceof DoorUnit doorUnit) {
+                if (doorUnit.getSeatUnitOfDoor() != null && doorUnit.getSeatUnitOfDoor() == seatUnit) {
+                    return doorUnit;
+                }
+                double distance = partUnit.worldPosition(partUnit.getPivotOffset()).distanceTo(livingEntity.position());
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestDoorUnit = doorUnit;
+                }
+            }
+        }
+        return nearestDoorUnit;
     }
 
     public Optional<PartUnit<?>> getPartUnit(String id) {

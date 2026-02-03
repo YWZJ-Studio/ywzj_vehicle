@@ -54,6 +54,20 @@
       "seat_offset": [-0.7, 2.7, 3],
       "owner_view_offset": [-0.8, 2.5, 3.3],
       "sub_part_unit_ids": []
+    },
+    {
+      "id": "door_left",
+      "name": "door_left",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "door_left",
+      "is_seat": false
+    },
+    {
+      "id": "door_right",
+      "name": "door_right",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "door_right",
+      "is_seat": false
     }
   ]
 }

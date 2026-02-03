@@ -16,6 +16,15 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<DoorUnit, DoorUnitData> DOOR =
+            PartUnitType.Builder.<DoorUnit, DoorUnitData>of(YwzjVehicle.modLocation("door"))
+                    .setFactory(DoorUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, DoorUnitPojo.class);
+                        return new DoorUnitData(pojo);
+                    })
+                    .build();
+
     public static final PartUnitType<RotatableUnit<RotatableUnitData>, RotatableUnitData> ROTATABLE =
             PartUnitType.Builder.<RotatableUnit<RotatableUnitData>, RotatableUnitData>of(YwzjVehicle.modLocation("rotatable"))
                     .setFactory(RotatableUnit::new)

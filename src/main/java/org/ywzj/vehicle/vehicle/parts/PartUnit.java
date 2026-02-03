@@ -4,15 +4,13 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.network.NetworkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
@@ -30,7 +28,6 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -101,6 +98,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         if (!this.getVehicle().level().isClientSide()) {
             syncData.tick();
         }
+    }
+
+    public boolean onEntityInteract(Player player, InteractionHand hand) {
+        return true;
     }
 
     public PartUnitSyncData getSyncData() {
@@ -232,24 +233,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         syncData.onUpdateReceived(entries);
     }
 
-    public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ServerPlayer serverPlayer = ctxSupplier.get().getSender();
-        if (serverPlayer == null) {
-            return;
-        }
-
-        Level level = serverPlayer.level();
-        Entity entity = level.getEntity(message.vehicleEntityId);
-
-        if (entity instanceof AbstractVehicle vehicle && message.partUnitIndex < vehicle.getPartUnits().size()) {
-            if (message.shoot) {
-                vehicle.shoot(message.partUnitIndex, message.weaponIndex, message.aimContexts, serverPlayer);
-            } else {
-                PartUnit<?> partUnit = vehicle.getPartUnits().get(message.partUnitIndex);
-                if (partUnit instanceof RotatableUnit<?> rotatableUnit) {
-                    rotatableUnit.setXAimRot(message.xAimRot);
-                    rotatableUnit.setYAimRot(message.yAimRot);
-                }
+    public void onClientMessageReceived(ClientVehicleAction message, Player player) {
+        if (message.shoot) {
+            vehicle.shoot(message.partUnitIndex, message.weaponIndex, message.aimContexts, player);
+        } else {
+            PartUnit<?> partUnit = vehicle.getPartUnits().get(message.partUnitIndex);
+            if (partUnit instanceof RotatableUnit<?> rotatableUnit) {
+                rotatableUnit.setXAimRot(message.xAimRot);
+                rotatableUnit.setYAimRot(message.yAimRot);
             }
         }
     }

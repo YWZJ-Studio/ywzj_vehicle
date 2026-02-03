@@ -2428,7 +2428,7 @@
 					]
 				},
 				{
-					"name": "side_door",
+					"name": "side_door_left",
 					"parent": "main",
 					"pivot": [-13.06072, 25.15898, 2.76428],
 					"cubes": [
@@ -2579,7 +2579,7 @@
 					]
 				},
 				{
-					"name": "group5",
+					"name": "side_door_right",
 					"parent": "main",
 					"pivot": [0, 6.375, 40.575],
 					"cubes": [

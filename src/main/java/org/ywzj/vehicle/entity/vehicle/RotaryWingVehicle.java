@@ -1,24 +1,32 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import com.maydaymemory.mae.control.runner.AnimationRunner;
+import com.maydaymemory.mae.control.runner.PauseState;
+import com.maydaymemory.mae.control.runner.PlayingState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.render.animation.EntityContext;
+import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -27,6 +35,7 @@ import java.util.List;
 public class RotaryWingVehicle extends AbstractVehicle {
 
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Boolean> LANDING_GEAR_DOWN = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.BOOLEAN);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -41,6 +50,8 @@ public class RotaryWingVehicle extends AbstractVehicle {
     public Vec3 airSpeed = new Vec3(0, 0, 0);
     public float propellerRotation;
     public long lastRenderTime;
+    private boolean animationLandingGearDown;
+    private AnimationRunner landingGearRunner;
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
@@ -54,12 +65,14 @@ public class RotaryWingVehicle extends AbstractVehicle {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(COLLECTIVE_PITCH, 0);
+        this.entityData.define(LANDING_GEAR_DOWN, true);
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putInt("CollectivePitch", getCollectivePitch());
+        compound.putBoolean("LandingGearDown", isLandingGearDown());
     }
 
     @Override
@@ -68,18 +81,85 @@ public class RotaryWingVehicle extends AbstractVehicle {
         if (compound.contains("CollectivePitch")) {
             entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getInt("CollectivePitch"), 0, 100));
         }
+        if (compound.contains("LandingGearDown")) {
+            entityData.set(LANDING_GEAR_DOWN, compound.getBoolean("LandingGearDown"));
+        }
     }
 
     @Override
-    public void onEnterVehicle(LivingEntity pPlayer) {
-        super.onEnterVehicle(pPlayer);
-        this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN);
+    public void writeSpawnData(FriendlyByteBuf buffer) {
+        super.writeSpawnData(buffer);
+        buffer.writeBoolean(isLandingGearDown());
     }
 
     @Override
-    public void onLeaveVehicle(LivingEntity entity) {
-        super.onLeaveVehicle(entity);
-        this.playSound(SoundEvents.IRON_TRAPDOOR_CLOSE);
+    public void readSpawnData(FriendlyByteBuf buffer) {
+        super.readSpawnData(buffer);
+        EntityContext<?> context = getAnimationInstance().getStateMachine().getContext();
+        if (context != null) {
+            PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
+            landingGearRunner = context.addAnimationRunner("landing_gear", playingState);
+            animationLandingGearDown = buffer.readBoolean();
+            if (animationLandingGearDown) {
+                playingState.setSpeed(-1);
+            } else {
+                playingState.setSpeed(1);
+                landingGearRunner.setProgress(landingGearRunner.getMaxProgress());
+            }
+        }
+        applyLandingGear();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (level().isClientSide() && animationLandingGearDown != isLandingGearDown()) {
+            if (landingGearRunner != null && landingGearRunner.getState() instanceof PauseState) {
+                PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
+                if (animationLandingGearDown) {
+                    playingState.setSpeed(1);
+                    animationLandingGearDown = false;
+                } else {
+                    playingState.setSpeed(-1);
+                    animationLandingGearDown = true;
+                }
+                landingGearRunner.setState(playingState);
+                applyLandingGear();
+            }
+        }
+    }
+
+    public void applyLandingGear() {
+        PartUnit<?> landingGearUnit = partUnitMap.get("landing_gear");
+        if (landingGearUnit != null) {
+            double maxHeight = landingGearUnit.getOBBs().stream()
+                    .mapToDouble(obb -> obb.extents().y * 2)
+                    .max()
+                    .orElse(0);
+            if (isLandingGearDown()) {
+                mainCubeOBB.height += maxHeight;
+                mainCubeOBB.y -= maxHeight;
+            } else {
+                mainCubeOBB.height -= maxHeight;
+                mainCubeOBB.y += maxHeight;
+            }
+            mainCubeOBB.rebuild();
+        }
+    }
+
+    @Override
+    public void onClientVehicleAction(ClientVehicleAction message, Player player) {
+        if (message.toggleLandingGear) {
+            PartUnit<?> landingGearUnit = partUnitMap.get("landing_gear");
+            if (landingGearUnit == null) {
+                player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
+            } else if (hasPower()) {
+                boolean landingGearDown = !isLandingGearDown();
+                entityData.set(LANDING_GEAR_DOWN, landingGearDown);
+                applyLandingGear();
+            }
+        }
+        super.onClientVehicleAction(message, player);
     }
 
     @Override
@@ -321,6 +401,10 @@ public class RotaryWingVehicle extends AbstractVehicle {
 
     public int getCollectivePitch() {
         return entityData.get(COLLECTIVE_PITCH);
+    }
+
+    public boolean isLandingGearDown() {
+        return entityData.get(LANDING_GEAR_DOWN);
     }
 
 }

@@ -11,6 +11,8 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
 public class DumpTruck extends WheeledVehicle {
@@ -48,8 +50,10 @@ public class DumpTruck extends WheeledVehicle {
     @Override
     public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
         super.interact(pPlayer, pHand);
-        if (!this.level().isClientSide()) {
-            if (pPlayer.isShiftKeyDown()) {
+        if (!this.level().isClientSide() && pPlayer.isShiftKeyDown()) {
+            Vec3 eyePosition = pPlayer.getEyePosition();
+            PartUnit<?> partUnit = VectorUtil.hitPartUnit(this, eyePosition, eyePosition.add(pPlayer.getLookAngle().scale(4)));
+            if (partUnit == partUnitMap.get("dump_truck_bed")) {
                 Vec3 bedPos = relativeRotPos(position().add(0, 5, 0), true);
                 pPlayer.teleportTo(bedPos.x, bedPos.y, bedPos.z);
             }

@@ -179,7 +179,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         }
         float recoil = data.getRecoil();
         for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.position).toList()) {
-            for (int i = 0; i < 20 * recoil; i++) {
+            for (int i = 0; i < 3 * recoil; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
@@ -187,15 +187,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
                         0.01, 0.01, 0.01);
             }
-            for (int i = 0; i < 10 * recoil + 1; i++) {
-                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
-                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(ParticleTypes.FLAME, true,
-                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
-                        0.01, 0.01, 0.01);
-            }
-            for (int i = 0; i < 15 * recoil + 1; i++) {
+            for (int i = 0; i < 3 * recoil + 1; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;

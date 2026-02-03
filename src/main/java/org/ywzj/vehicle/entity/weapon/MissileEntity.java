@@ -98,9 +98,9 @@ public class MissileEntity extends AmmoEntity {
             if (t < 0) t = 0; // 限制在射线范围内
             Vec3 proj = start.add(dir.scale(t));
             // 当前点逐渐靠近射线（朝投影点移动）
-            double speed = 0.2;
+            double speed = 0.8;
             // 逐步解锁机动
-            float maneuverability = Math.min((float) tickCount / 20, 1);
+            float maneuverability = Math.min((float) tickCount / 5, 1);
             // 每 tick 靠近速度
             speed *= maneuverability;
             Vec3 delta = proj.subtract(pos);

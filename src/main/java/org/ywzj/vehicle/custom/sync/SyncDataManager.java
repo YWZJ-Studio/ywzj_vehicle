@@ -138,6 +138,7 @@ public class SyncDataManager {
         @SubscribeEvent
         public static void onCommonSetupEvent(FMLCommonSetupEvent event) {
             SyncDataManager manager = SyncDataManager.get();
+            manager.registerSerializer(SyncDataSerializers.BOOLEAN);
             manager.registerSerializer(SyncDataSerializers.INT);
             manager.registerSerializer(SyncDataSerializers.FLOAT);
             manager.registerSerializer(SyncDataSerializers.DOUBLE);

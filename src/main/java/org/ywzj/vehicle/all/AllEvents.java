@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.all;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -34,7 +35,10 @@ import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.parts.DoorUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 
 import java.util.Iterator;
 
@@ -85,8 +89,28 @@ public class AllEvents {
         @SubscribeEvent
         public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
             ItemStack itemStack = event.getItemStack();
+            Player player = event.getEntity();
             if (itemStack.getItem() instanceof VehicleItem vehicleItem) {
-                vehicleItem.interactEntity(itemStack, event.getEntity(), event.getTarget(), event.getHand());
+                vehicleItem.interactEntity(itemStack, player, event.getTarget(), event.getHand());
+            }
+            if (event.getTarget() instanceof AbstractVehicle vehicle) {
+                Vec3 eyePosition = player.getEyePosition();
+                PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
+                if (partUnit != null) {
+                    if (!partUnit.onEntityInteract(player, event.getHand())) {
+                        event.setCanceled(true);
+                        return;
+                    } else if (partUnit instanceof DoorUnit) {
+                        return;
+                    }
+                }
+                if (!vehicle.level().isClientSide() && event.getHand() == InteractionHand.MAIN_HAND && !player.isShiftKeyDown()) {
+                    DoorUnit doorUnit = vehicle.getNearestDoorUnit(player);
+                    if (doorUnit != null && !doorUnit.isOpen()) {
+                        doorUnit.setOpen(true);
+                        event.setCanceled(true);
+                    }
+                }
             }
         }
 
@@ -114,6 +138,12 @@ public class AllEvents {
                     }
                     vehicle.onEnterVehicle(livingEntity);
                 } else {
+                    if (!event.getLevel().isClientSide()) {
+                        DoorUnit doorUnit = vehicle.getNearestDoorUnit(livingEntity);
+                        if (doorUnit != null && !doorUnit.isOpen()) {
+                            doorUnit.setOpen(true);
+                        }
+                    }
                     vehicle.onLeaveVehicle(livingEntity);
                 }
             }
