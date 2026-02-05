@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * 动能武器打出的子弹实体。
+ * Kinetic weapon projectile entity.
  */
 public class BulletEntity extends AmmoEntity {
 
@@ -60,20 +60,23 @@ public class BulletEntity extends AmmoEntity {
     private float gravity = 0;
     private float friction = 0.01F;
     private float knockback = 0;
-    // 穿透数
+    // Penetration count
     private int pierce = 1;
-    // 初始位置
+    // Initial position
     private Vec3 startPos;
     private float armorIgnore;
     private float headShot;
-    // 曳光
+    // Tracer properties
     private float caliber = 7.62f;
     private float tracerR = 1f;
     private float tracerG = 1f;
-    private float tracerB = 1f;;
+    private float tracerB = 1f;
 
-    // 返回一个距离-伤害乘数
+    // Returns distance-based damage multiplier
     private Function<Double, Float> distanceDamageFunction = (distance) -> 1.0f;
+    
+    // Weapon data reference for damage falloff calculation
+    private VehicleCannonWeaponData weaponData;
 
     public BulletEntity(EntityType<? extends Projectile> type, Level worldIn) {
         super(type, worldIn, null);
@@ -108,13 +111,13 @@ public class BulletEntity extends AmmoEntity {
     @Override
     public void tick() {
         super.tick();
-        // 调用 TaC 子弹服务器事件
+        // Invoke TaC bullet server event
         this.onBulletTick();
-        // 粒子效果
+        // Particle effects
         if (this.level().isClientSide) {
 //            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> AmmoParticleSpawner.addParticle(this));
         }
-        // 子弹模型的旋转与抛物线
+        // Bullet rotation and trajectory
         Vec3 movement = this.getDeltaMovement();
         double x = movement.x;
         double y = movement.y;
@@ -122,77 +125,76 @@ public class BulletEntity extends AmmoEntity {
         double distance = movement.horizontalDistance();
         this.setYRot((float) Math.toDegrees(Mth.atan2(x, z)));
         this.setXRot((float) Math.toDegrees(Mth.atan2(y, distance)));
-        // 子弹初始的朝向设置
+        // Initial rotation setup
         if (this.xRotO == 0.0F && this.yRotO == 0.0F) {
             this.yRotO = this.getYRot();
             this.xRotO = this.getXRot();
         }
-        // 子弹运动时的旋转（不包含自转）
+        // Rotation interpolation (excluding spin)
         this.setXRot(lerpRotation(this.xRotO, this.getXRot()));
         this.setYRot(lerpRotation(this.yRotO, this.getYRot()));
-        // 子弹位置更新
+        // Position update
         double nextPosX = this.getX() + x;
         double nextPosY = this.getY() + y;
         double nextPosZ = this.getZ() + z;
         this.setPos(nextPosX, nextPosY, nextPosZ);
         float friction = this.friction;
         float gravity = this.gravity;
-        // 子弹入水后的调整
+        // Water adjustments
         if (this.isInWater()) {
             for (int i = 0; i < 4; i++) {
                 this.level().addParticle(ParticleTypes.BUBBLE, nextPosX - x * 0.25F, nextPosY - y * 0.25F, nextPosZ - z * 0.25F, x, y, z);
             }
-            // 在水中的阻力
             friction = 0.4F;
             gravity *= 0.6F;
         }
-        // 重力与阻力更新速度状态
+        // Apply gravity and friction
         this.setDeltaMovement(this.getDeltaMovement().scale(1 - friction));
         this.setDeltaMovement(this.getDeltaMovement().add(0, -gravity, 0));
-        // 子弹生命结束
+        // Lifetime expiration
         if (this.tickCount >= this.life - 1) {
             this.discard();
         }
     }
 
-    // 子弹的逻辑处理
+    // Bullet logic processing
     protected void onBulletTick() {
-        // 服务器端子弹逻辑
+        // Server-side bullet logic
         if (!this.level().isClientSide()) {
-            // 子弹在 tick 起始的位置
+            // Bullet position at tick start
             Vec3 startVec = this.position();
-            // 子弹在 tick 结束的位置
+            // Bullet position at tick end
             Vec3 endVec = startVec.add(this.getDeltaMovement());
-            // 子弹的碰撞检测
+            // Block collision detection
             BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
             if (result.getType() != HitResult.Type.MISS) {
-                // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
+                // Set end position to block hit location
                 endVec = result.getLocation();
             }
 
             List<BulletHitResult> hitEntities = null;
-            // 子弹的击中检测，穿透为 1 或者爆炸类弹药限制为一个实体穿透判定
+            // Entity hit detection, limited to single penetration for pierce <= 1 or explosive ammo
             if (this.pierce <= 1) {
                 BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
-                // 将单个命中是实体创建为单个内容的 list
+                // Create single-element list for single hit
                 if (entityResult != null) {
                     hitEntities = Collections.singletonList(entityResult);
                 }
             } else {
                 hitEntities = EntityUtil.findEntitiesOnPath(this, startVec, endVec);
             }
-            // 当子弹击中实体时，进行被命中的实体读取
+            // Process entity hits
             if (hitEntities != null && !hitEntities.isEmpty()) {
                 hitEntities.stream()
                         .sorted(Comparator.comparingDouble(r -> r.getLocation().distanceToSqr(startVec)))
                         .limit(pierce)
                         .forEach(entityResult -> {
-                            // 处理子弹击中实体的逻辑
+                            // Handle entity hit logic
                             this.onHitEntity(entityResult);
                             this.pierce--;
                         });
                 if (this.pierce < 1) {
-                    // 子弹已经穿透所有实体，结束子弹的飞行
+                    // All penetrations exhausted
                     this.discard();
                     return;
                 }
@@ -247,34 +249,70 @@ public class BulletEntity extends AmmoEntity {
             destroyedBeforeHurt = vehicle.isDestroyed();
         }
 
-        // 对 LivingEntity 进行击退强度的自定义
+        // Apply custom knockback for living entities
         if (entity instanceof LivingEntity livingCore) {
-            // 取消击退效果，设定自己的击退强度
-            KnockBackModifier modifier = KnockBackModifier.fromLivingEntity(livingCore);
-            modifier.ywzj_vehicle$setKnockBackStrength(this.knockback);
-            // 创建伤害
-            performAttack(entity, damage, sources);
-            // 恢复原位
-            modifier.ywzj_vehicle$resetKnockBackStrength();
+            applyDamageWithKnockback(livingCore, entity, damage, sources);
         } else {
-            // 创建伤害
             performAttack(entity, damage, sources);
         }
 
-        if (entity instanceof AbstractVehicle vehicle) {
-            kill = !destroyedBeforeHurt && vehicle.isDestroyed();
-        } else if (entity instanceof LivingEntity livingEntity) {
-            kill = livingEntity.isDeadOrDying();
-        }
+        kill = determineKillStatus(entity, destroyedBeforeHurt);
 
         if (owner instanceof ServerPlayer serverPlayer) {
-            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill));
+            notifyPlayerOfHit(serverPlayer, entity, kill);
         }
 
         if (explosion.explode) {
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
-            vehicleExplosion.explode();
+            createExplosion(result.getLocation());
         }
+    }
+
+    /**
+     * Applies damage with custom knockback strength for living entities.
+     */
+    private void applyDamageWithKnockback(LivingEntity livingCore, Entity entity, float damage, Pair<DamageSource, DamageSource> sources) {
+        KnockBackModifier modifier = KnockBackModifier.fromLivingEntity(livingCore);
+        modifier.ywzj_vehicle$setKnockBackStrength(this.knockback);
+        performAttack(entity, damage, sources);
+        modifier.ywzj_vehicle$resetKnockBackStrength();
+    }
+
+    /**
+     * Determines if the entity was killed by the attack.
+     */
+    private boolean determineKillStatus(Entity entity, boolean destroyedBeforeHurt) {
+        if (entity instanceof AbstractVehicle vehicle) {
+            return !destroyedBeforeHurt && vehicle.isDestroyed();
+        } else if (entity instanceof LivingEntity livingEntity) {
+            return livingEntity.isDeadOrDying();
+        }
+        return false;
+    }
+
+    /**
+     * Notifies the player of a successful hit.
+     */
+    private void notifyPlayerOfHit(ServerPlayer serverPlayer, Entity entity, boolean kill) {
+        Channel.CHANNEL.send(
+            PacketDistributor.PLAYER.with(() -> serverPlayer),
+            new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill)
+        );
+    }
+
+    /**
+     * Creates an explosion at the specified location.
+     */
+    private void createExplosion(Vec3 location) {
+        VehicleExplosion vehicleExplosion = new VehicleExplosion(
+            level(), 
+            this.getOwner(), 
+            this.vehicle, 
+            location, 
+            explosion.radius, 
+            explosion.damage, 
+            explosion.destroyBlock
+        );
+        vehicleExplosion.explode();
     }
 
     protected void onHitBlock(BlockHitResult result, Vec3 startVec, Vec3 endVec) {
@@ -286,24 +324,12 @@ public class BulletEntity extends AmmoEntity {
 
         super.onHitBlock(result);
 
-        // 穿甲爆破
+        // Armor-piercing explosion
         if (explosion.explode) {
-            Level level = level();
-            BlockState state = level.getBlockState(pos);
-            float destroySpeed = state.getDestroySpeed(level, pos);
-            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50 && explosion.destroyBlock && AllConfigs.common.explosionDestroyBlocks.get()) {
-                level().destroyBlock(pos, false);
-            }
-            Vec3 explosionAtPos = hitVec.add(endVec.subtract(startVec).normalize().scale(getDeltaMovement().length()));
-            BlockHitResult resultAfterPenetrate = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(hitVec, explosionAtPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-            if (resultAfterPenetrate.getType() != HitResult.Type.MISS) {
-                explosionAtPos = resultAfterPenetrate.getLocation();
-            }
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, explosionAtPos, explosion.radius, explosion.damage, explosion.destroyBlock);
-            vehicleExplosion.explode();
+            handleArmorPiercingExplosion(pos, hitVec, startVec, endVec);
         }
 
-        // 弹孔与点燃特效
+        // Bullet hole and ignition effects (disabled)
 //        if (this.level() instanceof ServerLevel serverLevel) {
 //            BulletHoleOption bulletHoleOption = new BulletHoleOption(result.getDirection(), result.getBlockPos(), this.ammoId.toString(), this.gunId.toString(), this.gunDisplayId.toString());
 //            serverLevel.sendParticles(bulletHoleOption, hitVec.x, hitVec.y, hitVec.z, 1, 0, 0, 0, 0);
@@ -311,35 +337,88 @@ public class BulletEntity extends AmmoEntity {
         this.discard();
     }
 
-    // todo 根据距离进行伤害衰减设计
+    /**
+     * Handles armor-piercing explosion mechanics.
+     * Destroys weak blocks and calculates explosion position after penetration.
+     */
+    private void handleArmorPiercingExplosion(BlockPos pos, Vec3 hitVec, Vec3 startVec, Vec3 endVec) {
+        Level level = level();
+        BlockState state = level.getBlockState(pos);
+        float destroySpeed = state.getDestroySpeed(level, pos);
+        
+        // Destroy weak blocks if configured
+        if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50 
+                && explosion.destroyBlock && AllConfigs.common.explosionDestroyBlocks.get()) {
+            level().destroyBlock(pos, false);
+        }
+        
+        // Calculate explosion position after penetration
+        Vec3 explosionAtPos = hitVec.add(endVec.subtract(startVec).normalize().scale(getDeltaMovement().length()));
+        BlockHitResult resultAfterPenetrate = BlockRayTrace.rayTraceBlocks(
+            this.level(), 
+            new ClipContext(hitVec, explosionAtPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)
+        );
+        
+        if (resultAfterPenetrate.getType() != HitResult.Type.MISS) {
+            explosionAtPos = resultAfterPenetrate.getLocation();
+        }
+        
+        createExplosion(explosionAtPos);
+    }
+
+    // TODO: Implement distance-based damage falloff system
+    /**
+     * Calculates damage at hit location with distance-based falloff.
+     * Uses the weapon's damage falloff configuration to reduce damage over distance.
+     * 
+     * @param hitVec Hit location in world coordinates
+     * @return Final damage value after applying falloff multiplier
+     */
     public float getDamage(Vec3 hitVec) {
-        // 遍历进行判断
-        double playerDistance = hitVec.distanceTo(this.startPos);
-        float multiplier = this.distanceDamageFunction.apply(playerDistance);
+        double travelDistance = hitVec.distanceTo(this.startPos);
+        
+        // Use new damage falloff system if weapon data is available
+        if (weaponData != null && weaponData.getDamageFalloff() != null) {
+            float multiplier = weaponData.getDamageFalloff().calculateMultiplier(travelDistance);
+            return damage * multiplier;
+        }
+        
+        // Fallback to legacy function-based system
+        float multiplier = this.distanceDamageFunction.apply(travelDistance);
         return damage * multiplier;
     }
 
 
-    private void performAttack(Entity parts, float damage, Pair<DamageSource, DamageSource> sources) {
-        var source1 = sources.getLeft();
-        var source2 = sources.getRight();
-        // 穿甲伤害和普通伤害的比例计算
+    /**
+     * Performs a split damage attack with armor penetration mechanics.
+     * Damage is split between normal and armor-piercing based on armorIgnore value.
+     */
+    private void performAttack(Entity target, float damage, Pair<DamageSource, DamageSource> sources) {
+        var normalSource = sources.getLeft();
+        var armorPiercingSource = sources.getRight();
+        
+        // Calculate damage split between normal and armor-piercing
         float armorDamagePercent = Mth.clamp(this.armorIgnore, 0.0F, 1.0F);
         float normalDamagePercent = 1 - armorDamagePercent;
 
-        if (parts instanceof PartEntity<?> part) {
-            part.getParent().invulnerableTime = 0;
-        } else {
-            parts.invulnerableTime = 0;
-        }
-        parts.hurt(source1, damage * normalDamagePercent);
+        // Apply normal damage
+        resetInvulnerability(target);
+        target.hurt(normalSource, damage * normalDamagePercent);
 
-        if (parts instanceof PartEntity<?> part) {
+        // Apply armor-piercing damage
+        resetInvulnerability(target);
+        target.hurt(armorPiercingSource, damage * armorDamagePercent);
+    }
+
+    /**
+     * Resets entity invulnerability time to allow consecutive damage application.
+     */
+    private void resetInvulnerability(Entity entity) {
+        if (entity instanceof PartEntity<?> part) {
             part.getParent().invulnerableTime = 0;
         } else {
-            parts.invulnerableTime = 0;
+            entity.invulnerableTime = 0;
         }
-        parts.hurt(source2, damage * armorDamagePercent);
     }
 
     @Override
@@ -424,6 +503,16 @@ public class BulletEntity extends AmmoEntity {
 
     public void setDistanceDamageFunction(Function<Double, Float> distanceDamageFunction) {
         this.distanceDamageFunction = distanceDamageFunction;
+    }
+
+    /**
+     * Sets weapon data for advanced damage falloff calculations.
+     * This enables the new distance-based damage falloff system.
+     * 
+     * @param weaponData Weapon configuration data
+     */
+    public void setWeaponData(VehicleCannonWeaponData weaponData) {
+        this.weaponData = weaponData;
     }
 
     public float getArmorIgnore() {

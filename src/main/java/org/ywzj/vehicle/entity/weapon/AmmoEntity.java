@@ -58,53 +58,120 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         }
     }
 
+    /**
+     * Handles projectile collision detection and damage application.
+     * Processes both block and entity hits with explosion support.
+     */
     protected void tickHit() {
-        //todo: 细化
         if (!level().isClientSide()) {
-            // 子弹在 tick 起始的位置
             Vec3 startVec = this.position();
-            // 子弹在 tick 结束的位置
             Vec3 endVec = startVec.add(this.getDeltaMovement());
-            // 子弹的碰撞检测
-            BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-            if (result.getType() != HitResult.Type.MISS) {
-                // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
-                if (explosion != null && explosion.explode) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                    vehicleExplosion.explode();
-                }
-                this.discard();
+            
+            // Check block collision first
+            if (handleBlockCollision(startVec, endVec)) {
                 return;
             }
-            BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
-            // 将单个命中是实体创建为单个内容的 list
-            if (entityResult != null && entityResult.getEntity() != vehicle) {
-                Entity entity = entityResult.getEntity();
-                @Nullable Entity owner = this.getOwner();
-                // 攻击者
-                LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
-                DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation());
-                boolean kill = false;
-                boolean destroyedBeforeHurt = false;
-                if (entity instanceof AbstractVehicle vehicle) {
-                    destroyedBeforeHurt = vehicle.isDestroyed();
-                }
-                entity.hurt(source, damage);
-                if (entity instanceof AbstractVehicle vehicle) {
-                    kill = !destroyedBeforeHurt && vehicle.isDestroyed();
-                } else if (entity instanceof LivingEntity livingEntity) {
-                    kill = livingEntity.isDeadOrDying();
-                }
-                if (owner instanceof ServerPlayer serverPlayer) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill));
-                }
-                if (explosion != null) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                    vehicleExplosion.explode();
-                }
-                this.discard();
-            }
+            
+            // Check entity collision
+            handleEntityCollision(startVec, endVec);
         }
+    }
+
+    /**
+     * Handles collision with blocks.
+     * @return true if projectile should be discarded
+     */
+    private boolean handleBlockCollision(Vec3 startVec, Vec3 endVec) {
+        BlockHitResult result = BlockRayTrace.rayTraceBlocks(
+            this.level(), 
+            new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)
+        );
+        
+        if (result.getType() != HitResult.Type.MISS) {
+            if (explosion != null && explosion.explode) {
+                createExplosion(position());
+            }
+            this.discard();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Handles collision with entities.
+     */
+    private void handleEntityCollision(Vec3 startVec, Vec3 endVec) {
+        BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
+        
+        if (entityResult != null && entityResult.getEntity() != vehicle) {
+            Entity target = entityResult.getEntity();
+            applyDamageToEntity(target);
+            
+            if (explosion != null) {
+                createExplosion(position());
+            }
+            this.discard();
+        }
+    }
+
+    /**
+     * Applies damage to the target entity and notifies the attacker.
+     */
+    private void applyDamageToEntity(Entity target) {
+        @Nullable Entity owner = this.getOwner();
+        LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
+        DamageSource source = AllDamageTypes.Sources.bullet(
+            level().registryAccess(), 
+            this, 
+            attacker, 
+            target.position()
+        );
+        
+        boolean destroyedBeforeHurt = target instanceof AbstractVehicle v && v.isDestroyed();
+        target.hurt(source, damage);
+        boolean kill = determineKillStatus(target, destroyedBeforeHurt);
+        
+        if (owner instanceof ServerPlayer serverPlayer) {
+            notifyPlayerOfHit(serverPlayer, target, kill);
+        }
+    }
+
+    /**
+     * Determines if the target was killed by the attack.
+     */
+    private boolean determineKillStatus(Entity target, boolean destroyedBeforeHurt) {
+        if (target instanceof AbstractVehicle vehicle) {
+            return !destroyedBeforeHurt && vehicle.isDestroyed();
+        } else if (target instanceof LivingEntity livingEntity) {
+            return livingEntity.isDeadOrDying();
+        }
+        return false;
+    }
+
+    /**
+     * Notifies the player of a successful hit.
+     */
+    private void notifyPlayerOfHit(ServerPlayer player, Entity target, boolean kill) {
+        Channel.CHANNEL.send(
+            PacketDistributor.PLAYER.with(() -> player),
+            new ServerVehicleHurtEntity(vehicle.getId(), target.getId(), kill)
+        );
+    }
+
+    /**
+     * Creates an explosion at the specified location.
+     */
+    private void createExplosion(Vec3 location) {
+        VehicleExplosion vehicleExplosion = new VehicleExplosion(
+            level(), 
+            this.getOwner(), 
+            this.vehicle, 
+            location, 
+            explosion.radius, 
+            explosion.damage, 
+            explosion.destroyBlock
+        );
+        vehicleExplosion.explode();
     }
 
     @Override

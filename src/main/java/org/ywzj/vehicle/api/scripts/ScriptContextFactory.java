@@ -2,12 +2,20 @@ package org.ywzj.vehicle.api.scripts;
 
 import org.mozillaa.javascript.*;
 
+import java.util.Set;
+import java.util.function.Consumer;
+
 public final class ScriptContextFactory extends ContextFactory {
     private static final ScriptContextFactory INSTANCE;
+    private static ScriptExtensionEvent extensionEvent;
+    private static boolean eventFired = false;
+    
     static {
-        // 限制脚本能够访问的类
-        // todo 抛个事件，可以允许附属扩展，暂时先这样
-        ClassShutter shutter = className -> className.startsWith("org.ywzj.vehicle");
+        // Create class shutter with lazy event initialization
+        ClassShutter shutter = className -> {
+            ensureEventFired();
+            return extensionEvent.isClassAllowed(className);
+        };
         INSTANCE = new ScriptContextFactory(null, shutter);
     }
 
@@ -21,6 +29,15 @@ public final class ScriptContextFactory extends ContextFactory {
         try (Context ctx = this.enterContext()) {
             Scriptable scope = ctx.initSafeStandardObjects();
             ScriptUtils.inject(scope);
+            
+            // Apply scope initializers from extension event (lazy)
+            ensureEventFired();
+            if (extensionEvent != null) {
+                for (Consumer<Scriptable> initializer : extensionEvent.getScopeInitializers()) {
+                    initializer.accept(scope);
+                }
+            }
+            
             if (scope instanceof ScriptableObject so) {
                 so.sealObject();
             }
@@ -28,8 +45,35 @@ public final class ScriptContextFactory extends ContextFactory {
         }
     }
 
+    /**
+     * Ensures the extension event has been fired.
+     * Called lazily to avoid issues with mod loading context timing.
+     */
+    private static synchronized void ensureEventFired() {
+        if (!eventFired) {
+            extensionEvent = new ScriptExtensionEvent();
+            // Event is now just a data holder - addons can register via API
+            // No need to post to event bus since it's called too early
+            eventFired = true;
+        }
+    }
+
     public static ScriptContextFactory get() {
         return INSTANCE;
+    }
+
+    /**
+     * Gets the script extension event for inspection or modification.
+     * Useful for addons to register their classes/packages.
+     * 
+     * Example usage in addon mod:
+     * <pre>
+     * ScriptContextFactory.getExtensionEvent().allowPackage("com.example.addon");
+     * </pre>
+     */
+    public static ScriptExtensionEvent getExtensionEvent() {
+        ensureEventFired();
+        return extensionEvent;
     }
 
     public Scriptable createScope(Context ctx) {

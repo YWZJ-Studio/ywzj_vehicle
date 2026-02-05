@@ -2,6 +2,7 @@
   "type": "ywzj_vehicle:cannon",
   "name": "105mm_cannon",
   "caliber": 105,
+  "velocity": 32,
   "damage": 79,
   "headshot_multiplier": 1,
   "recoil": 1,

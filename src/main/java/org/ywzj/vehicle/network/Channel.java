@@ -103,6 +103,11 @@ public class Channel {
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.S_SCREEN_SHAKE.value(), ClientScreenShake.class,
+                ClientScreenShake::encode, ClientScreenShake::new,
+                ClientScreenShake::handle,
+                Optional.of(PLAY_TO_CLIENT));
     }
 
 }
@@ -124,7 +129,8 @@ enum PacketId {
     C_FIGURE_BOX_UPDATE(112),
     S_VEHICLE_CHANGE_DISPLAY(113),
     C_VEHICLE_CHANGE_DISPLAY(114),
-    S_SLICED_PACKET(200);
+    S_SLICED_PACKET(200),
+    S_SCREEN_SHAKE(201);
 
     private final int id;
 

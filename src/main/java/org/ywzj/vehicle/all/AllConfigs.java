@@ -6,10 +6,12 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ywzj.vehicle.YwzjVehicle;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +23,9 @@ public class AllConfigs {
     public static ServerConfig server;
     public static List<String> figureBoxCaptureBlacklist = new ArrayList<>();
 
+    private static final String CONFIG_DIR_NAME = "limitless_vehicle";
+    private static final String BLACKLIST_FILE_NAME = "figure_box_capture_blacklist.txt";
+
     public static void register(ModLoadingContext context) {
         Pair<CommonConfig, ForgeConfigSpec> specPairCommon = new ForgeConfigSpec.Builder().configure(CommonConfig::new);
         common = specPairCommon.getLeft();
@@ -31,24 +36,96 @@ public class AllConfigs {
         loadExternal();
     }
 
+    /**
+     * Loads external configuration files with comprehensive error handling.
+     * Creates default configuration if files don't exist.
+     */
     public static void loadExternal() {
-        Path configDir = FMLPaths.CONFIGDIR.get().resolve("limitless_vehicle");
-        Path filePath = configDir.resolve("figure_box_capture_blacklist.txt");
+        Path configDir = FMLPaths.CONFIGDIR.get().resolve(CONFIG_DIR_NAME);
+        Path filePath = configDir.resolve(BLACKLIST_FILE_NAME);
+        
         try {
-            if (Files.notExists(configDir)) Files.createDirectories(configDir);
-            if (Files.notExists(filePath)) {
+            ensureConfigDirectoryExists(configDir);
+            ensureBlacklistFileExists(filePath);
+            loadBlacklistFromFile(filePath);
+            
+            YwzjVehicle.LOGGER.info("Successfully loaded figure box blacklist: {} entries", figureBoxCaptureBlacklist.size());
+        } catch (IOException e) {
+            YwzjVehicle.LOGGER.error("Failed to load external configuration from: {}", filePath, e);
+            loadDefaultBlacklist();
+        } catch (SecurityException e) {
+            YwzjVehicle.LOGGER.error("Permission denied when accessing configuration directory: {}", configDir, e);
+            loadDefaultBlacklist();
+        } catch (Exception e) {
+            YwzjVehicle.LOGGER.error("Unexpected error while loading external configuration", e);
+            loadDefaultBlacklist();
+        }
+    }
+
+    /**
+     * Ensures the configuration directory exists, creating it if necessary.
+     */
+    private static void ensureConfigDirectoryExists(Path configDir) throws IOException {
+        if (Files.notExists(configDir)) {
+            try {
+                Files.createDirectories(configDir);
+                YwzjVehicle.LOGGER.info("Created configuration directory: {}", configDir);
+            } catch (IOException e) {
+                throw new IOException("Failed to create configuration directory: " + configDir, e);
+            }
+        }
+    }
+
+    /**
+     * Ensures the blacklist file exists, creating it with defaults if necessary.
+     */
+    private static void ensureBlacklistFileExists(Path filePath) throws IOException {
+        if (Files.notExists(filePath)) {
+            try {
                 List<String> defaultLines = Arrays.asList(
+                        "# Figure Box Capture Blacklist",
+                        "# Add entity IDs (one per line) that should not be captured",
+                        "# Lines starting with # are comments",
+                        "",
                         "minecraft:ender_dragon",
                         "corpse:corpse"
                 );
-                Files.write(filePath, defaultLines);
+                Files.write(filePath, defaultLines, StandardOpenOption.CREATE_NEW);
+                YwzjVehicle.LOGGER.info("Created default blacklist file: {}", filePath);
+            } catch (IOException e) {
+                throw new IOException("Failed to create blacklist file: " + filePath, e);
             }
-            figureBoxCaptureBlacklist.clear();
-            figureBoxCaptureBlacklist = Files.readAllLines(filePath);
-            figureBoxCaptureBlacklist.removeIf(line -> line.startsWith("#") || line.trim().isEmpty());
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+    }
+
+    /**
+     * Loads and parses the blacklist from file.
+     */
+    private static void loadBlacklistFromFile(Path filePath) throws IOException {
+        try {
+            figureBoxCaptureBlacklist.clear();
+            List<String> lines = Files.readAllLines(filePath);
+            
+            for (String line : lines) {
+                String trimmed = line.trim();
+                // Skip comments and empty lines
+                if (!trimmed.isEmpty() && !trimmed.startsWith("#")) {
+                    figureBoxCaptureBlacklist.add(trimmed);
+                }
+            }
+        } catch (IOException e) {
+            throw new IOException("Failed to read blacklist file: " + filePath, e);
+        }
+    }
+
+    /**
+     * Loads default blacklist entries when file loading fails.
+     */
+    private static void loadDefaultBlacklist() {
+        figureBoxCaptureBlacklist.clear();
+        figureBoxCaptureBlacklist.add("minecraft:ender_dragon");
+        figureBoxCaptureBlacklist.add("corpse:corpse");
+        YwzjVehicle.LOGGER.warn("Using default blacklist entries due to configuration load failure");
     }
 
     public static class CommonConfig {
@@ -64,23 +141,23 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
-            explosionDestroyBlocks = builder.comment("爆炸是否破坏方块")
+            explosionDestroyBlocks = builder.comment("Whether explosions destroy blocks")
                     .define("explosionDestroyBlocks", true);
-            explosionDropBlocks = builder.comment("爆炸是否掉落方块")
+            explosionDropBlocks = builder.comment("Whether explosions drop blocks")
                     .define("explosionDropBlocks", true);
-            vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
-                    .defineInRange("showVehicleInfoDistance", 512.0, 0.0, Double.MAX_VALUE);
-            selfRighting = builder.comment("倾角过大时是否自动回正")
+            vehicleExplosionHurtPassengerDamage = builder.comment("Damage dealt to passengers when vehicle explodes")
+                    .defineInRange("vehicleExplosionHurtPassengerDamage", 512.0, 0.0, Double.MAX_VALUE);
+            selfRighting = builder.comment("Whether vehicles auto-correct when tilted excessively")
                     .define("selfRighting", true);
-            infiniteFuel = builder.comment("无需燃油仍可运作")
+            infiniteFuel = builder.comment("Whether vehicles can operate without fuel")
                     .define("infiniteFuel", false);
-            fuelNameWhiteList = builder.comment("允许视作燃油的液体")
+            fuelNameWhiteList = builder.comment("Fluids that can be used as fuel")
                     .defineList("fuelNameWhiteList", Arrays.asList("fuel", "gas", "lava"), obj -> obj instanceof String);
-            hitIndicator = builder.comment("开启命中提示")
+            hitIndicator = builder.comment("Enable hit indicator")
                     .define("hitIndicator", true);
-            checkTeamOnEnterVehicle = builder.comment("载具乘客是否需为同队")
+            checkTeamOnEnterVehicle = builder.comment("Whether vehicle passengers must be on the same team")
                     .define("checkTeamOnEnterVehicle", true);
-            figureBoxOnlyCaptureVehicle = builder.comment("手办盒是否只能收纳载具")
+            figureBoxOnlyCaptureVehicle = builder.comment("Whether figure box can only capture vehicles")
                     .define("figureBoxOnlyCaptureVehicle", false);
         }
 
@@ -91,7 +168,7 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
 
         public ServerConfig(ForgeConfigSpec.Builder builder) {
-            showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离")
+            showVehicleInfoDistance = builder.comment("Maximum distance to show vehicle info when looking at it")
                     .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
         }
 

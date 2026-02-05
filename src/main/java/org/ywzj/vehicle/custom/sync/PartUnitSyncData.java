@@ -15,28 +15,58 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * 一个简易的数据同步工具，用于载具上 {@link PartUnit} 的数据同步，由每个 {@link PartUnit} 各自持有<br/>
- * 在载具的 {@link PartUnit} 结构发生后，应重新构造<br/>
- * 需要同步的数据应该是一个基础数据类型，且在客户端是只读的<br/>
- * 你需要确保声明同步数据的顺序在两侧保持严格一致<br/>
+ * Simplified data synchronization utility for {@link PartUnit} data on vehicles.
+ * Each {@link PartUnit} maintains its own instance.
+ * Should be reconstructed when the vehicle's {@link PartUnit} structure changes.
+ * Synchronized data should be primitive types and read-only on the client.
+ * Declaration order of sync data must be strictly consistent on both sides.
  */
 public class PartUnitSyncData {
     private final PartUnit<?> partUnit;
     private final int intervalTick;
     private List<SyncDataHolder<?>> dataHolders = new ArrayList<>();
     private boolean isInitialized = false;
+    private SyncMode syncMode = SyncMode.TRACKING; // Default sync mode
 
-    //todo: 支持不同的同步模式
+    /**
+     * Synchronization mode determines which players receive data updates.
+     */
     public enum SyncMode {
         /**
-         * 所有追踪此实体的玩家
+         * All players tracking this entity (default).
+         * Used for visible data like position, rotation, animations.
          */
         TRACKING,
+        
         /**
-         * 仅实体的乘客
+         * Only passengers of the entity.
+         * Used for internal data like ammo count, reload status.
          */
-        PASSENGERS_ONLY
+        PASSENGERS_ONLY,
+        
+        /**
+         * Only the operator/controller of this part unit.
+         * Used for sensitive data like targeting information, weapon status.
+         */
+        OPERATOR_ONLY,
+        
+        /**
+         * All players within a specific range.
+         * Used for proximity-based data like engine sounds, particle effects.
+         */
+        NEARBY_PLAYERS,
+        
+        /**
+         * No automatic synchronization.
+         * Data must be manually synchronized using custom packets.
+         */
+        MANUAL
     }
+
+    /**
+     * Range for NEARBY_PLAYERS sync mode (in blocks).
+     */
+    private double nearbyRange = 64.0;
 
     public PartUnitSyncData(@NotNull PartUnit<?> partUnit, int intervalTick) {
         this.intervalTick = intervalTick;
@@ -45,6 +75,50 @@ public class PartUnitSyncData {
 
     public PartUnitSyncData(@NotNull PartUnit<?> partUnit) {
         this(partUnit, 1);
+    }
+
+    /**
+     * Sets the synchronization mode for this data.
+     * Must be called before initialization.
+     * 
+     * @param syncMode The sync mode to use
+     * @return This instance for method chaining
+     */
+    public PartUnitSyncData setSyncMode(SyncMode syncMode) {
+        if (isInitialized) {
+            throw new IllegalStateException("Cannot change sync mode after initialization");
+        }
+        this.syncMode = syncMode;
+        return this;
+    }
+
+    /**
+     * Sets the range for NEARBY_PLAYERS sync mode.
+     * Must be called before initialization.
+     * 
+     * @param range Range in blocks
+     * @return This instance for method chaining
+     */
+    public PartUnitSyncData setNearbyRange(double range) {
+        if (isInitialized) {
+            throw new IllegalStateException("Cannot change nearby range after initialization");
+        }
+        this.nearbyRange = range;
+        return this;
+    }
+
+    /**
+     * Gets the current synchronization mode.
+     */
+    public SyncMode getSyncMode() {
+        return syncMode;
+    }
+
+    /**
+     * Gets the nearby range for NEARBY_PLAYERS mode.
+     */
+    public double getNearbyRange() {
+        return nearbyRange;
     }
 
     public void initialize() {
@@ -73,16 +147,94 @@ public class PartUnitSyncData {
 
 
     public void tick() {
+        // Skip sync if mode is MANUAL
+        if (syncMode == SyncMode.MANUAL) {
+            return;
+        }
+
         int entityId = partUnit.getVehicle().getId();
         if (partUnit.getVehicle().tickCount % intervalTick == 0) {
             var dirtyEntries = packDirty(false);
             if (!dirtyEntries.isEmpty()) {
                 var message = new ServerEntityDataUpdate(entityId, partUnit.getIndex(), dirtyEntries);
+                sendToTargets(message);
+            }
+        }
+    }
+
+    /**
+     * Sends sync data to appropriate targets based on sync mode.
+     */
+    private void sendToTargets(ServerEntityDataUpdate message) {
+        var vehicle = partUnit.getVehicle();
+        
+        switch (syncMode) {
+            case TRACKING -> {
+                // Send to all players tracking the entity
                 Channel.CHANNEL.send(
-                        PacketDistributor.TRACKING_ENTITY.with(partUnit::getVehicle),
-                        message
+                    PacketDistributor.TRACKING_ENTITY.with(() -> vehicle),
+                    message
                 );
             }
+            
+            case PASSENGERS_ONLY -> {
+                // Send only to passengers
+                vehicle.getPassengers().forEach(passenger -> {
+                    if (passenger instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                        Channel.CHANNEL.send(
+                            PacketDistributor.PLAYER.with(() -> serverPlayer),
+                            message
+                        );
+                    }
+                });
+            }
+            
+            case OPERATOR_ONLY -> {
+                // Send only to the operator of this part unit
+                var operator = partUnit.getOwner();
+                if (operator instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                    Channel.CHANNEL.send(
+                        PacketDistributor.PLAYER.with(() -> serverPlayer),
+                        message
+                    );
+                }
+            }
+            
+            case NEARBY_PLAYERS -> {
+                // Send to players within range
+                Channel.CHANNEL.send(
+                    PacketDistributor.NEAR.with(() -> new PacketDistributor.TargetPoint(
+                        vehicle.getX(),
+                        vehicle.getY(),
+                        vehicle.getZ(),
+                        nearbyRange,
+                        vehicle.level().dimension()
+                    )),
+                    message
+                );
+            }
+            
+            case MANUAL -> {
+                // No automatic sending - handled externally
+            }
+        }
+    }
+
+    /**
+     * Manually sends sync data to specific targets.
+     * Useful for MANUAL sync mode or custom synchronization logic.
+     * 
+     * @param distributor Packet distributor defining targets
+     */
+    public void manualSync(PacketDistributor.PacketTarget distributor) {
+        var dirtyEntries = packDirty(true);
+        if (!dirtyEntries.isEmpty()) {
+            var message = new ServerEntityDataUpdate(
+                partUnit.getVehicle().getId(),
+                partUnit.getIndex(),
+                dirtyEntries
+            );
+            Channel.CHANNEL.send(distributor, message);
         }
     }
 

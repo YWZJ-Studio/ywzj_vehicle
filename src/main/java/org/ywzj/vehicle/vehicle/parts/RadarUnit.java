@@ -90,16 +90,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         Vec3 radarPos = worldPosition(radarOffset);
         Vec3 scanVec = worldVec();
 
-        //todo: 测试
-//        Vec2 scanRot = worldRot();
-//        float x1 = scanRot.x + scanSectorAngle / 2;
-//        float x2 = scanRot.x - scanSectorAngle / 2;
-//        Vec3 v1 = VectorUtil.calculateViewVector(x1, scanRot.y);
-//        Vec3 v2 = VectorUtil.calculateViewVector(x2, scanRot.y);
-//        for (int i = 0; i < 10; i++) {
-//            DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(i)));
-//            DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(i)));
-//        }
+        // Debug visualization for radar scanning sector
+        if (minecraft.options.renderDebug) {
+            renderDebugVisualization(radarPos);
+        }
 
         long timeNow = System.currentTimeMillis();
         long life = (long) (360 / yRotSpeed / 20 * 1000L);
@@ -176,6 +170,52 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {}
+
+    /**
+     * Renders debug visualization for radar scanning sector.
+     * Activated when F3 debug mode is enabled.
+     * Displays:
+     * - Sector boundaries (red particles)
+     * - Maximum range (green particles)
+     * - Detected targets (yellow particles)
+     */
+    @OnlyIn(Dist.CLIENT)
+    private void renderDebugVisualization(Vec3 radarPos) {
+        Vec2 scanRot = worldRot();
+        float halfAngle = scanSectorAngle / 2;
+        
+        // Sector boundaries
+        float x1 = scanRot.x + halfAngle;
+        float x2 = scanRot.x - halfAngle;
+        Vec3 v1 = org.ywzj.vehicle.util.VectorUtil.rotToVec(x1, scanRot.y);
+        Vec3 v2 = org.ywzj.vehicle.util.VectorUtil.rotToVec(x2, scanRot.y);
+        
+        // Render sector edges (red particles)
+        int steps = (int) (maxDistance / 5);
+        for (int i = 0; i < steps; i++) {
+            double distance = i * 5;
+            org.ywzj.vehicle.util.DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(distance)));
+            org.ywzj.vehicle.util.DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(distance)));
+        }
+        
+        // Render center line (green particles) - scan direction
+        Vec3 centerVec = worldVec();
+        for (int i = 0; i < steps; i++) {
+            double distance = i * 10;
+            if (distance <= maxDistance) {
+                Vec3 pos = radarPos.add(centerVec.scale(distance));
+                vehicle.level().addParticle(net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER, 
+                    pos.x, pos.y, pos.z, 0, 0, 0);
+            }
+        }
+        
+        // Render detected targets (yellow particles)
+        for (DetectedObject detected : detectedObjects.values()) {
+            Vec3 targetPos = detected.detectedPosition;
+            vehicle.level().addParticle(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                targetPos.x, targetPos.y + 1, targetPos.z, 0, 0.1, 0);
+        }
+    }
 
     public static class DetectedObject {
 

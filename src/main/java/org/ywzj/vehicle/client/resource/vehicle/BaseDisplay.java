@@ -25,8 +25,8 @@ public class BaseDisplay {
     protected BedrockModel model;
     protected ResourceLocation texture;
     protected ResourceLocation slotTexture;
-    // todo 临时存这，实际使用需要封装成状态机
     protected Map<String, BedrockAnimation> animations = Map.of();
+    protected AnimationStateMachine animationStateMachine;
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
     protected Scriptable scope;
     protected Script script;
@@ -88,8 +88,12 @@ public class BaseDisplay {
                 map.put(anim.getName(), anim);
             }
             this.animations = map;
+            
+            // Initialize animation state machine
+            this.animationStateMachine = new AnimationStateMachine(this.animations);
         } else {
             this.animations = Map.of();
+            this.animationStateMachine = new AnimationStateMachine(Map.of());
         }
 
         if (pojo.sounds != null) {
@@ -126,6 +130,14 @@ public class BaseDisplay {
 
     public Map<String, BedrockAnimation> getAnimations() {
         return animations;
+    }
+
+    /**
+     * Gets the animation state machine for advanced animation control.
+     * Use this for state-based animations with transitions and blending.
+     */
+    public AnimationStateMachine getAnimationStateMachine() {
+        return animationStateMachine;
     }
 
     public Map<String, SoundEvent> getSoundEvents() {

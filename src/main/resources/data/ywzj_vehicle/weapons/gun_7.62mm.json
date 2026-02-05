@@ -13,5 +13,11 @@
   "reload": {
     "time": 100,
     "ammo": "ywzj_vehicle:ammo_machine_gun"
+  },
+  "damage_falloff": {
+    "type": "LINEAR",
+    "start_distance": 50,
+    "end_distance": 200,
+    "min_multiplier": 0.3
   }
 }
