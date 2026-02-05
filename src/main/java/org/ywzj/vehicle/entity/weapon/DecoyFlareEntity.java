@@ -1,8 +1,10 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -12,19 +14,22 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PlayMessages;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BlockRayTrace;
 
 public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
 
+    private static final ResourceLocation DECOY_FLARE_ID = YwzjVehicle.modLocation("decoy_flare");
     public static final int LIFE = 200;
     private VehicleSound tailSound;
 
     public DecoyFlareEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel, null);
+        super(pEntityType, pLevel, DECOY_FLARE_ID);
     }
 
     public DecoyFlareEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
@@ -32,7 +37,15 @@ public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
     }
 
     public DecoyFlareEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.DECOY_FLARE.get(), level, null);
+        super(AllEntities.DECOY_FLARE.get(), level, DECOY_FLARE_ID);
+    }
+
+    public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {
+        this.vehicle = vehicle;
+        this.name = name;
+        this.setPos(spawnPos);
+        this.setRot(ammoYRot, ammoXRot);
+        this.setOwner(shooter);
     }
 
     @Override

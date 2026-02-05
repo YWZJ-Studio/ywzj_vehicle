@@ -69,7 +69,9 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
                 }
                 displayMapBuilder.put(displayIdAndDataJson.getKey(), data);
                 data.setDisplayId(displayIdAndDataJson.getKey());
-                modelWithVariableDisplay.computeIfAbsent(data.getModelPath(), k -> new ArrayList<>()).add(data);
+                if (data.getModelPath() != null) {
+                    modelWithVariableDisplay.computeIfAbsent(data.getModelPath(), k -> new ArrayList<>()).add(data);
+                }
             } catch (Exception e) {
                 YwzjVehicle.LOGGER.error(marker, "Failed to load vehicle display: {}", displayIdAndDataJson.getKey(), e);
             }

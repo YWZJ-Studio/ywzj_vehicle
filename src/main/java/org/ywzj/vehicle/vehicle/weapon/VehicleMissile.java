@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -31,7 +32,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
                 || missileWeaponUnit.getXRot() > data.getXRotMax()
                 || missileWeaponUnit.getYRot() < data.getYRotMin()
                 || missileWeaponUnit.getYRot() > data.getYRotMax()) {
-            VehicleOverlay.tips.put(System.currentTimeMillis(), "超出导弹射界");
+            VehicleOverlay.tips.put(System.currentTimeMillis(), Component.translatable("ui.out_of_launch_limits"));
             return false;
         }
         return super.doClientShoot();

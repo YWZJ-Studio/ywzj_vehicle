@@ -750,12 +750,16 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return currentWeaponIndex;
     }
 
+    public List<AbstractVehicleWeapon<?>> getIndexedWeapons() {
+        return indexedWeapons;
+    }
+
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = super.serializeNBT();
         tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
         CompoundTag weaponTag = new CompoundTag();
-        this.weapons.forEach(weapon -> {
+        this.indexedWeapons.forEach(weapon -> {
             CompoundTag tag1 = weapon.serializeNBT();
             if (tag1.isEmpty()) {
                 return;
@@ -771,7 +775,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         super.deserializeNBT(nbt);
         this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
         CompoundTag weaponTag = nbt.getCompound("WeaponTag");
-        this.weapons.forEach(weapon -> {
+        this.indexedWeapons.forEach(weapon -> {
             if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
                 weapon.deserializeNBT(weaponTag.getCompound(weapon.getSerializeId()));
             }

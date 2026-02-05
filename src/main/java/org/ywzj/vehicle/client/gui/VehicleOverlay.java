@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class VehicleOverlay implements IGuiOverlay {
 
-    public static ConcurrentHashMap<Long, String> tips = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Long, Component> tips = new ConcurrentHashMap<>();
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -159,18 +160,18 @@ public class VehicleOverlay implements IGuiOverlay {
         {
             guiGraphics.pose().translate(centerX, centerY, 0);
             if (LocalVehiclePlayer.instance.controllingMissiles.stream().anyMatch(Entity::isAlive)) {
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font, "制导中", 0, -45, Color.GREEN);
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.homing"), 0, -45, Color.GREEN);
                 tips.clear();
             }
             if (vehicle.warningReceiver != null) {
                 if (vehicle.warningReceiver.missileLaunchWarn) {
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "敌导弹", 0, -55, Color.RED);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.missile_incoming"), 0, -55, Color.RED);
                 } else if (vehicle.warningReceiver.radarLockWarn) {
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "敌跟踪", 0, -55, Color.RED);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.being_locked"), 0, -55, Color.RED);
                 }
             }
             if (!tips.isEmpty()) {
-                for (Map.Entry<Long, String> tip : tips.entrySet()) {
+                for (Map.Entry<Long, Component> tip : tips.entrySet()) {
                     if (tip.getKey() + 3000 < System.currentTimeMillis()) {
                         tips.remove(tip.getKey());
                         continue;

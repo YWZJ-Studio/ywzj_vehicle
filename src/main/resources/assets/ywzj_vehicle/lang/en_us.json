@@ -97,6 +97,10 @@
   "ui.vehicle_rotary_wing.speed": "SPD:  %d",
   "ui.vehicle_rotary_wing.fuel": "FUEL: %s",
   "ui.vehicle_rotary_wing.altitude": "ALT: %d",
+  "ui.out_of_launch_limits": "Out of launch limits",
+  "ui.homing": "Homing",
+  "ui.missile_incoming": "Missile Incoming",
+  "ui.being_locked": "Being Locked",
 
   "button.machine_max.printing": "Print",
   "check_box.figure_box.open": "Open Cover",

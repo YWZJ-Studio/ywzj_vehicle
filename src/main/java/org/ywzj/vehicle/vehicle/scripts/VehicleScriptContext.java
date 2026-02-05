@@ -8,7 +8,13 @@ import org.ywzj.vehicle.api.scripts.EntityContextProvider;
 import org.ywzj.vehicle.api.scripts.ParticleUtil;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
+import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+
+import java.util.List;
+import java.util.Optional;
 
 public class VehicleScriptContext<T extends AbstractVehicle> extends EntityContextProvider<T> {
 
@@ -53,6 +59,20 @@ public class VehicleScriptContext<T extends AbstractVehicle> extends EntityConte
         }).orElse(0f);
     }
 
+    public int getWeaponRemainAmmo(String id, int weaponIndex) {
+        Optional<PartUnit<?>> partUnitOptional = entity.getPartUnit(id);
+        if (partUnitOptional.isEmpty()) {
+            return 0;
+        }
+        if (partUnitOptional.get() instanceof WeaponUnit weaponUnit) {
+            List<AbstractVehicleWeapon<?>> indexedWeapons = weaponUnit.getIndexedWeapons();
+            if (weaponIndex >= 0 && weaponIndex < indexedWeapons.size()) {
+                return indexedWeapons.get(weaponIndex).getRemainAmmo();
+            }
+        }
+        return 0;
+    }
+
     public void rotateBone(String boneName, float xRot, float yRot, float zRot) {
         BedrockBone bone = model.getBone(boneName);
         if (bone == null) {
@@ -77,6 +97,14 @@ public class VehicleScriptContext<T extends AbstractVehicle> extends EntityConte
                 (float) Math.toRadians(xRot)
         );
         bone.rotation.set(q);
+    }
+
+    public void visibleBone(String boneName, boolean visible) {
+        BedrockBone bone = model.getBone(boneName);
+        if (bone == null) {
+            return;
+        }
+        bone.visible = visible;
     }
 
     public float getXRot() {

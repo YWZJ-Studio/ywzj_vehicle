@@ -97,6 +97,10 @@
   "ui.vehicle_rotary_wing.speed": "速度: %d",
   "ui.vehicle_rotary_wing.fuel": "燃油: %s",
   "ui.vehicle_rotary_wing.altitude": "高度: %d",
+  "ui.out_of_launch_limits": "超出射界",
+  "ui.homing": "制导中",
+  "ui.missile_incoming": "敌导弹",
+  "ui.being_locked": "敌跟踪",
 
   "button.machine_max.printing": "打印",
   "check_box.figure_box.open": "打开玻璃罩",

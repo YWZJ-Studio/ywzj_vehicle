@@ -48,10 +48,7 @@ public class BaseDisplay {
     public BaseDisplay(BaseDisplayPojo pojo) {
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
-        if (modelPojo.isEmpty()) {
-            return;
-        }
-        this.model = new BedrockModel(modelPojo.get());
+        modelPojo.ifPresent(bedrockModelPOJO -> this.model = new BedrockModel(bedrockModelPOJO));
 
         if (pojo.script != null) {
             this.script = ClientAssetsManager.INSTANCE.getScript(pojo.script).orElse(null);
@@ -61,8 +58,8 @@ public class BaseDisplay {
 
                     script.exec(context, this.scope);
 
-                    var func = this.scope.get("prepareBones", this.scope);
-                    if (func instanceof Function function) {
+                    var funcPrepareBones = this.scope.get("prepareBones", this.scope);
+                    if (funcPrepareBones instanceof Function function) {
                         this.prepareBonesFunction = function;
                     }
 
