@@ -49,7 +49,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     public void tick() {
         super.tick();
         if (vehicle.level().isClientSide()) {
-            if (vehicle.hasPower()) {
+            if (vehicle.hasPower() && isFunctional()) {
                 tickScan();
             } else {
                 detectedObjects.clear();

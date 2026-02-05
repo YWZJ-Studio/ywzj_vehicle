@@ -54,6 +54,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected T data;
     private final PartUnitSyncData syncData;
     public PassengerPose passengerPose;
+    protected float health;
+    protected float maxHealth;
+    protected boolean functional = true;
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
@@ -68,6 +71,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.pivotOffset = data.getPivotOffset();
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
+        this.syncData.define(SyncDataSerializers.FLOAT, this::setHealth, this::getHealth, this.health);
+        this.syncData.define(SyncDataSerializers.BOOLEAN, this::setFunctional, this::isFunctional, this.functional);
     }
 
     public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
@@ -100,6 +105,45 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         }
     }
 
+    public void hurt(float amount) {
+        this.health = Math.max(0, this.health - amount);
+        if (this.health <= 0) {
+            this.functional = false;
+        }
+    }
+
+    public void heal(float amount) {
+        this.health = Math.min(this.maxHealth, this.health + amount);
+        if (this.health > 0) {
+            this.functional = true;
+        }
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public void setMaxHealth(float maxHealth) {
+        this.maxHealth = maxHealth;
+        this.health = maxHealth;
+    }
+
+    public boolean isFunctional() {
+        return functional;
+    }
+
+    public void setFunctional(boolean functional) {
+        this.functional = functional;
+    }
+
     public boolean onEntityInteract(Player player, InteractionHand hand) {
         return true;
     }
@@ -112,8 +156,13 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return partCubeOBBs;
     }
 
+    private List<OBB> cachedOBBs;
+
     public List<OBB> getOBBs() {
-        return partCubeOBBs.stream().map(VehicleCubeOBB::obb).toList();
+        if (cachedOBBs == null) {
+            cachedOBBs = partCubeOBBs.stream().map(VehicleCubeOBB::obb).toList();
+        }
+        return cachedOBBs;
     }
 
     /**

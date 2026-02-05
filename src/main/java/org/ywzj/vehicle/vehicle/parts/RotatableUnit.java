@@ -99,7 +99,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
             tickRemoteRot();
             tickSound();
         }
-        tickRot();
+        if (isFunctional()) {
+            tickRot();
+        }
         updateRot();
     }
 

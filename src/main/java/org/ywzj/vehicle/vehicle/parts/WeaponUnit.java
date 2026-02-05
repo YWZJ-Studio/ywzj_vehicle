@@ -340,6 +340,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public void shoot(int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
+        if (!isFunctional()) {
+            return;
+        }
         if (weaponIndex < indexedWeapons.size()) {
             AbstractVehicleWeapon<?> weapon = indexedWeapons.get(weaponIndex);
             if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, weapon, operator))) {

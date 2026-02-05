@@ -25,8 +25,10 @@ import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.ywzj.vehicle.vehicle.parts.PartUnit;
 
 public class VehicleOverlay implements IGuiOverlay {
 
@@ -48,6 +50,7 @@ public class VehicleOverlay implements IGuiOverlay {
         }
         if (!(vehicle instanceof NoneVehicle)) {
             renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
+            renderDamagedParts(guiGraphics, screenWidth, screenHeight, vehicle);
         }
         renderTips(guiGraphics, screenWidth, screenHeight, vehicle);
     }
@@ -149,6 +152,28 @@ public class VehicleOverlay implements IGuiOverlay {
             guiGraphics.drawString(Minecraft.getInstance().font,
                     String.format("%.1f%%", powerPercent),
                     124, -30, powerPercent < 30 ? 0xFFFF0000 : 0xFFFFFFFF);
+        }
+        poseStack.popPose();
+    }
+
+    private void renderDamagedParts(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
+        List<? extends PartUnit<?>> brokenParts = vehicle.getPartUnits().stream()
+                .filter(part -> !part.isFunctional())
+                .toList();
+
+        if (brokenParts.isEmpty()) return;
+
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.translate((float) screenWidth / 2, screenHeight, 0);
+            int y = -80;
+            guiGraphics.drawString(Minecraft.getInstance().font, "DAMAGED SYSTEMS:", 90, y, 0xFFFF0000, true);
+            y += 10;
+            for (PartUnit<?> part : brokenParts) {
+                guiGraphics.drawString(Minecraft.getInstance().font, "! " + part.getName().getString(), 100, y, 0xFFFF0000, true);
+                y += 10;
+            }
         }
         poseStack.popPose();
     }

@@ -95,6 +95,7 @@ public class RepairToolItem extends VehicleItem {
                     } else {
                         float h = Math.min(vehicle.getHealth() + 2.0f, vehicle.getMaxHealth());
                         vehicle.setHealth(h);
+                        vehicle.getPartUnits().forEach(part -> part.heal(1.0f));
                     }
                 } else if (hitResult.getEntity() instanceof LivingEntity livingEntity) {
                     livingEntity.hurt(pLevel.damageSources().playerAttack((Player) pLivingEntity), 2.0F);
