@@ -4,6 +4,7 @@ import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -43,18 +44,18 @@ public class MissileEntity extends AmmoEntity {
     private WeaponUnit weaponUnit;
     private VehicleSound sound;
 
-    public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData.Guidance guidance, WeaponUnit weaponUnit) {
-        super(entityType, level);
+    public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData.Guidance guidance, WeaponUnit weaponUnit, ResourceLocation weaponId) {
+        super(entityType, level, weaponId);
         this.guidance = guidance;
         this.weaponUnit = weaponUnit;
     }
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level) {
-        super(entityType, level);
+        super(entityType, level, null);
     }
 
     public MissileEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.MISSILE.get(), level);
+        super(AllEntities.MISSILE.get(), level, null);
     }
 
     public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {
@@ -100,7 +101,7 @@ public class MissileEntity extends AmmoEntity {
             // 当前点逐渐靠近射线（朝投影点移动）
             double speed = 0.8;
             // 逐步解锁机动
-            float maneuverability = Math.min((float) tickCount / 5, 1);
+            float maneuverability = Math.min((float) tickCount / 20, 1);
             // 每 tick 靠近速度
             speed *= maneuverability;
             Vec3 delta = proj.subtract(pos);

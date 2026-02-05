@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
@@ -24,11 +25,15 @@ public class AerialBombEntity extends AmmoEntity {
     private VehicleSound soundIncoming;
 
     public AerialBombEntity(EntityType<? extends Projectile> entityType, Level level) {
-        super(entityType, level);
+        super(AllEntities.ROCKET.get(), level, null);
+    }
+
+    public AerialBombEntity(EntityType<? extends Projectile> entityType, Level level, ResourceLocation weaponId) {
+        super(entityType, level, weaponId);
     }
 
     public AerialBombEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.AERIAL_BOMB.get(), level);
+        super(AllEntities.AERIAL_BOMB.get(), level, null);
     }
 
     public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {

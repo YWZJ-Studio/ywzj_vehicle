@@ -27,7 +27,7 @@ public class VehicleRocket extends AbstractVehicleWeapon<VehicleRocketWeaponData
         var data = this.getData();
 
         for (AimContext aimContext : aimContexts) {
-            RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level());
+            RocketEntity rocketEntity = new RocketEntity(AllEntities.ROCKET.get(), vehicle.level(), data.getWeaponId());
             rocketEntity.damage = data.getDamage();
             rocketEntity.explosion = data.getExplosion();
             rocketEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());

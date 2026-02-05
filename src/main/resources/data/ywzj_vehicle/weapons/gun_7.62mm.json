@@ -13,9 +13,5 @@
   "reload": {
     "time": 100,
     "ammo": "ywzj_vehicle:ammo_machine_gun"
-  },
-  "sounds": {
-    "fire": "ywzj_vehicle:gun_7.62mm_shot",
-    "reload": "ywzj_vehicle:gun_reload"
   }
 }

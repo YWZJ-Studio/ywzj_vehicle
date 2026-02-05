@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * display同时将作为完成初始化后的模型、动画、客户端侧音效等客户端资源缓存的载体
  * @param <D> 配置类型
  */
-public record VehicleDisplayType<D extends BaseVehicleDisplay> (
+public record VehicleDisplayType<D extends BaseDisplay> (
         ResourceLocation id,
         DataSerializer<D> dataSerializer
 ) {
@@ -25,12 +25,12 @@ public record VehicleDisplayType<D extends BaseVehicleDisplay> (
     }
 
     @FunctionalInterface
-    public interface DataSerializer<D extends BaseVehicleDisplay> {
+    public interface DataSerializer<D extends BaseDisplay> {
         @Nullable
         D parse(JsonElement json);
     }
 
-    public static class Builder<D extends BaseVehicleDisplay> {
+    public static class Builder<D extends BaseDisplay> {
         private final ResourceLocation id;
         private DataSerializer<D> dataSerializer;
 
@@ -38,7 +38,7 @@ public record VehicleDisplayType<D extends BaseVehicleDisplay> (
             this.id = id;
         }
 
-        public static <D extends BaseVehicleDisplay> Builder<D> of(ResourceLocation id) {
+        public static <D extends BaseDisplay> Builder<D> of(ResourceLocation id) {
             return new Builder<>(id);
         }
 

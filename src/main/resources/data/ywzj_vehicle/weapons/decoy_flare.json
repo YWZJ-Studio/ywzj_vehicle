@@ -10,8 +10,5 @@
     "time": 100,
     "ammo": "ywzj_vehicle:ammo_decoy_flare"
   },
-  "sounds": {
-    "fire": "ywzj_vehicle:decoy_flare_launch"
-  },
   "independent": true
 }

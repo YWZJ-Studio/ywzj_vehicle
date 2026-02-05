@@ -21,9 +21,5 @@
     "radius": 8,
     "destroy_block": true
   },
-  "guidance": "HOMING",
-  "sounds": {
-    "fire": "ywzj_vehicle:missile_launch",
-    "reload": "ywzj_vehicle:common_reload"
-  }
+  "guidance": "HOMING"
 }

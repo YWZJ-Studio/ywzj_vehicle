@@ -27,7 +27,7 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
         var data = this.getData();
 
         for (AimContext aimContext : aimContexts) {
-            AerialBombEntity aerialBombEntity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level());
+            AerialBombEntity aerialBombEntity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level(), data.getWeaponId());
             aerialBombEntity.explosion = data.getExplosion();
             aerialBombEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(aerialBombEntity);

@@ -2,6 +2,7 @@ package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,8 +22,8 @@ import java.util.List;
 
 public class ActiveProtectionGrenadeEntity extends GrenadeEntity {
 
-    public ActiveProtectionGrenadeEntity(Entity entity, Level level) {
-        super(AllEntities.APS_GRENADE.get(), entity, level);
+    public ActiveProtectionGrenadeEntity(Entity entity, Level level, ResourceLocation weaponId) {
+        super(AllEntities.APS_GRENADE.get(), entity, level, weaponId);
     }
 
     public ActiveProtectionGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {

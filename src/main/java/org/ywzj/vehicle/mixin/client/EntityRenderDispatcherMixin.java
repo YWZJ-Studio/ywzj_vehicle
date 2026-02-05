@@ -10,6 +10,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.client.render.util.OBBRenderer;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+
+import java.util.List;
 
 @Mixin(EntityRenderDispatcher.class)
 public class EntityRenderDispatcherMixin {
@@ -19,6 +22,9 @@ public class EntityRenderDispatcherMixin {
     private static void renderHitbox(PoseStack pMatrixStack, VertexConsumer pBuffer, Entity pEntity, float pPartialTicks, CallbackInfo ci) {
         if (pEntity instanceof OBBEntity obbEntity) {
             OBBRenderer.INSTANCE.render(pEntity.position(), obbEntity.getOBBs(), pMatrixStack, pBuffer, 0, 1, 0, 1, pPartialTicks);
+            if (pEntity instanceof AbstractVehicle vehicle) {
+                OBBRenderer.INSTANCE.render(pEntity.position(), List.of(vehicle.getMainCubeOBB().obb()), pMatrixStack, pBuffer, 0, 0, 1, 1, pPartialTicks);
+            }
         }
     }
 

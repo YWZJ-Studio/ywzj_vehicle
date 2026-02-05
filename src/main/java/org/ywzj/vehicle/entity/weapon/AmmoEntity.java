@@ -4,6 +4,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -33,6 +34,7 @@ import org.ywzj.vehicle.vehicle.pojo.Explosion;
 public abstract class AmmoEntity extends Projectile implements IEntityAdditionalSpawnData {
 
     public AbstractVehicle vehicle;
+    private ResourceLocation weaponId;
     public Component name;
     public float damage;
     public Explosion explosion;
@@ -43,8 +45,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     private double lerpXRot;
     private int lerpSteps;
 
-    public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
+    public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
         super(pEntityType, pLevel);
+        this.weaponId = weaponId;
     }
 
     @Override
@@ -116,11 +119,14 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     public void writeSpawnData(FriendlyByteBuf buffer) {
         buffer.writeComponent(name);
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
+        buffer.writeResourceLocation(weaponId);
     }
 
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
         name = additionalData.readComponent();
+        additionalData.readInt();
+        weaponId = additionalData.readResourceLocation();
     }
 
     @Override
@@ -145,6 +151,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             this.setPos(d0, d1, d2);
             this.setRot(this.getYRot(), this.getXRot());
         }
+    }
+
+    public ResourceLocation getWeaponId() {
+        return weaponId;
     }
 
 }

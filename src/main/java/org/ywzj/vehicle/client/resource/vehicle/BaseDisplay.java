@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * 基础载具效果配置实例
  */
-public class BaseVehicleDisplay {
+public class BaseDisplay {
 
     public static final Object[] EMPTY_ARGS = new Object[0];
     protected ResourceLocation displayId;
@@ -35,7 +35,7 @@ public class BaseVehicleDisplay {
     protected Function tickParticleFunction;
     protected VehicleScriptContext<? extends AbstractVehicle> vehicleScriptContext;
 
-    public BaseVehicleDisplay() {}
+    public BaseDisplay() {}
 
     public VehicleScriptContext<? extends AbstractVehicle> buildVehicleScriptContext() {
         return new VehicleScriptContext<>(null, model);
@@ -45,10 +45,13 @@ public class BaseVehicleDisplay {
      * 需要在资源包重载期间构造，否则无法正常获取模型等资源
      * @param pojo 配置数据
      */
-    public BaseVehicleDisplay(BaseVehicleDisplayPojo pojo) {
+    public BaseDisplay(BaseDisplayPojo pojo) {
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
-        this.model = modelPojo.map(BedrockModel::new).orElseThrow();
+        if (modelPojo.isEmpty()) {
+            return;
+        }
+        this.model = new BedrockModel(modelPojo.get());
 
         if (pojo.script != null) {
             this.script = ClientAssetsManager.INSTANCE.getScript(pojo.script).orElse(null);

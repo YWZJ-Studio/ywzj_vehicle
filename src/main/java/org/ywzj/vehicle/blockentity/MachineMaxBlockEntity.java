@@ -18,7 +18,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -33,7 +33,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
     public float progress;
     public float step;
     public ResourceLocation craftingVehicleId;
-    public BaseVehicleDisplay vehicleDisplay;
+    public BaseDisplay vehicleDisplay;
     public BaseVehicleData vehicleData;
     public List<MachineMaxBlockRenderer.BedrockBoneWrapper> bedrockBoneWrappers = new ArrayList<>();
     public MachineMaxBlockRenderer.BedrockBoneWrapper printingBoneWrapper;

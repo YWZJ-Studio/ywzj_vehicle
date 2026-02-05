@@ -31,7 +31,7 @@
 				},
 				{
 					"name": "sighting_system",
-					"pivot": [0, 0, 0],
+					"pivot": [0, 11.5, 11.075],
 					"cubes": [
 						{
 							"origin": [-1, 10.5, 10.075],

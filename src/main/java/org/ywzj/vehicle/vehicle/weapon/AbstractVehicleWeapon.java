@@ -18,6 +18,8 @@ import net.minecraftforge.common.util.INBTSerializable;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
@@ -31,8 +33,8 @@ import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -47,7 +49,6 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     private final WeaponUnit weaponUnit;
     private final int index;
     private final T data;
-    private final HashMap<String, SoundEvent> soundEvents = new HashMap<>();
     private final String serializeId;
     private Component displayName;
     protected long lastShootTime = 0;
@@ -75,10 +76,6 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         this.weaponUnit = weaponUnit;
         this.index = index;
         this.data = data;
-        if (data.sounds != null) {
-            data.sounds.forEach((soundName, soundResourceLocation) ->
-                    this.soundEvents.put(soundName, SoundEvent.createVariableRangeEvent(soundResourceLocation)));
-        }
         this.displayName = Component.translatable(data.getName());
         this.serializeId = serializeId;
     }
@@ -357,15 +354,18 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public SoundEvent getFireSound() {
-        return this.soundEvents.get("fire");
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(data.getWeaponId());
+        return displayOptional.map(display -> display.getSoundEvents().get("fire")).orElse(null);
     }
 
     public SoundEvent getShellSound() {
-        return this.soundEvents.get("shell");
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(data.getWeaponId());
+        return displayOptional.map(display -> display.getSoundEvents().get("shell")).orElse(null);
     }
 
     public SoundEvent getReloadSound() {
-        return this.soundEvents.get("reload");
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(data.getWeaponId());
+        return displayOptional.map(display -> display.getSoundEvents().get("reload")).orElse(null);
     }
 
     public boolean hasSyncData() {

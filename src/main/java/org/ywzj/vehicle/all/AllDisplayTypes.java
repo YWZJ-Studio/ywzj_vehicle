@@ -7,22 +7,30 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.vehicle.*;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
-public class AllVehicleDisplayTypes {
+public class AllDisplayTypes {
 
     public static final DeferredRegister<VehicleDisplayType<?>> VEHICLE_DISPLAY_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_DISPLAY_TYPE, YwzjVehicle.MOD_ID);
 
-    public static final RegistryObject<VehicleDisplayType<BaseVehicleDisplay>> GENERIC_VEHICLE = register(
+    public static final RegistryObject<VehicleDisplayType<BaseDisplay>> GENERIC_VEHICLE = register(
             "generic",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
-                return new BaseVehicleDisplay(pojo);
+                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                return new BaseDisplay(pojo);
+            }
+    );
+
+    public static final RegistryObject<VehicleDisplayType<BaseDisplay>> WEAPON = register(
+            "weapon",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                return new BaseDisplay(pojo);
             }
     );
 
     public static final RegistryObject<VehicleDisplayType<WheeledVehicleDisplay>> WHEELED_VEHICLE = register(
             "wheeled_vehicle",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
+                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new WheeledVehicleDisplay(pojo);
             }
     );
@@ -30,20 +38,20 @@ public class AllVehicleDisplayTypes {
     public static final RegistryObject<VehicleDisplayType<TrackedVehicleDisplay>> TRACKED_VEHICLE = register(
             "tracked_vehicle",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
+                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new TrackedVehicleDisplay(pojo);
             }
     );
 
-    public static final RegistryObject<VehicleDisplayType<RotaryWingVehicleDisplay>> ROTARY_WING_VEHICLE = register(
+    public static final RegistryObject<VehicleDisplayType<RotaryWingDisplay>> ROTARY_WING_VEHICLE = register(
             "rotary_wing_vehicle",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseVehicleDisplayPojo.class);
-                return new RotaryWingVehicleDisplay(pojo);
+                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                return new RotaryWingDisplay(pojo);
             }
     );
 
-    private static <D extends BaseVehicleDisplay> RegistryObject<VehicleDisplayType<D>> register(
+    private static <D extends BaseDisplay> RegistryObject<VehicleDisplayType<D>> register(
             String name,
             VehicleDisplayType.DataSerializer<D> dataSerializer
     ) {

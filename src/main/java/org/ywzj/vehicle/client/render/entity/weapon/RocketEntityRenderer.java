@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -13,13 +14,22 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.weapon.RocketEntity;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
+
+import java.util.Optional;
 
 public class RocketEntityRenderer extends EntityRenderer<RocketEntity> {
 
     public RocketEntityRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
+    }
+
+    @Override
+    public boolean shouldRender(RocketEntity pLivingEntity, Frustum pCamera, double pCamX, double pCamY, double pCamZ) {
+        return true;
     }
 
     @Override
@@ -30,9 +40,24 @@ public class RocketEntityRenderer extends EntityRenderer<RocketEntity> {
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
-            BedrockModel model = BedrockModelLoader.getModel(YwzjVehicle.modLocation("entity/rocket_57mm"));
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLocation("textures/entity/rocket_57mm.png")));
-
+            BedrockModel model = null;
+            VertexConsumer builder = null;
+            Optional<BaseDisplay> weaponDisplayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(pEntity.getWeaponId());
+            if (weaponDisplayOptional.isPresent()) {
+                BaseDisplay weaponDisplay = weaponDisplayOptional.get();
+                if (weaponDisplay.getModel() != null) {
+                    model = weaponDisplay.getModel();
+                }
+                if (weaponDisplay.getTexture() != null) {
+                    builder = bufferSource.getBuffer(RenderType.entityCutout(weaponDisplay.getTexture()));
+                }
+            }
+            if (model == null) {
+                model = BedrockModelLoader.getModel(YwzjVehicle.modLocation("entity/rocket_57mm"));
+            }
+            if (builder == null) {
+                builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLocation("textures/entity/rocket_57mm.png")));
+            }
             model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
         }
         pPoseStack.popPose();

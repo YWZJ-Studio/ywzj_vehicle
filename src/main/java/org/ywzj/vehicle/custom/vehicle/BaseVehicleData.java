@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.custom.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -109,9 +109,8 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             var partData = entry.data();
             partData.initStructureModel(model, vehiclePartGroups);
         }
-        // 取车体中体积最大的OBB表达车体的物理
-        vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
-        mainCubeOBB = vehicleBodyOBBs.get(0);
+        // 构建物理结构
+        buildMainCube(model);
         // 计算载具参考长度
         double minZ = Double.POSITIVE_INFINITY;
         double maxZ = Double.NEGATIVE_INFINITY;
@@ -173,7 +172,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             if (boneEntry.getKey().equals("vehicle_body")) {
                 VehicleCubeGroup group = new VehicleCubeGroup(null, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
                 buildVehicleBodyOBBs(bone, group);
-            } else {
+            } else if (!boneEntry.getKey().equals("main_structure")) {
                 // 从基岩模型最外层的各组构建
                 if (bone.parent != null && bone.parent.parent == null) {
                     VehicleCubeGroup group = new VehicleCubeGroup(null, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
@@ -191,6 +190,27 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         });
     }
 
+    private void buildMainCube(BedrockModel model) {
+        BedrockBone mainBone = model.getBoneMap().get("main_structure");
+        if (mainBone != null) {
+            if (mainBone.cubes.isEmpty()) {
+                YwzjVehicle.LOGGER.warn("main_structure has no cubes: {}", getName());
+                return;
+            }
+            List<BedrockCube> mainCubes = new ArrayList<>(mainBone.cubes);
+            mainCubes.sort(Comparator.comparingDouble(cube -> cube.width() * cube.height() * cube.depth()));
+            VehicleCubeGroup group = new VehicleCubeGroup(null, mainBone.rotation, new Vec3(mainBone.x / 16, mainBone.y / 16, mainBone.z / 16));
+            mainCubeOBB = VehicleCubeOBB.init(group, mainCubes.get(0));
+        } else {
+            if (vehicleBodyOBBs.isEmpty()) {
+                YwzjVehicle.LOGGER.warn("vehicleBodyOBBs is empty: {}", getName());
+                return;
+            }
+            vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
+            mainCubeOBB = vehicleBodyOBBs.get(0);
+        }
+    }
+
     /**
      * 从基岩Bone递归构建载具部件的结构OBB组
      * 每个结构OBB组持有其Bone以及匿名子Bone下所有的块
@@ -199,9 +219,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         if (bone == null) {
             return;
         }
-        bone.cubes.stream()
-                .map(cube -> (BedrockCubePerFace) cube)
-                .forEach(cube -> VehicleCubeOBB.init(group, cube));
+        bone.cubes.forEach(cube -> VehicleCubeOBB.init(group, cube));
         vehiclePartGroups.put(bone, group);
         bone.getChildren().forEach(child -> {
             VehicleCubeGroup childGroup = new VehicleCubeGroup(group, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
@@ -237,7 +255,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
 
     public VehicleStructOBBs getVehicleStructObbs() {
         var obbs = vehicleBodyOBBs.stream().map(VehicleCubeOBB::new).toList();
-        return new VehicleStructOBBs(obbs, obbs.get(0));
+        return new VehicleStructOBBs(obbs, new VehicleCubeOBB(mainCubeOBB));
     }
 
     public ResourceLocation getVehicleId() {

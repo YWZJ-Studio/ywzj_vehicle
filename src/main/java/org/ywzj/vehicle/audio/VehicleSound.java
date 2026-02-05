@@ -94,25 +94,15 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         }
         Vec3 simulatedPos;
         Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        if (entity.equals(cameraEntity.getVehicle())) {
-            simulatedPos = calRelativePos(entity.position(), cameraPos, 0.7);
-        } else {
-            simulatedPos = calRelativePos(entity.position(), cameraPos, scale);
-        }
+        simulatedPos = calRelativePos(entity.position(), cameraPos, entity.equals(cameraEntity.getVehicle()));
         simulatedPos = simulatedPos.add(entity.getDeltaMovement());
         this.x = simulatedPos.x;
         this.y = simulatedPos.y;
         this.z = simulatedPos.z;
     }
 
-    public Vec3 calRelativePos(Vec3 soundPos, Vec3 targetPos, double scale) {
-        double dX = soundPos.x - targetPos.x;
-        double dY = soundPos.y - targetPos.y;
-        double dZ = soundPos.z - targetPos.z;
-        double xC = targetPos.x + dX * scale;
-        double yC = targetPos.y + dY * scale;
-        double zC = targetPos.z + dZ * scale;
-        return new Vec3(xC, yC, zC);
+    public Vec3 calRelativePos(Vec3 soundPos, Vec3 targetPos, boolean cameraEntityOnVehicle) {
+        return targetPos.add(soundPos.subtract(targetPos).scale(cameraEntityOnVehicle ? 0.5 : scale));
     }
 
 }

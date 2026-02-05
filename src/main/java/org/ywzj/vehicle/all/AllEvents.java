@@ -106,8 +106,8 @@ public class AllEvents {
                 }
                 if (!vehicle.level().isClientSide() && event.getHand() == InteractionHand.MAIN_HAND && !player.isShiftKeyDown()) {
                     DoorUnit doorUnit = vehicle.getNearestDoorUnit(player);
-                    if (doorUnit != null && !doorUnit.isOpen()) {
-                        doorUnit.setOpen(true);
+                    if (doorUnit != null && !doorUnit.isOn()) {
+                        doorUnit.setOn(true);
                         event.setCanceled(true);
                     }
                 }
@@ -140,8 +140,8 @@ public class AllEvents {
                 } else {
                     if (!event.getLevel().isClientSide()) {
                         DoorUnit doorUnit = vehicle.getNearestDoorUnit(livingEntity);
-                        if (doorUnit != null && !doorUnit.isOpen()) {
-                            doorUnit.setOpen(true);
+                        if (doorUnit != null && !doorUnit.isOn()) {
+                            doorUnit.setOn(true);
                         }
                     }
                     vehicle.onLeaveVehicle(livingEntity);

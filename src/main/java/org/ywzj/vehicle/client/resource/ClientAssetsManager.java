@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.mozillaa.javascript.Script;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -27,14 +27,16 @@ public enum ClientAssetsManager {
     INSTANCE;
     private JsonDataManager<BedrockModelPOJO> models;
     private JsonDataManager<BedrockAnimationFile> animations;
-    private VehicleDisplayManager vehicleDisplayManager;
+    private DisplayManager vehicleDisplayManager;
+    private DisplayManager weaponDisplayManager;
     private ScriptManager scriptManager;
     private InternalAssets internalAssets;
 
     public void registerListeners(Consumer<PreparableReloadListener> consumer) {
         models = new JsonDataManager<>(BedrockModelPOJO.class, GsonUtil.GSON, "models/bedrock", "BedrockModelPojo");
         animations = new JsonDataManager<>(BedrockAnimationFile.class, GsonUtil.GSON, "animations/bedrock", "BedrockAnimationPojo");
-        vehicleDisplayManager = new VehicleDisplayManager();
+        vehicleDisplayManager = new DisplayManager("vehicle");
+        weaponDisplayManager = new DisplayManager("weapon");
         scriptManager = new ScriptManager();
         internalAssets = new InternalAssets();
 
@@ -42,6 +44,7 @@ public enum ClientAssetsManager {
         consumer.accept(animations);
         consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
+        consumer.accept(weaponDisplayManager);
         consumer.accept(internalAssets);
 
         // 完成加载后清理临时数据
@@ -106,21 +109,29 @@ public enum ClientAssetsManager {
 
     @UnmodifiableView
     @Nullable
-    public Map<ResourceLocation, BaseVehicleDisplay> getVehicleDisplays() {
+    public Map<ResourceLocation, BaseDisplay> getVehicleDisplays() {
         return vehicleDisplayManager != null ? vehicleDisplayManager.getDisplayMap() : null;
     }
 
     @NotNull
-    public List<BaseVehicleDisplay> getVariableDisplay(ResourceLocation model) {
+    public List<BaseDisplay> getVariableDisplay(ResourceLocation model) {
         return vehicleDisplayManager.getModelWithVariableDisplay().get(model);
     }
 
     @NotNull
-    public Optional<BaseVehicleDisplay> getVehicleDisplay(ResourceLocation id) {
+    public Optional<BaseDisplay> getVehicleDisplay(ResourceLocation id) {
         if (vehicleDisplayManager == null) {
             return Optional.empty();
         }
         return Optional.ofNullable(vehicleDisplayManager.getDisplayMap().get(id));
+    }
+
+    @NotNull
+    public Optional<BaseDisplay> getWeaponDisplay(ResourceLocation id) {
+        if (weaponDisplayManager == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(weaponDisplayManager.getDisplayMap().get(id));
     }
 
     public ScriptManager getScriptManager() {

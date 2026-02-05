@@ -4,9 +4,9 @@ import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 import org.ywzj.vehicle.vehicle.scripts.TrackedVehicleScriptContext;
 import org.ywzj.vehicle.vehicle.scripts.VehicleScriptContext;
 
-public class TrackedVehicleDisplay extends BaseVehicleDisplay {
+public class TrackedVehicleDisplay extends BaseDisplay {
 
-    public TrackedVehicleDisplay(BaseVehicleDisplayPojo pojo) {
+    public TrackedVehicleDisplay(BaseDisplayPojo pojo) {
         super(pojo);
     }
 

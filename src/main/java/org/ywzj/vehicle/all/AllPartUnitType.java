@@ -15,9 +15,11 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<PartUnit<PartUnitData>, PartUnitData>> GENERIC = register(PartUnitTypes.GENERIC);
 
-    public static final RegistryObject<PartUnitType<DoorUnit, DoorUnitData>> DOOR = register(PartUnitTypes.DOOR);
+    public static final RegistryObject<PartUnitType<SwitchableUnit<PartUnitData>, PartUnitData>> SWITCHABLE = register(PartUnitTypes.SWITCHABLE);
 
     public static final RegistryObject<PartUnitType<RotatableUnit<RotatableUnitData>, RotatableUnitData>> ROTATABLE = register(PartUnitTypes.ROTATABLE);
+
+    public static final RegistryObject<PartUnitType<DoorUnit, DoorUnitData>> DOOR = register(PartUnitTypes.DOOR);
 
     public static final RegistryObject<PartUnitType<WeaponUnit, WeaponUnitData>> WEAPON = register(PartUnitTypes.WEAPON);
 

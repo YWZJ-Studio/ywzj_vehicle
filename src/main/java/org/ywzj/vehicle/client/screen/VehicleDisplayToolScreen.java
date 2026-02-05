@@ -16,7 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
@@ -43,9 +43,9 @@ public class VehicleDisplayToolScreen extends Screen {
         super(Component.literal("Vehicle Display Tool"));
         this.vehicle = vehicle;
         ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).ifPresent(display -> {
-            List<BaseVehicleDisplay> vehicleDisplays = ClientAssetsManager.INSTANCE.getVariableDisplay(display.getModelPath());
+            List<BaseDisplay> vehicleDisplays = ClientAssetsManager.INSTANCE.getVariableDisplay(display.getModelPath());
             this.variableDisplayIds = vehicleDisplays.stream()
-                    .map(BaseVehicleDisplay::getDisplayId)
+                    .map(BaseDisplay::getDisplayId)
                     .distinct()
                     .toList();
         });
@@ -152,9 +152,9 @@ public class VehicleDisplayToolScreen extends Screen {
             );
         }
         poseStack.popPose();
-        Optional<BaseVehicleDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+        Optional<BaseDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
         if (vehicleDisplayOptional.isPresent()) {
-            BaseVehicleDisplay vehicleDisplay = vehicleDisplayOptional.get();
+            BaseDisplay vehicleDisplay = vehicleDisplayOptional.get();
             // 介绍
             if (vehicleDisplay.getDescription() != null) {
                 poseStack.pushPose();

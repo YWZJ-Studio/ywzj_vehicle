@@ -76,7 +76,7 @@ public class BulletEntity extends AmmoEntity {
     private Function<Double, Float> distanceDamageFunction = (distance) -> 1.0f;
 
     public BulletEntity(EntityType<? extends Projectile> type, Level worldIn) {
-        super(type, worldIn);
+        super(type, worldIn, null);
     }
 
     public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion, ResourceLocation weaponId) {
@@ -94,7 +94,7 @@ public class BulletEntity extends AmmoEntity {
     }
 
     public BulletEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.BULLET.get(), level);
+        super(AllEntities.BULLET.get(), level, null);
     }
 
     @Override

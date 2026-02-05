@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
@@ -23,11 +24,15 @@ public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
     private VehicleSound tailSound;
 
     public DecoyFlareEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel);
+        super(pEntityType, pLevel, null);
+    }
+
+    public DecoyFlareEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
+        super(pEntityType, pLevel, weaponId);
     }
 
     public DecoyFlareEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.DECOY_FLARE.get(), level);
+        super(AllEntities.DECOY_FLARE.get(), level, null);
     }
 
     @Override

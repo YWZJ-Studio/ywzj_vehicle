@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -12,8 +13,8 @@ import org.ywzj.vehicle.api.entity.SightObstruction;
 
 public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChangeable, SightObstruction {
 
-    public SmokeGrenadeEntity(Entity entity, Level level) {
-        super(AllEntities.SMOKE_GRENADE.get(), entity, level);
+    public SmokeGrenadeEntity(Entity entity, Level level, ResourceLocation weaponId) {
+        super(AllEntities.SMOKE_GRENADE.get(), entity, level, weaponId);
     }
 
     public SmokeGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {

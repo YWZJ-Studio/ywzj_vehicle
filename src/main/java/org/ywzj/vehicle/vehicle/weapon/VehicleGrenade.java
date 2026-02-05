@@ -33,7 +33,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
         Entity shooterEntity = shooter == null ? vehicle : shooter;
         for (AimContext aimContext : aimContexts) {
             if ("smoke".equals(data.getGrenade())) {
-                SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooterEntity, shooterEntity.level());
+                SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 smokeGrenadeEntity.setBaseData(data);
                 smokeGrenadeEntity.setPos(aimContext.position);
                 smokeGrenadeEntity.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
@@ -43,7 +43,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
             }
             if ("aps".equals(data.getGrenade())) {
-                ActiveProtectionGrenadeEntity activeProtectionGrenade = new ActiveProtectionGrenadeEntity(shooterEntity, shooterEntity.level());
+                ActiveProtectionGrenadeEntity activeProtectionGrenade = new ActiveProtectionGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 activeProtectionGrenade.setBaseData(data);
                 activeProtectionGrenade.setPos(aimContext.position);
                 activeProtectionGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());

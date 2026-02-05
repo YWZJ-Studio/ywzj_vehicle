@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * 基础载具效果配置实例
  */
-public class BaseVehicleDisplayPojo {
+public class BaseDisplayPojo {
 
     @SerializedName("model")
     public ResourceLocation model;

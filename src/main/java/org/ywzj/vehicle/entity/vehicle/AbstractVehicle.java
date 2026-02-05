@@ -58,7 +58,7 @@ import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
@@ -540,22 +540,22 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public SoundEvent getEngineStartSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_start")).orElse(null);
     }
 
     public SoundEvent getEngineStopSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_stop")).orElse(null);
     }
 
     public SoundEvent getEngineIdleSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_idle")).orElse(null);
     }
 
     public SoundEvent getEngineRunSound() {
-        Optional<BaseVehicleDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_run")).orElse(null);
     }
 
@@ -661,6 +661,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             allCubeOBBS.addAll(partUnit.getPartCubeOBBs());
         }
         allCubeOBBS.forEach(cubeOBB -> cubeOBB.update(this));
+        mainCubeOBB.update(this);
     }
 
     public AABB getAABB() {
@@ -691,7 +692,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                     toggleEngine(true);
                     partUnits.forEach(partUnit -> {
                         if (partUnit instanceof DoorUnit doorUnit) {
-                            doorUnit.setOpen(false);
+                            doorUnit.setOn(false);
                         }
                     });
                 }

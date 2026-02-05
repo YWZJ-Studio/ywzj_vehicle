@@ -14,9 +14,5 @@
     "damage": 99,
     "radius": 5,
     "destroy_block": true
-  },
-  "sounds": {
-    "fire": "ywzj_vehicle:rocket_launch",
-    "reload": "ywzj_vehicle:common_reload"
   }
 }

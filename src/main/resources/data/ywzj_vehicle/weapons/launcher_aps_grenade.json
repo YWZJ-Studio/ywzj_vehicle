@@ -10,9 +10,5 @@
   "reload": {
     "time": 100,
     "ammo": "ywzj_vehicle:ammo_grenade"
-  },
-  "sounds": {
-    "fire": "ywzj_vehicle:smoke_grenade_launch",
-    "reload": "ywzj_vehicle:common_reload"
   }
 }

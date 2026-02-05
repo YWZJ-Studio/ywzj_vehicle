@@ -175,6 +175,7 @@ public class WeaponUnitData extends RotatableUnitData {
             boltOffset = boltOffset.add(offset);
             float barrelLength = cube.depth();
             Vector3f selfRot = new Vector3f();
+            bone.rotation.getEulerAnglesYXZ(selfRot);
             if (singleBarrel) {
                 // 若武器单元只有一个炮管，那其基础旋转视为武器单元朝向的默认值
                 if (this.structureGroup != null) {
@@ -183,10 +184,10 @@ public class WeaponUnitData extends RotatableUnitData {
                 }
                 this.rotInfo.xRot = (float) Math.toDegrees(selfRot.x);
                 this.rotInfo.yRot = (float) Math.toDegrees(-selfRot.y);
+                bone.rotation.set(new Quaternionf());
                 this.bolts.add(new Bolt(boltOffset, barrelLength, 0, 0));
             } else {
                 // 若武器单元有多个炮管且朝向各不相同，那它们都将自带基础旋转
-                bone.rotation.getEulerAnglesYXZ(selfRot);
                 this.bolts.add(new Bolt(boltOffset, barrelLength, (float) Math.toDegrees(selfRot.x), (float) Math.toDegrees(-selfRot.y)));
             }
         }

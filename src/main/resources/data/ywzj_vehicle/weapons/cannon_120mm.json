@@ -16,10 +16,5 @@
     "damage": 50,
     "radius": 4,
     "destroy_block": true
-  },
-  "sounds": {
-    "fire": "ywzj_vehicle:cannon_125mm_shot",
-    "shell": "ywzj_vehicle:cannon_shell_drop",
-    "reload": "ywzj_vehicle:artillery_reload"
   }
 }

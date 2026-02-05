@@ -1,0 +1,7 @@
+{
+  "type": "ywzj_vehicle:weapon",
+  "sounds": {
+    "fire": "ywzj_vehicle:gun_12.7mm_shot",
+    "reload": "ywzj_vehicle:gun_reload"
+  }
+}

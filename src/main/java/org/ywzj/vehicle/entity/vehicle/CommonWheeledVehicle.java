@@ -15,7 +15,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-import static org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay.EMPTY_ARGS;
+import static org.ywzj.vehicle.client.resource.vehicle.BaseDisplay.EMPTY_ARGS;
 
 
 /**

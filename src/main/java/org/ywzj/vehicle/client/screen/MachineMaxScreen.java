@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -255,9 +255,9 @@ public class MachineMaxScreen extends Screen {
             );
         }
         poseStack.popPose();
-        Optional<BaseVehicleDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+        Optional<BaseDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
         if (vehicleDisplayOptional.isPresent()) {
-            BaseVehicleDisplay vehicleDisplay = vehicleDisplayOptional.get();
+            BaseDisplay vehicleDisplay = vehicleDisplayOptional.get();
             // 介绍
             if (vehicleDisplay.getDescription() != null) {
                 poseStack.pushPose();

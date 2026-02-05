@@ -6,8 +6,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.ywzj.vehicle.all.AllItems;
 
-import java.util.Map;
-
 public class BaseVehicleWeaponData {
 
     private ResourceLocation weaponId;
@@ -38,9 +36,6 @@ public class BaseVehicleWeaponData {
 
     @SerializedName("reload")
     private Reload reload = new Reload(60, Ingredient.of(AllItems.AMMO_AUTO_CANNON.get()));
-
-    @SerializedName("sounds")
-    public Map<String, ResourceLocation> sounds;
 
     @SerializedName("independent")
     public boolean independent;

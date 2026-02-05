@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -35,6 +36,7 @@ import java.util.function.Predicate;
 public abstract class GrenadeEntity extends Projectile implements IEntityAdditionalSpawnData {
 
     protected static final EntityDataAccessor<Boolean> EXPLODED = SynchedEntityData.defineId(GrenadeEntity.class, EntityDataSerializers.BOOLEAN);
+    private ResourceLocation weaponId;
     private int life = 100;
     private float gravity = 0.07f;
     private double bounceFactor = 0.75;
@@ -43,10 +45,11 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
     private float hitDamage = 1.0f;
     private ParticleOptions tailParticle = null;
 
-    public GrenadeEntity(EntityType<? extends Projectile> type, Entity shooter, Level level) {
+    public GrenadeEntity(EntityType<? extends Projectile> type, Entity shooter, Level level, ResourceLocation weaponId) {
         super(type, level);
         this.setPos(shooter.getX(), shooter.getEyeY() - 0.1, shooter.getZ());
         this.setOwner(shooter);
+        this.weaponId = weaponId;
     }
 
     public GrenadeEntity(EntityType<? extends Projectile> type, Level level) {
@@ -352,6 +355,10 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         this.tailParticle = tailParticle;
     }
 
+    public ResourceLocation getWeaponId() {
+        return weaponId;
+    }
+
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
         buffer.writeInt(life);
@@ -365,6 +372,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         } else {
             buffer.writeBoolean(false);
         }
+        buffer.writeResourceLocation(weaponId);
     }
 
     @Override
@@ -379,6 +387,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         } else {
             tailParticle = null;
         }
+        weaponId = additionalData.readResourceLocation();
     }
 
 }

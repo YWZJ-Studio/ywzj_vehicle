@@ -4,9 +4,9 @@ import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.vehicle.scripts.VehicleScriptContext;
 import org.ywzj.vehicle.vehicle.scripts.WheeledVehicleScriptContext;
 
-public class WheeledVehicleDisplay extends BaseVehicleDisplay {
+public class WheeledVehicleDisplay extends BaseDisplay {
 
-    public WheeledVehicleDisplay(BaseVehicleDisplayPojo pojo) {
+    public WheeledVehicleDisplay(BaseDisplayPojo pojo) {
         super(pojo);
     }
 
