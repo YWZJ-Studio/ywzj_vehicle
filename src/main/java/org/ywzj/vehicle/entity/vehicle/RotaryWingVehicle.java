@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -22,15 +23,22 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.EntityContext;
+import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.parts.DoorUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class RotaryWingVehicle extends AbstractVehicle {
 
@@ -48,6 +56,10 @@ public class RotaryWingVehicle extends AbstractVehicle {
     public float yRotSpeed;
     public float zRotSpeed;
     public Vec3 airSpeed = new Vec3(0, 0, 0);
+    public boolean hoverMode;
+    public boolean fastRoping;
+    public String fastRopingDoorId;
+    public HashMap<UUID, FastRopingContext> fastRopingContexts = new HashMap<>();
     public float propellerRotation;
     public long lastRenderTime;
     private boolean animationLandingGearDown;
@@ -119,14 +131,31 @@ public class RotaryWingVehicle extends AbstractVehicle {
                 if (animationLandingGearDown) {
                     playingState.setSpeed(1);
                     animationLandingGearDown = false;
+                    LocalVehiclePlayer.instance.sendMessage("tips.gear_up");
                 } else {
                     playingState.setSpeed(-1);
                     animationLandingGearDown = true;
+                    LocalVehiclePlayer.instance.sendMessage("tips.gear_down");
                 }
                 landingGearRunner.setState(playingState);
                 applyLandingGear();
             }
         }
+        if (!level().isClientSide() && fastRoping) {
+            tickFastRoping();
+        }
+    }
+
+    public void tickFastRoping() {
+        fastRopingContexts.values().removeIf(context -> {
+            context.rope.setPos(relativeRotPos(this.position().add(context.fixedNodeOffset), false));
+            if (context.isTouchGround() || context.livingEntity.isShiftKeyDown()) {
+                context.rope.kill();
+                return true;
+            }
+            context.tickDescending();
+            return false;
+        });
     }
 
     public void applyLandingGear() {
@@ -147,6 +176,44 @@ public class RotaryWingVehicle extends AbstractVehicle {
         }
     }
 
+    @NotNull
+    @Override
+    public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
+        if (fastRoping) {
+            FastRopingContext fastRopingContext = fastRopingContexts.get(pPassenger.getUUID());
+            if (fastRopingContext != null) {
+                return fastRopingContext.rope.position();
+            }
+        }
+        return super.getDismountLocationForPassenger(pPassenger);
+    }
+
+    @Override
+    public void onLeaveVehicle(LivingEntity pPassenger) {
+        super.onLeaveVehicle(pPassenger);
+        if (!level().isClientSide() && fastRoping) {
+            if (position().y - EntityUtil.getGroundY(level(), position()) < 8) {
+                return;
+            }
+            Vec3 dismountLocation;
+            if (fastRopingDoorId != null
+                    && partUnitMap.get(fastRopingDoorId) instanceof DoorUnit doorUnit) {
+                dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
+                doorUnit.setOn(true);
+            } else {
+                dismountLocation = getDismountLocationForPassenger(pPassenger);
+            }
+            FastRopingContext fastRopingContext = new FastRopingContext();
+            Rope rope = new Rope(AllEntities.ROPE.get(), level());
+            rope.setPos(dismountLocation);
+            level().addFreshEntity(rope);
+            fastRopingContext.rope = rope;
+            fastRopingContext.livingEntity = pPassenger;
+            fastRopingContext.fixedNodeOffset = relativeRotDirection(dismountLocation.subtract(this.position()), true);
+            fastRopingContexts.put(pPassenger.getUUID(), fastRopingContext);
+        }
+    }
+
     @Override
     public void onClientVehicleAction(ClientVehicleAction message, Player player) {
         if (message.toggleLandingGear) {
@@ -157,6 +224,15 @@ public class RotaryWingVehicle extends AbstractVehicle {
                 boolean landingGearDown = !isLandingGearDown();
                 entityData.set(LANDING_GEAR_DOWN, landingGearDown);
                 applyLandingGear();
+            }
+        }
+        if (message.toggleHoverMode) {
+            if (!hoverMode) {
+                hoverMode = true;
+                player.displayClientMessage(Component.translatable("tips.hover_mode_on"), true);
+            } else {
+                hoverMode = false;
+                player.displayClientMessage(Component.translatable("tips.hover_mode_off"), true);
             }
         }
         super.onClientVehicleAction(message, player);
@@ -266,6 +342,17 @@ public class RotaryWingVehicle extends AbstractVehicle {
         float yRotSpeedAcceleration = (float) (this.yRotSpeedAcceleration * scale);
         float zRotSpeedAcceleration = (float) (this.zRotSpeedAcceleration * scale);
         if (getDriver() != null) {
+            if (hoverMode) {
+                controlUnit.xRot = 0;
+                controlUnit.yRot = getYRot();
+                Vec3 velocity = getDeltaMovement();
+                if (velocity.y > 0.05) {
+                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1, 0, 100));
+                } else if (velocity.y < -0.0001) {
+                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() + 1, 0, 100));
+                }
+            }
+
             if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep && scale > 0) {
                 float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
                 float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
@@ -344,6 +431,11 @@ public class RotaryWingVehicle extends AbstractVehicle {
             xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 0.1f));
             zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 0.1f));
         }
+
+        if (isDestroyed() && !level().getBlockState(this.blockPosition().below()).isSolid()) {
+            this.setYRot(this.getYRot() + 10);
+        }
+
         return force;
     }
 
@@ -405,6 +497,44 @@ public class RotaryWingVehicle extends AbstractVehicle {
 
     public boolean isLandingGearDown() {
         return entityData.get(LANDING_GEAR_DOWN);
+    }
+
+    public static class FastRopingContext {
+
+        public LivingEntity livingEntity;
+        public Rope rope;
+        public Vec3 fixedNodeOffset;
+
+        public boolean isTouchGround() {
+            return livingEntity.level().getBlockState(livingEntity.blockPosition().below()).isSolid();
+        }
+
+        public void tickDescending() {
+            if (!rope.ropeNodes.isEmpty()) {
+                Rope.RopeNode lastNode = rope.ropeNodes.get(rope.ropeNodes.size() - 1);
+                if (livingEntity.position().y <= lastNode.pos.y) {
+                    applyMovement(lastNode.pos, true);
+                    return;
+                }
+            }
+            for (Rope.RopeNode node : rope.ropeNodes) {
+                if (livingEntity.position().y < node.pos.y) {
+                    applyMovement(node.pos, false);
+                    break;
+                }
+            }
+        }
+
+        private void applyMovement(Vec3 nodePos, boolean lastNode) {
+            Vec3 targetPos = new Vec3(nodePos.x, lastNode ? nodePos.y : livingEntity.position().y - 0.2, nodePos.z);
+            if (livingEntity instanceof ServerPlayer serverPlayer) {
+                serverPlayer.teleportTo(targetPos.x, targetPos.y, targetPos.z);
+            } else {
+                livingEntity.moveTo(targetPos.subtract(livingEntity.getDeltaMovement()));
+            }
+            livingEntity.fallDistance = 0;
+        }
+
     }
 
 }

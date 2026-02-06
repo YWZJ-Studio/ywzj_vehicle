@@ -160,6 +160,7 @@ public class Quadcopter extends RotaryWingVehicle {
         }
     }
 
+    @NotNull
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity pPassenger) {
         if (fakeOperator != null) {

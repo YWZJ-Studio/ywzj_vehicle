@@ -47,6 +47,7 @@ public class LocalVehiclePlayer {
     public boolean outOfRangeFinding;
     public HashSet<MissileEntity> controllingMissiles = new HashSet<>();
     public boolean mouseTurnedAfterScope;
+    public AbstractVehicle.Seat seat;
     public ViewType viewType = ViewType.THIRD_PERSON;
     public int tickCount;
     private final ReentrantLock lock = new ReentrantLock();

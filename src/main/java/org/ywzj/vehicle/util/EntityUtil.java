@@ -4,8 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -22,15 +22,6 @@ import java.util.function.Predicate;
 public class EntityUtil {
 
     private static final Predicate<Entity> PROJECTILE_TARGETS = input -> input != null && input.isPickable() && !input.isSpectator();
-
-    public static boolean withinBroadcastRange(Entity entity, Player serverPlayer) {
-        Vec3 vec3 = serverPlayer.position().subtract(entity.position());
-//        double d0 = (double)Math.min(this.getEffectiveRange(), ChunkMap.this.viewDistance * 16);
-        double d0 = 128;
-        double d1 = vec3.x * vec3.x + vec3.z * vec3.z;
-        double d2 = d0 * d0;
-        return d1 <= d2;
-    }
 
     @Nullable
     public static BulletHitResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {
@@ -125,6 +116,14 @@ public class EntityUtil {
         if (shape.isEmpty()) return false;
         double surfaceY = shape.max(Direction.Axis.Y) + blockBelow.getY();
         return pos.y - surfaceY <= 0.05;
+    }
+
+    public static double getGroundY(Level level, Vec3 pos) {
+        BlockPos blockPos = BlockPos.containing(pos);
+        while (blockPos.getY() > level.getMinBuildHeight() && level.getBlockState(blockPos).isAir()) {
+            blockPos = blockPos.below();
+        }
+        return blockPos.getY() + 1.0;
     }
 
 }

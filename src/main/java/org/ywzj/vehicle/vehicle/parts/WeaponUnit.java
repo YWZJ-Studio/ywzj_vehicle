@@ -480,35 +480,37 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
-        if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
-            Quaternionf rotationO = new Quaternionf();
-            rotationO.rotateY(org.joml.Math.toRadians(-(vehicle.getYRot() - dVehicleYRot)))
-                    .rotateX(org.joml.Math.toRadians(vehicle.getXRot() - dVehicleXRot))
-                    .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
-            if (structureGroup != null) {
-                rotationO.mul(structureGroup.baseRotation);
+        if (Math.abs(dVehicleXRot) > 0.01 || Math.abs(dVehicleYRot) > 0.01 || Math.abs(dVehicleZRot) > 0.01) {
+            if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
+                Quaternionf rotationO = new Quaternionf();
+                rotationO.rotateY(org.joml.Math.toRadians(-(vehicle.getYRot() - dVehicleYRot)))
+                        .rotateX(org.joml.Math.toRadians(vehicle.getXRot() - dVehicleXRot))
+                        .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
+                if (structureGroup != null) {
+                    rotationO.mul(structureGroup.baseRotation);
+                }
+                if (baseRotatableUnit != null && baseRotatableUnit.structureGroup != null) {
+                    rotationO.mul(baseRotatableUnit.structureGroup.globalTransform().rotation());
+                }
+                Vector3f localVec = VectorUtil.rotToVec(xRot, yRot).toVector3f();
+                Quaternionf relativeRot = baseRot().invert().mul(rotationO);
+                Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
+                Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
+                setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
+                if (org.joml.Math.abs(xRot - xRotO) > 180) {
+                    xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
+                }
+                if (vehicle.level().isClientSide()) {
+                    setXAimRot(targetRot.x);
+                    setYAimRot(targetRot.y);
+                    ignoreRemoteRotTick = 1;
+                }
+                setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
+                if (org.joml.Math.abs(yRot - yRotO) > 180) {
+                    yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
+                }
+                updateRot();
             }
-            if (baseRotatableUnit != null && baseRotatableUnit.structureGroup != null) {
-                rotationO.mul(baseRotatableUnit.structureGroup.globalTransform().rotation());
-            }
-            Vector3f localVec = VectorUtil.rotToVec(xRot, yRot).toVector3f();
-            Quaternionf relativeRot = baseRot().invert().mul(rotationO);
-            Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
-            Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
-            setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
-            if (org.joml.Math.abs(xRot - xRotO) > 180) {
-                xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
-            }
-            if (vehicle.level().isClientSide()) {
-                setXAimRot(targetRot.x);
-                setYAimRot(targetRot.y);
-                ignoreRemoteRotTick = 1;
-            }
-            setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
-            if (org.joml.Math.abs(yRot - yRotO) > 180) {
-                yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
-            }
-            updateRot();
         }
     }
 

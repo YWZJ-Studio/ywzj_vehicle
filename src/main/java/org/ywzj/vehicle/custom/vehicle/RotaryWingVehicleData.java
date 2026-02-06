@@ -15,6 +15,8 @@ public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
     public float zRotSpeedAcceleration = 1;
     public float zRotSpeedMax = 4;
     public float maxAirSpeed = 1f;
+    public boolean fastRoping;
+    public String fastRopingDoorId;
 
     @Override
     public AbstractVehicle fromCustom(Level level) {
@@ -31,6 +33,8 @@ public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
         this.zRotSpeedAcceleration = pojo.attributes.zRotSpeedAcceleration;
         this.zRotSpeedMax = pojo.attributes.zRotSpeedMax;
         this.maxAirSpeed = pojo.attributes.maxAirSpeed;
+        this.fastRoping = pojo.attributes.fastRoping;
+        this.fastRopingDoorId = pojo.attributes.fastRopingDoorId;
     }
 
     public void inject(RotaryWingVehicle vehicle) {
@@ -42,6 +46,8 @@ public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
         vehicle.zRotSpeedAcceleration = this.zRotSpeedAcceleration;
         vehicle.zRotSpeedMax = this.zRotSpeedMax;
         vehicle.maxAirSpeed = this.maxAirSpeed;
+        vehicle.fastRoping = this.fastRoping;
+        vehicle.fastRopingDoorId = this.fastRopingDoorId;
     }
 
 }

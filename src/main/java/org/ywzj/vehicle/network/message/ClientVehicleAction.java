@@ -20,6 +20,7 @@ public class ClientVehicleAction {
     public boolean leaveVehicle;
     public boolean toggleEngine;
     public boolean toggleLandingGear;
+    public boolean toggleHoverMode;
     public boolean lockEntity;
     public int lockedEntityId;
     public int partUnitIndex;
@@ -44,6 +45,10 @@ public class ClientVehicleAction {
         }
         control.toggleLandingGear = buf.readBoolean();
         if (control.toggleLandingGear) {
+            return control;
+        }
+        control.toggleHoverMode = buf.readBoolean();
+        if (control.toggleHoverMode) {
             return control;
         }
         control.lockEntity = buf.readBoolean();
@@ -83,6 +88,10 @@ public class ClientVehicleAction {
         if (toggleLandingGear) {
             return;
         }
+        buf.writeBoolean(toggleHoverMode);
+        if (toggleHoverMode) {
+            return;
+        }
         buf.writeBoolean(lockEntity);
         if (lockEntity) {
             buf.writeInt(lockedEntityId);
@@ -119,7 +128,7 @@ public class ClientVehicleAction {
             if (!(entity instanceof AbstractVehicle vehicle)) {
                 return;
             }
-            if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.lockEntity) {
+            if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
                 vehicle.onClientVehicleAction(message, player);
             } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
                 vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);

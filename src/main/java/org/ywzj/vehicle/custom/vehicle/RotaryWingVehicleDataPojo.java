@@ -32,6 +32,12 @@ public class RotaryWingVehicleDataPojo extends BaseVehicleDataPojo {
 
         @SerializedName("max_air_speed")
         public float maxAirSpeed;
+
+        @SerializedName("fast_roping")
+        public boolean fastRoping;
+
+        @SerializedName("fast_roping_door_id")
+        public String fastRopingDoorId;
     }
 
 }

@@ -23,6 +23,7 @@ import org.ywzj.vehicle.client.particle.DustStoneParticle;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.FakePlayerRenderer;
+import org.ywzj.vehicle.client.render.entity.misc.RopeRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.DumpTruckRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.QuadcopterRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
@@ -68,6 +69,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROPE.get(), RopeRenderer::new));
 
         ItemBlockRenderTypes.setRenderLayer(AllBlocks.FIGURE_BOX_BLOCK.get(), RenderType.cutout());
         BlockEntityRenderers.register(AllBlockEntities.FIGURE_BOX_BLOCK_ENTITY.get(), FigureBoxBlockRenderer::new);

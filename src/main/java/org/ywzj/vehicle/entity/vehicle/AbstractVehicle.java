@@ -756,6 +756,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
                 && !passengerIdsBySeat.contains(player.getId())) {
             LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
+            LocalVehiclePlayer.instance.seat = null;
         }
         for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
             Seat seat = seats.get(index);
@@ -768,6 +769,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 seat.passengerId = id;
                 if (seat.passengerId == player.getId()) {
                     seat.partUnit.applySeatRot(player);
+                    LocalVehiclePlayer.instance.seat = seat;
                 }
             } else {
                 if (index == 0) {
@@ -885,6 +887,10 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     @NotNull
     @Override
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
+        DoorUnit doorUnit = getNearestDoorUnit(pPassenger);
+        if (doorUnit != null) {
+            return doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
+        }
         PartUnit<?> partUnit = getOwnOperatorUnit(pPassenger);
         return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
     }

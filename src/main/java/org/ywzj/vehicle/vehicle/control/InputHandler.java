@@ -61,6 +61,8 @@ public class InputHandler {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
                     }
+                } else if (TOGGLE_HOVER_MODE.matches(event.getKey(), event.getScanCode())) {
+                    sendToggleHoverMode(vehicle);
                 } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.independentWeapons.stream()
@@ -122,11 +124,14 @@ public class InputHandler {
                 }
                 if (System.currentTimeMillis() - waitSwitchSeatTime > 500) {
                     int seatsCount = vehicle.seats.size();
-                    for (int seatIndex = (vehicle.getOwnOperatorUnit(player).getIndex() + 1) % seatsCount; seatIndex < seatsCount; seatIndex++) {
-                        if (vehicle.seats.get(seatIndex).partUnit.getOwner() == null) {
-                            sendChangeSeat(vehicle, seatIndex);
-                            waitSwitchSeatTime = System.currentTimeMillis();
-                            return;
+                    AbstractVehicle.Seat playerSeat = LocalVehiclePlayer.instance.seat;
+                    if (playerSeat != null) {
+                        for (int seatIndex = (playerSeat.seatIndex + 1) % seatsCount; seatIndex < seatsCount; seatIndex++) {
+                            if (vehicle.seats.get(seatIndex).partUnit.getOwner() == null) {
+                                sendChangeSeat(vehicle, seatIndex);
+                                waitSwitchSeatTime = System.currentTimeMillis();
+                                return;
+                            }
                         }
                     }
                 }
@@ -243,6 +248,13 @@ public class InputHandler {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleLandingGear = true;
+        Channel.CHANNEL.sendToServer(action);
+    }
+
+    private static void sendToggleHoverMode(AbstractVehicle vehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = vehicle.getId();
+        action.toggleHoverMode = true;
         Channel.CHANNEL.sendToServer(action);
     }
 
