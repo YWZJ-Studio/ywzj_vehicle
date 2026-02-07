@@ -506,7 +506,7 @@ public class RotaryWingVehicle extends AbstractVehicle {
         public Vec3 fixedNodeOffset;
 
         public boolean isTouchGround() {
-            return livingEntity.level().getBlockState(livingEntity.blockPosition().below()).isSolid();
+            return livingEntity.level().getBlockState(livingEntity.blockPosition().below()).isSolid() || livingEntity.getVehicle() != null;
         }
 
         public void tickDescending() {

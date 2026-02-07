@@ -13,6 +13,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.compat.SuperbWarfareCompat;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
@@ -87,6 +88,12 @@ public class EntityUtil {
                 return new BulletHitResult(bulletEntity, closestHitPos, false);
             } else {
                 return null;
+            }
+        }
+        if (SuperbWarfareCompat.isLoaded()) {
+            BulletHitResult superbWarfareHitResult = SuperbWarfareCompat.getHitResult(bulletEntity, entity, startVec, endVec);
+            if (superbWarfareHitResult != null) {
+                return superbWarfareHitResult;
             }
         }
         AABB boundingBox = HitboxHelper.getFixedBoundingBox(entity, bulletEntity.getOwner());
