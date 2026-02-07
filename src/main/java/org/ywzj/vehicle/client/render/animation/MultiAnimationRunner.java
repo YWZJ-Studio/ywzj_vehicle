@@ -1,19 +1,20 @@
 package org.ywzj.vehicle.client.render.animation;
 
-import com.maydaymemory.mae.basic.*;
-import com.maydaymemory.mae.blend.EulerAdditiveBlender;
-import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
+import com.maydaymemory.mae.basic.Animation;
+import com.maydaymemory.mae.basic.DummyPose;
+import com.maydaymemory.mae.basic.Keyframe;
+import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.maydaymemory.mae.control.runner.IAnimationState;
 import com.maydaymemory.mae.control.runner.PlayingState;
 import net.minecraft.resources.ResourceLocation;
+import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Function;
 
 public class MultiAnimationRunner<T extends Animation> {
 
-    public static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
     private final int maxRunners;
     private final ConcurrentLinkedDeque<AnimationRunner> animationRunners = new ConcurrentLinkedDeque<>();
     private final Function<T, AnimationRunner> runnerSupplier;
@@ -51,7 +52,7 @@ public class MultiAnimationRunner<T extends Animation> {
             if (blendedPose == null) {
                 blendedPose = pose;
             } else {
-                blendedPose = BLENDER.blend(blendedPose, pose);
+                blendedPose = PoseBlenders.BLENDER.blend(blendedPose, pose);
             }
         }
         return blendedPose != null ? blendedPose : DummyPose.INSTANCE;

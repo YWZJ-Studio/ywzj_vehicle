@@ -1,0 +1,155 @@
+package org.ywzj.vehicle.client.render.animation.compiler;
+
+import org.ywzj.vehicle.client.render.animation.graph.*;
+import org.ywzj.vehicle.client.resource.animation.PoseNodeDefinition;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Compiler for pose graph definitions.
+ * Compiles JSON pose node definitions into runtime PoseNode objects.
+ */
+public class PoseGraphCompiler {
+    private final Map<String, BoneMask> boneMasks;
+
+    public PoseGraphCompiler(Map<String, BoneMask> boneMasks) {
+        this.boneMasks = boneMasks != null ? boneMasks : new HashMap<>();
+    }
+
+    /**
+     * Compile a pose graph from root node definition
+     */
+    public PoseGraph compile(PoseNodeDefinition rootDefinition) {
+        if (rootDefinition == null) {
+            throw new IllegalArgumentException("Root node definition cannot be null");
+        }
+
+        PoseNode rootNode = compileNode(rootDefinition);
+        return new PoseGraph(rootNode);
+    }
+
+    /**
+     * Compile a single pose node
+     */
+    private PoseNode compileNode(PoseNodeDefinition definition) {
+        if (definition == null) {
+            throw new IllegalArgumentException("Node definition cannot be null");
+        }
+
+        String type = definition.getType();
+        if (type == null) {
+            throw new IllegalArgumentException("Node type cannot be null");
+        }
+
+        return switch (type.toLowerCase()) {
+            case "state_machine" -> compileStateMachineNode(definition);
+            case "blend" -> compileBlendNode(definition);
+            case "layered_blend" -> compileLayeredBlendNode(definition);
+            case "additive" -> compileAdditiveNode(definition);
+            default -> throw new IllegalArgumentException("Unknown node type: " + type);
+        };
+    }
+
+    /**
+     * Compile state_machine node
+     */
+    private PoseNode compileStateMachineNode(PoseNodeDefinition definition) {
+        String ref = definition.getRef();
+        if (ref == null || ref.isEmpty()) {
+            throw new IllegalArgumentException("state_machine node requires 'ref' field");
+        }
+        return new StateMachineNode(ref);
+    }
+
+    /**
+     * Compile blend node
+     */
+    private PoseNode compileBlendNode(PoseNodeDefinition definition) {
+        PoseNodeDefinition aDef = definition.getA();
+        PoseNodeDefinition bDef = definition.getB();
+
+        if (aDef == null || bDef == null) {
+            throw new IllegalArgumentException("blend node requires 'a' and 'b' fields");
+        }
+
+        PoseNode nodeA = compileNode(aDef);
+        PoseNode nodeB = compileNode(bDef);
+        WeightSource weightSource = compileWeightSource(definition.getWeight());
+
+        return new BlendNode(nodeA, nodeB, weightSource);
+    }
+
+    /**
+     * Compile layered_blend node
+     */
+    private PoseNode compileLayeredBlendNode(PoseNodeDefinition definition) {
+        PoseNodeDefinition baseDef = definition.getBase();
+        if (baseDef == null) {
+            throw new IllegalArgumentException("layered_blend node requires 'base' field");
+        }
+
+        PoseNode baseNode = compileNode(baseDef);
+        List<LayeredBlendNode.Layer> layers = new ArrayList<>();
+
+        if (definition.getLayers() != null) {
+            for (PoseNodeDefinition.LayerDefinition layerDef : definition.getLayers()) {
+                PoseNode layerPose = compileNode(layerDef.getPose());
+                BoneMask mask = null;
+                if (layerDef.getMask() != null) {
+                    mask = boneMasks.get(layerDef.getMask());
+                }
+                WeightSource weightSource = compileWeightSource(layerDef.getWeight());
+                layers.add(new LayeredBlendNode.Layer(layerPose, mask, weightSource));
+            }
+        }
+
+        return new LayeredBlendNode(baseNode, layers);
+    }
+
+    /**
+     * Compile additive node
+     */
+    private PoseNode compileAdditiveNode(PoseNodeDefinition definition) {
+        PoseNodeDefinition baseDef = definition.getBase();
+        PoseNodeDefinition addDef = definition.getAdd();
+
+        if (baseDef == null || addDef == null) {
+            throw new IllegalArgumentException("additive node requires 'base' and 'add' fields");
+        }
+
+        PoseNode baseNode = compileNode(baseDef);
+        PoseNode addNode = compileNode(addDef);
+        WeightSource weightSource = compileWeightSource(definition.getWeight());
+
+        return new AdditiveNode(baseNode, addNode, weightSource);
+    }
+
+    /**
+     * Compile weight source from JSON value
+     */
+    private WeightSource compileWeightSource(Object weightValue) {
+        if (weightValue == null) {
+            return new WeightSource.Static(1.0f);
+        }
+
+        // Static float value
+        if (weightValue instanceof Number) {
+            return new WeightSource.Static(((Number) weightValue).floatValue());
+        }
+
+        // Parameter reference
+        if (weightValue instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> weightMap = (Map<String, Object>) weightValue;
+            String param = (String) weightMap.get("param");
+            if (param != null) {
+                return new WeightSource.Parameter(param, 0.0f);
+            }
+        }
+
+        throw new IllegalArgumentException("Invalid weight value: " + weightValue);
+    }
+}
