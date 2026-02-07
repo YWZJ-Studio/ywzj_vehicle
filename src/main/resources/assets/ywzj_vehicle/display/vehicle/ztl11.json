@@ -2,6 +2,7 @@
   "model": "ywzj_vehicle:entity/ztl11",
   "texture": "ywzj_vehicle:textures/entity/ztl11.png",
   "slot_texture": "ywzj_vehicle:textures/slot/ztl11.png",
+  "animations": "ywzj_vehicle:entity/ztl11.animation",
   "script": "ywzj_vehicle:ztl11",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",

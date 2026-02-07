@@ -58,10 +58,6 @@ public class Rope extends Entity {
             Vec3 velocity = node.pos.subtract(node.lastPos).scale(friction);
             node.lastPos = node.pos;
             node.pos = node.pos.add(velocity).add(0, gravity, 0);
-            // 简易地面碰撞检测
-            if (!level().getBlockState(new BlockPos((int)node.pos.x, (int)node.pos.y, (int)node.pos.z)).isAir()) {
-                node.pos = new Vec3(node.pos.x, node.lastPos.y, node.pos.z);
-            }
         }
         // 绳节点受前一个绳节点的影响运动
         for (int i = 0; i < 5; i++) {

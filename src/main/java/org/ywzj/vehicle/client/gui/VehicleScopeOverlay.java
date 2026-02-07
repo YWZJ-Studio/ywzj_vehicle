@@ -48,30 +48,30 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         } else if (vehicle instanceof RotaryWingVehicle rotaryWingVehicle) {
             renderHelicopter(guiGraphics, screenWidth, screenHeight, rotaryWingVehicle);
         }
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
         // 准心
-        if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit
-                && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
-            RenderHelper.drawRect(guiGraphics, centerX, centerY, 15, 15, color, 1f);
+        if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+            Vec3 posO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
+            Vec3 pos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
             guiGraphics.pose().pushPose();
             {
-                Vec3 posO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
-                Vec3 pos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
                 guiGraphics.pose().translate(
                         Mth.lerp(partialTick, posO.x, pos.x),
                         Mth.lerp(partialTick, posO.y, pos.y),
                         0);
-                drawSquare(guiGraphics, 0, 0, 5, color);
-                guiGraphics.fill(0, -32, 1, -8, color);
-                guiGraphics.fill(0, 8, 1, 32, color);
-                guiGraphics.fill(-32, 0, -8, 1, color);
-                guiGraphics.fill(32, 0, 8, 1, color);
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                        (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
-                                + (int) LocalVehiclePlayer.instance.aimLocationDistance + " m", 0, 40, color);
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.withStabilizer() ? Component.translatable("ui.stabilizer_on").getString() : "", 36, 28, color);
+                if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
+                    drawSquare(guiGraphics, 0, 0, 5, color);
+                    guiGraphics.fill(0, -32, 1, -8, color);
+                    guiGraphics.fill(0, 8, 1, 32, color);
+                    guiGraphics.fill(-32, 0, -8, 1, color);
+                    guiGraphics.fill(32, 0, 8, 1, color);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font,
+                            (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
+                                    + (int) LocalVehiclePlayer.instance.aimLocationDistance + " m", 0, 40, color);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.withStabilizer() ? Component.translatable("ui.stabilizer_on").getString() : "", 36, 28, color);
+                } else {
+                    RenderHelper.drawRect(guiGraphics, 0, 0, 1, 1, color, 1f);
+                }
             }
             guiGraphics.pose().popPose();
         }

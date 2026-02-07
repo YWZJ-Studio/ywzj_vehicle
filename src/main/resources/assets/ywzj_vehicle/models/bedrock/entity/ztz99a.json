@@ -10342,8 +10342,13 @@
 					"pivot": [0, 30, 25]
 				},
 				{
-					"name": "octagon25",
+					"name": "octagon32",
 					"parent": "canno",
+					"pivot": [0, 30.375, 113.75]
+				},
+				{
+					"name": "octagon25",
+					"parent": "octagon32",
 					"pivot": [0, 30.375, 113.75],
 					"rotation": [-90, 0, 0],
 					"cubes": [
@@ -10455,7 +10460,7 @@
 				},
 				{
 					"name": "octagon26",
-					"parent": "canno",
+					"parent": "octagon32",
 					"pivot": [0, 30.375, 70.75],
 					"cubes": [
 						{
@@ -10514,7 +10519,7 @@
 				},
 				{
 					"name": "octagon11",
-					"parent": "canno",
+					"parent": "octagon32",
 					"pivot": [0, 30.375, 34.75],
 					"cubes": [
 						{
@@ -10572,9 +10577,9 @@
 					]
 				},
 				{
-					"name": "octagon10",
-					"parent": "canno",
-					"pivot": [0, 30.375, 99.75],
+					"name": "octagon33",
+					"parent": "octagon32",
+					"pivot": [0, 0, 0],
 					"cubes": [
 						{
 							"origin": [-0.93198, 28.125, 112],
@@ -10627,7 +10632,14 @@
 								"up": {"uv": [403, 380], "uv_size": [-5, -1]},
 								"down": {"uv": [385, 398], "uv_size": [-5, 1]}
 							}
-						},
+						}
+					]
+				},
+				{
+					"name": "octagon10",
+					"parent": "canno",
+					"pivot": [0, 30.375, 99.75],
+					"cubes": [
 						{
 							"origin": [-4, 26.375, 22.75],
 							"size": [8, 7, 12],
