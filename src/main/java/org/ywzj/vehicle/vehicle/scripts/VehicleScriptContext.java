@@ -6,6 +6,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.scripts.EntityContextProvider;
 import org.ywzj.vehicle.api.scripts.ParticleUtil;
+import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
@@ -20,10 +21,18 @@ public class VehicleScriptContext<T extends AbstractVehicle> extends EntityConte
 
     protected float partialTick;
     protected BedrockModel model;
+    protected BaseAnimationContext animationContext;
 
     public VehicleScriptContext(T vehicle, BedrockModel model) {
         super(vehicle);
         this.model = model;
+    }
+
+    /**
+     * Set the animation controller context for accessing controller variables
+     */
+    public void setAnimationContext(BaseAnimationContext context) {
+        this.animationContext = context;
     }
 
     @ApiStatus.Internal

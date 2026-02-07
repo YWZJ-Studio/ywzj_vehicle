@@ -2,32 +2,44 @@ package org.ywzj.vehicle.client.render.animation;
 
 import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.statemachine.AnimationStateMachine;
+import org.ywzj.vehicle.api.animation.IAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
-public class VehicleAnimationInstance {
+import java.util.HashMap;
+import java.util.Map;
 
-    private AnimationStateMachine<VehicleContext> stateMachine;
+public class VehicleAnimationInstance<T extends BaseAnimationContext> implements IAnimationInstance<T> {
+
+    private Map<String, AnimationStateMachine<T>> stateMachines = new HashMap<>();
+    private AnimationController<T> controller;
+    private T context;
 
     public VehicleAnimationInstance(AbstractVehicle vehicle) {
         ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId())
-                .ifPresent(display -> {
-                    this.stateMachine = new AnimationStateMachine<>(
-                            VehicleAnimationStates.IDLE_STATE,
-                            new VehicleContext(vehicle, display.getAnimations()),
-                            System::nanoTime
-                    );
-                });
+            .ifPresent(display -> {
+                context = new VehicleContext(vehicle, display.getAnimations());
+                stateMachines = controller.initialize(context);
+            });
+
+
     }
 
-    public AnimationStateMachine<VehicleContext> getStateMachine() {
-        return stateMachine;
+    public AnimationStateMachine<T> getStateMachine(String name) {
+        return stateMachines.get(name);
+    }
+
+    public T getContext() {
+        return context;
     }
 
     public void tick() {
-        if (stateMachine != null) {
-            stateMachine.tick();
+        for (var value : stateMachines.values()) {
+            value.tick();
         }
     }
 
@@ -36,7 +48,7 @@ public class VehicleAnimationInstance {
     }
 
     public Pose getCurrentPose() {
-        return stateMachine.getPose();
+        return controller.getPoseGraph().evaluate();
     }
 
 }

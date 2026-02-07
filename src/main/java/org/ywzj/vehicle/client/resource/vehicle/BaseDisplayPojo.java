@@ -25,6 +25,9 @@ public class BaseDisplayPojo {
     @SerializedName("script")
     public ResourceLocation script;
 
+    @SerializedName("animation_controller")
+    public ResourceLocation animationController;
+
     @SerializedName("sounds")
     public Map<String, ResourceLocation> sounds;
 

@@ -27,6 +27,7 @@ public enum ClientAssetsManager {
     INSTANCE;
     private JsonDataManager<BedrockModelPOJO> models;
     private JsonDataManager<BedrockAnimationFile> animations;
+    private AnimationControllerDefinitionManager animationControllerDefinitionManager;
     private DisplayManager vehicleDisplayManager;
     private DisplayManager weaponDisplayManager;
     private ScriptManager scriptManager;
@@ -35,6 +36,7 @@ public enum ClientAssetsManager {
     public void registerListeners(Consumer<PreparableReloadListener> consumer) {
         models = new JsonDataManager<>(BedrockModelPOJO.class, GsonUtil.GSON, "models/bedrock", "BedrockModelPojo");
         animations = new JsonDataManager<>(BedrockAnimationFile.class, GsonUtil.GSON, "animations/bedrock", "BedrockAnimationPojo");
+        animationControllerDefinitionManager = new AnimationControllerDefinitionManager();
         vehicleDisplayManager = new DisplayManager("vehicle");
         weaponDisplayManager = new DisplayManager("weapon");
         scriptManager = new ScriptManager();
@@ -42,6 +44,7 @@ public enum ClientAssetsManager {
 
         consumer.accept(models);
         consumer.accept(animations);
+        consumer.accept(animationControllerDefinitionManager);
         consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
         consumer.accept(weaponDisplayManager);
@@ -145,5 +148,4 @@ public enum ClientAssetsManager {
     public InternalAssets getInternalAssets() {
         return internalAssets;
     }
-
 }

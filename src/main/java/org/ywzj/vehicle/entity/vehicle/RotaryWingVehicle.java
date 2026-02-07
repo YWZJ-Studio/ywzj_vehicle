@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.EntityContext;
+import org.ywzj.vehicle.client.render.animation.context.EntityContext;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
