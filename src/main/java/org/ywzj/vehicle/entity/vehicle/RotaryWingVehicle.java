@@ -26,7 +26,6 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.misc.Rope;
-import org.ywzj.vehicle.client.render.animation.context.EntityContext;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -107,18 +106,18 @@ public class RotaryWingVehicle extends AbstractVehicle {
     @Override
     public void readSpawnData(FriendlyByteBuf buffer) {
         super.readSpawnData(buffer);
-        EntityContext<?> context = getAnimationInstance().getStateMachine().getContext();
-        if (context != null) {
-            PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
-            landingGearRunner = context.addAnimationRunner("landing_gear", playingState);
-            animationLandingGearDown = buffer.readBoolean();
-            if (animationLandingGearDown) {
-                playingState.setSpeed(-1);
-            } else {
-                playingState.setSpeed(1);
-                landingGearRunner.setProgress(landingGearRunner.getMaxProgress());
-            }
-        }
+//        EntityContext<?> context = getAnimationInstance().getStateMachine().getContext();
+//        if (context != null) {
+//            PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
+//            landingGearRunner = context.addAnimationRunner("landing_gear", playingState);
+//            animationLandingGearDown = buffer.readBoolean();
+//            if (animationLandingGearDown) {
+//                playingState.setSpeed(-1);
+//            } else {
+//                playingState.setSpeed(1);
+//                landingGearRunner.setProgress(landingGearRunner.getMaxProgress());
+//            }
+//        }
         applyLandingGear();
     }
 

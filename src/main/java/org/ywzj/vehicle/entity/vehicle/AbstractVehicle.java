@@ -54,9 +54,7 @@ import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
-import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
-import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -84,7 +82,8 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
 
-public abstract class AbstractVehicle extends ContainerCraft implements OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
+public abstract class AbstractVehicle extends ContainerCraft
+        implements OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -121,8 +120,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public WarningReceiver warningReceiver;
     public boolean protectPassenger;
     public PhysicsEngine physicsEngine;
-    private final ScriptCache scriptCache = new ScriptCache(null);
-    private VehicleAnimationInstance animationInstance;
     protected boolean dataInitialized;
     private long destroyedTime;
     protected int engineParticleTick;
@@ -276,9 +273,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             setMaxHealth(vehicleData.getMaxHealth());
             setHealth(vehicleData.getMaxHealth());
         }
-        if (this.level().isClientSide()) {
-            this.animationInstance = new VehicleAnimationInstance(this);
-        }
         this.name = vehicleData.getName();
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
@@ -361,7 +355,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (!level().isClientSide()) {
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleChangeDisplay(this.getId(), displayId));
         } else {
-            this.animationInstance = new VehicleAnimationInstance(this);
+//            this.animationInstance = new VehicleAnimationInstance(this);
         }
     }
 
@@ -382,9 +376,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         if (level().isClientSide()) {
             tickSound();
             tickParticle();
-            if (animationInstance != null) {
-                animationInstance.tick();
-            }
         } else {
             if (tickCount == 1) {
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
@@ -496,17 +487,17 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     @Override
-    public void move(MoverType pType, Vec3 pPos) {
+    public void move(@NotNull MoverType pType, Vec3 pPos) {
         this.setPos(this.getX() + pPos.x, this.getY() + pPos.y, this.getZ() + pPos.z);
     }
 
     @Override
-    public boolean isInvulnerableTo(DamageSource source) {
+    public boolean isInvulnerableTo(@NotNull DamageSource source) {
         return super.isInvulnerableTo(source) || source.is(DamageTypes.PLAYER_ATTACK);
     }
 
     @Override
-    public boolean hurt(DamageSource damageSource, float amount) {
+    public boolean hurt(@NotNull DamageSource damageSource, float amount) {
         if (MinecraftForge.EVENT_BUS.post(new VehicleAttackEvent(this, damageSource, amount))) {
             return false;
         }
@@ -979,14 +970,6 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public double getStructureLength() {
         return structureLength;
-    }
-
-    public ScriptCache getScriptCache() {
-        return scriptCache;
-    }
-
-    public VehicleAnimationInstance getAnimationInstance() {
-        return animationInstance;
     }
 
     public float getXRot() {

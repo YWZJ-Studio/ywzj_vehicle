@@ -34,6 +34,10 @@ public class PoseNodeDefinition {
     @SerializedName("add")
     private PoseNodeDefinition add;
 
+    // For script node
+    @SerializedName("function")
+    private String function;
+
     // Weight configuration
     @SerializedName("weight")
     private Object weight;
@@ -66,6 +70,10 @@ public class PoseNodeDefinition {
         return add;
     }
 
+    public String getFunction() {
+        return function;
+    }
+
     public Object getWeight() {
         return weight;
     }
@@ -77,18 +85,11 @@ public class PoseNodeDefinition {
         @SerializedName("pose")
         private PoseNodeDefinition pose;
 
-        @SerializedName("mask")
-        private String mask;
-
         @SerializedName("weight")
         private Object weight;
 
         public PoseNodeDefinition getPose() {
             return pose;
-        }
-
-        public String getMask() {
-            return mask;
         }
 
         public Object getWeight() {

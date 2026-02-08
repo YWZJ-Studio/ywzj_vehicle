@@ -34,6 +34,14 @@ public class ScriptCompiler {
     }
 
     /**
+     * Load pre-compiled external script.
+     * This script will be executed in the scope before inline scripts.
+     */
+    public void loadCompiledExternalScript(Script script) {
+        this.externalScript = script;
+    }
+
+    /**
      * Compile JavaScript code (with caching)
      */
     public Script compile(String scriptCode) {

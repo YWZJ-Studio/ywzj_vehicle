@@ -42,5 +42,5 @@ public class LayeredBlendNode implements PoseNode {
     /**
      * Layer configuration
      */
-    public record Layer(PoseNode poseNode, BoneMask mask, WeightSource weightSource) {}
+    public record Layer(PoseNode poseNode, WeightSource weightSource) {}
 }

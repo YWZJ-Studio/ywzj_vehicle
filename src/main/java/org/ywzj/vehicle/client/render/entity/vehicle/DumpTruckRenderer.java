@@ -66,8 +66,8 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
 
             // 车斗
             float bedXRot = 0;
-            PartUnit dumpTruckBed = vehicle.seats.get(0).partUnit.getSubPartUnits().get(0);
-            if (dumpTruckBed instanceof RotatableUnit rotatableUnit) {
+            PartUnit<?> dumpTruckBed = vehicle.seats.get(0).partUnit.getSubPartUnits().get(0);
+            if (dumpTruckBed instanceof RotatableUnit<?> rotatableUnit) {
                 bedXRot = Mth.lerp(pPartialTick, rotatableUnit.xRotO, rotatableUnit.getXRot());
             }
 
@@ -95,14 +95,12 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             wheel5.rotation.mul(Axis.XN.rotationDegrees(vehicle.wheelRotation));
             wheel6.rotation.mul(Axis.XN.rotationDegrees(vehicle.wheelRotation));
 
-            // 应用基岩动画
-            if (display.getVehicleScriptContext() != null) {
-                display.getVehicleScriptContext().updateRenderer(pPartialTick, vehicle);
-            }
             Pose pose = model.getPose();
-            if (vehicle.getAnimationInstance() != null) {
-                vehicle.getAnimationInstance().tick();
-                model.applyPose(VehicleRender.BLENDER.blend(pose, vehicle.getAnimationInstance().getCurrentPose()));
+            
+            var instance = vehicle.getAnimationInstance();
+            if (instance != null) {
+                instance.tick();
+                model.applyPose(VehicleRender.BLENDER.blend(pose, instance.getCurrentPose()));
             }
 
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);

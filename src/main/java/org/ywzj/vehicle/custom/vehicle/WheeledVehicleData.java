@@ -5,7 +5,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
-public class WheeledVehicleData extends BaseVehicleData<WheeledVehicle> {
+public class WheeledVehicleData extends BaseVehicleData {
 
     public float brakeForce;
     public float forwardForce;

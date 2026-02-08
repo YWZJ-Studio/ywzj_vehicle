@@ -4,7 +4,6 @@ import org.ywzj.vehicle.client.render.animation.graph.*;
 import org.ywzj.vehicle.client.resource.animation.PoseNodeDefinition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,10 +12,20 @@ import java.util.Map;
  * Compiles JSON pose node definitions into runtime PoseNode objects.
  */
 public class PoseGraphCompiler {
-    private final Map<String, BoneMask> boneMasks;
 
-    public PoseGraphCompiler(Map<String, BoneMask> boneMasks) {
-        this.boneMasks = boneMasks != null ? boneMasks : new HashMap<>();
+    /**
+     * Resolver for script functions.
+     * Takes a function name and returns a ScriptPoseNode, or null if not found.
+     */
+    @FunctionalInterface
+    public interface ScriptNodeResolver {
+        ScriptPoseNode resolve(String functionName);
+    }
+
+    private final ScriptNodeResolver scriptNodeResolver;
+
+    public PoseGraphCompiler(ScriptNodeResolver scriptNodeResolver) {
+        this.scriptNodeResolver = scriptNodeResolver;
     }
 
     /**
@@ -49,6 +58,7 @@ public class PoseGraphCompiler {
             case "blend" -> compileBlendNode(definition);
             case "layered_blend" -> compileLayeredBlendNode(definition);
             case "additive" -> compileAdditiveNode(definition);
+            case "script" -> compileScriptNode(definition);
             default -> throw new IllegalArgumentException("Unknown node type: " + type);
         };
     }
@@ -97,12 +107,8 @@ public class PoseGraphCompiler {
         if (definition.getLayers() != null) {
             for (PoseNodeDefinition.LayerDefinition layerDef : definition.getLayers()) {
                 PoseNode layerPose = compileNode(layerDef.getPose());
-                BoneMask mask = null;
-                if (layerDef.getMask() != null) {
-                    mask = boneMasks.get(layerDef.getMask());
-                }
                 WeightSource weightSource = compileWeightSource(layerDef.getWeight());
-                layers.add(new LayeredBlendNode.Layer(layerPose, mask, weightSource));
+                layers.add(new LayeredBlendNode.Layer(layerPose, weightSource));
             }
         }
 
@@ -122,9 +128,29 @@ public class PoseGraphCompiler {
 
         PoseNode baseNode = compileNode(baseDef);
         PoseNode addNode = compileNode(addDef);
-        WeightSource weightSource = compileWeightSource(definition.getWeight());
 
-        return new AdditiveNode(baseNode, addNode, weightSource);
+        return new AdditiveNode(baseNode, addNode);
+    }
+
+    /**
+     * Compile script node
+     */
+    private PoseNode compileScriptNode(PoseNodeDefinition definition) {
+        String functionName = definition.getFunction();
+        if (functionName == null || functionName.isEmpty()) {
+            throw new IllegalArgumentException("script node requires 'function' field");
+        }
+
+        if (scriptNodeResolver == null) {
+            throw new IllegalStateException("Script node resolver not available");
+        }
+
+        ScriptPoseNode node = scriptNodeResolver.resolve(functionName);
+        if (node == null) {
+            throw new IllegalArgumentException("Script function not found: " + functionName);
+        }
+
+        return node;
     }
 
     /**

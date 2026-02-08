@@ -15,7 +15,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.ModRegistries;
+import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.util.ResourceScanner;
 
@@ -31,10 +33,16 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
     private final String path;
     private Map<ResourceLocation, BaseDisplay> displayMap = Map.of();
     private final Map<ResourceLocation, List<BaseDisplay>> modelWithVariableDisplay = new ConcurrentHashMap<>();
+    private final ScriptManager scriptManager;
+    private final ScriptContextFactory scriptContextFactory;
 
-    public DisplayManager(String path) {
+    public DisplayManager(String path,
+                         ScriptManager scriptManager,
+                         ScriptContextFactory scriptContextFactory) {
         this.path = path;
         this.marker = MarkerManager.getMarker("DisplayManager$" + path);
+        this.scriptManager = scriptManager;
+        this.scriptContextFactory = scriptContextFactory;
     }
 
     @NotNull
@@ -46,6 +54,7 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
     @Override
     public void apply(@NotNull Map<ResourceLocation, JsonElement> resources, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         ImmutableMap.Builder<ResourceLocation, BaseDisplay> displayMapBuilder = ImmutableMap.builder();
+        
         for (var displayIdAndDataJson : resources.entrySet()) {
             try {
                 var obj = GsonHelper.convertToJsonObject(displayIdAndDataJson.getValue(), "vehicle display");
@@ -62,15 +71,20 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
                     continue;
                 }
 
-                var data = dataType.parse(displayIdAndDataJson.getValue());
-                if (data == null) {
+                var display = dataType.parse(displayIdAndDataJson.getValue());
+                if (display == null) {
                     YwzjVehicle.LOGGER.warn(marker, "Failed to parse vehicle display: {}", displayIdAndDataJson.getKey());
                     continue;
                 }
-                displayMapBuilder.put(displayIdAndDataJson.getKey(), data);
-                data.setDisplayId(displayIdAndDataJson.getKey());
-                if (data.getModelPath() != null) {
-                    modelWithVariableDisplay.computeIfAbsent(data.getModelPath(), k -> new ArrayList<>()).add(data);
+
+                if (display instanceof VehicleDisplay<?, ?> vd) {
+                    vd.initializeAnimationController(scriptManager, scriptContextFactory);
+                }
+                
+                displayMapBuilder.put(displayIdAndDataJson.getKey(), display);
+                display.setDisplayId(displayIdAndDataJson.getKey());
+                if (display.getModelPath() != null) {
+                    modelWithVariableDisplay.computeIfAbsent(display.getModelPath(), k -> new ArrayList<>()).add(display);
                 }
             } catch (Exception e) {
                 YwzjVehicle.LOGGER.error(marker, "Failed to load vehicle display: {}", displayIdAndDataJson.getKey(), e);

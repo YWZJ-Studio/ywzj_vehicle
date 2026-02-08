@@ -8,14 +8,10 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
-import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
-import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
-
-import static org.ywzj.vehicle.client.resource.vehicle.BaseDisplay.EMPTY_ARGS;
 
 
 /**
@@ -66,15 +62,7 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
 
     @Override
     protected void tickParticle() {
-        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getVehicleId()).ifPresent(display -> {
-            display.getVehicleScriptContext().updateLogic(this);
-            var func = display.getTickParticleFunction();
-            if (func != null) {
-                try (var ctx = ScriptContextFactory.get().enterContext()) {
-                    func.call(ctx, display.getScope(), func, EMPTY_ARGS);
-                }
-            }
-        });
+
     }
 
     @Override

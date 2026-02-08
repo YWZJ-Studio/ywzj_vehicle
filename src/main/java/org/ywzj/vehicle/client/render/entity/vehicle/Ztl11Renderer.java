@@ -115,14 +115,12 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
             machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
             machineGun.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
 
-            // 应用基岩动画
-            if (display.getVehicleScriptContext() != null) {
-                display.getVehicleScriptContext().updateRenderer(pPartialTick, vehicle);
-            }
             Pose pose = model.getPose();
-            if (vehicle.getAnimationInstance() != null) {
-                vehicle.getAnimationInstance().tick();
-                model.applyPose(VehicleRender.BLENDER.blend(pose, vehicle.getAnimationInstance().getCurrentPose()));
+
+            var instance = vehicle.getAnimationInstance();
+            if (instance != null) {
+                instance.tick();
+                model.applyPose(VehicleRender.BLENDER.blend(pose, instance.getCurrentPose()));
             }
 
             vehicle.lastRenderTime = System.currentTimeMillis();

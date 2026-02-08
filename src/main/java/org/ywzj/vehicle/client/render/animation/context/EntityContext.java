@@ -1,21 +1,17 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.Keyframe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 
-import java.util.Map;
-
 public class EntityContext<T extends Entity> extends BaseAnimationContext {
 
-    private final T entity;
+    protected final T entity;
 
-    public EntityContext(T entity, Map<String, BedrockAnimation> animations) {
-        super(animations);
+    public EntityContext(T entity) {
         this.entity = entity;
-        this.getAnimationRunnerHolder().setSoundProcessor(this::processSounds);
+        this.getAnimationRunners().setSoundProcessor(this::processSounds);
     }
 
     public void processSounds(Iterable<Keyframe<ResourceLocation>> sounds) {

@@ -11,14 +11,26 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基本动画上下文
  */
 public abstract class BaseAnimationContext implements Tickable {
+    protected float partialTick;
     // 自定义变量
     private final Map<String, Object> parameters = new ConcurrentHashMap<>();
-    // 可用动画
-    private final Map<String, BedrockAnimation> animations;
     // 动画播放管理器
     private final AnimationRunnerHolder animationRunnerHolder = new AnimationRunnerHolder(this::getAnimation);
+    // 可用动画
+    private Map<String, BedrockAnimation> animations;
 
-    public BaseAnimationContext(Map<String, BedrockAnimation> animations) {
+    public BaseAnimationContext() {
+    }
+
+    public void setPartialTick(float partialTick) {
+        this.partialTick = partialTick;
+    }
+
+    public float getPartialTick() {
+        return partialTick;
+    }
+
+    public void setAnimations(Map<String, BedrockAnimation> animations) {
         this.animations = animations;
     }
 
@@ -27,12 +39,16 @@ public abstract class BaseAnimationContext implements Tickable {
         animationRunnerHolder.tick();
     }
 
-    public AnimationRunnerHolder getAnimationRunnerHolder() {
+    public AnimationRunnerHolder getAnimationRunners() {
         return animationRunnerHolder;
     }
 
     public BedrockAnimation getAnimation(String name) {
         return animations.get(name);
+    }
+
+    public Map<String, BedrockAnimation> getAnimations() {
+        return animations;
     }
 
     // region 参数管理

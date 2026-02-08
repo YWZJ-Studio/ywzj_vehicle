@@ -149,7 +149,7 @@ public class StateMachineCompiler {
                     throw new IllegalArgumentException("Runner evaluate requires 'track' field");
                 }
                 yield context -> {
-                    var runnerHolder = context.getAnimationRunnerHolder();
+                    var runnerHolder = context.getAnimationRunners();
                     var runner = runnerHolder.getAnimationRunner(track);
                     if (runner != null) {
                         return runner.evaluate();

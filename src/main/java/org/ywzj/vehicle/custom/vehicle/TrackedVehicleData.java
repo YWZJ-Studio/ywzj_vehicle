@@ -5,7 +5,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 
-public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
+public class TrackedVehicleData extends BaseVehicleData {
 
     public float brakeAcceleration;
     public float forwardAcceleration;

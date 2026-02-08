@@ -4,6 +4,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.render.animation.context.AnimationContextFactory;
 import org.ywzj.vehicle.client.resource.vehicle.*;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
@@ -16,7 +17,8 @@ public class AllDisplayTypes {
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new BaseDisplay(pojo);
-            }
+            },
+            AnimationContextFactory.vehicle()
     );
 
     public static final RegistryObject<VehicleDisplayType<BaseDisplay>> WEAPON = register(
@@ -24,7 +26,8 @@ public class AllDisplayTypes {
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new BaseDisplay(pojo);
-            }
+            },
+            null
     );
 
     public static final RegistryObject<VehicleDisplayType<WheeledVehicleDisplay>> WHEELED_VEHICLE = register(
@@ -32,7 +35,8 @@ public class AllDisplayTypes {
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new WheeledVehicleDisplay(pojo);
-            }
+            },
+            AnimationContextFactory.vehicle()
     );
 
     public static final RegistryObject<VehicleDisplayType<TrackedVehicleDisplay>> TRACKED_VEHICLE = register(
@@ -40,7 +44,8 @@ public class AllDisplayTypes {
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new TrackedVehicleDisplay(pojo);
-            }
+            },
+            AnimationContextFactory.trackedVehicle()
     );
 
     public static final RegistryObject<VehicleDisplayType<RotaryWingDisplay>> ROTARY_WING_VEHICLE = register(
@@ -48,16 +53,19 @@ public class AllDisplayTypes {
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new RotaryWingDisplay(pojo);
-            }
+            },
+            AnimationContextFactory.vehicle()
     );
 
     private static <D extends BaseDisplay> RegistryObject<VehicleDisplayType<D>> register(
             String name,
-            VehicleDisplayType.DataSerializer<D> dataSerializer
+            VehicleDisplayType.DataSerializer<D> dataSerializer,
+            AnimationContextFactory<?, ?> contextFactory
     ) {
         return VEHICLE_DISPLAY_TYPES.register(name,
                 () -> VehicleDisplayType.Builder.<D>of(YwzjVehicle.modLocation(name))
                         .setDataSerializer(dataSerializer)
+                        .setContextFactory(contextFactory)
                         .build()
         );
     }

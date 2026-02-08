@@ -4,6 +4,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -14,15 +15,21 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllParticleTypes;
+import org.ywzj.vehicle.api.animation.IAnimationEntity;
+import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public class TrackedVehicle extends AbstractVehicle {
+public class TrackedVehicle extends AbstractVehicle
+        implements IAnimationEntity<TrackedVehicle, VehicleContext<TrackedVehicle>> {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);
@@ -38,10 +45,27 @@ public class TrackedVehicle extends AbstractVehicle {
     private VehicleSound engineRunSoundInstance;
 
     private TrackAnimationInstance trackAnimationInstance;
+    private IAnimationInstance<VehicleContext<TrackedVehicle>> animationInstance;
 
     public TrackedVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
+
+    @Override
+    public IAnimationInstance<VehicleContext<TrackedVehicle>> getAnimationInstance() {
+        return animationInstance;
+    }
+
+    @Override
+    public void initData(ResourceLocation vehicleId) {
+        super.initData(vehicleId);
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(display -> {
+            if (display instanceof TrackedVehicleDisplay display1) {
+                this.animationInstance = display1.createAnimationInstance(this);
+            }
+        });
+    }
+
 
     public float getForwardSpeed() {
         return this.entityData.get(FORWARD_SPEED);

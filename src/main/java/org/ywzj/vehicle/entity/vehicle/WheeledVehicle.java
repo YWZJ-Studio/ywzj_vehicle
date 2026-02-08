@@ -4,6 +4,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -13,7 +14,12 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.api.animation.IAnimationEntity;
+import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -21,7 +27,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public class WheeledVehicle extends AbstractVehicle {
+public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<WheeledVehicle, VehicleContext<WheeledVehicle>> {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_ANGLE = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
@@ -41,8 +47,25 @@ public class WheeledVehicle extends AbstractVehicle {
     private VehicleSound engineRunSoundInstance;
     private VehicleSound tireSquealSoundInstance;
 
+    private IAnimationInstance<VehicleContext<WheeledVehicle>> animationInstance;
+
     public WheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+    }
+
+    @Override
+    public IAnimationInstance<VehicleContext<WheeledVehicle>> getAnimationInstance() {
+        return animationInstance;
+    }
+
+    @Override
+    public void initData(ResourceLocation vehicleId) {
+        super.initData(vehicleId);
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(display -> {
+            if (display instanceof WheeledVehicleDisplay display1) {
+                this.animationInstance = display1.createAnimationInstance(this);
+            }
+        });
     }
 
     public float getForwardSpeed() {

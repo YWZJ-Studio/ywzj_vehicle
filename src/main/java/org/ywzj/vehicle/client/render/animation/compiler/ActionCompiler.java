@@ -47,7 +47,7 @@ public class ActionCompiler {
         return (context) -> {
             var animation = context.getAnimation(animationName);
             if (animation != null) {
-                context.getAnimationRunnerHolder().playAnimation(track, animation, playType);
+                context.getAnimationRunners().playAnimation(track, animation, playType);
             }
         };
     }

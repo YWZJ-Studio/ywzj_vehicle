@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.mozillaa.javascript.Script;
+import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
+import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
@@ -37,9 +39,12 @@ public enum ClientAssetsManager {
         models = new JsonDataManager<>(BedrockModelPOJO.class, GsonUtil.GSON, "models/bedrock", "BedrockModelPojo");
         animations = new JsonDataManager<>(BedrockAnimationFile.class, GsonUtil.GSON, "animations/bedrock", "BedrockAnimationPojo");
         animationControllerDefinitionManager = new AnimationControllerDefinitionManager();
-        vehicleDisplayManager = new DisplayManager("vehicle");
-        weaponDisplayManager = new DisplayManager("weapon");
         scriptManager = new ScriptManager();
+        
+        // Create display managers with animation controller support
+        vehicleDisplayManager = new DisplayManager("vehicle", scriptManager, ScriptContextFactory.get());
+        weaponDisplayManager = new DisplayManager("weapon", scriptManager, ScriptContextFactory.get());
+        
         internalAssets = new InternalAssets();
 
         consumer.accept(models);
@@ -135,6 +140,13 @@ public enum ClientAssetsManager {
             return Optional.empty();
         }
         return Optional.ofNullable(weaponDisplayManager.getDisplayMap().get(id));
+    }
+
+    public Optional<AnimationControllerDefinition> getAnimationControllerDefinition(ResourceLocation id) {
+        if (animationControllerDefinitionManager == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(animationControllerDefinitionManager.getData(id));
     }
 
     public ScriptManager getScriptManager() {

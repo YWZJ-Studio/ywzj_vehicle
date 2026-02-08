@@ -1,0 +1,16 @@
+{
+  "name": "ztz99a_controller",
+  "script": "ywzj_vehicle:ztz99a",
+  "parameters": {},
+  "graph": {
+    "type": "additive",
+    "base": {
+      "type": "script",
+      "function": "prepareBones"
+    },
+    "add": {
+      "type": "script",
+      "function": "createTrackPose"
+    }
+  }
+}

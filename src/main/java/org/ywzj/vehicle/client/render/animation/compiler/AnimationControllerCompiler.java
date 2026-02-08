@@ -3,7 +3,6 @@ package org.ywzj.vehicle.client.render.animation.compiler;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.render.animation.controller.CompiledStateMachine;
-import org.ywzj.vehicle.client.render.animation.graph.BoneMask;
 import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.animation.ParameterDefinition;
@@ -12,23 +11,16 @@ import org.ywzj.vehicle.client.resource.animation.StateMachineDefinition;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Compiles animation controller definitions into runtime AnimationController objects.
- * New architecture: Parameters + State Machines + Pose Graph
- */
 public class AnimationControllerCompiler {
     private final StateMachineCompiler stateMachineCompiler;
     private final PoseGraphCompiler poseGraphCompiler;
 
-    public AnimationControllerCompiler(StateMachineCompiler stateMachineCompiler,
-                                      Map<String, BoneMask> boneMasks) {
+    public AnimationControllerCompiler(StateMachineCompiler stateMachineCompiler, 
+                                      PoseGraphCompiler.ScriptNodeResolver scriptNodeResolver) {
         this.stateMachineCompiler = stateMachineCompiler;
-        this.poseGraphCompiler = new PoseGraphCompiler(boneMasks);
+        this.poseGraphCompiler = new PoseGraphCompiler(scriptNodeResolver);
     }
 
-    /**
-     * Compile an animation controller definition
-     */
     public <T extends BaseAnimationContext> AnimationController<T> compile(
             AnimationControllerDefinition definition) {
 

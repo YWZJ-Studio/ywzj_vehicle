@@ -9,7 +9,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.client.render.animation.context.EntityContext;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -22,14 +21,14 @@ public class SwitchableUnit<T extends PartUnitData> extends PartUnit<T> {
 
     public SwitchableUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
-        if (vehicle.level().isClientSide()) {
-            EntityContext<?> context = vehicle.getAnimationInstance().getStateMachine().getContext();
-            if (context != null) {
-                PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
-                playingState.setSpeed(-1);
-                switchRunner = context.addAnimationRunner(getId(), playingState);
-            }
-        }
+//        if (vehicle.level().isClientSide()) {
+//            EntityContext<?> context = vehicle.getAnimationInstance().getStateMachine().getContext();
+//            if (context != null) {
+//                PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
+//                playingState.setSpeed(-1);
+//                switchRunner = context.addAnimationRunner(getId(), playingState);
+//            }
+//        }
         this.getSyncData().define(SyncDataSerializers.BOOLEAN, this::setOn, this::isOn, false);
     }
 

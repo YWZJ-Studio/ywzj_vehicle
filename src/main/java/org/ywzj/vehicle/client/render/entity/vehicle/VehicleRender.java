@@ -2,7 +2,6 @@ package org.ywzj.vehicle.client.render.entity.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.maydaymemory.mae.basic.ArrayPoseBuilder;
-import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
 import com.maydaymemory.mae.blend.EulerAdditiveBlender;
 import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
@@ -20,8 +19,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
-import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
@@ -48,40 +48,26 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         }
         pPoseStack.pushPose();
         {
-            try {
-                if (display.getVehicleScriptContext() != null) {
-                    display.getVehicleScriptContext().updateRenderer(pPartialTick, vehicle);
+            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+            Vec3 root = new Vec3(0, 0, 0);
+            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
+
+            if (vehicle instanceof IAnimationEntity<?,?> animationEntity) {
+                var instance = animationEntity.getAnimationInstance();
+                if (instance != null) {
+                    instance.tick();
+                    instance.getContext().setPartialTick(pPartialTick);
+                    model.applyPose(BLENDER.blend(model.getBindPose(), instance.getCurrentPose()));
                 }
-                Pose pose = null;
-                if (display.getPrepareBonesFunction() != null) {
-                    var func = display.getPrepareBonesFunction();
-                    if (func != null) {
-                        try (var context = ScriptContextFactory.get().enterContext()) {
-                            model.applyPose(model.getBindPose());
-                            func.call(context, display.getScope(), func, EMPTY_ARGS);
-                            pose = model.getPose();
-                        }
-                    }
-                }
-                if (pose != null) {
-                    if (vehicle.getAnimationInstance() != null) {
-                        vehicle.getAnimationInstance().tick();
-                        model.applyPose(BLENDER.blend(pose, vehicle.getAnimationInstance().getCurrentPose()));
-                    }
-                }
-                super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-                Vec3 root = new Vec3(0, 0, 0);
-                pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-                pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-                pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-                vehicle.lastRenderTime = System.currentTimeMillis();
-                VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
-                model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-                model.getBoneIndexes().forEach(bone -> bone.visible = true);
-                model.applyPose(model.getBindPose());
-            } catch (Exception exception) {
-                exception.printStackTrace();
             }
+
+            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
+            model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            model.getBoneIndexes().forEach(bone -> bone.visible = true);
+            model.applyPose(model.getBindPose());
+            vehicle.lastRenderTime = System.currentTimeMillis();
         }
         pPoseStack.popPose();
     }
@@ -89,12 +75,12 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
     @SubscribeEvent
     public static void onFire(VehicleFireEvent.Post event) {
         if (event.isClientSide()) {
-            event.getVehicle().getAnimationInstance().onFire(event.getWeapon());
+//            event.getVehicle().getAnimationInstance().onFire(event.getWeapon());
         }
     }
 
     @Override
-    public ResourceLocation getTextureLocation(T pEntity) {
+    public ResourceLocation getTextureLocation(@NotNull T pEntity) {
         return null;
     }
 

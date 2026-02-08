@@ -1,18 +1,12 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
-import org.ywzj.vehicle.vehicle.scripts.VehicleScriptContext;
-import org.ywzj.vehicle.vehicle.scripts.WheeledVehicleScriptContext;
 
-public class WheeledVehicleDisplay extends BaseDisplay {
+public class WheeledVehicleDisplay extends VehicleDisplay<WheeledVehicle, VehicleContext<WheeledVehicle>> {
 
     public WheeledVehicleDisplay(BaseDisplayPojo pojo) {
         super(pojo);
-    }
-
-    @Override
-    public VehicleScriptContext<WheeledVehicle> buildVehicleScriptContext() {
-        return new WheeledVehicleScriptContext(null, model);
     }
 
 }

@@ -27,12 +27,6 @@ public class StateMachineDefinition {
     @SerializedName("states")
     private Map<String, StateDefinition> states;
 
-    /**
-     * Layer blending configuration
-     */
-    @SerializedName("layer")
-    private LayerConfig layer;
-
     public String getName() {
         return name;
     }
@@ -43,9 +37,5 @@ public class StateMachineDefinition {
 
     public Map<String, StateDefinition> getStates() {
         return states;
-    }
-
-    public LayerConfig getLayer() {
-        return layer;
     }
 }

@@ -28,7 +28,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
 
-public class BaseVehicleData<T extends AbstractVehicle> {
+public class BaseVehicleData {
 
     protected ResourceLocation vehicleId;
     protected Component name;
@@ -131,7 +131,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         structureLength = maxZ - minZ;
     }
 
-    public void inject(T vehicle) {}
+    public void inject(AbstractVehicle vehicle) {}
 
     public record PartUnitsAndSeats(
             Map<String, PartUnit<?>> partUnitMap,
