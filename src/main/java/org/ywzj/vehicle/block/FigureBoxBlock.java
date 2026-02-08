@@ -28,6 +28,9 @@ import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 
 import java.util.List;
 
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_DATA;
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_ID;
+
 public class FigureBoxBlock extends HorizontalEntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -64,8 +67,8 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
                 CompoundTag tag = itemStack.getOrCreateTag();
                 CompoundTag entityData = new CompoundTag();
                 entity.saveWithoutId(entityData);
-                tag.put("entityData", entityData);
-                tag.putString("entityId", EntityType.getKey(entity.getType()).toString());
+                tag.put(ENTITY_DATA, entityData);
+                tag.putString(ENTITY_ID, EntityType.getKey(entity.getType()).toString());
                 itemStack.setTag(tag);
             }
             return List.of(itemStack);

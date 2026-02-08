@@ -38,6 +38,9 @@ import java.util.function.Consumer;
 
 public class FigureBoxItem extends VehicleItem {
 
+    public static final String ENTITY_DATA = "entityData";
+    public static final String ENTITY_ID = "entityId";
+
     public FigureBoxItem(Properties pProperties) {
         super(pProperties);
     }
@@ -62,15 +65,15 @@ public class FigureBoxItem extends VehicleItem {
 
     public static InteractionResult capture(ItemStack itemStack, Player player, Entity target) {
         CompoundTag tag = itemStack.getOrCreateTag();
-        if (tag.contains("entityData")) {
+        if (tag.contains(ENTITY_DATA)) {
             player.displayClientMessage(Component.translatable("tips.figure_box_has_entity"), true);
             return InteractionResult.FAIL;
         }
         CompoundTag entityData = new CompoundTag();
         target.saveWithoutId(entityData);
         entityData.remove("Passengers");
-        tag.put("entityData", entityData);
-        tag.putString("entityId", EntityType.getKey(target.getType()).toString());
+        tag.put(ENTITY_DATA, entityData);
+        tag.putString(ENTITY_ID, EntityType.getKey(target.getType()).toString());
         itemStack.setTag(tag);
         target.discard();
         player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -105,15 +108,15 @@ public class FigureBoxItem extends VehicleItem {
             return InteractionResult.SUCCESS;
         }
         CompoundTag tag = itemStack.getOrCreateTag();
-        if (!tag.contains("entityData")) {
+        if (!tag.contains(ENTITY_DATA)) {
             // 若右击打印机方块
             if (level.getBlockEntity(new BlockPos(context.getClickedPos())) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {
                 if (machineMaxBlockEntity.hasProduct()) {
                     AbstractVehicle vehicle = machineMaxBlockEntity.takeProduct();
                     CompoundTag entityData = new CompoundTag();
                     vehicle.saveWithoutId(entityData);
-                    tag.put("entityData", entityData);
-                    tag.putString("entityId", EntityType.getKey(vehicle.getType()).toString());
+                    tag.put(ENTITY_DATA, entityData);
+                    tag.putString(ENTITY_ID, EntityType.getKey(vehicle.getType()).toString());
                     itemStack.setTag(tag);
                     player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
                     player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
@@ -129,8 +132,8 @@ public class FigureBoxItem extends VehicleItem {
             }
             return capture(itemStack, player, items.get(0));
         }
-        String entityId = tag.getString("entityId");
-        CompoundTag entityData = tag.getCompound("entityData");
+        String entityId = tag.getString(ENTITY_ID);
+        CompoundTag entityData = tag.getCompound(ENTITY_DATA);
         BlockPos pos = context.getClickedPos().above();
         EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
         if (type != null) {
@@ -152,8 +155,8 @@ public class FigureBoxItem extends VehicleItem {
                 // 释放内容物
                 entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
                 level.addFreshEntity(entity);
-                tag.remove("entityData");
-                tag.remove("entityId");
+                tag.remove(ENTITY_DATA);
+                tag.remove(ENTITY_ID);
                 itemStack.setTag(tag);
                 player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.PLAYERS, 1.0F, 1.0F);
                 player.displayClientMessage(Component.translatable("tips.figure_box_release_entity"), true);
@@ -166,8 +169,8 @@ public class FigureBoxItem extends VehicleItem {
 
     @Override
     public void appendHoverText(ItemStack itemStack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (itemStack.hasTag() && itemStack.getTag().contains("entityId")) {
-            tooltip.add(Component.translatable("tips.figure_box_with_entity").append(itemStack.getTag().getString("entityId")));
+        if (itemStack.hasTag() && itemStack.getTag().contains(ENTITY_ID)) {
+            tooltip.add(Component.translatable("tips.figure_box_with_entity").append(itemStack.getTag().getString(ENTITY_ID)));
         }
     }
 

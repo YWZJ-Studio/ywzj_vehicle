@@ -16,6 +16,9 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_DATA;
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_ID;
+
 public class FigureBoxBlockEntity extends BlockEntity {
 
     private Entity entity;
@@ -73,8 +76,8 @@ public class FigureBoxBlockEntity extends BlockEntity {
         if (entity != null) {
             CompoundTag entityData = new CompoundTag();
             entity.saveWithoutId(entityData);
-            tag.putString("entityId", EntityType.getKey(entity.getType()).toString());
-            tag.put("entityData", entityData);
+            tag.putString(ENTITY_ID, EntityType.getKey(entity.getType()).toString());
+            tag.put(ENTITY_DATA, entityData);
         }
         tag.putBoolean("open", open);
         tag.putFloat("scale", scale);
@@ -88,9 +91,9 @@ public class FigureBoxBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains("entityId") && tag.contains("entityData")) {
-            entityId = tag.getString("entityId");
-            entityData = tag.getCompound("entityData");
+        if (tag.contains(ENTITY_ID) && tag.contains(ENTITY_DATA)) {
+            entityId = tag.getString(ENTITY_ID);
+            entityData = tag.getCompound(ENTITY_DATA);
         }
         open = tag.getBoolean("open");
         scale = tag.getFloat("scale");

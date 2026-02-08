@@ -35,6 +35,9 @@ import org.ywzj.vehicle.item.FigureBoxItem;
 
 import javax.annotation.Nonnull;
 
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_DATA;
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_ID;
+
 public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static final SlotModel VEHICLE_SLOT_MODEL = new SlotModel();
@@ -65,9 +68,9 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                 }
                 blockDispatcher.renderSingleBlock(state, poseStack, pBuffer, pPackedLight, pPackedOverlay, ModelData.EMPTY, null);
                 CompoundTag tag = itemStack.getOrCreateTag();
-                if (tag.contains("entityId") && tag.contains("entityData")) {
-                    String entityId = tag.getString("entityId");
-                    CompoundTag entityData = tag.getCompound("entityData");
+                if (tag.contains(ENTITY_ID) && tag.contains(ENTITY_DATA)) {
+                    String entityId = tag.getString(ENTITY_ID);
+                    CompoundTag entityData = tag.getCompound(ENTITY_DATA);
                     EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
                     if (type != null) {
                         Entity entity = type.create(Minecraft.getInstance().level);

@@ -39,7 +39,8 @@ public class AllConfigs {
             if (Files.notExists(filePath)) {
                 List<String> defaultLines = Arrays.asList(
                         "minecraft:ender_dragon",
-                        "corpse:corpse"
+                        "corpse:corpse",
+                        "twilightforest:naga"
                 );
                 Files.write(filePath, defaultLines);
             }
