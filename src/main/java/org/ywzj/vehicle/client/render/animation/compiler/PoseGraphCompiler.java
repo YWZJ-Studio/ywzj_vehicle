@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.render.animation.compiler;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
 import org.ywzj.vehicle.client.render.animation.graph.*;
 import org.ywzj.vehicle.client.resource.animation.PoseNodeDefinition;
 
@@ -24,8 +25,11 @@ public class PoseGraphCompiler {
 
     private final ScriptNodeResolver scriptNodeResolver;
 
-    public PoseGraphCompiler(ScriptNodeResolver scriptNodeResolver) {
+    private final BoneIndexProvider boneIndexProvider;
+
+    public PoseGraphCompiler(ScriptNodeResolver scriptNodeResolver, BoneIndexProvider boneIndexProvider) {
         this.scriptNodeResolver = scriptNodeResolver;
+        this.boneIndexProvider = boneIndexProvider;
     }
 
     /**
@@ -59,6 +63,8 @@ public class PoseGraphCompiler {
             case "layered_blend" -> compileLayeredBlendNode(definition);
             case "additive" -> compileAdditiveNode(definition);
             case "script" -> compileScriptNode(definition);
+            case "bone_binding" -> compileBoneBindingNode(definition, boneIndexProvider);
+            case "track_animation" -> compileTrackAnimationNode();
             default -> throw new IllegalArgumentException("Unknown node type: " + type);
         };
     }
@@ -151,6 +157,48 @@ public class PoseGraphCompiler {
         }
 
         return node;
+    }
+
+    /**
+     * Compile bone_binding node
+     */
+    private PoseNode compileBoneBindingNode(PoseNodeDefinition definition, BoneIndexProvider boneIndexProvider) {
+        List<BoneBindingNode.WheelBinding> wheelBindings = new ArrayList<>();
+        List<BoneBindingNode.PartBinding> partBindings = new ArrayList<>();
+
+        // Compile wheel bindings
+        if (definition.getWheelBindings() != null) {
+            for (PoseNodeDefinition.WheelBindingDefinition def : definition.getWheelBindings()) {
+                BoneBindingNode.WheelBinding binding = new BoneBindingNode.WheelBinding();
+                binding.bones = def.getBones();
+                binding.side = def.getSide();
+                binding.radius = def.getRadius();
+                binding.axis = def.getAxis();
+                wheelBindings.add(binding);
+            }
+        }
+
+        // Compile part bindings
+        if (definition.getPartBindings() != null) {
+            for (PoseNodeDefinition.PartBindingDefinition def : definition.getPartBindings()) {
+                BoneBindingNode.PartBinding binding = new BoneBindingNode.PartBinding();
+                binding.bone = def.getBone();
+                binding.part = def.getPart();
+                binding.rotationType = def.getRotationType();
+                binding.axis = def.getAxis();
+                binding.invert = def.isInvert();
+                partBindings.add(binding);
+            }
+        }
+
+        return new BoneBindingNode(wheelBindings, partBindings, boneIndexProvider);
+    }
+
+    /**
+     * Compile track_animation node
+     */
+    private PoseNode compileTrackAnimationNode() {
+        return new TrackAnimationNode();
     }
 
     /**

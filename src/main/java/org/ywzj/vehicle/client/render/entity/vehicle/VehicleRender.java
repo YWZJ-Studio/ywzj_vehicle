@@ -57,8 +57,8 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             if (vehicle instanceof IAnimationEntity<?,?> animationEntity) {
                 var instance = animationEntity.getAnimationInstance();
                 if (instance != null) {
-                    instance.tick();
                     instance.getContext().setPartialTick(pPartialTick);
+                    instance.tick();
                     model.applyPose(BLENDER.blend(model.getBindPose(), instance.getCurrentPose()));
                 }
             }

@@ -18,8 +18,8 @@ import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
-import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
+import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -29,7 +29,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import java.util.List;
 
 public class TrackedVehicle extends AbstractVehicle
-        implements IAnimationEntity<TrackedVehicle, VehicleContext<TrackedVehicle>> {
+        implements IAnimationEntity<TrackedVehicle, TrackedVehicleContext> {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);
@@ -45,14 +45,14 @@ public class TrackedVehicle extends AbstractVehicle
     private VehicleSound engineRunSoundInstance;
 
     private TrackAnimationInstance trackAnimationInstance;
-    private IAnimationInstance<VehicleContext<TrackedVehicle>> animationInstance;
+    private IAnimationInstance<TrackedVehicleContext> animationInstance;
 
     public TrackedVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
     @Override
-    public IAnimationInstance<VehicleContext<TrackedVehicle>> getAnimationInstance() {
+    public IAnimationInstance<TrackedVehicleContext> getAnimationInstance() {
         return animationInstance;
     }
 
@@ -62,6 +62,8 @@ public class TrackedVehicle extends AbstractVehicle
         ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(display -> {
             if (display instanceof TrackedVehicleDisplay display1) {
                 this.animationInstance = display1.createAnimationInstance(this);
+                TrackAnimationInstance instance = new TrackAnimationInstance(display1.getLeftTrackAnimation(), display1.getRightTrackAnimation());
+                this.animationInstance.getContext().setTrackAnimationInstance(instance);
             }
         });
     }

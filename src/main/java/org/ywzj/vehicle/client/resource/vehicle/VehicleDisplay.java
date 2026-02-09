@@ -51,7 +51,7 @@ public class VehicleDisplay<E extends Entity, CTX extends EntityContext<E>> exte
 
         Optional<AnimationControllerDefinition> definitionOpt = ClientAssetsManager.INSTANCE.getAnimationControllerDefinition(animationControllerRef);
         if (definitionOpt.isEmpty()) {
-            System.err.println("Animation controller definition not found: " + animationControllerRef);
+            YwzjVehicle.LOGGER.warn("Animation controller definition not found: {}", animationControllerRef);
             return;
         }
 
@@ -113,7 +113,8 @@ public class VehicleDisplay<E extends Entity, CTX extends EntityContext<E>> exte
             };
             
             AnimationControllerCompiler controllerCompiler = new AnimationControllerCompiler(
-                    stateMachineCompiler, scriptNodeResolver);
+                    stateMachineCompiler, scriptNodeResolver, model
+            );
 
             return controllerCompiler.compile(definition);
 

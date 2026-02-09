@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
-import org.ywzj.vehicle.client.render.animation.TrackAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
+import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 
 public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
@@ -9,6 +9,10 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
 
     public TrackedVehicleContext(TrackedVehicle vehicle) {
         super(vehicle);
+    }
+
+    public void setTrackAnimationInstance(TrackAnimationInstance trackAnimationInstance) {
+        this.trackAnimationInstance = trackAnimationInstance;
     }
 
     public float getForwardSpeed() {
@@ -19,22 +23,26 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
         return entity.getTurnSpeed();
     }
 
-    public void advanceTrackProgress(String leftTrack, String rightTrack, float moduleLength, float trackWidth) {
-        float deltaTime = (this.currentTimeMillis() - this.lastRenderTime()) / 1000f;
+    @Override
+    public void tick() {
+        super.tick();
+        this.advanceTrackProgress();
+    }
 
+    // tick里会自动调用
+    public void advanceTrackProgress() {
+        if (trackAnimationInstance == null) {
+            return;
+        }
+
+        float deltaTime = (this.currentTimeMillis() - this.lastRenderTime()) / 1000f;
         float forwardSpeed = this.getForwardSpeed();
         float turnSpeed = this.getTurnSpeed();
 
-        trackWidth /= 20f;
+        float trackWidth = trackAnimationInstance.getTrackWidth() / 20f;
         float leftTrackSpeed = (forwardSpeed + turnSpeed * trackWidth / 2) * 20;
         float rightTrackSpeed = (forwardSpeed - turnSpeed * trackWidth / 2) * 20;
-
-        if (trackAnimationInstance == null) {
-            trackAnimationInstance = new TrackAnimationInstance(
-                    this.getAnimation(leftTrack), this.getAnimation(rightTrack)
-            );
-        }
-        trackAnimationInstance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime, moduleLength);
+        trackAnimationInstance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime);
     }
 
     public PoseHelper getTrackPose() {
@@ -45,10 +53,16 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
     }
 
     public float getLeftWheelDegrees(float leftDriveRadius) {
+        if (trackAnimationInstance == null) {
+            return 0f;
+        }
         return trackAnimationInstance.leftWheelDegrees(leftDriveRadius);
     }
 
     public float getRightWheelDegrees(float rightDriveRadius) {
+        if (trackAnimationInstance == null) {
+            return 0f;
+        }
         return trackAnimationInstance.rightWheelDegrees(rightDriveRadius);
     }
 }

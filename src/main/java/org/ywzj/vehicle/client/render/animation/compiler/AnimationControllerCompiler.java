@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.render.animation.compiler;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.render.animation.controller.CompiledStateMachine;
@@ -14,11 +15,14 @@ import java.util.Map;
 public class AnimationControllerCompiler {
     private final StateMachineCompiler stateMachineCompiler;
     private final PoseGraphCompiler poseGraphCompiler;
+    private final BoneIndexProvider boneIndexProvider;
 
-    public AnimationControllerCompiler(StateMachineCompiler stateMachineCompiler, 
-                                      PoseGraphCompiler.ScriptNodeResolver scriptNodeResolver) {
+    public AnimationControllerCompiler(StateMachineCompiler stateMachineCompiler,
+                                       PoseGraphCompiler.ScriptNodeResolver scriptNodeResolver,
+                                       BoneIndexProvider boneIndexProvider) {
         this.stateMachineCompiler = stateMachineCompiler;
-        this.poseGraphCompiler = new PoseGraphCompiler(scriptNodeResolver);
+        this.poseGraphCompiler = new PoseGraphCompiler(scriptNodeResolver, boneIndexProvider);
+        this.boneIndexProvider = boneIndexProvider;
     }
 
     public <T extends BaseAnimationContext> AnimationController<T> compile(

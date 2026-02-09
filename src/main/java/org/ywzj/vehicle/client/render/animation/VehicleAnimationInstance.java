@@ -39,6 +39,9 @@ public class VehicleAnimationInstance<T extends BaseAnimationContext> implements
         for (var value : stateMachines.values()) {
             value.tick();
         }
+        if (context != null) {
+            context.tick();
+        }
     }
 
     @NotNull

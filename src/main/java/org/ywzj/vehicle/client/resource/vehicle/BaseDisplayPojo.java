@@ -34,4 +34,7 @@ public class BaseDisplayPojo {
     @SerializedName("description")
     public String description;
 
+    @SerializedName("track_config")
+    public TrackConfig trackConfig;
+
 }

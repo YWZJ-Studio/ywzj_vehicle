@@ -42,6 +42,26 @@ public class PoseNodeDefinition {
     @SerializedName("weight")
     private Object weight;
 
+    // For bone_binding node
+    @SerializedName("wheel_bindings")
+    private List<WheelBindingDefinition> wheelBindings;
+
+    @SerializedName("part_bindings")
+    private List<PartBindingDefinition> partBindings;
+
+    // For track_animation node
+    @SerializedName("left_track")
+    private String leftTrack;
+
+    @SerializedName("right_track")
+    private String rightTrack;
+
+    @SerializedName("module_length")
+    private Float moduleLength;
+
+    @SerializedName("track_width")
+    private Float trackWidth;
+
     public String getType() {
         return type;
     }
@@ -78,6 +98,30 @@ public class PoseNodeDefinition {
         return weight;
     }
 
+    public List<WheelBindingDefinition> getWheelBindings() {
+        return wheelBindings;
+    }
+
+    public List<PartBindingDefinition> getPartBindings() {
+        return partBindings;
+    }
+
+    public String getLeftTrack() {
+        return leftTrack;
+    }
+
+    public String getRightTrack() {
+        return rightTrack;
+    }
+
+    public Float getModuleLength() {
+        return moduleLength;
+    }
+
+    public Float getTrackWidth() {
+        return trackWidth;
+    }
+
     /**
      * Layer definition for layered_blend node
      */
@@ -94,6 +138,79 @@ public class PoseNodeDefinition {
 
         public Object getWeight() {
             return weight;
+        }
+    }
+
+    /**
+     * Wheel binding definition for bone_binding node
+     */
+    public static class WheelBindingDefinition {
+        @SerializedName("bones")
+        private List<String> bones;
+
+        @SerializedName("side")
+        private String side;
+
+        @SerializedName("radius")
+        private float radius;
+
+        @SerializedName("axis")
+        private String axis;
+
+        public List<String> getBones() {
+            return bones;
+        }
+
+        public String getSide() {
+            return side;
+        }
+
+        public float getRadius() {
+            return radius;
+        }
+
+        public String getAxis() {
+            return axis;
+        }
+    }
+
+    /**
+     * Part binding definition for bone_binding node
+     */
+    public static class PartBindingDefinition {
+        @SerializedName("bone")
+        private String bone;
+
+        @SerializedName("part")
+        private String part;
+
+        @SerializedName("rotation_type")
+        private String rotationType;
+
+        @SerializedName("axis")
+        private String axis;
+
+        @SerializedName("invert")
+        private boolean invert;
+
+        public String getBone() {
+            return bone;
+        }
+
+        public String getPart() {
+            return part;
+        }
+
+        public String getRotationType() {
+            return rotationType;
+        }
+
+        public String getAxis() {
+            return axis;
+        }
+
+        public boolean isInvert() {
+            return invert;
         }
     }
 }

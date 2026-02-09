@@ -1,6 +1,5 @@
+// 已不再使用，仅作示例
 function prepareBones(context) {
-    context.advanceTrackProgress("tread_l_move", "tread_r_move", 0.25, 3)
-
     // Create pose helper
     const builder = createPoseBuilder();
 

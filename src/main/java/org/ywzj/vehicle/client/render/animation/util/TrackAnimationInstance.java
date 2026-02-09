@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation;
+package org.ywzj.vehicle.client.render.animation.util;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.ArrayPoseBuilder;
@@ -24,6 +24,9 @@ public class TrackAnimationInstance {
     public float leftCumulativeDisplacement = 0f;
     public float rightCumulativeDisplacement = 0f;
 
+    private float moduleLength = 0.25f;
+    private float trackWidth = 3f;
+
     public TrackAnimationInstance(BedrockAnimation left, BedrockAnimation right) {
         leftTrackRunner = new AnimationRunner(left, new AnimationContext(left.getSpecifiedEndTimeS()));
         rightTrackRunner = new AnimationRunner(right, new AnimationContext(right.getSpecifiedEndTimeS()));
@@ -34,7 +37,7 @@ public class TrackAnimationInstance {
      * animProgress 保持为模 1 的相位，用于循环动画。
      * cumulativeDisplacement 累加真实位移，用于计算轮子绝对旋转角度。
      */
-    public void advanceProgress(float leftLinearSpeed, float rightLinearSpeed, float deltaSeconds, float moduleLength) {
+    public void advanceProgress(float leftLinearSpeed, float rightLinearSpeed, float deltaSeconds) {
         // 累计位移（米）
         leftCumulativeDisplacement += leftLinearSpeed * deltaSeconds;
         rightCumulativeDisplacement += rightLinearSpeed * deltaSeconds;
@@ -77,5 +80,21 @@ public class TrackAnimationInstance {
         Pose leftPose = leftTrackRunner.evaluate();
         Pose rightPose = rightTrackRunner.evaluate();
         return BLENDER.blend(leftPose, rightPose);
+    }
+
+    public float getTrackWidth() {
+        return trackWidth;
+    }
+
+    public float getModuleLength() {
+        return moduleLength;
+    }
+
+    public void setTrackWidth(float trackWidth) {
+        this.trackWidth = trackWidth;
+    }
+
+    public void setModuleLength(float moduleLength) {
+        this.moduleLength = moduleLength;
     }
 }

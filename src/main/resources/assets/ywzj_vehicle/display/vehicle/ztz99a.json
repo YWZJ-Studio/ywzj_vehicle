@@ -10,5 +10,11 @@
     "engine_idle": "ywzj_vehicle:ztz99a_engine_idle",
     "engine_run": "ywzj_vehicle:ztz99a_engine_run"
   },
+  "track_config": {
+    "left_track": "tread_l_move",
+    "right_track": "tread_r_move",
+    "module_length": 0.25,
+    "track_width": 3.0
+  },
   "description": "99式主战坦克（工程代号WZ-123）是中国人民解放军最新的主战坦克。\n与另一款较新的主战坦克96式相比，其制造成本与性能更高，它具备优异的防弹外型，其炮塔和车体均采用第三代复合装甲，是中国陆军集团军重型合成旅的主要突击力量，被称为中国陆战王牌。"
 }
