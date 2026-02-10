@@ -7,45 +7,67 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
+/**
+ * 骨骼绑定节点，直接绑定骨骼到车辆数据（轮子转动、部件旋转等），通过缓存绑定配置和骨骼索引来优化性能。
+ * 适用于大量骨骼绑定的情况，避免每帧进行字符串查找和排序。
+ */
 public class BoneBindingNode implements PoseNode {
     
-    private final List<CompiledWheelBinding> compiledWheelBindings;
-    private final List<CompiledPartBinding> compiledPartBindings;
-    private final int maxBoneIndex;
+    private final List<CachedWheelBinding> cachedWheelBindings;
+    private final List<CachedPartBinding> cachedPartBindings;
+    private final int[] sortedBoneIndices;
+    private final int[] indexToArrayPos;
 
     public BoneBindingNode(List<WheelBinding> wheelBindings, List<PartBinding> partBindings, BoneIndexProvider boneIndexProvider) {
         // Pre-compile wheel bindings with bone indices
-        this.compiledWheelBindings = compileWheelBindings(
+        this.cachedWheelBindings = compileWheelBindings(
             wheelBindings != null ? wheelBindings : List.of(), 
             boneIndexProvider
         );
         
         // Pre-compile part bindings with bone indices
-        this.compiledPartBindings = compilePartBindings(
+        this.cachedPartBindings = compilePartBindings(
             partBindings != null ? partBindings : List.of(), 
             boneIndexProvider
         );
         
-        // Calculate max bone index for array sizing
-        int max = -1;
-        for (CompiledWheelBinding binding : compiledWheelBindings) {
+        // Collect all unique bone indices and sort them
+        Set<Integer> boneIndexSet = new HashSet<>();
+        for (CachedWheelBinding binding : cachedWheelBindings) {
             for (int idx : binding.boneIndices) {
-                if (idx > max) max = idx;
+                boneIndexSet.add(idx);
             }
         }
-        for (CompiledPartBinding binding : compiledPartBindings) {
-            if (binding.boneIndex > max) max = binding.boneIndex;
+        for (CachedPartBinding binding : cachedPartBindings) {
+            boneIndexSet.add(binding.boneIndex);
         }
-        this.maxBoneIndex = max;
+        
+        // Convert to sorted array for efficient lookup
+        this.sortedBoneIndices = boneIndexSet.stream()
+            .mapToInt(Integer::intValue)
+            .sorted()
+            .toArray();
+        
+        // Build index mapping once at construction time
+        if (sortedBoneIndices.length > 0) {
+            int maxIndex = sortedBoneIndices[sortedBoneIndices.length - 1];
+            this.indexToArrayPos = new int[maxIndex + 1];
+            Arrays.fill(indexToArrayPos, -1);
+            
+            for (int i = 0; i < sortedBoneIndices.length; i++) {
+                indexToArrayPos[sortedBoneIndices[i]] = i;
+            }
+        } else {
+            this.indexToArrayPos = new int[0];
+        }
     }
 
     /**
      * Compile wheel bindings: resolve bone names to indices once at construction time
      */
-    private static List<CompiledWheelBinding> compileWheelBindings(
+    private static List<CachedWheelBinding> compileWheelBindings(
             List<WheelBinding> bindings, 
             BoneIndexProvider provider) {
         return bindings.stream()
@@ -54,7 +76,7 @@ public class BoneBindingNode implements PoseNode {
                     .mapToInt(provider::getIndex)
                     .filter(idx -> idx >= 0)
                     .toArray();
-                return new CompiledWheelBinding(
+                return new CachedWheelBinding(
                     indices,
                     binding.side,
                     binding.radius,
@@ -67,7 +89,7 @@ public class BoneBindingNode implements PoseNode {
     /**
      * Compile part bindings: resolve bone names to indices once at construction time
      */
-    private static List<CompiledPartBinding> compilePartBindings(
+    private static List<CachedPartBinding> compilePartBindings(
             List<PartBinding> bindings, 
             BoneIndexProvider provider) {
         return bindings.stream()
@@ -76,7 +98,7 @@ public class BoneBindingNode implements PoseNode {
                 if (boneIndex < 0) {
                     return null; // Skip invalid bones
                 }
-                return new CompiledPartBinding(
+                return new CachedPartBinding(
                     boneIndex,
                     binding.part,
                     binding.rotationType,
@@ -99,18 +121,18 @@ public class BoneBindingNode implements PoseNode {
 
     @Override
     public Pose evaluate(IAnimationInstance<?> context) {
-        OptimizedPoseBuilder builder = new OptimizedPoseBuilder(maxBoneIndex);
+        OptimizedPoseBuilder builder = new OptimizedPoseBuilder(sortedBoneIndices, indexToArrayPos);
         
         // Apply wheel bindings
         if (context.getContext() instanceof TrackedVehicleContext trackedContext) {
-            for (CompiledWheelBinding binding : compiledWheelBindings) {
+            for (CachedWheelBinding binding : cachedWheelBindings) {
                 applyWheelBinding(builder, trackedContext, binding);
             }
         }
 
         if (context.getContext() instanceof VehicleContext<?> vehicleContext) {
             // Apply part bindings
-            for (CompiledPartBinding binding : compiledPartBindings) {
+            for (CachedPartBinding binding : cachedPartBindings) {
                 applyPartBinding(builder, vehicleContext, binding);
             }
         }
@@ -118,7 +140,7 @@ public class BoneBindingNode implements PoseNode {
         return builder.build();
     }
 
-    private void applyWheelBinding(OptimizedPoseBuilder builder, TrackedVehicleContext context, CompiledWheelBinding binding) {
+    private void applyWheelBinding(OptimizedPoseBuilder builder, TrackedVehicleContext context, CachedWheelBinding binding) {
         float angle = switch (binding.side) {
             case "left" -> context.getLeftWheelDegrees(binding.radius);
             case "right" -> context.getRightWheelDegrees(binding.radius);
@@ -130,7 +152,7 @@ public class BoneBindingNode implements PoseNode {
         }
     }
 
-    private void applyPartBinding(OptimizedPoseBuilder builder, VehicleContext<?> context, CompiledPartBinding binding) {
+    private void applyPartBinding(OptimizedPoseBuilder builder, VehicleContext<?> context, CachedPartBinding binding) {
         float rotation = switch (binding.rotationType) {
             case "x" -> context.getPartXRot(binding.part);
             case "y" -> context.getPartYRot(binding.part);
@@ -144,9 +166,6 @@ public class BoneBindingNode implements PoseNode {
         builder.setRotation(binding.boneIndex, binding.axis, rotation);
     }
 
-    /**
-     * Configuration for wheel bone bindings
-     */
     public static class WheelBinding {
         public List<String> bones;
         public String side; // "left" or "right"
@@ -154,9 +173,6 @@ public class BoneBindingNode implements PoseNode {
         public String axis; // "x", "y", or "z"
     }
 
-    /**
-     * Configuration for part rotation bindings
-     */
     public static class PartBinding {
         public String bone;
         public String part;
@@ -165,20 +181,14 @@ public class BoneBindingNode implements PoseNode {
         public boolean invert;
     }
 
-    /**
-     * Compiled wheel binding with pre-resolved bone indices
-     */
-    private record CompiledWheelBinding(
+    private record CachedWheelBinding(
         int[] boneIndices,
         String side,
         float radius,
         int axis // 0=x, 1=y, 2=z
     ) {}
 
-    /**
-     * Compiled part binding with pre-resolved bone index
-     */
-    private record CompiledPartBinding(
+    private record CachedPartBinding(
         int boneIndex,
         String part,
         String rotationType,
@@ -186,34 +196,33 @@ public class BoneBindingNode implements PoseNode {
         boolean invert
     ) {}
 
-    /**
-     * Optimized pose builder that uses pre-sorted array instead of TreeMap.
-     * Eliminates per-frame sorting overhead and bone name lookup.
-     */
     private static class OptimizedPoseBuilder {
         private static final ZYXBoneTransformFactory TRANSFORM_FACTORY = new ZYXBoneTransformFactory();
-        
-        private final BoneTransformData[] transforms;
-        private int count = 0;
 
-        OptimizedPoseBuilder(int maxBoneIndex) {
-            // Pre-allocate array sized to max bone index
-            this.transforms = new BoneTransformData[maxBoneIndex + 1];
+        private final int[] indexToArrayPos;
+        private final BoneTransformData[] transforms;
+
+        OptimizedPoseBuilder(int[] sortedBoneIndices, int[] indexToArrayPos) {
+            this.indexToArrayPos = indexToArrayPos;
+            this.transforms = new BoneTransformData[sortedBoneIndices.length];
         }
 
         void setRotation(int boneIndex, int axis, float angle) {
-            if (boneIndex < 0 || boneIndex >= transforms.length) {
+            if (boneIndex < 0 || boneIndex >= indexToArrayPos.length) {
                 return;
             }
             
-            BoneTransformData data = transforms[boneIndex];
-            if (data == null) {
-                data = new BoneTransformData(boneIndex);
-                transforms[boneIndex] = data;
-                count++;
+            int arrayPos = indexToArrayPos[boneIndex];
+            if (arrayPos < 0) {
+                return;
             }
             
-            // Set rotation on the specified axis
+            BoneTransformData data = transforms[arrayPos];
+            if (data == null) {
+                data = new BoneTransformData(boneIndex);
+                transforms[arrayPos] = data;
+            }
+
             switch (axis) {
                 case 0 -> data.rotX = angle;
                 case 1 -> data.rotY = angle;
@@ -222,16 +231,14 @@ public class BoneBindingNode implements PoseNode {
         }
 
         Pose build() {
-            if (count == 0) {
+            if (transforms.length == 0) {
                 return DummyPose.INSTANCE;
             }
 
             ArrayPoseBuilder builder = new ArrayPoseBuilder();
-            
-            // Iterate in index order (already sorted by array structure)
+
             for (BoneTransformData data : transforms) {
                 if (data != null) {
-                    // Convert degrees to radians
                     float rotXRad = (float) Math.toRadians(data.rotX);
                     float rotYRad = (float) Math.toRadians(data.rotY);
                     float rotZRad = (float) Math.toRadians(data.rotZ);

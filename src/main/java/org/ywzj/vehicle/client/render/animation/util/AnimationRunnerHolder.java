@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+// todo 枚举不方便脚本使用，后续可以改成int
 // 一个简单的基岩播放动画管理器
 public class AnimationRunnerHolder implements Tickable {
     public static final String DEFAULT_TRACK_NAME = "main";

@@ -40,6 +40,12 @@ public class AnimationControllerDefinition {
     private Map<String, StateMachineDefinition> stateMachines;
 
     /**
+     * Switchable animation definitions (doors, landing gear, etc.)
+     */
+    @SerializedName("switchable_animations")
+    private Map<String, SwitchableAnimationDefinition> switchableAnimations;
+
+    /**
      * Pose graph definition (blending logic)
      */
     @SerializedName("graph")
@@ -63,6 +69,10 @@ public class AnimationControllerDefinition {
 
     public Map<String, StateMachineDefinition> getStateMachines() {
         return stateMachines;
+    }
+
+    public Map<String, SwitchableAnimationDefinition> getSwitchableAnimations() {
+        return switchableAnimations;
     }
 
     public PoseNodeDefinition getGraph() {

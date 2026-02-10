@@ -8,6 +8,7 @@ import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.animation.ParameterDefinition;
 import org.ywzj.vehicle.client.resource.animation.StateMachineDefinition;
+import org.ywzj.vehicle.client.resource.animation.SwitchableAnimationDefinition;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,14 +16,12 @@ import java.util.Map;
 public class AnimationControllerCompiler {
     private final StateMachineCompiler stateMachineCompiler;
     private final PoseGraphCompiler poseGraphCompiler;
-    private final BoneIndexProvider boneIndexProvider;
 
     public AnimationControllerCompiler(StateMachineCompiler stateMachineCompiler,
                                        PoseGraphCompiler.ScriptNodeResolver scriptNodeResolver,
                                        BoneIndexProvider boneIndexProvider) {
         this.stateMachineCompiler = stateMachineCompiler;
         this.poseGraphCompiler = new PoseGraphCompiler(scriptNodeResolver, boneIndexProvider);
-        this.boneIndexProvider = boneIndexProvider;
     }
 
     public <T extends BaseAnimationContext> AnimationController<T> compile(
@@ -44,12 +43,15 @@ public class AnimationControllerCompiler {
             }
         }
 
+        // Get switchable animation definitions (no compilation needed, just pass through)
+        Map<String, SwitchableAnimationDefinition> switchableAnimations = definition.getSwitchableAnimations();
+
         // Compile pose graph
         PoseGraph poseGraph = null;
         if (definition.getGraph() != null) {
             poseGraph = poseGraphCompiler.compile(definition.getGraph());
         }
 
-        return new AnimationController<>(name, parameters, compiledStateMachines, poseGraph);
+        return new AnimationController<>(name, parameters, compiledStateMachines, switchableAnimations, poseGraph);
     }
 }

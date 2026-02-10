@@ -1,21 +1,24 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
-import com.maydaymemory.mae.control.Tickable;
 import org.ywzj.vehicle.client.render.animation.util.AnimationRunnerHolder;
+import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 基本动画上下文
+ * 基本动画上下文<br/>
+ * 由于在状态机之间共享，如果实现ITickable会导致被重复调用，故需要在AnimationInstance中手动调用tick方法<br/>
  */
-public abstract class BaseAnimationContext implements Tickable {
+public abstract class BaseAnimationContext {
     protected float partialTick;
     // 自定义变量
     private final Map<String, Object> parameters = new ConcurrentHashMap<>();
     // 动画播放管理器
     private final AnimationRunnerHolder animationRunnerHolder = new AnimationRunnerHolder(this::getAnimation);
+    // 切换动画播放器
+    private final Map<String, SwitchableRunner> switchableRunners = new ConcurrentHashMap<>();
     // 可用动画
     private Map<String, BedrockAnimation> animations;
 
@@ -34,9 +37,19 @@ public abstract class BaseAnimationContext implements Tickable {
         this.animations = animations;
     }
 
-    @Override
     public void tick() {
         animationRunnerHolder.tick();
+        for (SwitchableRunner runner : switchableRunners.values()) {
+            runner.tick();
+        }
+    }
+
+    public SwitchableRunner getSwitchableRunner(String key) {
+        return switchableRunners.get(key);
+    }
+
+    public void addSwitchableRunner(String key, SwitchableRunner runner) {
+        switchableRunners.put(key, runner);
     }
 
     public AnimationRunnerHolder getAnimationRunners() {

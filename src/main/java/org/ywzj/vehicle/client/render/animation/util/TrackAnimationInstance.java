@@ -9,6 +9,10 @@ import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 
+import java.util.List;
+
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.MERGE_BLENDER;
+
 /**
  * 一个简单的履带动画实例，包含左右履带动画的进度与累计位移计算
  */
@@ -79,7 +83,7 @@ public class TrackAnimationInstance {
         rightTrackRunner.setProgress(rightAnimProgress);
         Pose leftPose = leftTrackRunner.evaluate();
         Pose rightPose = rightTrackRunner.evaluate();
-        return BLENDER.blend(leftPose, rightPose);
+        return MERGE_BLENDER.blend(List.of(leftPose, rightPose));
     }
 
     public float getTrackWidth() {

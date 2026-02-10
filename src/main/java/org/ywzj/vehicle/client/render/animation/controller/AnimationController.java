@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
 import org.ywzj.vehicle.client.resource.animation.ParameterDefinition;
+import org.ywzj.vehicle.client.resource.animation.SwitchableAnimationDefinition;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,15 +22,19 @@ public class AnimationController<T extends BaseAnimationContext> {
     private final Map<String, ParameterDefinition> parameters;
     // 状态机
     private final Map<String, CompiledStateMachine<T>> stateMachines;
+    // 可开关动画定义
+    private final Map<String, SwitchableAnimationDefinition> switchableAnimations;
     private final PoseGraph poseGraph;
 
     public AnimationController(String name,
                               Map<String, ParameterDefinition> parameters,
                               Map<String, CompiledStateMachine<T>> stateMachines,
+                              Map<String, SwitchableAnimationDefinition> switchableAnimations,
                               PoseGraph poseGraph) {
         this.name = name;
         this.parameters = parameters != null ? Map.copyOf(parameters) : Map.of();
         this.stateMachines = stateMachines != null ? Map.copyOf(stateMachines) : Map.of();
+        this.switchableAnimations = switchableAnimations != null ? Map.copyOf(switchableAnimations) : Map.of();
         this.poseGraph = poseGraph;
     }
 
@@ -94,5 +99,20 @@ public class AnimationController<T extends BaseAnimationContext> {
      */
     public Map<String, ParameterDefinition> getParameters() {
         return parameters;
+    }
+
+    /**
+     * Get switchable animation definitions
+     */
+    @NotNull
+    public Map<String, SwitchableAnimationDefinition> getSwitchableAnimations() {
+        return switchableAnimations;
+    }
+
+    /**
+     * Get a switchable animation definition by name
+     */
+    public SwitchableAnimationDefinition getSwitchableAnimation(String name) {
+        return switchableAnimations.get(name);
     }
 }

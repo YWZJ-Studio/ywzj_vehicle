@@ -20,7 +20,7 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
-import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -59,15 +59,16 @@ public class TrackedVehicle extends AbstractVehicle
     @Override
     public void initData(ResourceLocation vehicleId) {
         super.initData(vehicleId);
-        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(display -> {
-            if (display instanceof TrackedVehicleDisplay display1) {
-                this.animationInstance = display1.createAnimationInstance(this);
-                TrackAnimationInstance instance = new TrackAnimationInstance(display1.getLeftTrackAnimation(), display1.getRightTrackAnimation());
-                this.animationInstance.getContext().setTrackAnimationInstance(instance);
-            }
-        });
     }
 
+    @Override
+    public void initDisplayData(BaseDisplay display) {
+        if (display instanceof TrackedVehicleDisplay display1) {
+            this.animationInstance = display1.createAnimationInstance(this);
+            TrackAnimationInstance instance = new TrackAnimationInstance(display1.getLeftTrackAnimation(), display1.getRightTrackAnimation());
+            this.animationInstance.getContext().setTrackAnimationInstance(instance);
+        }
+    }
 
     public float getForwardSpeed() {
         return this.entityData.get(FORWARD_SPEED);

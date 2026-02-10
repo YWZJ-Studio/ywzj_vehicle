@@ -12,9 +12,13 @@ public class PoseNodeDefinition {
     @SerializedName("type")
     private String type;
 
-    // For state_machine node
+    // For state_machine / switchable_animation node
     @SerializedName("ref")
     private String ref;
+
+    // For merge node
+    @SerializedName("inputs")
+    private List<PoseNodeDefinition> inputs;
 
     // For blend node
     @SerializedName("a")
@@ -48,19 +52,6 @@ public class PoseNodeDefinition {
 
     @SerializedName("part_bindings")
     private List<PartBindingDefinition> partBindings;
-
-    // For track_animation node
-    @SerializedName("left_track")
-    private String leftTrack;
-
-    @SerializedName("right_track")
-    private String rightTrack;
-
-    @SerializedName("module_length")
-    private Float moduleLength;
-
-    @SerializedName("track_width")
-    private Float trackWidth;
 
     public String getType() {
         return type;
@@ -106,21 +97,10 @@ public class PoseNodeDefinition {
         return partBindings;
     }
 
-    public String getLeftTrack() {
-        return leftTrack;
+    public List<PoseNodeDefinition> getInputs() {
+        return inputs;
     }
 
-    public String getRightTrack() {
-        return rightTrack;
-    }
-
-    public Float getModuleLength() {
-        return moduleLength;
-    }
-
-    public Float getTrackWidth() {
-        return trackWidth;
-    }
 
     /**
      * Layer definition for layered_blend node

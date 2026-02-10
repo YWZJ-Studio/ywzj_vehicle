@@ -1,0 +1,45 @@
+{
+  "name": "ztz99a_controller",
+  "script": "ywzj_vehicle:ztz99a",
+  "parameters": {},
+  "switchable_animations": {
+    "front_door_left": {
+      "part_id": "front_door_left",
+      "animation": "front_door_left"
+    },
+    "front_door_right": {
+      "part_id": "front_door_right",
+      "animation": "front_door_right"
+    },
+    "side_door_left": {
+      "part_id": "side_door_left",
+      "animation": "side_door_left"
+    },
+    "side_door_right": {
+      "part_id": "side_door_right",
+      "animation": "side_door_right"
+    }
+  },
+  "graph": {
+    // 合并节点
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "switchable_animation",
+        "ref": "front_door_left"
+      },
+      {
+        "type": "switchable_animation",
+        "ref": "front_door_right"
+      },
+      {
+        "type": "switchable_animation",
+        "ref": "side_door_left"
+      },
+      {
+        "type": "switchable_animation",
+        "ref": "side_door_right"
+      }
+    ]
+  }
+}

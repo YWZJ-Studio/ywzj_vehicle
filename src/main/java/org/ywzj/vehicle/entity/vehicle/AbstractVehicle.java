@@ -226,6 +226,10 @@ public abstract class AbstractVehicle extends ContainerCraft
             passengerIdsBySeat[index] = buffer.readInt();
         }
         setSeats(passengerIdsBySeat);
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(this::initDisplayData);
+    }
+
+    public void initDisplayData(BaseDisplay display) {
     }
 
     private CompoundTag serializePartUnitsData() {

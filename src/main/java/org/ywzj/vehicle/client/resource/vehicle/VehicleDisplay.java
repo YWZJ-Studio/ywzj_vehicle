@@ -1,6 +1,6 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
-import net.minecraft.world.entity.Entity;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import org.mozillaa.javascript.*;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
@@ -12,15 +12,18 @@ import org.ywzj.vehicle.client.render.animation.context.EntityContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.render.animation.graph.ScriptPoseNode;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
+import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.ScriptManager;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class VehicleDisplay<E extends Entity, CTX extends EntityContext<E>> extends BaseDisplay {
+public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext<E>> extends BaseDisplay {
     
     protected AnimationController<?> animationController;
     protected AnimationContextFactory<E, CTX> contextFactory;
@@ -169,10 +172,6 @@ public class VehicleDisplay<E extends Entity, CTX extends EntityContext<E>> exte
         return scriptScope;
     }
 
-    /**
-     * Create animation instance for the given entity.
-     * This method handles the type casting safely at runtime.
-     */
     @SuppressWarnings("unchecked")
     public IAnimationInstance<CTX> createAnimationInstance(E entity) {
         if (animationController == null || contextFactory == null) {
@@ -183,6 +182,19 @@ public class VehicleDisplay<E extends Entity, CTX extends EntityContext<E>> exte
         context.setAnimations(animations);
 
         AnimationController<CTX> typedController = (AnimationController<CTX>) animationController;
+        for (var entry : typedController.getSwitchableAnimations().entrySet()) {
+            String animationName = entry.getValue().getAnimation();
+            BedrockAnimation animation = context.getAnimation(animationName);
+            if (animation == null) {
+                continue;
+            }
+            entity.getPartUnit(entry.getValue().getPartId()).ifPresent(part -> {
+                if (part instanceof SwitchableUnit<?> switchablePart) {
+                    context.addSwitchableRunner(animationName, new SwitchableRunner(switchablePart, animation));
+                }
+            });
+        }
+
         return new VehicleAnimationInstance<>(typedController, context);
     }
 }

@@ -4,7 +4,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -18,7 +17,7 @@ import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
-import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -59,13 +58,10 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     }
 
     @Override
-    public void initData(ResourceLocation vehicleId) {
-        super.initData(vehicleId);
-        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(display -> {
-            if (display instanceof WheeledVehicleDisplay display1) {
-                this.animationInstance = display1.createAnimationInstance(this);
-            }
-        });
+    public void initDisplayData(BaseDisplay display) {
+        if (display instanceof WheeledVehicleDisplay display1) {
+            this.animationInstance = display1.createAnimationInstance(this);
+        }
     }
 
     public float getForwardSpeed() {

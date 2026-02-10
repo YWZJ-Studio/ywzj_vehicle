@@ -1,0 +1,63 @@
+package org.ywzj.vehicle.client.render.animation.util;
+
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.maydaymemory.mae.basic.DummyPose;
+import com.maydaymemory.mae.basic.Pose;
+import com.maydaymemory.mae.control.runner.AnimationContext;
+import com.maydaymemory.mae.control.runner.AnimationRunner;
+import com.maydaymemory.mae.control.runner.PauseState;
+import com.maydaymemory.mae.control.runner.PlayingState;
+import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
+
+// 简单的 SwitchableRunner 管理器，用于管理门、起落架等可开关结构的动画 Runner
+public class SwitchableRunner {
+    private final SwitchableUnit<?> unit;
+    private AnimationRunner runner;
+    private boolean lastState;
+
+    public SwitchableRunner(SwitchableUnit<?> unit, BedrockAnimation animation) {
+        this.unit = unit;
+        this.lastState = unit.isOn();
+        AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
+        runner = new AnimationRunner(animation, animContext);
+
+        if (unit.isOn()) {
+            // Jump to end
+            animContext.setProgress(animation.getSpecifiedEndTimeS());
+        } else {
+            // Jump to start
+            animContext.setProgress(0);
+        }
+        runner.setState(new PauseState());
+        lastState = unit.isOn();
+    }
+
+    public void setRunner(AnimationRunner runner) {
+        this.runner = runner;
+    }
+
+    public void tick() {
+        if (runner != null) {
+            runner.tick();
+        }
+
+        if (unit == null) {
+            return;
+        }
+
+        if (unit.isOn() != lastState) {
+            float speed = unit.isOn() ? 1.0f : -1.0f;
+            PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
+            playingState.setSpeed(speed);
+            runner.setState(playingState);
+            lastState = unit.isOn();
+        }
+    }
+
+    public Pose evaluate() {
+        if (runner != null) {
+            return runner.evaluate();
+        }
+        return DummyPose.INSTANCE;
+    }
+}

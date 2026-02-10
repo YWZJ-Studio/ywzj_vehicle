@@ -5,7 +5,7 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
 
 /**
- * 简单叠加
+ * 简单加性混合，输出两个pose的和
  */
 public class AdditiveNode implements PoseNode {
     private final PoseNode baseNode;
