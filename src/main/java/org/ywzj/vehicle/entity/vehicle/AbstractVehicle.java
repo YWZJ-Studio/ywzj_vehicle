@@ -54,6 +54,8 @@ import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
+import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
+import org.ywzj.vehicle.api.event.VehicleMoveEvent;
 import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
@@ -91,6 +93,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ENERGY = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> ENGINE_SPEED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     private ResourceLocation vehicleId;
@@ -152,6 +155,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         this.entityData.define(Z_ROT, 0f);
         this.entityData.define(ENERGY, 0f);
         this.entityData.define(POWER, 0f);
+        this.entityData.define(ENGINE_SPEED, 0f);
         this.entityData.define(ENGINE_ON, false);
         this.entityData.define(DESTROYED, false);
     }
@@ -396,7 +400,11 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
             }
             tickEnergy();
             tickPower();
+            tickEngineSpeed();
             tickPhysics(tickMove());
+            if (MinecraftForge.EVENT_BUS.post(new VehicleMoveEvent(this))) {
+                this.setDeltaMovement(Vec3.ZERO);
+            }
             if (uav) {
                 keepChunkLoaded(position());
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
@@ -434,6 +442,13 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
+    protected void tickEngineSpeed() {
+        float engineSpeed = getEngineSpeed();
+        if (hasPower() && engineSpeed <= 60) {
+            setEngineSpeed(Math.max(engineSpeed + (isEngineOn() ? 1 : -1), 0));
+        }
+    }
+
     protected void tickPhysics(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
@@ -456,6 +471,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 touchPoints.add(point);
             }
         }
+        MinecraftForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
 
         // 调试
 //        touchPoints.forEach(p -> DebugUtil.particle(level(), new Vec3(p.worldPos(axes)), p.cubeFace()));
@@ -1022,6 +1038,14 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         }
     }
 
+    public float getViewXRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? this.getXRot() : Mth.lerp(pPartialTicks, this.xRotO, this.getXRot());
+    }
+
+    public float getViewYRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? this.getYRot() : Mth.lerp(pPartialTicks, this.yRotO, this.getYRot());
+    }
+
     public float getViewZRot(float pPartialTicks) {
         return pPartialTicks == 1.0F ? this.getZRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
     }
@@ -1102,7 +1126,15 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
     }
 
     public void setPower(float power) {
-        entityData.set(POWER, Mth.clamp(power, 0, 100));
+        entityData.set(POWER, power);
+    }
+
+    public float getEngineSpeed() {
+        return entityData.get(ENGINE_SPEED);
+    }
+
+    public void setEngineSpeed(float engineSpeed) {
+        entityData.set(ENGINE_SPEED, engineSpeed);
     }
 
     public boolean hasPower() {
