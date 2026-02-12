@@ -11,6 +11,7 @@ import org.ywzj.vehicle.client.render.animation.context.AnimationContextFactory;
 import org.ywzj.vehicle.client.render.animation.context.EntityContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.render.animation.graph.ScriptPoseNode;
+import org.ywzj.vehicle.client.render.animation.util.LoopAnimationRunner;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
 import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
@@ -27,8 +28,8 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
     
     protected AnimationController<?> animationController;
     protected AnimationContextFactory<E, CTX> contextFactory;
-    protected Scriptable scriptScope;  // Cached script scope shared by this display instance
-    protected Map<String, Function> scriptFunctions = new HashMap<>();  // Cached script functions
+    protected Scriptable scriptScope;
+    protected Map<String, Function> scriptFunctions = new HashMap<>();
 
     public VehicleDisplay(BaseDisplayPojo pojo) {
         super(pojo);
@@ -82,21 +83,15 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
                 }
             }
 
-            // Initialize script scope if script is present
+            // 初始化此display的脚本作用域，并导入外部脚本定义的函数
             if (compiledScript != null) {
                 initializeScriptScope(compiledScript, scriptContextFactory);
             }
 
-            ScriptCompiler scriptCompiler = new ScriptCompiler(scriptContextFactory);
-
-            if (compiledScript != null) {
-                scriptCompiler.loadCompiledExternalScript(compiledScript);
-            }
-
+            ScriptCompiler scriptCompiler = new ScriptCompiler(scriptContextFactory, scriptScope);
             ActionCompiler actionCompiler = new ActionCompiler(scriptCompiler);
             ConditionCompiler conditionCompiler = new ConditionCompiler(scriptCompiler);
-            StateMachineCompiler stateMachineCompiler = new StateMachineCompiler(
-                    scriptCompiler, actionCompiler, conditionCompiler);
+            StateMachineCompiler stateMachineCompiler = new StateMachineCompiler(scriptCompiler, actionCompiler, conditionCompiler);
             
             // Create script node resolver that uses cached functions and scope
             PoseGraphCompiler.ScriptNodeResolver scriptNodeResolver = functionName -> {
@@ -127,10 +122,6 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
         }
     }
 
-    /**
-     * Initialize script scope and cache script functions.
-     * This scope is shared by all script pose nodes in this display.
-     */
     protected void initializeScriptScope(Script compiledScript, ScriptContextFactory scriptContextFactory) {
         try (Context cx = scriptContextFactory.enterContext()) {
             this.scriptScope = scriptContextFactory.createScope(cx);
@@ -146,30 +137,9 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
             
             // Execute script to define functions
             compiledScript.exec(cx, scriptScope);
-
-            // Cache commonly used functions
-            Object prepareBones = scriptScope.get("prepareBones", scriptScope);
-            if (prepareBones instanceof Function function) {
-                scriptFunctions.put("prepareBones", function);
-            }
-            
         } catch (Exception e) {
             YwzjVehicle.LOGGER.warn("Failed to initialize script scope", e);
         }
-    }
-
-    /**
-     * Get cached script function by name.
-     */
-    public Function getScriptFunction(String name) {
-        return scriptFunctions.get(name);
-    }
-
-    /**
-     * Get script scope.
-     */
-    public Scriptable getScriptScope() {
-        return scriptScope;
     }
 
     @SuppressWarnings("unchecked")
@@ -190,10 +160,20 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
             }
             entity.getPartUnit(entry.getValue().getPartId()).ifPresent(part -> {
                 if (part instanceof SwitchableUnit<?> switchablePart) {
-                    context.addSwitchableRunner(animationName, new SwitchableRunner(switchablePart, animation));
+                    context.addSwitchableRunner(entry.getKey(), new SwitchableRunner(switchablePart, animation));
                 }
             });
         }
+
+        for (var entry : typedController.getLoopAnimations().entrySet()) {
+            String animationName = entry.getValue().getAnimation();
+            BedrockAnimation animation = context.getAnimation(animationName);
+            if (animation == null) {
+                continue;
+            }
+            context.addLoopRunner(entry.getKey(), new LoopAnimationRunner(animation));
+        }
+
 
         return new VehicleAnimationInstance<>(typedController, context);
     }

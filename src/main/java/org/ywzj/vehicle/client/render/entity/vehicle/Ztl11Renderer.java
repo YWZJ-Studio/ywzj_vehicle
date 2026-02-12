@@ -20,6 +20,8 @@ import org.ywzj.vehicle.entity.vehicle.Ztl11;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
+
 public class Ztl11Renderer extends EntityRenderer<Ztl11> {
 
     public Ztl11Renderer(EntityRendererProvider.Context pContext) {
@@ -120,7 +122,7 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
             var instance = vehicle.getAnimationInstance();
             if (instance != null) {
                 instance.tick();
-                model.applyPose(VehicleRender.BLENDER.blend(pose, instance.getCurrentPose()));
+                model.applyPose(BLENDER.blend(pose, instance.getCurrentPose()));
             }
 
             vehicle.lastRenderTime = System.currentTimeMillis();

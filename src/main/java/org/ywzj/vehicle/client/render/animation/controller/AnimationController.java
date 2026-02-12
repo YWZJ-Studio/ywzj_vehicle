@@ -5,6 +5,7 @@ import com.maydaymemory.mae.util.LongSupplier;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
+import org.ywzj.vehicle.client.resource.animation.LoopAnimationDefinition;
 import org.ywzj.vehicle.client.resource.animation.ParameterDefinition;
 import org.ywzj.vehicle.client.resource.animation.SwitchableAnimationDefinition;
 
@@ -24,17 +25,20 @@ public class AnimationController<T extends BaseAnimationContext> {
     private final Map<String, CompiledStateMachine<T>> stateMachines;
     // 可开关动画定义
     private final Map<String, SwitchableAnimationDefinition> switchableAnimations;
+    private final Map<String, LoopAnimationDefinition> loopAnimations;
     private final PoseGraph poseGraph;
 
     public AnimationController(String name,
-                              Map<String, ParameterDefinition> parameters,
-                              Map<String, CompiledStateMachine<T>> stateMachines,
-                              Map<String, SwitchableAnimationDefinition> switchableAnimations,
-                              PoseGraph poseGraph) {
+                               Map<String, ParameterDefinition> parameters,
+                               Map<String, CompiledStateMachine<T>> stateMachines,
+                               Map<String, SwitchableAnimationDefinition> switchableAnimations,
+                               Map<String, LoopAnimationDefinition> loopAnimationDefinitions,
+                               PoseGraph poseGraph) {
         this.name = name;
         this.parameters = parameters != null ? Map.copyOf(parameters) : Map.of();
         this.stateMachines = stateMachines != null ? Map.copyOf(stateMachines) : Map.of();
         this.switchableAnimations = switchableAnimations != null ? Map.copyOf(switchableAnimations) : Map.of();
+        this.loopAnimations = loopAnimationDefinitions != null ? Map.copyOf(loopAnimationDefinitions) : Map.of();
         this.poseGraph = poseGraph;
     }
 
@@ -52,7 +56,7 @@ public class AnimationController<T extends BaseAnimationContext> {
                 }
             }
         }
-        // 以初始状态创建所以状态机实例
+        // 以初始状态创建所有状态机实例
         Map<String, AnimationStateMachine<T>> map = new HashMap<>();
         LongSupplier timeSupplier = System::nanoTime;
         for (Map.Entry<String, CompiledStateMachine<T>> entry : stateMachines.entrySet()) {
@@ -114,5 +118,9 @@ public class AnimationController<T extends BaseAnimationContext> {
      */
     public SwitchableAnimationDefinition getSwitchableAnimation(String name) {
         return switchableAnimations.get(name);
+    }
+
+    public Map<String, LoopAnimationDefinition> getLoopAnimations() {
+        return loopAnimations;
     }
 }

@@ -1,13 +1,9 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
-import com.maydaymemory.mae.basic.ArrayPoseBuilder;
-import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
-import com.maydaymemory.mae.blend.EulerAdditiveBlender;
-import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -23,13 +19,13 @@ import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> {
-
-    public static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
-    private static final Object[] EMPTY_ARGS = new Object[0];
 
     public VehicleRender(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -42,7 +38,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         if (display == null) {
             return;
         }
-        BedrockModel model = display.getModel();
+        VehicleBedrockModel model = display.getModel();
         if (model == null) {
             return;
         }
@@ -65,7 +61,8 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
 
             VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-            model.getBoneIndexes().forEach(bone -> bone.visible = true);
+            model.renderSpecialBones(pPoseStack, bufferSource, LightTexture.pack(16, 16), OverlayTexture.NO_OVERLAY);
+
             model.applyPose(model.getBindPose());
             vehicle.lastRenderTime = System.currentTimeMillis();
         }
@@ -75,7 +72,12 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
     @SubscribeEvent
     public static void onFire(VehicleFireEvent.Post event) {
         if (event.isClientSide()) {
-//            event.getVehicle().getAnimationInstance().onFire(event.getWeapon());
+            if (event.getVehicle() instanceof IAnimationEntity<?,?> animationEntity) {
+                var instance = animationEntity.getAnimationInstance();
+                if (instance != null) {
+                    instance.getContext().offerEvent("fire");
+                }
+            }
         }
     }
 

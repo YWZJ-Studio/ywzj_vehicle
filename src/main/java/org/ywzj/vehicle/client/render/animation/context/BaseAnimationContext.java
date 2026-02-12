@@ -2,9 +2,12 @@ package org.ywzj.vehicle.client.render.animation.context;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import org.ywzj.vehicle.client.render.animation.util.AnimationRunnerHolder;
+import org.ywzj.vehicle.client.render.animation.util.LoopAnimationRunner;
 import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -19,10 +22,22 @@ public abstract class BaseAnimationContext {
     private final AnimationRunnerHolder animationRunnerHolder = new AnimationRunnerHolder(this::getAnimation);
     // 切换动画播放器
     private final Map<String, SwitchableRunner> switchableRunners = new ConcurrentHashMap<>();
+    // 循环动画播放器
+    private final Map<String, LoopAnimationRunner> loopRunners = new ConcurrentHashMap<>();
     // 可用动画
     private Map<String, BedrockAnimation> animations;
 
+    private final Queue<String> eventQueue = new LinkedList<>();
+
     public BaseAnimationContext() {
+    }
+
+    public void offerEvent(String event) {
+        eventQueue.offer(event);
+    }
+
+    public String consumeEvent() {
+        return eventQueue.poll();
     }
 
     public void setPartialTick(float partialTick) {
@@ -42,6 +57,9 @@ public abstract class BaseAnimationContext {
         for (SwitchableRunner runner : switchableRunners.values()) {
             runner.tick();
         }
+        for (LoopAnimationRunner runner : loopRunners.values()) {
+            runner.tick();
+        }
     }
 
     public SwitchableRunner getSwitchableRunner(String key) {
@@ -50,6 +68,14 @@ public abstract class BaseAnimationContext {
 
     public void addSwitchableRunner(String key, SwitchableRunner runner) {
         switchableRunners.put(key, runner);
+    }
+
+    public void addLoopRunner(String key, LoopAnimationRunner loopAnimationRunner) {
+        loopRunners.put(key, loopAnimationRunner);
+    }
+
+    public LoopAnimationRunner getLoopRunner(String key) {
+        return loopRunners.get(key);
     }
 
     public AnimationRunnerHolder getAnimationRunners() {

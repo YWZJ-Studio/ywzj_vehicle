@@ -2,72 +2,113 @@
   "name": "ztz99a_controller",
   "script": "ywzj_vehicle:ztz99a",
   "parameters": {},
+  // 循环动画源
+  "loop_animations": {
+    "static": {
+      "animation": "static"
+    }
+  },
+  "state_machines": {
+    "fire": {
+      "start_state": "idle",
+      "states": {
+        "idle": {
+          "on_update": [
+            {
+              "type": "script",
+              "script": "handleShoot(context)"
+            }
+          ],
+          "evaluate": {
+            "type": "script",
+            "script": "context.getAnimationRunners().getMultiRunnerPose()"
+          }
+        }
+      }
+    }
+  },
   "graph": {
-    // 合并节点
+    // 合并节点，排在后面的pose会覆盖前面的pose中相同骨骼的动画
     "type": "merge",
     "inputs": [
       {
-        // 骨骼绑定 pose
-        "type": "bone_binding",
-        // 特殊绑定，仅履带载具有效
-        "wheel_bindings": [
-          {
-            "bones": [
-              "hull_big_0", "hull_big_1", "hull_big_2", "hull_big_3", "hull_big_4",
-              "hull_big_5", "hull_big_6", "hull_big_7", "hull_big_8", "hull_big_9"
-            ],
-            "side": "left",
-            "radius": 0.375,
-            "axis": "x"
-          },
-          {
-            "bones": ["hull_big_10", "hull_big_11", "hull_big_12"],
-            "side": "right",
-            "radius": 0.375,
-            "axis": "x"
-          },
-          {
-            "bones": ["hull_small_0", "hull_small_1", "hull_small_2", "hull_small_3", "hull_small_4"],
-            "side": "left",
-            "radius": 0.28,
-            "axis": "x"
-          }
-        ],
-        // 常规的绑定
-        "part_bindings": [
-          {
-            "bone": "turret",
-            "part": "turret",
-            "rotation_type": "y",
-            "axis": "y",
-            "invert": true
-          },
-          {
-            "bone": "canno",
-            "part": "turret",
-            "rotation_type": "x",
-            "axis": "x",
-            "invert": false
-          },
-          {
-            "bone": "machine_gun",
-            "part": "commander_machine_gun",
-            "rotation_type": "y",
-            "axis": "y",
-            "invert": true
-          },
-          {
-            "bone": "machine_gun_high",
-            "part": "commander_machine_gun",
-            "rotation_type": "x",
-            "axis": "x",
-            "invert": false
-          }
-        ]
+        "type": "loop_animation",
+        "ref": "static"
       },
       {
-        // 履带动画 pose，仅履带载具有效
-        "type": "track_animation"
+        "type": "additive",
+        "base": {
+          "type": "merge",
+          "inputs": [
+            {
+              // 骨骼绑定 pose
+              "type": "bone_binding",
+              // 特殊绑定，仅履带载具有效
+              "wheel_bindings": [
+                {
+                  "bones": [
+                    "hull_big_0", "hull_big_1", "hull_big_2", "hull_big_3", "hull_big_4",
+                    "hull_big_5", "hull_big_6", "hull_big_7", "hull_big_8", "hull_big_9"
+                  ],
+                  "side": "left",
+                  "radius": 0.375,
+                  "axis": "x"
+                },
+                {
+                  "bones": ["hull_big_10", "hull_big_11", "hull_big_12"],
+                  "side": "right",
+                  "radius": 0.375,
+                  "axis": "x"
+                },
+                {
+                  "bones": ["hull_small_0", "hull_small_1", "hull_small_2", "hull_small_3", "hull_small_4"],
+                  "side": "left",
+                  "radius": 0.28,
+                  "axis": "x"
+                }
+              ],
+              // 常规的绑定
+              "part_bindings": [
+                {
+                  "bone": "turret",
+                  "part": "turret",
+                  "rotation_type": "y",
+                  "axis": "y",
+                  "invert": true
+                },
+                {
+                  "bone": "canno",
+                  "part": "turret",
+                  "rotation_type": "x",
+                  "axis": "x",
+                  "invert": false
+                },
+                {
+                  "bone": "machine_gun",
+                  "part": "commander_machine_gun",
+                  "rotation_type": "y",
+                  "axis": "y",
+                  "invert": true
+                },
+                {
+                  "bone": "machine_gun_high",
+                  "part": "commander_machine_gun",
+                  "rotation_type": "x",
+                  "axis": "x",
+                  "invert": false
+                }
+              ]
+            },
+            {
+              // 履带动画 pose，仅履带载具有效
+              "type": "track_animation"
+            }
+          ]
+        },
+        "add": {
+          "type": "state_machine",
+          "ref": "fire"
+        }
       }
     ]
   }

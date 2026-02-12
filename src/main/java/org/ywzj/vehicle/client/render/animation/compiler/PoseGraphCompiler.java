@@ -61,6 +61,7 @@ public class PoseGraphCompiler {
             case "state_machine" -> compileStateMachineNode(definition);
             case "merge" -> compileMergeNode(definition);
             case "switchable_animation" -> switchableAnimationNode(definition);
+            case "loop_animation" -> loopAnimationNode(definition);
             case "blend" -> compileBlendNode(definition);
             case "layered_blend" -> compileLayeredBlendNode(definition);
             case "additive" -> compileAdditiveNode(definition);
@@ -69,6 +70,14 @@ public class PoseGraphCompiler {
             case "track_animation" -> compileTrackAnimationNode();
             default -> throw new IllegalArgumentException("Unknown node type: " + type);
         };
+    }
+
+    private PoseNode loopAnimationNode(PoseNodeDefinition definition) {
+        String partId = definition.getRef();
+        if (partId == null || partId.isEmpty()) {
+            throw new IllegalArgumentException("switchable_animation node requires 'ref' field");
+        }
+        return new LoopAnimationNode(partId);
     }
 
     private PoseNode switchableAnimationNode(PoseNodeDefinition definition) {

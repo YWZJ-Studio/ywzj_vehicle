@@ -37,4 +37,7 @@ public class BaseDisplayPojo {
     @SerializedName("track_config")
     public TrackConfig trackConfig;
 
+    @SerializedName("special_bone_effects")
+    public java.util.List<SpecialBoneEffect> specialBoneEffects;
+
 }

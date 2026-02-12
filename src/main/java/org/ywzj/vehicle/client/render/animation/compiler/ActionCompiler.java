@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.client.render.animation.compiler;
 
-import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.context.SoundResolver;
 import org.ywzj.vehicle.client.render.animation.util.AnimationPlayType;
@@ -87,7 +86,7 @@ public class ActionCompiler {
             return (context) -> {};
         }
 
-        Script compiledScript = scriptCompiler.compile(scriptCode);
-        return (context) -> scriptCompiler.execute(compiledScript, context);
+        org.mozillaa.javascript.Function compiledFunction = scriptCompiler.compile(scriptCode);
+        return (context) -> scriptCompiler.execute(compiledFunction, context);
     }
 }

@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.client.render.animation.compiler;
 
-import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.resource.animation.ConditionDefinition;
 
@@ -48,8 +47,8 @@ public class ConditionCompiler {
             return context -> true;
         }
 
-        Script compiledScript = scriptCompiler.compile(scriptCode);
-        return context -> scriptCompiler.evaluateBoolean(compiledScript, context);
+        org.mozillaa.javascript.Function compiledFunction = scriptCompiler.compile(scriptCode);
+        return context -> scriptCompiler.evaluateBoolean(compiledFunction, context);
     }
 
     /**

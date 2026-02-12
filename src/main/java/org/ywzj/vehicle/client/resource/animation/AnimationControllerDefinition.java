@@ -45,6 +45,9 @@ public class AnimationControllerDefinition {
     @SerializedName("switchable_animations")
     private Map<String, SwitchableAnimationDefinition> switchableAnimations;
 
+    @SerializedName("loop_animations")
+    private Map<String, LoopAnimationDefinition> loopAnimations;
+
     /**
      * Pose graph definition (blending logic)
      */
@@ -73,6 +76,10 @@ public class AnimationControllerDefinition {
 
     public Map<String, SwitchableAnimationDefinition> getSwitchableAnimations() {
         return switchableAnimations;
+    }
+
+    public Map<String, LoopAnimationDefinition> getLoopAnimations() {
+        return loopAnimations;
     }
 
     public PoseNodeDefinition getGraph() {

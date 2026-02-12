@@ -21,6 +21,8 @@ import org.ywzj.vehicle.entity.vehicle.DumpTruck;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
+
 public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
 
     public DumpTruckRenderer(EntityRendererProvider.Context pContext) {
@@ -100,7 +102,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             var instance = vehicle.getAnimationInstance();
             if (instance != null) {
                 instance.tick();
-                model.applyPose(VehicleRender.BLENDER.blend(pose, instance.getCurrentPose()));
+                model.applyPose(BLENDER.blend(pose, instance.getCurrentPose()));
             }
 
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);

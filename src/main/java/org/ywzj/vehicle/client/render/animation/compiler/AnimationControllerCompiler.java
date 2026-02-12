@@ -5,10 +5,7 @@ import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.render.animation.controller.CompiledStateMachine;
 import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
-import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
-import org.ywzj.vehicle.client.resource.animation.ParameterDefinition;
-import org.ywzj.vehicle.client.resource.animation.StateMachineDefinition;
-import org.ywzj.vehicle.client.resource.animation.SwitchableAnimationDefinition;
+import org.ywzj.vehicle.client.resource.animation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,8 +21,7 @@ public class AnimationControllerCompiler {
         this.poseGraphCompiler = new PoseGraphCompiler(scriptNodeResolver, boneIndexProvider);
     }
 
-    public <T extends BaseAnimationContext> AnimationController<T> compile(
-            AnimationControllerDefinition definition) {
+    public <T extends BaseAnimationContext> AnimationController<T> compile(AnimationControllerDefinition definition) {
 
         String name = definition.getName();
 
@@ -43,8 +39,9 @@ public class AnimationControllerCompiler {
             }
         }
 
-        // Get switchable animation definitions (no compilation needed, just pass through)
         Map<String, SwitchableAnimationDefinition> switchableAnimations = definition.getSwitchableAnimations();
+        // todo 其实应该带条件，现在暂时原样传，后续补
+        Map<String, LoopAnimationDefinition> loopAnimations = definition.getLoopAnimations();
 
         // Compile pose graph
         PoseGraph poseGraph = null;
@@ -52,6 +49,6 @@ public class AnimationControllerCompiler {
             poseGraph = poseGraphCompiler.compile(definition.getGraph());
         }
 
-        return new AnimationController<>(name, parameters, compiledStateMachines, switchableAnimations, poseGraph);
+        return new AnimationController<>(name, parameters, compiledStateMachines, switchableAnimations, loopAnimations, poseGraph);
     }
 }

@@ -1,4 +1,14 @@
-// 已不再使用，仅作示例
+function handleShoot(context) {
+    let event = context.consumeEvent();
+    const runner = context.getAnimationRunners();
+    while (event) {
+        runner.pushAnimation("turret_shoot", "play_once_stop");
+        event = context.consumeEvent();
+    }
+}
+
+
+// 以下部分已不再使用，仅作示例
 function prepareBones(context) {
     // Create pose helper
     const builder = createPoseBuilder();

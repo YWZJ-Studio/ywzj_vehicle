@@ -7,7 +7,7 @@ public final class ScriptContextFactory extends ContextFactory {
     static {
         // 限制脚本能够访问的类
         // todo 抛个事件，可以允许附属扩展，暂时先这样
-        ClassShutter shutter = className -> className.startsWith("org.ywzj.vehicle");
+        ClassShutter shutter = className -> className.startsWith("org.ywzj.vehicle") || className.equals("java.lang.String");
         INSTANCE = new ScriptContextFactory(null, shutter);
     }
 

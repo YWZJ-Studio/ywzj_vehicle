@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.render.animation.graph;
 
+import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.statemachine.AnimationStateMachine;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
@@ -18,7 +19,7 @@ public class StateMachineNode implements PoseNode {
     public Pose evaluate(IAnimationInstance<?> context) {
         AnimationStateMachine<?> stateMachine = context.getStateMachine(stateMachineName);
         if (stateMachine == null) {
-            return null;
+            return DummyPose.INSTANCE;
         }
         return stateMachine.getPose();
     }

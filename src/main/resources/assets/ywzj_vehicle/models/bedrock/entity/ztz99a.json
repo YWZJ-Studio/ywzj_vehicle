@@ -6,9 +6,9 @@
 				"identifier": "geometry.unknown",
 				"texture_width": 512,
 				"texture_height": 512,
-				"visible_bounds_width": 16,
-				"visible_bounds_height": 5.5,
-				"visible_bounds_offset": [0, 2.25, 0]
+				"visible_bounds_width": 18,
+				"visible_bounds_height": 7,
+				"visible_bounds_offset": [0, 1.5, 0]
 			},
 			"bones": [
 				{
@@ -10754,6 +10754,57 @@
 								"west": {"uv": [238, 372], "uv_size": [9, 3]},
 								"up": {"uv": [244, 323], "uv_size": [-8, -9]},
 								"down": {"uv": [285, 315], "uv_size": [-8, 9]}
+							}
+						}
+					]
+				},
+				{
+					"name": "turret_muzzle_flash",
+					"parent": "canno",
+					"pivot": [0, 30, 117],
+					"cubes": [
+						{
+							"origin": [-40, -9.6, 115.6],
+							"size": [80, 80, 0.02],
+							"uv": {
+								"north": {"uv": [128, 256], "uv_size": [-128, 128]},
+								"south": {"uv": [0, 256], "uv_size": [128, 128]}
+							}
+						},
+						{
+							"origin": [-84, -9.6, 113.6],
+							"size": [80, 80, 0.02],
+							"uv": {
+								"north": {"uv": [256, 0], "uv_size": [-256, 256]},
+								"south": {"uv": [0, 0], "uv_size": [256, 256]}
+							}
+						},
+						{
+							"origin": [12, -9.6, 113.6],
+							"size": [80, 80, 0.02],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [256, 256]},
+								"south": {"uv": [256, 0], "uv_size": [-256, 256]}
+							}
+						},
+						{
+							"origin": [-56, -25.6, 164.6],
+							"size": [112, 112, 0.02],
+							"pivot": [0, 30.4, 164.61],
+							"rotation": [-45, -90, 0],
+							"uv": {
+								"north": {"uv": [256, 0], "uv_size": [256, 256]},
+								"south": {"uv": [512, 0], "uv_size": [-256, 256]}
+							}
+						},
+						{
+							"origin": [-56, -25.6, 164.6],
+							"size": [112, 112, 0.02],
+							"pivot": [0, 30.4, 164.61],
+							"rotation": [0, -90, 45],
+							"uv": {
+								"north": {"uv": [256, 0], "uv_size": [256, 256]},
+								"south": {"uv": [512, 0], "uv_size": [-256, 256]}
 							}
 						}
 					]

@@ -1,11 +1,11 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,13 +18,14 @@ public class BaseDisplay {
 
     protected ResourceLocation displayId;
     protected ResourceLocation modelPath;
-    protected BedrockModel model;
+    protected VehicleBedrockModel model;
     protected ResourceLocation texture;
     protected ResourceLocation slotTexture;
     protected Map<String, BedrockAnimation> animations = Map.of();
     protected ResourceLocation animationControllerRef;
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
     protected String description;
+    protected List<SpecialBoneEffect> specialBoneEffects = new ArrayList<>();
 
     public BaseDisplay() {}
 
@@ -35,7 +36,14 @@ public class BaseDisplay {
     public BaseDisplay(BaseDisplayPojo pojo) {
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
-        modelPojo.ifPresent(bedrockModelPOJO -> this.model = new BedrockModel(bedrockModelPOJO));
+
+        if (pojo.specialBoneEffects != null && !pojo.specialBoneEffects.isEmpty()) {
+            this.specialBoneEffects = pojo.specialBoneEffects;
+            modelPojo.ifPresent(bedrockModelPOJO ->
+                this.model = new VehicleBedrockModel(bedrockModelPOJO, pojo.specialBoneEffects));
+        } else {
+            modelPojo.ifPresent(bedrockModelPOJO -> this.model = new VehicleBedrockModel(bedrockModelPOJO, List.of()));
+        }
 
         this.texture = pojo.texture;
         this.slotTexture = pojo.slotTexture;
@@ -83,7 +91,7 @@ public class BaseDisplay {
         return slotTexture;
     }
 
-    public BedrockModel getModel() {
+    public VehicleBedrockModel getModel() {
         return model;
     }
 
@@ -103,4 +111,7 @@ public class BaseDisplay {
         return description;
     }
 
+    public List<SpecialBoneEffect> getSpecialBoneEffects() {
+        return specialBoneEffects;
+    }
 }

@@ -4,9 +4,10 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.SimpleAn
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.SimpleTransition;
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
-import org.mozillaa.javascript.Script;
+import org.mozillaa.javascript.Wrapper;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.controller.CompiledStateMachine;
+import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
 import org.ywzj.vehicle.client.resource.animation.EvaluateConfig;
 import org.ywzj.vehicle.client.resource.animation.StateDefinition;
 import org.ywzj.vehicle.client.resource.animation.StateMachineDefinition;
@@ -34,14 +35,13 @@ public class StateMachineCompiler {
 
     public <T extends BaseAnimationContext> CompiledStateMachine<T> compile(StateMachineDefinition definition) {
         String name = definition.getName();
-        Map<String, Script> compiledScripts = new HashMap<>();
 
         // Step 1: Compile all states
         Map<String, SimpleAnimationState<T>> stateMap = new HashMap<>();
         for (Map.Entry<String, StateDefinition> entry : definition.getStates().entrySet()) {
             String stateName = entry.getKey();
             StateDefinition stateDef = entry.getValue();
-            SimpleAnimationState<T> state = compileState(stateDef, stateName);
+            SimpleAnimationState<T> state = compileState(stateDef);
             stateMap.put(stateName, state);
         }
 
@@ -68,8 +68,7 @@ public class StateMachineCompiler {
         return new CompiledStateMachine<>(name, entryState);
     }
 
-    private <T extends BaseAnimationContext> SimpleAnimationState<T> compileState(
-            StateDefinition stateDef, String stateName) {
+    private <T extends BaseAnimationContext> SimpleAnimationState<T> compileState(StateDefinition stateDef) {
 
         SimpleAnimationState.Builder<T> builder = new SimpleAnimationState.Builder<>();
 
@@ -133,17 +132,20 @@ public class StateMachineCompiler {
                 if (scriptCode == null || scriptCode.isEmpty()) {
                     throw new IllegalArgumentException("Script evaluate requires script code");
                 }
-                Script compiledScript = scriptCompiler.compile(scriptCode);
+                org.mozillaa.javascript.Function compiledFunction = scriptCompiler.compile(scriptCode);
                 yield context -> {
-                    Object result = scriptCompiler.execute(compiledScript, context);
-                    if (result instanceof Pose pose) {
-                        return pose;
+                    Object result = scriptCompiler.execute(compiledFunction, context);
+                    if (result instanceof Wrapper wrapper) {
+                        result = wrapper.unwrap();
+                    }
+                    if (result instanceof PoseHelper helper) {
+                        return helper.build();
                     }
                     return DummyPose.INSTANCE;
                 };
             }
             // 取得特定轨道的动画输出
-            case "runner" -> {
+            case "track" -> {
                 String track = evaluateConfig.getTrack();
                 if (track == null) {
                     throw new IllegalArgumentException("Runner evaluate requires 'track' field");

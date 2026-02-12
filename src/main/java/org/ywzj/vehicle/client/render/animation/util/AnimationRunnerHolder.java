@@ -114,12 +114,36 @@ public class AnimationRunnerHolder implements Tickable {
     }
 
     /**
+     * 使用自动分配轨道播放动画
+     * @param animationName 动画名称
+     * @param type 播放类型
+     */
+    public void pushAnimation(String animationName, @NotNull String type) {
+        AnimationPlayType playType = AnimationPlayType.fromString(type);
+        if (playType != null) {
+            pushAnimation(animationName, playType);
+        }
+    }
+
+    /**
      * 使用自动混合轨道播放动画
      * @param animation 动画对象
      * @param type 播放类型
      */
     public void pushAnimation(BedrockAnimation animation, @NotNull AnimationPlayType type) {
         multiAnimationRunner.play(animation, type.state());
+    }
+
+    public PoseHelper getTrackPose(String track) {
+        AnimationRunner runner = namedRunner.get(track);
+        if (runner != null) {
+            return new PoseHelper(runner.evaluate());
+        }
+        return PoseHelper.DUMMY;
+    }
+
+    public PoseHelper getMultiRunnerPose() {
+        return new PoseHelper(multiAnimationRunner.evaluatePose());
     }
 
     /**
