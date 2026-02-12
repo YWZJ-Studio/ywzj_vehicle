@@ -457,8 +457,8 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
 
         for (VehicleCubeOBB.CubePoint point : surfacePoints) {
-            Vector3f worldPos = point.worldPos(axes);
-            BlockPos blockPos = BlockPos.containing(new Vec3(worldPos));
+            Vec3 worldPos = new Vec3(point.worldPos(axes));
+            BlockPos blockPos = BlockPos.containing(worldPos);
 
             // 调试
 //            DebugUtil.particle(level(), new Vec3(worldPos), point.cubeFace());

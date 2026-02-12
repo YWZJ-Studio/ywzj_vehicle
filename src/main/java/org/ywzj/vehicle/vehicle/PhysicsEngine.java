@@ -515,6 +515,9 @@ public class PhysicsEngine {
     }
 
     private boolean isHalfBlock(VehicleCubeOBB.CubePoint cubePoint) {
+        if (cubePoint.cubePointContext.blockState() == null) {
+            return false;
+        }
         return cubePoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
                 || cubePoint.cubePointContext.blockState().getBlock() instanceof SlabBlock;
     }

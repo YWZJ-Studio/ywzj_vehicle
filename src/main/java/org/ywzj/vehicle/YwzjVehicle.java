@@ -11,6 +11,7 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ywzj.vehicle.all.*;
+import org.ywzj.vehicle.compat.CreateCompat;
 import org.ywzj.vehicle.compat.SuperbWarfareCompat;
 import org.ywzj.vehicle.compat.ValkyrienSkiesCompat;
 import org.ywzj.vehicle.network.Channel;
@@ -52,6 +53,7 @@ public class YwzjVehicle {
     public void initCompat() {
         SuperbWarfareCompat.init();
         ValkyrienSkiesCompat.init();
+        CreateCompat.init();
     }
 
     @SuppressWarnings("removal")
