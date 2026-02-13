@@ -36,6 +36,8 @@ public class VehicleAnimationInstance<T extends BaseAnimationContext> implements
         }
         if (context != null) {
             context.tick();
+            // 此帧结束，清除事件
+            context.clearEvents();
         }
     }
 

@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -50,22 +49,6 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
             }
         }
         return 0;
-    }
-
-    // ========== Tracked Vehicle Methods ==========
-
-    public float getForwardSpeed() {
-        if (getEntity() instanceof TrackedVehicle tracked) {
-            return tracked.getForwardSpeed();
-        }
-        return 0f;
-    }
-
-    public float getTurnSpeed() {
-        if (getEntity() instanceof TrackedVehicle tracked) {
-            return tracked.getTurnSpeed();
-        }
-        return 0f;
     }
 
     // ========== Utility Methods ==========

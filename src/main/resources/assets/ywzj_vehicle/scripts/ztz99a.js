@@ -1,9 +1,7 @@
 function handleShoot(context) {
-    let event = context.consumeEvent();
     const runner = context.getAnimationRunners();
-    while (event) {
+    if (context.hasEvent("fire")) {
         runner.pushAnimation("turret_shoot", "play_once_stop");
-        event = context.consumeEvent();
     }
 }
 

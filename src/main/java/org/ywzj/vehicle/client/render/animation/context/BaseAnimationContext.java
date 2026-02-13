@@ -5,9 +5,9 @@ import org.ywzj.vehicle.client.render.animation.util.AnimationRunnerHolder;
 import org.ywzj.vehicle.client.render.animation.util.LoopAnimationRunner;
 import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,17 +27,21 @@ public abstract class BaseAnimationContext {
     // 可用动画
     private Map<String, BedrockAnimation> animations;
 
-    private final Queue<String> eventQueue = new LinkedList<>();
+    private final Set<String> events = new HashSet<>();
 
     public BaseAnimationContext() {
     }
 
     public void offerEvent(String event) {
-        eventQueue.offer(event);
+        events.add(event);
     }
 
-    public String consumeEvent() {
-        return eventQueue.poll();
+    public boolean hasEvent(String event) {
+        return events.contains(event);
+    }
+
+    public void clearEvents() {
+        events.clear();
     }
 
     public void setPartialTick(float partialTick) {

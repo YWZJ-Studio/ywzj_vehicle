@@ -1,6 +1,9 @@
 package org.ywzj.vehicle.client.render.item;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.model.SlotModel;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -34,11 +37,33 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.item.FigureBoxItem;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.TimeUnit;
 
 public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static final SlotModel VEHICLE_SLOT_MODEL = new SlotModel();
     private final FigureBoxBlockEntity figureBoxBlockEntity = new FigureBoxBlockEntity(BlockPos.ZERO, Blocks.AIR.defaultBlockState());
+    private final LoadingCache<ItemStack, Entity> entityCache = CacheBuilder.newBuilder()
+            .weakKeys()
+            .maximumSize(50)
+            .expireAfterAccess(60, TimeUnit.SECONDS)
+            .build(new CacheLoader<>() {
+                @Override
+                public Entity load(ItemStack stack) {
+                    CompoundTag tag = stack.getOrCreateTag();
+                    String entityId = tag.getString("entityId");
+                    CompoundTag entityData = tag.getCompound("entityData");
+                    EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
+                    if (type != null) {
+                        Entity entity = type.create(Minecraft.getInstance().level);
+                        if (entity != null) {
+                            entity.load(entityData);
+                        }
+                        return entity;
+                    }
+                    return null;
+                }
+            });
 
     public FigureBoxItemRenderer(BlockEntityRenderDispatcher pBlockEntityRenderDispatcher, EntityModelSet pEntityModelSet) {
         super(pBlockEntityRenderDispatcher, pEntityModelSet);
@@ -66,12 +91,12 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                 blockDispatcher.renderSingleBlock(state, poseStack, pBuffer, pPackedLight, pPackedOverlay, ModelData.EMPTY, null);
                 CompoundTag tag = itemStack.getOrCreateTag();
                 if (tag.contains("entityId") && tag.contains("entityData")) {
-                    String entityId = tag.getString("entityId");
-                    CompoundTag entityData = tag.getCompound("entityData");
-                    EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
-                    if (type != null) {
-                        Entity entity = type.create(Minecraft.getInstance().level);
-                        entity.load(entityData);
+                    try {
+                        Entity entity = entityCache.getUnchecked(itemStack);
+                        if (entity == null) {
+                            poseStack.popPose();
+                            return;
+                        }
                         if (entity instanceof AbstractVehicle vehicle && isGui) {
                             ResourceLocation vehicleId = vehicle.getVehicleId();
                             BaseDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
@@ -94,6 +119,7 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         if (renderer != null) {
                             renderer.render(figureBoxBlockEntity, 0.0f, poseStack, pBuffer, pPackedLight, pPackedOverlay);
                         }
+                    } catch (Exception ignore) {
                     }
                 }
             }

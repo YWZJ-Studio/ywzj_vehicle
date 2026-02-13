@@ -22,7 +22,7 @@ public interface AnimationContextFactory<E extends Entity, CTX extends EntityCon
     /**
      * Factory for vehicle contexts
      */
-    static <V extends AbstractVehicle> AnimationContextFactory<V, VehicleContext<V>> vehicle() {
+    static <E extends AbstractVehicle> AnimationContextFactory<E, VehicleContext<E>> vehicle() {
         return VehicleContext::new;
     }
 
