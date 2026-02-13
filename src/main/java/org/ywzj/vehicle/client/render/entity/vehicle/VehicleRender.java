@@ -61,7 +61,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
 
             VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-            model.renderSpecialBones(pPoseStack, bufferSource, LightTexture.pack(16, 16), OverlayTexture.NO_OVERLAY);
+            model.renderSpecialBones(pPoseStack, bufferSource, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
 
             model.applyPose(model.getBindPose());
             vehicle.lastRenderTime = System.currentTimeMillis();
