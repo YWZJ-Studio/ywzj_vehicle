@@ -697,43 +697,62 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
+    @Override
+    protected void addPassenger(Entity pPassenger) {
+        if (pPassenger instanceof LivingEntity livingEntity) {
+            onEnterVehicle(livingEntity);
+            super.addPassenger(pPassenger);
+        }
+    }
+
+    @Override
+    protected void removePassenger(Entity pPassenger) {
+        if (pPassenger instanceof LivingEntity livingEntity) {
+            onLeaveVehicle(livingEntity);
+            super.removePassenger(pPassenger);
+        }
+    }
+
     public void onEnterVehicle(LivingEntity livingEntity) {
         if (!level().isClientSide()) {
             ServerLevel serverLevel = (ServerLevel) level();
             Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
-            if (emptySeatOptional.isPresent()) {
-                Seat seat = emptySeatOptional.get();
-                if (seat.seatIndex == 0) {
-                    controlUnit.setOperator(livingEntity);
-                    toggleEngine(true);
-                    partUnits.forEach(partUnit -> {
-                        if (partUnit instanceof DoorUnit doorUnit) {
-                            doorUnit.setOn(false);
-                        }
-                    });
-                }
-                seat.partUnit.setOwner(livingEntity);
-                seat.passengerId = livingEntity.getId();
-                for (ServerPlayer serverPlayer : serverLevel.players()) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
-                }
+            if (!emptySeatOptional.isPresent()) {
+                return;
             }
+            Seat seat = emptySeatOptional.get();
+            if (seat.seatIndex == 0) {
+                controlUnit.setOperator(livingEntity);
+                toggleEngine(true);
+                partUnits.forEach(partUnit -> {
+                    if (partUnit instanceof DoorUnit doorUnit) {
+                        doorUnit.setOn(false);
+                    }
+                });
+            }
+            seat.partUnit.setOwner(livingEntity);
+            seat.passengerId = livingEntity.getId();
+            for (ServerPlayer serverPlayer : serverLevel.players()) {
+                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
+            }
+        } else {
+            livingEntity.setSprinting(false);
         }
-        livingEntity.setSprinting(false);
     }
 
     public void onLeaveVehicle(LivingEntity pPassenger) {
         if (!level().isClientSide()) {
             Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
-            if (ownSeat.isPresent()) {
-                Seat seat = ownSeat.get();
-                if (seat.seatIndex == 0) {
-                    controlUnit.setOperator(null);
-                }
-                seat.partUnit.setOwner(null);
-                seat.passengerId = -1;
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+            if (!ownSeat.isPresent()) {
+                return;
             }
+            Seat seat = ownSeat.get();
+            if (seat.seatIndex == 0) {
+                controlUnit.setOperator(null);
+            }
+            seat.partUnit.setOwner(null);
+            seat.passengerId = -1;
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
@@ -829,7 +848,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     @Override
     protected boolean canAddPassenger(@NotNull Entity pPassenger) {
-        return seats.stream().anyMatch(seat -> seat.passengerId == pPassenger.getId());
+        return seats.stream().anyMatch(seat -> seat.passengerId == -1);
     }
 
     @Override
@@ -937,6 +956,15 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
 
     public LivingEntity getDriver() {
         return controlUnit.getOperator();
+    }
+
+    @Override
+    public LivingEntity getControllingPassenger() {
+        if (level().isClientSide()) {
+            return null;
+        } else {
+            return getDriver();
+        }
     }
 
     public PartUnit<?> getOwnOperatorUnit(LivingEntity pPassenger) {

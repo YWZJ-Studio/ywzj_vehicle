@@ -122,21 +122,15 @@ public class AllEvents {
             if (event.getEntityBeingMounted() instanceof AbstractVehicle vehicle && event.getEntityMounting() instanceof LivingEntity livingEntity) {
                 if (event.isMounting()) {
                     if (livingEntity instanceof ServerPlayer serverPlayer) {
-                        if (serverPlayer.isShiftKeyDown()) {
-                            event.setCanceled(true);
-                            return;
-                        }
                         if (AllConfigs.common.checkTeamOnEnterVehicle.get() && serverPlayer.getTeam() != null) {
                             if (vehicle.getPassengers().stream()
                                     .anyMatch(entity -> entity instanceof ServerPlayer passenger
                                             && passenger.getTeam() != null
                                             && !passenger.getTeam().equals(serverPlayer.getTeam()))) {
                                 event.setCanceled(true);
-                                return;
                             }
                         }
                     }
-                    vehicle.onEnterVehicle(livingEntity);
                 } else {
                     if (!event.getLevel().isClientSide()) {
                         DoorUnit doorUnit = vehicle.getNearestDoorUnit(livingEntity);
@@ -144,7 +138,6 @@ public class AllEvents {
                             doorUnit.setOn(true);
                         }
                     }
-                    vehicle.onLeaveVehicle(livingEntity);
                 }
             }
         }

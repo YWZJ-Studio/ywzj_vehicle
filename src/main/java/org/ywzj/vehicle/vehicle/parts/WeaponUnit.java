@@ -375,6 +375,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Vec2 aimRot(Vec3 worldPosition) {
+        if (xTurnGroup == null) {
+            return new Vec2(0, 0);
+        }
         Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().offset()), false);
         Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
         return vecToRot(worldAim);
