@@ -26,10 +26,20 @@ public abstract class BaseAnimationContext {
     private final Map<String, LoopAnimationRunner> loopRunners = new ConcurrentHashMap<>();
     // 可用动画
     private Map<String, BedrockAnimation> animations;
+    // 脚本自定义变量
+    private Object scriptParam;
 
     private final Set<String> events = new HashSet<>();
 
     public BaseAnimationContext() {
+    }
+
+    public void saveScriptParam(Object param) {
+        this.scriptParam = param;
+    }
+
+    public Object getScriptParam() {
+        return scriptParam;
     }
 
     public void offerEvent(String event) {

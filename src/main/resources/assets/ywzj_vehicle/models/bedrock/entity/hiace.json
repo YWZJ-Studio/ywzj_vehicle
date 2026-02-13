@@ -3058,10 +3058,15 @@
 					]
 				},
 				{
-					"name": "control",
+					"name": "control1",
 					"parent": "main",
 					"pivot": [-7.17754, 24.55379, 32.83606],
-					"rotation": [90, 65, 90],
+					"rotation": [90, 65, 90]
+				},
+				{
+					"name": "control",
+					"parent": "control1",
+					"pivot": [-7.17754, 24.55379, 32.83606],
 					"cubes": [
 						{
 							"origin": [-9.13328, 23.95379, 28.27032],

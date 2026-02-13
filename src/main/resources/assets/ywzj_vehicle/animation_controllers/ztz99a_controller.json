@@ -43,28 +43,27 @@
             {
               // 骨骼绑定 pose
               "type": "bone_binding",
-              // 特殊绑定，仅履带载具有效
-              "wheel_bindings": [
+              "special_bindings": [
                 {
                   "bones": [
                     "hull_big_0", "hull_big_1", "hull_big_2", "hull_big_3", "hull_big_4",
                     "hull_big_5", "hull_big_6", "hull_big_7", "hull_big_8", "hull_big_9"
                   ],
-                  "side": "left",
-                  "radius": 0.375,
-                  "axis": "x"
+                  "source": "left_wheel_rotation",
+                  "axis": "x",
+                  "param": 0.375
                 },
                 {
                   "bones": ["hull_big_10", "hull_big_11", "hull_big_12"],
-                  "side": "right",
-                  "radius": 0.375,
-                  "axis": "x"
+                  "source": "right_wheel_rotation",
+                  "axis": "x",
+                  "param": 0.375
                 },
                 {
                   "bones": ["hull_small_0", "hull_small_1", "hull_small_2", "hull_small_3", "hull_small_4"],
-                  "side": "left",
-                  "radius": 0.28,
-                  "axis": "x"
+                  "source": "left_wheel_rotation",
+                  "axis": "x",
+                  "param": 0.28
                 }
               ],
               // 常规的绑定

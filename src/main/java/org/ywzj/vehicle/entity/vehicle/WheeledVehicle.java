@@ -16,7 +16,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -26,7 +26,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<WheeledVehicle, VehicleContext<WheeledVehicle>> {
+public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<WheeledVehicle, WheeledVehicleContext> {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_ANGLE = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
@@ -46,14 +46,14 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     private VehicleSound engineRunSoundInstance;
     private VehicleSound tireSquealSoundInstance;
 
-    private IAnimationInstance<VehicleContext<WheeledVehicle>> animationInstance;
+    private IAnimationInstance<WheeledVehicleContext> animationInstance;
 
     public WheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
     @Override
-    public IAnimationInstance<VehicleContext<WheeledVehicle>> getAnimationInstance() {
+    public IAnimationInstance<WheeledVehicleContext> getAnimationInstance() {
         return animationInstance;
     }
 

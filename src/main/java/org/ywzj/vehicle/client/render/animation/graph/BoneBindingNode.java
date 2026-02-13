@@ -6,6 +6,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
 
 import java.util.*;
 
@@ -15,15 +16,15 @@ import java.util.*;
  */
 public class BoneBindingNode implements PoseNode {
     
-    private final List<CachedWheelBinding> cachedWheelBindings;
+    private final List<CachedSpecialBinding> cachedSpecialBindings;
     private final List<CachedPartBinding> cachedPartBindings;
     private final int[] sortedBoneIndices;
     private final int[] indexToArrayPos;
 
-    public BoneBindingNode(List<WheelBinding> wheelBindings, List<PartBinding> partBindings, BoneIndexProvider boneIndexProvider) {
-        // Pre-compile wheel bindings with bone indices
-        this.cachedWheelBindings = compileWheelBindings(
-            wheelBindings != null ? wheelBindings : List.of(), 
+    public BoneBindingNode(List<SpecialBinding> specialBindings, List<PartBinding> partBindings, BoneIndexProvider boneIndexProvider) {
+        // Pre-compile special bindings with bone indices
+        this.cachedSpecialBindings = compileSpecialBindings(
+            specialBindings != null ? specialBindings : List.of(), 
             boneIndexProvider
         );
         
@@ -35,7 +36,7 @@ public class BoneBindingNode implements PoseNode {
         
         // Collect all unique bone indices and sort them
         Set<Integer> boneIndexSet = new HashSet<>();
-        for (CachedWheelBinding binding : cachedWheelBindings) {
+        for (CachedSpecialBinding binding : cachedSpecialBindings) {
             for (int idx : binding.boneIndices) {
                 boneIndexSet.add(idx);
             }
@@ -65,10 +66,10 @@ public class BoneBindingNode implements PoseNode {
     }
 
     /**
-     * Compile wheel bindings: resolve bone names to indices once at construction time
+     * Compile special bindings: resolve bone names to indices once at construction time
      */
-    private static List<CachedWheelBinding> compileWheelBindings(
-            List<WheelBinding> bindings, 
+    private static List<CachedSpecialBinding> compileSpecialBindings(
+            List<SpecialBinding> bindings, 
             BoneIndexProvider provider) {
         return bindings.stream()
             .map(binding -> {
@@ -76,11 +77,14 @@ public class BoneBindingNode implements PoseNode {
                     .mapToInt(provider::getIndex)
                     .filter(idx -> idx >= 0)
                     .toArray();
-                return new CachedWheelBinding(
+                return new CachedSpecialBinding(
                     indices,
-                    binding.side,
-                    binding.radius,
-                    parseAxis(binding.axis)
+                    binding.source,
+                    parseAxis(binding.axis),
+                    binding.multiplier,
+                    binding.min,
+                    binding.max,
+                    binding.param
                 );
             })
             .toList();
@@ -111,11 +115,14 @@ public class BoneBindingNode implements PoseNode {
     }
 
     private static int parseAxis(String axis) {
+        if (axis == null) {
+            return -1;
+        }
         return switch (axis) {
             case "x" -> 0;
             case "y" -> 1;
             case "z" -> 2;
-            default -> 0;
+            default -> -1;
         };
     }
 
@@ -123,11 +130,9 @@ public class BoneBindingNode implements PoseNode {
     public Pose evaluate(IAnimationInstance<?> context) {
         OptimizedPoseBuilder builder = new OptimizedPoseBuilder(sortedBoneIndices, indexToArrayPos);
         
-        // Apply wheel bindings
-        if (context.getContext() instanceof TrackedVehicleContext trackedContext) {
-            for (CachedWheelBinding binding : cachedWheelBindings) {
-                applyWheelBinding(builder, trackedContext, binding);
-            }
+        // Apply special bindings
+        for (CachedSpecialBinding binding : cachedSpecialBindings) {
+            applySpecialBinding(builder, context, binding);
         }
 
         if (context.getContext() instanceof VehicleContext<?> vehicleContext) {
@@ -140,16 +145,70 @@ public class BoneBindingNode implements PoseNode {
         return builder.build();
     }
 
-    private void applyWheelBinding(OptimizedPoseBuilder builder, TrackedVehicleContext context, CachedWheelBinding binding) {
-        float angle = switch (binding.side) {
-            case "left" -> context.getLeftWheelDegrees(binding.radius);
-            case "right" -> context.getRightWheelDegrees(binding.radius);
+    private void applySpecialBinding(OptimizedPoseBuilder builder, IAnimationInstance<?> context, CachedSpecialBinding binding) {
+        if (binding.source == null || binding.source.isEmpty()) {
+            return;
+        }
+        
+        float value = getValueFromSource(context, binding.source, binding.param);
+        
+        // Apply multiplier
+        value *= binding.multiplier;
+        
+        // Apply constraints
+        if (binding.min != null) {
+            value = Math.max(binding.min, value);
+        }
+        if (binding.max != null) {
+            value = Math.min(binding.max, value);
+        }
+        
+        // Apply to all bones
+        if (binding.axis >= 0) {
+            for (int boneIndex : binding.boneIndices) {
+                builder.setRotation(boneIndex, binding.axis, value);
+            }
+        }
+    }
+    
+    /**
+     * Get value from data source based on context type
+     */
+    private float getValueFromSource(IAnimationInstance<?> context, String source, Float param) {
+        Object ctx = context.getContext();
+        float paramValue = param != null ? param : 0f;
+        
+        return switch (source) {
+            // Wheeled vehicle sources
+            case "wheel_rotation" -> {
+                if (ctx instanceof WheeledVehicleContext wheeledCtx) {
+                    yield wheeledCtx.getWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+                }
+                yield 0f;
+            }
+            case "steering_angle" -> {
+                if (ctx instanceof WheeledVehicleContext wheeledCtx) {
+                    yield wheeledCtx.getSteeringAngle();
+                }
+                yield 0f;
+            }
+            
+            // Tracked vehicle sources
+            case "left_wheel_rotation" -> {
+                if (ctx instanceof TrackedVehicleContext trackedCtx) {
+                    yield trackedCtx.getLeftWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+                }
+                yield 0f;
+            }
+            case "right_wheel_rotation" -> {
+                if (ctx instanceof TrackedVehicleContext trackedCtx) {
+                    yield trackedCtx.getRightWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+                }
+                yield 0f;
+            }
+            
             default -> 0f;
         };
-        
-        for (int boneIndex : binding.boneIndices) {
-            builder.setRotation(boneIndex, binding.axis, angle);
-        }
     }
 
     private void applyPartBinding(OptimizedPoseBuilder builder, VehicleContext<?> context, CachedPartBinding binding) {
@@ -166,11 +225,14 @@ public class BoneBindingNode implements PoseNode {
         builder.setRotation(binding.boneIndex, binding.axis, rotation);
     }
 
-    public static class WheelBinding {
+    public static class SpecialBinding {
         public List<String> bones;
-        public String side; // "left" or "right"
-        public float radius;
-        public String axis; // "x", "y", or "z"
+        public String source; // Data source: "wheel_rotation", "steering_angle", "left_wheel_rotation", "right_wheel_rotation"
+        public String axis; // "x", "y", or "z" - rotation axis
+        public float multiplier = 1.0f; // Multiplier for the value
+        public Float min; // Minimum constraint (optional)
+        public Float max; // Maximum constraint (optional)
+        public Float param; // Parameter for the source (e.g., wheel radius)
     }
 
     public static class PartBinding {
@@ -181,11 +243,14 @@ public class BoneBindingNode implements PoseNode {
         public boolean invert;
     }
 
-    private record CachedWheelBinding(
+    private record CachedSpecialBinding(
         int[] boneIndices,
-        String side,
-        float radius,
-        int axis // 0=x, 1=y, 2=z
+        String source,
+        int axis, // 0=x, 1=y, 2=z, -1=none
+        float multiplier,
+        Float min,
+        Float max,
+        Float param
     ) {}
 
     private record CachedPartBinding(

@@ -1,6 +1,6 @@
 {
-  "name": "ztz99a_controller",
-  "script": "ywzj_vehicle:ztz99a",
+  "name": "hiace_controller",
+  "script": "ywzj_vehicle:hiace",
   "parameters": {},
   "switchable_animations": {
     "front_door_left": {
@@ -24,6 +24,36 @@
     // 合并节点
     "type": "merge",
     "inputs": [
+      {
+        // 骨骼绑定 pose - 轮胎旋转和转向
+        "type": "bone_binding",
+        "special_bindings": [
+          {
+            "bones": ["wheel1", "wheel2"],
+            "source": "wheel_rotation",
+            "axis": "x",
+            "param": 0.35
+          },
+          {
+            "bones": ["wheel1", "wheel2"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": 1.0,
+            "min": -30.0,
+            "max": 30.0
+          },
+          {
+            "bones": ["wheel3", "wheel4"],
+            "source": "wheel_rotation",
+            "axis": "x",
+            "param": 0.35
+          }
+        ]
+      },
+      {
+        "type": "script",
+        "function": "rotControl"
+      },
       {
         "type": "switchable_animation",
         "ref": "front_door_left"

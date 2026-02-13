@@ -36,7 +36,7 @@ public class AllDisplayTypes {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new WheeledVehicleDisplay(pojo);
             },
-            AnimationContextFactory.vehicle()
+            AnimationContextFactory.wheeledVehicle()
     );
 
     public static final RegistryObject<VehicleDisplayType<TrackedVehicleDisplay>> TRACKED_VEHICLE = register(

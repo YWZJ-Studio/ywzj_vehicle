@@ -3,6 +3,7 @@ package org.ywzj.vehicle.client.render.animation.context;
 import net.minecraft.world.entity.Entity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
+import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
 /**
  * Factory for creating animation contexts for specific entity types.
@@ -28,6 +29,10 @@ public interface AnimationContextFactory<E extends Entity, CTX extends EntityCon
 
     static AnimationContextFactory<TrackedVehicle, TrackedVehicleContext> trackedVehicle() {
         return TrackedVehicleContext::new;
+    }
+
+    static AnimationContextFactory<WheeledVehicle, WheeledVehicleContext> wheeledVehicle() {
+        return WheeledVehicleContext::new;
     }
     
     /**

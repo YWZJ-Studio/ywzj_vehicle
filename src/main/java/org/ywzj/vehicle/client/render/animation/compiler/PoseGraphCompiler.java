@@ -192,18 +192,21 @@ public class PoseGraphCompiler {
      * Compile bone_binding node
      */
     private PoseNode compileBoneBindingNode(PoseNodeDefinition definition, BoneIndexProvider boneIndexProvider) {
-        List<BoneBindingNode.WheelBinding> wheelBindings = new ArrayList<>();
+        List<BoneBindingNode.SpecialBinding> specialBindings = new ArrayList<>();
         List<BoneBindingNode.PartBinding> partBindings = new ArrayList<>();
 
-        // Compile wheel bindings
-        if (definition.getWheelBindings() != null) {
-            for (PoseNodeDefinition.WheelBindingDefinition def : definition.getWheelBindings()) {
-                BoneBindingNode.WheelBinding binding = new BoneBindingNode.WheelBinding();
+        // Compile special bindings
+        if (definition.getSpecialBindings() != null) {
+            for (PoseNodeDefinition.SpecialBindingDefinition def : definition.getSpecialBindings()) {
+                BoneBindingNode.SpecialBinding binding = new BoneBindingNode.SpecialBinding();
                 binding.bones = def.getBones();
-                binding.side = def.getSide();
-                binding.radius = def.getRadius();
+                binding.source = def.getSource();
                 binding.axis = def.getAxis();
-                wheelBindings.add(binding);
+                binding.multiplier = def.getMultiplier();
+                binding.min = def.getMin();
+                binding.max = def.getMax();
+                binding.param = def.getParam();
+                specialBindings.add(binding);
             }
         }
 
@@ -220,7 +223,7 @@ public class PoseGraphCompiler {
             }
         }
 
-        return new BoneBindingNode(wheelBindings, partBindings, boneIndexProvider);
+        return new BoneBindingNode(specialBindings, partBindings, boneIndexProvider);
     }
 
     /**

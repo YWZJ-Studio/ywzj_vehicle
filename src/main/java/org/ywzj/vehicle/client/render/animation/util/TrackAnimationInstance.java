@@ -1,11 +1,7 @@
 package org.ywzj.vehicle.client.render.animation.util;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
-import com.maydaymemory.mae.basic.ArrayPoseBuilder;
 import com.maydaymemory.mae.basic.Pose;
-import com.maydaymemory.mae.basic.ZYXBoneTransformFactory;
-import com.maydaymemory.mae.blend.EulerAdditiveBlender;
-import com.maydaymemory.mae.blend.SimpleEulerAdditiveBlender;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 
@@ -17,8 +13,6 @@ import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.MERGE_B
  * 一个简单的履带动画实例，包含左右履带动画的进度与累计位移计算
  */
 public class TrackAnimationInstance {
-    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
-
     private final AnimationRunner leftTrackRunner;
     private final AnimationRunner rightTrackRunner;
 

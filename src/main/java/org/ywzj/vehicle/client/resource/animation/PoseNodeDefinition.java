@@ -47,8 +47,8 @@ public class PoseNodeDefinition {
     private Object weight;
 
     // For bone_binding node
-    @SerializedName("wheel_bindings")
-    private List<WheelBindingDefinition> wheelBindings;
+    @SerializedName("special_bindings")
+    private List<SpecialBindingDefinition> specialBindings;
 
     @SerializedName("part_bindings")
     private List<PartBindingDefinition> partBindings;
@@ -89,8 +89,8 @@ public class PoseNodeDefinition {
         return weight;
     }
 
-    public List<WheelBindingDefinition> getWheelBindings() {
-        return wheelBindings;
+    public List<SpecialBindingDefinition> getSpecialBindings() {
+        return specialBindings;
     }
 
     public List<PartBindingDefinition> getPartBindings() {
@@ -122,35 +122,57 @@ public class PoseNodeDefinition {
     }
 
     /**
-     * Wheel binding definition for bone_binding node
+     * Special binding definition for bone_binding node
+     * Used for binding bones to dynamic data sources (wheel rotation, steering, etc.)
      */
-    public static class WheelBindingDefinition {
+    public static class SpecialBindingDefinition {
         @SerializedName("bones")
         private List<String> bones;
 
-        @SerializedName("side")
-        private String side;
-
-        @SerializedName("radius")
-        private float radius;
+        @SerializedName("source")
+        private String source;
 
         @SerializedName("axis")
         private String axis;
+
+        @SerializedName("multiplier")
+        private float multiplier = 1.0f;
+
+        @SerializedName("min")
+        private Float min;
+
+        @SerializedName("max")
+        private Float max;
+
+        @SerializedName("param")
+        private Float param;
 
         public List<String> getBones() {
             return bones;
         }
 
-        public String getSide() {
-            return side;
-        }
-
-        public float getRadius() {
-            return radius;
+        public String getSource() {
+            return source;
         }
 
         public String getAxis() {
             return axis;
+        }
+
+        public float getMultiplier() {
+            return multiplier;
+        }
+
+        public Float getMin() {
+            return min;
+        }
+
+        public Float getMax() {
+            return max;
+        }
+
+        public Float getParam() {
+            return param;
         }
     }
 
