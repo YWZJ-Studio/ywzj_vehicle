@@ -2,6 +2,6 @@
   "model": "ywzj_vehicle:entity/bgm_71_tow",
   "texture": "ywzj_vehicle:textures/entity/bgm_71_tow.png",
   "slot_texture": "ywzj_vehicle:textures/slot/bgm_71_tow.png",
-  "script": "ywzj_vehicle:bgm_71_tow",
+  "animation_controller": "ywzj_vehicle:bgm_71_tow_controller",
   "sounds": {}
 }

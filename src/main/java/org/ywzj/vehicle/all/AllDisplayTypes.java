@@ -12,11 +12,11 @@ public class AllDisplayTypes {
 
     public static final DeferredRegister<VehicleDisplayType<?>> VEHICLE_DISPLAY_TYPES = DeferredRegister.create(ModRegistries.VEHICLE_DISPLAY_TYPE, YwzjVehicle.MOD_ID);
 
-    public static final RegistryObject<VehicleDisplayType<BaseDisplay>> GENERIC_VEHICLE = register(
+    public static final RegistryObject<VehicleDisplayType<SimpleVehicleDisplay>> GENERIC_VEHICLE = register(
             "generic",
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
-                return new BaseDisplay(pojo);
+                return new SimpleVehicleDisplay(pojo);
             },
             AnimationContextFactory.vehicle()
     );

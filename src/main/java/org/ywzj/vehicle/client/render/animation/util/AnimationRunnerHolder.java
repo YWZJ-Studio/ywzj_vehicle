@@ -41,10 +41,7 @@ public class AnimationRunnerHolder implements Tickable {
         namedRunner.values().forEach(AnimationRunner::tick);
 
         if (soundProcessor != null) {
-            Iterable<Keyframe<ResourceLocation>> sounds = multiAnimationRunner.clip(BedrockAnimation.SOUND_CHANNEL_NAME);
-            if (sounds != null) {
-                soundProcessor.accept(sounds);
-            }
+            multiAnimationRunner.clip(BedrockAnimation.SOUND_CHANNEL_NAME, soundProcessor);
 
             for (AnimationRunner runner : namedRunner.values()) {
                 Iterable<Keyframe<ResourceLocation>> namedSounds = runner.clip(BedrockAnimation.SOUND_CHANNEL_NAME);

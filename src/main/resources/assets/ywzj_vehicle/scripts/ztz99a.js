@@ -1,3 +1,4 @@
+
 function handleShoot(context) {
     const runner = context.getAnimationRunners();
     if (context.hasEvent("fire")) {

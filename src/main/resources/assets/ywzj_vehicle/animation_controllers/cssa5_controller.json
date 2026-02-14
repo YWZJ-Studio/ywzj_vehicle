@@ -1,0 +1,90 @@
+{
+  "name": "cssa5_controller",
+  "script": "ywzj_vehicle:cssa5",
+  "parameters": {},
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "bone_binding",
+        "special_bindings": [
+          {
+            "bones": ["wheel1", "wheel2", "wheel3", "wheel4", "wheel5", "wheel6", "wheel7", "wheel8"],
+            "source": "wheel_rotation",
+            "axis": "x",
+            "param": 0.35
+          },
+          {
+            "bones": ["wheel1", "wheel2"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": 1.0,
+            "min": -30.0,
+            "max": 30.0
+          },
+          {
+            "bones": ["wheel3", "wheel4"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": 0.5,
+            "min": -15.0,
+            "max": 15.0
+          },
+          {
+            "bones": ["wheel5", "wheel6"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": -0.5,
+            "min": -15.0,
+            "max": 15.0
+          },
+          {
+            "bones": ["wheel7", "wheel8"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": -1.0,
+            "min": -30.0,
+            "max": 30.0
+          }
+        ],
+        "part_bindings": [
+          {
+            "bone": "turret",
+            "part": "turret",
+            "rotation_type": "y",
+            "axis": "y",
+            "invert": true
+          },
+          {
+            "bone": "machine_gun",
+            "part": "turret",
+            "rotation_type": "x",
+            "axis": "x",
+            "invert": false
+          },
+          {
+            "bone": "missile_left",
+            "part": "turret_missile",
+            "rotation_type": "x",
+            "axis": "x",
+            "invert": false
+          },
+          {
+            "bone": "missile_right",
+            "part": "turret_missile",
+            "rotation_type": "x",
+            "axis": "x",
+            "invert": false
+          },
+          {
+            "bone": "obj_center",
+            "part": "radar",
+            "rotation_type": "y",
+            "axis": "y",
+            "invert": true
+          }
+        ]
+      }
+    ]
+  }
+}

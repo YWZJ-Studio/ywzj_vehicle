@@ -3,7 +3,7 @@
   "model": "ywzj_vehicle:entity/cssa5",
   "texture": "ywzj_vehicle:textures/entity/cssa5.png",
   "slot_texture": "ywzj_vehicle:textures/slot/cssa5.png",
-  "script": "ywzj_vehicle:cssa5",
+  "animation_controller": "ywzj_vehicle:cssa5_controller",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:truck_engine_idle",

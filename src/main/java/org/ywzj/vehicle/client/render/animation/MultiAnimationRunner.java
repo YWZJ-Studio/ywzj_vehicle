@@ -11,8 +11,10 @@ import net.minecraft.resources.ResourceLocation;
 import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
+// 用于自动分配多个轨道混合播放的工具
 public class MultiAnimationRunner<T extends Animation> {
 
     private final int maxRunners;
@@ -58,11 +60,13 @@ public class MultiAnimationRunner<T extends Animation> {
         return blendedPose != null ? blendedPose : DummyPose.INSTANCE;
     }
 
-    public Iterable<Keyframe<ResourceLocation>> clip(String channelName) {
-        return animationRunners.stream()
-                .findFirst()
-                .<Iterable<Keyframe<ResourceLocation>>>map(animationRunner -> animationRunner.clip(channelName))
-                .orElse(null);
+    public void clip(String channelName, Consumer<Iterable<Keyframe<ResourceLocation>>> consumer) {
+        for (AnimationRunner runner : animationRunners) {
+            Iterable<Keyframe<ResourceLocation>> clip = runner.clip(channelName);
+            if (clip != null) {
+                consumer.accept(clip);
+            }
+        }
     }
 
 }

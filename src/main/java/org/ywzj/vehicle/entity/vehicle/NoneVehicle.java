@@ -5,12 +5,18 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.api.animation.IAnimationEntity;
+import org.ywzj.vehicle.api.animation.IAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.SimpleVehicleDisplay;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
 
-public class NoneVehicle extends AbstractVehicle {
+public class NoneVehicle extends AbstractVehicle implements IAnimationEntity<AbstractVehicle, VehicleContext<AbstractVehicle>> {
+    private IAnimationInstance<VehicleContext<AbstractVehicle>> animationInstance;
 
     public NoneVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -28,4 +34,15 @@ public class NoneVehicle extends AbstractVehicle {
         return Vec3.ZERO;
     }
 
+    @Override
+    public IAnimationInstance<VehicleContext<AbstractVehicle>> getAnimationInstance() {
+        return animationInstance;
+    }
+
+    @Override
+    public void initDisplayData(BaseDisplay display) {
+        if (display instanceof SimpleVehicleDisplay display1) {
+            this.animationInstance = display1.createAnimationInstance(this);
+        }
+    }
 }

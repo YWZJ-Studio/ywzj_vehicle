@@ -1,0 +1,29 @@
+{
+  "name": "cssa5_controller",
+  "script": "ywzj_vehicle:bgm_71_tow",
+  "parameters": {},
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "bone_binding",
+        "part_bindings": [
+          {
+            "bone": "rot",
+            "part": "tow",
+            "rotation_type": "y",
+            "axis": "y",
+            "invert": true
+          },
+          {
+            "bone": "tow",
+            "part": "tow",
+            "rotation_type": "x",
+            "axis": "x",
+            "invert": false
+          }
+        ]
+      }
+    ]
+  }
+}

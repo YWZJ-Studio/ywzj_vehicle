@@ -19,6 +19,10 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
         return getEntity().getPartUnit(id).map(part -> part.getOwner() != null).orElse(false);
     }
 
+    public float getPower() {
+        return getEntity().getPower();
+    }
+
     public float getPartXRot(String id) {
         return getEntity().getPartUnit(id).map(part -> {
             if (part instanceof RotatableUnit<?> rotatable) {
@@ -52,10 +56,6 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
     }
 
     // ========== Utility Methods ==========
-
-    public long currentTimeMillis() {
-        return System.currentTimeMillis();
-    }
 
     public long lastRenderTime() {
         return getEntity().lastRenderTime;
