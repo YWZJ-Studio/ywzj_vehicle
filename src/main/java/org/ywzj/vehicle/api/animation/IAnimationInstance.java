@@ -9,6 +9,7 @@ public interface IAnimationInstance<T extends BaseAnimationContext> {
 
     AnimationStateMachine<T> getStateMachine(String name);
 
+    @NotNull
     T getContext();
 
     void tick();

@@ -16,7 +16,7 @@ public class VehicleAnimationInstance<T extends BaseAnimationContext> implements
     private final AnimationController<T> controller;
     private final T context;
 
-    public VehicleAnimationInstance(AnimationController<T> controller, T context) {
+    public VehicleAnimationInstance(AnimationController<T> controller, @NotNull T context) {
         this.controller = controller;
         this.context = context;
         this.stateMachines = controller.initialize(context);
@@ -26,6 +26,7 @@ public class VehicleAnimationInstance<T extends BaseAnimationContext> implements
         return stateMachines.get(name);
     }
 
+    @NotNull
     public T getContext() {
         return context;
     }

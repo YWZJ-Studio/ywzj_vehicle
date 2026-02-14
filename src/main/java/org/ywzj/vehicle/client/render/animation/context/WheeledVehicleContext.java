@@ -74,4 +74,15 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
     public float getSteeringAngle(float maxAngle) {
         return Math.max(-maxAngle, Math.min(maxAngle, steeringAngle));
     }
+
+    @Override
+    public float getBindingValue(String source, Float param) {
+        float paramValue = param != null ? param : 0f;
+        
+        return switch (source) {
+            case "wheel_rotation" -> getWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+            case "steering_angle" -> getSteeringAngle();
+            default -> super.getBindingValue(source, param);
+        };
+    }
 }

@@ -192,38 +192,61 @@ public class PoseGraphCompiler {
      * Compile bone_binding node
      */
     private PoseNode compileBoneBindingNode(PoseNodeDefinition definition, BoneIndexProvider boneIndexProvider) {
-        List<BoneBindingNode.SpecialBinding> specialBindings = new ArrayList<>();
-        List<BoneBindingNode.PartBinding> partBindings = new ArrayList<>();
+        List<BoneBindingNode.CachedSpecialBinding> cachedSpecialBindings = new ArrayList<>();
+        List<BoneBindingNode.CachedPartBinding> cachedPartBindings = new ArrayList<>();
 
-        // Compile special bindings
+        // Compile special bindings directly to cached form
         if (definition.getSpecialBindings() != null) {
             for (PoseNodeDefinition.SpecialBindingDefinition def : definition.getSpecialBindings()) {
-                BoneBindingNode.SpecialBinding binding = new BoneBindingNode.SpecialBinding();
-                binding.bones = def.getBones();
-                binding.source = def.getSource();
-                binding.axis = def.getAxis();
-                binding.multiplier = def.getMultiplier();
-                binding.min = def.getMin();
-                binding.max = def.getMax();
-                binding.param = def.getParam();
-                specialBindings.add(binding);
+                int[] boneIndices = def.getBones().stream()
+                    .mapToInt(boneIndexProvider::getIndex)
+                    .filter(idx -> idx >= 0)
+                    .toArray();
+                
+                cachedSpecialBindings.add(new BoneBindingNode.CachedSpecialBinding(
+                    boneIndices,
+                    def.getSource(),
+                    parseAxis(def.getAxis()),
+                    def.getMultiplier(),
+                    def.getMin(),
+                    def.getMax(),
+                    def.getParam()
+                ));
             }
         }
 
-        // Compile part bindings
+        // Compile part bindings directly to cached form
         if (definition.getPartBindings() != null) {
             for (PoseNodeDefinition.PartBindingDefinition def : definition.getPartBindings()) {
-                BoneBindingNode.PartBinding binding = new BoneBindingNode.PartBinding();
-                binding.bone = def.getBone();
-                binding.part = def.getPart();
-                binding.rotationType = def.getRotationType();
-                binding.axis = def.getAxis();
-                binding.invert = def.isInvert();
-                partBindings.add(binding);
+                int boneIndex = boneIndexProvider.getIndex(def.getBone());
+                if (boneIndex >= 0) {
+                    cachedPartBindings.add(new BoneBindingNode.CachedPartBinding(
+                        boneIndex,
+                        def.getPart(),
+                        def.getRotationType(),
+                        parseAxis(def.getAxis()),
+                        def.isInvert()
+                    ));
+                }
             }
         }
 
-        return new BoneBindingNode(specialBindings, partBindings, boneIndexProvider);
+        return new BoneBindingNode(cachedSpecialBindings, cachedPartBindings);
+    }
+
+    /**
+     * Parse axis string to integer (0=x, 1=y, 2=z, -1=invalid)
+     */
+    private static int parseAxis(String axis) {
+        if (axis == null) {
+            return -1;
+        }
+        return switch (axis) {
+            case "x" -> 0;
+            case "y" -> 1;
+            case "z" -> 2;
+            default -> -1;
+        };
     }
 
     /**

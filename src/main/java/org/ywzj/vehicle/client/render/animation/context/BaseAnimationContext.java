@@ -148,5 +148,17 @@ public abstract class BaseAnimationContext {
         }
         return defaultValue;
     }
+    
+    /**
+     * Get value from a data source for special bindings.
+     * Override this method in subclasses to provide custom data sources.
+     * 
+     * @param source The data source name
+     * @param param Optional parameter for the data source
+     * @return The value from the data source, or 0 if not supported
+     */
+    public float getBindingValue(String source, Float param) {
+        return 0f;
+    }
     // endregion
 }

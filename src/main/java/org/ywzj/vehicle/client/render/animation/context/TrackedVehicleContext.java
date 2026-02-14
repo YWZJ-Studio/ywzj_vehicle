@@ -65,4 +65,15 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
         }
         return trackAnimationInstance.rightWheelDegrees(rightDriveRadius);
     }
+
+    @Override
+    public float getBindingValue(String source, Float param) {
+        float paramValue = param != null ? param : 0f;
+        
+        return switch (source) {
+            case "left_wheel_rotation" -> getLeftWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+            case "right_wheel_rotation" -> getRightWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+            default -> super.getBindingValue(source, param);
+        };
+    }
 }
