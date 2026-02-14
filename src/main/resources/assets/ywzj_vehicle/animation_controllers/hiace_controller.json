@@ -29,7 +29,7 @@
         "type": "bone_binding",
         "special_bindings": [
           {
-            "bones": ["wheel1", "wheel2"],
+            "bones": ["wheel1", "wheel2", "wheel3", "wheel4"],
             "source": "wheel_rotation",
             "axis": "x",
             "param": 0.35
@@ -43,16 +43,12 @@
             "max": 30.0
           },
           {
-            "bones": ["wheel3", "wheel4"],
-            "source": "wheel_rotation",
-            "axis": "x",
-            "param": 0.35
+            "bones": ["control"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": 12
           }
         ]
-      },
-      {
-        "type": "script",
-        "function": "rotControl"
       },
       {
         "type": "switchable_animation",
