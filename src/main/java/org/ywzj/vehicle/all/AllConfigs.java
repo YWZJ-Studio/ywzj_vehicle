@@ -70,7 +70,7 @@ public class AllConfigs {
             explosionDropBlocks = builder.comment("爆炸是否掉落方块")
                     .define("explosionDropBlocks", true);
             vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
-                    .defineInRange("showVehicleInfoDistance", 512.0, 0.0, Double.MAX_VALUE);
+                    .defineInRange("vehicleExplosionHurtPassengerDamage", 512.0, 0.0, Double.MAX_VALUE);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
             infiniteFuel = builder.comment("无需燃油仍可运作")
