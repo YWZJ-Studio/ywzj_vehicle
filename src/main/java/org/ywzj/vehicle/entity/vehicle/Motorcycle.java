@@ -11,8 +11,8 @@ import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
+import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 
 import java.util.List;
 
@@ -28,9 +28,10 @@ public class Motorcycle extends WheeledVehicle {
     public void initData(ResourceLocation vehicleId) {
         super.initData(vehicleId);
         PartUnit<?> passengerSeat = partUnits.get(0);
-        passengerSeat.passengerPose = new PassengerPose();
-        passengerSeat.passengerPose.leftArmRotX = -1.5f;
-        passengerSeat.passengerPose.rightArmRotX= -1.5f;
+        PassengerPose passengerPose = new PassengerPose();
+        passengerPose.leftArmRotX = -1.5f;
+        passengerPose.rightArmRotX= -1.5f;
+        passengerSeat.setPassengerPose(passengerPose);
     }
 
     @Override

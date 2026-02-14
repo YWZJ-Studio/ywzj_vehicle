@@ -410,7 +410,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
-        partsWithVehicleRot();
+        afterVehicleRot();
         if (viewInfo.lockPassengerYBodyRot) {
             getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         }
@@ -652,12 +652,30 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
         partUnits.forEach(PartUnit::tick);
     }
 
-    protected void partsWithVehicleRot() {
+    protected void afterVehicleRot() {
         float dXRot = xRot - xRotO;
         float dYRot = yRot - yRotO;
         float dZRot = zRot - zRotO;
         if (dXRot != 0 || dYRot != 0) {
             partUnits.forEach(partUnit -> partUnit.withVehicleRot(dXRot, dYRot, dZRot));
+        }
+        if (level().isClientSide()) {
+            Player player = LocalVehiclePlayer.instance.getPlayer();
+            if (player.getVehicle() == this) {
+                boolean rotTp = viewInfo.passengerViewRot.rotByVehicleInThirdPerson && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON;
+                boolean rotOp = viewInfo.passengerViewRot.rotByVehicleInOperator && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR;
+                if (rotTp || rotOp) {
+                    player.yRotO = player.yRotO + dYRot;
+                    player.setYRot(player.getYRot() + dYRot);
+                }
+            }
+        } else {
+            getPassengers().stream()
+                    .filter(passenger -> !(passenger instanceof Player))
+                    .forEach(passenger -> {
+                        passenger.yRotO = passenger.yRotO + dYRot;
+                        passenger.setYRot(passenger.getYRot() + dYRot);
+                    });
         }
     }
 

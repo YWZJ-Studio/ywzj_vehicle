@@ -2,6 +2,7 @@ package org.ywzj.vehicle.custom.part.data;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,9 @@ public class PartUnitPojo {
 
     @SerializedName("seat_offset")
     public Vec3 seatOffset = Vec3.ZERO;
+
+    @SerializedName("passenger_pose")
+    public PassengerPose passengerPose = null;
 
     @SerializedName("owner_view_offset")
     public Vec3 ownerViewOffset = null;
