@@ -155,7 +155,7 @@ public class PhysicsEngine {
     private void destroyBlocks(VehicleCubeOBB physicsCube, VehicleCubeOBB.CubeFace cubeFace) {
         stuckTick += 1;
         if (stuckTick == 10) {
-            if (canDestroyBlock) {
+            if (canDestroyBlock && AllConfigs.common.canDestroyBlock.get()) {
                 Level level = vehicle.level();
                 for (VehicleCubeOBB.CubePoint cubePoint : vehicle.getMainCubeOBB().cubePointsByFace.get(cubeFace)) {
                     if (cubePoint.obbLocalPos().y > -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {

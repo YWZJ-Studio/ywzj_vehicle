@@ -667,6 +667,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements OBBEntit
                 if (rotTp || rotOp) {
                     player.yRotO = player.yRotO + dYRot;
                     player.setYRot(player.getYRot() + dYRot);
+                    player.setYBodyRot(player.yBodyRot + dYRot);
                 }
             }
         } else {

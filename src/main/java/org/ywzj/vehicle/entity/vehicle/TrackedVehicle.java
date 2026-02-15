@@ -69,7 +69,7 @@ public class TrackedVehicle extends AbstractVehicle {
     @Override
     protected void tickSound() {
         super.tickSound();
-        if (getEnergy() != 0 && getPower() == 5 && isEngineOn()) {
+        if (getPower() == 5 && isEngineOn()) {
             SoundEvent engineStartSound = getEngineStartSound();
             if (engineStartSound != null) {
                 new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();

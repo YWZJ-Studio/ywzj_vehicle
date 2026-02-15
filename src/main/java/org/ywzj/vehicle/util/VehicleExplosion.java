@@ -3,6 +3,7 @@ package org.ywzj.vehicle.util;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +14,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.EntityBasedExplosionDamageCalculator;
 import net.minecraft.world.level.Explosion;
@@ -26,11 +28,18 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.HashSet;
 import java.util.List;
@@ -53,11 +62,11 @@ public class VehicleExplosion {
     private final ObjectArrayList<BlockPos> toBlow = new ObjectArrayList<>();
 
     public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage) {
-        this(level, source, vehicle, position, radius, damage, AllConfigs.common.explosionDestroyBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
+        this(level, source, vehicle, position, radius, damage, AllConfigs.common.canDestroyBlock.get(), AllConfigs.common.explosionDropBlock.get());
     }
 
     public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage, boolean destroyBlocks) {
-        this(level, source, vehicle, position, radius, damage, destroyBlocks && AllConfigs.common.explosionDestroyBlocks.get(), AllConfigs.common.explosionDropBlocks.get());
+        this(level, source, vehicle, position, radius, damage, destroyBlocks && AllConfigs.common.canDestroyBlock.get(), AllConfigs.common.explosionDropBlock.get());
     }
 
     public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage, boolean destroyBlocks, boolean dropBlocks) {
@@ -68,8 +77,8 @@ public class VehicleExplosion {
         this.z = position.z;
         this.radius = radius;
         this.damage = damage;
-        this.destroyBlocks = destroyBlocks && AllConfigs.common.explosionDestroyBlocks.get();
-        this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlocks.get();
+        this.destroyBlocks = destroyBlocks && AllConfigs.common.canDestroyBlock.get();
+        this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlock.get();
         this.damageSource = level.damageSources().explosion(source, vehicle);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
@@ -87,7 +96,13 @@ public class VehicleExplosion {
         try {
             ruin(vanillaExplosion);
             hurt(excludedEntities);
-            effect();
+            if (!level.isClientSide()) {
+                ServerVehicleExplosion serverVehicleExplosion = new ServerVehicleExplosion(source == null ? -1 : source.getId(), x, y, z, radius);
+                ServerLevel serverLevel = (ServerLevel) level;
+                for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceToSqr(x, y, z) < 256 * 256)) {
+                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleExplosion);
+                }
+            }
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -191,24 +206,62 @@ public class VehicleExplosion {
         }
     }
 
-    private void effect() {
-        if (!level.isClientSide()) {
-            ServerLevel serverLevel = (ServerLevel) level;
-            level.playSound(source, BlockPos.containing(new Vec3(x, y, z)), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8f, 1f);
-            for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceTo(source) < 256)) {
-                double spread = radius * 0.3;
-                int count = (int)(radius * radius * 2);
-                serverLevel.sendParticles(
-                        player,
-                        ParticleTypes.EXPLOSION,
-                        true,
-                        x, y, z,
-                        count,
-                        spread, spread, spread,
-                        0.15
-                );
-            }
+    @OnlyIn(Dist.CLIENT)
+    public static void effect(ServerVehicleExplosion serverVehicleExplosion) {
+        Level level = Minecraft.getInstance().level;
+        Player player = LocalVehiclePlayer.instance.getPlayer();
+        double x = serverVehicleExplosion.x();
+        double y = serverVehicleExplosion.y();
+        double z = serverVehicleExplosion.z();
+        float radius = serverVehicleExplosion.radius();
+        level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.0f, 0.6f);
+        double spread = radius * 0.3;
+        int count = (int) (radius * radius * 2);
+        for (int i = 0; i < count; i++) {
+            level.addParticle(
+                    ParticleTypes.EXPLOSION, true,
+                    x + (level.random.nextDouble() - 0.5) * 2 * spread * 2,
+                    y + (level.random.nextDouble() - 0.2) * 3 * spread * 2,
+                    z + (level.random.nextDouble() - 0.5) * 2 * spread * 2,
+                    0, 0.02, 0
+            );
         }
+        level.addParticle(ParticleTypes.FLASH, true, x, y, z, 0, 0, 0);
+        int smokeCount = (int) (radius * 16);
+        for (int i = 0; i < smokeCount; i++) {
+            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true,
+                    x + (level.random.nextDouble() - 0.5) * 2 * radius,
+                    y + (level.random.nextDouble() - 0.5) * 2 * radius * 0.2,
+                    z + (level.random.nextDouble() - 0.5) * 2 * radius,
+                    0, 0.02, 0
+            );
+            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true,
+                    x + (level.random.nextDouble() - 0.5) * 2 * radius * 0.6,
+                    y + (level.random.nextDouble() - 0.5) * 2 * radius,
+                    z + (level.random.nextDouble() - 0.5) * 2 * radius * 0.6,
+                    0, 0.02, 0
+            );
+        }
+        for (int i = 0; i < (int) (radius * 5); i++) {
+            level.addParticle(ParticleTypes.FLAME, true,
+                    x + (level.random.nextDouble() - 0.5) * 2 * radius,
+                    y + (level.random.nextDouble() - 0.5) * 2 * radius,
+                    z + (level.random.nextDouble() - 0.5) * 2 * radius,
+                    (level.random.nextDouble() - 0.5) * 2 * 0.1, 0.1, (level.random.nextDouble() - 0.5) * 2 * 0.1
+            );
+        }
+        for (int i = 0; i < (int) (radius * 10); i++) {
+            level.addParticle(ParticleTypes.CLOUD, true,
+                    x + (level.random.nextDouble() - 0.5) * 2 * radius * 1.2,
+                    y + 0.1,
+                    z + (level.random.nextDouble() - 0.5) * 2 * radius * 1.2,
+                    (level.random.nextDouble() - 0.5) * 2 * 0.2, 0, (level.random.nextDouble() - 0.5) * 2 * 0.2
+            );
+        }
+        FirstPersonHandler.shakePos = new Vec3(x, y, z);
+        FirstPersonHandler.shakeRadius = 16 * radius;
+        FirstPersonHandler.shakeTime = Math.min(FirstPersonHandler.shakeTime + 8 + radius * 0.1, 10);
+        FirstPersonHandler.shakeAmplitude = 0.1 + 0.1 * radius;
     }
 
     private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPos>> pDropPositionArray, ItemStack pStack, BlockPos pPos) {

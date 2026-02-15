@@ -2,7 +2,9 @@ package org.ywzj.vehicle.client.handler;
 
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.ViewportEvent;
@@ -16,6 +18,10 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 public class FirstPersonHandler {
 
     public static float zRot;
+    public static Vec3 shakePos;
+    public static double shakeRadius;
+    public static double shakeTime;
+    public static double shakeAmplitude;
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRenderOverlay(RenderHandEvent event) {
@@ -38,5 +44,30 @@ public class FirstPersonHandler {
                 event.setRoll(zRot);
             }
         }
+        if (!LocalVehiclePlayer.instance.getPlayer().isSpectator()) {
+            shake(event);
+        }
     }
+
+    /**
+     * 参考自Superb Warfare
+     */
+    public static void shake(ViewportEvent.ComputeCameraAngles event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean onVehicle = LocalVehiclePlayer.instance.onVehicle();
+        double yaw = event.getYaw();
+        double pitch = event.getPitch();
+        double roll = event.getRoll();
+        shakeTime = Mth.lerp(0.05 * Minecraft.getInstance().getDeltaFrameTime(), shakeTime, 0.0);
+        if (shakeTime > 0) {
+            double shakeRadiusAmplitude = 1 - Mth.clamp(minecraft.player.position().distanceTo(shakePos) / shakeRadius, 0, 1);
+            yaw = yaw + (shakeTime * Math.sin(1.2 * Math.PI * shakeTime) * shakeAmplitude * shakeRadiusAmplitude * (onVehicle ? 0.15 : 1.0));
+            pitch = pitch - (shakeTime * Math.sin(1.2 * Math.PI * shakeTime) * shakeAmplitude * shakeRadiusAmplitude * (onVehicle ? 0.15 : 1.0));
+            roll = roll - (shakeTime * Math.sin(1.2 * Math.PI * shakeTime) * shakeAmplitude * shakeRadiusAmplitude * (onVehicle ? 0.15 : 1.0));
+        }
+        event.setYaw((float) yaw);
+        event.setPitch((float) pitch);
+        event.setRoll((float) roll);
+    }
+
 }

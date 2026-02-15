@@ -432,7 +432,7 @@ public class RotaryWingVehicle extends AbstractVehicle {
             zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 0.1f));
         }
 
-        if (isDestroyed() && !level().getBlockState(this.blockPosition().below()).isSolid()) {
+        if (isDestroyed() && !onGround()) {
             this.setYRot(this.getYRot() + 10);
         }
 

@@ -9,6 +9,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
 
 public class WarningReceiver {
@@ -22,7 +23,8 @@ public class WarningReceiver {
     public static void handle(ServerVehicleWarn message) {
         Level level = Minecraft.getInstance().level;
         Entity fromVehicle = level.getEntity(message.fromVehicleId);
-        if (level.getEntity(message.toVehicleId) instanceof AbstractVehicle toVehicle) {
+        if (level.getEntity(message.toVehicleId) instanceof AbstractVehicle toVehicle
+                && toVehicle.equals(LocalVehiclePlayer.instance.getVehicle())) {
             WarningReceiver warningReceiver = toVehicle.warningReceiver;
             if (warningReceiver != null) {
                 if (message.warnType == WarnType.RADAR_LOCK) {
