@@ -3,6 +3,7 @@ package org.ywzj.vehicle.client.resource.vehicle;
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,16 +29,13 @@ public class BaseDisplayPojo {
     @SerializedName("animation_controller")
     public ResourceLocation animationController;
 
+    @SerializedName("special_bone_effects")
+    public List<SpecialBoneEffect> specialBoneEffects;
+
     @SerializedName("sounds")
     public Map<String, ResourceLocation> sounds;
 
     @SerializedName("description")
     public String description;
-
-    @SerializedName("track_config")
-    public TrackConfig trackConfig;
-
-    @SerializedName("special_bone_effects")
-    public java.util.List<SpecialBoneEffect> specialBoneEffects;
 
 }

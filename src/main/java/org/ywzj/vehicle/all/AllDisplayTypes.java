@@ -42,17 +42,17 @@ public class AllDisplayTypes {
     public static final RegistryObject<VehicleDisplayType<TrackedVehicleDisplay>> TRACKED_VEHICLE = register(
             "tracked_vehicle",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                var pojo = GsonUtil.GSON.fromJson(json, TrackedVehicleDisplayPojo.class);
                 return new TrackedVehicleDisplay(pojo);
             },
             AnimationContextFactory.trackedVehicle()
     );
 
-    public static final RegistryObject<VehicleDisplayType<RotaryWingDisplay>> ROTARY_WING_VEHICLE = register(
+    public static final RegistryObject<VehicleDisplayType<RotaryWingVehicleDisplay>> ROTARY_WING_VEHICLE = register(
             "rotary_wing_vehicle",
             json -> {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
-                return new RotaryWingDisplay(pojo);
+                return new RotaryWingVehicleDisplay(pojo);
             },
             AnimationContextFactory.vehicle()
     );

@@ -12,16 +12,14 @@ public class TrackedVehicleDisplay extends VehicleDisplay<TrackedVehicle, Tracke
     private BedrockAnimation leftTrackAnimation;
     private BedrockAnimation rightTrackAnimation;
 
-    public TrackedVehicleDisplay(BaseDisplayPojo pojo) {
+    public TrackedVehicleDisplay(TrackedVehicleDisplayPojo pojo) {
         super(pojo);
         this.trackConfig = pojo.trackConfig;
-
         if (trackConfig != null && trackConfig.isValid()) {
             leftTrackAnimation = animations.get(trackConfig.leftTrack);
             rightTrackAnimation = animations.get(trackConfig.rightTrack);
         }
     }
-
 
     @Nullable
     public TrackConfig getTrackConfig() {

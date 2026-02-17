@@ -5,7 +5,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 
-public class RotaryWingVehicleData extends BaseVehicleData {
+public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
 
     public float mainRotorForce = 1.4f * 0.7f * 1;
     public float xRotSpeedAcceleration = 1f;

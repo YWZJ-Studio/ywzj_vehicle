@@ -5,6 +5,7 @@ import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 
 public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
+
     private TrackAnimationInstance trackAnimationInstance;
 
     public TrackedVehicleContext(TrackedVehicle vehicle) {
@@ -76,4 +77,5 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
             default -> super.getBindingValue(source, param);
         };
     }
+
 }

@@ -9,6 +9,7 @@ import java.util.List;
  * Represents a node in the pose graph.
  */
 public class PoseNodeDefinition {
+
     @SerializedName("type")
     private String type;
 
@@ -215,4 +216,5 @@ public class PoseNodeDefinition {
             return invert;
         }
     }
+
 }

@@ -3,6 +3,7 @@ package org.ywzj.vehicle.client.render.animation.context;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
 public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
+
     private float wheelRotation = 0f;
     private float steeringAngle = 0f;
 
@@ -85,4 +86,5 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
             default -> super.getBindingValue(source, param);
         };
     }
+
 }

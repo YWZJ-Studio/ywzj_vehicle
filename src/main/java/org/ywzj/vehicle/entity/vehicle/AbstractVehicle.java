@@ -56,7 +56,6 @@ import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
-import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -1075,6 +1074,10 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public float getViewYRot(float pPartialTicks) {
+        float dYRot = yRot - yRotO;
+        if (Math.abs(dYRot) > 180) {
+            yRotO += Math.signum(dYRot) * 360;
+        }
         return pPartialTicks == 1.0F ? this.getYRot() : Mth.lerp(pPartialTicks, this.yRotO, this.getYRot());
     }
 
