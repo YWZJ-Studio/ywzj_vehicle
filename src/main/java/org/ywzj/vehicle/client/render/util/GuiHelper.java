@@ -4,9 +4,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
-import org.ywzj.vehicle.client.render.ModShaders;
+import org.ywzj.vehicle.client.shader.ModShaders;
 
 public class GuiHelper {
+
     public static void drawCircle(PoseStack poseStack, float x, float y, float radius, int color, float thickness, float progress) {
         // Backwards-compatible wrapper: treat progress as end, start at 0
         drawCircle(poseStack, x, y, radius, color, thickness, 0.0f, progress);
@@ -56,4 +57,5 @@ public class GuiHelper {
         buf.vertex(matrix,cx + radius, cy - radius, 0).color(r, g, b, a).uv(1, 0).normal(thickness, start, end).endVertex();
         buf.vertex(matrix,cx - radius, cy - radius, 0).color(r, g, b, a).uv(0, 0).normal(thickness, start, end).endVertex();
     }
+
 }

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render;
+package org.ywzj.vehicle.client.shader;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -61,11 +61,10 @@ public class ThermalHandler implements ResourceManagerReloadListener {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        setActive(false);
         setSeeThroughWalls(false);
-
-        if (!isActive) return;
-
+        if (!isActive) {
+            return;
+        }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
             prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick(), event.getFrustum(), event.getCamera());
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {

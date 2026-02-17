@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render;
+package org.ywzj.vehicle.client.shader;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -40,4 +40,5 @@ public class ModShaders {
     public static ShaderInstance getCircleShader() {
         return circleShader;
     }
+
 }
