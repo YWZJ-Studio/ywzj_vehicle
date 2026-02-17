@@ -39,7 +39,8 @@ public class AllConfigs {
             if (Files.notExists(filePath)) {
                 List<String> defaultLines = Arrays.asList(
                         "minecraft:ender_dragon",
-                        "corpse:corpse"
+                        "corpse:corpse",
+                        "twilightforest:naga"
                 );
                 Files.write(filePath, defaultLines);
             }
@@ -53,8 +54,8 @@ public class AllConfigs {
 
     public static class CommonConfig {
 
-        public final ForgeConfigSpec.ConfigValue<Boolean> explosionDestroyBlocks;
-        public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlocks;
+        public final ForgeConfigSpec.ConfigValue<Boolean> canDestroyBlock;
+        public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlock;
         public final ForgeConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
         public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
         public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
@@ -64,12 +65,12 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
-            explosionDestroyBlocks = builder.comment("爆炸是否破坏方块")
-                    .define("explosionDestroyBlocks", true);
-            explosionDropBlocks = builder.comment("爆炸是否掉落方块")
-                    .define("explosionDropBlocks", true);
+            canDestroyBlock = builder.comment("载具是否能破坏方块")
+                    .define("canDestroyBlock", true);
+            explosionDropBlock = builder.comment("爆炸是否掉落方块")
+                    .define("explosionDropBlock", true);
             vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
-                    .defineInRange("showVehicleInfoDistance", 512.0, 0.0, Double.MAX_VALUE);
+                    .defineInRange("vehicleExplosionHurtPassengerDamage", 512.0, 0.0, Double.MAX_VALUE);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
             infiniteFuel = builder.comment("无需燃油仍可运作")

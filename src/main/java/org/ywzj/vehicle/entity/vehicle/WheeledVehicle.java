@@ -93,36 +93,41 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     @Override
     protected void tickSound() {
         super.tickSound();
-        if (getEnergy() != 0 && getPower() == 5 && isEngineOn()) {
+        if (getPower() == 5 && isEngineOn()) {
             SoundEvent engineStartSound = getEngineStartSound();
             if (engineStartSound != null) {
                 new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();
             }
         }
-        float vf = getSpeed();
-        if (vf == 0) {
+        if (!hasPower()) {
+            if (engineIdleSoundInstance != null) {
+                engineIdleSoundInstance.stop();
+                engineIdleSoundInstance = null;
+            }
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
             }
-            if (!hasPower()) {
-                if (engineIdleSoundInstance != null) {
-                    engineIdleSoundInstance.stop();
-                    engineIdleSoundInstance = null;
-                }
-            } else if (engineIdleSoundInstance == null) {
+        }
+        float engineSpeed = getEngineSpeed();
+        if (engineSpeed == 60) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineIdleSoundInstance == null) {
                 SoundEvent engineIdleSound = getEngineIdleSound();
                 if (engineIdleSound != null) {
                     engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
                     engineIdleSoundInstance.play();
                 }
             }
-        } else {
+        } else if (engineSpeed > 60) {
             if (engineIdleSoundInstance != null) {
                 engineIdleSoundInstance.stop();
                 engineIdleSoundInstance = null;
             }
-            float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
+            float pitch = (engineSpeed - 60) / 40 * 0.3f + 0.8f;
             if (engineRunSoundInstance == null) {
                 SoundEvent engineRunSound = getEngineRunSound();
                 if (engineRunSound != null) {
@@ -295,6 +300,28 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
 
         this.setDeltaMovement(new Vec3(velocity.x, velocity.y + gVelocity, velocity.z));
         return Vec3.ZERO;
+    }
+
+    @Override
+    protected void tickEngineSpeed() {
+        super.tickEngineSpeed();
+        float engineSpeed = getEngineSpeed();
+        if (controlUnit.forward || controlUnit.backward) {
+            if (hasPower()) {
+                Vec3 velocity = getDeltaMovement();
+                Vec3 vehicleDirection = getLookAngle();
+                float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+                if ((angle < 90 && controlUnit.forward) || (angle > 90 && controlUnit.backward)) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 1, 0, 100));
+                } else {
+                    setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+                }
+            }
+        } else {
+            if (engineSpeed > 60) {
+                setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+            }
+        }
     }
 
 }

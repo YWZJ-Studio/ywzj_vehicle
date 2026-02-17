@@ -291,7 +291,7 @@ public class BulletEntity extends AmmoEntity {
             Level level = level();
             BlockState state = level.getBlockState(pos);
             float destroySpeed = state.getDestroySpeed(level, pos);
-            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50 && explosion.destroyBlock && AllConfigs.common.explosionDestroyBlocks.get()) {
+            if (!state.isAir() && destroySpeed > 0 && destroySpeed < 50 && explosion.destroyBlock && AllConfigs.common.canDestroyBlock.get()) {
                 level().destroyBlock(pos, false);
             }
             Vec3 explosionAtPos = hitVec.add(endVec.subtract(startVec).normalize().scale(getDeltaMovement().length()));

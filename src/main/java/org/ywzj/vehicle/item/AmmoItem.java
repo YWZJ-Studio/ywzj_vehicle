@@ -1,6 +1,8 @@
 package org.ywzj.vehicle.item;
 
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import org.ywzj.vehicle.all.AllItems;
 
 public class AmmoItem extends Item {
 
@@ -17,6 +19,14 @@ public class AmmoItem extends Item {
 
     public AmmoType getAmmoType() {
         return ammoType;
+    }
+
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        if (stack.getItem() == AllItems.AMMO_CREATIVE.get()) {
+            return true;
+        }
+        return super.isFoil(stack);
     }
 
 }

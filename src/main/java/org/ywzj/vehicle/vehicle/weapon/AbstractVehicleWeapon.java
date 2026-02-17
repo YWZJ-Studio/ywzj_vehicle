@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.INBTSerializable;
+import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -266,6 +267,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         return vehicle.getCapability(ForgeCapabilities.ITEM_HANDLER).map(cap -> {
             for (int i = 0; i < cap.getSlots(); i++) {
                 ItemStack stack = cap.getStackInSlot(i);
+                if (stack.getItem() == AllItems.AMMO_CREATIVE.get()) {
+                    return true;
+                }
                 if (isAmmoForWeapon(stack)) {
                     return true;
                 }
@@ -297,14 +301,18 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
 
     public void reload() {
         int maxCap = this.getData().getMaxCapacity();
-        for (var item : vehicle.getItemStacks()) {
-            int need = maxCap - remainAmmo;
-            if (need <= 0) break;
+        if (vehicle.getItemStacks().stream().anyMatch(stack -> stack.getItem() == AllItems.AMMO_CREATIVE.get())) {
+            remainAmmo = maxCap;
+        } else {
+            for (var item : vehicle.getItemStacks()) {
+                int need = maxCap - remainAmmo;
+                if (need <= 0) break;
 
-            if (this.isAmmoForWeapon(item)) {
-                int toTake = Math.min(need, item.getCount());
-                item.shrink(toTake);
-                remainAmmo += toTake;
+                if (this.isAmmoForWeapon(item)) {
+                    int toTake = Math.min(need, item.getCount());
+                    item.shrink(toTake);
+                    remainAmmo += toTake;
+                }
             }
         }
         if (getReloadSound() != null) {

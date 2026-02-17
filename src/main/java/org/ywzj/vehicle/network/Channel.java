@@ -99,6 +99,11 @@ public class Channel {
                 ClientVehicleChangeDisplay::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
+        CHANNEL.registerMessage(PacketId.S_VEHICLE_EXPLOSION.value(), ServerVehicleExplosion.class,
+                ServerVehicleExplosion::encode, ServerVehicleExplosion::decode,
+                ServerVehicleExplosion::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
         CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
@@ -124,6 +129,7 @@ enum PacketId {
     C_FIGURE_BOX_UPDATE(112),
     S_VEHICLE_CHANGE_DISPLAY(113),
     C_VEHICLE_CHANGE_DISPLAY(114),
+    S_VEHICLE_EXPLOSION(115),
     S_SLICED_PACKET(200);
 
     private final int id;

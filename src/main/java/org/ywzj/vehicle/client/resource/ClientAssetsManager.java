@@ -9,6 +9,8 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -72,6 +74,7 @@ public enum ClientAssetsManager {
         });
     }
 
+    @OnlyIn(Dist.CLIENT)
     public void reload(ResourceManager resourceManager) {
         models.apply(models.prepare(resourceManager, null), null, null);
         scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);

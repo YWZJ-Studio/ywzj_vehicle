@@ -54,6 +54,9 @@ import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
+import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
+import org.ywzj.vehicle.api.event.VehicleMoveEvent;
+import org.ywzj.vehicle.api.scripts.ScriptCache;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -90,6 +93,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ENERGY = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> ENGINE_SPEED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     private ResourceLocation vehicleId;
@@ -149,6 +153,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.entityData.define(Z_ROT, 0f);
         this.entityData.define(ENERGY, 0f);
         this.entityData.define(POWER, 0f);
+        this.entityData.define(ENGINE_SPEED, 0f);
         this.entityData.define(ENGINE_ON, false);
         this.entityData.define(DESTROYED, false);
     }
@@ -229,8 +234,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(this::initDisplayData);
     }
 
-    public void initDisplayData(BaseDisplay display) {
-    }
+    public void initDisplayData(BaseDisplay display) {}
 
     private CompoundTag serializePartUnitsData() {
         CompoundTag partUnitsTag = new CompoundTag();
@@ -358,8 +362,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.displayId = displayId;
         if (!level().isClientSide()) {
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleChangeDisplay(this.getId(), displayId));
-        } else {
-//            this.animationInstance = new VehicleAnimationInstance(this);
         }
     }
 
@@ -391,13 +393,17 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             tickEnergy();
             tickPower();
+            tickEngineSpeed();
             tickPhysics(tickMove());
+            if (MinecraftForge.EVENT_BUS.post(new VehicleMoveEvent(this))) {
+                this.setDeltaMovement(Vec3.ZERO);
+            }
             if (uav) {
                 keepChunkLoaded(position());
                 keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
             }
         }
-        partsWithVehicleRot();
+        afterVehicleRot();
         if (viewInfo.lockPassengerYBodyRot) {
             getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
         }
@@ -429,6 +435,13 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
+    protected void tickEngineSpeed() {
+        float engineSpeed = getEngineSpeed();
+        if (hasPower() && engineSpeed <= 60) {
+            setEngineSpeed(Math.max(engineSpeed + (isEngineOn() ? 1 : -1), 0));
+        }
+    }
+
     protected void tickPhysics(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
         // 车体大OBB的表面采样点
@@ -437,8 +450,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
 
         for (VehicleCubeOBB.CubePoint point : surfacePoints) {
-            Vector3f worldPos = point.worldPos(axes);
-            BlockPos blockPos = BlockPos.containing(new Vec3(worldPos));
+            Vec3 worldPos = new Vec3(point.worldPos(axes));
+            BlockPos blockPos = BlockPos.containing(worldPos);
 
             // 调试
 //            DebugUtil.particle(level(), new Vec3(worldPos), point.cubeFace());
@@ -451,6 +464,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 touchPoints.add(point);
             }
         }
+        MinecraftForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
 
         // 调试
 //        touchPoints.forEach(p -> DebugUtil.particle(level(), new Vec3(p.worldPos(axes)), p.cubeFace()));
@@ -631,12 +645,31 @@ public abstract class AbstractVehicle extends ContainerCraft
         partUnits.forEach(PartUnit::tick);
     }
 
-    protected void partsWithVehicleRot() {
+    protected void afterVehicleRot() {
         float dXRot = xRot - xRotO;
         float dYRot = yRot - yRotO;
         float dZRot = zRot - zRotO;
         if (dXRot != 0 || dYRot != 0) {
             partUnits.forEach(partUnit -> partUnit.withVehicleRot(dXRot, dYRot, dZRot));
+        }
+        if (level().isClientSide()) {
+            Player player = LocalVehiclePlayer.instance.getPlayer();
+            if (player.getVehicle() == this) {
+                boolean rotTp = viewInfo.passengerViewRot.rotByVehicleInThirdPerson && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON;
+                boolean rotOp = viewInfo.passengerViewRot.rotByVehicleInOperator && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR;
+                if (rotTp || rotOp) {
+                    player.yRotO = player.yRotO + dYRot;
+                    player.setYRot(player.getYRot() + dYRot);
+                    player.setYBodyRot(player.yBodyRot + dYRot);
+                }
+            }
+        } else {
+            getPassengers().stream()
+                    .filter(passenger -> !(passenger instanceof Player))
+                    .forEach(passenger -> {
+                        passenger.yRotO = passenger.yRotO + dYRot;
+                        passenger.setYRot(passenger.getYRot() + dYRot);
+                    });
         }
     }
 
@@ -676,43 +709,62 @@ public abstract class AbstractVehicle extends ContainerCraft
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
+    @Override
+    protected void addPassenger(Entity pPassenger) {
+        if (pPassenger instanceof LivingEntity livingEntity) {
+            onEnterVehicle(livingEntity);
+            super.addPassenger(pPassenger);
+        }
+    }
+
+    @Override
+    protected void removePassenger(Entity pPassenger) {
+        if (pPassenger instanceof LivingEntity livingEntity) {
+            onLeaveVehicle(livingEntity);
+            super.removePassenger(pPassenger);
+        }
+    }
+
     public void onEnterVehicle(LivingEntity livingEntity) {
         if (!level().isClientSide()) {
             ServerLevel serverLevel = (ServerLevel) level();
             Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
-            if (emptySeatOptional.isPresent()) {
-                Seat seat = emptySeatOptional.get();
-                if (seat.seatIndex == 0) {
-                    controlUnit.setOperator(livingEntity);
-                    toggleEngine(true);
-                    partUnits.forEach(partUnit -> {
-                        if (partUnit instanceof DoorUnit doorUnit) {
-                            doorUnit.setOn(false);
-                        }
-                    });
-                }
-                seat.partUnit.setOwner(livingEntity);
-                seat.passengerId = livingEntity.getId();
-                for (ServerPlayer serverPlayer : serverLevel.players()) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
-                }
+            if (!emptySeatOptional.isPresent()) {
+                return;
             }
+            Seat seat = emptySeatOptional.get();
+            if (seat.seatIndex == 0) {
+                controlUnit.setOperator(livingEntity);
+                toggleEngine(true);
+                partUnits.forEach(partUnit -> {
+                    if (partUnit instanceof DoorUnit doorUnit) {
+                        doorUnit.setOn(false);
+                    }
+                });
+            }
+            seat.partUnit.setOwner(livingEntity);
+            seat.passengerId = livingEntity.getId();
+            for (ServerPlayer serverPlayer : serverLevel.players()) {
+                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
+            }
+        } else {
+            livingEntity.setSprinting(false);
         }
-        livingEntity.setSprinting(false);
     }
 
     public void onLeaveVehicle(LivingEntity pPassenger) {
         if (!level().isClientSide()) {
             Optional<Seat> ownSeat = seats.stream().filter(seat -> seat.passengerId == pPassenger.getId()).findFirst();
-            if (ownSeat.isPresent()) {
-                Seat seat = ownSeat.get();
-                if (seat.seatIndex == 0) {
-                    controlUnit.setOperator(null);
-                }
-                seat.partUnit.setOwner(null);
-                seat.passengerId = -1;
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+            if (!ownSeat.isPresent()) {
+                return;
             }
+            Seat seat = ownSeat.get();
+            if (seat.seatIndex == 0) {
+                controlUnit.setOperator(null);
+            }
+            seat.partUnit.setOwner(null);
+            seat.passengerId = -1;
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         }
     }
 
@@ -808,7 +860,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     protected boolean canAddPassenger(@NotNull Entity pPassenger) {
-        return seats.stream().anyMatch(seat -> seat.passengerId == pPassenger.getId());
+        return seats.stream().anyMatch(seat -> seat.passengerId == -1);
     }
 
     @Override
@@ -918,6 +970,15 @@ public abstract class AbstractVehicle extends ContainerCraft
         return controlUnit.getOperator();
     }
 
+    @Override
+    public LivingEntity getControllingPassenger() {
+        if (level().isClientSide()) {
+            return null;
+        } else {
+            return getDriver();
+        }
+    }
+
     public PartUnit<?> getOwnOperatorUnit(LivingEntity pPassenger) {
         if (pPassenger == null) {
             return null;
@@ -1009,6 +1070,14 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
+    public float getViewXRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? this.getXRot() : Mth.lerp(pPartialTicks, this.xRotO, this.getXRot());
+    }
+
+    public float getViewYRot(float pPartialTicks) {
+        return pPartialTicks == 1.0F ? this.getYRot() : Mth.lerp(pPartialTicks, this.yRotO, this.getYRot());
+    }
+
     public float getViewZRot(float pPartialTicks) {
         return pPartialTicks == 1.0F ? this.getZRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
     }
@@ -1089,7 +1158,15 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public void setPower(float power) {
-        entityData.set(POWER, Mth.clamp(power, 0, 100));
+        entityData.set(POWER, power);
+    }
+
+    public float getEngineSpeed() {
+        return entityData.get(ENGINE_SPEED);
+    }
+
+    public void setEngineSpeed(float engineSpeed) {
+        entityData.set(ENGINE_SPEED, engineSpeed);
     }
 
     public boolean hasPower() {

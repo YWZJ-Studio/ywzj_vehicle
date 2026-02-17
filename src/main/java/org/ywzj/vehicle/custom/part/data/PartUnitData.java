@@ -3,6 +3,7 @@ package org.ywzj.vehicle.custom.part.data;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -20,6 +21,7 @@ public class PartUnitData {
     protected boolean isSeat;
     protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
+    protected PassengerPose passengerPose;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected List<String> subPartUnitIds;
@@ -41,6 +43,7 @@ public class PartUnitData {
         this.isSeat = pojo.isSeat;
         this.seatRot = pojo.seatRot;
         this.seatOffset = pojo.seatOffset;
+        this.passengerPose = pojo.passengerPose;
         this.ownerViewOffset = pojo.ownerViewOffset;
         this.subPartUnitIds = pojo.subPartUnitIds;
         this.initData(pojo);
@@ -108,6 +111,13 @@ public class PartUnitData {
 
     public Vec3 getSeatOffset() {
         return seatOffset;
+    }
+
+    public PassengerPose getPassengerPose() {
+        if (passengerPose == null) {
+            return null;
+        }
+        return new PassengerPose(passengerPose);
     }
 
     public Vec3 getOwnerViewOffset() {

@@ -23,6 +23,7 @@ import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -103,37 +104,41 @@ public class TrackedVehicle extends AbstractVehicle
     @Override
     protected void tickSound() {
         super.tickSound();
-        if (getEnergy() != 0 && getPower() == 5 && isEngineOn()) {
+        if (getPower() == 5 && isEngineOn()) {
             SoundEvent engineStartSound = getEngineStartSound();
             if (engineStartSound != null) {
                 new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();
             }
         }
-        float vf = entityData.get(FORWARD_SPEED);
-        float vt = entityData.get(TURN_SPEED);
-        if (vf == 0 && vt == 0) {
+        if (!hasPower()) {
+            if (engineIdleSoundInstance != null) {
+                engineIdleSoundInstance.stop();
+                engineIdleSoundInstance = null;
+            }
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
             }
-            if (!hasPower()) {
-                if (engineIdleSoundInstance != null) {
-                    engineIdleSoundInstance.stop();
-                    engineIdleSoundInstance = null;
-                }
-            } else if (engineIdleSoundInstance == null) {
+        }
+        float engineSpeed = getEngineSpeed();
+        if (engineSpeed == 60) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineIdleSoundInstance == null) {
                 SoundEvent engineIdleSound = getEngineIdleSound();
                 if (engineIdleSound != null) {
                     engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
                     engineIdleSoundInstance.play();
                 }
             }
-        } else {
+        } else if (engineSpeed > 60) {
             if (engineIdleSoundInstance != null) {
                 engineIdleSoundInstance.stop();
                 engineIdleSoundInstance = null;
             }
-            float pitch = Math.abs(vf) / maxSpeedForward * 0.3f + 0.8f;
+            float pitch = (engineSpeed - 60) / 40 * 0.3f + 0.8f;
             if (engineRunSoundInstance == null) {
                 SoundEvent engineRunSound = getEngineRunSound();
                 if (engineRunSound != null) {
@@ -257,6 +262,30 @@ public class TrackedVehicle extends AbstractVehicle
         motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
         this.setDeltaMovement(motion);
         return new Vec3(0, 0, 0);
+    }
+
+    @Override
+    protected void tickEngineSpeed() {
+        super.tickEngineSpeed();
+        float engineSpeed = getEngineSpeed();
+        if (controlUnit.forward || controlUnit.backward || controlUnit.left || controlUnit.right) {
+            if (hasPower()) {
+                Vec3 velocity = getDeltaMovement();
+                Vec3 vehicleDirection = getLookAngle();
+                float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+                if ((angle < 90 && controlUnit.forward) || (angle > 90 && controlUnit.backward)) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 1, 0, 100));
+                } else if (controlUnit.left || controlUnit.right) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 2, 0, 100));
+                } else {
+                    setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+                }
+            }
+        } else {
+            if (engineSpeed > 60) {
+                setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+            }
+        }
     }
 
     /**

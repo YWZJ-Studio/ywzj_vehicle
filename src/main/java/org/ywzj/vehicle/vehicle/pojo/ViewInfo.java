@@ -23,4 +23,7 @@ public class ViewInfo {
     @SerializedName("lock_passenger_y_body_rot")
     public boolean lockPassengerYBodyRot = false;
 
+    @SerializedName("passenger_view_rot")
+    public PassengerViewRot passengerViewRot = new PassengerViewRot();
+
 }

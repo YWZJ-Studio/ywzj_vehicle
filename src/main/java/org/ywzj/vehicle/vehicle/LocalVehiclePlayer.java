@@ -10,6 +10,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.shader.CrtHandler;
+import org.ywzj.vehicle.client.shader.ThermalHandler;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -183,6 +185,8 @@ public class LocalVehiclePlayer {
             AbstractVehicle vehicle = getVehicle();
             PartUnit<?> partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
             if (partUnit instanceof WeaponUnit weaponUnit) {
+                CrtHandler.setActive(false);
+                ThermalHandler.setActive(false);
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
                         if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
@@ -201,6 +205,9 @@ public class LocalVehiclePlayer {
                 } else if (toViewType == ViewType.SCOPE) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
                         return;
+                    }
+                    if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
+                        CrtHandler.setActive(true);
                     }
                     Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
                             weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();

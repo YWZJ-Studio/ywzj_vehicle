@@ -20,7 +20,7 @@ import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.vehicle.passenger.PassengerPose;
+import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
@@ -47,13 +47,13 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected boolean isSeat;
     protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
+    protected PassengerPose passengerPose;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected PartUnit<?> parentPartUnit;
     protected List<PartUnit<?>> subPartUnits = new ArrayList<>();
     protected T data;
     private final PartUnitSyncData syncData;
-    public PassengerPose passengerPose;
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
@@ -64,6 +64,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.isSeat = data.isSeat();
         this.seatRot = data.getSeatRot();
         this.seatOffset = data.getSeatOffset();
+        this.passengerPose = data.getPassengerPose();
         this.ownerViewOffset = data.getOwnerViewOffset();
         this.pivotOffset = data.getPivotOffset();
         this.syncData = new PartUnitSyncData(this);
@@ -214,6 +215,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public void setSeatOffset(Vec3 seatOffset) {
         this.seatOffset = seatOffset;
+    }
+
+    public PassengerPose getPassengerPose() {
+        return passengerPose;
+    }
+
+    public void setPassengerPose(PassengerPose passengerPose) {
+        this.passengerPose = passengerPose;
     }
 
     public void setParentPartUnit(PartUnit<?> parentPartUnit) {
