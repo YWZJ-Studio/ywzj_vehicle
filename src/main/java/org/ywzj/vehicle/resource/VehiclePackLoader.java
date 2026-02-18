@@ -24,6 +24,7 @@ import org.apache.maven.artifact.versioning.VersionRange;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
+import org.ywzj.vehicle.util.GetJarResources;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,7 @@ public enum VehiclePackLoader implements RepositorySource {
     private static final Marker MARKER = MarkerManager.getMarker("VehiclePackFinder");
     public PackType packType;
     private static final Path VEHICLE_PACKS_PATH = FMLPaths.GAMEDIR.get().resolve("limitless_vehicle");
+    private static final String DEFAULT_VEHICLE_PACK_PATH = "default_vehicle";
     private List<VehiclePack> vehiclePacks;
     static {
         File folder = VEHICLE_PACKS_PATH.toFile();
@@ -64,24 +66,17 @@ public enum VehiclePackLoader implements RepositorySource {
     }
 
     public void scanVehiclePacks() {
+        Path defaultVehiclePackPath = Path.of(VEHICLE_PACKS_PATH + "/" + DEFAULT_VEHICLE_PACK_PATH);
+        if (!Files.isDirectory(defaultVehiclePackPath)) {
+            // 默认载具包
+            GetJarResources.copyModDirectory("/" + DEFAULT_VEHICLE_PACK_PATH, defaultVehiclePackPath);
+        }
         YwzjVehicle.LOGGER.info(MARKER, "Start scanning for vehicle packs in {}", VEHICLE_PACKS_PATH);
         vehiclePacks = scanVehiclePacks(VEHICLE_PACKS_PATH);
         YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s)", vehiclePacks.size());
     }
 
     private List<Pack> vehiclePacksAsResource() {
-//        // 确保配置文件加载，这个阶段将比标准的forge配置文件加载早
-//        PreLoadConfig.load(resourcePacksPath);
-//
-//        // 仅在第一次加载时复制默认资源包
-//        if (firstLoad) {
-//            if (!PreLoadConfig.override.get()) {
-//                for (ResourceManager.ExtraEntry entry : ResourceManager.EXTRA_ENTRIES) {
-//                    GetJarResources.copyModDirectory(entry.modMainClass(), entry.srcPath(), resourcePacksPath, entry.extraDirName());
-//                }
-//            }
-//            firstLoad = false;
-//        }
         List<Pack> packs = new ArrayList<>();
         List<PathPackResources> extensionPacks = new ArrayList<>();
         for (VehiclePack vehiclePack : vehiclePacks) {

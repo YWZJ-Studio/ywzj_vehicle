@@ -1,0 +1,31 @@
+{
+  "default_vehicle": "Limitless Vehicle",
+
+  "ywzj_vehicle.dump_truck": "Dump Truck",
+  "ywzj_vehicle.lav150": "LAV-150",
+  "ywzj_vehicle.ztl11": "ZTL-11",
+  "ywzj_vehicle.ztz99a": "ZTZ-99A",
+  "ywzj_vehicle.z10": "Z-10",
+  "ywzj_vehicle.motorcycle": "Motorcycle",
+  "ywzj_vehicle.hiace": "Hiace",
+  "ywzj_vehicle.quadcopter": "Quadcopter Drone",
+  "ywzj_vehicle.m1a2": "M1A2",
+  "ywzj_vehicle.cssa5": "CS/SA5",
+  "ywzj_vehicle.ah64d": "AH-64D",
+  "ywzj_vehicle.lav_ad": "LAV-AD",
+  "ywzj_vehicle.bgm_71_tow": "BGM-71 TOW",
+
+  "entity.ywzj_vehicle.dump_truck": "Dump Truck",
+  "entity.ywzj_vehicle.lav150": "LAV-150",
+  "entity.ywzj_vehicle.ztl11": "ZTL-11",
+  "entity.ywzj_vehicle.ztz99a": "ZTZ-99A",
+  "entity.ywzj_vehicle.z10": "Z-10",
+  "entity.ywzj_vehicle.motorcycle": "Motorcycle",
+  "entity.ywzj_vehicle.hiace": "Hiace",
+  "entity.ywzj_vehicle.quadcopter": "Quadcopter Drone",
+  "entity.ywzj_vehicle.m1a2": "M1A2",
+  "entity.ywzj_vehicle.cssa5": "CS/SA5",
+  "entity.ywzj_vehicle.ah64d": "AH-64D",
+  "entity.ywzj_vehicle.lav_ad": "LAV-AD",
+  "entity.ywzj_vehicle.bgm_71_tow": "BGM-71 TOW"
+}

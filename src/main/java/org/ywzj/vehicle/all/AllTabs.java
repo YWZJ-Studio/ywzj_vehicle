@@ -21,18 +21,6 @@ public class AllTabs {
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, YwzjVehicle.MOD_ID);
     public static final List<Supplier<? extends ItemLike>> MISC_ITEMS = new ArrayList<>();
 
-    public static final RegistryObject<CreativeModeTab> TAB_VEHICLE = TABS.register("tab_vehicle", () ->
-            CreativeModeTab
-                    .builder()
-                    .title(Component.translatable("tab.vehicle"))
-                    .icon(() -> AllItems.PLAIN_TEXTURE_ITEM.get().createInstance(YwzjVehicle.modLocation("textures/tab.png")))
-                    .displayItems((displayParams, output) ->
-                            CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
-                                    .filter(vehicleId -> vehicleId.getNamespace().equals(YwzjVehicle.MOD_ID))
-                                    .sorted()
-                                    .forEach(vehicleId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleId))))
-                    .build());
-
     public static final RegistryObject<CreativeModeTab> TAB_MISC = TABS.register("tab_misc", () ->
             CreativeModeTab
                     .builder()

@@ -1,0 +1,9 @@
+{
+  "name": "ah64d_controller",
+  "script": "ywzj_vehicle:ah64d",
+  "parameters": {},
+  "graph": {
+    "type": "script",
+    "function": "prepareBones"
+  }
+}
