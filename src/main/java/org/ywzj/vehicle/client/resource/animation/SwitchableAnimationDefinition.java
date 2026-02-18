@@ -18,11 +18,18 @@ public class SwitchableAnimationDefinition {
     @SerializedName("animation")
     private String animation;
 
+    @SerializedName("invert")
+    private boolean invert = false;
+
     public String getPartId() {
         return partId;
     }
 
     public String getAnimation() {
         return animation;
+    }
+
+    public boolean isInvert() {
+        return invert;
     }
 }

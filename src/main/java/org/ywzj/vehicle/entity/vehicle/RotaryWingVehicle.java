@@ -1,8 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.maydaymemory.mae.control.runner.AnimationRunner;
-import com.maydaymemory.mae.control.runner.PauseState;
-import com.maydaymemory.mae.control.runner.PlayingState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -12,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
@@ -24,25 +22,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.api.animation.IAnimationEntity;
+import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.DoorUnit;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parts.*;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-public class RotaryWingVehicle extends AbstractVehicle {
+public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEntity<RotaryWingVehicle, VehicleContext<RotaryWingVehicle>> {
 
     public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.INT);
-    public static final EntityDataAccessor<Boolean> LANDING_GEAR_DOWN = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.BOOLEAN);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -61,11 +60,15 @@ public class RotaryWingVehicle extends AbstractVehicle {
     public HashMap<UUID, FastRopingContext> fastRopingContexts = new HashMap<>();
     public float propellerRotation;
     public long lastRenderTime;
-    private boolean animationLandingGearDown;
-    private AnimationRunner landingGearRunner;
+    public String landingGearPartId;
+    public LandingGearUnit landingGear;
+    public boolean lastLandingGearState = false;
+
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
+
+    private IAnimationInstance<VehicleContext<RotaryWingVehicle>> animationInstance;
 
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -73,17 +76,29 @@ public class RotaryWingVehicle extends AbstractVehicle {
     }
 
     @Override
+    public IAnimationInstance<VehicleContext<RotaryWingVehicle>> getAnimationInstance() {
+        return animationInstance;
+    }
+
+    @Override
+    public void initDisplayData(BaseDisplay display) {
+        super.initDisplayData(display);
+        if (display instanceof RotaryWingVehicleDisplay display1) {
+            this.animationInstance = display1.createAnimationInstance(this);
+        }
+
+    }
+
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(COLLECTIVE_PITCH, 0);
-        this.entityData.define(LANDING_GEAR_DOWN, true);
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putInt("CollectivePitch", getCollectivePitch());
-        compound.putBoolean("LandingGearDown", isLandingGearDown());
     }
 
     @Override
@@ -92,8 +107,8 @@ public class RotaryWingVehicle extends AbstractVehicle {
         if (compound.contains("CollectivePitch")) {
             entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getInt("CollectivePitch"), 0, 100));
         }
-        if (compound.contains("LandingGearDown")) {
-            entityData.set(LANDING_GEAR_DOWN, compound.getBoolean("LandingGearDown"));
+        if (this.landingGear != null) {
+            onLandingGearUpdate(this.landingGear, isLandingGearDown());
         }
     }
 
@@ -106,43 +121,48 @@ public class RotaryWingVehicle extends AbstractVehicle {
     @Override
     public void readSpawnData(FriendlyByteBuf buffer) {
         super.readSpawnData(buffer);
-//        EntityContext<?> context = getAnimationInstance().getStateMachine().getContext();
-//        if (context != null) {
-//            PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
-//            landingGearRunner = context.addAnimationRunner("landing_gear", playingState);
-//            animationLandingGearDown = buffer.readBoolean();
-//            if (animationLandingGearDown) {
-//                playingState.setSpeed(-1);
-//            } else {
-//                playingState.setSpeed(1);
-//                landingGearRunner.setProgress(landingGearRunner.getMaxProgress());
-//            }
-//        }
-        applyLandingGear();
+        if (this.landingGear != null) {
+            onLandingGearUpdate(this.landingGear, isLandingGearDown());
+        }
+    }
+
+    @Override
+    public void initData(ResourceLocation vehicleId) {
+        super.initData(vehicleId);
+        PartUnit<?> landingGearUnit = partUnitMap.get(this.landingGearPartId);
+        if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
+            this.landingGear = switchableUnit;
+            this.landingGear.setOnStateChange(this::onLandingGearUpdate);
+        }
     }
 
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide() && animationLandingGearDown != isLandingGearDown()) {
-            if (landingGearRunner != null && landingGearRunner.getState() instanceof PauseState) {
-                PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
-                if (animationLandingGearDown) {
-                    playingState.setSpeed(1);
-                    animationLandingGearDown = false;
-                    LocalVehiclePlayer.instance.sendMessage("tips.gear_up");
-                } else {
-                    playingState.setSpeed(-1);
-                    animationLandingGearDown = true;
-                    LocalVehiclePlayer.instance.sendMessage("tips.gear_down");
-                }
-                landingGearRunner.setState(playingState);
-                applyLandingGear();
-            }
-        }
         if (!level().isClientSide() && fastRoping) {
             tickFastRoping();
         }
+    }
+
+    public void onLandingGearUpdate(LandingGearUnit part, boolean newState) {
+        if (newState != lastLandingGearState) {
+            double maxHeight = part.getMaxHeight();
+            if (newState) {
+                mainCubeOBB.height += maxHeight;
+                mainCubeOBB.y -= maxHeight;
+            } else {
+                mainCubeOBB.height -= maxHeight;
+                mainCubeOBB.y += maxHeight;
+            }
+            mainCubeOBB.rebuild();
+        }
+
+        this.lastLandingGearState = newState;
+    }
+
+    @Nullable
+    public LandingGearUnit getLandingGearUnit() {
+        return landingGear;
     }
 
     public void tickFastRoping() {
@@ -155,24 +175,6 @@ public class RotaryWingVehicle extends AbstractVehicle {
             context.tickDescending();
             return false;
         });
-    }
-
-    public void applyLandingGear() {
-        PartUnit<?> landingGearUnit = partUnitMap.get("landing_gear");
-        if (landingGearUnit != null) {
-            double maxHeight = landingGearUnit.getOBBs().stream()
-                    .mapToDouble(obb -> obb.extents().y * 2)
-                    .max()
-                    .orElse(0);
-            if (isLandingGearDown()) {
-                mainCubeOBB.height += maxHeight;
-                mainCubeOBB.y -= maxHeight;
-            } else {
-                mainCubeOBB.height -= maxHeight;
-                mainCubeOBB.y += maxHeight;
-            }
-            mainCubeOBB.rebuild();
-        }
     }
 
     @NotNull
@@ -216,13 +218,12 @@ public class RotaryWingVehicle extends AbstractVehicle {
     @Override
     public void onClientVehicleAction(ClientVehicleAction message, Player player) {
         if (message.toggleLandingGear) {
-            PartUnit<?> landingGearUnit = partUnitMap.get("landing_gear");
+            SwitchableUnit<?> landingGearUnit = this.getLandingGearUnit();
             if (landingGearUnit == null) {
                 player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
             } else if (hasPower()) {
                 boolean landingGearDown = !isLandingGearDown();
-                entityData.set(LANDING_GEAR_DOWN, landingGearDown);
-                applyLandingGear();
+                landingGearUnit.setOn(landingGearDown);
             }
         }
         if (message.toggleHoverMode) {
@@ -495,7 +496,8 @@ public class RotaryWingVehicle extends AbstractVehicle {
     }
 
     public boolean isLandingGearDown() {
-        return entityData.get(LANDING_GEAR_DOWN);
+        var landingGearUnit = this.getLandingGearUnit();
+        return landingGearUnit != null && landingGearUnit.isOn();
     }
 
     public static class FastRopingContext {

@@ -14,18 +14,22 @@ public class SwitchableRunner {
     private final SwitchableUnit<?> unit;
     private AnimationRunner runner;
     private boolean lastState;
+    private boolean invert;
 
-    public SwitchableRunner(SwitchableUnit<?> unit, BedrockAnimation animation) {
+    public SwitchableRunner(SwitchableUnit<?> unit, BedrockAnimation animation, boolean invert) {
         this.unit = unit;
+        this.invert = invert;
         this.lastState = unit.isOn();
         AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
         runner = new AnimationRunner(animation, animContext);
 
-        if (unit.isOn()) {
-            // Jump to end
+        boolean effectiveState = unit.isOn();
+        if (invert) {
+            effectiveState = !effectiveState;
+        }
+        if (effectiveState) {
             animContext.setProgress(animation.getSpecifiedEndTimeS());
         } else {
-            // Jump to start
             animContext.setProgress(0);
         }
         runner.setState(new PauseState());
@@ -47,6 +51,9 @@ public class SwitchableRunner {
 
         if (unit.isOn() != lastState) {
             float speed = unit.isOn() ? 1.0f : -1.0f;
+            if (invert) {
+                speed = -speed;
+            }
             PlayingState playingState = new PlayingState(System::nanoTime, PauseState::new);
             playingState.setSpeed(speed);
             runner.setState(playingState);
@@ -59,5 +66,9 @@ public class SwitchableRunner {
             return runner.evaluate();
         }
         return DummyPose.INSTANCE;
+    }
+
+    public boolean isInvert() {
+        return invert;
     }
 }

@@ -26,7 +26,7 @@ import java.util.Optional;
 
 public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext<E>> extends BaseDisplay {
     
-    protected AnimationController<?> animationController;
+    protected AnimationController<CTX> animationController;
     protected AnimationContextFactory<E, CTX> contextFactory;
     protected Scriptable scriptScope;
     protected Map<String, Function> scriptFunctions = new HashMap<>();
@@ -35,7 +35,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
         super(pojo);
     }
 
-    public AnimationController<?> getAnimationController() {
+    public AnimationController<CTX> getAnimationController() {
         return animationController;
     }
 
@@ -59,7 +59,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
             return;
         }
 
-        AnimationController<?> controller = compileAnimationController(
+        AnimationController<CTX> controller = compileAnimationController(
             definitionOpt.get(), scriptManager, scriptContextFactory
         );
         
@@ -68,7 +68,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
         }
     }
 
-    protected AnimationController<?> compileAnimationController(AnimationControllerDefinition definition,
+    protected AnimationController<CTX> compileAnimationController(AnimationControllerDefinition definition,
                                                                ScriptManager scriptManager,
                                                                ScriptContextFactory scriptContextFactory) {
         try {
@@ -142,7 +142,6 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
         }
     }
 
-    @SuppressWarnings("unchecked")
     public IAnimationInstance<CTX> createAnimationInstance(E entity) {
         if (animationController == null || contextFactory == null) {
             return null;
@@ -151,16 +150,17 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
         CTX context = contextFactory.create(entity);
         context.setAnimations(animations);
 
-        AnimationController<CTX> typedController = (AnimationController<CTX>) animationController;
+        AnimationController<CTX> typedController = animationController;
         for (var entry : typedController.getSwitchableAnimations().entrySet()) {
             String animationName = entry.getValue().getAnimation();
+            boolean invert = entry.getValue().isInvert();
             BedrockAnimation animation = context.getAnimation(animationName);
             if (animation == null) {
                 continue;
             }
             entity.getPartUnit(entry.getValue().getPartId()).ifPresent(part -> {
                 if (part instanceof SwitchableUnit<?> switchablePart) {
-                    context.addSwitchableRunner(entry.getKey(), new SwitchableRunner(switchablePart, animation));
+                    context.addSwitchableRunner(entry.getKey(), new SwitchableRunner(switchablePart, animation, invert));
                 }
             });
         }
@@ -173,7 +173,6 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
             }
             context.addLoopRunner(entry.getKey(), new LoopAnimationRunner(animation));
         }
-
 
         return new VehicleAnimationInstance<>(typedController, context);
     }

@@ -25,6 +25,15 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<LandingGearUnit, PartUnitData> LANDING_GEAR =
+            PartUnitType.Builder.<LandingGearUnit, PartUnitData>of(YwzjVehicle.modLocation("landing_gear"))
+                    .setFactory(LandingGearUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, PartUnitPojo.class);
+                        return new PartUnitData(pojo);
+                    })
+                    .build();
+
     public static final PartUnitType<RotatableUnit<RotatableUnitData>, RotatableUnitData> ROTATABLE =
             PartUnitType.Builder.<RotatableUnit<RotatableUnitData>, RotatableUnitData>of(YwzjVehicle.modLocation("rotatable"))
                     .setFactory(RotatableUnit::new)
