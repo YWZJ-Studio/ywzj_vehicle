@@ -20,9 +20,7 @@ import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext<E>> extends BaseDisplay {
     
@@ -151,6 +149,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
         context.setAnimations(animations);
 
         AnimationController<CTX> typedController = animationController;
+        Set<String> partIds = new HashSet<>();
         for (var entry : typedController.getSwitchableAnimations().entrySet()) {
             String animationName = entry.getValue().getAnimation();
             boolean invert = entry.getValue().isInvert();
@@ -161,8 +160,23 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
             entity.getPartUnit(entry.getValue().getPartId()).ifPresent(part -> {
                 if (part instanceof SwitchableUnit<?> switchablePart) {
                     context.addSwitchableRunner(entry.getKey(), new SwitchableRunner(switchablePart, animation, invert));
+                    partIds.add(entry.getKey());
                 }
             });
+        }
+
+        // 尝试为所有未声明pose源，但是存在对应名称动画的SwitchableUnit添加SwitchableRunner
+        for (var unit : entity.getPartUnits()) {
+            if (unit instanceof SwitchableUnit<?> switchableUnit) {
+                String partId = unit.getId();
+                BedrockAnimation animation = context.getAnimation(partId + "_switch");
+                if (animation == null) {
+                    continue;
+                }
+                if (!partIds.contains(partId)) {
+                    context.addSwitchableRunner(partId, new SwitchableRunner(switchableUnit, animation, switchableUnit.defaultOpen()));
+                }
+            }
         }
 
         for (var entry : typedController.getLoopAnimations().entrySet()) {

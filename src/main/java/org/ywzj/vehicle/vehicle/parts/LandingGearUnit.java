@@ -40,4 +40,9 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
     public double getMaxHeight() {
         return maxHeight;
     }
+
+    @Override
+    public boolean defaultOpen() {
+        return true;
+    }
 }

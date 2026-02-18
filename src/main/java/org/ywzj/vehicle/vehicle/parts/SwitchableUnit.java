@@ -55,4 +55,7 @@ public class SwitchableUnit<T extends PartUnitData> extends PartUnit<T> {
         this.on = nbt.getBoolean("on");
     }
 
+    public boolean defaultOpen() {
+        return false;
+    }
 }
