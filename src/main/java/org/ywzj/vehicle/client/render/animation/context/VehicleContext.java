@@ -1,5 +1,8 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
+import com.maydaymemory.mae.basic.DummyPose;
+import com.maydaymemory.mae.basic.Pose;
+import org.ywzj.vehicle.client.render.animation.util.SimpleFireAnimationHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
@@ -11,8 +14,30 @@ import java.util.Optional;
 
 public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> {
 
+    private SimpleFireAnimationHandler fireAnimationHandler;
+
     public VehicleContext(E entity) {
         super(entity);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (fireAnimationHandler != null) {
+            fireAnimationHandler.tick(this.events);
+        }
+    }
+
+    public void setFireAnimationHandler(SimpleFireAnimationHandler fireAnimationHandler) {
+        this.fireAnimationHandler = fireAnimationHandler;
+        this.fireAnimationHandler.setSoundProcessor(this::processSounds);
+    }
+
+    public Pose getFirePose() {
+        if (fireAnimationHandler != null) {
+            return fireAnimationHandler.evaluate();
+        }
+        return DummyPose.INSTANCE;
     }
 
     public boolean hasOwner(String id) {

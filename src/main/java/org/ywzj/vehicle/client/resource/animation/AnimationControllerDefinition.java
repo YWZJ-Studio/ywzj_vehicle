@@ -2,7 +2,9 @@ package org.ywzj.vehicle.client.resource.animation;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,14 +41,15 @@ public class AnimationControllerDefinition {
     @SerializedName("state_machines")
     private Map<String, StateMachineDefinition> stateMachines;
 
-    /**
-     * Switchable animation definitions (doors, landing gear, etc.)
-     */
     @SerializedName("switchable_animations")
     private Map<String, SwitchableAnimationDefinition> switchableAnimations;
 
     @SerializedName("loop_animations")
     private Map<String, LoopAnimationDefinition> loopAnimations;
+
+    @Nullable
+    @SerializedName("fire_animations")
+    public Map<String, List<String>> fireAnimations;
 
     /**
      * Pose graph definition (blending logic)
@@ -80,6 +83,11 @@ public class AnimationControllerDefinition {
 
     public Map<String, LoopAnimationDefinition> getLoopAnimations() {
         return loopAnimations;
+    }
+
+    @Nullable
+    public Map<String, List<String>> getFireAnimations() {
+        return fireAnimations;
     }
 
     public PoseNodeDefinition getGraph() {

@@ -8,11 +8,12 @@ import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.compiler.*;
 import org.ywzj.vehicle.client.render.animation.context.AnimationContextFactory;
-import org.ywzj.vehicle.client.render.animation.context.EntityContext;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
 import org.ywzj.vehicle.client.render.animation.graph.ScriptPoseNode;
 import org.ywzj.vehicle.client.render.animation.util.LoopAnimationRunner;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
+import org.ywzj.vehicle.client.render.animation.util.SimpleFireAnimationHandler;
 import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.ScriptManager;
@@ -22,7 +23,7 @@ import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
 
 import java.util.*;
 
-public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext<E>> extends BaseDisplay {
+public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContext<E>> extends BaseDisplay {
     
     protected AnimationController<CTX> animationController;
     protected AnimationContextFactory<E, CTX> contextFactory;
@@ -186,6 +187,11 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends EntityContext
                 continue;
             }
             context.addLoopRunner(entry.getKey(), new LoopAnimationRunner(animation));
+        }
+
+        var fireAnimations = typedController.getFireAnimations();
+        if (fireAnimations != null) {
+            context.setFireAnimationHandler(new SimpleFireAnimationHandler(context::getAnimation, fireAnimations));
         }
 
         return new VehicleAnimationInstance<>(typedController, context);

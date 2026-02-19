@@ -2,29 +2,13 @@
   "name": "ztz99a_controller",
   "script": "ywzj_vehicle:ztz99a",
   "parameters": {},
+  "fire_animations": {
+    "turret_fire": ["turret_shoot"]
+  },
   // 循环动画源
   "loop_animations": {
     "static": {
       "animation": "static"
-    }
-  },
-  "state_machines": {
-    "fire": {
-      "start_state": "idle",
-      "states": {
-        "idle": {
-          "on_update": [
-            {
-              "type": "script",
-              "script": "handleShoot(context)"
-            }
-          ],
-          "evaluate": {
-            "type": "script",
-            "script": "context.getAnimationRunners().getMultiRunnerPose()"
-          }
-        }
-      }
     }
   },
   "graph": {
@@ -105,8 +89,7 @@
           ]
         },
         "add": {
-          "type": "state_machine",
-          "ref": "fire"
+          "type": "fire_animation"
         }
       }
     ]

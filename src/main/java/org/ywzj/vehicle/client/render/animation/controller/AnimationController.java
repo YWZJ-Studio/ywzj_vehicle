@@ -3,6 +3,7 @@ package org.ywzj.vehicle.client.render.animation.controller;
 import com.maydaymemory.mae.control.statemachine.AnimationStateMachine;
 import com.maydaymemory.mae.util.LongSupplier;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
 import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
 import org.ywzj.vehicle.client.resource.animation.LoopAnimationDefinition;
@@ -10,6 +11,7 @@ import org.ywzj.vehicle.client.resource.animation.ParameterDefinition;
 import org.ywzj.vehicle.client.resource.animation.SwitchableAnimationDefinition;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,7 +27,10 @@ public class AnimationController<T extends BaseAnimationContext> {
     private final Map<String, CompiledStateMachine<T>> stateMachines;
     // 可开关动画定义
     private final Map<String, SwitchableAnimationDefinition> switchableAnimations;
+    // 循环动画定义
     private final Map<String, LoopAnimationDefinition> loopAnimations;
+    // 开火动画定义
+    private final Map<String, List<String>> fireAnimations;
     private final PoseGraph poseGraph;
 
     public AnimationController(String name,
@@ -33,12 +38,14 @@ public class AnimationController<T extends BaseAnimationContext> {
                                Map<String, CompiledStateMachine<T>> stateMachines,
                                Map<String, SwitchableAnimationDefinition> switchableAnimations,
                                Map<String, LoopAnimationDefinition> loopAnimationDefinitions,
+                               Map<String, List<String>> fireAnimations,
                                PoseGraph poseGraph) {
         this.name = name;
         this.parameters = parameters != null ? Map.copyOf(parameters) : Map.of();
         this.stateMachines = stateMachines != null ? Map.copyOf(stateMachines) : Map.of();
         this.switchableAnimations = switchableAnimations != null ? Map.copyOf(switchableAnimations) : Map.of();
         this.loopAnimations = loopAnimationDefinitions != null ? Map.copyOf(loopAnimationDefinitions) : Map.of();
+        this.fireAnimations = fireAnimations;
         this.poseGraph = poseGraph;
     }
 
@@ -122,5 +129,10 @@ public class AnimationController<T extends BaseAnimationContext> {
 
     public Map<String, LoopAnimationDefinition> getLoopAnimations() {
         return loopAnimations;
+    }
+
+    @Nullable
+    public Map<String, List<String>> getFireAnimations() {
+        return fireAnimations;
     }
 }

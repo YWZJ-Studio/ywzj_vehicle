@@ -67,7 +67,8 @@ public class PoseGraphCompiler {
             case "additive" -> compileAdditiveNode(definition);
             case "script" -> compileScriptNode(definition);
             case "bone_binding" -> compileBoneBindingNode(definition, boneIndexProvider);
-            case "track_animation" -> compileTrackAnimationNode();
+            case "track_animation" -> new TrackAnimationNode();
+            case "fire_animation" -> new FireAnimationNode();
             default -> throw new IllegalArgumentException("Unknown node type: " + type);
         };
     }
@@ -247,13 +248,6 @@ public class PoseGraphCompiler {
             case "z" -> 2;
             default -> -1;
         };
-    }
-
-    /**
-     * Compile track_animation node
-     */
-    private PoseNode compileTrackAnimationNode() {
-        return new TrackAnimationNode();
     }
 
     /**

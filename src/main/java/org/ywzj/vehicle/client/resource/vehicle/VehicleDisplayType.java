@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.client.render.animation.context.AnimationContextFactory;
-import org.ywzj.vehicle.client.render.animation.context.EntityContext;
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 /**
@@ -25,11 +25,11 @@ public record VehicleDisplayType<D extends BaseDisplay> (
         
         // Set context factory if this is a VehicleDisplay
         if (display instanceof VehicleDisplay<?, ?> vd && contextFactory != null) {
-            VehicleDisplay<AbstractVehicle, EntityContext<AbstractVehicle>> typedDisplay =
-                (VehicleDisplay<AbstractVehicle, EntityContext<AbstractVehicle>>) vd;
+            VehicleDisplay<AbstractVehicle, VehicleContext<AbstractVehicle>> typedDisplay =
+                (VehicleDisplay<AbstractVehicle, VehicleContext<AbstractVehicle>>) vd;
 
-            AnimationContextFactory<AbstractVehicle, EntityContext<AbstractVehicle>> typedFactory =
-                (AnimationContextFactory<AbstractVehicle, EntityContext<AbstractVehicle>>) contextFactory;
+            AnimationContextFactory<AbstractVehicle, VehicleContext<AbstractVehicle>> typedFactory =
+                (AnimationContextFactory<AbstractVehicle, VehicleContext<AbstractVehicle>>) contextFactory;
             typedDisplay.setContextFactory(typedFactory);
         }
         

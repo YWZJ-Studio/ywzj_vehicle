@@ -8,6 +8,7 @@ import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
 import org.ywzj.vehicle.client.resource.animation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AnimationControllerCompiler {
@@ -42,6 +43,7 @@ public class AnimationControllerCompiler {
         Map<String, SwitchableAnimationDefinition> switchableAnimations = definition.getSwitchableAnimations();
         // todo 其实应该带条件，现在暂时原样传，后续补
         Map<String, LoopAnimationDefinition> loopAnimations = definition.getLoopAnimations();
+        Map<String, List<String>> fireAnimations = definition.getFireAnimations();
 
         // Compile pose graph
         PoseGraph poseGraph = null;
@@ -49,6 +51,12 @@ public class AnimationControllerCompiler {
             poseGraph = poseGraphCompiler.compile(definition.getGraph());
         }
 
-        return new AnimationController<>(name, parameters, compiledStateMachines, switchableAnimations, loopAnimations, poseGraph);
+        return new AnimationController<>(
+                name, parameters, compiledStateMachines,
+                switchableAnimations,
+                loopAnimations,
+                fireAnimations,
+                poseGraph
+        );
     }
 }

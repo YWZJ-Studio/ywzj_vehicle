@@ -70,12 +70,14 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
 
     @SubscribeEvent
     public static void onFire(VehicleFireEvent.Post event) {
-        if (event.isClientSide()) {
-            if (event.getVehicle() instanceof IAnimationEntity<?,?> animationEntity) {
-                var instance = animationEntity.getAnimationInstance();
-                if (instance != null) {
-                    instance.getContext().offerEvent("fire");
-                }
+        if (!event.isClientSide()) {
+            return;
+        }
+        if (event.getVehicle() instanceof IAnimationEntity<?,?> animationEntity) {
+            var instance = animationEntity.getAnimationInstance();
+            if (instance != null) {
+                String partId = event.getWeapon().getWeaponUnit().getId();
+                instance.getContext().offerEvent(partId + "_fire");
             }
         }
     }

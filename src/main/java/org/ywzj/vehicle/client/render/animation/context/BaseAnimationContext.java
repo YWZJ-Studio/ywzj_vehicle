@@ -29,7 +29,7 @@ public abstract class BaseAnimationContext {
     // 脚本自定义变量
     private Object scriptParam;
 
-    private final Set<String> events = new HashSet<>();
+    protected final Set<String> events = new HashSet<>();
 
     public BaseAnimationContext() {
     }
