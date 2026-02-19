@@ -4,7 +4,6 @@ import com.maydaymemory.mae.basic.Pose;
 import org.mozillaa.javascript.Function;
 import org.mozillaa.javascript.Scriptable;
 import org.mozillaa.javascript.Wrapper;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
@@ -29,28 +28,23 @@ public class ScriptPoseNode implements PoseNode {
             return null;
         }
 
-        try {
-            try (var ctx = ScriptContextFactory.get().enterContext()) {
-                Object result = scriptFunction.call(
-                        ctx,
-                        scope,
-                        scope,
-                        new Object[]{context.getContext()}
-                );
+        try (var ctx = ScriptContextFactory.get().enterContext()) {
+            Object result = scriptFunction.call(
+                    ctx,
+                    scope,
+                    scope,
+                    new Object[]{context.getContext()}
+            );
 
-                if (result instanceof Wrapper wrapper) {
-                    result = wrapper.unwrap();
-                }
-
-                if (result instanceof PoseHelper pose) {
-                    return pose.build();
-                }
+            if (result instanceof Wrapper wrapper) {
+                result = wrapper.unwrap();
             }
-            
-            return null;
-        } catch (Exception e) {
-            YwzjVehicle.LOGGER.debug("Error evaluating script pose node: ", e);
-            return null;
+
+            if (result instanceof PoseHelper pose) {
+                return pose.build();
+            }
         }
+
+        return null;
     }
 }
