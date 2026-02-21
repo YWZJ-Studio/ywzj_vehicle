@@ -70,7 +70,7 @@
 
   "ui.stabilizer_on": "稳定器开",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",
-  "ui.vehicle_rotary_wing.collective_pitch": "总距: %.2f",
+  "ui.vehicle_rotary_wing.collective_pitch": "总距: %d",
   "ui.vehicle_rotary_wing.speed": "速度: %d",
   "ui.vehicle_rotary_wing.fuel": "燃油: %s",
   "ui.vehicle_rotary_wing.altitude": "高度: %d",

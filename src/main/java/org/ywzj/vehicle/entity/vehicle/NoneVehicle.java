@@ -41,8 +41,9 @@ public class NoneVehicle extends AbstractVehicle implements IAnimationEntity<Abs
 
     @Override
     public void initDisplayData(BaseDisplay display) {
-        if (display instanceof SimpleVehicleDisplay display1) {
-            this.animationInstance = display1.createAnimationInstance(this);
+        if (display instanceof SimpleVehicleDisplay simpleVehicleDisplay) {
+            this.animationInstance = simpleVehicleDisplay.createAnimationInstance(this);
         }
     }
+
 }

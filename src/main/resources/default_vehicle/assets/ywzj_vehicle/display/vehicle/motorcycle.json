@@ -3,7 +3,7 @@
   "model": "ywzj_vehicle:entity/motorcycle",
   "texture": "ywzj_vehicle:textures/entity/motorcycle.png",
   "slot_texture": "ywzj_vehicle:textures/slot/motorcycle.png",
-  "script": "ywzj_vehicle:motorcycle",
+  "animation_controller": "ywzj_vehicle:motorcycle_controller",
   "sounds": {
     "engine_start": "ywzj_vehicle:motorcycle_engine_start",
     "engine_idle": "ywzj_vehicle:motorcycle_engine_idle",

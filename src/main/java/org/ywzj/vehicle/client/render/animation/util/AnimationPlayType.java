@@ -6,6 +6,7 @@ import com.maydaymemory.mae.control.runner.*;
 import java.util.function.Supplier;
 
 public enum AnimationPlayType {
+
     @SerializedName("play_once_stop")
     PLAY_ONCE_STOP(() -> new PlayingState(System::nanoTime, StopState::new)),
 
@@ -36,4 +37,5 @@ public enum AnimationPlayType {
             default -> LOOP;
         };
     }
+
 }

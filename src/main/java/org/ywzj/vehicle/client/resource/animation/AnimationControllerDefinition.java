@@ -11,6 +11,7 @@ import java.util.Map;
  * 动画控制器定义
  */
 public class AnimationControllerDefinition {
+
     /**
      * Controller name
      */
@@ -48,8 +49,8 @@ public class AnimationControllerDefinition {
     private Map<String, LoopAnimationDefinition> loopAnimations;
 
     @Nullable
-    @SerializedName("fire_animations")
-    public Map<String, List<String>> fireAnimations;
+    @SerializedName("event_animations")
+    public Map<String, List<String>> eventAnimations;
 
     /**
      * Pose graph definition (blending logic)
@@ -86,11 +87,12 @@ public class AnimationControllerDefinition {
     }
 
     @Nullable
-    public Map<String, List<String>> getFireAnimations() {
-        return fireAnimations;
+    public Map<String, List<String>> getEventAnimations() {
+        return eventAnimations;
     }
 
     public PoseNodeDefinition getGraph() {
         return graph;
     }
+
 }

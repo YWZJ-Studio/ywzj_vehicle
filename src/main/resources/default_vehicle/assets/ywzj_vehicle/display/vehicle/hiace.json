@@ -4,7 +4,6 @@
   "texture": "ywzj_vehicle:textures/entity/hiace.png",
   "slot_texture": "ywzj_vehicle:textures/slot/hiace.png",
   "animations": "ywzj_vehicle:entity/hiace.animation",
-  "script": "ywzj_vehicle:hiace",
   "animation_controller": "ywzj_vehicle:hiace_controller",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",

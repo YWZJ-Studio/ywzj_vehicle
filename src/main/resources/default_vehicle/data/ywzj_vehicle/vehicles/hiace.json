@@ -13,7 +13,11 @@
   "view_info": {
     "third_person_center_offset": [0, 4, 0],
     "third_person_distance": 7,
-    "sound_distance": 3
+    "sound_distance": 3,
+    "passenger_view_rot": {
+      "rot_by_vehicle_in_third_person": false,
+      "rot_by_vehicle_in_operator": true
+    }
   },
   "energy_info": {
     "energy_capacity": 1,

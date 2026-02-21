@@ -4,7 +4,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -18,8 +17,8 @@ import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
-import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.context.tracked.TrackAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.context.tracked.TrackedVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -44,7 +43,6 @@ public class TrackedVehicle extends AbstractVehicle
     public double trackLength;
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
-
     private TrackAnimationInstance trackAnimationInstance;
     private IAnimationInstance<TrackedVehicleContext> animationInstance;
 
@@ -55,11 +53,6 @@ public class TrackedVehicle extends AbstractVehicle
     @Override
     public IAnimationInstance<TrackedVehicleContext> getAnimationInstance() {
         return animationInstance;
-    }
-
-    @Override
-    public void initData(ResourceLocation vehicleId) {
-        super.initData(vehicleId);
     }
 
     @Override

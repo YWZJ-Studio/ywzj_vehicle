@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
@@ -8,6 +8,7 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
  * 一种特殊的node，永远只会输出一个循环动画，用于替代简单状态机
  */
 public class LoopAnimationNode implements PoseNode {
+
     private final String ref;
 
     public LoopAnimationNode(String ref) {
@@ -26,4 +27,5 @@ public class LoopAnimationNode implements PoseNode {
     public String getRef() {
         return ref;
     }
+
 }

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
@@ -9,6 +9,7 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
  * Pose node that references a state machine as pose source.
  */
 public class StateMachineNode implements PoseNode {
+
     private final String stateMachineName;
 
     public StateMachineNode(String stateMachineName) {
@@ -27,4 +28,5 @@ public class StateMachineNode implements PoseNode {
     public String getStateMachineName() {
         return stateMachineName;
     }
+
 }

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
@@ -6,6 +6,7 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 
 public class SwitchableAnimationNode implements PoseNode {
+
     private final String partId;
 
     public SwitchableAnimationNode(String partId) {
@@ -20,7 +21,7 @@ public class SwitchableAnimationNode implements PoseNode {
                 return runner.evaluate();
             }
         }
-
         return DummyPose.INSTANCE;
     }
+
 }

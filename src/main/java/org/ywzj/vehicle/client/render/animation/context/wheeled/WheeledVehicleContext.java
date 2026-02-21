@@ -1,5 +1,6 @@
-package org.ywzj.vehicle.client.render.animation.context;
+package org.ywzj.vehicle.client.render.animation.context.wheeled;
 
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
 public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
@@ -45,9 +46,6 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
      * @return 旋转角度（度）
      */
     public float getWheelDegrees(float radius) {
-        if (radius <= 0) {
-            return 0f;
-        }
         // 根据半径调整累积的旋转角度
         float circumference = (float) (2 * Math.PI * radius);
         return (wheelRotation / circumference) % 360f;
@@ -79,9 +77,8 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
     @Override
     public float getBindingValue(String source, Float param) {
         float paramValue = param != null ? param : 0f;
-        
         return switch (source) {
-            case "wheel_rotation" -> getWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+            case "wheel_rotation" -> getWheelDegrees(paramValue);
             case "steering_angle" -> getSteeringAngle();
             default -> super.getBindingValue(source, param);
         };

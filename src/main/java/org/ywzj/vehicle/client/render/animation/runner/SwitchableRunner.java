@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.util;
+package org.ywzj.vehicle.client.render.animation.runner;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.DummyPose;
@@ -7,10 +7,17 @@ import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.maydaymemory.mae.control.runner.PauseState;
 import com.maydaymemory.mae.control.runner.PlayingState;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
 
-// 简单的 SwitchableRunner 管理器，用于管理门、起落架等可开关结构的动画 Runner
+/**
+ * 简单的 SwitchableRunner 管理器，用于管理门、起落架等可开关结构的动画 Runner
+ */
 public class SwitchableRunner {
+
     private final SwitchableUnit<?> unit;
     private AnimationRunner runner;
     private boolean lastState;
@@ -44,12 +51,14 @@ public class SwitchableRunner {
         if (runner != null) {
             runner.tick();
         }
-
         if (unit == null) {
             return;
         }
-
         if (unit.isOn() != lastState) {
+            AbstractVehicle vehicle = unit.getVehicle();
+            vehicle.level().playSound(LocalVehiclePlayer.instance.getPlayer(), vehicle.blockPosition(),
+                    unit.isOn() ? SoundEvents.IRON_TRAPDOOR_OPEN : SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.PLAYERS,
+                    1f, 1f);
             float speed = unit.isOn() ? 1.0f : -1.0f;
             if (invert) {
                 speed = -speed;
@@ -71,4 +80,5 @@ public class SwitchableRunner {
     public boolean isInvert() {
         return invert;
     }
+
 }

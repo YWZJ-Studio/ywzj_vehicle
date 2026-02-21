@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.render.animation.graph;
 
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.graph.node.PoseNode;
 
 /**
  * Pose graph that manages the root node and evaluates final pose.

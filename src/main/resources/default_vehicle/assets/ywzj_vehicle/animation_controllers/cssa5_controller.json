@@ -12,7 +12,7 @@
             "bones": ["wheel1", "wheel2", "wheel3", "wheel4", "wheel5", "wheel6", "wheel7", "wheel8"],
             "source": "wheel_rotation",
             "axis": "x",
-            "param": 0.35
+            "param": 0.8
           },
           {
             "bones": ["wheel1", "wheel2"],
@@ -84,6 +84,10 @@
             "invert": true
           }
         ]
+      },
+      {
+        "type": "script",
+        "function": "updateBones"
       }
     ]
   }

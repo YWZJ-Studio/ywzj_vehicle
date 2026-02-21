@@ -1,6 +1,8 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
 import net.minecraft.world.entity.Entity;
+import org.ywzj.vehicle.client.render.animation.context.tracked.TrackedVehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.wheeled.WheeledVehicleContext;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;

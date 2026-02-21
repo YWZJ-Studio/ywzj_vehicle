@@ -360,7 +360,8 @@ public class MachineMaxScreen extends Screen {
             return;
         }
         vehicle = vehicleDataOptional.get().construct(Minecraft.getInstance().level, Vec3.ZERO, 0, 0);
-        vehicle.initData(vehicleId);
+        vehicle.initData();
+        vehicle.initDisplayData();
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }

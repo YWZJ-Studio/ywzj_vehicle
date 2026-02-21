@@ -47,6 +47,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             BedrockBone wheel5 = model.getBoneMap().get("wheel8");
             BedrockBone wheel6 = model.getBoneMap().get("wheel7");
             BedrockBone control = model.getBoneMap().get("control");
+            Quaternionf controlO = new Quaternionf(control.rotation);
             BedrockBone bed = model.getBoneMap().get("back");
             BedrockBone bedDoor = model.getBoneMap().get("back_door");
             BedrockBone lift = model.getBoneMap().get("lift");
@@ -76,7 +77,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             // 应用程序动画
             wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
             wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
-            control.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 15 - 90));
+            control.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 15));
             bed.rotation.mul(Axis.XN.rotationDegrees(bedXRot));
             bedDoor.rotation.mul(Axis.XN.rotationDegrees(-bedXRot * 2));
             lift.rotation.mul(Axis.XN.rotationDegrees(-70 + 65 * (-bedXRot / 45)));
@@ -115,7 +116,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
 
             model.applyPose(model.getBindPose());
             Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-            control.rotation.set(reset);
+            control.rotation.set(controlO);
             lift.rotation.set(reset);
         }
         pPoseStack.popPose();

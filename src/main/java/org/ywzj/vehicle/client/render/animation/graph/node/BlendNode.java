@@ -1,7 +1,8 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.graph.WeightSource;
 import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
 
 /**
@@ -9,6 +10,7 @@ import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
  * Pose = lerp(PoseA, PoseB, clamp(weight, 0, 1))
  */
 public class BlendNode implements PoseNode {
+
     private final PoseNode nodeA;
     private final PoseNode nodeB;
     private final WeightSource weightSource;
@@ -30,4 +32,5 @@ public class BlendNode implements PoseNode {
         float weight = Math.max(0.0f, Math.min(1.0f, weightSource.getWeight(context)));
         return PoseBlenders.INTERPOLATOR_BLENDER.blend(poseA, poseB, weight);
     }
+
 }

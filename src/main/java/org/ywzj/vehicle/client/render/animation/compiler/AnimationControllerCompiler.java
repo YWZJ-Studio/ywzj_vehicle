@@ -23,7 +23,6 @@ public class AnimationControllerCompiler {
     }
 
     public <T extends BaseAnimationContext> AnimationController<T> compile(AnimationControllerDefinition definition) {
-
         String name = definition.getName();
 
         // Get parameter definitions
@@ -43,7 +42,7 @@ public class AnimationControllerCompiler {
         Map<String, SwitchableAnimationDefinition> switchableAnimations = definition.getSwitchableAnimations();
         // todo 其实应该带条件，现在暂时原样传，后续补
         Map<String, LoopAnimationDefinition> loopAnimations = definition.getLoopAnimations();
-        Map<String, List<String>> fireAnimations = definition.getFireAnimations();
+        Map<String, List<String>> eventAnimations = definition.getEventAnimations();
 
         // Compile pose graph
         PoseGraph poseGraph = null;
@@ -55,7 +54,7 @@ public class AnimationControllerCompiler {
                 name, parameters, compiledStateMachines,
                 switchableAnimations,
                 loopAnimations,
-                fireAnimations,
+                eventAnimations,
                 poseGraph
         );
     }

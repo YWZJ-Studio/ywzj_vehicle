@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
@@ -39,9 +38,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEntity<RotaryWingVehicle, VehicleContext<RotaryWingVehicle>> {
+public class RotaryWingVehicle extends AbstractVehicle
+        implements IAnimationEntity<RotaryWingVehicle, VehicleContext<RotaryWingVehicle>> {
 
-    public static final EntityDataAccessor<Integer> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -63,11 +63,9 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
     public String landingGearPartId;
     public LandingGearUnit landingGear;
     public boolean lastLandingGearState = false;
-
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
-
     private IAnimationInstance<VehicleContext<RotaryWingVehicle>> animationInstance;
 
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
@@ -82,30 +80,28 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
 
     @Override
     public void initDisplayData(BaseDisplay display) {
-        super.initDisplayData(display);
         if (display instanceof RotaryWingVehicleDisplay display1) {
             this.animationInstance = display1.createAnimationInstance(this);
         }
-
     }
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(COLLECTIVE_PITCH, 0);
+        this.entityData.define(COLLECTIVE_PITCH, 0f);
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.putInt("CollectivePitch", getCollectivePitch());
+        compound.putFloat("CollectivePitch", getCollectivePitch());
     }
 
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         if (compound.contains("CollectivePitch")) {
-            entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getInt("CollectivePitch"), 0, 100));
+            entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getFloat("CollectivePitch"), 0, 100));
         }
         if (this.landingGear != null) {
             onLandingGearUpdate(this.landingGear, isLandingGearDown());
@@ -127,8 +123,8 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
     }
 
     @Override
-    public void initData(ResourceLocation vehicleId) {
-        super.initData(vehicleId);
+    public void initData() {
+        super.initData();
         PartUnit<?> landingGearUnit = partUnitMap.get(this.landingGearPartId);
         if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
             this.landingGear = switchableUnit;
@@ -249,6 +245,17 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
     protected void tickSound() {
         super.tickSound();
         float engineSpeed = getPower();
+        if (engineSpeed == 0) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.stop();
+                engineStartSoundInstance = null;
+            }
+            return;
+        }
         if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
             SoundEvent engineStopSound = getEngineStopSound();
             if (engineStopSound != null) {
@@ -259,31 +266,15 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
                 engineStartSoundInstance.setVolume(engineSpeed / 100);
             }
         }
-        if (engineSpeed == 0) {
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.stop();
-                engineStartSoundInstance = null;
-            }
-        } else if (engineSpeed > 0) {
+        if (engineSpeed > 0) {
             if (engineSpeed > 50 && engineStopSoundInstance != null) {
                 engineStopSoundInstance = null;
             }
-            if (engineStartSoundInstance == null) {
+            if (engineSpeed < 20 && engineStartSoundInstance == null) {
                 SoundEvent engineStartSound = getEngineStartSound();
                 if (engineStartSound != null) {
                     engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
                     engineStartSoundInstance.play();
-                } else {
-                    SoundEvent engineRunSound = getEngineRunSound();
-                    if (engineRunSound != null) {
-                        engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
-                        engineRunSoundInstance.play();
-                        engineStartSoundInstance = engineRunSoundInstance;
-                    }
                 }
             }
             if (engineSpeed > 50 && engineRunSoundInstance == null) {
@@ -306,13 +297,13 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
         }
 
         // 总距控制
-        int collectivePitch = getCollectivePitch();
+        float collectivePitch = getCollectivePitch();
         if (controlUnit.up) {
             collectivePitch += 5;
         } else if (controlUnit.down) {
             collectivePitch -= 5;
         }
-        entityData.set(COLLECTIVE_PITCH, Mth.clamp(collectivePitch, 0, 100));
+        entityData.set(COLLECTIVE_PITCH, Mth.clamp(collectivePitch, 0f, 100f));
 
         airSpeed = getDeltaMovement();
         // 引擎转速与浆距得出力系数，该值越高，桨叶效率越高，则出力越高
@@ -345,11 +336,11 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
             if (hoverMode) {
                 controlUnit.xRot = 0;
                 controlUnit.yRot = getYRot();
-                Vec3 velocity = getDeltaMovement();
-                if (velocity.y > 0.05) {
-                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1, 0, 100));
-                } else if (velocity.y < -0.0001) {
-                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() + 1, 0, 100));
+                double vy = airSpeed.y - physicsEngine.gravityA;
+                if (vy > 0.01) {
+                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
+                } else if (vy < -0.01) {
+                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
                 }
             }
 
@@ -474,7 +465,7 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
         // 引擎烟
         if (hasPower()) {
             float engineSpeed = getPower();
-            int collectivePitch = getCollectivePitch();
+            float collectivePitch = getCollectivePitch();
             if ((engineSpeed > 0 && engineParticleTick > Mth.clamp(10 - collectivePitch / 10, 3, 10))) {
                 energyInfo.engineParticleOffsets.forEach(offset -> {
                     Vec3 engineSmokePos = this.position().add(offset);
@@ -491,7 +482,7 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
         }
     }
 
-    public int getCollectivePitch() {
+    public float getCollectivePitch() {
         return entityData.get(COLLECTIVE_PITCH);
     }
 

@@ -1,16 +1,22 @@
-function prepareBones() {
-    const cache = context.loadCache() ?? {};
-    const previousPropellerRotation = cache.propellerRotation ?? 0;
-    const rot = context.getPower() / 5
-    cache.propellerRotation = (previousPropellerRotation + rot) % 360;
-    context.saveCache(cache);
+const missiles = ["missile_left_1", "missile_right_1", "missile_left_2", "missile_right_2", "missile_left_3", "missile_right_3", "missile_left_4", "missile_right_4"]
 
-    context.rotateBone("z10w_top", 0, -cache.propellerRotation, 0);
-    context.rotateBone("z10w_tail", -cache.propellerRotation * 5, 0, 0);
+function updateBones(context) {
+    const previousPropellerRotation = context.getFloat("propellerRotation", 0);
+    const propellerRotation = (previousPropellerRotation + context.getPower() / 5) % 360;
+    context.setFloat("propellerRotation", propellerRotation)
 
-    context.rotateBone("z10w_camera", 0, -context.getPartYRot("sighting_system"), 0);
-    context.rotateBone("z10w_camera", context.getPartXRot("sighting_system"), 0, 0);
-
-    context.rotateBone("z10w_canno", 0, -context.getPartYRot("auto_cannon"), 0);
-    context.rotateBone("z10w_canno", context.getPartXRot("auto_cannon"), 0, 0);
+    const builder = createPoseBuilder();
+    builder.setRotation("z10w_top", 0, -propellerRotation, 0);
+    builder.setRotation("z10w_tail", -propellerRotation * 5, 0, 0);
+    builder.setRotation("z10w_camera", 0, -context.getPartYRot("sighting_system"), 0);
+    builder.setRotation("z10w_camera", context.getPartXRot("sighting_system"), 0, 0);
+    builder.setRotation("z10w_canno", 0, -context.getPartYRot("auto_cannon"), 0);
+    builder.setRotation("z10w_canno", context.getPartXRot("auto_cannon"), 0, 0);
+    let remainMissiles = context.getWeaponRemainAmmo("sighting_system", 1)
+    for (let i = 0; i < missiles.length; i++) {
+        if (i < missiles.length - remainMissiles) {
+            builder.hideBone(missiles[i])
+        }
+    }
+    return builder;
 }

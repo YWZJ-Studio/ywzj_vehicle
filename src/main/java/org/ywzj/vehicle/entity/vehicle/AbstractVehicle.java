@@ -196,7 +196,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 this.displayId = displayId;
             }
         }
-        this.initData(this.getVehicleId());
+        this.initData();
         if (compound.contains("PartUnits", Tag.TAG_COMPOUND)) {
             deserializePartUnitsData(compound.getCompound("PartUnits"));
         }
@@ -223,17 +223,15 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void readSpawnData(FriendlyByteBuf buffer) {
         this.vehicleId = buffer.readResourceLocation();
         this.displayId = buffer.readResourceLocation();
-        this.initData(this.getVehicleId());
+        this.initData();
+        this.initDisplayData();
         deserializePartUnitsData(buffer.readNbt());
         int[] passengerIdsBySeat = new int[buffer.readInt()];
         for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
             passengerIdsBySeat[index] = buffer.readInt();
         }
         setSeats(passengerIdsBySeat);
-        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(this::initDisplayData);
     }
-
-    public void initDisplayData(BaseDisplay display) {}
 
     private CompoundTag serializePartUnitsData() {
         CompoundTag partUnitsTag = new CompoundTag();
@@ -263,19 +261,27 @@ public abstract class AbstractVehicle extends ContainerCraft
         super.onAddedToWorld();
         if (!level().isClientSide()) {
             if (!dataInitialized) {
-                this.initData(getVehicleId());
+                initData();
             }
         }
     }
 
-    public void initData(ResourceLocation vehicleId) {
-        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
-        if (vehicleDataOptional.isEmpty()) {
+    public void initDisplayData() {
+        ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(this::initDisplayData);
+    }
+
+    public void initData() {
+        CommonAssetsManager.vehicleDataManager().getVehicleData(this.getVehicleId()).ifPresent(this::initData);
+    }
+
+    public void initDisplayData(BaseDisplay display) {}
+
+    public void initData(BaseVehicleData vehicleData) {
+        if (vehicleData == null) {
             YwzjVehicle.LOGGER.error("No vehicle data found for {}", vehicleId);
             this.discard();
             return;
         }
-        BaseVehicleData vehicleData = vehicleDataOptional.get();
         if (getHealth() < 0) {
             setMaxHealth(vehicleData.getMaxHealth());
             setHealth(vehicleData.getMaxHealth());
@@ -306,33 +312,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         updateOBBs();
         this.dataInitialized = true;
     }
-
-//    调试用载具构建写法
-//    @Deprecated
-//    public void initData(ResourceLocation vehicleId) {
-//        initPartUnits();
-//        initOBBs();
-//        Map<String, PartUnit<?>> map = new HashMap<>();
-//        for (PartUnit<?> partUnit : partUnits) {
-//            map.put(partUnit.getId(), partUnit);
-//        }
-//        this.partUnitMap = map;
-//
-//        if (getHealth() < 0) {
-//            if (this instanceof Hiace) {
-//                this.setMaxHealth(10);
-//                this.setHealth(10);
-//            } else if (this instanceof Ztz99a) {
-//                this.setMaxHealth(300);
-//                this.setHealth(300);
-//            } else {
-//                this.setMaxHealth(100);
-//                this.setHealth(100);
-//            }
-//        }
-//
-//        this.dataInitialized = true;
-//    }
 
     /**
      * 获取载具自定义配置ID，默认会是载具注册ID
@@ -424,14 +403,15 @@ public abstract class AbstractVehicle extends ContainerCraft
             setPower(0);
             return;
         }
-        if (isDestroyed()) {
+        if (getEnergy() == 0) {
             setPower(0);
             return;
         }
-        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
-        if (getEnergy() == 0) {
-            setPower(0);
+        if (isDestroyed()) {
+            setPower(Math.max(getPower() - 2, 0));
+            return;
         }
+        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
     }
 
     protected void tickEngineSpeed() {
@@ -657,6 +637,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                 boolean rotTp = viewInfo.passengerViewRot.rotByVehicleInThirdPerson && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON;
                 boolean rotOp = viewInfo.passengerViewRot.rotByVehicleInOperator && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR;
                 if (rotTp || rotOp) {
+                    if (rotOp) {
+                        player.xRotO = player.xRotO + dXRot;
+                        player.setXRot(player.getXRot() + dXRot);
+                    }
                     player.yRotO = player.yRotO + dYRot;
                     player.setYRot(player.getYRot() + dYRot);
                     player.setYBodyRot(player.yBodyRot + dYRot);

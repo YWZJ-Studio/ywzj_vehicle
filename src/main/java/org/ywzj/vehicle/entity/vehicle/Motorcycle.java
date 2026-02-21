@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -25,8 +24,8 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
-    public void initData(ResourceLocation vehicleId) {
-        super.initData(vehicleId);
+    public void initData() {
+        super.initData();
         PartUnit<?> passengerSeat = partUnits.get(0);
         PassengerPose passengerPose = new PassengerPose();
         passengerPose.leftArmRotX = -1.5f;

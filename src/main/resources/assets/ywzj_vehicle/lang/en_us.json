@@ -70,7 +70,7 @@
 
   "ui.stabilizer_on": "STAB ON",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",
-  "ui.vehicle_rotary_wing.collective_pitch": "COL:  %.2f",
+  "ui.vehicle_rotary_wing.collective_pitch": "COL:  %d",
   "ui.vehicle_rotary_wing.speed": "SPD:  %d",
   "ui.vehicle_rotary_wing.fuel": "FUEL: %s",
   "ui.vehicle_rotary_wing.altitude": "ALT: %d",

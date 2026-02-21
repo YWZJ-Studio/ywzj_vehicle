@@ -2,7 +2,7 @@
   "name": "ztz99a_controller",
   "script": "ywzj_vehicle:ztz99a",
   "parameters": {},
-  "fire_animations": {
+  "event_animations": {
     "turret_fire": ["turret_shoot"]
   },
   // 循环动画源
@@ -89,7 +89,7 @@
           ]
         },
         "add": {
-          "type": "fire_animation"
+          "type": "event_animation"
         }
       }
     ]

@@ -23,9 +23,6 @@ public class BaseDisplayPojo {
     @SerializedName("animations")
     public ResourceLocation animations;
 
-    @SerializedName("script")
-    public ResourceLocation script;
-
     @SerializedName("animation_controller")
     public ResourceLocation animationController;
 

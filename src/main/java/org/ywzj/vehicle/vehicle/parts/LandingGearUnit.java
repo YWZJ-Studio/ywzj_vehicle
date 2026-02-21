@@ -45,4 +45,5 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
     public boolean defaultOpen() {
         return true;
     }
+
 }

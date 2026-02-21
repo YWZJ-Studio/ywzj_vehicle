@@ -1,0 +1,89 @@
+{
+  "name": "m1a2_controller",
+  "script": "ywzj_vehicle:m1a2",
+  "parameters": {},
+  "event_animations": {
+    "turret_fire": ["turret_shoot"]
+  },
+  "loop_animations": {
+    "static": {
+      "animation": "static"
+    }
+  },
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "loop_animation",
+        "ref": "static"
+      },
+      {
+        "type": "additive",
+        "base": {
+          "type": "merge",
+          "inputs": [
+            {
+              "type": "bone_binding",
+              "special_bindings": [
+                {
+                  "bones": [
+                    "wheel0", "wheel1", "wheel2", "wheel3", "wheel4",
+                    "wheel5", "wheel6", "wheel7", "wheel8", "wheel9"
+                  ],
+                  "source": "left_wheel_rotation",
+                  "axis": "x",
+                  "param": 0.375
+                },
+                {
+                  "bones": [
+                    "wheel10", "wheel11", "wheel12", "wheel13", "wheel14",
+                    "wheel15", "wheel16", "wheel17", "wheel18", "wheel19"
+                  ],
+                  "source": "right_wheel_rotation",
+                  "axis": "x",
+                  "param": 0.375
+                }
+              ],
+              "part_bindings": [
+                {
+                  "bone": "turret",
+                  "part": "turret",
+                  "rotation_type": "y",
+                  "axis": "y",
+                  "invert": true
+                },
+                {
+                  "bone": "cannon",
+                  "part": "turret",
+                  "rotation_type": "x",
+                  "axis": "x",
+                  "invert": false
+                },
+                {
+                  "bone": "mg",
+                  "part": "anti_aircraft_machine_gun",
+                  "rotation_type": "y",
+                  "axis": "y",
+                  "invert": true
+                },
+                {
+                  "bone": "mg_up",
+                  "part": "anti_aircraft_machine_gun",
+                  "rotation_type": "x",
+                  "axis": "x",
+                  "invert": false
+                }
+              ]
+            },
+            {
+              "type": "track_animation"
+            }
+          ]
+        },
+        "add": {
+          "type": "event_animation"
+        }
+      }
+    ]
+  }
+}

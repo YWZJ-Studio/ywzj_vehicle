@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
@@ -8,6 +8,7 @@ import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
  * 简单加性混合，输出两个pose的和
  */
 public class AdditiveNode implements PoseNode {
+
     private final PoseNode baseNode;
     private final PoseNode addNode;
 
@@ -26,4 +27,5 @@ public class AdditiveNode implements PoseNode {
 
         return PoseBlenders.BLENDER.blend(basePose, addPose);
     }
+
 }

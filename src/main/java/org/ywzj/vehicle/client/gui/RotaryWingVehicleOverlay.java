@@ -60,7 +60,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 Component.translatable("ui.vehicle_rotary_wing.rpm", (int) rotaryWingVehicle.getPower()),
                 leftX, leftY, 0x00FF00);
         guiGraphics.drawString(font,
-                Component.translatable("ui.vehicle_rotary_wing.collective_pitch", rotaryWingVehicle.getCollectivePitch()),
+                Component.translatable("ui.vehicle_rotary_wing.collective_pitch", (int) rotaryWingVehicle.getCollectivePitch()),
                 leftX, leftY + 12, 0x00FF00);
         int speed = (int) (new Vec3(rotaryWingVehicle.getDeltaMovement().x, 0, rotaryWingVehicle.getDeltaMovement().z).length() * 72); // 20 * 3.6 = 72
         guiGraphics.drawString(font,

@@ -43,6 +43,42 @@ public class PassengerPose {
     @SerializedName("right_arm_rot_z")
     public Float rightArmRotZ;
 
+    @SerializedName("left_leg_x")
+    public Float leftLegX;
+
+    @SerializedName("left_leg_y")
+    public Float leftLegY;
+
+    @SerializedName("left_leg_z")
+    public Float leftLegZ;
+
+    @SerializedName("left_leg_rot_x")
+    public Float leftLegRotX;
+
+    @SerializedName("left_leg_rot_y")
+    public Float leftLegRotY;
+
+    @SerializedName("left_leg_rot_z")
+    public Float leftLegRotZ;
+
+    @SerializedName("right_leg_x")
+    public Float rightLegX;
+
+    @SerializedName("right_leg_y")
+    public Float rightLegY;
+
+    @SerializedName("right_leg_z")
+    public Float rightLegZ;
+
+    @SerializedName("right_leg_rot_x")
+    public Float rightLegRotX;
+
+    @SerializedName("right_leg_rot_y")
+    public Float rightLegRotY;
+
+    @SerializedName("right_leg_rot_z")
+    public Float rightLegRotZ;
+
     public PassengerPose() {}
 
     public PassengerPose(PassengerPose passengerPose) {
@@ -61,6 +97,18 @@ public class PassengerPose {
         this.rightArmRotX = passengerPose.rightArmRotX;
         this.rightArmRotY = passengerPose.rightArmRotY;
         this.rightArmRotZ = passengerPose.rightArmRotZ;
+        this.leftLegX = passengerPose.leftLegX;
+        this.leftLegY = passengerPose.leftLegY;
+        this.leftLegZ = passengerPose.leftLegZ;
+        this.leftLegRotX = passengerPose.leftLegRotX;
+        this.leftLegRotY = passengerPose.leftLegRotY;
+        this.leftLegRotZ = passengerPose.leftLegRotZ;
+        this.rightLegX = passengerPose.rightLegX;
+        this.rightLegY = passengerPose.rightLegY;
+        this.rightLegZ = passengerPose.rightLegZ;
+        this.rightLegRotX = passengerPose.rightLegRotX;
+        this.rightLegRotY = passengerPose.rightLegRotY;
+        this.rightLegRotZ = passengerPose.rightLegRotZ;
     }
 
 }

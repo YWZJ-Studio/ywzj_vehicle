@@ -19,6 +19,7 @@ import java.util.Map;
  * @param <T>
  */
 public class AnimationController<T extends BaseAnimationContext> {
+
     // 控制器名称
     private final String name;
     // 变量定义
@@ -29,8 +30,9 @@ public class AnimationController<T extends BaseAnimationContext> {
     private final Map<String, SwitchableAnimationDefinition> switchableAnimations;
     // 循环动画定义
     private final Map<String, LoopAnimationDefinition> loopAnimations;
-    // 开火动画定义
-    private final Map<String, List<String>> fireAnimations;
+    // 事件动画定义
+    private final Map<String, List<String>> eventAnimations;
+
     private final PoseGraph poseGraph;
 
     public AnimationController(String name,
@@ -38,14 +40,14 @@ public class AnimationController<T extends BaseAnimationContext> {
                                Map<String, CompiledStateMachine<T>> stateMachines,
                                Map<String, SwitchableAnimationDefinition> switchableAnimations,
                                Map<String, LoopAnimationDefinition> loopAnimationDefinitions,
-                               Map<String, List<String>> fireAnimations,
+                               Map<String, List<String>> eventAnimations,
                                PoseGraph poseGraph) {
         this.name = name;
         this.parameters = parameters != null ? Map.copyOf(parameters) : Map.of();
         this.stateMachines = stateMachines != null ? Map.copyOf(stateMachines) : Map.of();
         this.switchableAnimations = switchableAnimations != null ? Map.copyOf(switchableAnimations) : Map.of();
         this.loopAnimations = loopAnimationDefinitions != null ? Map.copyOf(loopAnimationDefinitions) : Map.of();
-        this.fireAnimations = fireAnimations;
+        this.eventAnimations = eventAnimations;
         this.poseGraph = poseGraph;
     }
 
@@ -132,7 +134,8 @@ public class AnimationController<T extends BaseAnimationContext> {
     }
 
     @Nullable
-    public Map<String, List<String>> getFireAnimations() {
-        return fireAnimations;
+    public Map<String, List<String>> getEventAnimations() {
+        return eventAnimations;
     }
+
 }

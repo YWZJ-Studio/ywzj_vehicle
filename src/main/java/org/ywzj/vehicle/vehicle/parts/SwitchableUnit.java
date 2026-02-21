@@ -58,4 +58,5 @@ public class SwitchableUnit<T extends PartUnitData> extends PartUnit<T> {
     public boolean defaultOpen() {
         return false;
     }
+
 }

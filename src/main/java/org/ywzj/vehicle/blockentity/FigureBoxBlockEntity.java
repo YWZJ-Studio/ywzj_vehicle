@@ -50,9 +50,15 @@ public class FigureBoxBlockEntity extends BlockEntity {
 
     public void setEntity(Entity entity) {
         this.entity = entity;
-        if (level != null && !level.isClientSide) {
-            setChanged();
-            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        if (level != null) {
+            if (level.isClientSide()) {
+                if (entity instanceof AbstractVehicle vehicle) {
+                    vehicle.initDisplayData();
+                }
+            } else {
+                setChanged();
+                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+            }
         }
     }
 
@@ -64,7 +70,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
                 entity.load(entityData);
                 setEntity(entity);
                 if (entity instanceof AbstractVehicle vehicle) {
-                    vehicle.initData(vehicle.getVehicleId());
+                    vehicle.initData();
                 }
             }
         }

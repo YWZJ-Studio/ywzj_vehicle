@@ -22,7 +22,7 @@ public class BaseDisplay {
     protected ResourceLocation texture;
     protected ResourceLocation slotTexture;
     protected Map<String, BedrockAnimation> animations = Map.of();
-    protected ResourceLocation animationControllerRef;
+    protected ResourceLocation animationControllerPath;
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
     protected String description;
     protected List<SpecialBoneEffect> specialBoneEffects = new ArrayList<>();
@@ -47,7 +47,7 @@ public class BaseDisplay {
 
         this.texture = pojo.texture;
         this.slotTexture = pojo.slotTexture;
-        this.animationControllerRef = pojo.animationController;
+        this.animationControllerPath = pojo.animationController;
 
         if (pojo.animations != null) {
             var animationPojo = ClientAssetsManager.INSTANCE.getAnimation(pojo.animations);
@@ -99,8 +99,8 @@ public class BaseDisplay {
         return animations;
     }
 
-    public ResourceLocation getAnimationControllerRef() {
-        return animationControllerRef;
+    public ResourceLocation getAnimationControllerPath() {
+        return animationControllerPath;
     }
 
     public Map<String, SoundEvent> getSoundEvents() {
@@ -114,4 +114,5 @@ public class BaseDisplay {
     public List<SpecialBoneEffect> getSpecialBoneEffects() {
         return specialBoneEffects;
     }
+
 }

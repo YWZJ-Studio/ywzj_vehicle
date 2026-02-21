@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.*;
 import org.joml.Vector3f;
@@ -201,4 +201,5 @@ public class BoneBindingNode implements PoseNode {
             }
         }
     }
+
 }

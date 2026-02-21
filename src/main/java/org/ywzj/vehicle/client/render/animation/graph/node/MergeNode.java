@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
@@ -12,6 +12,7 @@ import java.util.List;
  * 合并节点，简单合并多个pose，对于同一骨骼，后面的pose会覆盖前面的pose
  */
 public class MergeNode implements PoseNode {
+
     public List<PoseNode> inputNodes;
 
     public MergeNode(List<PoseNode> inputNodes) {
@@ -32,4 +33,5 @@ public class MergeNode implements PoseNode {
         }
         return PoseBlenders.MERGE_BLENDER.blend(poses);
     }
+
 }

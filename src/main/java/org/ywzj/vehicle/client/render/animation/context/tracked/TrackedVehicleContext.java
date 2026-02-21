@@ -1,7 +1,7 @@
-package org.ywzj.vehicle.client.render.animation.context;
+package org.ywzj.vehicle.client.render.animation.context.tracked;
 
+import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
-import org.ywzj.vehicle.client.render.animation.util.TrackAnimationInstance;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 
 public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
@@ -70,10 +70,9 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
     @Override
     public float getBindingValue(String source, Float param) {
         float paramValue = param != null ? param : 0f;
-        
         return switch (source) {
-            case "left_wheel_rotation" -> getLeftWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
-            case "right_wheel_rotation" -> getRightWheelDegrees(paramValue > 0 ? paramValue : 0.35f);
+            case "left_wheel_rotation" -> getLeftWheelDegrees(paramValue);
+            case "right_wheel_rotation" -> getRightWheelDegrees(paramValue);
             default -> super.getBindingValue(source, param);
         };
     }

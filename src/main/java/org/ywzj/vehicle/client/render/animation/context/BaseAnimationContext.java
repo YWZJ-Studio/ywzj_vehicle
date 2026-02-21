@@ -1,9 +1,9 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
-import org.ywzj.vehicle.client.render.animation.util.AnimationRunnerHolder;
-import org.ywzj.vehicle.client.render.animation.util.LoopAnimationRunner;
-import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
+import org.ywzj.vehicle.client.render.animation.runner.AnimationRunnerHolder;
+import org.ywzj.vehicle.client.render.animation.runner.LoopAnimationRunner;
+import org.ywzj.vehicle.client.render.animation.runner.SwitchableRunner;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 由于在状态机之间共享，如果实现ITickable会导致被重复调用，故需要在AnimationInstance中手动调用tick方法<br/>
  */
 public abstract class BaseAnimationContext {
+
     protected float partialTick;
     // 自定义变量
     private final Map<String, Object> parameters = new ConcurrentHashMap<>();
@@ -26,20 +27,18 @@ public abstract class BaseAnimationContext {
     private final Map<String, LoopAnimationRunner> loopRunners = new ConcurrentHashMap<>();
     // 可用动画
     private Map<String, BedrockAnimation> animations;
-    // 脚本自定义变量
-    private Object scriptParam;
-
     protected final Set<String> events = new HashSet<>();
 
-    public BaseAnimationContext() {
-    }
+    public BaseAnimationContext() {}
 
-    public void saveScriptParam(Object param) {
-        this.scriptParam = param;
-    }
-
-    public Object getScriptParam() {
-        return scriptParam;
+    public void tick() {
+        animationRunnerHolder.tick();
+        for (SwitchableRunner runner : switchableRunners.values()) {
+            runner.tick();
+        }
+        for (LoopAnimationRunner runner : loopRunners.values()) {
+            runner.tick();
+        }
     }
 
     public void offerEvent(String event) {
@@ -64,16 +63,6 @@ public abstract class BaseAnimationContext {
 
     public void setAnimations(Map<String, BedrockAnimation> animations) {
         this.animations = animations;
-    }
-
-    public void tick() {
-        animationRunnerHolder.tick();
-        for (SwitchableRunner runner : switchableRunners.values()) {
-            runner.tick();
-        }
-        for (LoopAnimationRunner runner : loopRunners.values()) {
-            runner.tick();
-        }
     }
 
     public SwitchableRunner getSwitchableRunner(String key) {
@@ -165,4 +154,5 @@ public abstract class BaseAnimationContext {
     public long currentTimeMillis() {
         return System.currentTimeMillis();
     }
+
 }

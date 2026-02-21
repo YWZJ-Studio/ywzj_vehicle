@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 public class NoAllocMergeBlender implements MergeBlender {
+
     @Override
     public Pose blend(List<Pose> poses) {
         if (poses.isEmpty()) {
@@ -77,4 +78,5 @@ public class NoAllocMergeBlender implements MergeBlender {
             }
         }
     }
+
 }

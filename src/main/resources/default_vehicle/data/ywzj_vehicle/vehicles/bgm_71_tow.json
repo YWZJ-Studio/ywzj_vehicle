@@ -21,6 +21,10 @@
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "tow",
       "seat_offset": [0, 2, -1],
+      "passenger_pose": {
+        "left_leg_rot_x": 0,
+        "right_leg_rot_x": 0
+      },
       "fire_control_sensor_type": "ir",
       "fire_control_lock_type": "aim_frustum",
       "crosshair_style": "circle",

@@ -25,6 +25,14 @@ public class HumanoidModelMixin {
     @Final
     public ModelPart rightArm;
 
+    @Shadow
+    @Final
+    public ModelPart leftLeg;
+
+    @Shadow
+    @Final
+    public ModelPart rightLeg;
+
     @Inject(
             method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V",
             at = @At(value = "TAIL")
@@ -41,6 +49,24 @@ public class HumanoidModelMixin {
     }
 
     private void setPose(PassengerPose pose) {
+        if (pose.leftArmX != null) {
+            this.leftArm.x = pose.leftArmX;
+        }
+        if (pose.leftArmY != null) {
+            this.leftArm.y = pose.leftArmY;
+        }
+        if (pose.leftArmZ != null) {
+            this.leftArm.z = pose.leftArmZ;
+        }
+        if (pose.leftArmRotX != null) {
+            this.leftArm.xRot = pose.leftArmRotX;
+        }
+        if (pose.leftArmRotY != null) {
+            this.leftArm.yRot = pose.leftArmRotY;
+        }
+        if (pose.leftArmRotZ != null) {
+            this.leftArm.zRot = pose.leftArmRotZ;
+        }
         if (pose.rightArmX != null) {
             this.rightArm.x = pose.rightArmX;
         }
@@ -59,23 +85,41 @@ public class HumanoidModelMixin {
         if (pose.rightArmRotZ != null) {
             this.rightArm.zRot = pose.rightArmRotZ;
         }
-        if (pose.leftArmX != null) {
-            this.leftArm.x = pose.leftArmX;
+        if (pose.leftLegX != null) {
+            this.leftLeg.x = pose.leftLegX;
         }
-        if (pose.leftArmY != null) {
-            this.leftArm.y = pose.leftArmY;
+        if (pose.leftLegY != null) {
+            this.leftLeg.y = pose.leftLegY;
         }
-        if (pose.leftArmZ != null) {
-            this.leftArm.z = pose.leftArmZ;
+        if (pose.leftLegZ != null) {
+            this.leftLeg.z = pose.leftLegZ;
         }
-        if (pose.leftArmRotX != null) {
-            this.leftArm.xRot = pose.leftArmRotX;
+        if (pose.leftLegRotX != null) {
+            this.leftLeg.xRot = pose.leftLegRotX;
         }
-        if (pose.leftArmRotY != null) {
-            this.leftArm.yRot = pose.leftArmRotY;
+        if (pose.leftLegRotY != null) {
+            this.leftLeg.yRot = pose.leftLegRotY;
         }
-        if (pose.leftArmRotZ != null) {
-            this.leftArm.zRot = pose.leftArmRotZ;
+        if (pose.leftLegRotZ != null) {
+            this.leftLeg.zRot = pose.leftLegRotZ;
+        }
+        if (pose.rightLegX != null) {
+            this.rightLeg.x = pose.rightLegX;
+        }
+        if (pose.rightLegY != null) {
+            this.rightLeg.y = pose.rightLegY;
+        }
+        if (pose.rightLegZ != null) {
+            this.rightLeg.z = pose.rightLegZ;
+        }
+        if (pose.rightLegRotX != null) {
+            this.rightLeg.xRot = pose.rightLegRotX;
+        }
+        if (pose.rightLegRotY != null) {
+            this.rightLeg.yRot = pose.rightLegRotY;
+        }
+        if (pose.rightLegRotZ != null) {
+            this.rightLeg.zRot = pose.rightLegRotZ;
         }
     }
 

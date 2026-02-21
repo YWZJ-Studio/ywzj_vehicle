@@ -2,8 +2,9 @@ package org.ywzj.vehicle.client.render.animation.context;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
-import org.ywzj.vehicle.client.render.animation.util.SimpleFireAnimationHandler;
+import org.ywzj.vehicle.client.render.animation.util.AnimationHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.control.ControlUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -14,7 +15,7 @@ import java.util.Optional;
 
 public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> {
 
-    private SimpleFireAnimationHandler fireAnimationHandler;
+    private AnimationHandler eventAnimationHandler;
 
     public VehicleContext(E entity) {
         super(entity);
@@ -23,29 +24,49 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
     @Override
     public void tick() {
         super.tick();
-        if (fireAnimationHandler != null) {
-            fireAnimationHandler.tick(this.events);
+        if (eventAnimationHandler != null) {
+            eventAnimationHandler.tick(this.events);
         }
     }
 
-    public void setFireAnimationHandler(SimpleFireAnimationHandler fireAnimationHandler) {
-        this.fireAnimationHandler = fireAnimationHandler;
-        this.fireAnimationHandler.setSoundProcessor(this::processSounds);
+    public void setEventAnimationHandler(AnimationHandler eventAnimationHandler) {
+        this.eventAnimationHandler = eventAnimationHandler;
+        this.eventAnimationHandler.setSoundProcessor(this::processSounds);
     }
 
-    public Pose getFirePose() {
-        if (fireAnimationHandler != null) {
-            return fireAnimationHandler.evaluate();
+    public Pose getEventPose() {
+        if (eventAnimationHandler != null) {
+            return eventAnimationHandler.evaluate();
         }
         return DummyPose.INSTANCE;
+    }
+
+    public float getXRot() {
+        return getEntity().getXRot();
+    }
+
+    public float getYRot() {
+        return getEntity().getYRot();
+    }
+
+    public float getZRot() {
+        return getEntity().getZRot();
     }
 
     public boolean hasOwner(String id) {
         return getEntity().getPartUnit(id).map(part -> part.getOwner() != null).orElse(false);
     }
 
+    public ControlUnit getControlUnit() {
+        return getEntity().controlUnit;
+    }
+
     public float getPower() {
         return getEntity().getPower();
+    }
+
+    public float getEngineSpeed() {
+        return getEntity().getEngineSpeed();
     }
 
     public float getPartXRot(String id) {
@@ -80,9 +101,8 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
         return 0;
     }
 
-    // ========== Utility Methods ==========
-
     public long lastRenderTime() {
         return getEntity().lastRenderTime;
     }
+
 }

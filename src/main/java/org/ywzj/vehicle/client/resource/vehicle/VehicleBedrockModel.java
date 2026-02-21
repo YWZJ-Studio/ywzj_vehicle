@@ -19,11 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 public class VehicleBedrockModel extends BedrockModel {
-    public record SpecialBoneEntry(BedrockBone bone, SpecialBoneEffect effect) {
-    }
 
+    public record SpecialBoneEntry(BedrockBone bone, SpecialBoneEffect effect) {}
     private final Map<String, SpecialBoneEffect> specialBoneMap;
-
     private final List<SpecialBoneEntry> specialBoneEntries;
 
     /**
@@ -35,7 +33,6 @@ public class VehicleBedrockModel extends BedrockModel {
         super(pojo);
         this.specialBoneMap = new HashMap<>();
         this.specialBoneEntries = new ArrayList<>();
-
         if (specialBoneEffects != null) {
             for (SpecialBoneEffect effect : specialBoneEffects) {
                 if (effect.isValid()) {
@@ -83,8 +80,8 @@ public class VehicleBedrockModel extends BedrockModel {
         }
         setSpecialBoneVisible(true);
         for (var entry : specialBoneEntries) {
+            //todo
             VertexConsumer buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
-
             poseStack.pushPose();
             poseStack.mulPoseMatrix(getGlobalTransform(entry.bone));
             entry.bone.render(poseStack, buffer, packedLight, packedOverlay);
@@ -96,7 +93,7 @@ public class VehicleBedrockModel extends BedrockModel {
     public static Matrix4f getGlobalTransform(@NotNull BedrockBone targetBone) {
         Matrix4f matrix = new Matrix4f();
 
-        for(BedrockBone bone = targetBone.parent; bone != null; bone = bone.parent) {
+        for (BedrockBone bone = targetBone.parent; bone != null; bone = bone.parent) {
             matrix.scaleLocal(bone.xScale, bone.yScale, bone.zScale);
             matrix.rotateLocal(bone.rotation);
             matrix.translateLocal(bone.x / 16.0F, bone.y / 16.0F, bone.z / 16.0F);

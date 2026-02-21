@@ -1,12 +1,14 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.graph.WeightSource;
 import org.ywzj.vehicle.client.render.animation.util.PoseBlenders;
 
 import java.util.List;
 
 public class LayeredBlendNode implements PoseNode {
+
     private final PoseNode baseNode;
     private final List<Layer> layers;
 
@@ -43,4 +45,5 @@ public class LayeredBlendNode implements PoseNode {
      * Layer configuration
      */
     public record Layer(PoseNode poseNode, WeightSource weightSource) {}
+
 }

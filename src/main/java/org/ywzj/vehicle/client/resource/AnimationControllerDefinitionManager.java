@@ -12,4 +12,5 @@ public class AnimationControllerDefinitionManager extends JsonDataManager<Animat
     public AnimationControllerDefinitionManager() {
         super(AnimationControllerDefinition.class, GsonUtil.GSON, "animation_controllers", "AnimationController");
     }
+
 }

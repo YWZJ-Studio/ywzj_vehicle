@@ -193,8 +193,8 @@ public class VehicleExplosion {
                 continue;
             }
             // 距离衰减
-            double attenuation = 1.0 - (distance / radius);
-            double damage = this.damage * attenuation * attenuation;
+            double attenuation = 1.0 - 0.5 * (distance / radius);
+            double damage = this.damage * attenuation;
             if (entity instanceof LivingEntity livingEntity) {
                 LivingHurtEvent hurtEvent = new LivingHurtEvent(livingEntity, damageSource, (float) damage);
                 if (!MinecraftForge.EVENT_BUS.post(hurtEvent)) {

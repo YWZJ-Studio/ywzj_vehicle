@@ -481,8 +481,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
     }
 
+    /**
+     * 武器站双向稳定系统
+     */
     @Override
     public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
+        if (Math.abs(xAimRot - xRot) > 5 || Math.abs(yAimRot - yRot) > 5) {
+            return;
+        }
         if (Math.abs(dVehicleXRot) > 0.01 || Math.abs(dVehicleYRot) > 0.01 || Math.abs(dVehicleZRot) > 0.01) {
             if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
                 Quaternionf rotationO = new Quaternionf();

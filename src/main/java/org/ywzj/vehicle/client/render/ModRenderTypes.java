@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.function.Function;
 
 public class ModRenderTypes extends RenderType {
+
     public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
         super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
     }
@@ -30,4 +31,5 @@ public class ModRenderTypes extends RenderType {
     public static RenderType muzzleFlash(ResourceLocation texture) {
         return MUZZLE_FLASH.apply(texture);
     }
+
 }

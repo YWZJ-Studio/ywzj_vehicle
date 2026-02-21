@@ -49,4 +49,5 @@ public class AnimationControllerManager extends SimplePreparableReloadListener<M
     public Map<ResourceLocation, AnimationControllerDefinition> getAllDefinitions() {
         return definitions;
     }
+
 }

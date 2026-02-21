@@ -1,7 +1,9 @@
 package org.ywzj.vehicle.client.render.animation.compiler;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
-import org.ywzj.vehicle.client.render.animation.graph.*;
+import org.ywzj.vehicle.client.render.animation.graph.PoseGraph;
+import org.ywzj.vehicle.client.render.animation.graph.WeightSource;
+import org.ywzj.vehicle.client.render.animation.graph.node.*;
 import org.ywzj.vehicle.client.resource.animation.PoseNodeDefinition;
 
 import java.util.ArrayList;
@@ -68,7 +70,7 @@ public class PoseGraphCompiler {
             case "script" -> compileScriptNode(definition);
             case "bone_binding" -> compileBoneBindingNode(definition, boneIndexProvider);
             case "track_animation" -> new TrackAnimationNode();
-            case "fire_animation" -> new FireAnimationNode();
+            case "event_animation" -> new EventAnimationNode();
             default -> throw new IllegalArgumentException("Unknown node type: " + type);
         };
     }

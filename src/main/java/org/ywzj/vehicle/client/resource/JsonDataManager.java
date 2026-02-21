@@ -23,12 +23,11 @@ import java.util.Map;
  * @param <T> 数据类型
  */
 public class JsonDataManager<T> extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> {
-    protected final Map<ResourceLocation, T> dataMap = Maps.newHashMap();
 
+    protected final Map<ResourceLocation, T> dataMap = Maps.newHashMap();
     private final Gson gson;
     private final Class<T> dataClass;
     private final Marker marker;
-
     private final FileToIdConverter fileToIdConverter;
 
     public JsonDataManager(Class<T> dataClass, Gson pGson, String directory, String marker) {
@@ -92,4 +91,5 @@ public class JsonDataManager<T> extends SimplePreparableReloadListener<Map<Resou
     public void clearData() {
         dataMap.clear();
     }
+
 }

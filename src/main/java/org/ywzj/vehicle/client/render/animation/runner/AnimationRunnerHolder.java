@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.util;
+package org.ywzj.vehicle.client.render.animation.runner;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.Keyframe;
@@ -9,7 +9,8 @@ import com.maydaymemory.mae.control.runner.IAnimationState;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.client.render.animation.MultiAnimationRunner;
+import org.ywzj.vehicle.client.render.animation.util.AnimationPlayType;
+import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -18,14 +19,13 @@ import java.util.function.Function;
 // todo 枚举不方便脚本使用，后续可以改成int
 // 一个简单的基岩播放动画管理器
 public class AnimationRunnerHolder implements Tickable {
+
     public static final String DEFAULT_TRACK_NAME = "main";
     // 自动动画轨道
     private final MultiAnimationRunner<BedrockAnimation> multiAnimationRunner = new MultiAnimationRunner<>(animation -> new AnimationRunner(animation, new AnimationContext(animation.getSpecifiedEndTimeS())));
     // 独立动画轨道
     private final ConcurrentHashMap<String, AnimationRunner> namedRunner = new ConcurrentHashMap<>();
-
     private final Function<String, BedrockAnimation> animationProvider;
-
     private Consumer<Iterable<Keyframe<ResourceLocation>>> soundProcessor;
 
     public AnimationRunnerHolder(Function<String, BedrockAnimation> animationProvider) {
@@ -152,4 +152,5 @@ public class AnimationRunnerHolder implements Tickable {
     public AnimationRunner getAnimationRunner(String track) {
         return namedRunner.get(track);
     }
+
 }

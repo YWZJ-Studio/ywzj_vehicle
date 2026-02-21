@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.client.render.animation.compiler;
 
 import org.ywzj.vehicle.client.render.animation.context.BaseAnimationContext;
-import org.ywzj.vehicle.client.render.animation.context.SoundResolver;
 import org.ywzj.vehicle.client.render.animation.util.AnimationPlayType;
+import org.ywzj.vehicle.client.render.animation.util.SoundResolver;
 import org.ywzj.vehicle.client.resource.animation.ActionDefinition;
 
 import java.util.function.Consumer;

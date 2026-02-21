@@ -42,11 +42,11 @@ public enum ClientAssetsManager {
         animations = new JsonDataManager<>(BedrockAnimationFile.class, GsonUtil.GSON, "animations/bedrock", "BedrockAnimationPojo");
         animationControllerDefinitionManager = new AnimationControllerDefinitionManager();
         scriptManager = new ScriptManager();
-        
-        // Create display managers with animation controller support
+
+        // 具有模型、贴图、音效、动画的各类抽象实例
         vehicleDisplayManager = new DisplayManager("vehicle", scriptManager, ScriptContextFactory.get());
         weaponDisplayManager = new DisplayManager("weapon", scriptManager, ScriptContextFactory.get());
-        
+
         internalAssets = new InternalAssets();
 
         consumer.accept(models);
@@ -79,6 +79,7 @@ public enum ClientAssetsManager {
         models.apply(models.prepare(resourceManager, null), null, null);
         scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
         animations.apply(animations.prepare(resourceManager, null), null, null);
+        animationControllerDefinitionManager.apply(animationControllerDefinitionManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
             try {
@@ -163,4 +164,5 @@ public enum ClientAssetsManager {
     public InternalAssets getInternalAssets() {
         return internalAssets;
     }
+
 }

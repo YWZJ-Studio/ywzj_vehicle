@@ -7,7 +7,7 @@ import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import org.ywzj.vehicle.client.render.animation.MultiAnimationRunner;
+import org.ywzj.vehicle.client.render.animation.runner.MultiAnimationRunner;
 
 import java.util.List;
 import java.util.Map;
@@ -15,25 +15,26 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class SimpleFireAnimationHandler {
+public class AnimationHandler {
+
     private final MultiAnimationRunner<BedrockAnimation> multiAnimationRunner = new MultiAnimationRunner<>(animation -> new AnimationRunner(animation, new AnimationContext(animation.getSpecifiedEndTimeS())));
     private final Function<String, BedrockAnimation> animationProvider;
-    private final Map<String, List<String>> fireAnimations;
+    private final Map<String, List<String>> animations;
     private Consumer<Iterable<Keyframe<ResourceLocation>>> soundProcessor;
     protected final RandomSource random = RandomSource.create();
 
-    public SimpleFireAnimationHandler(Function<String, BedrockAnimation> animationProvider, Map<String, List<String>> fireAnimations) {
+    public AnimationHandler(Function<String, BedrockAnimation> animationProvider, Map<String, List<String>> animations) {
         this.animationProvider = animationProvider;
-        this.fireAnimations = fireAnimations;
+        this.animations = animations;
     }
 
     public void setSoundProcessor(Consumer<Iterable<Keyframe<ResourceLocation>>> soundProcessor) {
         this.soundProcessor = soundProcessor;
     }
 
-    public void processFireAnimation(Set<String> events) {
+    public void processAnimation(Set<String> events) {
         for (String event : events) {
-            var animations = fireAnimations.get(event);
+            var animations = this.animations.get(event);
             if (animations != null && !animations.isEmpty()) {
                 String animationName = animations.get(random.nextInt(animations.size()));
                 BedrockAnimation animation = animationProvider.apply(animationName);
@@ -45,7 +46,7 @@ public class SimpleFireAnimationHandler {
     }
 
     public void tick(Set<String> events) {
-        processFireAnimation(events);
+        processAnimation(events);
         multiAnimationRunner.tick();
         if (soundProcessor != null) {
             multiAnimationRunner.clip(BedrockAnimation.SOUND_CHANNEL_NAME, soundProcessor);
@@ -55,4 +56,5 @@ public class SimpleFireAnimationHandler {
     public Pose evaluate() {
         return multiAnimationRunner.evaluatePose();
     }
+
 }

@@ -1,0 +1,27 @@
+{
+  "name": "motorcycle_controller",
+  "script": "ywzj_vehicle:motorcycle",
+  "parameters": {},
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "bone_binding",
+        "special_bindings": [
+          {
+            "bones": ["wheel_front", "wheel_back"],
+            "source": "wheel_rotation",
+            "axis": "x",
+            "param": 0.35
+          },
+          {
+            "bones": ["front"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": -16
+          }
+        ]
+      }
+    ]
+  }
+}

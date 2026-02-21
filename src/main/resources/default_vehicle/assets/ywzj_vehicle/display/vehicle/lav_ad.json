@@ -3,7 +3,7 @@
   "model": "ywzj_vehicle:entity/lav_ad",
   "texture": "ywzj_vehicle:textures/entity/lav_ad.png",
   "slot_texture": "ywzj_vehicle:textures/slot/lav_ad.png",
-  "script": "ywzj_vehicle:lav_ad",
+  "animation_controller": "ywzj_vehicle:lav_ad_controller",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:truck_engine_idle",

@@ -4,6 +4,6 @@
   "parameters": {},
   "graph": {
     "type": "script",
-    "function": "prepareBones"
+    "function": "updateBones"
   }
 }

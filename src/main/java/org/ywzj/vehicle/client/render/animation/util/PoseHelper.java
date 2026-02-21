@@ -7,15 +7,13 @@ import org.joml.Vector3f;
 import java.util.TreeMap;
 
 public class PoseHelper {
-    public static final PoseHelper DUMMY = new PoseHelper(DummyPose.INSTANCE);
 
+    public static final PoseHelper DUMMY = new PoseHelper(DummyPose.INSTANCE);
     private static final ZYXBoneTransformFactory TRANSFORM_FACTORY = new ZYXBoneTransformFactory();
-    
     private final BoneIndexProvider boneIndexProvider;
     private final TreeMap<Integer, BoneTransformData> transforms = new TreeMap<>();
-
     private Pose pose;
-    
+
     /**
      * Create a PoseHelper with a bone index provider.
      * 
@@ -28,6 +26,18 @@ public class PoseHelper {
     public PoseHelper(Pose pose) {
         this.pose = pose;
         this.boneIndexProvider = null;
+    }
+
+    public void hideBone(String boneName) {
+        int boneIndex = boneIndexProvider.getIndex(boneName);
+        if (boneIndex < 0) {
+            return;
+        }
+        transforms.put(boneIndex, new BoneTransformData(
+                0, 0, 0,
+                0, 0, 0,
+                0, 0, 0
+        ));
     }
 
     /**
@@ -54,7 +64,7 @@ public class PoseHelper {
             1.0f, 1.0f, 1.0f
         ));
     }
-    
+
     /**
      * Set bone transform with rotation (in degrees), translation, and scale.
      */
@@ -73,28 +83,28 @@ public class PoseHelper {
             (float) scaleX, (float) scaleY, (float) scaleZ
         ));
     }
-    
+
     /**
      * Set bone rotation only (in degrees).
      */
     public void setRotation(String boneName, double rotX, double rotY, double rotZ) {
         setBone(boneName, rotX, rotY, rotZ, 0, 0, 0);
     }
-    
+
     /**
      * Set bone translation only.
      */
     public void setTranslation(String boneName, double transX, double transY, double transZ) {
         setBone(boneName, 0, 0, 0, transX, transY, transZ);
     }
-    
+
     /**
      * Clear all bone transforms.
      */
     public void clear() {
         transforms.clear();
     }
-    
+
     /**
      * Build and return the final Pose object.
      * Bone transforms are added in ascending order of bone index.
@@ -133,7 +143,8 @@ public class PoseHelper {
     /**
      * Internal data class for storing bone transform data.
      */
-    private record BoneTransformData(float rotX, float rotY, float rotZ, float transX, float transY, float transZ,
-                                     float scaleX, float scaleY, float scaleZ) {
-    }
+    private record BoneTransformData(float rotX, float rotY, float rotZ,
+                                     float transX, float transY, float transZ,
+                                     float scaleX, float scaleY, float scaleZ) {}
+
 }

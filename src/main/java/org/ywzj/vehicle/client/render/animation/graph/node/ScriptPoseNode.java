@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.graph;
+package org.ywzj.vehicle.client.render.animation.graph.node;
 
 import com.maydaymemory.mae.basic.Pose;
 import org.mozillaa.javascript.Function;
@@ -9,8 +9,7 @@ import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
 
 /**
- * Pose node that generates pose from JavaScript function.
- * Typically used for procedural animations like prepareBones.
+ * 脚本节点，经由JavaScript的指定方法获取pose
  */
 public class ScriptPoseNode implements PoseNode {
     
@@ -27,7 +26,6 @@ public class ScriptPoseNode implements PoseNode {
         if (scriptFunction == null) {
             return null;
         }
-
         try (var ctx = ScriptContextFactory.get().enterContext()) {
             Object result = scriptFunction.call(
                     ctx,
@@ -35,16 +33,14 @@ public class ScriptPoseNode implements PoseNode {
                     scope,
                     new Object[]{context.getContext()}
             );
-
             if (result instanceof Wrapper wrapper) {
                 result = wrapper.unwrap();
             }
-
             if (result instanceof PoseHelper pose) {
                 return pose.build();
             }
         }
-
         return null;
     }
+
 }

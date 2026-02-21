@@ -1,3 +1,4 @@
+// 以下部分已不再使用，仅作示例
 
 function handleShoot(context) {
     const runner = context.getAnimationRunners();
@@ -6,8 +7,6 @@ function handleShoot(context) {
     }
 }
 
-
-// 以下部分已不再使用，仅作示例
 function prepareBones(context) {
     // Create pose helper
     const builder = createPoseBuilder();

@@ -1,11 +1,13 @@
-package org.ywzj.vehicle.client.render.animation.util;
+package org.ywzj.vehicle.client.render.animation.runner;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
+import org.ywzj.vehicle.client.render.animation.util.AnimationPlayType;
 
 public class LoopAnimationRunner {
+
     private AnimationRunner runner;
 
     public LoopAnimationRunner(BedrockAnimation animation) {
@@ -30,4 +32,5 @@ public class LoopAnimationRunner {
     public void setRunner(AnimationRunner runner) {
         this.runner = runner;
     }
+
 }

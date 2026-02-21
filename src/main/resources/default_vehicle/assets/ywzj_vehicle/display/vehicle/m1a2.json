@@ -4,10 +4,23 @@
   "texture": "ywzj_vehicle:textures/entity/m1a2.png",
   "slot_texture": "ywzj_vehicle:textures/slot/m1a2.png",
   "animations": "ywzj_vehicle:entity/m1a2.animation",
-  "script": "ywzj_vehicle:m1a2",
+  "animation_controller": "ywzj_vehicle:m1a2_controller",
   "sounds": {
     "engine_start": "ywzj_vehicle:m1a2_engine_start",
     "engine_idle": "ywzj_vehicle:m1a2_engine_idle",
     "engine_run": "ywzj_vehicle:m1a2_engine_run"
-  }
+  },
+  "track_config": {
+    "left_track": "tread_l_move",
+    "right_track": "tread_r_move",
+    "module_length": 0.25,
+    "track_width": 3.0
+  },
+  "special_bone_effects": [
+    {
+      "bone": "turret_muzzle_flash",
+      "texture": "ywzj_vehicle:textures/bedrock/effect/muzzle_flash_1.png",
+      "type": "muzzle_flash"
+    }
+  ]
 }

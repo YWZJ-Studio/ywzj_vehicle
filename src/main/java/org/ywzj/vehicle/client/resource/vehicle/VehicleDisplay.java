@@ -10,11 +10,11 @@ import org.ywzj.vehicle.client.render.animation.compiler.*;
 import org.ywzj.vehicle.client.render.animation.context.AnimationContextFactory;
 import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.client.render.animation.controller.AnimationController;
-import org.ywzj.vehicle.client.render.animation.graph.ScriptPoseNode;
-import org.ywzj.vehicle.client.render.animation.util.LoopAnimationRunner;
+import org.ywzj.vehicle.client.render.animation.graph.node.ScriptPoseNode;
+import org.ywzj.vehicle.client.render.animation.runner.LoopAnimationRunner;
+import org.ywzj.vehicle.client.render.animation.runner.SwitchableRunner;
+import org.ywzj.vehicle.client.render.animation.util.AnimationHandler;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
-import org.ywzj.vehicle.client.render.animation.util.SimpleFireAnimationHandler;
-import org.ywzj.vehicle.client.render.animation.util.SwitchableRunner;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.ScriptManager;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
@@ -48,13 +48,13 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
 
     public void initializeAnimationController(ScriptManager scriptManager,
                                              ScriptContextFactory scriptContextFactory) {
-        if (animationControllerRef == null) {
+        if (animationControllerPath == null) {
             return;
         }
 
-        Optional<AnimationControllerDefinition> definitionOpt = ClientAssetsManager.INSTANCE.getAnimationControllerDefinition(animationControllerRef);
+        Optional<AnimationControllerDefinition> definitionOpt = ClientAssetsManager.INSTANCE.getAnimationControllerDefinition(animationControllerPath);
         if (definitionOpt.isEmpty()) {
-            YwzjVehicle.LOGGER.warn("Animation controller definition not found: {}", animationControllerRef);
+            YwzjVehicle.LOGGER.warn("Animation controller definition not found: {}", animationControllerPath);
             return;
         }
 
@@ -68,8 +68,8 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
     }
 
     protected AnimationController<CTX> compileAnimationController(AnimationControllerDefinition definition,
-                                                               ScriptManager scriptManager,
-                                                               ScriptContextFactory scriptContextFactory) {
+                                                                  ScriptManager scriptManager,
+                                                                  ScriptContextFactory scriptContextFactory) {
         try {
             // Load external script if specified
             Script compiledScript = null;
@@ -91,7 +91,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
             ActionCompiler actionCompiler = new ActionCompiler(scriptCompiler);
             ConditionCompiler conditionCompiler = new ConditionCompiler(scriptCompiler);
             StateMachineCompiler stateMachineCompiler = new StateMachineCompiler(scriptCompiler, actionCompiler, conditionCompiler);
-            
+
             // Create script node resolver that uses cached functions and scope
             PoseGraphCompiler.ScriptNodeResolver scriptNodeResolver = functionName -> {
                 Function function = scriptFunctions.get(functionName);
@@ -108,13 +108,12 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
                 return null;
 
             };
-            
+
             AnimationControllerCompiler controllerCompiler = new AnimationControllerCompiler(
                     stateMachineCompiler, scriptNodeResolver, model
             );
 
             return controllerCompiler.compile(definition);
-
         } catch (Exception e) {
             YwzjVehicle.LOGGER.warn("Failed to compile animation controller", e);
             return null;
@@ -189,9 +188,9 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
             context.addLoopRunner(entry.getKey(), new LoopAnimationRunner(animation));
         }
 
-        var fireAnimations = typedController.getFireAnimations();
-        if (fireAnimations != null) {
-            context.setFireAnimationHandler(new SimpleFireAnimationHandler(context::getAnimation, fireAnimations));
+        var eventAnimations = typedController.getEventAnimations();
+        if (eventAnimations != null) {
+            context.setEventAnimationHandler(new AnimationHandler(context::getAnimation, eventAnimations));
         }
 
         return new VehicleAnimationInstance<>(typedController, context);

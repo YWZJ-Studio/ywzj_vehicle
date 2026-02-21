@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.util;
+package org.ywzj.vehicle.client.render.animation.context.tracked;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.Pose;
@@ -13,6 +13,7 @@ import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.MERGE_B
  * 一个简单的履带动画实例，包含左右履带动画的进度与累计位移计算
  */
 public class TrackAnimationInstance {
+
     private final AnimationRunner leftTrackRunner;
     private final AnimationRunner rightTrackRunner;
 
@@ -59,7 +60,6 @@ public class TrackAnimationInstance {
      * displacement 单位为米，可以为负（表示反向旋转）。
      */
     public float wheelRotation(float displacement, float radius) {
-        if (radius <= 0f) return 0f;
         float rotations = displacement / (2f * (float) Math.PI * radius);
         return rotations * 360f;
     }
@@ -95,4 +95,5 @@ public class TrackAnimationInstance {
     public void setModuleLength(float moduleLength) {
         this.moduleLength = moduleLength;
     }
+
 }
