@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -23,7 +24,6 @@ import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -214,9 +214,9 @@ public class VehicleOverlay implements IGuiOverlay {
                 poseStack.pushPose();
                 {
                     float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
-                    VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
+                    AABB aabb = vehicle.getBoundingBox();
                     Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
-                            Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + mainCubeOBB.getHeight(),
+                            Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
                             Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
                     Vec3 screenPos = VectorUtil.worldToScreen(pos);
                     renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
