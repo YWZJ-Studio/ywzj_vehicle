@@ -128,8 +128,9 @@ public class MissileEntity extends AmmoEntity {
         if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
             // 雷达下持续从载机获取目标
             targetEntity = weaponUnit.getAimLockEntity();
-        } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-            // 红外下若丢失目标，则从载机获取目标
+        } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR
+                || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.EO) {
+            // 红外或光电下若丢失目标，则从载机获取目标
             if (targetEntity == null) {
                 targetEntity = weaponUnit.getAimLockEntity();
                 if (targetEntity == null) {
@@ -229,7 +230,7 @@ public class MissileEntity extends AmmoEntity {
     public void proportionalGuide(Entity target) {
         Vec3 missilePos = this.position();
         Vec3 missileVel = this.getDeltaMovement();
-        Vec3 targetPos = target.position();
+        Vec3 targetPos = target.getEyePosition();
         Vec3 targetVel = target.getDeltaMovement();
 
         Vec3 relPos = targetPos.subtract(missilePos);

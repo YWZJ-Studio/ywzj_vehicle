@@ -26,8 +26,8 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 || !LocalVehiclePlayer.instance.getPlayer().equals(rotaryWingVehicle.getDriver())) {
             return;
         }
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
+        float centerX = (float) screenWidth / 2;
+        float centerY = (float) screenHeight / 2;
         LocalVehiclePlayer.ViewType viewType = LocalVehiclePlayer.instance.viewType;
         renderMainInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
         renderHeightInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
@@ -38,10 +38,10 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                     pose.translate(centerX, centerY, 0);
                 } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-                    pose.translate(centerX + 75, centerY + 50, 0);
+                    pose.translate(centerX + 75, centerY + 55, 0);
                     pose.scale(0.7f, 0.7f, 0.7f);
                 }
-                renderSpeedInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
+                renderSpeedInfo(guiGraphics, rotaryWingVehicle);
                 renderRollInfo(guiGraphics, centerX, centerY, rotaryWingVehicle, viewType);
             }
             pose.popPose();
@@ -51,9 +51,9 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
     /**
      * 主信息
      */
-    public static void renderMainInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle) {
-        int leftX = centerX - 120;
-        int leftY = centerY - 21;
+    public static void renderMainInfo(GuiGraphics guiGraphics, float centerX, float centerY, RotaryWingVehicle rotaryWingVehicle) {
+        int leftX = (int) (centerX - 120);
+        int leftY = (int) (centerY - 21);
         // 信息
         var font = Minecraft.getInstance().font;
         guiGraphics.drawString(font,
@@ -72,16 +72,16 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 leftX, leftY + 36, 0x00FF00);
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.altitude", (int) rotaryWingVehicle.getY()),
-                centerX + 62, leftY + 24, 0x00FF00);
+                (int) (centerX + 62), (int) (leftY + 24), 0x00FF00);
     }
 
     /**
      * 高度信息
      */
-    public static void renderHeightInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle) {
+    public static void renderHeightInfo(GuiGraphics guiGraphics, float centerX, float centerY, RotaryWingVehicle rotaryWingVehicle) {
         // 高度变化
-        int heightY = centerY - 21;
-        int heightX = centerX + 110;
+        int heightY = (int) (centerY - 21);
+        int heightX = (int) (centerX + 110);
         for (int step = 0; step < 17; step++) {
             boolean flag = step % 4 == 0;
             guiGraphics.fill((flag ? heightX : heightX + 5), heightY, heightX + 10, heightY + 1, 0xFF00FF00);
@@ -96,7 +96,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
             heightY = (int) (centerY + 3 + (24 * -rotaryWingVehicle.getDeltaMovement().y));
-            heightX = centerX + 123;
+            heightX = (int) (centerX + 123);
             pose.translate(heightX, heightY, 0);
             BufferBuilder buf = Tesselator.getInstance().getBuilder();
             buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
@@ -114,7 +114,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
     /**
      * 速度信息
      */
-    public static void renderSpeedInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle) {
+    public static void renderSpeedInfo(GuiGraphics guiGraphics, RotaryWingVehicle rotaryWingVehicle) {
         Vec3 v = rotaryWingVehicle.relativeRotDirection(rotaryWingVehicle.getDeltaMovement(), true);
         float arrowLength = (float) (15.0f * v.length() / rotaryWingVehicle.maxAirSpeed);
         float arrowSize = 4.0f;
@@ -153,7 +153,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
     /**
      * 滚转信息
      */
-    public static void renderRollInfo(GuiGraphics guiGraphics, int centerX, int centerY, RotaryWingVehicle rotaryWingVehicle, LocalVehiclePlayer.ViewType viewType) {
+    public static void renderRollInfo(GuiGraphics guiGraphics, float centerX, float centerY, RotaryWingVehicle rotaryWingVehicle, LocalVehiclePlayer.ViewType viewType) {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         {
@@ -187,16 +187,17 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 }
                 pose.popPose();
                 double xRot = -rotaryWingVehicle.getXRot();
-                int range = 45;
+                int range = 50;
                 float interval = 5;
-                float gap = 9;
+                float gap = range / interval;
                 int baseY = -range;
                 double value = xRot + range / gap * interval;
                 int rot = (int) (Math.floor(value / interval) * interval);
                 double mod = ((xRot % interval) + interval) % interval;
                 pose.translate(0, mod / interval * gap, 0);
                 pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
-                while (baseY <= 45) {
+                guiGraphics.enableScissor(0, (int) (centerY + 21), guiGraphics.guiWidth(), (int) (centerY + 89));
+                while (baseY <= range) {
                     guiGraphics.fill(-17, baseY, -13, baseY + 1, 0xFF00FF00);
                     guiGraphics.fill(-12, baseY, -8, baseY + 1, 0xFF00FF00);
                     guiGraphics.fill(-7, baseY, -3, baseY + 1, 0xFF00FF00);
@@ -207,6 +208,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                     baseY += gap;
                     rot -= interval;
                 }
+                guiGraphics.disableScissor();
             }
         }
         pose.popPose();

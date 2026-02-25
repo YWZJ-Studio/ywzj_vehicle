@@ -31,10 +31,12 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -65,6 +67,7 @@ import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -116,13 +119,14 @@ public abstract class AbstractVehicle extends ContainerCraft
     private float zRot;
     public float zRotO;
     private float lerpZRot;
-    public boolean uav;
     protected List<VehicleCubeOBB> vehicleCubeOBBs;
     protected VehicleCubeOBB mainCubeOBB;
     protected double structureLength;
     public WarningReceiver warningReceiver;
-    public boolean protectPassenger;
     public PhysicsEngine physicsEngine;
+    private final HashMap<LivingEntity, Vec3> dismountLocations;
+    public boolean uav;
+    public boolean protectPassenger;
     protected boolean dataInitialized;
     private long destroyedTime;
     protected int engineParticleTick;
@@ -142,6 +146,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.energyInfo = new EnergyInfo();
         this.setMaxUpStep(1.0f);
         this.physicsEngine = new PhysicsEngine(this);
+        this.dismountLocations = new HashMap<>();
     }
 
     @Override
@@ -703,6 +708,15 @@ public abstract class AbstractVehicle extends ContainerCraft
     @Override
     protected void removePassenger(Entity pPassenger) {
         if (pPassenger instanceof LivingEntity livingEntity) {
+            Vec3 dismountLocation;
+            DoorUnit doorUnit = getNearestDoorUnit(livingEntity);
+            if (doorUnit != null) {
+                dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
+            } else {
+                PartUnit<?> partUnit = getOwnOperatorUnit(livingEntity);
+                dismountLocation = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
+            }
+            dismountLocations.put(livingEntity, dismountLocation);
             onLeaveVehicle(livingEntity);
             super.removePassenger(pPassenger);
         }
@@ -711,12 +725,29 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void onEnterVehicle(LivingEntity livingEntity) {
         if (!level().isClientSide()) {
             ServerLevel serverLevel = (ServerLevel) level();
-            Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
-            if (!emptySeatOptional.isPresent()) {
-                return;
+            Seat targetSeat = null;
+            if (livingEntity instanceof ServerPlayer serverPlayer) {
+                // 优先取交互到的门所对应的乘位
+                Vec3 eyePosition = serverPlayer.getEyePosition();
+                PartUnit<?> partUnit = VectorUtil.hitPartUnit(this, eyePosition, eyePosition.add(serverPlayer.getLookAngle().scale(4)));
+                if (partUnit instanceof DoorUnit doorUnit && doorUnit.getSeatUnitOfDoor() != null) {
+                    Optional<Seat> doorSeat = seats.stream().filter(seat -> seat.partUnit == doorUnit.getSeatUnitOfDoor()).findFirst();
+                    if (doorSeat.isPresent()) {
+                        targetSeat = doorSeat.get();
+                        if (targetSeat.passengerId != -1) {
+                            return;
+                        }
+                    }
+                }
             }
-            Seat seat = emptySeatOptional.get();
-            if (seat.seatIndex == 0) {
+            if (targetSeat == null) {
+                Optional<Seat> emptySeatOptional = seats.stream().filter(seat -> seat.passengerId == -1).findFirst();
+                if (emptySeatOptional.isEmpty()) {
+                    return;
+                }
+                targetSeat = emptySeatOptional.get();
+            }
+            if (targetSeat.seatIndex == 0) {
                 controlUnit.setOperator(livingEntity);
                 toggleEngine(true);
                 partUnits.forEach(partUnit -> {
@@ -725,14 +756,13 @@ public abstract class AbstractVehicle extends ContainerCraft
                     }
                 });
             }
-            seat.partUnit.setOwner(livingEntity);
-            seat.passengerId = livingEntity.getId();
+            targetSeat.partUnit.setOwner(livingEntity);
+            targetSeat.passengerId = livingEntity.getId();
             for (ServerPlayer serverPlayer : serverLevel.players()) {
                 Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
             }
-        } else {
-            livingEntity.setSprinting(false);
         }
+        livingEntity.setSprinting(false);
     }
 
     public void onLeaveVehicle(LivingEntity pPassenger) {
@@ -905,9 +935,20 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             Vector3f rotOffset = axisRollMat.transform(new Vector3f(0, 0, -d));
             Vec3 thirdPersonPos = thirdPersonCenter.add(rotOffset.x, rotOffset.y, rotOffset.z);
-            Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(0.1);
-            while (level().getBlockState(BlockPos.containing(thirdPersonPos)).isSolid()) {
-                thirdPersonPos = thirdPersonPos.add(step);
+            int maxTry = 128;
+            while (maxTry > 0) {
+                maxTry -= 1;
+                BlockHitResult blockHitResult = level().clip(new ClipContext(thirdPersonPos, thirdPersonCenter,
+                        ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, pPassenger));
+                if (blockHitResult.getType() != BlockHitResult.Type.MISS) {
+                    thirdPersonPos = blockHitResult.getLocation();
+                    Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(0.1);
+                    thirdPersonPos = thirdPersonPos.add(step);
+                } else {
+                    Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(1);
+                    thirdPersonPos = thirdPersonPos.add(step);
+                    break;
+                }
             }
             return thirdPersonPos;
         }
@@ -917,12 +958,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     @NotNull
     @Override
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
-        DoorUnit doorUnit = getNearestDoorUnit(pPassenger);
-        if (doorUnit != null) {
-            return doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
-        }
-        PartUnit<?> partUnit = getOwnOperatorUnit(pPassenger);
-        return relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
+        return dismountLocations.getOrDefault(pPassenger, super.getDismountLocationForPassenger(pPassenger));
     }
 
     @Override

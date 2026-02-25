@@ -39,6 +39,8 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     protected float xRemoteAimRot;
     protected float yRemoteAimRot;
 
+    public float xSelfRot;
+    public float ySelfRot;
     public float xRotSpeed;
     public float yRotSpeed;
     public float xRotMax = 90;
@@ -73,11 +75,14 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
 
-    @Deprecated
-    public RotatableUnit(String id, int index, AbstractVehicle vehicle) {
-        super(id, index, vehicle);
-        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);
-        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
+    public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
+        super.buildStructure(vehicleCubeGroupCopy);
+        if (structureGroup != null) {
+            Vector3f selfRot = new Vector3f();
+            structureGroup.baseRotation.getEulerAnglesYXZ(selfRot);
+            this.xSelfRot = (float) Math.toDegrees(selfRot.x);
+            this.ySelfRot = (float) Math.toDegrees(-selfRot.y);
+        }
     }
 
     @Override
@@ -160,7 +165,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
                 xRot = xAimRot;
             }
             xRot = Mth.wrapDegrees(xRot);
-            xRot = Math.max(Math.min(xRot, xRotMax), xRotMin);
+            xRot = Math.max(Math.min(xRot, xRotMax - xSelfRot), xRotMin - xSelfRot);
             if (Math.abs(xRot - xRotO) > 180) {
                 xRotO += Math.signum(xRot - xRotO) * 360;
             }
@@ -170,7 +175,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
                 yRot = yAimRot;
             }
             yRot = Mth.wrapDegrees(yRot);
-            yRot = Math.max(Math.min(yRot, yRotMax), yRotMin);
+            yRot = Math.max(Math.min(yRot, yRotMax - ySelfRot), yRotMin - ySelfRot);
             if (Math.abs(yRot - yRotO) > 180) {
                 yRotO += Math.signum(yRot - yRotO) * 360;
             }
@@ -200,7 +205,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         return new Vec3(baseRot().transform(VectorUtil.rotToVec(xRot, yRot).toVector3f()));
     }
 
-    public Vec2 vecToRot(Vec3 worldVec) {
+    public Vec2 worldVecToLocalRot(Vec3 worldVec) {
         Vector3f localAim = baseRot().conjugate().transform(worldVec.toVector3f());
         return VectorUtil.vecToRot(new Vec3(localAim));
     }
@@ -388,6 +393,13 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public List<RotatableUnit<?>> getSubRotatableUnits() {
         return subRotatableUnits;
+    }
+
+    @Deprecated
+    public RotatableUnit(String id, int index, AbstractVehicle vehicle) {
+        super(id, index, vehicle);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);
+        this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
 
 }

@@ -24,7 +24,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.rotarywing.RotaryWingVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.entity.misc.Rope;
@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class RotaryWingVehicle extends AbstractVehicle
-        implements IAnimationEntity<RotaryWingVehicle, VehicleContext<RotaryWingVehicle>> {
+        implements IAnimationEntity<RotaryWingVehicle, RotaryWingVehicleContext> {
 
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
@@ -66,7 +66,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
-    private IAnimationInstance<VehicleContext<RotaryWingVehicle>> animationInstance;
+    private IAnimationInstance<RotaryWingVehicleContext> animationInstance;
 
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -74,14 +74,14 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public IAnimationInstance<VehicleContext<RotaryWingVehicle>> getAnimationInstance() {
+    public IAnimationInstance<RotaryWingVehicleContext> getAnimationInstance() {
         return animationInstance;
     }
 
     @Override
     public void initDisplayData(BaseDisplay display) {
-        if (display instanceof RotaryWingVehicleDisplay display1) {
-            this.animationInstance = display1.createAnimationInstance(this);
+        if (display instanceof RotaryWingVehicleDisplay rotaryWingVehicleDisplay) {
+            this.animationInstance = rotaryWingVehicleDisplay.createAnimationInstance(this);
         }
     }
 
@@ -292,10 +292,6 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     @Override
     protected Vec3 tickMove() {
-        if (getDriver() == null) {
-            controlUnit.reset();
-        }
-
         // 总距控制
         float collectivePitch = getCollectivePitch();
         if (controlUnit.up) {
@@ -329,99 +325,97 @@ public class RotaryWingVehicle extends AbstractVehicle
         }
         this.setDeltaMovement(airSpeed);
 
+        if (hoverMode) {
+            controlUnit.xRot = 0;
+            controlUnit.yRot = getYRot();
+            double vy = airSpeed.y - physicsEngine.gravityA;
+            if (vy > 0.01) {
+                entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
+            } else if (vy < -0.01) {
+                entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
+            }
+        }
+
         float xRotSpeedAcceleration = (float) (this.xRotSpeedAcceleration * scale);
         float yRotSpeedAcceleration = (float) (this.yRotSpeedAcceleration * scale);
         float zRotSpeedAcceleration = (float) (this.zRotSpeedAcceleration * scale);
-        if (getDriver() != null) {
-            if (hoverMode) {
-                controlUnit.xRot = 0;
-                controlUnit.yRot = getYRot();
-                double vy = airSpeed.y - physicsEngine.gravityA;
-                if (vy > 0.01) {
-                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
-                } else if (vy < -0.01) {
-                    entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
-                }
+        if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep && scale > 0) {
+            float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
+            float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
+            if (yDiff > 0) {
+                yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration * shrink);
+            } else if (yDiff < 0) {
+                yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration * shrink);
             }
-
-            if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep && scale > 0) {
-                float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
-                float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
-                if (yDiff > 0) {
-                    yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration * shrink);
-                } else if (yDiff < 0) {
-                    yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration * shrink);
-                }
-                if (Math.abs(yDiff) > 3) {
-                    if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
-                        yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
-                    }
-                    this.setYRot(this.getYRot() + yRotSpeed);
-                } else {
-                    yRotSpeed = 0;
-                    this.setYRot(controlUnit.yRot);
-                }
-            } else {
-                if (controlUnit.rightYaw) {
-                    yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration);
-                }
-                if (controlUnit.leftYaw) {
-                    yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
+            if (Math.abs(yDiff) > 3) {
+                if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
+                    yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
                 }
                 this.setYRot(this.getYRot() + yRotSpeed);
-            }
-
-            if (!(controlUnit.forward || controlUnit.backward) && !controlUnit.xRotKeep) {
-                float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
-                float shrink = Math.min(1, Math.abs(xDiff) / xRotSpeedAcceleration);
-                if (xDiff > 0) {
-                    xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration * shrink);
-                } else if (xDiff < 0) {
-                    xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration * shrink);
-                }
-                if (Math.abs(xDiff) > 3) {
-                    this.setXRot(this.getXRot() + xRotSpeed);
-                } else {
-                    xRotSpeed = 0;
-                    this.setXRot(controlUnit.xRot);
-                }
             } else {
-                if (controlUnit.forward) {
-                    xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration);
-                }
-                if (controlUnit.backward) {
-                    xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
-                }
-                this.setXRot(this.getXRot() + xRotSpeed);
+                yRotSpeed = 0;
+                this.setYRot(controlUnit.yRot);
             }
-
-            if (!(controlUnit.left || controlUnit.right)) {
-                float zDiff = Mth.wrapDegrees(-this.getZRot());
-                float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
-                if (zDiff > 0) {
-                    zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration * shrink);
-                } else if (zDiff < 0) {
-                    zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration * shrink);
-                }
-                if (Math.abs(zDiff) > 3) {
-                    this.setZRot(this.getZRot() + zRotSpeed);
-                } else {
-                    zRotSpeed = 0;
-                    this.setZRot(0);
-                }
-            } else {
-                if (controlUnit.right) {
-                    zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration);
-                }
-                if (controlUnit.left) {
-                    zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
-                }
-                this.setZRot(this.getZRot() + zRotSpeed);
+        } else {
+            if (controlUnit.rightYaw) {
+                yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration);
             }
-            yRotSpeed = Math.signum(yRotSpeed) * (Math.max(0, Math.abs(yRotSpeed) - 0.1f));
-            xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 0.1f));
-            zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 0.1f));
+            if (controlUnit.leftYaw) {
+                yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
+            }
+            this.setYRot(this.getYRot() + yRotSpeed);
         }
+
+        if (!(controlUnit.forward || controlUnit.backward) && !controlUnit.xRotKeep) {
+            float xDiff = Mth.wrapDegrees(controlUnit.xRot - this.getXRot());
+            float shrink = Math.min(1, Math.abs(xDiff) / xRotSpeedAcceleration);
+            if (xDiff > 0) {
+                xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration * shrink);
+            } else if (xDiff < 0) {
+                xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration * shrink);
+            }
+            if (Math.abs(xDiff) > 3) {
+                this.setXRot(this.getXRot() + xRotSpeed);
+            } else {
+                xRotSpeed = 0;
+                this.setXRot(controlUnit.xRot);
+            }
+        } else {
+            if (controlUnit.forward) {
+                xRotSpeed = Math.min(xRotSpeedMax, xRotSpeed + xRotSpeedAcceleration);
+            }
+            if (controlUnit.backward) {
+                xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
+            }
+            this.setXRot(this.getXRot() + xRotSpeed);
+        }
+
+        if (!(controlUnit.left || controlUnit.right)) {
+            float zDiff = Mth.wrapDegrees(-this.getZRot());
+            float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
+            if (zDiff > 0) {
+                zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration * shrink);
+            } else if (zDiff < 0) {
+                zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration * shrink);
+            }
+            if (Math.abs(zDiff) > 3) {
+                this.setZRot(this.getZRot() + zRotSpeed);
+            } else {
+                zRotSpeed = 0;
+                this.setZRot(0);
+            }
+        } else {
+            if (controlUnit.right) {
+                zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration);
+            }
+            if (controlUnit.left) {
+                zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
+            }
+            this.setZRot(this.getZRot() + zRotSpeed);
+        }
+        yRotSpeed = Math.signum(yRotSpeed) * (Math.max(0, Math.abs(yRotSpeed) - 0.1f));
+        xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 0.1f));
+        zRotSpeed = Math.signum(zRotSpeed) * (Math.max(0, Math.abs(zRotSpeed) - 0.1f));
 
         if (isDestroyed() && !onGround()) {
             this.setYRot(this.getYRot() + 10);

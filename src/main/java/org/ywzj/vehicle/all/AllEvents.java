@@ -99,12 +99,11 @@ public class AllEvents {
                 if (partUnit != null) {
                     if (!partUnit.onEntityInteract(player, event.getHand())) {
                         event.setCanceled(true);
-                        return;
-                    } else if (partUnit instanceof DoorUnit) {
-                        return;
                     }
+                    return;
                 }
                 if (!vehicle.level().isClientSide() && event.getHand() == InteractionHand.MAIN_HAND && !player.isShiftKeyDown()) {
+                    // 交互登上载具时，先打开最近的门
                     DoorUnit doorUnit = vehicle.getNearestDoorUnit(player);
                     if (doorUnit != null && !doorUnit.isOn()) {
                         doorUnit.setOn(true);
@@ -133,6 +132,7 @@ public class AllEvents {
                     }
                 } else {
                     if (!event.getLevel().isClientSide()) {
+                        // 离开载具时，打开最近的门
                         DoorUnit doorUnit = vehicle.getNearestDoorUnit(livingEntity);
                         if (doorUnit != null && !doorUnit.isOn()) {
                             doorUnit.setOn(true);
@@ -190,6 +190,7 @@ public class AllEvents {
         @SubscribeEvent
         public static void onVehicleFire(VehicleFireEvent.Post event) {
             event.getWeapon().soundsAndParticles();
+            event.getWeapon().getWeaponUnit().onClientFire();
         }
 
         @SubscribeEvent

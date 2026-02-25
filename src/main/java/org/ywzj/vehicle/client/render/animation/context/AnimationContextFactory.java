@@ -1,9 +1,11 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
 import net.minecraft.world.entity.Entity;
+import org.ywzj.vehicle.client.render.animation.context.rotarywing.RotaryWingVehicleContext;
 import org.ywzj.vehicle.client.render.animation.context.tracked.TrackedVehicleContext;
 import org.ywzj.vehicle.client.render.animation.context.wheeled.WheeledVehicleContext;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
@@ -29,14 +31,18 @@ public interface AnimationContextFactory<E extends Entity, CTX extends EntityCon
         return VehicleContext::new;
     }
 
+    static AnimationContextFactory<WheeledVehicle, WheeledVehicleContext> wheeledVehicle() {
+        return WheeledVehicleContext::new;
+    }
+
     static AnimationContextFactory<TrackedVehicle, TrackedVehicleContext> trackedVehicle() {
         return TrackedVehicleContext::new;
     }
 
-    static AnimationContextFactory<WheeledVehicle, WheeledVehicleContext> wheeledVehicle() {
-        return WheeledVehicleContext::new;
+    static AnimationContextFactory<RotaryWingVehicle, RotaryWingVehicleContext> rotaryWingVehicle() {
+        return RotaryWingVehicleContext::new;
     }
-    
+
     /**
      * Factory for generic entity contexts
      */

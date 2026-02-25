@@ -79,7 +79,7 @@ public class VehicleExplosion {
         this.damage = damage;
         this.destroyBlocks = destroyBlocks && AllConfigs.common.canDestroyBlock.get();
         this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlock.get();
-        this.damageSource = level.damageSources().explosion(source, vehicle);
+        this.damageSource = level.damageSources().explosion(vehicle, source);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
 

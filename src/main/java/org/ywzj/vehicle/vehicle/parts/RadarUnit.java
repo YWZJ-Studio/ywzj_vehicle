@@ -61,7 +61,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         if (!vehicle.level().isClientSide()) {
             if (lockedEntity != null) {
                 Vec3 radarPos = worldPosition(radarOffset);
-                Vec2 rot = vecToRot(lockedEntity.position().subtract(radarPos));
+                Vec2 rot = worldVecToLocalRot(lockedEntity.position().subtract(radarPos));
                 if (yRotAdd) {
                     yAimRot = rot.y + scanSectorAngle / 4;
                 } else {

@@ -9,5 +9,6 @@
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:truck_engine_idle",
     "engine_run": "ywzj_vehicle:truck_engine_run"
-  }
+  },
+  "tab_index": 1
 }

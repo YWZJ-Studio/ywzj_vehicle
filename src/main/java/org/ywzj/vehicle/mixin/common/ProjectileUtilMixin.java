@@ -51,7 +51,7 @@ public class ProjectileUtilMixin {
             at = @At("HEAD"), cancellable = true)
     private static void onGetEntityHitResult(Level pLevel, Entity pProjectile, Vec3 pStartVec, Vec3 pEndVec, AABB pBoundingBox,
                                            Predicate<Entity> pFilter, float pInflationAmount, CallbackInfoReturnable<EntityHitResult> cir) {
-        for(Entity entity : pLevel.getEntities(pProjectile, pBoundingBox, pFilter)) {
+        for (Entity entity : pLevel.getEntities(pProjectile, pBoundingBox, pFilter)) {
             if (entity instanceof OBBEntity) {
                 Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, pStartVec, pEndVec);
                 if (closestHitPos != null) {
@@ -59,6 +59,7 @@ public class ProjectileUtilMixin {
                 } else {
                     cir.setReturnValue(null);
                 }
+                return;
             }
         }
     }

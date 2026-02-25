@@ -35,4 +35,7 @@ public class BaseDisplayPojo {
     @SerializedName("description")
     public String description;
 
+    @SerializedName("tab_index")
+    public int tabIndex;
+
 }

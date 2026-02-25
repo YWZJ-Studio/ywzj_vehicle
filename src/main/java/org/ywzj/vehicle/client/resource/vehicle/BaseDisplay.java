@@ -25,6 +25,7 @@ public class BaseDisplay {
     protected ResourceLocation animationControllerPath;
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
     protected String description;
+    protected int tabIndex;
     protected List<SpecialBoneEffect> specialBoneEffects = new ArrayList<>();
 
     public BaseDisplay() {}
@@ -69,6 +70,7 @@ public class BaseDisplay {
         }
 
         this.description = pojo.description;
+        this.tabIndex = pojo.tabIndex;
     }
 
     public ResourceLocation getDisplayId() {
@@ -109,6 +111,10 @@ public class BaseDisplay {
 
     public String getDescription() {
         return description;
+    }
+
+    public int getTabIndex() {
+        return tabIndex;
     }
 
     public List<SpecialBoneEffect> getSpecialBoneEffects() {

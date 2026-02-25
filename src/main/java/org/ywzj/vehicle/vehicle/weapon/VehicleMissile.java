@@ -6,6 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.gui.VehicleOverlay;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
@@ -55,6 +56,9 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
 
         for (AimContext aimContext : aimContexts) {
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data.getGuidance(), weaponUnit, data.getWeaponId());
+            if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                missileEntity.targetEntity = weaponUnit.getAimLockEntity();
+            }
             missileEntity.damage = data.getDamage();
             missileEntity.explosion = data.getExplosion();
             missileEntity.maxSpeed = data.getMaxSpeed();

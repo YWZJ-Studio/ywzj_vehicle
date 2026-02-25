@@ -5,7 +5,6 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
@@ -19,7 +18,6 @@ import java.util.Map;
 public class WeaponUnitData extends RotatableUnitData {
 
     private List<Bolt> bolts;
-    boolean singleBarrel;
     private FiringMode firingMode;
     private boolean parentWeaponUnitAim;
     private Vec3 opticalSightOffset;
@@ -143,9 +141,6 @@ public class WeaponUnitData extends RotatableUnitData {
         } else if (yTurnBone != null) {
             this.xTurnGroup = vehiclePartGroups.get(yTurnBone);
         }
-        if (xTurnBone == null || xTurnBone.getChildren().isEmpty() || xTurnBone.getChildren().size() == 1) {
-            this.singleBarrel = true;
-        }
         this.partCubeOBBs = new ArrayList<>();
         this.partCubeOBBs.addAll(xTurnUnitOBBs);
         this.partCubeOBBs.addAll(yTurnUnitOBBs);
@@ -176,20 +171,7 @@ public class WeaponUnitData extends RotatableUnitData {
             float barrelLength = cube.depth();
             Vector3f selfRot = new Vector3f();
             bone.rotation.getEulerAnglesYXZ(selfRot);
-            if (singleBarrel) {
-                // 若武器单元只有一个炮管，那其基础旋转视为武器单元朝向的默认值
-                if (this.structureGroup != null) {
-                    this.structureGroup.rotation.mul(new Quaternionf(bone.rotation)).getEulerAnglesYXZ(selfRot);
-                    this.structureGroup.baseRotation = new Quaternionf();
-                }
-                this.rotInfo.xRot = (float) Math.toDegrees(selfRot.x);
-                this.rotInfo.yRot = (float) Math.toDegrees(-selfRot.y);
-                bone.rotation.set(new Quaternionf());
-                this.bolts.add(new Bolt(boltOffset, barrelLength, 0, 0));
-            } else {
-                // 若武器单元有多个炮管且朝向各不相同，那它们都将自带基础旋转
-                this.bolts.add(new Bolt(boltOffset, barrelLength, (float) Math.toDegrees(selfRot.x), (float) Math.toDegrees(-selfRot.y)));
-            }
+            this.bolts.add(new Bolt(boltOffset, barrelLength, (float) Math.toDegrees(selfRot.x), (float) Math.toDegrees(-selfRot.y)));
         }
         for (BedrockBone child : bone.getChildren()) {
             buildBolts(child, offset.add(child.x / 16, child.y / 16, child.z / 16));

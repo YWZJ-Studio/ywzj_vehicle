@@ -3,5 +3,6 @@
   "texture": "ywzj_vehicle:textures/entity/bgm_71_tow.png",
   "slot_texture": "ywzj_vehicle:textures/slot/bgm_71_tow.png",
   "animation_controller": "ywzj_vehicle:bgm_71_tow_controller",
-  "sounds": {}
+  "sounds": {},
+  "tab_index": 400
 }

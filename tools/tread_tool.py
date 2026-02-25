@@ -40,7 +40,7 @@ def build_animation(bones, duration=1.0):
         }
     }
     bones_map = {b.get("name"): b for b in bones if "name" in b}
-    pattern = re.compile(r"^tread_([a-z])_(\d+)$")
+    pattern = re.compile(r"^tread_([a-z])_(-?\d+)$")
 
     for name, bone in bones_map.items():
         m = pattern.match(name)

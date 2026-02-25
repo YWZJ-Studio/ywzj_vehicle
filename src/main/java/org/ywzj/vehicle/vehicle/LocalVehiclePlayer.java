@@ -76,6 +76,7 @@ public class LocalVehiclePlayer {
             tickCount = 0;
         }
         tickAim();
+        checkState();
     }
 
     private void tickAim() {
@@ -249,19 +250,19 @@ public class LocalVehiclePlayer {
         AbstractVehicle vehicle = getVehicle();
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
            if (viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                if (!mouseTurnedAfterScope && (Math.abs(pXRot) >= 0.5 || Math.abs(pYRot) >= 0.5)) {
-                    weaponUnit.setXAimRot(weaponUnit.getXRot());
-                    weaponUnit.setYAimRot(weaponUnit.getYRot());
-                    mouseTurnedAfterScope = true;
-                }
-                if (!mouseTurnedAfterScope) {
-                    return;
-                }
-                pXRot *= 0.15f;
-                pYRot *= 0.15f;
+               if (!mouseTurnedAfterScope && (Math.abs(pXRot) >= 0.5 || Math.abs(pYRot) >= 0.5)) {
+                   weaponUnit.setXAimRot(weaponUnit.getXRot());
+                   weaponUnit.setYAimRot(weaponUnit.getYRot());
+                   mouseTurnedAfterScope = true;
+               }
+               if (!mouseTurnedAfterScope) {
+                   return;
+               }
+               pXRot *= 0.15f;
+               pYRot *= 0.15f;
                float tx = Mth.abs(weaponUnit.getXAimRot() - weaponUnit.getXRot()) % 360 / weaponUnit.getXRotSpeed();
                float vx = Math.min(weaponUnit.getXRotSpeed() / 16, weaponUnit.getXRotSpeed() / (tx * 10));
-               if ((pXRot > 0 && weaponUnit.getXAimRot() < weaponUnit.xRotMax) || (pXRot < 0 && weaponUnit.getXAimRot() > weaponUnit.xRotMin)) {
+               if ((pXRot > 0 && weaponUnit.getXAimRot() < weaponUnit.xRotMax - weaponUnit.xSelfRot) || (pXRot < 0 && weaponUnit.getXAimRot() > weaponUnit.xRotMin - weaponUnit.xSelfRot)) {
                    float rx = (float) (weaponUnit.getXAimRot() + pXRot * vx);
                    if (rx > 180) {
                        rx = -180 + (rx - 180);
@@ -272,7 +273,7 @@ public class LocalVehiclePlayer {
                }
                float ty = Mth.abs(weaponUnit.getYAimRot() - weaponUnit.getYRot()) % 360 / weaponUnit.getYRotSpeed();
                float vy = Math.min(weaponUnit.getYRotSpeed() / 16, weaponUnit.getYRotSpeed() / (ty * 10));
-               if ((pYRot > 0 && weaponUnit.getYAimRot() < weaponUnit.yRotMax) || (pYRot < 0 && weaponUnit.getYAimRot() > weaponUnit.yRotMin)) {
+               if ((pYRot > 0 && weaponUnit.getYAimRot() < weaponUnit.yRotMax - weaponUnit.ySelfRot) || (pYRot < 0 && weaponUnit.getYAimRot() > weaponUnit.yRotMin - weaponUnit.ySelfRot)) {
                    float ry = (float) (weaponUnit.getYAimRot() + pYRot * vy);
                    if (ry > 180) {
                        ry = -180 + (ry - 180);
@@ -370,6 +371,17 @@ public class LocalVehiclePlayer {
         }
         if (Math.abs(cameraAimRotZ - cameraAimRotZO) > 90) {
             cameraAimRotZO += cameraAimRotZO < 0 ? 360f : -360f;
+        }
+    }
+
+    public void checkState() {
+        Player player = getPlayer();
+        AbstractVehicle vehicle = getVehicle();
+        if (CrtHandler.isIsActive()) {
+            if (vehicle == null ||
+                    (!(getVehicle().getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit
+                            && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT)))
+                CrtHandler.setActive(false);
         }
     }
 

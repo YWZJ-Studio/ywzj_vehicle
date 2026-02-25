@@ -9,10 +9,13 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -39,7 +42,11 @@ public class AllTabs {
                         .displayItems((displayParams, output) ->
                                 CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
                                         .filter(vehicleId -> vehicleId.getNamespace().equals(namespace))
-                                        .sorted()
+                                        .sorted(Comparator.comparingInt(vehicleId ->
+                                                ClientAssetsManager.INSTANCE
+                                                        .getVehicleDisplay(vehicleId)
+                                                        .map(BaseDisplay::getTabIndex)
+                                                        .orElse(0)))
                                         .forEach(vehicleId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleId))))
                         .build());
     }

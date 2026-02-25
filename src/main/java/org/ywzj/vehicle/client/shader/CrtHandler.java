@@ -83,4 +83,8 @@ public class CrtHandler implements ResourceManagerReloadListener {
         }
     }
 
+    public static boolean isIsActive() {
+        return isActive;
+    }
+
 }

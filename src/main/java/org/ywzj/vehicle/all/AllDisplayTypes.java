@@ -54,7 +54,7 @@ public class AllDisplayTypes {
                 var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
                 return new RotaryWingVehicleDisplay(pojo);
             },
-            AnimationContextFactory.vehicle()
+            AnimationContextFactory.rotaryWingVehicle()
     );
 
     private static <D extends BaseDisplay> RegistryObject<VehicleDisplayType<D>> register(

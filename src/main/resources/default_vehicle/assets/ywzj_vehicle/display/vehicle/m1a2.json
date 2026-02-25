@@ -22,5 +22,6 @@
       "texture": "ywzj_vehicle:textures/bedrock/effect/muzzle_flash_1.png",
       "type": "muzzle_flash"
     }
-  ]
+  ],
+  "tab_index": 101
 }

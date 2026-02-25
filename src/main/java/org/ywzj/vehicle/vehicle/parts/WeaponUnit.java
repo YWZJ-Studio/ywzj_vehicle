@@ -10,6 +10,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
@@ -139,13 +140,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void switchWeapon(boolean next) {
         int size = weapons.size();
-        this.getCurrentWeapon().ifPresent(
-                AbstractVehicleWeapon::onSwitchFrom
-        );
+        this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
         this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
-        this.getCurrentWeapon().ifPresent(
-                AbstractVehicleWeapon::onSwitchTo
-        );
+        this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
     }
 
     public void initWeapon(int index) {
@@ -166,7 +163,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 WeaponUnit parent = this;
                 AbstractVehicleWeapon<?> weapon;
                 if (weaponInfo.partUnitId != null && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit) {
-                    subWeaponUnit.setParentWeaponUnit(parent);
+                    if (subWeaponUnit.getParentWeaponUnit() == null) {
+                        subWeaponUnit.setParentWeaponUnit(parent);
+                    }
                     parent.addSubWeaponUnit(subWeaponUnit);
                     weapon = vehicleWeaponIndex.create(vehicle, subWeaponUnit, index, weaponInfo.saveId);
                 } else {
@@ -179,7 +178,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 }
                 weapon.defineSyncData(this.getSyncData());
                 indexedWeapons.add(weapon);
-                index++;
+                index += 1;
             }
         }
         // 雷达
@@ -241,12 +240,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             aim(aimLockEntity.getBoundingBox().getCenter());
             Vec3 checkStart = worldPivotPosition();
             Vec3 checkEnd = aimLockEntity.position();
-            BlockHitResult result = vehicle.level().clip(new ClipContext(checkStart, checkEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
+            Level level = vehicle.level();
+            BlockHitResult result = level.clip(new ClipContext(checkStart, checkEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
             // 锁定实体是否被不透光方块遮挡
             if (result.getType() != HitResult.Type.MISS) {
                 BlockPos pos = result.getBlockPos();
-                BlockState state = vehicle.level().getBlockState(pos);
-                if (state.isAir() || state.canOcclude()) {
+                BlockState state = level.getBlockState(pos);
+                if (!state.getCollisionShape(level, pos).isEmpty() && state.canOcclude()) {
                     setAimLockEntity(null);
                     return;
                 }
@@ -355,10 +355,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public void onClientFire() {
+        if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+            setAimLockEntity(null);
+        }
+    }
+
     public void aim(Vec3 worldPos) {
         Vec2 rot = aimRot(worldPos);
         Bolt bolt = getCurrentBolt();
-        rot = new Vec2(rot.x - bolt.xRot(), rot.y + bolt.yRot());
+        rot = new Vec2(rot.x - bolt.xRot, rot.y + bolt.yRot);
         if (xAimRot != rot.x || yAimRot != rot.y) {
             if (vehicle.level().isClientSide()) {
                 ClientVehicleAction control = new ClientVehicleAction();
@@ -380,7 +387,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().offset()), false);
         Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
-        return vecToRot(worldAim);
+        return worldVecToLocalRot(worldAim);
     }
 
     public Vec3 aimHitPosition() {
@@ -419,9 +426,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Vec3 boltPosition = worldBoltPosition(bolt, vehicleRotation, globalTransform);
         Vector3f worldRot = new Vector3f();
         vehicleRotation.mul(rotation).getEulerAnglesYXZ(worldRot);
-        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot(), (float) Math.toDegrees(-worldRot.y) + bolt.yRot());
+        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
-        aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength()));
+        aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength));
         return aimContext;
     }
 
@@ -434,7 +441,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public Vec3 worldBoltPosition(Bolt bolt, Quaternionf vehicleRotation, VehicleCubeGroup.GlobalTransform globalTransform) {
         Quaternionf rotation = globalTransform.rotation();
-        Vector3f boltOffset = new Vector3f((float) bolt.offset().x, (float) bolt.offset().y, (float) bolt.offset().z);
+        Vector3f boltOffset = new Vector3f((float) bolt.offset.x, (float) bolt.offset.y, (float) bolt.offset.z);
         rotation.transform(boltOffset);
         Vec3 pivot = globalTransform.offset();
         Vector3f rotatedBoltOffset = vehicleRotation.transform(pivot.add(boltOffset.x, boltOffset.y, boltOffset.z).toVector3f());
@@ -582,7 +589,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             // 光电锁定
             if (sensorType == WeaponUnitData.FireControlSensorType.EO
                     && lockType == WeaponUnitData.FireControlLockType.AIM_HIT) {
-                EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, worldPivotPosition(), aimLockPosition);
+                Vec3 pivotPosition = worldPivotPosition();
+                Vec3 direction = aimLockPosition.subtract(pivotPosition).normalize();
+                EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, pivotPosition, pivotPosition.add(direction.scale(LocalVehiclePlayer.renderDistance())));
                 if (entityHit != null) {
                     Entity entity = entityHit.getEntity();
                     if (entity instanceof SightObstruction) {

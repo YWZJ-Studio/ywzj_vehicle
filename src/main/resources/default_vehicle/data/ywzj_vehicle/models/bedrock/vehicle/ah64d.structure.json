@@ -12,6 +12,24 @@
 			},
 			"bones": [
 				{
+					"name": "main_structure",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-14.975, 0, -128],
+							"size": [29.4, 52.225, 236.65],
+							"uv": {
+								"north": {"uv": [88, 0], "uv_size": [-88, 87]},
+								"east": {"uv": [252, 0], "uv_size": [-252, 87]},
+								"south": {"uv": [88, 0], "uv_size": [-88, 87]},
+								"west": {"uv": [252, 0], "uv_size": [-252, 87]},
+								"up": {"uv": [88, 0], "uv_size": [-88, 252]},
+								"down": {"uv": [88, 0], "uv_size": [-88, 252]}
+							}
+						}
+					]
+				},
+				{
 					"name": "vehicle_body",
 					"pivot": [-2.275, 26, 32.725],
 					"cubes": [
