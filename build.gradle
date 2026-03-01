@@ -119,8 +119,11 @@ dependencies {
         jarJar.ranged(it, "[1.8.0,2.0.0)")
     }
     // SBM
-    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.5-forge+mc1.20.1"))) {
-        jarJar.ranged(it, "[2.1.5,)")
+//    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.5-forge+mc1.20.1"))) {
+//        jarJar.ranged(it, "[2.1.5,)")
+//    }
+    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.6-forge+mc1.20.1"))) {
+        jarJar.ranged(it, "[2.1.6,)")
     }
     compileOnly("com.maydaymemory:mae:1.1.0") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
@@ -157,6 +160,7 @@ dependencies {
 
     if (!project.gradle.startParameter.taskNames.any { it.contains("runServer") }) {
         runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
+        runtimeOnly fg.deobf("curse.maven:rubidium-extra-654373:6101745")
         runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
     }
 
