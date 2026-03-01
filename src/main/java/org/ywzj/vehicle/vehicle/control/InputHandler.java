@@ -11,6 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -161,7 +162,11 @@ public class InputHandler {
                     controlUnit.xRot = 0;
                     controlUnit.yRotKeep = true;
                 } else {
-                    controlUnit.xRot = player.getXRot();
+                    if (vehicle instanceof RotaryWingVehicle) {
+                        controlUnit.xRot = player.getXRot();
+                    } else if (vehicle instanceof FixedWingVehicle) {
+                        controlUnit.xRot = player.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE;
+                    }
                     controlUnit.yRot = player.getYRot();
                     xRotO = controlUnit.xRot;
                     yRotO = controlUnit.yRot;

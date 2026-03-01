@@ -97,8 +97,14 @@ public class VehicleCubeOBB {
         Vector3f centerOffset = new Vector3f((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
         rotation.transform(centerOffset);
         Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vector3f center = vehicleRotation.transform(globalTransform.offset().add(centerOffset.x, centerOffset.y, centerOffset.z).toVector3f());
-        obb.setCenter(vehicle.position().add(center.x, center.y, center.z).toVector3f());
+        Vector3f center = vehicleRotation.transform(globalTransform.offset()
+                .add(centerOffset.x, centerOffset.y, centerOffset.z)
+                .subtract(vehicle.centerOffset.x, vehicle.centerOffset.y, vehicle.centerOffset.z)
+                .toVector3f());
+        obb.setCenter(vehicle.position()
+                .add(vehicle.centerOffset)
+                .add(center.x, center.y, center.z)
+                .toVector3f());
         obb.setRotation(vehicleRotation.mul(rotation));
     }
 

@@ -1,6 +1,5 @@
-package org.ywzj.vehicle.client.render.animation.context.tracked;
+package org.ywzj.vehicle.client.render.animation.context;
 
-import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 

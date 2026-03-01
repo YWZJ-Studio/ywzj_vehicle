@@ -2,6 +2,7 @@ package org.ywzj.vehicle.custom.vehicle;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
@@ -32,6 +33,9 @@ public class BaseVehicleDataPojo {
 
     @SerializedName("protect_passenger")
     public boolean protectPassenger = true;
+
+    @SerializedName("center_offset")
+    public Vec3 centerOffset = Vec3.ZERO;
 
     @SerializedName("structure_model")
     public ResourceLocation structureModel = null;

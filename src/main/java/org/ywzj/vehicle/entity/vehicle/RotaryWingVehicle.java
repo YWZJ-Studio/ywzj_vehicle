@@ -24,7 +24,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.context.rotarywing.RotaryWingVehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.RotaryWingVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.entity.misc.Rope;

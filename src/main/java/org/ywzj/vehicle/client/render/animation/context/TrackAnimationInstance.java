@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.client.render.animation.context.tracked;
+package org.ywzj.vehicle.client.render.animation.context;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.basic.Pose;

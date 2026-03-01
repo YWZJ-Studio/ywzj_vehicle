@@ -143,8 +143,13 @@ public class AllEntities {
                     .clientTrackingRange(16)
                     .build("rotary_wing_vehicle"));
 
-//    public static final RegistryObject<EntityType<CommonWheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("common_wheeled_vehicle",
-//            () -> CommonWheeledVehicle.TYPE);
+    public static final RegistryObject<EntityType<FixedWingVehicle>> FIXED_WING_VEHICLE = ENTITIES.register("fixed_wing_vehicle",
+            () -> EntityType.Builder.of(FixedWingVehicle::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(16)
+                    .build("fixed_wing_vehicle"));
 
     public static final RegistryObject<EntityType<DumpTruck>> DUMP_TRUCK = registerVehicle("dump_truck", DumpTruck::new);
 

@@ -196,7 +196,7 @@ public class PhysicsEngine {
         try {
             // 加速度使得重心偏移
             Vector3f a = new Vector3f(velocity).sub(this.velocityO);
-            gravityCenter.add(a.negate().mul((float) (physicsCube.height * 8)));
+            gravityCenter.add(a.mul((float) (physicsCube.height * 8)));
 
             // 升力影响
             if (force.y >= gravityA * mass) {

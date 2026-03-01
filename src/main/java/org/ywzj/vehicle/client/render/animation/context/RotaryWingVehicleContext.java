@@ -1,6 +1,5 @@
-package org.ywzj.vehicle.client.render.animation.context.rotarywing;
+package org.ywzj.vehicle.client.render.animation.context;
 
-import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 
 public class RotaryWingVehicleContext extends VehicleContext<RotaryWingVehicle> {

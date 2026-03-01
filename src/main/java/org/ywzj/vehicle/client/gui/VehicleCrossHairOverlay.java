@@ -62,23 +62,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
                     float alpha = 0.4f;
-                    // 导引头冷却提示
-                    if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                        if (weaponUnit.isIrSensorOn()) {
-                            alpha += (float) Math.sin((double) weaponUnit.getIrCoolingTick() / 5 * Math.PI) * 0.2f;
-                        }
-                    }
                     int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
-                    if (weaponUnit.getFireControlLockType() == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
-                        // 导引头小圈
-                        if (weaponUnit.getAimLockEntity() == null && weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 15, aimCircleColor, 0.03f, 0, 0);
-                        }
-                        // 导引头/雷达大圈
-                        GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.01f, 0, 0);
-                    } else {
-                        GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
-                    }
+                    GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
                     guiGraphics.pose().popPose();
                 }
                 if (showHit) {
@@ -86,6 +71,22 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     double y = Mth.lerp(partialTick, screenHitYO, screenHitY);
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
+                    // 导引头冷却提示
+                    if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR && weaponUnit.isIrSensorOn()) {
+                        float alpha = 0.4f;
+                        if (weaponUnit.isIrSensorOn()) {
+                            alpha += (float) Math.sin((double) weaponUnit.getIrCoolingTick() / 5 * Math.PI) * 0.2f;
+                        }
+                        int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
+                        if (weaponUnit.getFireControlLockType() == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
+                            // 导引头小圈
+                            if (weaponUnit.getAimLockEntity() == null && weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                                GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 15, aimCircleColor, 0.03f, 0, 0);
+                            }
+                            // 导引头/雷达大圈
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.01f, 0, 0);
+                        }
+                    }
                     weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                         WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
                         if (crosshairStyle != null) {

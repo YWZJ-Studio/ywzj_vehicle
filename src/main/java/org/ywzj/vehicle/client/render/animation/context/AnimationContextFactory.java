@@ -1,13 +1,7 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
 import net.minecraft.world.entity.Entity;
-import org.ywzj.vehicle.client.render.animation.context.rotarywing.RotaryWingVehicleContext;
-import org.ywzj.vehicle.client.render.animation.context.tracked.TrackedVehicleContext;
-import org.ywzj.vehicle.client.render.animation.context.wheeled.WheeledVehicleContext;
-import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
-import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
-import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
+import org.ywzj.vehicle.entity.vehicle.*;
 
 /**
  * Factory for creating animation contexts for specific entity types.
@@ -41,6 +35,10 @@ public interface AnimationContextFactory<E extends Entity, CTX extends EntityCon
 
     static AnimationContextFactory<RotaryWingVehicle, RotaryWingVehicleContext> rotaryWingVehicle() {
         return RotaryWingVehicleContext::new;
+    }
+
+    static AnimationContextFactory<FixedWingVehicle, FixedWingVehicleContext> fixedWingVehicle() {
+        return FixedWingVehicleContext::new;
     }
 
     /**

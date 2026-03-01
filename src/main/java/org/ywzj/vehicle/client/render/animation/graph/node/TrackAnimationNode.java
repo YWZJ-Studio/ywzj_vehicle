@@ -3,7 +3,7 @@ package org.ywzj.vehicle.client.render.animation.graph.node;
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
-import org.ywzj.vehicle.client.render.animation.context.tracked.TrackedVehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 
 /**
  * 履带式专用节点，生成履带动画pose

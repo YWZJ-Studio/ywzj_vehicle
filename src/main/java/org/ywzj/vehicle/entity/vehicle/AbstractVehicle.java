@@ -109,6 +109,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected boolean viewZoomed;
     public EnergyInfo energyInfo;
     public DefenseStats defenseStats;
+    public Vec3 centerOffset;
     public float curbWeight;
     private float xRot;
     public float xRotO;
@@ -297,6 +298,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
         this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
         this.defenseStats = vehicleData.getDefenseStats();
+        this.centerOffset = vehicleData.getCenterOffset();
         vehicleData.inject(this);
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
         this.vehicleCubeOBBs = vehicleStruct.obbs();
@@ -1130,8 +1132,17 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (reverse) {
             axisRollMat = axisRollMat.transpose();
         }
-        Vector3f d = axisRollMat.transform(new Vector3f((float) worldDirection.x(), (float) worldDirection.y(), (float) worldDirection.z()));
-        return new Vec3(d.x, d.y, d.z);
+        Vector3f relativePos = new Vector3f(
+                (float) (worldDirection.x() - centerOffset.x),
+                (float) (worldDirection.y() - centerOffset.y),
+                (float) (worldDirection.z() - centerOffset.z)
+        );
+        axisRollMat.transform(relativePos);
+        return new Vec3(
+                relativePos.x + centerOffset.x,
+                relativePos.y + centerOffset.y,
+                relativePos.z + centerOffset.z
+        );
     }
 
     public abstract void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator);
