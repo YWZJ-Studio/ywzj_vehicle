@@ -1,0 +1,24 @@
+{
+  "name": "j8_controller",
+  "script": "ywzj_vehicle:j8",
+  "parameters": {},
+  "switchable_animations": {
+    "door": {
+      "part_id": "door",
+      "animation": "door"
+    }
+  },
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "switchable_animation",
+        "ref": "door"
+      },
+      {
+        "type": "script",
+        "function": "updateBones"
+      }
+    ]
+  }
+}

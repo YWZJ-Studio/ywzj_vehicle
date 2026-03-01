@@ -1,0 +1,16 @@
+{
+  "type": "ywzj_vehicle:fixed_wing_vehicle",
+  "model": "ywzj_vehicle:entity/j8",
+  "texture": "ywzj_vehicle:textures/entity/j8.png",
+  "slot_texture": "ywzj_vehicle:textures/slot/j8.png",
+  "animations": "ywzj_vehicle:entity/j8.animation",
+  "animation_controller": "ywzj_vehicle:j8_controller",
+  "sounds": {
+    "engine_start": "ywzj_vehicle:jet_engine_start",
+    "engine_stop": "ywzj_vehicle:jet_engine_stop",
+    "engine_run": "ywzj_vehicle:jet_engine_run",
+    "engine_thrust": "ywzj_vehicle:jet_engine_thrust",
+    "passby": "ywzj_vehicle:jet_passby"
+  },
+  "tab_index": 400
+}

@@ -1,0 +1,106 @@
+{
+  "type": "ywzj_vehicle:fixed_wing_vehicle",
+  "attributes": {},
+  "max_health": 30,
+  "view_info": {
+    "third_person_center_offset": [0, 6, 0],
+    "third_person_distance": 20,
+    "third_person_center_offset_zoomed": [0, 7, 0],
+    "third_person_distance_zoomed": 4,
+    "sound_distance": 8
+  },
+  "energy_info": {
+    "energy_capacity": 0.25,
+    "energy_consumption_per_tick": 0.00001
+  },
+  "with_warning_receiver": true,
+  "center_offset": [0, 1.625, 0],
+  "structure_model": "ywzj_vehicle:vehicle/j8",
+  "parts": [
+    {
+      "id": "seat",
+      "name": "seat",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "seat",
+      "seat_offset": [0, 2.7, 3.6],
+      "operator_on_weapon_unit": false,
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0
+      },
+      "optical_sight_offset": [0, 0.6, 1.2],
+      "operator_view_offset": [0, 1, 0],
+      "optical_sight_type": "none",
+      "with_stabilizer": true,
+      "zoom_max": 12,
+      "weapons": [
+        {
+          "id": "ywzj_vehicle:auto_cannon",
+          "part_unit_id": "auto_cannon"
+        },
+        {
+          "id": "ywzj_vehicle:fim_92",
+          "part_unit_id": "missile"
+        },
+        {
+          "id": "ywzj_vehicle:decoy_flare",
+          "part_unit_id": "decoy_flare"
+        }
+      ]
+    },
+    {
+      "id": "auto_cannon",
+      "name": "auto_cannon",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "auto_cannon",
+      "is_seat": false,
+      "crosshair_style": "circle",
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0
+      }
+    },
+    {
+      "id": "missile",
+      "name": "missile",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "missile",
+      "fire_control_sensor_type": "ir",
+      "fire_control_lock_type": "aim_frustum",
+      "is_seat": false,
+      "parent_weapon_unit_aim": true,
+      "crosshair_style": "none",
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0
+      }
+    },
+    {
+      "id": "decoy_flare",
+      "name": "decoy_flare",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "decoy_flare",
+      "is_seat": false,
+      "crosshair_style": "none",
+      "firing_mode": "salvo",
+      "rot_info": {
+        "x_rot_speed": 0,
+        "y_rot_speed": 0
+      }
+    },
+    {
+      "id": "landing_gear",
+      "name": "landing_gear",
+      "type": "ywzj_vehicle:landing_gear",
+      "structure_bone": "landing_gear",
+      "is_seat": false
+    },
+    {
+      "id": "door",
+      "name": "door",
+      "type": "ywzj_vehicle:door",
+      "structure_bone": "door",
+      "is_seat": false
+    }
+  ]
+}
