@@ -8,9 +8,91 @@
       "animation": "door"
     }
   },
+  "state_machines": {
+    "wy": {
+      "start_state": "init",
+      "states": {
+        "init": {
+          "on_enter": [
+            {
+              "type": "play_animation",
+              "animation": "animation.j8.wy_off_loop",
+              "play_type": "loop",
+              "track": "wy_off"
+            },
+            {
+              "type": "play_animation",
+              "animation": "animation.j8.wy_on_loop",
+              "play_type": "loop",
+              "track": "wy_on"
+            }
+          ],
+          "transitions": [
+            {
+              "target": "wy_on",
+              "condition": {
+                "type": "script",
+                "script": "context.getThrottleLevel() > 0"
+              },
+              "duration": 0
+            },
+            {
+              "target": "wy_off",
+              "condition": {
+                "type": "script",
+                "script": "context.getThrottleLevel() <= 0"
+              },
+              "duration": 0
+            }
+          ],
+          "evaluate": {
+            "type": "track",
+            "track": "wy_on"
+          }
+        },
+        "wy_off": {
+          "transitions": [
+            {
+              "target": "wy_on",
+              "condition": {
+                "type": "script",
+                "script": "context.getThrottleLevel() > 0"
+              },
+              "duration": 0.5
+            }
+          ],
+          "evaluate": {
+            "type": "track",
+            "track": "wy_off"
+          },
+          "duration": 0.5
+        },
+        "wy_on": {
+          "transitions": [
+            {
+              "target": "wy_off",
+              "condition": {
+                "type": "script",
+                "script": "context.getThrottleLevel() <= 0"
+              },
+              "duration": 0.5
+            }
+          ],
+          "evaluate": {
+            "type": "track",
+            "track": "wy_on"
+          }
+        }
+      }
+    }
+  },
   "graph": {
     "type": "merge",
     "inputs": [
+      {
+        "type": "state_machine",
+        "ref": "wy"
+      },
       {
         "type": "switchable_animation",
         "ref": "door"

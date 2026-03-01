@@ -12,5 +12,13 @@
     "engine_thrust": "ywzj_vehicle:jet_engine_thrust",
     "passby": "ywzj_vehicle:jet_passby"
   },
+  // 特效，替代骨骼
+  "special_bone_effects": [
+    {
+      "bone": "enghy",
+      "texture": "ywzj_vehicle:textures/entity/j8.png",
+      "type": "muzzle_flash"
+    }
+  ],
   "tab_index": 400
 }
