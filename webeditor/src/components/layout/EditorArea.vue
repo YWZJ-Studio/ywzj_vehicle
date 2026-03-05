@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="editor-area">
     <!-- 载具详情视图 -->
     <VehicleDetail v-if="isVehicleTab && vehicleData" :vehicle="vehicleData" />
@@ -21,7 +21,10 @@
             :is="currentEditor"
             :content="content"
             :path="path"
-            :auto-texture="autoTextureUrl"
+            :auto-texture="previewContext?.autoTexture"
+            :auto-texture-name="previewContext?.autoTextureName"
+            :auto-structure-model="previewContext?.autoStructureModel"
+            :auto-structure-model-name="previewContext?.autoStructureModelName"
             @update="emit('update', $event)"
           />
         </KeepAlive>
@@ -80,16 +83,15 @@ const isBedrockModel = computed(() => {
 });
 
 const viewModeOptions = computed(() => {
-  const options = [
-    { label: '代码视图', value: 'code' }
-  ];
+  const options = [{label: '代码视图', value: 'code'}];
 
   // 如果是 Bedrock 模型，添加 3D 预览选项
   if (isBedrockModel.value) {
-    options.unshift({ label: '3D预览', value: '3d' });
+    options.unshift({label: '3D预览', value: '3d'});
   } else {
-    options.unshift({ label: '表单视图', value: 'form' });
+    options.unshift({label: '表单视图', value: 'form'});
   }
+
   viewMode.value = options[0].value as ViewMode;
   return options;
 });
@@ -120,37 +122,13 @@ const schemaTitle = computed(() => {
   return schemaInfo?.title || '';
 });
 
-// 自动查找对应的纹理文件
-const autoTextureUrl = computed(() => {
+const previewContext = computed(() => {
   if (!isBedrockModel.value || viewMode.value !== '3d') return undefined;
-
-  // 从模型路径推断纹理路径
-  // 例如: assets/ywzj_vehicle/models/bedrock/entity/tank.json
-  // 对应: assets/ywzj_vehicle/textures/entity/tank.png
-  const modelPath = props.path.replace(/^assets\//, '').replace(/^data\//, '');
-  const texturePath = modelPath
-    .replace('/models/bedrock/', '/textures/')
-    .replace('.json', '.png');
-
-  // 查找纹理文件
-  const fullTexturePath = `assets/${texturePath}`;
-  const openFile = fileSystemStore.openFiles.get(fullTexturePath);
-
-  if (openFile?.content) {
-    return openFile.content;
-  }
-
-  return undefined;
+  return fileSystemStore.openFiles.get(props.path)?.previewContext;
 });
 
-// 监听路径变化，重置视图模式
 watch(() => props.path, () => {
-  // Bedrock 模型默认使用 3D 预览
-  if (isBedrockModel.value) {
-    viewMode.value = '3d';
-  } else {
-    viewMode.value = 'form';
-  }
+  viewMode.value = isBedrockModel.value ? '3d' : 'form';
 });
 
 const currentEditor = computed(() => {

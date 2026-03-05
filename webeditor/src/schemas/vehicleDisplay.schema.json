@@ -46,16 +46,7 @@
       "description": "动画资源位置",
       "x-completion": {
         "packType": "assets",
-        "category": "models/bedrock"
-      }
-    },
-    "script": {
-      "type": "string",
-      "pattern": "^[a-z0-9_]+:[a-z0-9_/.]+$",
-      "description": "脚本资源位置",
-      "x-completion": {
-        "packType": "assets",
-        "category": "display"
+        "category": "animations/bedrock"
       }
     },
     "sounds": {

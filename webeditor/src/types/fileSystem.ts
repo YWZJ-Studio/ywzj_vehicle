@@ -12,4 +12,12 @@ export interface OpenFile {
   content: string;
   modified: boolean;
   savedContent: string;
+  previewContext?: ModelPreviewContext;
+}
+
+export interface ModelPreviewContext {
+  autoTexture?: string;
+  autoTextureName?: string;
+  autoStructureModel?: string;
+  autoStructureModelName?: string;
 }

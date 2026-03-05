@@ -3,13 +3,14 @@ import {fileSystemManager} from '@/utils/fileSystemApi';
 import {getFileType} from '@/utils/fileTypes';
 import {globalSoundsManager} from '@/utils/soundsManager';
 import {globalNamespaceIdProvider} from '@/utils/namespaceIdCompletion';
-import type {FileNode, OpenFile} from '@/types/fileSystem';
+import type {FileNode, ModelPreviewContext, OpenFile} from '@/types/fileSystem';
 
 export const useFileSystemStore = defineStore('fileSystem', {
   state: () => ({
     rootHandle: null as FileSystemDirectoryHandle | null,
     fileTree: [] as FileNode[],
     openFiles: new Map<string, OpenFile>(),
+    pendingPreviewContexts: new Map<string, ModelPreviewContext>(),
     activeFilePath: '' as string,
     loading: false,
     fileLoading: false, // 文件加载状态
@@ -68,6 +69,7 @@ export const useFileSystemStore = defineStore('fileSystem', {
         // 清空所有打开的标签页
         console.log('[FileSystem] 🗑️ 清空所有打开的标签页');
         this.openFiles.clear();
+        this.pendingPreviewContexts.clear();
         this.activeFilePath = '';
 
         // 清空所有缓存
@@ -89,6 +91,9 @@ export const useFileSystemStore = defineStore('fileSystem', {
         // 初始化音效管理器，加载所有 sounds.json
         await globalSoundsManager.initialize(this.fileTree);
 
+        // 初始化命名空间 ID 补全缓存
+        globalNamespaceIdProvider.updateFileTree(this.fileTree);
+
         console.log('[FileSystem] ✅ 载具包打开成功');
         return true;
       } catch (err: any) {
@@ -105,6 +110,14 @@ export const useFileSystemStore = defineStore('fileSystem', {
     async openFile(path: string, fileHandle: FileSystemFileHandle) {
       if (this.openFiles.has(path)) {
         this.activeFilePath = path;
+        const pendingContext = this.pendingPreviewContexts.get(path);
+        if (pendingContext) {
+          const fileData = this.openFiles.get(path);
+          if (fileData) {
+            fileData.previewContext = pendingContext;
+          }
+          this.pendingPreviewContexts.delete(path);
+        }
         return;
       }
 
@@ -159,7 +172,9 @@ export const useFileSystemStore = defineStore('fileSystem', {
           content,
           modified: false,
           savedContent: content,
+          previewContext: this.pendingPreviewContexts.get(path),
         });
+        this.pendingPreviewContexts.delete(path);
         this.activeFilePath = path;
 
         console.log('[FileSystem] ✅ Step 5: File opened successfully');
@@ -195,6 +210,15 @@ export const useFileSystemStore = defineStore('fileSystem', {
       fileData.modified = content !== fileData.savedContent;
     },
 
+    setModelPreviewContext(path: string, context: ModelPreviewContext) {
+      const fileData = this.openFiles.get(path);
+      if (fileData) {
+        fileData.previewContext = context;
+        return;
+      }
+      this.pendingPreviewContexts.set(path, context);
+    },
+
     async saveFile(path: string) {
       const fileData = this.openFiles.get(path);
       if (!fileData || !fileData.modified) return;
@@ -228,6 +252,7 @@ export const useFileSystemStore = defineStore('fileSystem', {
     closeFile(path: string) {
       if (this.openFiles.has(path)) {
         this.openFiles.delete(path);
+        this.pendingPreviewContexts.delete(path);
         if (this.activeFilePath === path) {
           const remaining = Array.from(this.openFiles.keys());
           this.activeFilePath = remaining[remaining.length - 1] || '';
@@ -244,6 +269,7 @@ export const useFileSystemStore = defineStore('fileSystem', {
     async refreshFileTree() {
       if (!this.rootHandle) return;
       this.fileTree = await fileSystemManager.buildFileTree(this.rootHandle);
+      globalNamespaceIdProvider.updateFileTree(this.fileTree);
     },
 
     async createFile(parentPath: string, fileName: string) {

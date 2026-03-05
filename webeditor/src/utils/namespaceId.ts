@@ -12,10 +12,10 @@ export interface ResourceTypeConfig {
   extensions: string[];
   /**
    * 资源路径提取策略
-   * - 'filename': 只取文件名（不含扩展名），用于数据包
-   * - 'fullpath': 保留完整子路径（不含扩展名），用于资源包
+   * - 'normal': 不含拓展名和category
+   * - 'fullpath': 保留完整的拓展名和category
    */
-  pathStrategy: 'filename' | 'fullpath';
+  pathStrategy: 'normal' | 'fullpath';
   /** 可选的描述信息 */
   description?: string;
 }
@@ -65,9 +65,11 @@ class ResourceTypeRegistry {
         const namespace = match[1];
         const remainingPath = match[2];
 
-        // 验证文件扩展名
-        const ext = remainingPath.split('.').pop()?.toLowerCase();
-        if (ext && config.extensions.includes(ext)) {
+        // 验证文件扩展名（支持多段扩展名如 .structure.json）
+        const hasMatchingExt = config.extensions.some(ext =>
+          remainingPath.toLowerCase().endsWith(ext.startsWith('.') ? ext : `.${ext}`)
+        );
+        if (hasMatchingExt) {
           return { config, namespace, remainingPath };
         }
       }
@@ -100,7 +102,7 @@ function registerDefaultTypes(): void {
       packType: 'data',
       category: 'vehicles',
       extensions: ['json'],
-      pathStrategy: 'filename',
+      pathStrategy: 'normal',
       description: '载具配置数据'
     },
     {
@@ -108,7 +110,7 @@ function registerDefaultTypes(): void {
       packType: 'data',
       category: 'weapons',
       extensions: ['json'],
-      pathStrategy: 'filename',
+      pathStrategy: 'normal',
       description: '武器配置数据'
     },
     {
@@ -116,15 +118,15 @@ function registerDefaultTypes(): void {
       packType: 'data',
       category: 'display',
       extensions: ['json'],
-      pathStrategy: 'filename',
+      pathStrategy: 'normal',
       description: '显示配置数据'
     },
     {
       name: 'Bedrock 结构模型',
       packType: 'data',
       category: 'models/bedrock',
-      extensions: ['json'],
-      pathStrategy: 'fullpath',
+      extensions: ['.structure.json'],
+      pathStrategy: 'normal',
       description: 'Bedrock 版模型文件'
     },
 
@@ -133,7 +135,7 @@ function registerDefaultTypes(): void {
       name: '纹理',
       packType: 'assets',
       category: 'textures',
-      extensions: ['png', 'jpg', 'jpeg', 'gif'],
+      extensions: ['png'],
       pathStrategy: 'fullpath',
       description: '纹理图片资源'
     },
@@ -142,15 +144,15 @@ function registerDefaultTypes(): void {
       packType: 'assets',
       category: 'models/bedrock',
       extensions: ['json'],
-      pathStrategy: 'fullpath',
+      pathStrategy: 'normal',
       description: 'Bedrock 版模型文件'
     },
     {
       name: '音效',
       packType: 'assets',
       category: 'sounds',
-      extensions: ['ogg', 'mp3', 'wav'],
-      pathStrategy: 'fullpath',
+      extensions: ['ogg'],
+      pathStrategy: 'normal',
       description: '音频文件'
     },
     {
@@ -158,8 +160,24 @@ function registerDefaultTypes(): void {
       packType: 'assets',
       category: 'display',
       extensions: ['json'],
-      pathStrategy: 'fullpath',
+      pathStrategy: 'normal',
       description: '客户端显示配置'
+    },
+    {
+      name: 'js 脚本（客户端）',
+      packType: 'assets',
+      category: 'scripts',
+      extensions: ['js'],
+      pathStrategy: 'normal',
+      description: '客户端JavaScript脚本文件'
+    },
+    {
+      name: 'Bedrock 动画',
+      packType: 'assets',
+      category: 'animations/bedrock',
+      extensions: ['json'],
+      pathStrategy: 'normal',
+      description: 'Bedrock 动画文件'
     },
   ]);
 }
@@ -172,7 +190,7 @@ registerDefaultTypes();
 /**
  * 将文件路径转换为 Minecraft 命名空间 ID
  *
- * @param path 文件路径，格式如：src/main/resources/data/ywzj_vehicle/vehicles/ah64d.json
+ * @param path 文件路径，格式如：data/ywzj_vehicle/vehicles/ah64d.json
  * @returns 命名空间 ID，格式如：ywzj_vehicle:ah64d，如果不匹配则返回 null
  */
 export function pathToNamespaceId(path: string): string | null {
@@ -187,17 +205,23 @@ export function pathToNamespaceId(path: string): string | null {
 
   const { config, namespace, remainingPath } = result;
 
-  // 移除文件扩展名
-  const pathWithoutExt = remainingPath.replace(/\.[^.]+$/, '');
-
   // 根据策略提取资源路径
   let resourcePath: string;
-  if (config.pathStrategy === 'filename') {
-    // 只取最后的文件名
-    resourcePath = pathWithoutExt.split('/').pop() || pathWithoutExt;
+  if (config.pathStrategy === 'normal') {
+    // 不含拓展名和category，保留category之后的目录结构
+    // 支持多段扩展名（如 .structure.json）
+    const matchedExt = config.extensions.find(ext =>
+      remainingPath.toLowerCase().endsWith(ext.startsWith('.') ? ext : `.${ext}`)
+    );
+    if (matchedExt) {
+      const extToRemove = matchedExt.startsWith('.') ? matchedExt : `.${matchedExt}`;
+      resourcePath = remainingPath.slice(0, -extToRemove.length);
+    } else {
+      resourcePath = remainingPath.replace(/\.[^.]+$/, '');
+    }
   } else {
-    // 保留完整路径
-    resourcePath = pathWithoutExt;
+    // fullpath: 保留完整的拓展名和category
+    resourcePath = `${config.category}/${remainingPath}`;
   }
 
   return `${namespace}:${resourcePath}`;

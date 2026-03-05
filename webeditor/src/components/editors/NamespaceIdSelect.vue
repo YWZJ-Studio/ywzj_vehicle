@@ -1,7 +1,7 @@
 <template>
   <div class="namespace-id-select">
     <el-autocomplete
-      :model-value="modelValue"
+      :model-value="modelValue ?? ''"
       @update:model-value="handleUpdate"
       :fetch-suggestions="querySearch"
       :placeholder="placeholder"
@@ -17,8 +17,9 @@
       </template>
     </el-autocomplete>
     <el-button
-      v-if="modelValue && fileExists"
+      v-if="resourceType"
       :icon="FolderOpened"
+      :disabled="!modelValue || !fileExists"
       size="small"
       @click="openFile"
       title="打开文件"
@@ -27,13 +28,14 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue';
+import {computed} from 'vue';
+import {ElMessage} from 'element-plus';
 import {FolderOpened} from '@element-plus/icons-vue';
 import {useFileSystemStore} from '@/stores/fileSystem';
 import {globalNamespaceIdProvider} from '@/utils/namespaceIdCompletion';
 
 interface Props {
-  modelValue: string;
+  modelValue?: string;
   packType?: 'data' | 'assets';
   category?: string;
   fieldName?: string;
@@ -46,20 +48,6 @@ const emit = defineEmits<{
 }>();
 
 const fileSystemStore = useFileSystemStore();
-const suggestions = ref<Array<{ value: string; label: string; detail: string }>>([]);
-
-// 用于防止重复加载
-const isLoading = ref(false);
-const lastLoadKey = ref<string>('');
-
-const fileExists = computed(() => {
-  if (!props.modelValue || !resourceType.value) return false;
-  const items = globalNamespaceIdProvider.getCompletionsByType(
-    resourceType.value.packType,
-    resourceType.value.category
-  );
-  return items.some(item => item.namespaceId === props.modelValue);
-});
 
 // 推断资源类型
 const resourceType = computed<{ packType: 'data' | 'assets', category: string } | null>(() => {
@@ -69,95 +57,67 @@ const resourceType = computed<{ packType: 'data' | 'assets', category: string } 
   return null;
 });
 
+// 直接从 provider 读取缓存，文件树变化由 store 统一触发 provider 更新
+const suggestions = computed(() => {
+  if (!resourceType.value) return [];
+  // 依赖 fileTree 使 computed 在文件树变化时重新求值
+  void fileSystemStore.fileTree;
+  return globalNamespaceIdProvider
+    .getCompletionsByType(resourceType.value.packType, resourceType.value.category)
+    .map(item => ({ value: item.namespaceId, label: item.namespaceId, detail: item.detail || '' }));
+});
 
-// 加载补全建议
-async function loadSuggestions() {
-  if (!resourceType.value) {
-    suggestions.value = [];
-    return;
-  }
-
-  // 生成一个唯一的加载键，用于检测是否需要重新加载
-  const loadKey = `${resourceType.value.packType}:${resourceType.value.category}:${fileSystemStore.fileTree.length}`;
-
-  if (isLoading.value || lastLoadKey.value === loadKey) {
-    return;
-  }
-
-  // 标记为正在加载
-  isLoading.value = true;
-  lastLoadKey.value = loadKey;
-
-  try {
-    // 更新文件树数据
-    globalNamespaceIdProvider.updateFileTree(fileSystemStore.fileTree);
-
-    const items = globalNamespaceIdProvider.getCompletionsByType(
-      resourceType.value.packType,
-      resourceType.value.category
-    );
-
-    // 转换为下拉选项格式
-    suggestions.value = items.map(item => ({
-      value: item.namespaceId,
-      label: item.namespaceId,
-      detail: item.detail || ''
-    }));
-  } catch (err) {
-    console.error('[NamespaceIdSelect] Error loading suggestions:', err);
-    suggestions.value = [];
-  } finally {
-    // 解除加载状态
-    isLoading.value = false;
-  }
-}
+const fileExists = computed(() =>
+  !!props.modelValue && suggestions.value.some(item => item.value === props.modelValue)
+);
 
 // autocomplete 查询函数
 function querySearch(queryString: string, cb: (results: any[]) => void) {
   if (!queryString) {
-    // 如果查询字符串为空，返回所有建议
     cb(suggestions.value);
     return;
   }
-
-  // 过滤匹配的建议
   const lowerQuery = queryString.toLowerCase();
-  const results = suggestions.value.filter(item =>
-    item.value.toLowerCase().includes(lowerQuery)
-  );
-
-  cb(results);
+  cb(suggestions.value.filter(item => item.value.toLowerCase().includes(lowerQuery)));
 }
 
-// 处理值更新
 function handleUpdate(value: string) {
   emit('update:modelValue', value);
 }
 
-// 打开文件
+function findFileNode(nodes: any[], targetPath: string): any {
+  for (const node of nodes) {
+    if (node.path === targetPath) return node;
+    if (node.children) {
+      const found = findFileNode(node.children, targetPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 async function openFile() {
   if (!props.modelValue || !resourceType.value) return;
-
   const items = globalNamespaceIdProvider.getCompletionsByType(
     resourceType.value.packType,
     resourceType.value.category
   );
   const item = items.find(i => i.namespaceId === props.modelValue);
-
-  if (item?.fileHandle && item?.filePath) {
-    await fileSystemStore.openFile(item.filePath, item.fileHandle);
+  if (!item?.filePath) {
+    ElMessage.error(`找不到文件：${props.modelValue}`);
+    return;
+  }
+  const node = findFileNode(fileSystemStore.fileTree, item.filePath);
+  if (!node?.handle) {
+    ElMessage.error(`无法打开文件：${item.filePath}`);
+    return;
+  }
+  try {
+    await fileSystemStore.openFile(item.filePath, node.handle as FileSystemFileHandle);
+  } catch {
+    ElMessage.error(`打开文件失败：${item.filePath}`);
   }
 }
-
-// 监听文件树变化
-watch(() => fileSystemStore.fileTree, () => {
-  loadSuggestions();
-}, { deep: true });
-
-// 监听资源类型变化（immediate: true 会在组件挂载时立即执行一次）
-watch(resourceType, () => {
-  loadSuggestions();
-}, { immediate: true });
 </script>
 
 <style scoped>
@@ -165,6 +125,7 @@ watch(resourceType, () => {
   display: flex;
   gap: 4px;
   align-items: center;
+  width: 100%;
 }
 
 .namespace-option {

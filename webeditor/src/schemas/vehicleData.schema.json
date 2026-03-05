@@ -169,7 +169,11 @@
     "structure_model": {
       "type": "string",
       "pattern": "^[a-z0-9_]+:[a-z0-9_/]+$",
-      "description": "vehicle.structure_model"
+      "description": "vehicle.structure_model",
+      "x-completion": {
+        "packType": "data",
+        "category": "models/bedrock"
+      }
     },
     "parts": {
       "type": "array",

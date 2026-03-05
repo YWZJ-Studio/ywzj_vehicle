@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="bedrock-model-viewer">
     <div class="viewer-toolbar">
       <div class="model-info">
@@ -131,6 +131,9 @@ interface Props {
   content: string;
   path: string;
   autoTexture?: string;
+  autoTextureName?: string;
+  autoStructureModel?: string;
+  autoStructureModelName?: string;
 }
 
 const props = defineProps<Props>();
@@ -182,6 +185,9 @@ onMounted(() => {
     if (props.autoTexture) {
       loadAutoTexture();
     }
+    if (props.autoStructureModel) {
+      loadAutoStructureModel();
+    }
   } catch (err: any) {
     error.value = '初始化失败: ' + (err.message || err);
   }
@@ -215,6 +221,14 @@ watch(() => props.content, () => {
 watch(() => props.autoTexture, (newTexture) => {
   if (newTexture) {
     loadAutoTexture();
+  }
+});
+
+watch(() => props.autoStructureModel, (newStructureModel) => {
+  if (newStructureModel) {
+    loadAutoStructureModel();
+  } else {
+    clearStructureModel();
   }
 });
 
@@ -509,6 +523,19 @@ async function loadAutoTexture() {
   }
 }
 
+function loadAutoStructureModel() {
+  if (!props.autoStructureModel) return;
+
+  try {
+    error.value = '';
+    const parsed = parseBedrockModel(props.autoStructureModel);
+    structureModelData.value = parsed;
+    structureModelName.value = props.autoStructureModelName || '自动加载';
+    renderStructureModel();
+  } catch (err: any) {
+    console.error('自动加载结构模型失败:', err);
+  }
+}
 function handleStructureModelSelect() {
   structureInput.value?.click();
 }

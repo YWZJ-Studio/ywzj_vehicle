@@ -181,8 +181,12 @@ export class NamespaceIdCompletionProvider {
       );
       const match = normalizedPath.match(pattern);
       if (match) {
-        const ext = match[2].split('.').pop()?.toLowerCase();
-        if (ext && type.extensions.includes(ext)) {
+        const remainingPath = match[2];
+        // 支持多段扩展名（如 .structure.json）
+        const hasMatchingExt = type.extensions.some(ext =>
+          remainingPath.toLowerCase().endsWith(ext.startsWith('.') ? ext : `.${ext}`)
+        );
+        if (hasMatchingExt) {
           return type;
         }
       }

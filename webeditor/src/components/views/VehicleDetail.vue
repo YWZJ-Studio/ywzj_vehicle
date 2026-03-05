@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="vehicle-detail">
     <div class="detail-header">
       <h3>{{ vehicle.name }}</h3>
@@ -49,14 +49,19 @@
 
       <div class="actions">
         <el-button type="primary" @click="openAllFiles">打开所有配置文件</el-button>
+        <el-button type="success" :disabled="!vehicle.displayFile" @click="previewVehicleModel">预览模型</el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import {ElMessage} from 'element-plus';
 import {ArrowRight, Box, Document, Picture} from '@element-plus/icons-vue';
 import {useFileSystemStore} from '@/stores/fileSystem';
+import {parseJsonWithComments} from '@/utils/jsonParser';
+import {globalNamespaceIdProvider} from '@/utils/namespaceIdCompletion';
+import type {ModelPreviewContext} from '@/types/fileSystem';
 import type {Vehicle} from '@/types/vehicle';
 
 const props = defineProps<{
@@ -81,6 +86,193 @@ async function openAllFiles() {
   for (const path of files) {
     await openFile(path);
   }
+}
+
+async function previewVehicleModel() {
+  if (!props.vehicle.displayFile) {
+    ElMessage.warning('未找到 display 文件');
+    return;
+  }
+
+  const displayText = await readTextFile(props.vehicle.displayFile);
+  if (!displayText) {
+    ElMessage.error('读取 display 文件失败');
+    return;
+  }
+
+  let displayData: any;
+  try {
+    displayData = parseJsonWithComments(displayText);
+  } catch (err: any) {
+    ElMessage.error(`display 文件解析失败: ${err.message || err}`);
+    return;
+  }
+
+  const modelRef = pickString(displayData, [
+    'model',
+    'display.model',
+    'vehicle_display.model',
+    'vehicle.display.model',
+  ]);
+  const textureRef = pickString(displayData, [
+    'texture',
+    'display.texture',
+    'vehicle_display.texture',
+    'vehicle.display.texture',
+  ]);
+
+  if (!modelRef) {
+    ElMessage.error('display 文件中未找到 model 字段');
+    return;
+  }
+
+  const modelPath = resolveResourcePath(modelRef, 'model');
+  if (!modelPath) {
+    ElMessage.error(`无法解析模型路径: ${modelRef}`);
+    return;
+  }
+
+  let structureRef: string | undefined;
+  if (props.vehicle.dataFile) {
+    const dataText = await readTextFile(props.vehicle.dataFile);
+    if (dataText) {
+      try {
+        const data = parseJsonWithComments(dataText);
+        structureRef = pickString(data, ['structure_model', 'vehicle.structure_model']);
+      } catch {
+        // ignore data parse errors for model preview
+      }
+    }
+  }
+
+  const texturePath = textureRef ? resolveResourcePath(textureRef, 'texture') : undefined;
+  const structurePath = structureRef ? resolveResourcePath(structureRef, 'structure') : undefined;
+
+  let autoTexture: string | undefined;
+  if (texturePath) {
+    autoTexture = await readImageAsDataUrl(texturePath);
+  } else if (textureRef) {
+    ElMessage.warning(`未解析到贴图路径: ${textureRef}`);
+  }
+
+  let autoStructureModel: string | undefined;
+  if (structurePath) {
+    autoStructureModel = await readTextFile(structurePath);
+  } else if (structureRef) {
+    ElMessage.warning(`未解析到结构模型路径: ${structureRef}`);
+  }
+
+  const previewContext: ModelPreviewContext = {
+    autoTexture,
+    autoTextureName: texturePath ? getFileName(texturePath) : undefined,
+    autoStructureModel,
+    autoStructureModelName: structurePath ? getFileName(structurePath) : undefined,
+  };
+
+  fileSystemStore.setModelPreviewContext(modelPath, previewContext);
+  await openFile(modelPath);
+  ElMessage.success('模型预览已打开');
+}
+
+function readNestedString(obj: any, path: string): string | undefined {
+  const parts = path.split('.');
+  let current = obj;
+
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = current[part];
+  }
+
+  return typeof current === 'string' ? current : undefined;
+}
+
+function pickString(obj: any, paths: string[]): string | undefined {
+  for (const path of paths) {
+    const value = readNestedString(obj, path);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function resolveResourcePath(
+  rawValue: string,
+  type: 'model' | 'texture' | 'structure'
+): string | undefined {
+  const value = rawValue.trim();
+  if (!value) return undefined;
+
+  if ((value.startsWith('assets/') || value.startsWith('data/')) && fileExists(value)) {
+    return value;
+  }
+
+  const completionTypes = type === 'texture'
+    ? [{packType: 'assets' as const, category: 'textures'}]
+    : [
+      {packType: 'assets' as const, category: 'models/bedrock'},
+      {packType: 'data' as const, category: 'models/bedrock'},
+    ];
+
+  for (const itemType of completionTypes) {
+    const items = globalNamespaceIdProvider.getCompletionsByType(itemType.packType, itemType.category);
+    const found = items.find(item => item.namespaceId === value);
+    if (found) {
+      return found.filePath;
+    }
+  }
+
+  const [namespace, relRaw] = value.split(':');
+  if (!namespace || !relRaw) return undefined;
+
+  if (type === 'texture') {
+    const rel = relRaw.startsWith('textures/') ? relRaw : `textures/${relRaw}`;
+    const candidates = [
+      `assets/${namespace}/${rel}`,
+      `assets/${namespace}/${rel}.png`,
+      `assets/${namespace}/${rel}.jpg`,
+      `assets/${namespace}/${rel}.jpeg`,
+    ];
+    return candidates.find(fileExists);
+  }
+
+  const relNoExt = relRaw
+    .replace(/^models\/bedrock\//, '')
+    .replace(/\.json$/, '');
+  const candidates = [
+    `assets/${namespace}/models/bedrock/${relNoExt}.json`,
+    `data/${namespace}/models/bedrock/${relNoExt}.json`,
+  ];
+  return candidates.find(fileExists);
+}
+
+function fileExists(path: string): boolean {
+  return !!findFileNode(fileSystemStore.fileTree, path);
+}
+
+async function readTextFile(path: string): Promise<string | undefined> {
+  const opened = fileSystemStore.openFiles.get(path);
+  if (opened?.content) return opened.content;
+
+  const node = findFileNode(fileSystemStore.fileTree, path);
+  if (!node?.handle) return undefined;
+
+  const file = await (node.handle as FileSystemFileHandle).getFile();
+  return await file.text();
+}
+
+async function readImageAsDataUrl(path: string): Promise<string | undefined> {
+  const opened = fileSystemStore.openFiles.get(path);
+  if (opened?.content?.startsWith('data:image/')) return opened.content;
+
+  const node = findFileNode(fileSystemStore.fileTree, path);
+  if (!node?.handle) return undefined;
+
+  const file = await (node.handle as FileSystemFileHandle).getFile();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 function findFileNode(nodes: any[], targetPath: string, currentPath = ''): any {
@@ -179,5 +371,7 @@ function findFileNode(nodes: any[], targetPath: string, currentPath = ''): any {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  gap: 8px;
 }
 </style>
