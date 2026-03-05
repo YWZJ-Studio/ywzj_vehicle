@@ -1,22 +1,37 @@
 <template>
   <div class="activity-bar">
-    <div
-      v-for="item in items"
-      :key="item.id"
-      class="activity-item"
-      :class="{ active: activeView === item.id }"
-      @click="$emit('select', item.id)"
-      :title="item.title"
-    >
-      <el-icon :size="24">
-        <component :is="item.icon" />
-      </el-icon>
+    <div class="activity-items-top">
+      <div
+        v-for="item in items"
+        :key="item.id"
+        class="activity-item"
+        :class="{ active: activeView === item.id }"
+        @click="$emit('select', item.id)"
+        :title="item.title"
+      >
+        <el-icon :size="24">
+          <component :is="item.icon" />
+        </el-icon>
+      </div>
+    </div>
+
+    <div class="activity-items-bottom">
+      <div
+        class="activity-item"
+        :class="{ active: activeView === 'settings' }"
+        @click="$emit('select', 'settings')"
+        title="设置"
+      >
+        <el-icon :size="24">
+          <Setting />
+        </el-icon>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {FolderOpened, Van} from '@element-plus/icons-vue';
+import {FolderOpened, Van, Setting} from '@element-plus/icons-vue';
 
 interface ActivityItem {
   id: string;
@@ -47,6 +62,18 @@ const items: ActivityItem[] = [
   flex-direction: column;
   align-items: center;
   padding: 8px 0;
+}
+
+.activity-items-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activity-items-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 

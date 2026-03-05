@@ -41,6 +41,7 @@ declare module 'vue' {
     JsonFormEditor: typeof import('./src/components/editors/JsonFormEditor.vue')['default']
     MonacoEditor: typeof import('./src/components/editors/MonacoEditor.vue')['default']
     NamespaceIdSelect: typeof import('./src/components/editors/NamespaceIdSelect.vue')['default']
+    Settings: typeof import('./src/components/views/Settings.vue')['default']
     VehicleDetail: typeof import('./src/components/views/VehicleDetail.vue')['default']
     VehicleExplorer: typeof import('./src/components/views/VehicleExplorer.vue')['default']
   }

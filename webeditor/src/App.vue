@@ -38,10 +38,10 @@
 
     <div v-if="hasOpenFolder" class="editor-workspace">
       <div class="main-layout">
-        <ActivityBar :active-view="activeView" @select="activeView = $event" />
+        <ActivityBar :active-view="activeView" @select="handleViewSelect" />
 
         <div class="left-panel" :style="{ width: leftPanelWidth + 'px' }">
-          <VehicleExplorer v-if="activeView === 'vehicles'" />
+          <VehicleExplorer v-if="leftPanelView === 'vehicles'" />
           <FileTree
             v-else
             :tree="fileTree"
@@ -61,14 +61,16 @@
 
         <div class="center-panel">
           <EditorTabs
-            v-if="openFileTabs.length > 0"
-            :tabs="openFileTabs"
-            :active="activeFilePath"
-            @select="setActiveFile"
-            @close="closeFile"
+            v-if="allTabs.length > 0"
+            :tabs="allTabs"
+            :active="activeView === 'settings' ? 'settings' : activeFilePath"
+            @select="handleTabSelect"
+            @close="handleTabClose"
           />
 
-          <KeepAlive :max="10">
+          <Settings v-if="activeView === 'settings'" />
+
+          <KeepAlive v-else :max="10">
             <EditorArea
               v-if="activeFile"
               :key="activeFilePath"
@@ -78,7 +80,7 @@
             />
           </KeepAlive>
 
-          <div v-if="!activeFile" class="empty-state">
+          <div v-if="!activeFile && activeView !== 'settings'" class="empty-state">
             <el-empty description="请从左侧选择一个文件开始编辑" />
           </div>
         </div>
@@ -119,6 +121,7 @@ import {useFileSystemStore} from '@/stores/fileSystem';
 import {useVehicleStore} from '@/stores/vehicle';
 import ActivityBar from '@/components/layout/ActivityBar.vue';
 import VehicleExplorer from '@/components/views/VehicleExplorer.vue';
+import Settings from '@/components/views/Settings.vue';
 import FileTree from '@/components/layout/FileTree.vue';
 import EditorTabs from '@/components/layout/EditorTabs.vue';
 import EditorArea from '@/components/layout/EditorArea.vue';
@@ -129,6 +132,7 @@ const fileSystemStore = useFileSystemStore();
 const vehicleStore = useVehicleStore();
 
 const activeView = ref('vehicles');
+const lastPanelView = ref('vehicles'); // Track last non-settings view
 
 const leftPanelWidth = ref(250);
 const rightPanelWidth = ref(300);
@@ -141,6 +145,16 @@ const fileTree = computed(() => fileSystemStore.fileTree);
 const activeFilePath = computed(() => fileSystemStore.activeFilePath);
 const activeFile = computed(() => fileSystemStore.activeFile);
 const openFileTabs = computed(() => fileSystemStore.openFileTabs);
+
+const leftPanelView = computed(() => activeView.value === 'settings' ? lastPanelView.value : activeView.value);
+
+const allTabs = computed(() => {
+  const tabs = [...openFileTabs.value];
+  if (activeView.value === 'settings') {
+    tabs.push({ path: 'settings', name: '设置', modified: false });
+  }
+  return tabs;
+});
 
 async function handleOpenFolder() {
   try {
@@ -182,6 +196,30 @@ async function handleRefresh() {
   await fileSystemStore.refreshFileTree();
   vehicleStore.refreshVehicles();
   ElMessage.success('文件树已刷新');
+}
+
+function handleViewSelect(view: string) {
+  if (view !== 'settings') {
+    lastPanelView.value = view;
+  }
+  activeView.value = view;
+}
+
+function handleTabSelect(path: string) {
+  if (path === 'settings') {
+    activeView.value = 'settings';
+  } else {
+    setActiveFile(path);
+    activeView.value = lastPanelView.value;
+  }
+}
+
+function handleTabClose(path: string) {
+  if (path === 'settings') {
+    activeView.value = lastPanelView.value;
+  } else {
+    closeFile(path);
+  }
 }
 
 async function handleFileSelect(node: FileNode) {
