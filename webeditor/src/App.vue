@@ -38,8 +38,12 @@
 
     <div v-if="hasOpenFolder" class="editor-workspace">
       <div class="main-layout">
+        <ActivityBar :active-view="activeView" @select="activeView = $event" />
+
         <div class="left-panel" :style="{ width: leftPanelWidth + 'px' }">
+          <VehicleExplorer v-if="activeView === 'vehicles'" />
           <FileTree
+            v-else
             :tree="fileTree"
             :active-path="activeFilePath"
             @select="handleFileSelect"
@@ -102,21 +106,6 @@
         <el-button type="primary" size="large" :icon="FolderOpened" @click="handleOpenFolder">
           打开载具包文件夹
         </el-button>
-        <div class="welcome-info">
-          <el-alert
-            title="浏览器兼容性提示"
-            type="info"
-            :closable="false"
-            show-icon
-          >
-            <p>此编辑器需要支持 File System Access API 的浏览器：</p>
-            <ul>
-              <li>Chrome 86+</li>
-              <li>Edge 86+</li>
-              <li>Opera 72+</li>
-            </ul>
-          </el-alert>
-        </div>
       </el-empty>
     </div>
   </div>
@@ -127,6 +116,9 @@ import {computed, onBeforeUnmount, ref} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {DocumentCopy, FolderOpened, RefreshRight, Warning} from '@element-plus/icons-vue';
 import {useFileSystemStore} from '@/stores/fileSystem';
+import {useVehicleStore} from '@/stores/vehicle';
+import ActivityBar from '@/components/layout/ActivityBar.vue';
+import VehicleExplorer from '@/components/views/VehicleExplorer.vue';
 import FileTree from '@/components/layout/FileTree.vue';
 import EditorTabs from '@/components/layout/EditorTabs.vue';
 import EditorArea from '@/components/layout/EditorArea.vue';
@@ -134,6 +126,9 @@ import InspectorPanel from '@/components/layout/InspectorPanel.vue';
 import type {FileNode} from '@/types/fileSystem';
 
 const fileSystemStore = useFileSystemStore();
+const vehicleStore = useVehicleStore();
+
+const activeView = ref('vehicles');
 
 const leftPanelWidth = ref(250);
 const rightPanelWidth = ref(300);
@@ -175,6 +170,7 @@ async function handleOpenFolder() {
     // 跳过提示，直接打开
     const success = await fileSystemStore.openFolder(true);
     if (success) {
+      vehicleStore.refreshVehicles();
       ElMessage.success('打开成功');
     }
   } catch (err: any) {
@@ -184,6 +180,7 @@ async function handleOpenFolder() {
 
 async function handleRefresh() {
   await fileSystemStore.refreshFileTree();
+  vehicleStore.refreshVehicles();
   ElMessage.success('文件树已刷新');
 }
 

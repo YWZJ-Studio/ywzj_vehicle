@@ -130,6 +130,7 @@ import type {BedrockCube, CubeUV, ParsedBedrockModel, ParsedBone, UVFace} from '
 interface Props {
   content: string;
   path: string;
+  autoTexture?: string;
 }
 
 const props = defineProps<Props>();
@@ -178,6 +179,9 @@ onMounted(() => {
   try {
     initThreeJS();
     loadModel();
+    if (props.autoTexture) {
+      loadAutoTexture();
+    }
   } catch (err: any) {
     error.value = '初始化失败: ' + (err.message || err);
   }
@@ -206,6 +210,12 @@ onDeactivated(() => {
 
 watch(() => props.content, () => {
   loadModel();
+});
+
+watch(() => props.autoTexture, (newTexture) => {
+  if (newTexture) {
+    loadAutoTexture();
+  }
 });
 
 watch(renderMode, () => {
@@ -472,6 +482,31 @@ function loadTexture(dataUrl: string): Promise<THREE.Texture> {
       reject
     );
   });
+}
+
+async function loadAutoTexture() {
+  if (!props.autoTexture) return;
+
+  try {
+    textureLoading.value = true;
+    error.value = '';
+
+    const texture = await loadTexture(props.autoTexture);
+
+    if (currentTexture.value) {
+      currentTexture.value.dispose();
+    }
+
+    currentTexture.value = texture;
+    textureName.value = '自动加载';
+
+    renderMode.value = 'texture';
+    reloadModel();
+  } catch (err: any) {
+    console.error('自动加载纹理失败:', err);
+  } finally {
+    textureLoading.value = false;
+  }
 }
 
 function handleStructureModelSelect() {

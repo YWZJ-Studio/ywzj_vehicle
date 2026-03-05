@@ -5,7 +5,7 @@ import {findSchemaByPath, schemaRegistry} from './schemaRegistry';
 import {parseJsonWithComments} from './jsonParser';
 
 // 创建 Ajv 实例并添加格式验证
-const ajv = new Ajv({ allErrors: true });
+const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
 
 // 编译 Schema

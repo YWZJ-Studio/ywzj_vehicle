@@ -12,7 +12,7 @@
       :pack-type="completionConfig?.packType"
       :category="completionConfig?.category"
       :field-name="propName"
-      :placeholder="propSchema.description"
+      :placeholder="translatedDescription"
     />
 
     <!-- String Input (fallback) -->
@@ -20,7 +20,7 @@
       v-else-if="fieldType === 'string' && !enumValues"
       :model-value="modelValue"
       @update:model-value="emit('update:modelValue', $event)"
-      :placeholder="propSchema.description"
+      :placeholder="translatedDescription"
       clearable
     />
 
@@ -29,7 +29,7 @@
       v-else-if="fieldType === 'string' && enumValues"
       :model-value="modelValue"
       @update:model-value="emit('update:modelValue', $event)"
-      :placeholder="propSchema.description"
+      :placeholder="translatedDescription"
       clearable
       style="width: 100%"
     >
@@ -49,7 +49,7 @@
       :min="propSchema.minimum"
       :max="propSchema.maximum"
       :step="getNumberStep()"
-      :placeholder="propSchema.description"
+      :placeholder="translatedDescription"
       style="width: 100%"
     />
 
@@ -156,13 +156,13 @@
       @update:model-value="emit('update:modelValue', $event)"
       type="textarea"
       :rows="3"
-      :placeholder="propSchema.description"
+      :placeholder="translatedDescription"
     />
 
     <template #label>
       <span class="form-label">
         {{ label }}
-        <el-tooltip v-if="propSchema.description" :content="propSchema.description" placement="top">
+        <el-tooltip v-if="translatedDescription" :content="translatedDescription" placement="top">
           <el-icon class="help-icon"><QuestionFilled /></el-icon>
         </el-tooltip>
       </span>
@@ -172,9 +172,12 @@
 
 <script setup lang="ts">
 import {computed, ref} from 'vue';
+import {useI18n} from 'vue-i18n';
 import {Delete, Plus, QuestionFilled} from '@element-plus/icons-vue';
 import {resolveRef} from '@/utils/schemaUtils';
 import NamespaceIdSelect from './NamespaceIdSelect.vue';
+
+const {t} = useI18n();
 
 interface Props {
   propName: string;
@@ -217,6 +220,13 @@ const hasCompletion = computed(() => {
 // 获取 x-completion 配置
 const completionConfig = computed(() => {
   return props.propSchema['x-completion'] || null;
+});
+
+const translatedDescription = computed(() => {
+  const desc = props.propSchema.description;
+  if (!desc) return '';
+  // 如果是翻译键（如 vehicle.type），则翻译；否则直接返回
+  return desc.includes('.') ? t(desc) : desc;
 });
 
 const arrayItemType = computed(() => {

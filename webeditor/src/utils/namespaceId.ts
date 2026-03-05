@@ -119,6 +119,14 @@ function registerDefaultTypes(): void {
       pathStrategy: 'filename',
       description: '显示配置数据'
     },
+    {
+      name: 'Bedrock 结构模型',
+      packType: 'data',
+      category: 'models/bedrock',
+      extensions: ['json'],
+      pathStrategy: 'fullpath',
+      description: 'Bedrock 版模型文件'
+    },
 
     // ===== 资源包 (Assets) =====
     {
@@ -136,14 +144,6 @@ function registerDefaultTypes(): void {
       extensions: ['json'],
       pathStrategy: 'fullpath',
       description: 'Bedrock 版模型文件'
-    },
-    {
-      name: '通用模型',
-      packType: 'assets',
-      category: 'models',
-      extensions: ['json', 'obj', 'fbx', 'gltf', 'glb'],
-      pathStrategy: 'fullpath',
-      description: '3D 模型文件'
     },
     {
       name: '音效',

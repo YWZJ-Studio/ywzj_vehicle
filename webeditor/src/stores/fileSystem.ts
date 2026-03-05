@@ -171,6 +171,22 @@ export const useFileSystemStore = defineStore('fileSystem', {
       }
     },
 
+    openVehicleTab(vehicleId: string) {
+      const path = `vehicle:${vehicleId}`;
+      if (this.openFiles.has(path)) {
+        this.activeFilePath = path;
+        return;
+      }
+
+      this.openFiles.set(path, {
+        handle: null as any,
+        content: vehicleId,
+        modified: false,
+        savedContent: vehicleId,
+      });
+      this.activeFilePath = path;
+    },
+
     updateFileContent(path: string, content: string) {
       const fileData = this.openFiles.get(path);
       if (!fileData) return;

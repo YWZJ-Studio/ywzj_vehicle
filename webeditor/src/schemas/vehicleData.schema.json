@@ -7,56 +7,59 @@
     "type": {
       "type": "string",
       "enum": [
+        "generic",
         "ywzj_vehicle:wheeled_vehicle",
-        "ywzj_vehicle:tracked_vehicle"
+        "ywzj_vehicle:tracked_vehicle",
+        "ywzj_vehicle:rotary_wing_vehicle",
+        "ywzj_vehicle:fixed_wing_vehicle"
       ],
-      "description": "载具类型"
+      "description": "vehicle.type"
     },
     "attributes": {
       "type": "object",
-      "description": "载具属性",
+      "description": "vehicle.attributes",
       "properties": {
         "brake_force": {
           "type": "number",
           "minimum": 0,
           "default": 0.015,
-          "description": "制动力"
+          "description": "vehicle.brake_force"
         },
         "forward_force": {
           "type": "number",
           "minimum": 0,
           "default": 0.015,
-          "description": "前进推力"
+          "description": "vehicle.forward_force"
         },
         "backward_force": {
           "type": "number",
           "minimum": 0,
           "default": 0.01,
-          "description": "后退推力"
+          "description": "vehicle.backward_force"
         },
         "max_speed_forward": {
           "type": "number",
           "minimum": 0,
           "default": 1.0,
-          "description": "最大前进速度"
+          "description": "vehicle.max_speed_forward"
         },
         "max_speed_backward": {
           "type": "number",
           "minimum": 0,
           "default": 0.2,
-          "description": "最大后退速度"
+          "description": "vehicle.max_speed_backward"
         },
         "turn_step": {
           "type": "number",
           "minimum": 0,
           "default": 2.5,
-          "description": "转向步长"
+          "description": "vehicle.turn_step"
         },
         "max_turn": {
           "type": "number",
           "minimum": 0,
           "default": 5.0,
-          "description": "最大转向角度"
+          "description": "vehicle.max_turn"
         }
       }
     },
@@ -64,11 +67,11 @@
       "type": "number",
       "minimum": 1,
       "default": 100,
-      "description": "最大生命值"
+      "description": "vehicle.max_health"
     },
     "view_info": {
       "type": "object",
-      "description": "视角信息",
+      "description": "vehicle.view_info",
       "properties": {
         "third_person_center_offset": {
           "type": "array",
@@ -78,99 +81,99 @@
           "minItems": 3,
           "maxItems": 3,
           "default": [0, 0, 0],
-          "description": "第三人称中心偏移 [x, y, z]"
+          "description": "vehicle.third_person_center_offset"
         },
         "third_person_distance": {
           "type": "number",
           "minimum": 0,
           "default": 8.0,
-          "description": "第三人称距离"
+          "description": "vehicle.third_person_distance"
         },
         "sound_distance": {
           "type": "number",
           "minimum": 0,
           "default": 5.0,
-          "description": "声音距离"
+          "description": "vehicle.sound_distance"
         },
         "lock_passenger_y_body_rot": {
           "type": "boolean",
           "default": true,
-          "description": "锁定乘客Y轴旋转"
+          "description": "vehicle.lock_passenger_y_body_rot"
         }
       }
     },
     "energy_info": {
       "type": "object",
-      "description": "能源信息",
+      "description": "vehicle.energy_info",
       "properties": {
         "energy_capacity": {
           "type": "number",
           "minimum": 0,
           "default": 100.0,
-          "description": "能源容量"
+          "description": "vehicle.energy_capacity"
         },
         "energy_consumption_per_tick": {
           "type": "number",
           "minimum": 0,
           "default": 0.01,
-          "description": "每刻能源消耗"
+          "description": "vehicle.energy_consumption_per_tick"
         }
       }
     },
     "physics_info": {
       "type": "object",
-      "description": "物理信息",
+      "description": "vehicle.physics_info",
       "properties": {
         "gravity": {
           "type": "number",
           "default": -0.08,
-          "description": "重力"
+          "description": "vehicle.gravity"
         },
         "drag": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
           "default": 0.05,
-          "description": "阻力"
+          "description": "vehicle.drag"
         }
       }
     },
     "defense_stats": {
       "type": "object",
-      "description": "防御属性",
+      "description": "vehicle.defense_stats",
       "properties": {
         "armor": {
           "type": "number",
           "minimum": 0,
           "default": 0,
-          "description": "护甲值"
+          "description": "vehicle.armor"
         },
         "armor_toughness": {
           "type": "number",
           "minimum": 0,
           "default": 0,
-          "description": "护甲韧性"
+          "description": "vehicle.armor_toughness"
         }
       }
     },
     "with_warning_receiver": {
       "type": "boolean",
       "default": false,
-      "description": "是否带有预警接收器"
+      "description": "vehicle.with_warning_receiver"
     },
     "protect_passenger": {
       "type": "boolean",
       "default": true,
-      "description": "是否保护乘客"
+      "description": "vehicle.protect_passenger"
     },
     "structure_model": {
       "type": "string",
       "pattern": "^[a-z0-9_]+:[a-z0-9_/]+$",
-      "description": "结构模型资源位置"
+      "description": "vehicle.structure_model"
     },
     "parts": {
       "type": "array",
-      "description": "部件列表",
+      "description": "vehicle.parts",
       "items": {
         "$ref": "#/definitions/partUnit"
       },
@@ -185,21 +188,21 @@
         "id": {
           "type": "string",
           "pattern": "^[a-z0-9_]+$",
-          "description": "部件ID"
+          "description": "vehicle.part_id"
         },
         "name": {
           "type": "string",
-          "description": "部件名称"
+          "description": "vehicle.part_name"
         },
         "type": {
           "type": "string",
           "pattern": "^[a-z0-9_]+:[a-z0-9_]+$",
-          "description": "部件类型"
+          "description": "vehicle.part_type"
         },
         "is_seat": {
           "type": "boolean",
           "default": false,
-          "description": "是否为座位"
+          "description": "vehicle.is_seat"
         },
         "seat_offset": {
           "type": "array",
@@ -208,7 +211,7 @@
           },
           "minItems": 3,
           "maxItems": 3,
-          "description": "座位偏移 [x, y, z]"
+          "description": "vehicle.seat_offset"
         },
         "owner_view_offset": {
           "type": "array",
@@ -217,7 +220,7 @@
           },
           "minItems": 3,
           "maxItems": 3,
-          "description": "拥有者视角偏移 [x, y, z]"
+          "description": "vehicle.owner_view_offset"
         },
         "sub_part_unit_ids": {
           "type": "array",
@@ -225,7 +228,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "子部件ID列表"
+          "description": "vehicle.sub_part_unit_ids"
         }
       }
     }

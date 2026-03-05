@@ -1,24 +1,34 @@
 <template>
-  <el-autocomplete
-    :model-value="modelValue"
-    @update:model-value="handleUpdate"
-    :fetch-suggestions="querySearch"
-    :placeholder="placeholder"
-    :trigger-on-focus="true"
-    clearable
-    style="width: 100%"
-  >
-    <template #default="{ item }">
-      <div class="namespace-option">
-        <span class="namespace-id">{{ item.value }}</span>
-        <span class="namespace-detail">{{ item.detail }}</span>
-      </div>
-    </template>
-  </el-autocomplete>
+  <div class="namespace-id-select">
+    <el-autocomplete
+      :model-value="modelValue"
+      @update:model-value="handleUpdate"
+      :fetch-suggestions="querySearch"
+      :placeholder="placeholder"
+      :trigger-on-focus="true"
+      clearable
+      style="width: 100%"
+    >
+      <template #default="{ item }">
+        <div class="namespace-option">
+          <span class="namespace-id">{{ item.value }}</span>
+          <span class="namespace-detail">{{ item.detail }}</span>
+        </div>
+      </template>
+    </el-autocomplete>
+    <el-button
+      v-if="modelValue && fileExists"
+      :icon="FolderOpened"
+      size="small"
+      @click="openFile"
+      title="打开文件"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import {computed, ref, watch} from 'vue';
+import {FolderOpened} from '@element-plus/icons-vue';
 import {useFileSystemStore} from '@/stores/fileSystem';
 import {globalNamespaceIdProvider} from '@/utils/namespaceIdCompletion';
 
@@ -41,6 +51,15 @@ const suggestions = ref<Array<{ value: string; label: string; detail: string }>>
 // 用于防止重复加载
 const isLoading = ref(false);
 const lastLoadKey = ref<string>('');
+
+const fileExists = computed(() => {
+  if (!props.modelValue || !resourceType.value) return false;
+  const items = globalNamespaceIdProvider.getCompletionsByType(
+    resourceType.value.packType,
+    resourceType.value.category
+  );
+  return items.some(item => item.namespaceId === props.modelValue);
+});
 
 // 推断资源类型
 const resourceType = computed<{ packType: 'data' | 'assets', category: string } | null>(() => {
@@ -115,6 +134,21 @@ function handleUpdate(value: string) {
   emit('update:modelValue', value);
 }
 
+// 打开文件
+async function openFile() {
+  if (!props.modelValue || !resourceType.value) return;
+
+  const items = globalNamespaceIdProvider.getCompletionsByType(
+    resourceType.value.packType,
+    resourceType.value.category
+  );
+  const item = items.find(i => i.namespaceId === props.modelValue);
+
+  if (item?.fileHandle && item?.filePath) {
+    await fileSystemStore.openFile(item.filePath, item.fileHandle);
+  }
+}
+
 // 监听文件树变化
 watch(() => fileSystemStore.fileTree, () => {
   loadSuggestions();
@@ -127,6 +161,12 @@ watch(resourceType, () => {
 </script>
 
 <style scoped>
+.namespace-id-select {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
 .namespace-option {
   display: flex;
   justify-content: space-between;

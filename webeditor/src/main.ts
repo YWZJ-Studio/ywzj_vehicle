@@ -6,6 +6,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import App from './App.vue';
 import './assets/styles/main.css';
 import {setupMonacoWorkers} from './utils/monacoWorker';
+import i18n from './locales';
 
 // 配置 Monaco Editor 的 Web Workers
 setupMonacoWorkers();
@@ -20,5 +21,6 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 app.use(pinia);
 app.use(ElementPlus);
+app.use(i18n);
 
 app.mount('#app');

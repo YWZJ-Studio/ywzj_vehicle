@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    ActivityBar: typeof import('./src/components/layout/ActivityBar.vue')['default']
     BedrockModelViewer: typeof import('./src/components/editors/BedrockModelViewer.vue')['default']
     EditorArea: typeof import('./src/components/layout/EditorArea.vue')['default']
     EditorTabs: typeof import('./src/components/layout/EditorTabs.vue')['default']
@@ -40,5 +41,7 @@ declare module 'vue' {
     JsonFormEditor: typeof import('./src/components/editors/JsonFormEditor.vue')['default']
     MonacoEditor: typeof import('./src/components/editors/MonacoEditor.vue')['default']
     NamespaceIdSelect: typeof import('./src/components/editors/NamespaceIdSelect.vue')['default']
+    VehicleDetail: typeof import('./src/components/views/VehicleDetail.vue')['default']
+    VehicleExplorer: typeof import('./src/components/views/VehicleExplorer.vue')['default']
   }
 }
