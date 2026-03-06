@@ -227,7 +227,9 @@ function onPaneContextMenu(e: MouseEvent) {
   e.preventDefault();
   contextMenu.visible = false;
   edgeContextMenu.visible = false;
-  const flowCoords = project({ x: e.clientX, y: e.clientY });
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+  const flowCoords = project({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   paneContextMenu.flowX = flowCoords.x;
   paneContextMenu.flowY = flowCoords.y;
   paneContextMenu.x = e.clientX;
