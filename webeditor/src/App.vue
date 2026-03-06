@@ -95,6 +95,7 @@
             v-if="activeFile"
             :content="activeFile.content"
             :path="activeFilePath"
+            @update="handleContentUpdate"
           />
           <div v-else class="empty-state">
             <el-empty description="未选择文件" />

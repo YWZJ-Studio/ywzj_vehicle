@@ -1,9 +1,33 @@
 <template>
   <div class="inspector-panel">
-    <div class="inspector-header">
+    <!-- Tab bar — only shown for animation controllers -->
+    <div v-if="isAnimController" class="inspector-tabs">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'file' }"
+        @click="activeTab = 'file'"
+      >文件属性</button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'node' }"
+        @click="activeTab = 'node'"
+      >节点属性</button>
+    </div>
+    <div v-else class="inspector-header">
       <span>属性</span>
     </div>
-    <div class="inspector-content">
+
+    <!-- Node properties tab -->
+    <div v-if="isAnimController && activeTab === 'node'" class="node-props-wrapper">
+      <NodePropertiesPanel
+        :selection="acSelection"
+        :root="acRoot"
+        @patch="handlePatch"
+      />
+    </div>
+
+    <!-- File properties tab (always shown for non-AC files, or when tab=file) -->
+    <div v-show="!isAnimController || activeTab === 'file'" class="inspector-content">
       <!-- 命名空间 ID 信息 -->
       <div v-if="namespaceId" class="info-card namespace-card">
         <div class="card-header">
@@ -107,6 +131,9 @@ import {formatFileSize, getFileType} from '@/utils/fileTypes';
 import {findSchemaByPath} from '@/utils/schemaRegistry';
 import {validateJsonString, type ValidationResult} from '@/utils/validator';
 import {getNamespace, getResourceCategory, pathToNamespaceId} from '@/utils/namespaceId';
+import {isAnimationControllerFile, parseAnimationControllerContent} from '@/utils/animationControllerGraph';
+import {useAnimationControllerEditorStore} from '@/stores/animationControllerEditor';
+import NodePropertiesPanel from '@/components/editors/animation-controller/NodePropertiesPanel.vue';
 
 interface Props {
   content: string;
@@ -114,8 +141,10 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ update: [content: string] }>();
 
 const validationResult = ref<ValidationResult | null>(null);
+const activeTab = ref<'file' | 'node'>('file');
 
 const fileName = computed(() => props.path.split('/').pop() || '');
 const fileType = computed(() => getFileType(fileName.value));
@@ -147,6 +176,7 @@ watch(() => props.content, () => {
 
 watch(() => props.path, () => {
   validateContent();
+  activeTab.value = 'file';
 });
 
 function validateContent() {
@@ -159,6 +189,40 @@ function validateContent() {
 }
 
 const formatSize = (bytes: number) => formatFileSize(bytes);
+
+// ── Animation controller integration ─────────────────────────────────────────
+
+const isAnimController = computed(() => isAnimationControllerFile(props.path));
+
+const acEditorStore = useAnimationControllerEditorStore();
+
+const acSelection = computed(() =>
+  isAnimController.value ? acEditorStore.getContext(props.path).selection : null,
+);
+
+const acRoot = computed(() => {
+  if (!isAnimController.value) return {};
+  try {
+    return parseAnimationControllerContent(props.content);
+  } catch {
+    return {};
+  }
+});
+
+// Auto-switch to node tab when something is selected
+watch(acSelection, (sel) => {
+  if (sel && isAnimController.value) {
+    activeTab.value = 'node';
+  }
+});
+
+function handlePatch(updates: Record<string, any>) {
+  // Import patchAnimationControllerSource lazily to avoid circular dep issues
+  import('@/utils/animationControllerGraph').then(({ patchAnimationControllerSource }) => {
+    const patched = patchAnimationControllerSource(props.content, updates);
+    emit('update', patched);
+  });
+}
 </script>
 
 <style scoped>
@@ -168,6 +232,31 @@ const formatSize = (bytes: number) => formatFileSize(bytes);
   height: 100%;
   overflow: hidden;
   background-color: var(--el-bg-color);
+}
+
+.inspector-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--el-border-color);
+  flex-shrink: 0;
+  background-color: var(--el-bg-color);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--el-text-color-secondary);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn.active {
+  color: var(--el-color-primary);
+  border-bottom-color: var(--el-color-primary);
 }
 
 .inspector-header {
@@ -294,5 +383,16 @@ const formatSize = (bytes: number) => formatFileSize(bytes);
 
 .error-item :deep(.el-alert__description) {
   font-size: 12px;
+}
+
+.node-props-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.node-props-wrapper :deep(.node-props) {
+  height: auto;
+  overflow-y: visible;
 }
 </style>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Minecraft/Dev/**)",
+      "Bash(grep -E \"\\\\.\\(java|kt\\)$\")"
+    ]
+  }
+}

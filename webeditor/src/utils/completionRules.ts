@@ -318,22 +318,21 @@ export function registerCompletionRule(rule: CompletionRule): void {
  * registerCompletionRulesFromSchemas(schemaRegistry);
  * ```
  */
-export function registerCompletionRulesFromSchemas(
+export async function registerCompletionRulesFromSchemas(
   schemaRegistry: Array<{ schema: any; title?: string }>
-): void {
+): Promise<void> {
   // 动态导入以避免循环依赖
-  import('./schemaCompletionExtractor').then(({ extractCompletionRulesFromSchemaRegistry, deduplicateCompletionRules }) => {
-    // Convert to expected format
-    const schemasWithTitle = schemaRegistry.map(item => ({
-      schema: item.schema,
-      title: item.title || 'Untitled Schema'
-    }));
+  const { extractCompletionRulesFromSchemaRegistry, deduplicateCompletionRules } = await import('./schemaCompletionExtractor');
 
-    const rules = extractCompletionRulesFromSchemaRegistry(schemasWithTitle);
-    const uniqueRules = deduplicateCompletionRules(rules);
-    globalCompletionRuleManager.addRules(uniqueRules);
+  const schemasWithTitle = schemaRegistry.map(item => ({
+    schema: item.schema,
+    title: item.title || 'Untitled Schema'
+  }));
 
-    console.log(`[CompletionRules] 从 Schema 自动注册了 ${uniqueRules.length} 条补全规则`);
-  });
+  const rules = extractCompletionRulesFromSchemaRegistry(schemasWithTitle);
+  const uniqueRules = deduplicateCompletionRules(rules);
+  globalCompletionRuleManager.addRules(uniqueRules);
+
+  console.log(`[CompletionRules] 从 Schema 自动注册了 ${uniqueRules.length} 条补全规则`);
 }
 

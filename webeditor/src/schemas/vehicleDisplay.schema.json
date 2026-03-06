@@ -49,6 +49,15 @@
         "category": "animations/bedrock"
       }
     },
+    "animation_controller": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+:[a-z0-9_/.]+$",
+      "description": "动画控制器",
+      "x-completion": {
+        "packType": "assets",
+        "category": "animation_controllers"
+      }
+    },
     "sounds": {
       "type": "object",
       "additionalProperties": {

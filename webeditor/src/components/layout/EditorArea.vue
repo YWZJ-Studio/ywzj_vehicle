@@ -44,7 +44,9 @@ import MonacoEditor from '@/components/editors/MonacoEditor.vue';
 import ImagePreview from '@/components/editors/ImagePreview.vue';
 import JsonFormEditor from '@/components/editors/JsonFormEditor.vue';
 import BedrockModelViewer from '@/components/editors/BedrockModelViewer.vue';
+import AnimationControllerEditor from '@/components/editors/AnimationControllerEditor.vue';
 import VehicleDetail from '@/components/views/VehicleDetail.vue';
+import {isAnimationControllerFile} from '@/utils/animationControllerGraph';
 
 interface Props {
   content: string;
@@ -82,6 +84,9 @@ const isBedrockModel = computed(() => {
   return fileType === 'json' && props.path.includes('models/bedrock');
 });
 
+// 检查是否是动画控制器文件
+const isAnimationController = computed(() => isAnimationControllerFile(props.path));
+
 const viewModeOptions = computed(() => {
   const options = [{label: '代码视图', value: 'code'}];
 
@@ -98,6 +103,9 @@ const viewModeOptions = computed(() => {
 
 // 检查是否有 Schema 支持或是 Bedrock 模型
 const hasSchemaSupport = computed(() => {
+  // 动画控制器有自己的编辑器，不走通用工具栏
+  if (isAnimationController.value) return false;
+
   // Bedrock 模型也显示工具栏（用于切换 3D 预览）
   if (isBedrockModel.value) {
     return true;
@@ -142,6 +150,11 @@ const currentEditor = computed(() => {
 
   // JSON 文件根据视图模式选择编辑器
   if (fileType === 'json') {
+    // 动画控制器专用编辑器
+    if (isAnimationController.value) {
+      return AnimationControllerEditor;
+    }
+
     // 3D 预览模式（仅 Bedrock 模型）
     if (viewMode.value === '3d' && isBedrockModel.value) {
       return BedrockModelViewer;

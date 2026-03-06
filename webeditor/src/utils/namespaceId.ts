@@ -179,6 +179,14 @@ function registerDefaultTypes(): void {
       pathStrategy: 'normal',
       description: 'Bedrock 动画文件'
     },
+    {
+      name: '动画控制器',
+      packType: 'assets',
+      category: 'animation_controllers',
+      extensions: ['.json'],
+      pathStrategy: 'normal',
+      description: '动画控制器定义文件'
+    },
   ]);
 }
 

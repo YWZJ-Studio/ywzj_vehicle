@@ -7,8 +7,12 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    ActionListEditor: typeof import('./src/components/editors/animation-controller/ActionListEditor.vue')['default']
     ActivityBar: typeof import('./src/components/layout/ActivityBar.vue')['default']
+    AnimationControllerEditor: typeof import('./src/components/editors/AnimationControllerEditor.vue')['default']
     BedrockModelViewer: typeof import('./src/components/editors/BedrockModelViewer.vue')['default']
+    BlendControllerFlow: typeof import('./src/components/editors/animation-controller/BlendControllerFlow.vue')['default']
+    ConditionEditor: typeof import('./src/components/editors/animation-controller/ConditionEditor.vue')['default']
     EditorArea: typeof import('./src/components/layout/EditorArea.vue')['default']
     EditorTabs: typeof import('./src/components/layout/EditorTabs.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
@@ -17,6 +21,7 @@ declare module 'vue' {
     ElButtonGroup: typeof import('element-plus/es')['ElButtonGroup']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElDialog: typeof import('element-plus/es')['ElDialog']
+    ElDivider: typeof import('element-plus/es')['ElDivider']
     ElDropdown: typeof import('element-plus/es')['ElDropdown']
     ElDropdownItem: typeof import('element-plus/es')['ElDropdownItem']
     ElDropdownMenu: typeof import('element-plus/es')['ElDropdownMenu']
@@ -41,7 +46,10 @@ declare module 'vue' {
     JsonFormEditor: typeof import('./src/components/editors/JsonFormEditor.vue')['default']
     MonacoEditor: typeof import('./src/components/editors/MonacoEditor.vue')['default']
     NamespaceIdSelect: typeof import('./src/components/editors/NamespaceIdSelect.vue')['default']
+    NodePropertiesPanel: typeof import('./src/components/editors/animation-controller/NodePropertiesPanel.vue')['default']
     Settings: typeof import('./src/components/views/Settings.vue')['default']
+    StateMachineFlow: typeof import('./src/components/editors/animation-controller/StateMachineFlow.vue')['default']
+    TransitionEdge: typeof import('./src/components/editors/animation-controller/TransitionEdge.vue')['default']
     VehicleDetail: typeof import('./src/components/views/VehicleDetail.vue')['default']
     VehicleExplorer: typeof import('./src/components/views/VehicleExplorer.vue')['default']
   }
