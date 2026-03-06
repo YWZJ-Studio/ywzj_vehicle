@@ -5,7 +5,6 @@
       :nodes="computedNodes"
       :edges="computedEdges"
       :default-edge-options="{ type: 'default', animated: false }"
-      fit-view-on-init
       class="flow-canvas"
       @node-click="onNodeClick"
       @edge-click="onEdgeClick"
@@ -15,6 +14,7 @@
       @edge-context-menu="onEdgeContextMenu"
       @pane-context-menu="onPaneContextMenu"
     >
+      <Background pattern-color="#aaa" :gap="16" />
       <Controls />
 
       <template #node-default="{ data, id }">

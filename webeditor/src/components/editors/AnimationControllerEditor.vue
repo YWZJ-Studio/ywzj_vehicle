@@ -340,6 +340,10 @@ function handleDeleteState(machineName: string, stateName: string) {
       }
     }
   }
+  // remove empty state machine
+  if (smClone[machineName] && Object.keys(smClone[machineName].states ?? {}).length === 0) {
+    delete smClone[machineName];
+  }
   editorStore.setSelection(props.path, null);
   emitPatch({ state_machines: smClone });
 }
