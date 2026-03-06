@@ -11,6 +11,11 @@ export type AnimationSelection =
       label?: string;
     }
   | {
+      kind: 'blend-edge';
+      edgeId: string;
+      jsonPath: Array<string | number>;
+    }
+  | {
       kind: 'state-node';
       nodeId: string;
       machineName: string;

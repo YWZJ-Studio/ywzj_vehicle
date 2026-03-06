@@ -35,6 +35,17 @@
             <el-button :icon="Delete" size="small" type="danger" @click="deleteSelectedEdge" />
           </el-tooltip>
         </template>
+
+        <!-- 混合图操作 -->
+        <template v-if="viewMode === 'blend'">
+          <el-divider direction="vertical" />
+          <el-tooltip v-if="selectedBlendNode" content="删除选中节点">
+            <el-button :icon="Delete" size="small" type="danger" @click="deleteSelectedBlendNode" />
+          </el-tooltip>
+          <el-tooltip v-if="selectedBlendEdge" content="删除选中连线">
+            <el-button :icon="Delete" size="small" type="danger" @click="deleteSelectedBlendEdge" />
+          </el-tooltip>
+        </template>
       </div>
     </div>
 
@@ -54,6 +65,9 @@
         :selected-id="selectedNodeId"
         @select="handleSelect"
         @move-node="handleBlendNodeMove"
+        @delete-node="handleDeleteBlendNode"
+        @delete-edge="handleDeleteBlendEdge"
+        @connect-edge="handleConnectBlendEdge"
       />
       <StateMachineFlow
         v-else
@@ -164,6 +178,7 @@ const selectedNodeId = computed(() => {
   if (!sel) return null;
   if (sel.kind === 'state-node') return sel.nodeId;
   if (sel.kind === 'blend-node') return sel.nodeId;
+  if (sel.kind === 'blend-edge') return sel.edgeId;
   if (sel.kind === 'transition-edge') return sel.edgeId;
   return null;
 });
@@ -171,6 +186,18 @@ const selectedNodeId = computed(() => {
 const selectedStateInfo = computed(() => {
   const sel = ctx.value.selection;
   if (sel?.kind === 'state-node') return sel;
+  return null;
+});
+
+const selectedBlendNode = computed(() => {
+  const sel = ctx.value.selection;
+  if (sel?.kind === 'blend-node') return sel;
+  return null;
+});
+
+const selectedBlendEdge = computed(() => {
+  const sel = ctx.value.selection;
+  if (sel?.kind === 'blend-edge') return sel;
   return null;
 });
 
@@ -322,6 +349,18 @@ function deleteSelectedState() {
   handleDeleteState(sel.machineName, sel.stateName);
 }
 
+function deleteSelectedBlendNode() {
+  const sel = selectedBlendNode.value;
+  if (!sel) return;
+  handleDeleteBlendNode(sel.jsonPath);
+}
+
+function deleteSelectedBlendEdge() {
+  const sel = selectedBlendEdge.value;
+  if (!sel) return;
+  handleDeleteBlendEdge(sel.jsonPath);
+}
+
 function deleteSelectedEdge() {
   const sel = selectedEdgeInfo.value;
   if (!sel) return;
@@ -346,6 +385,151 @@ function handleDeleteState(machineName: string, stateName: string) {
   }
   editorStore.setSelection(props.path, null);
   emitPatch({ state_machines: smClone });
+}
+
+function handleDeleteBlendNode(jsonPath: Array<string | number>) {
+  if (jsonPath.length < 1 || jsonPath[0] !== 'graph' && jsonPath[0] !== 'detached') return;
+  pushHistory(props.content);
+
+  const graphClone = JSON.parse(JSON.stringify(root.value.graph ?? {}));
+  const detachedClone = JSON.parse(JSON.stringify(root.value.detached ?? []));
+
+  // 获取要删除的节点
+  let nodeToDelete: any;
+  if (jsonPath[0] === 'graph') {
+    if (jsonPath.length === 1) {
+      nodeToDelete = graphClone;
+    } else {
+      let current = graphClone;
+      for (let i = 1; i < jsonPath.length - 1; i++) {
+        current = current[jsonPath[i]];
+        if (!current) return;
+      }
+      nodeToDelete = current[jsonPath[jsonPath.length - 1]];
+    }
+  } else if (jsonPath[0] === 'detached') {
+    const idx = jsonPath[1] as number;
+    nodeToDelete = detachedClone[idx];
+  }
+
+  // 收集子节点到 detached
+  if (nodeToDelete && typeof nodeToDelete === 'object') {
+    ['a', 'b', 'base', 'add'].forEach(key => {
+      if (nodeToDelete[key] && typeof nodeToDelete[key] === 'object') {
+        detachedClone.push(nodeToDelete[key]);
+      }
+    });
+    ['inputs', 'layers'].forEach(key => {
+      if (Array.isArray(nodeToDelete[key])) {
+        nodeToDelete[key].forEach((item: any) => {
+          if (item && typeof item === 'object') {
+            detachedClone.push(item);
+          }
+        });
+      }
+    });
+  }
+
+  // 删除节点本身
+  if (jsonPath[0] === 'graph') {
+    if (jsonPath.length === 1) {
+      emitPatch({ graph: {}, detached: detachedClone });
+    } else {
+      let current = graphClone;
+      for (let i = 1; i < jsonPath.length - 1; i++) {
+        current = current[jsonPath[i]];
+      }
+      delete current[jsonPath[jsonPath.length - 1]];
+      emitPatch({ graph: graphClone, detached: detachedClone });
+    }
+  } else if (jsonPath[0] === 'detached') {
+    detachedClone.splice(jsonPath[1] as number, 1);
+    emitPatch({ detached: detachedClone });
+  }
+
+  editorStore.setSelection(props.path, null);
+}
+
+function handleDeleteBlendEdge(jsonPath: Array<string | number>) {
+  if (jsonPath.length < 2 || jsonPath[0] !== 'graph') return;
+  pushHistory(props.content);
+
+  const graphClone = JSON.parse(JSON.stringify(root.value.graph ?? {}));
+  const detachedClone = JSON.parse(JSON.stringify(root.value.detached ?? []));
+
+  // 获取父节点和要删除的连线对应的子节点
+  let parent = graphClone;
+  for (let i = 1; i < jsonPath.length - 1; i++) {
+    parent = parent[jsonPath[i]];
+    if (!parent) return;
+  }
+
+  const key = jsonPath[jsonPath.length - 1];
+  const childNode = parent[key];
+
+  // 将子节点（包括子树）移到detached
+  if (childNode && typeof childNode === 'object') {
+    detachedClone.push(childNode);
+  }
+
+  // 删除连接
+  if (Array.isArray(parent)) {
+    parent.splice(key as number, 1);
+  } else {
+    delete parent[key];
+  }
+
+  editorStore.setSelection(props.path, null);
+  emitPatch({ graph: graphClone, detached: detachedClone });
+}
+
+function handleConnectBlendEdge(sourceJsonPath: Array<string | number>, targetJsonPath: Array<string | number>, targetHandle: string) {
+  pushHistory(props.content);
+
+  const graphClone = JSON.parse(JSON.stringify(root.value.graph ?? {}));
+  const detachedClone = JSON.parse(JSON.stringify(root.value.detached ?? []));
+
+  // 获取源节点
+  let sourceNode: any;
+  if (sourceJsonPath[0] === 'detached') {
+    const idx = sourceJsonPath[1] as number;
+    sourceNode = detachedClone[idx];
+    detachedClone.splice(idx, 1);
+  } else if (sourceJsonPath[0] === 'graph') {
+    let current = graphClone;
+    for (let i = 1; i < sourceJsonPath.length - 1; i++) {
+      current = current[sourceJsonPath[i]];
+      if (!current) return;
+    }
+    const key = sourceJsonPath[sourceJsonPath.length - 1];
+    sourceNode = current[key];
+    delete current[key];
+  }
+
+  if (!sourceNode) return;
+
+  // 设置到目标节点
+  let target = graphClone;
+  for (let i = 1; i < targetJsonPath.length; i++) {
+    target = target[targetJsonPath[i]];
+    if (!target) return;
+  }
+
+  // 处理数组类型的输入（inputs, layers）
+  if (targetHandle === 'inputs' || targetHandle === 'layers') {
+    if (!Array.isArray(target[targetHandle])) {
+      target[targetHandle] = [];
+    }
+    target[targetHandle].push(sourceNode);
+  } else {
+    // 单个属性，如果已存在则移到 detached
+    if (target[targetHandle] && typeof target[targetHandle] === 'object') {
+      detachedClone.push(target[targetHandle]);
+    }
+    target[targetHandle] = sourceNode;
+  }
+
+  emitPatch({ graph: graphClone, detached: detachedClone });
 }
 
 // ── add transition ────────────────────────────────────────────────────────────

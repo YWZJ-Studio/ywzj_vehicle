@@ -8,6 +8,7 @@ export interface AnimationControllerRoot {
   loop_animations?: Record<string, any>;
   state_machines?: Record<string, AnimationStateMachine>;
   graph?: BlendNode;
+  detached?: BlendNode[];
   [key: string]: any;
 }
 
