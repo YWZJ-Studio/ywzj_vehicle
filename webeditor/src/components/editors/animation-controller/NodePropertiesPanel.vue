@@ -40,7 +40,7 @@
           <el-input
             :model-value="stateData?.evaluate?.track ?? ''"
             size="small"
-            @update:model-value="v => setEvaluateField('track', v)"
+            @update:model-value="onEvaluateTrackUpdate"
           />
         </div>
         <div v-if="stateData?.evaluate?.type === 'script'" class="field-row">
@@ -50,7 +50,7 @@
             size="small"
             type="textarea"
             :rows="3"
-            @update:model-value="v => setEvaluateField('script', v)"
+            @update:model-value="onEvaluateScriptUpdate"
           />
         </div>
       </div>
@@ -63,24 +63,24 @@
           type="textarea"
           :rows="2"
           placeholder="可选注释"
-          @update:model-value="v => setEditorMeta('comment', v)"
+          @update:model-value="onStateCommentUpdate"
         />
       </div>
 
       <ActionListEditor
         title="on_enter"
         :actions="stateData?.on_enter ?? []"
-        @update="v => setStateField('on_enter', v)"
+        @update="onStateEnterUpdate"
       />
       <ActionListEditor
         title="on_update"
         :actions="stateData?.on_update ?? []"
-        @update="v => setStateField('on_update', v)"
+        @update="onStateUpdateUpdate"
       />
       <ActionListEditor
         title="on_exit"
         :actions="stateData?.on_exit ?? []"
-        @update="v => setStateField('on_exit', v)"
+        @update="onStateExitUpdate"
       />
     </template>
 
@@ -96,7 +96,7 @@
             :model-value="transitionData?.target ?? ''"
             size="small"
             style="width:100%"
-            @update:model-value="v => setTransitionField('target', v)"
+            @update:model-value="onTransitionTargetUpdate"
           >
             <el-option
               v-for="s in siblingStateNames"
@@ -115,7 +115,7 @@
             :step="0.05"
             :precision="3"
             style="width:100%"
-            @update:model-value="v => setTransitionField('duration', v)"
+            @update:model-value="onTransitionDurationUpdate"
           />
         </div>
         <div class="field-row">
@@ -126,7 +126,7 @@
             style="width:100%"
             clearable
             placeholder="linear"
-            @update:model-value="v => setTransitionField('blend_curve', v || undefined)"
+            @update:model-value="onTransitionBlendCurveUpdate"
           >
             <el-option label="linear" value="linear" />
             <el-option label="ease_in" value="ease_in" />
@@ -140,14 +140,14 @@
         <div class="section-title">条件</div>
         <ConditionEditor
           :condition="transitionData?.condition ?? null"
-          @update="v => setTransitionField('condition', v)"
+          @update="onTransitionConditionUpdate"
         />
       </div>
 
       <ActionListEditor
         title="after_trigger"
         :actions="transitionData?.after_trigger ?? []"
-        @update="v => setTransitionField('after_trigger', v)"
+        @update="onTransitionAfterTriggerUpdate"
       />
     </template>
 
@@ -161,7 +161,7 @@
             :model-value="blendData?.type ?? ''"
             size="small"
             style="width:100%"
-            @update:model-value="v => setBlendField('type', v)"
+            @update:model-value="onBlendTypeUpdate"
           >
             <el-option v-for="t in BLEND_NODE_TYPES" :key="t" :label="t" :value="t" />
           </el-select>
@@ -173,7 +173,7 @@
           <el-input
             :model-value="blendData?.ref ?? ''"
             size="small"
-            @update:model-value="v => setBlendField('ref', v)"
+            @update:model-value="onBlendRefUpdate"
           />
         </div>
 
@@ -184,7 +184,7 @@
             :model-value="String(blendData?.weight ?? '')"
             size="small"
             placeholder="数值或脚本表达式"
-            @update:model-value="v => setBlendField('weight', v)"
+            @update:model-value="onBlendWeightUpdate"
           />
         </div>
 
@@ -193,8 +193,52 @@
           <el-input
             :model-value="blendData?.editor?.comment ?? ''"
             size="small"
-            @update:model-value="v => setBlendEditorMeta('comment', v)"
+            @update:model-value="onBlendCommentUpdate"
           />
+        </div>
+      </div>
+
+      <!-- bone_binding section -->
+      <div v-if="blendData?.type === 'bone_binding'" class="props-section">
+        <div class="section-title">骨骼绑定</div>
+        <div class="field-row">
+          <span class="field-label">特殊绑定</span>
+          <span class="field-value mono">{{ specialBindingsCount }} 条</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">部件绑定</span>
+          <span class="field-value mono">{{ partBindingsCount }} 条</span>
+        </div>
+        <div class="field-row" style="justify-content: center;">
+          <el-button size="small" type="primary" @click="openBoneBindingEditor">
+            在编辑器中打开
+          </el-button>
+        </div>
+      </div>
+
+      <div v-if="blendData?.type === 'merge'" class="props-section">
+        <div class="section-title">输入顺序</div>
+        <div v-if="!mergeChildren.length" class="empty-list">暂无已连接子节点</div>
+        <div v-else class="merge-list">
+          <div
+            v-for="(item, idx) in mergeChildren"
+            :key="item.key"
+            class="merge-item"
+            :class="{
+              'is-dragging': draggingMergeIndex === idx,
+              'is-drop-target': dropMergeIndex === idx && draggingMergeIndex !== idx,
+            }"
+            draggable="true"
+            @dragstart="onMergeDragStart($event, idx)"
+            @dragover="onMergeDragOver($event, idx)"
+            @drop="onMergeDrop(idx)"
+            @dragend="onMergeDragEnd"
+          >
+            <span class="drag-handle">::</span>
+            <span class="merge-index">{{ item.order }}.</span>
+            <span class="merge-label">{{ item.label }}</span>
+            <span class="merge-type">{{ item.type }}</span>
+          </div>
         </div>
       </div>
     </template>
@@ -202,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Connection } from '@element-plus/icons-vue';
 import type { AnimationSelection } from '@/stores/animationControllerEditor';
 import type {
@@ -232,6 +276,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   patch: [updates: Record<string, any>];
+  'open-bone-binding-editor': [];
 }>();
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -305,6 +350,30 @@ function setEditorMeta(field: string, value: string) {
   patchRoot([...props.selection.jsonPath, 'editor', field], value || undefined);
 }
 
+function onEvaluateTrackUpdate(value: string) {
+  setEvaluateField('track', value);
+}
+
+function onEvaluateScriptUpdate(value: string) {
+  setEvaluateField('script', value);
+}
+
+function onStateCommentUpdate(value: string) {
+  setEditorMeta('comment', value);
+}
+
+function onStateEnterUpdate(value: AnimationAction[]) {
+  setStateField('on_enter', value);
+}
+
+function onStateUpdateUpdate(value: AnimationAction[]) {
+  setStateField('on_update', value);
+}
+
+function onStateExitUpdate(value: AnimationAction[]) {
+  setStateField('on_exit', value);
+}
+
 // ── transition edge ───────────────────────────────────────────────────────────
 
 const transitionData = computed(() => {
@@ -322,6 +391,26 @@ function setTransitionField(field: string, value: any) {
   patchRoot([...props.selection.jsonPath, field], value);
 }
 
+function onTransitionTargetUpdate(value: string) {
+  setTransitionField('target', value);
+}
+
+function onTransitionDurationUpdate(value: number | null | undefined) {
+  setTransitionField('duration', value ?? 0);
+}
+
+function onTransitionBlendCurveUpdate(value: string | undefined) {
+  setTransitionField('blend_curve', value || undefined);
+}
+
+function onTransitionConditionUpdate(value: AnimationCondition | null) {
+  setTransitionField('condition', value);
+}
+
+function onTransitionAfterTriggerUpdate(value: AnimationAction[]) {
+  setTransitionField('after_trigger', value);
+}
+
 // ── blend node ────────────────────────────────────────────────────────────────
 
 const blendData = computed(() => {
@@ -333,6 +422,29 @@ const isLeafBlendNode = computed(() =>
   LEAF_BLEND_TYPES.has(blendData.value?.type ?? ''),
 );
 
+const specialBindingsCount = computed(() =>
+  Array.isArray(blendData.value?.special_bindings) ? blendData.value.special_bindings.length : 0,
+);
+
+const partBindingsCount = computed(() =>
+  Array.isArray(blendData.value?.part_bindings) ? blendData.value.part_bindings.length : 0,
+);
+
+const draggingMergeIndex = ref<number | null>(null);
+const dropMergeIndex = ref<number | null>(null);
+
+const mergeChildren = computed(() => {
+  if (blendData.value?.type !== 'merge' || !Array.isArray(blendData.value.inputs)) return [];
+
+  return blendData.value.inputs
+    .map((item: any, index: number) => ({
+      key: `${item?.type ?? 'node'}-${item?.ref ?? ''}-${index}`,
+      label: item?.ref || `节点 ${index + 1}`,
+      type: item?.type ?? 'unknown',
+      order: index + 1,
+    }));
+});
+
 function setBlendField(field: string, value: any) {
   if (props.selection?.kind !== 'blend-node') return;
   patchRoot([...props.selection.jsonPath, field], value);
@@ -341,6 +453,69 @@ function setBlendField(field: string, value: any) {
 function setBlendEditorMeta(field: string, value: string) {
   if (props.selection?.kind !== 'blend-node') return;
   patchRoot([...props.selection.jsonPath, 'editor', field], value || undefined);
+}
+
+function onBlendTypeUpdate(value: string) {
+  setBlendField('type', value);
+}
+
+function onBlendRefUpdate(value: string) {
+  setBlendField('ref', value);
+}
+
+function onBlendWeightUpdate(value: string) {
+  setBlendField('weight', value);
+}
+
+function onBlendCommentUpdate(value: string) {
+  setBlendEditorMeta('comment', value);
+}
+
+function openBoneBindingEditor() {
+  emit('open-bone-binding-editor');
+}
+
+function normalizeMergeIndex(index: string | number): number {
+  return typeof index === 'number' ? index : Number(index);
+}
+
+function onMergeDragStart(e: DragEvent, index: string | number) {
+  const normalizedIndex = normalizeMergeIndex(index);
+  draggingMergeIndex.value = normalizedIndex;
+  dropMergeIndex.value = normalizedIndex;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(normalizedIndex));
+  }
+}
+
+function onMergeDragOver(e: DragEvent, index: string | number) {
+  const normalizedIndex = normalizeMergeIndex(index);
+  e.preventDefault();
+  dropMergeIndex.value = normalizedIndex;
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+}
+
+function onMergeDrop(targetIndex: string | number) {
+  if (props.selection?.kind !== 'blend-node') return;
+  const normalizedTargetIndex = normalizeMergeIndex(targetIndex);
+  const sourceIndex = draggingMergeIndex.value;
+  onMergeDragEnd();
+  if (sourceIndex == null || sourceIndex === normalizedTargetIndex) return;
+
+  const inputs = Array.isArray(blendData.value?.inputs)
+    ? deepClone(blendData.value.inputs)
+    : [];
+  if (!inputs[sourceIndex] || !inputs[normalizedTargetIndex]) return;
+
+  const [moved] = inputs.splice(sourceIndex, 1);
+  inputs.splice(normalizedTargetIndex, 0, moved);
+  patchRoot([...props.selection.jsonPath, 'inputs'], inputs);
+}
+
+function onMergeDragEnd() {
+  draggingMergeIndex.value = null;
+  dropMergeIndex.value = null;
 }
 </script>
 
@@ -409,5 +584,70 @@ function setBlendEditorMeta(field: string, value: string) {
 
 .mono {
   font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.empty-list {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+}
+
+.merge-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.merge-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
+  cursor: move;
+  user-select: none;
+}
+
+.merge-item.is-dragging {
+  opacity: 0.45;
+}
+
+.merge-item.is-drop-target {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset;
+}
+
+.drag-handle {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+  letter-spacing: -1px;
+}
+
+.merge-index {
+  width: 22px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.merge-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.merge-type {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color);
+  padding: 2px 6px;
+  border-radius: 999px;
 }
 </style>

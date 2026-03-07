@@ -62,6 +62,9 @@
               <Handle type="source" :position="Position.Right" class="ue-handle" />
             </div>
             <div v-if="data.ref" class="node-ref">{{ data.ref }}</div>
+            <div v-if="data.rawType === 'bone_binding'" class="node-summary">
+              special: {{ data.specialBindingCount ?? 0 }} / part: {{ data.partBindingCount ?? 0 }}
+            </div>
           </div>
         </div>
       </template>
@@ -190,6 +193,8 @@ function buildGraph(root: AnimationControllerRoot) {
         jsonPath: path,
         rawType: type,
         ref: node.ref,
+        specialBindingCount: Array.isArray(node.special_bindings) ? node.special_bindings.length : 0,
+        partBindingCount: Array.isArray(node.part_bindings) ? node.part_bindings.length : 0,
       },
       type: 'default',
     });
@@ -503,6 +508,14 @@ function onConnect(connection: Connection) {
   color: #888;
   margin-top: 4px;
   padding: 0 12px;
+  font-family: 'Consolas', monospace;
+}
+
+.node-summary {
+  font-size: 10px;
+  color: #ffb74d;
+  margin-top: 4px;
+  padding: 0 12px 8px;
   font-family: 'Consolas', monospace;
 }
 

@@ -23,8 +23,18 @@
         :selection="acSelection"
         :root="acRoot"
         @patch="handlePatch"
+        @open-bone-binding-editor="handleOpenBoneBindingEditor"
       />
     </div>
+
+    <BoneBindingEditorDialog
+      v-if="isAnimController"
+      :visible="showBoneBindingDialog"
+      :special-bindings="boneBindingData?.special_bindings"
+      :part-bindings="boneBindingData?.part_bindings"
+      @update:visible="showBoneBindingDialog = $event"
+      @confirm="handleBoneBindingConfirm"
+    />
 
     <!-- File properties tab (always shown for non-AC files, or when tab=file) -->
     <div v-show="!isAnimController || activeTab === 'file'" class="inspector-content">
@@ -131,9 +141,15 @@ import {formatFileSize, getFileType} from '@/utils/fileTypes';
 import {findSchemaByPath} from '@/utils/schemaRegistry';
 import {validateJsonString, type ValidationResult} from '@/utils/validator';
 import {getNamespace, getResourceCategory, pathToNamespaceId} from '@/utils/namespaceId';
-import {isAnimationControllerFile, parseAnimationControllerContent} from '@/utils/animationControllerGraph';
+import {getValueAtPath, isAnimationControllerFile, parseAnimationControllerContent} from '@/utils/animationControllerGraph';
 import {useAnimationControllerEditorStore} from '@/stores/animationControllerEditor';
 import NodePropertiesPanel from '@/components/editors/animation-controller/NodePropertiesPanel.vue';
+import BoneBindingEditorDialog from '@/components/editors/animation-controller/BoneBindingEditorDialog.vue';
+import type {
+  BoneBindingPartBinding,
+  BoneBindingSpecialBinding,
+  BoneBindingBlendNode,
+} from '@/types/animationController';
 
 interface Props {
   content: string;
@@ -145,6 +161,7 @@ const emit = defineEmits<{ update: [content: string] }>();
 
 const validationResult = ref<ValidationResult | null>(null);
 const activeTab = ref<'file' | 'node'>('file');
+const showBoneBindingDialog = ref(false);
 
 const fileName = computed(() => props.path.split('/').pop() || '');
 const fileType = computed(() => getFileType(fileName.value));
@@ -209,10 +226,21 @@ const acRoot = computed(() => {
   }
 });
 
+const boneBindingData = computed<BoneBindingBlendNode | null>(() => {
+  const sel = acSelection.value;
+  if (sel?.kind !== 'blend-node' || sel.type !== 'bone_binding') return null;
+  const node = getValueAtPath(acRoot.value, sel.jsonPath);
+  if (!node || typeof node !== 'object' || node.type !== 'bone_binding') return null;
+  return node as BoneBindingBlendNode;
+});
+
 // Auto-switch to node tab when something is selected
 watch(acSelection, (sel) => {
   if (sel && isAnimController.value) {
     activeTab.value = 'node';
+  }
+  if (sel?.kind !== 'blend-node' || sel.type !== 'bone_binding') {
+    showBoneBindingDialog.value = false;
   }
 });
 
@@ -222,6 +250,39 @@ function handlePatch(updates: Record<string, any>) {
     const patched = patchAnimationControllerSource(props.content, updates);
     emit('update', patched);
   });
+}
+
+function handleOpenBoneBindingEditor() {
+  if (!boneBindingData.value) return;
+  showBoneBindingDialog.value = true;
+}
+
+function handleBoneBindingConfirm(
+  specialBindings: BoneBindingSpecialBinding[],
+  partBindings: BoneBindingPartBinding[],
+) {
+  const sel = acSelection.value;
+  if (sel?.kind !== 'blend-node') return;
+
+  const rootClone = JSON.parse(JSON.stringify(acRoot.value));
+  let current: any = rootClone;
+  for (let i = 0; i < sel.jsonPath.length - 1; i++) {
+    current = current[sel.jsonPath[i]];
+    if (!current) return;
+  }
+
+  const key = sel.jsonPath[sel.jsonPath.length - 1];
+  const currentNode = current[key];
+  if (!currentNode || currentNode.type !== 'bone_binding') return;
+
+  current[key] = {
+    ...currentNode,
+    special_bindings: specialBindings,
+    part_bindings: partBindings,
+  };
+
+  const topKey = sel.jsonPath[0] as string;
+  handlePatch({ [topKey]: rootClone[topKey] });
 }
 </script>
 

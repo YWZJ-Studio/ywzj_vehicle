@@ -63,6 +63,27 @@ export interface BlendNode {
   [key: string]: any;
 }
 
+export interface BoneBindingSpecialBinding {
+  bones?: string[];
+  source?: string;
+  axis?: 'x' | 'y' | 'z' | string;
+  param?: number;
+}
+
+export interface BoneBindingPartBinding {
+  bone?: string;
+  part?: string;
+  rotation_type?: string;
+  axis?: 'x' | 'y' | 'z' | string;
+  invert?: boolean;
+}
+
+export interface BoneBindingBlendNode extends BlendNode {
+  type: 'bone_binding';
+  special_bindings?: BoneBindingSpecialBinding[];
+  part_bindings?: BoneBindingPartBinding[];
+}
+
 export interface GraphNodeData {
   label: string;
   kind: 'blend' | 'state';
