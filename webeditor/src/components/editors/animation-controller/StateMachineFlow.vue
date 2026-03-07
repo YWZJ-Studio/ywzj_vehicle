@@ -68,7 +68,7 @@
     </VueFlow>
 
     <div v-else class="empty-graph">
-      <el-empty description="该控制器没有状态机定义" />
+      <el-empty description="该控制器没有状态机定义，点击右上角添加第一个节点" />
     </div>
 
     <!-- 节点右键菜单 -->

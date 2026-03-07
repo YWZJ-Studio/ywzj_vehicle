@@ -39,6 +39,9 @@
         <!-- 混合图操作 -->
         <template v-if="viewMode === 'blend'">
           <el-divider direction="vertical" />
+          <el-tooltip content="添加节点">
+            <el-button :icon="Plus" size="small" type="primary" @click="showAddBlendNodeDialog = true" />
+          </el-tooltip>
           <el-tooltip v-if="selectedBlendNode" content="删除选中节点">
             <el-button :icon="Delete" size="small" type="danger" @click="deleteSelectedBlendNode" />
           </el-tooltip>
@@ -65,9 +68,11 @@
         :selected-id="selectedNodeId"
         @select="handleSelect"
         @move-node="handleBlendNodeMove"
+        @move-output-node="handleOutputNodeMove"
         @delete-node="handleDeleteBlendNode"
         @delete-edge="handleDeleteBlendEdge"
         @connect-edge="handleConnectBlendEdge"
+        @add-node-at-position="handleAddBlendNodeAtPosition"
       />
       <StateMachineFlow
         v-else
@@ -123,6 +128,26 @@
       <template #footer>
         <el-button @click="showAddTransitionDialog = false">取消</el-button>
         <el-button type="primary" :disabled="!newTransitionTarget" @click="confirmAddTransition">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加混合节点对话框 -->
+    <el-dialog v-model="showAddBlendNodeDialog" title="添加节点" width="360px" @closed="onBlendNodeDialogClosed">
+      <el-form @submit.prevent="confirmAddBlendNode">
+        <el-form-item label="节点类型">
+          <el-select v-model="newBlendNodeType" style="width: 100%">
+            <el-option label="blend" value="blend" />
+            <el-option label="additive" value="additive" />
+            <el-option label="layered_blend" value="layered_blend" />
+            <el-option label="merge" value="merge" />
+            <el-option label="state_machine" value="state_machine" />
+            <el-option label="bone_binding" value="bone_binding" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddBlendNodeDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmAddBlendNode">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -279,6 +304,14 @@ function handleBlendNodeMove(jsonPath: Array<string | number>, x: number, y: num
   const clone = JSON.parse(JSON.stringify((root.value as any)[topKey]));
   setValueAtPath(clone, [...jsonPath.slice(1), 'editor'], updated);
   const patched = patchAnimationControllerSource(props.content, { [topKey]: clone });
+  emit('update', patched);
+}
+
+function handleOutputNodeMove(x: number, y: number) {
+  pushHistory(props.content);
+  const cur = root.value.editor ?? {};
+  const updated = { ...cur, output_x: Math.round(x), output_y: Math.round(y) };
+  const patched = patchAnimationControllerSource(props.content, { editor: updated });
   emit('update', patched);
 }
 
@@ -451,11 +484,63 @@ function handleDeleteBlendNode(jsonPath: Array<string | number>) {
 }
 
 function handleDeleteBlendEdge(jsonPath: Array<string | number>) {
-  if (jsonPath.length < 2 || jsonPath[0] !== 'graph') return;
+  if (jsonPath.length < 1) return;
   pushHistory(props.content);
 
   const graphClone = JSON.parse(JSON.stringify(root.value.graph ?? {}));
   const detachedClone = JSON.parse(JSON.stringify(root.value.detached ?? []));
+
+  // 处理游离节点的连线删除
+  if (jsonPath[0] === 'detached') {
+    const detachedIdx = jsonPath[1] as number;
+    const detachedNode = detachedClone[detachedIdx];
+    if (!detachedNode) return;
+
+    // 如果只有两层路径，说明要删除整个游离节点的某个子节点
+    if (jsonPath.length === 2) {
+      // 这种情况不应该发生，因为删除边应该有具体的属性路径
+      return;
+    }
+
+    // 获取要删除的子节点路径
+    let parent = detachedNode;
+    for (let i = 2; i < jsonPath.length - 1; i++) {
+      parent = parent[jsonPath[i]];
+      if (!parent) return;
+    }
+
+    const key = jsonPath[jsonPath.length - 1];
+    const childNode = parent[key];
+
+    // 将子节点移到detached
+    if (childNode && typeof childNode === 'object') {
+      detachedClone.push(childNode);
+    }
+
+    // 删除连接
+    if (Array.isArray(parent)) {
+      parent.splice(key as number, 1);
+    } else {
+      delete parent[key];
+    }
+
+    editorStore.setSelection(props.path, null);
+    emitPatch({ graph: graphClone, detached: detachedClone });
+    return;
+  }
+
+  // 处理图中节点的连线删除
+  if (jsonPath[0] !== 'graph') return;
+
+  // 特殊情况：断开根节点与OUTPUT的连线
+  if (jsonPath.length === 1) {
+    if (graphClone && typeof graphClone === 'object' && Object.keys(graphClone).length > 0) {
+      detachedClone.push(graphClone);
+    }
+    editorStore.setSelection(props.path, null);
+    emitPatch({ graph: {}, detached: detachedClone });
+    return;
+  }
 
   // 获取父节点和要删除的连线对应的子节点
   let parent = graphClone;
@@ -508,12 +593,32 @@ function handleConnectBlendEdge(sourceJsonPath: Array<string | number>, targetJs
 
   if (!sourceNode) return;
 
-  // 设置到目标节点
-  let target = graphClone;
-  for (let i = 1; i < targetJsonPath.length; i++) {
-    target = target[targetJsonPath[i]];
-    if (!target) return;
+  // 特殊处理：连接到 OUTPUT 节点（根节点）
+  if (targetJsonPath[0] === '__ROOT__' && targetHandle === 'graph') {
+    // 如果当前 graph 存在，移到 detached
+    if (graphClone && typeof graphClone === 'object' && Object.keys(graphClone).length > 0) {
+      detachedClone.push(graphClone);
+    }
+    emitPatch({ graph: sourceNode, detached: detachedClone });
+    return;
   }
+
+  // 设置到目标节点
+  let target: any;
+  if (targetJsonPath[0] === 'detached') {
+    // 目标是游离节点
+    const idx = targetJsonPath[1] as number;
+    target = detachedClone[idx];
+  } else if (targetJsonPath[0] === 'graph') {
+    // 目标在图中
+    target = graphClone;
+    for (let i = 1; i < targetJsonPath.length; i++) {
+      target = target[targetJsonPath[i]];
+      if (!target) return;
+    }
+  }
+
+  if (!target) return;
 
   // 处理数组类型的输入（inputs, layers）
   if (targetHandle === 'inputs' || targetHandle === 'layers') {
@@ -588,6 +693,43 @@ function handleDeleteTransition(machineName: string, fromState: string, transiti
   if (!states?.[fromState]?.transitions) return;
   states[fromState].transitions.splice(transitionIndex, 1);
   emitPatch({ state_machines: smClone });
+}
+
+// ── add blend node ────────────────────────────────────────────────────────────
+
+const showAddBlendNodeDialog = ref(false);
+const newBlendNodeType = ref('blend');
+const pendingBlendNodePosition = ref<{ x: number; y: number } | null>(null);
+
+function onBlendNodeDialogClosed() {
+  newBlendNodeType.value = 'blend';
+  pendingBlendNodePosition.value = null;
+}
+
+function handleAddBlendNodeAtPosition(x: number, y: number) {
+  pendingBlendNodePosition.value = { x, y };
+  showAddBlendNodeDialog.value = true;
+}
+
+function confirmAddBlendNode() {
+  const type = newBlendNodeType.value;
+  pushHistory(props.content);
+
+  const detachedClone = JSON.parse(JSON.stringify(root.value.detached ?? []));
+  const newNode: any = { type };
+
+  if (pendingBlendNodePosition.value) {
+    newNode.editor = {
+      x: Math.round(pendingBlendNodePosition.value.x),
+      y: Math.round(pendingBlendNodePosition.value.y),
+    };
+  }
+
+  detachedClone.push(newNode);
+  emitPatch({ detached: detachedClone });
+
+  showAddBlendNodeDialog.value = false;
+  pendingBlendNodePosition.value = null;
 }
 
 // ── source view ───────────────────────────────────────────────────────────────

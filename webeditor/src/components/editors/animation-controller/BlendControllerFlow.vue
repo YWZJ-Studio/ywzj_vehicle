@@ -13,6 +13,7 @@
       @node-drag-stop="onNodeDragStop"
       @node-context-menu="onNodeContextMenu"
       @edge-context-menu="onEdgeContextMenu"
+      @pane-context-menu="onPaneContextMenu"
       @connect="onConnect"
     >
       <Background pattern-color="#aaa" :gap="16" />
@@ -89,12 +90,22 @@
     >
       <div class="context-menu-item danger" @click="onContextDeleteEdge">删除连线</div>
     </div>
+
+    <!-- 画布右键菜单 -->
+    <div
+      v-if="paneContextMenu.visible"
+      class="context-menu"
+      :style="{ left: paneContextMenu.x + 'px', top: paneContextMenu.y + 'px' }"
+      @mouseleave="paneContextMenu.visible = false"
+    >
+      <div class="context-menu-item" @click="onContextAddNode">添加节点</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch, reactive } from 'vue';
-import { VueFlow, Handle, Position } from '@vue-flow/core';
+import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import type { NodeMouseEvent, NodeDragEvent, EdgeMouseEvent, Connection } from '@vue-flow/core';
@@ -110,10 +121,14 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [sel: AnimationSelection | null];
   moveNode: [jsonPath: Array<string | number>, x: number, y: number];
+  moveOutputNode: [x: number, y: number];
   deleteNode: [jsonPath: Array<string | number>];
   deleteEdge: [jsonPath: Array<string | number>];
   connectEdge: [sourceJsonPath: Array<string | number>, targetJsonPath: Array<string | number>, targetHandle: string];
+  addNodeAtPosition: [x: number, y: number];
 }>();
+
+const { project } = useVueFlow();
 
 const graphRef = ref(buildGraph(props.root));
 watch(() => props.root, () => { graphRef.value = buildGraph(props.root); }, { deep: true });
@@ -148,10 +163,6 @@ const computedEdges = computed(() => {
 function buildGraph(root: AnimationControllerRoot) {
   const nodes: any[] = [];
   const edges: any[] = [];
-
-  if (!root.graph || typeof root.graph !== 'object') {
-    return { nodes, edges };
-  }
 
   let idCounter = 0;
   let maxY = 0;
@@ -222,21 +233,15 @@ function buildGraph(root: AnimationControllerRoot) {
     return id;
   };
 
-  const rootId = walk(root.graph, ['graph'], 0);
-
-  // Add virtual root node at right-center
-  nodes.push({
-    id: 'root',
-    type: 'root',
-    position: { x: maxX + 300, y: maxY / 2 },
-    data: { kind: 'root' },
-  });
-
-  edges.push({
-    id: `edge_${rootId}_root`,
-    source: rootId,
-    target: 'root',
-  });
+  // Process graph if it exists and has a type
+  if (root.graph && typeof root.graph === 'object' && root.graph.type) {
+    const rootId = walk(root.graph, ['graph'], 0);
+    edges.push({
+      id: `edge_${rootId}_root`,
+      source: rootId,
+      target: 'root',
+    });
+  }
 
   // Add detached nodes
   if (Array.isArray(root.detached)) {
@@ -244,6 +249,16 @@ function buildGraph(root: AnimationControllerRoot) {
       walk(detachedNode, ['detached', idx], 0);
     });
   }
+
+  // Always add virtual OUTPUT node
+  const outputX = Number(root.editor?.output_x ?? maxX + 300);
+  const outputY = Number(root.editor?.output_y ?? maxY / 2);
+  nodes.push({
+    id: 'root',
+    type: 'root',
+    position: { x: outputX, y: outputY },
+    data: { kind: 'root' },
+  });
 
   return { nodes, edges };
 }
@@ -279,21 +294,27 @@ function onNodeClick(e: NodeMouseEvent) {
 function onPaneClick() {
   contextMenu.visible = false;
   edgeContextMenu.visible = false;
+  paneContextMenu.visible = false;
   emit('select', null);
 }
 
 function onNodeDragStop(e: NodeDragEvent) {
-  if (e.node.data.kind === 'root') return;
+  if (e.node.data.kind === 'root') {
+    emit('moveOutputNode', e.node.position.x, e.node.position.y);
+    return;
+  }
   emit('moveNode', e.node.data.jsonPath, e.node.position.x, e.node.position.y);
 }
 
 const contextMenu = reactive({ visible: false, x: 0, y: 0, jsonPath: [] as Array<string | number> });
 const edgeContextMenu = reactive({ visible: false, x: 0, y: 0, jsonPath: [] as Array<string | number> });
+const paneContextMenu = reactive({ visible: false, x: 0, y: 0, flowX: 0, flowY: 0 });
 
 function onNodeContextMenu(e: NodeMouseEvent) {
   if (e.node.data.kind === 'root') return;
   e.event.preventDefault();
   edgeContextMenu.visible = false;
+  paneContextMenu.visible = false;
   contextMenu.jsonPath = e.node.data.jsonPath;
   contextMenu.x = (e.event as MouseEvent).clientX;
   contextMenu.y = (e.event as MouseEvent).clientY;
@@ -315,6 +336,7 @@ function onEdgeClick(e: EdgeMouseEvent) {
 function onEdgeContextMenu(e: EdgeMouseEvent) {
   e.event.preventDefault();
   contextMenu.visible = false;
+  paneContextMenu.visible = false;
   const sourceNode = nodes.value.find(n => n.id === e.edge.source);
   if (!sourceNode) return;
   edgeContextMenu.jsonPath = sourceNode.data.jsonPath;
@@ -333,10 +355,36 @@ function onContextDeleteEdge() {
   emit('deleteEdge', edgeContextMenu.jsonPath);
 }
 
+function onPaneContextMenu(e: MouseEvent) {
+  e.preventDefault();
+  contextMenu.visible = false;
+  edgeContextMenu.visible = false;
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+  const flowCoords = project({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  paneContextMenu.flowX = flowCoords.x;
+  paneContextMenu.flowY = flowCoords.y;
+  paneContextMenu.x = e.clientX;
+  paneContextMenu.y = e.clientY;
+  paneContextMenu.visible = true;
+}
+
+function onContextAddNode() {
+  paneContextMenu.visible = false;
+  emit('addNodeAtPosition', paneContextMenu.flowX, paneContextMenu.flowY);
+}
+
 function onConnect(connection: Connection) {
   const sourceNode = nodes.value.find(n => n.id === connection.source);
   const targetNode = nodes.value.find(n => n.id === connection.target);
-  if (!sourceNode || !targetNode || targetNode.data.kind === 'root') return;
+  if (!sourceNode || !targetNode) return;
+
+  // Allow connection to root node - use special marker
+  if (targetNode.data.kind === 'root') {
+    emit('connectEdge', sourceNode.data.jsonPath, ['__ROOT__'], 'graph');
+    return;
+  }
+
   if (!connection.targetHandle) return;
   emit('connectEdge', sourceNode.data.jsonPath, targetNode.data.jsonPath, connection.targetHandle);
 }
