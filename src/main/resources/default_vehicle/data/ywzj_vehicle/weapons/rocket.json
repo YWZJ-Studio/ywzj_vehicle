@@ -12,7 +12,7 @@
   "explosion": {
     "explode": true,
     "damage": 99,
-    "radius": 5,
+    "radius": 6,
     "destroy_block": true
   }
 }

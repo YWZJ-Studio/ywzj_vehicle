@@ -52,13 +52,13 @@ public class DamageSystem {
         if (hitPos != null) {
             Component message;
             if (scale >= 0.7) {
-                vehicle.playSound(AllSounds.VEHICLE_HIT_BIG.get(), 1, 1);
+                vehicle.playSound(AllSounds.VEHICLE_HIT_BIG.get(), 2, 1);
                 message = Component.translatable("message.vehicle.damage_system.critical");
             } else if (scale > 0.3) {
-                vehicle.playSound(AllSounds.VEHICLE_HIT_MED.get(), 1, 1);
+                vehicle.playSound(AllSounds.VEHICLE_HIT_MED.get(), 2, 1);
                 message = Component.translatable("message.vehicle.damage_system.hurt");
             } else {
-                vehicle.playSound(AllSounds.VEHICLE_HIT_SMALL.get(), 1, 1);
+                vehicle.playSound(AllSounds.VEHICLE_HIT_SMALL.get(), 2, 1);
                 message = Component.translatable("message.vehicle.damage_system.hit");
             }
             if (damageSource.getDirectEntity() instanceof Projectile projectile) {
@@ -77,7 +77,7 @@ public class DamageSystem {
                 }
             }
         } else {
-            vehicle.playSound(vehicle.getHurtSound(damageSource), 1, 1);
+            vehicle.playSound(vehicle.getHurtSound(damageSource), 2, 1);
         }
         YwzjVehicle.LOGGER.debug("{} damaged by {} with amount: {}", vehicle, damageSource, amount);
         vehicle.setHealth(vehicle.getHealth() - amount);

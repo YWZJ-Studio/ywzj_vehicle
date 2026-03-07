@@ -12,6 +12,9 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("bolts")
     public List<Bolt> bolts = null;
 
+    @SerializedName("ammo_capacity")
+    public int ammoCapacity = -1;
+
     @SerializedName("firing_mode")
     public WeaponUnitData.FiringMode firingMode = WeaponUnitData.FiringMode.RIPPLE;
 

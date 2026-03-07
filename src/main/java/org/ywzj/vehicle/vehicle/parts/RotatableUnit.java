@@ -234,9 +234,10 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group) {
         Quaternionf vehicleRotation = vehicle.rotYXZ();
+        offsetFromVehicle = offsetFromVehicle.subtract(vehicle.centerOffset);
         Vector3f rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset().toVector3f();
         Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts);
-        return vehicle.position().add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
+        return vehicle.position().add(vehicle.centerOffset).add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
     }
 
     public Vec3 worldPositionWithBaseRot(Vec3 offsetFromVehicle) {

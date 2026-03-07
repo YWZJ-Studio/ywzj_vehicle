@@ -297,6 +297,66 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
     }
 
     /**
+     * 计算 AABB 与 OBB 之间的最小平移向量 (MTV)
+     * 如果不碰撞，返回 (0, 0, 0)
+     * 如果碰撞，返回的向量方向为 [从 OBB 指向 AABB]，长度为重叠深度
+     */
+    public Vector3f calculateMTV(AABB aabb) {
+        Vector3f aabbCenter = aabb.getCenter().toVector3f();
+        Vector3f aabbExtents = new Vector3f((float) aabb.getXsize() / 2f, (float) aabb.getYsize() / 2f, (float) aabb.getZsize() / 2f);
+
+        Vector3f[] axesOBB = this.getAxes();
+        Vector3f[] axesAABB = { new Vector3f(1, 0, 0), new Vector3f(0, 1, 0), new Vector3f(0, 0, 1) };
+
+        float minOverlap = Float.MAX_VALUE;
+        Vector3f mtvAxis = new Vector3f();
+
+        // 15 条需要测试的轴
+        Vector3f[] testAxes = new Vector3f[15];
+        System.arraycopy(axesAABB, 0, testAxes, 0, 3);
+        System.arraycopy(axesOBB, 0, testAxes, 3, 3);
+
+        int count = 6;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                testAxes[count++] = new Vector3f(axesAABB[i]).cross(axesOBB[j]);
+            }
+        }
+
+        for (Vector3f axis : testAxes) {
+            if (axis.lengthSquared() < 1e-6f) continue; // 忽略平行产生的零向量
+            axis.normalize();
+
+            // 计算投影范围
+            float overlap = getOverlap(axis, aabbCenter, aabbExtents, this.center(), this.extents(), axesOBB);
+
+            if (overlap <= 0) return new Vector3f(0); // 发现分离轴，说明不碰撞
+
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                mtvAxis.set(axis);
+            }
+        }
+
+        // 确保 MTV 方向是从 OBB 指向 AABB (即推开的方向)
+        Vector3f direction = new Vector3f(aabbCenter).sub(this.center());
+        if (direction.dot(mtvAxis) < 0) {
+            mtvAxis.negate();
+        }
+
+        return mtvAxis.mul(minOverlap);
+    }
+
+    private float getOverlap(Vector3f axis, Vector3f c1, Vector3f e1, Vector3f c2, Vector3f e2, Vector3f[] axes2) {
+        // AABB 的投影半径
+        float r1 = Math.abs(axis.x) * e1.x + Math.abs(axis.y) * e1.y + Math.abs(axis.z) * e1.z;
+        // OBB 的投影半径
+        float r2 = Math.abs(axis.dot(axes2[0])) * e2.x + Math.abs(axis.dot(axes2[1])) * e2.y + Math.abs(axis.dot(axes2[2])) * e2.z;
+        float distance = Math.abs(new Vector3f(c1).sub(c2).dot(axis));
+        return (r1 + r2) - distance;
+    }
+
+    /**
      * 获取玩家看向的某个OBB
      */
 //    @Nullable

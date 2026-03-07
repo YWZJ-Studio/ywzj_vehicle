@@ -107,7 +107,7 @@ public class AllEntities {
                     .build("fake_player"));
 
     public static final RegistryObject<EntityType<Rope>> ROPE = ENTITIES.register("rope",
-            () -> EntityType.Builder.of(Rope::new, MobCategory.CREATURE).sized(1f, 1f)
+            () -> EntityType.Builder.of(Rope::new, MobCategory.MISC).sized(1f, 1f)
                     .clientTrackingRange(16)
                     .build("rope"));
 

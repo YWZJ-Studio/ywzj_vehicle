@@ -29,8 +29,10 @@ import static org.ywzj.vehicle.all.AllKeys.*;
 public class InputHandler {
 
     public static boolean freeCamera;
-    public static float xRotO;
-    public static float yRotO;
+    public static float playerXRotO;
+    public static float playerYRotO;
+    public static float controlXRotO;
+    public static float controlYRotO;
     private static long waitSwitchSeatTime;
 
     @SubscribeEvent
@@ -38,7 +40,7 @@ public class InputHandler {
         if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) {
             return;
         }
-        if (event.getAction() == GLFW.GLFW_PRESS){
+        if (event.getAction() == GLFW.GLFW_PRESS) {
             if (LocalVehiclePlayer.instance.onVehicle()) {
                 AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
                 WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
@@ -71,6 +73,13 @@ public class InputHandler {
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
                 }
+            }
+        } else if (event.getAction() == GLFW.GLFW_RELEASE) {
+            if (FREE_CAMERA.matches(event.getKey(), event.getScanCode())) {
+                LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
+                localVehiclePlayer.playerLerpXRot = playerXRotO;
+                localVehiclePlayer.playerLerpYRot = playerYRotO;
+                localVehiclePlayer.playerLerpSteps = 8;
             }
         }
     }
@@ -154,10 +163,10 @@ public class InputHandler {
                 controlUnit.functionalDown = FUNCTIONAL_DOWN.isDown();
                 controlUnit.functionalLeft = FUNCTIONAL_LEFT.isDown();
                 controlUnit.functionalRight = FUNCTIONAL_RIGHT.isDown();
-                if (freeCamera) {
-                    controlUnit.xRot = xRotO;
-                    controlUnit.yRot = yRotO;
-                } else if (vehicle instanceof RotaryWingVehicle
+                if (freeCamera || LocalVehiclePlayer.instance.playerLerpSteps > 0) {
+                    controlUnit.xRot = controlXRotO;
+                    controlUnit.yRot = controlYRotO;
+                } else if ((vehicle instanceof RotaryWingVehicle || vehicle instanceof FixedWingVehicle)
                         && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                     controlUnit.xRot = 0;
                     controlUnit.yRotKeep = true;
@@ -168,8 +177,10 @@ public class InputHandler {
                         controlUnit.xRot = player.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE;
                     }
                     controlUnit.yRot = player.getYRot();
-                    xRotO = controlUnit.xRot;
-                    yRotO = controlUnit.yRot;
+                    controlXRotO = controlUnit.xRot;
+                    controlYRotO = controlUnit.yRot;
+                    playerXRotO = player.getXRot();
+                    playerYRotO = player.getYRot();
                 }
                 vehicle.controlUnit.update(controlUnit);
                 sendControl(vehicle, controlUnit);

@@ -19,6 +19,9 @@ public class BaseVehicleWeaponData {
     @SerializedName("inaccuracy")
     private float inaccuracy = 0.5f;
 
+    @SerializedName("life")
+    private int life = 20 * 60;
+
     @SerializedName("damage")
     private float damage = 5.0f;
 
@@ -105,6 +108,14 @@ public class BaseVehicleWeaponData {
 
     public void setInaccuracy(float inaccuracy) {
         this.inaccuracy = inaccuracy;
+    }
+
+    public int getLife() {
+        return life;
+    }
+
+    public void setLife(int life) {
+        this.life = life;
     }
 
     public float getDamage() {

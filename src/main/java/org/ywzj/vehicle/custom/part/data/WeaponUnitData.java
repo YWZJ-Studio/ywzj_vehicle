@@ -18,6 +18,7 @@ import java.util.Map;
 public class WeaponUnitData extends RotatableUnitData {
 
     private List<Bolt> bolts;
+    private int ammoCapacity;
     private FiringMode firingMode;
     private boolean parentWeaponUnitAim;
     private Vec3 opticalSightOffset;
@@ -40,6 +41,7 @@ public class WeaponUnitData extends RotatableUnitData {
     public WeaponUnitData(WeaponUnitPojo pojo) {
         super(pojo);
         this.bolts = pojo.bolts;
+        this.ammoCapacity = pojo.ammoCapacity;
         this.firingMode = pojo.firingMode;
         this.parentWeaponUnitAim = pojo.parentWeaponUnitAim;
         this.opticalSightOffset = pojo.opticalSightOffset;
@@ -57,6 +59,10 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public List<Bolt> getBolts() {
         return bolts;
+    }
+
+    public int getAmmoCapacity() {
+        return ammoCapacity;
     }
 
     public FiringMode getFiringMode() {

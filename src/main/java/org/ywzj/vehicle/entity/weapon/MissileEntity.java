@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -28,7 +27,9 @@ import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
@@ -37,6 +38,7 @@ public class MissileEntity extends AmmoEntity {
 
     public float maxSpeed;
     public Entity targetEntity;
+    public Vec3 targetVec;
     public Vec3 targetPos;
     public int operatorId;
     public float maxG;
@@ -76,6 +78,14 @@ public class MissileEntity extends AmmoEntity {
             tickGuidance();
             tickMove();
             tickHit();
+            life -= 1;
+            if (life < 0 && !isRemoved()) {
+                if (explosion != null) {
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    vehicleExplosion.explode();
+                }
+                this.discard();
+            }
         }
     }
 
@@ -84,10 +94,14 @@ public class MissileEntity extends AmmoEntity {
             tickTrack();
             // 截射
             if (targetEntity != null) {
-                proportionalGuide(targetEntity);
+                proportionalGuide(targetEntity, null);
+            } else if (targetPos != null) {
+                proportionalGuide(null, targetPos);
             }
         } else if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
-            this.lookAt(EntityAnchorArgument.Anchor.EYES, targetPos);
+            if (targetPos != null) {
+                proportionalGuide(null, targetPos);
+            }
         } else if (guidance == VehicleMissileWeaponData.Guidance.SACLOS) {
             Vec2 rot = weaponUnit.worldRot();
             Vec3 start = weaponUnit.worldPivotPosition();
@@ -114,6 +128,11 @@ public class MissileEntity extends AmmoEntity {
     }
 
     private void tickMove() {
+        if (targetVec != null && targetPos != null && this.position().distanceTo(targetPos) < 5f) {
+            targetPos = VectorUtil.hitPosition(this, targetPos, targetPos.add(targetVec.scale(256)));
+        }
+        EntityUtil.keepChunkLoaded(this, position());
+        EntityUtil.keepChunkLoaded(this, position().add(getLookAngle().normalize().scale(16)));
         Vec3 velocity = this.getDeltaMovement();
         double dx = this.getX() + velocity.x;
         double dy = this.getY() + velocity.y;
@@ -227,11 +246,18 @@ public class MissileEntity extends AmmoEntity {
         }
     }
 
-    public void proportionalGuide(Entity target) {
+    public void proportionalGuide(Entity target, Vec3 pos) {
         Vec3 missilePos = this.position();
         Vec3 missileVel = this.getDeltaMovement();
-        Vec3 targetPos = target.getEyePosition();
-        Vec3 targetVel = target.getDeltaMovement();
+        Vec3 targetPos;
+        Vec3 targetVel;
+        if (target != null) {
+            targetPos = target.getEyePosition();
+            targetVel = target.getDeltaMovement();
+        } else {
+            targetPos = pos;
+            targetVel = Vec3.ZERO;
+        }
 
         Vec3 relPos = targetPos.subtract(missilePos);
         Vec3 relVel = targetVel.subtract(missileVel);
@@ -266,10 +292,10 @@ public class MissileEntity extends AmmoEntity {
         // 适配过载限制
         // 逐步解锁最大过载，再降低
         double accelNow;
-        if (this.tickCount < 20) {
-            accelNow = this.maxG * Math.pow((double) this.tickCount / 20, 2);
+        if (this.tickCount < 5) {
+            accelNow = this.maxG * Math.pow((double) this.tickCount / 5, 2);
         } else {
-            accelNow = Math.max(0, this.maxG * (1 - (double) (this.tickCount - 20) / 60));
+            accelNow = Math.max(0, this.maxG * (1 - (double) (this.tickCount - 5) / 100));
         }
         Vec3 vel = this.getDeltaMovement();
         double speed = vel.length();

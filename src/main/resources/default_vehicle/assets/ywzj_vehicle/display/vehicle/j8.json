@@ -12,7 +12,6 @@
     "engine_thrust": "ywzj_vehicle:jet_engine_thrust",
     "passby": "ywzj_vehicle:jet_passby"
   },
-  // 特效，替代骨骼
   "special_bone_effects": [
     {
       "bone": "enghy",
@@ -20,5 +19,6 @@
       "type": "muzzle_flash"
     }
   ],
+  "description": "歼击8型战斗机（歼-8或称J-8），是沈阳飞机工业集团研制生产的单座、双发、高空高速第三代战斗机，装备中国人民解放军空军。该机是中国空军在换装苏-27战斗机以前最先进的拦截机。\n\n授权自“龙之崛起”团队",
   "tab_index": 400
 }

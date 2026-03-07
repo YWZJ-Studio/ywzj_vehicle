@@ -23,6 +23,7 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 
+import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 
@@ -61,7 +62,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
                     guiGraphics.pose().pushPose();
                     guiGraphics.pose().translate(x, y, 0);
-                    float alpha = 0.4f;
+                    float alpha =  FREE_CAMERA.isDown() ? 0.25f : 0.5f;
                     int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
                     GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
                     guiGraphics.pose().popPose();

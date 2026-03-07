@@ -5,7 +5,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.client.render.util.Color;
@@ -21,27 +20,21 @@ public class FixedWingVehicleOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-        if (!(vehicle instanceof FixedWingVehicle rotaryWingVehicle)
-                || !LocalVehiclePlayer.instance.getPlayer().equals(rotaryWingVehicle.getDriver())) {
+        if (!(vehicle instanceof FixedWingVehicle fixedWingVehicle)
+                || !LocalVehiclePlayer.instance.getPlayer().equals(fixedWingVehicle.getDriver())) {
             return;
         }
         float centerX = (float) screenWidth / 2;
         float centerY = (float) screenHeight / 2;
         LocalVehiclePlayer.ViewType viewType = LocalVehiclePlayer.instance.viewType;
-        renderMainInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
-//        renderHeightInfo(guiGraphics, centerX, centerY, rotaryWingVehicle);
-        if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON || viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+        renderMainInfo(guiGraphics, centerX, centerY, fixedWingVehicle);
+        if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
             PoseStack pose = guiGraphics.pose();
             pose.pushPose();
             {
-                if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                    pose.translate(centerX, centerY, 0);
-                } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-                    pose.translate(centerX + 75, centerY + 55, 0);
-                    pose.scale(0.7f, 0.7f, 0.7f);
-                }
-//                renderSpeedInfo(guiGraphics, rotaryWingVehicle);
-//                renderRollInfo(guiGraphics, centerX, centerY, rotaryWingVehicle, viewType);
+                pose.translate(centerX + 75, centerY + 55, 0);
+                pose.scale(0.7f, 0.7f, 0.7f);
+                RotaryWingVehicleOverlay.renderRollInfo(guiGraphics, centerX, centerY, fixedWingVehicle, viewType);
             }
             pose.popPose();
         }
@@ -64,7 +57,7 @@ public class FixedWingVehicleOverlay implements IGuiOverlay {
         guiGraphics.drawString(font,
                 text,
                 leftX, leftY + 12, Color.GREEN);
-        int speed = (int) (new Vec3(fixedWingVehicle.getDeltaMovement().x, 0, fixedWingVehicle.getDeltaMovement().z).length() * 72); // 20 * 3.6 = 72
+        int speed = (int) (fixedWingVehicle.getDeltaMovement().length() * 72); // 20 * 3.6 = 72
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.speed", speed),
                 leftX, leftY + 24, Color.GREEN);

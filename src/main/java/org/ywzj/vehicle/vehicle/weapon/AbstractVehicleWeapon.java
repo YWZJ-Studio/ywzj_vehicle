@@ -205,7 +205,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public int getMaxCapacity() {
-        return this.getData().getMaxCapacity();
+        return weaponUnit.getAmmoCapacity() != -1 ? weaponUnit.getAmmoCapacity() : this.getData().getMaxCapacity();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -300,7 +300,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public void reload() {
-        int maxCap = this.getData().getMaxCapacity();
+        int maxCap = getMaxCapacity();
         if (vehicle.getItemStacks().stream().anyMatch(stack -> stack.getItem() == AllItems.AMMO_CREATIVE.get())) {
             remainAmmo = maxCap;
         } else {

@@ -1,0 +1,22 @@
+{
+  "type": "ywzj_vehicle:cannon",
+  "name": "GSh-23",
+  "caliber": 23,
+  "damage": 10,
+  "velocity": 32,
+  "inaccuracy": 0.15,
+  "recoil": 0.2,
+  "headshot_multiplier": 1.5,
+  "shoot_interval": 20,
+  "max_capacity": 120,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_auto_cannon"
+  },
+  "explosion": {
+    "explode": true,
+    "damage": 10,
+    "radius": 0.5,
+    "destroy_block": true
+  }
+}
