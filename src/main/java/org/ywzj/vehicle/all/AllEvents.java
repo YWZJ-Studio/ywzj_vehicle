@@ -189,8 +189,10 @@ public class AllEvents {
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void onVehicleFire(VehicleFireEvent.Post event) {
-            event.getWeapon().soundsAndParticles();
-            event.getWeapon().getWeaponUnit().onClientFire();
+            if (event.isClientSide()) {
+                event.getWeapon().onClientFire();
+                event.getWeapon().getWeaponUnit().onClientFire();
+            }
         }
 
         @SubscribeEvent

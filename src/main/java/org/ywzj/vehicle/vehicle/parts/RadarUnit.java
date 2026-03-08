@@ -69,14 +69,14 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                     yRotAdd = !yRotAdd;
                 }
             } else {
-                yAimRot = Mth.wrapDegrees(yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed));
-                if (yAimRot > yRotMax || yAimRot < yRotMin) {
+                if (yAimRot >= yRotMax || yAimRot <= yRotMin) {
                     yRotAdd = !yRotAdd;
                 }
-                xAimRot = Mth.wrapDegrees(xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed));
-                if (xAimRot > xRotMax || xAimRot < xRotMin) {
+                if (xAimRot >= xRotMax || xAimRot <= xRotMin) {
                     xRotAdd = !xRotAdd;
                 }
+                yAimRot = Mth.clamp(Mth.wrapDegrees(yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed)), yRotMin, yRotMax);
+                xAimRot = Mth.clamp(Mth.wrapDegrees(xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed)), xRotMin, xRotMax);
             }
         }
         super.tickRot();

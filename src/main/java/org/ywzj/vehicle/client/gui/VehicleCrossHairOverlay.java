@@ -84,7 +84,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                             if (weaponUnit.getAimLockEntity() == null && weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
                                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 15, aimCircleColor, 0.03f, 0, 0);
                             }
-                            // 导引头/雷达大圈
+                            // 导引头大圈
                             GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 64, aimCircleColor, 0.01f, 0, 0);
                         }
                     }

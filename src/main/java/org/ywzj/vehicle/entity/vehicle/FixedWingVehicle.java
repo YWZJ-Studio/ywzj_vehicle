@@ -327,26 +327,28 @@ public class FixedWingVehicle extends AbstractVehicle
             zRotInput = Math.signum(zRotInput) * Math.min(1, Math.abs(zRotInput));
         }
         // 鼠标瞄准
-        if (getDriver() != null) {
-            Vec3 aimVec = VectorUtil.rotToVec(controlUnit.xRot, controlUnit.yRotKeep ? getYRot() : controlUnit.yRot);
-            if (!(controlUnit.up || controlUnit.down)) {
-                double xDiff = aimVec.dot(upDirection);
-                xRotInput = (float) (Math.signum(-xDiff) * Math.min(1, Math.abs(xDiff) * xRotInputStep * 40));
-            }
-            if (!(controlUnit.leftYaw || controlUnit.rightYaw)) {
-                double yDiff = aimVec.dot(leftDirection);
-                yRotInput = (float) (Math.signum(yDiff) * Math.min(1, Math.abs(yDiff) * yRotInputStep * 40));
-            }
-            if (!(controlUnit.left || controlUnit.right)) {
-                double yDiff = aimVec.dot(leftDirection);
-                float zRot = getZRot();
-                if (Math.abs(yDiff) <= 0.05) {
-                    // 滚转自动回正
-                    zRotInput = (-Math.signum(zRot) * Math.min(1, Math.abs(zRot) / 128));
-                } else {
-                    // 滚转倾向目标位置
-                    zRotInput = (float) (Math.signum(-yDiff) * Math.min(1, Math.abs(yDiff) * zRotInputStep * 4));
-                }
+        if (getDriver() == null) {
+            controlUnit.xRot = 0;
+            controlUnit.yRot = getYRot();
+        }
+        Vec3 aimVec = VectorUtil.rotToVec(controlUnit.xRot, controlUnit.yRotKeep ? getYRot() : controlUnit.yRot);
+        if (!(controlUnit.up || controlUnit.down)) {
+            double xDiff = aimVec.dot(upDirection);
+            xRotInput = (float) (Math.signum(-xDiff) * Math.min(1, Math.abs(xDiff) * xRotInputStep * 40));
+        }
+        if (!(controlUnit.leftYaw || controlUnit.rightYaw)) {
+            double yDiff = aimVec.dot(leftDirection);
+            yRotInput = (float) (Math.signum(yDiff) * Math.min(1, Math.abs(yDiff) * yRotInputStep * 40));
+        }
+        if (!(controlUnit.left || controlUnit.right)) {
+            double yDiff = aimVec.dot(leftDirection);
+            float zRot = getZRot();
+            if (Math.abs(yDiff) <= 0.05) {
+                // 滚转自动回正
+                zRotInput = (-Math.signum(zRot) * Math.min(1, Math.abs(zRot) / 128));
+            } else {
+                // 滚转倾向目标位置
+                zRotInput = (float) (Math.signum(-yDiff) * Math.min(1, Math.abs(yDiff) * zRotInputStep * 4));
             }
         }
         double mass = physicsEngine.mass;

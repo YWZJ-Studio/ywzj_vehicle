@@ -70,10 +70,12 @@
 
   "ui.stabilizer_on": "STAB ON",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",
+  "ui.vehicle_rotary_wing.throttle_level": "THR:  ",
   "ui.vehicle_rotary_wing.collective_pitch": "COL:  %d",
   "ui.vehicle_rotary_wing.speed": "SPD:  %d",
   "ui.vehicle_rotary_wing.fuel": "FUEL: %s",
   "ui.vehicle_rotary_wing.altitude": "ALT: %d",
+  "ui.war_emergency_power": "WEP",
   "ui.out_of_launch_limits": "Out of launch limits",
   "ui.homing": "Homing",
   "ui.missile_incoming": "Missile Incoming",

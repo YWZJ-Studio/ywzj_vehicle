@@ -642,12 +642,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             radarUnit.setLockedEntity(aimLockEntity);
         }
         if (vehicle.level().isClientSide()) {
+            if (irTrackAlarmSound != null && aimLockEntity == null) {
+                irTrackAlarmSound.stop();
+                irTrackAlarmSound = null;
+            }
             // 红外锁定提示
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                if (irTrackAlarmSound != null && aimLockEntity == null) {
-                    irTrackAlarmSound.stop();
-                    irTrackAlarmSound = null;
-                }
                 if (irTrackAlarmSound == null && aimLockEntity != null) {
                     irTrackAlarmSound = new VehicleSound(AllSounds.IR_TRACK_ALARM.get(), 1f, 1f, 1f, true, 50, false, false, vehicle.getId());
                     irTrackAlarmSound.play();
@@ -755,6 +755,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void setCurrentWeaponIndex(int index) {
         this.currentWeaponIndex = index;
+        setAimLockEntity(null);
     }
 
     public int getCurrentWeaponIndex() {
