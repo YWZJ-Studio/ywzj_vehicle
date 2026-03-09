@@ -90,14 +90,6 @@ public enum ClientAssetsManager {
             }
         });
         weaponDisplayManager.apply(weaponDisplayManager.prepare(resourceManager, null), null, null);
-        weaponDisplayManager.getDisplayMap().values().forEach(weaponDisplay -> {
-            try {
-                Minecraft.getInstance().textureManager.register(weaponDisplay.getTexture(), new SimpleTexture(weaponDisplay.getTexture()));
-                Minecraft.getInstance().textureManager.register(weaponDisplay.getSlotTexture(), new SimpleTexture(weaponDisplay.getSlotTexture()));
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-        });
     }
 
     @UnmodifiableView

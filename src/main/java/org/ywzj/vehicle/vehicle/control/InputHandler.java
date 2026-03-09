@@ -75,11 +75,13 @@ public class InputHandler {
                 }
             }
         } else if (event.getAction() == GLFW.GLFW_RELEASE) {
-            if (FREE_CAMERA.matches(event.getKey(), event.getScanCode())) {
-                LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
-                localVehiclePlayer.playerLerpXRot = playerXRotO;
-                localVehiclePlayer.playerLerpYRot = playerYRotO;
-                localVehiclePlayer.playerLerpSteps = 8;
+            if (LocalVehiclePlayer.instance.onVehicle()) {
+                if (FREE_CAMERA.matches(event.getKey(), event.getScanCode())) {
+                    LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
+                    localVehiclePlayer.playerLerpXRot = playerXRotO;
+                    localVehiclePlayer.playerLerpYRot = playerYRotO;
+                    localVehiclePlayer.playerLerpSteps = 8;
+                }
             }
         }
     }
