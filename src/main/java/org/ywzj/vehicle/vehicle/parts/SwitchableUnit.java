@@ -9,16 +9,12 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 public class SwitchableUnit<T extends PartUnitData> extends PartUnit<T> {
 
-    private boolean on;
+    protected boolean on;
 
     public SwitchableUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
+        this.on = defaultOpen();
         this.getSyncData().define(SyncDataSerializers.BOOLEAN, this::setOn, this::isOn, false);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
     }
 
     public boolean onEntityInteract(Player player, InteractionHand hand) {

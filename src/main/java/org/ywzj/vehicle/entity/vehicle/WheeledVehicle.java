@@ -16,7 +16,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.context.wheeled.WheeledVehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -270,7 +270,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             if (turnVector.length() > 0.001f) {
                 float turnLength = (float) turnVector.length();
                 float k1 = (float) Math.max(0.01, 1 - Math.pow(motion / maxSpeedForward, 0.5));
-                float k2 = (float) (Math.cos(Math.min(Math.PI / 2, Math.toRadians(angle * 4))) * 0.9f + 0.1f);
+                float k2 = 0.1f / turnLength;
                 float k3 = handbrake ? (float) 0.01 : 1;
                 float k4 = k1 * k2 * k3;
                 if (k4 < 0.003) {

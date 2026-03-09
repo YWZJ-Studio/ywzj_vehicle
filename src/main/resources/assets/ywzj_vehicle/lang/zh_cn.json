@@ -70,10 +70,12 @@
 
   "ui.stabilizer_on": "稳定器开",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",
+  "ui.vehicle_rotary_wing.throttle_level": "节流阀: ",
   "ui.vehicle_rotary_wing.collective_pitch": "总距: %d",
   "ui.vehicle_rotary_wing.speed": "速度: %d",
   "ui.vehicle_rotary_wing.fuel": "燃油: %s",
   "ui.vehicle_rotary_wing.altitude": "高度: %d",
+  "ui.war_emergency_power": "加力",
   "ui.out_of_launch_limits": "超出射界",
   "ui.homing": "制导中",
   "ui.missile_incoming": "敌导弹",

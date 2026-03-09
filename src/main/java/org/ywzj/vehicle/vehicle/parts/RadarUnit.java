@@ -14,7 +14,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.custom.part.data.RadarUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
-import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,9 +38,8 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     @Override
     public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
         super.buildStructure(vehicleCubeGroupCopy);
-        if (!this.partCubeOBBs.isEmpty()) {
-            VehicleCubeOBB radarOBB = this.partCubeOBBs.get(0);
-            this.radarOffset = new Vec3(radarOBB.x / 16, radarOBB.y / 16, radarOBB.z / 16);
+        if (structureGroup != null) {
+            this.radarOffset = structureGroup.pivotOffset;
         }
     }
 
@@ -71,14 +69,14 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                     yRotAdd = !yRotAdd;
                 }
             } else {
-                yAimRot = Mth.wrapDegrees(yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed));
-                if (yAimRot > yRotMax || yAimRot < yRotMin) {
+                if (yAimRot >= yRotMax || yAimRot <= yRotMin) {
                     yRotAdd = !yRotAdd;
                 }
-                xAimRot = Mth.wrapDegrees(xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed));
-                if (xAimRot > xRotMax || xAimRot < xRotMin) {
+                if (xAimRot >= xRotMax || xAimRot <= xRotMin) {
                     xRotAdd = !xRotAdd;
                 }
+                yAimRot = Mth.clamp(Mth.wrapDegrees(yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed)), yRotMin, yRotMax);
+                xAimRot = Mth.clamp(Mth.wrapDegrees(xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed)), xRotMin, xRotMax);
             }
         }
         super.tickRot();

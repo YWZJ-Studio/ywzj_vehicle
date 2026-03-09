@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
-import org.ywzj.vehicle.client.render.animation.context.tracked.TrackedVehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 
 import javax.annotation.Nullable;

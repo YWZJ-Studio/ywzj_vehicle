@@ -68,7 +68,7 @@ public final class GetJarResources {
         return null;
     }
 
-    private static void copyFolder(URI sourceURI, Path targetPath) throws IOException {
+    public static void copyFolder(URI sourceURI, Path targetPath) throws IOException {
         if (Files.isDirectory(targetPath)) {
             deleteFiles(targetPath);
         }
@@ -92,7 +92,7 @@ public final class GetJarResources {
         }
     }
 
-    private static void deleteFiles(Path targetPath) throws IOException {
+    public static void deleteFiles(Path targetPath) throws IOException {
         Files.walkFileTree(targetPath, new SimpleFileVisitor<>() {
             // 先去遍历删除文件
             @Override

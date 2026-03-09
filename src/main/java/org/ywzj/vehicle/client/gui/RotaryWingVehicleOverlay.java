@@ -153,7 +153,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
     /**
      * 滚转信息
      */
-    public static void renderRollInfo(GuiGraphics guiGraphics, float centerX, float centerY, RotaryWingVehicle rotaryWingVehicle, LocalVehiclePlayer.ViewType viewType) {
+    public static void renderRollInfo(GuiGraphics guiGraphics, float centerX, float centerY, AbstractVehicle vehicle, LocalVehiclePlayer.ViewType viewType) {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         {
@@ -164,7 +164,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 guiGraphics.fill(3, 0, 7, 1, 0xFF00FF00);
                 guiGraphics.fill(8, 0, 12, 1, 0xFF00FF00);
                 guiGraphics.fill(13, 0, 17, 1, 0xFF00FF00);
-                pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(rotaryWingVehicle.getZRot())));
+                pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(vehicle.getZRot())));
                 pose.scale(1f, 0.6f, 1f);
                 guiGraphics.fill(-11, 0, -2, 1, 0xFF00FF00);
                 guiGraphics.fill(-3, 0, -2, 3, 0xFF00FF00);
@@ -186,7 +186,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                     RenderSystem.disableBlend();
                 }
                 pose.popPose();
-                double xRot = -rotaryWingVehicle.getXRot();
+                double xRot = -vehicle.getXRot();
                 int range = 50;
                 float interval = 5;
                 float gap = range / interval;
@@ -195,7 +195,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 int rot = (int) (Math.floor(value / interval) * interval);
                 double mod = ((xRot % interval) + interval) % interval;
                 pose.translate(0, mod / interval * gap, 0);
-                pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
+                pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(vehicle.getZRot())));
                 guiGraphics.enableScissor(0, (int) (centerY + 21), guiGraphics.guiWidth(), (int) (centerY + 89));
                 while (baseY <= range) {
                     guiGraphics.fill(-17, baseY, -13, baseY + 1, 0xFF00FF00);

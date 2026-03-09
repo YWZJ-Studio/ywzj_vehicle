@@ -135,7 +135,7 @@ public class PhysicsEngine {
                     BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                     if (blockState.isSolid()) {
                         if (!isHalfBlock(touchPoint) || testPos.y < testBlockPos.getY() + 0.55) {
-                            velocity = velocity.add(0, 0.001f, 0);
+                            velocity = new Vec3(velocity.x, Math.min(0.5f, velocity.y + 0.001f), velocity.z);
                         }
                     }
                 }
@@ -180,9 +180,6 @@ public class PhysicsEngine {
         if (!touchPoints.isEmpty()) {
             // 接触摩擦力
             velocity = velocity.normalize().scale(Math.max(0, velocity.length() - friction / mass));
-        } else {
-            // 空气阻力
-            velocity = velocity.normalize().scale(velocity.length() - velocity.length() * friction / mass);
         }
         this.velocity = velocity.toVector3f();
         return velocity;
@@ -196,7 +193,7 @@ public class PhysicsEngine {
         try {
             // 加速度使得重心偏移
             Vector3f a = new Vector3f(velocity).sub(this.velocityO);
-            gravityCenter.add(a.negate().mul((float) (physicsCube.height * 8)));
+            gravityCenter.add(a.mul((float) (physicsCube.height * 8)));
 
             // 升力影响
             if (force.y >= gravityA * mass) {

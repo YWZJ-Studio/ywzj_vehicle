@@ -17,6 +17,7 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     private final Integer fadeTicks;
     private final Integer entityId;
     private Entity entity;
+    private final Vec3 offset;
     private final double scale;
     private boolean isPlaying;
     private boolean isFadeOut;
@@ -24,9 +25,10 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
     private boolean fadeOut;
     private Integer fadeInTick = 0;
 
-    public VehicleSound(SoundEvent event, float volume, float distance, float pitch, boolean loop, int fadeTicks, boolean fadeIn, boolean fadeOut, int entityId) {
+    public VehicleSound(SoundEvent event, Vec3 offset, float volume, float distance, float pitch, boolean loop, int fadeTicks, boolean fadeIn, boolean fadeOut, int entityId) {
         super(event, SoundSource.PLAYERS, volume, pitch, SoundInstance.createUnseededRandom(), 0, 0, 0);
         this.entityId = entityId;
+        this.offset = offset;
         updateRelativePos();
         this.volume = fadeIn ? 0.0001f : volume;
         this.fadeTicks = fadeTicks;
@@ -36,6 +38,10 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         this.looping = loop;
         this.isPlaying = true;
         this.isFadeOut = false;
+    }
+
+    public VehicleSound(SoundEvent event, float volume, float distance, float pitch, boolean loop, int fadeTicks, boolean fadeIn, boolean fadeOut, int entityId) {
+        this(event, Vec3.ZERO, volume, distance, pitch, loop, fadeTicks, fadeIn, fadeOut, entityId);
     }
 
     public void play() {
@@ -94,15 +100,17 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         }
         Vec3 simulatedPos;
         Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        simulatedPos = calRelativePos(entity.position(), cameraPos, entity.equals(cameraEntity.getVehicle()));
-        simulatedPos = simulatedPos.add(entity.getDeltaMovement());
+        simulatedPos = calRelativePos(entity.position().add(offset), cameraPos, entity.equals(cameraEntity.getVehicle()));
         this.x = simulatedPos.x;
         this.y = simulatedPos.y;
         this.z = simulatedPos.z;
     }
 
     public Vec3 calRelativePos(Vec3 soundPos, Vec3 targetPos, boolean cameraEntityOnVehicle) {
-        return targetPos.add(soundPos.subtract(targetPos).scale(cameraEntityOnVehicle ? 0.5 : scale));
+        if (cameraEntityOnVehicle) {
+            soundPos = targetPos.add(soundPos.subtract(targetPos).normalize().scale(1 / scale * 8));
+        }
+        return targetPos.add(soundPos.subtract(targetPos).scale(scale));
     }
 
 }

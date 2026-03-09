@@ -17,7 +17,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -30,7 +29,6 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -67,6 +65,7 @@ import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.DamageSystem;
@@ -109,6 +108,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected boolean viewZoomed;
     public EnergyInfo energyInfo;
     public DefenseStats defenseStats;
+    public Vec3 centerOffset;
     public float curbWeight;
     private float xRot;
     public float xRotO;
@@ -297,6 +297,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
         this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
         this.defenseStats = vehicleData.getDefenseStats();
+        this.centerOffset = vehicleData.getCenterOffset();
         vehicleData.inject(this);
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
         this.vehicleCubeOBBs = vehicleStruct.obbs();
@@ -356,7 +357,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     @Override
     public void tick() {
         super.tick();
-        tickRot();
+        tickPosAndRot();
         if (!this.isRemoved()) {
             aiStep();
         }
@@ -382,8 +383,8 @@ public abstract class AbstractVehicle extends ContainerCraft
                 this.setDeltaMovement(Vec3.ZERO);
             }
             if (uav) {
-                keepChunkLoaded(position());
-                keepChunkLoaded(position().add(getLookAngle().normalize().scale(16)));
+                EntityUtil.keepChunkLoaded(this, position());
+                EntityUtil.keepChunkLoaded(this, position().add(getLookAngle().normalize().scale(16)));
             }
         }
         afterVehicleRot();
@@ -596,7 +597,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     protected abstract Vec3 tickMove();
 
-    protected void tickRot() {
+    protected void tickPosAndRot() {
         if (!level().isClientSide()) {
             if (this.xRotO == this.xRot && this.yRotO == this.yRot && !finalRotUpdate) {
                 triggerRotUpdate();
@@ -1130,8 +1131,17 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (reverse) {
             axisRollMat = axisRollMat.transpose();
         }
-        Vector3f d = axisRollMat.transform(new Vector3f((float) worldDirection.x(), (float) worldDirection.y(), (float) worldDirection.z()));
-        return new Vec3(d.x, d.y, d.z);
+        Vector3f relativePos = new Vector3f(
+                (float) (worldDirection.x() - centerOffset.x),
+                (float) (worldDirection.y() - centerOffset.y),
+                (float) (worldDirection.z() - centerOffset.z)
+        );
+        axisRollMat.transform(relativePos);
+        return new Vec3(
+                relativePos.x + centerOffset.x,
+                relativePos.y + centerOffset.y,
+                relativePos.z + centerOffset.z
+        );
     }
 
     public abstract void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator);
@@ -1262,60 +1272,28 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (pEntity.noPhysics || this.noPhysics) {
             return;
         }
-        Vec3 feetPosition = pEntity.position().subtract(new Vec3(0, 0.1f, 0));
-        Vec3 midPosition = feetPosition.add(0, pEntity.getEyeHeight() / 2, 0);
-        Vec3 eyePosition = feetPosition.add(0, pEntity.getEyeHeight(), 0);
+        AABB entityAABB = pEntity.getBoundingBox();
+        Vec3 movement = pEntity.getDeltaMovement();
         for (OBB obb : getOBBs()) {
-            if (obb.contains(feetPosition)) {
-                double onVehicleGravity = Math.max(0, pEntity.getDeltaMovement().y);
-                if (onVehicleGravity == 0) {
-                    pEntity.setOnGround(true);
-                }
-                double d = obb.embeddingDepth(feetPosition);
-                pEntity.setDeltaMovement(this.getDeltaMovement().add(0, onVehicleGravity + d <= 0.2f ? 0 : d, 0));
-                pEntity.fallDistance = 0;
+            if (!OBB.isColliding(obb, entityAABB)) {
                 continue;
             }
-            if (obb.contains(eyePosition)) {
-                double dx = pEntity.getX() - obb.center().x;
-                double dz = pEntity.getZ() - obb.center().z;
-                double dMax = Mth.absMax(dx, dz);
-                if (dMax >= (double) 0.01F) {
-                    dMax = Math.sqrt(dMax);
-                    dx /= dMax;
-                    dz /= dMax;
-                    double d = 1.0D / dMax;
-                    if (d > 1.0D) {
-                        d = 1.0D;
+            Vec3 mtv = new Vec3(obb.calculateMTV(entityAABB));
+            if (mtv.lengthSqr() > 0) {
+                if (Math.abs(mtv.y) > Math.abs(mtv.x) && Math.abs(mtv.y) > Math.abs(mtv.z)) {
+                    if (mtv.y > 0) {
+                        pEntity.setOnGround(true);
+                        pEntity.fallDistance = 0;
                     }
-                    dx *= d;
-                    dz *= d;
-                    dx *= 0.05F;
-                    dz *= 0.05F;
-                    if (pEntity.isPushable()) {
-                        pEntity.push(dx, 0.0D, dz);
-                    }
-                    continue;
+                    pEntity.setDeltaMovement(movement.x, this.getDeltaMovement().y, movement.z);
                 }
-            }
-            AABB aabb = pEntity.getBoundingBox();
-            if (OBB.isColliding(obb, aabb)) {
-                int face = obb.embeddingFace(midPosition);
-                Vector3f[] axes = obb.getAxes();
-                Vector3f support = axes[Math.abs(face) - 1];
-                if (face < 0) {
-                    support.negate();
-                }
-                if (pEntity.isPushable()) {
-                    float force = 0.1f;
-                    if (this.getDeltaMovement().length() > 0.01 && Math.abs(face) != 2) {
-                        force = 0.2f;
-                    }
-                    Vec3 move = new Vec3(support).scale(force);
-                    move = new Vec3(move.x, Math.max(0, move.y), move.z);
-                    pEntity.setPos(pEntity.position().add(move));
-                    this.hasImpulse = true;
-                }
+                mtv = new Vec3(Math.abs(mtv.x) < 0.001 ? this.getDeltaMovement().x : mtv.x,
+                        Math.abs(mtv.y) < 0.001 ? this.getDeltaMovement().y : mtv.y,
+                        Math.abs(mtv.z) < 0.001 ? this.getDeltaMovement().z : mtv.z);
+                Vec3 toPos = new Vec3(pEntity.getX() + mtv.x,
+                        pEntity.getY() + mtv.y,
+                        pEntity.getZ() + mtv.z);
+                pEntity.setPos(toPos);
             }
         }
     }
@@ -1339,11 +1317,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
-    public void keepChunkLoaded(Vec3 position) {
-        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
-        ((ServerLevel) this.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, this.getId());
-    }
-
     public void triggerRotUpdate() {
         ClientboundMoveEntityPacket.Rot packet = new ClientboundMoveEntityPacket.Rot(this.getId(), (byte) 0, (byte) 0, this.onGround());
         ((ServerLevel) this.level()).getChunkSource().broadcast(this, packet);
@@ -1362,13 +1335,13 @@ public abstract class AbstractVehicle extends ContainerCraft
         double dx = v.x;
         double dy = v.y;
         double dz = v.z;
-        if (Math.abs(v.x) < 0.003D) {
+        if (Math.abs(v.x) < 0.001D) {
             dx = 0.0D;
         }
-        if (Math.abs(v.y) < 0.003D) {
+        if (Math.abs(v.y) < 0.001D) {
             dy = 0.0D;
         }
-        if (Math.abs(v.z) < 0.003D) {
+        if (Math.abs(v.z) < 0.001D) {
             dz = 0.0D;
         }
         this.setDeltaMovement(dx, dy, dz);

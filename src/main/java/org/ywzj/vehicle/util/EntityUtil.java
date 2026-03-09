@@ -3,8 +3,11 @@ package org.ywzj.vehicle.util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -23,6 +26,11 @@ import java.util.function.Predicate;
 public class EntityUtil {
 
     private static final Predicate<Entity> PROJECTILE_TARGETS = input -> input != null && input.isPickable() && !input.isSpectator();
+
+    public static void keepChunkLoaded(Entity entity, Vec3 position) {
+        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
+        ((ServerLevel) entity.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, entity.getId());
+    }
 
     @Nullable
     public static BulletHitResult findEntityOnPath(Projectile bulletEntity, Vec3 startVec, Vec3 endVec) {

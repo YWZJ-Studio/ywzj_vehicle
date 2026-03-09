@@ -89,6 +89,7 @@ public enum ClientAssetsManager {
                 exception.printStackTrace();
             }
         });
+        weaponDisplayManager.apply(weaponDisplayManager.prepare(resourceManager, null), null, null);
     }
 
     @UnmodifiableView

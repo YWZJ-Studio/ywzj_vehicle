@@ -34,6 +34,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
@@ -45,16 +47,21 @@ public enum VehiclePackLoader implements RepositorySource {
     private static final Marker MARKER = MarkerManager.getMarker("VehiclePackFinder");
     public PackType packType;
     private static final Path VEHICLE_PACKS_PATH = FMLPaths.GAMEDIR.get().resolve("limitless_vehicle");
+    private static final Path VEHICLE_PACKS_BACKUP_PATH = FMLPaths.GAMEDIR.get().resolve("limitless_vehicle_backup");
     private static final String DEFAULT_VEHICLE_PACK_PATH = "default_vehicle";
     private List<VehiclePack> vehiclePacks;
     static {
-        File folder = VEHICLE_PACKS_PATH.toFile();
-        if (!folder.isDirectory()) {
-            try {
+        try {
+            File folder = VEHICLE_PACKS_PATH.toFile();
+            if (!folder.isDirectory()) {
                 Files.createDirectories(folder.toPath());
-            } catch (Exception e) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Failed to init vehicle resource directory...", e);
             }
+            folder = VEHICLE_PACKS_BACKUP_PATH.toFile();
+            if (!folder.isDirectory()) {
+                Files.createDirectories(folder.toPath());
+            }
+        } catch (Exception e) {
+            YwzjVehicle.LOGGER.warn(MARKER, "Failed to init vehicle resource directory...", e);
         }
     }
 
@@ -66,14 +73,38 @@ public enum VehiclePackLoader implements RepositorySource {
     }
 
     public void scanVehiclePacks() {
-        Path defaultVehiclePackPath = Path.of(VEHICLE_PACKS_PATH + "/" + DEFAULT_VEHICLE_PACK_PATH);
-        if (!Files.isDirectory(defaultVehiclePackPath)) {
-            // 默认载具包
-            GetJarResources.copyModDirectory("/" + DEFAULT_VEHICLE_PACK_PATH, defaultVehiclePackPath);
-        }
+        checkDefaultVehiclePack();
         YwzjVehicle.LOGGER.info(MARKER, "Start scanning for vehicle packs in {}", VEHICLE_PACKS_PATH);
         vehiclePacks = scanVehiclePacks(VEHICLE_PACKS_PATH);
         YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s)", vehiclePacks.size());
+    }
+
+    private void checkDefaultVehiclePack() {
+        Path defaultVehiclePackPath = Path.of(VEHICLE_PACKS_PATH + "/" + DEFAULT_VEHICLE_PACK_PATH);
+        if (Files.isDirectory(defaultVehiclePackPath)) {
+            try (InputStream streamExist = Files.newInputStream(defaultVehiclePackPath.resolve("vehicle_pack.meta.json"))) {
+                PackMeta packMetaExist = GsonUtil.GSON.fromJson(new InputStreamReader(streamExist, StandardCharsets.UTF_8), PackMeta.class);
+                if (packMetaExist != null) {
+                    String versionExist = packMetaExist.getVersion();
+                    try (InputStream streamJar = GetJarResources.readModFile("/" + DEFAULT_VEHICLE_PACK_PATH + "/vehicle_pack.meta.json")) {
+                        PackMeta packMetaJar = GsonUtil.GSON.fromJson(new InputStreamReader(streamJar, StandardCharsets.UTF_8), PackMeta.class);
+                        if (packMetaJar != null) {
+                            String versionJar = packMetaJar.getVersion();
+                            if (versionExist.compareTo(versionJar) >= 0) {
+                                return;
+                            }
+                        }
+                    }
+                }
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                String timestamp = LocalDateTime.now().format(formatter);
+                GetJarResources.copyFolder(defaultVehiclePackPath.toUri(), VEHICLE_PACKS_BACKUP_PATH.resolve(DEFAULT_VEHICLE_PACK_PATH + "_" + timestamp));
+                GetJarResources.deleteFiles(defaultVehiclePackPath);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+        }
+        GetJarResources.copyModDirectory("/" + DEFAULT_VEHICLE_PACK_PATH, defaultVehiclePackPath);
     }
 
     private List<Pack> vehiclePacksAsResource() {

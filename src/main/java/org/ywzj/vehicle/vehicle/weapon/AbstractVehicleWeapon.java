@@ -19,6 +19,7 @@ import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
+import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
@@ -106,6 +107,15 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
 
     protected void setReloadTime(int reloadTime) {
         this.reloadTime = reloadTime;
+        if (reloadTime == 0) {
+            if (getReloadSound() != null) {
+                Vec3 soundPosition = getWeaponUnit().worldPivotPosition();
+                VehicleSound reloadSound = new VehicleSound(getReloadSound(), soundPosition.subtract(vehicle.position()),
+                        1f, 2f, 1f,
+                        false, 0, false, false, vehicle.getId());
+                reloadSound.play();
+            }
+        }
     }
 
     public boolean isCoolingDown() {
@@ -145,10 +155,13 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void soundsAndParticles() {
+    public void onClientFire() {
         Level level = vehicle.level();
+        Vec3 soundPosition = getWeaponUnit().worldPivotPosition();
         if (getFireSound() != null) {
-            level.playSound(LocalVehiclePlayer.instance.getPlayer(), vehicle, getFireSound(), SoundSource.PLAYERS, 4f, 1f);
+            level.playSound(LocalVehiclePlayer.instance.getPlayer(), soundPosition.x, soundPosition.y, soundPosition.z,
+                    getFireSound(), SoundSource.PLAYERS,
+                    4f, 1f);
             if (getShellSound() != null) {
                 long interval;
                 if (data.getMaxCapacity() == 1) {
@@ -161,7 +174,12 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                     try {
                         Thread.sleep(finalInterval);
                     } catch (Exception ignore) {}
-                    Minecraft.getInstance().submit(() -> level.playSound(LocalVehiclePlayer.instance.getPlayer(), vehicle, getShellSound(), SoundSource.PLAYERS, 4f, 1f));
+                    Minecraft.getInstance().submit(() -> {
+                        VehicleSound shellSound = new VehicleSound(getShellSound(), soundPosition.subtract(vehicle.position()),
+                                1f, 2f, 1f,
+                                false, 0, false, false, vehicle.getId());
+                        shellSound.play();
+                    });
                 });
             }
         }
@@ -205,7 +223,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public int getMaxCapacity() {
-        return this.getData().getMaxCapacity();
+        return weaponUnit.getAmmoCapacity() != -1 ? weaponUnit.getAmmoCapacity() : this.getData().getMaxCapacity();
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -300,23 +318,21 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public void reload() {
-        int maxCap = this.getData().getMaxCapacity();
+        int maxCap = getMaxCapacity();
         if (vehicle.getItemStacks().stream().anyMatch(stack -> stack.getItem() == AllItems.AMMO_CREATIVE.get())) {
             remainAmmo = maxCap;
         } else {
             for (var item : vehicle.getItemStacks()) {
                 int need = maxCap - remainAmmo;
-                if (need <= 0) break;
-
+                if (need <= 0) {
+                    break;
+                }
                 if (this.isAmmoForWeapon(item)) {
                     int toTake = Math.min(need, item.getCount());
                     item.shrink(toTake);
                     remainAmmo += toTake;
                 }
             }
-        }
-        if (getReloadSound() != null) {
-            vehicle.level().playSound(null, vehicle, getReloadSound(), SoundSource.PLAYERS, 2f, 1f);
         }
     }
 

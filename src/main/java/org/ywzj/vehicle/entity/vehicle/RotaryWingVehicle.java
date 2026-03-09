@@ -24,7 +24,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.render.animation.context.rotarywing.RotaryWingVehicleContext;
+import org.ywzj.vehicle.client.render.animation.context.RotaryWingVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.entity.misc.Rope;
@@ -62,7 +62,6 @@ public class RotaryWingVehicle extends AbstractVehicle
     public long lastRenderTime;
     public String landingGearPartId;
     public LandingGearUnit landingGear;
-    public boolean lastLandingGearState = false;
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
@@ -103,22 +102,22 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (compound.contains("CollectivePitch")) {
             entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getFloat("CollectivePitch"), 0, 100));
         }
-        if (this.landingGear != null) {
-            onLandingGearUpdate(this.landingGear, isLandingGearDown());
+        if (landingGear != null) {
+            landingGear.setOn(isLandingGearUp());
         }
     }
 
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
-        buffer.writeBoolean(isLandingGearDown());
+        buffer.writeBoolean(isLandingGearUp());
     }
 
     @Override
     public void readSpawnData(FriendlyByteBuf buffer) {
         super.readSpawnData(buffer);
-        if (this.landingGear != null) {
-            onLandingGearUpdate(this.landingGear, isLandingGearDown());
+        if (landingGear != null) {
+            landingGear.setOn(isLandingGearUp());
         }
     }
 
@@ -127,8 +126,8 @@ public class RotaryWingVehicle extends AbstractVehicle
         super.initData();
         PartUnit<?> landingGearUnit = partUnitMap.get(this.landingGearPartId);
         if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
-            this.landingGear = switchableUnit;
-            this.landingGear.setOnStateChange(this::onLandingGearUpdate);
+            landingGear = switchableUnit;
+            landingGear.setOn(isLandingGearUp());
         }
     }
 
@@ -138,22 +137,6 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (!level().isClientSide() && fastRoping) {
             tickFastRoping();
         }
-    }
-
-    public void onLandingGearUpdate(LandingGearUnit part, boolean newState) {
-        if (newState != lastLandingGearState) {
-            double maxHeight = part.getMaxHeight();
-            if (newState) {
-                mainCubeOBB.height += maxHeight;
-                mainCubeOBB.y -= maxHeight;
-            } else {
-                mainCubeOBB.height -= maxHeight;
-                mainCubeOBB.y += maxHeight;
-            }
-            mainCubeOBB.rebuild();
-        }
-
-        this.lastLandingGearState = newState;
     }
 
     @Nullable
@@ -218,8 +201,7 @@ public class RotaryWingVehicle extends AbstractVehicle
             if (landingGearUnit == null) {
                 player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
             } else if (hasPower()) {
-                boolean landingGearDown = !isLandingGearDown();
-                landingGearUnit.setOn(landingGearDown);
+                landingGearUnit.setOn(!isLandingGearUp());
             }
         }
         if (message.toggleHoverMode) {
@@ -320,6 +302,9 @@ public class RotaryWingVehicle extends AbstractVehicle
         double dVH = Math.sqrt(Math.pow(airSpeed.length(), 2) - Math.pow(dVV, 2));
         force.add(vP.scale(dVH * scaleAir * 0.005f));
         airSpeed = airSpeed.add(force);
+        double al = airSpeed.length();
+        // 空气阻力
+        airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.friction / physicsEngine.mass);
         if (airSpeed.length() >= maxAirSpeed) {
             airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }
@@ -480,7 +465,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         return entityData.get(COLLECTIVE_PITCH);
     }
 
-    public boolean isLandingGearDown() {
+    public boolean isLandingGearUp() {
         var landingGearUnit = this.getLandingGearUnit();
         return landingGearUnit != null && landingGearUnit.isOn();
     }

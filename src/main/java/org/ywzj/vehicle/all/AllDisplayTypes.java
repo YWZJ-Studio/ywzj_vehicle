@@ -57,6 +57,15 @@ public class AllDisplayTypes {
             AnimationContextFactory.rotaryWingVehicle()
     );
 
+    public static final RegistryObject<VehicleDisplayType<FixedWingVehicleDisplay>> FIXED_WING_VEHICLE = register(
+            "fixed_wing_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                return new FixedWingVehicleDisplay(pojo);
+            },
+            AnimationContextFactory.fixedWingVehicle()
+    );
+
     private static <D extends BaseDisplay> RegistryObject<VehicleDisplayType<D>> register(
             String name,
             VehicleDisplayType.DataSerializer<D> dataSerializer,

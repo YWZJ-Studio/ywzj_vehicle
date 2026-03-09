@@ -44,7 +44,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         pPoseStack.pushPose();
         {
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-            Vec3 root = new Vec3(0, 0, 0);
+            Vec3 root = vehicle.centerOffset;
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-vehicle.getViewYRot(pPartialTick)), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(vehicle.getViewXRot(pPartialTick)), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.ZP.rotationDegrees(vehicle.getViewZRot(pPartialTick)), (float) root.x, (float) root.y, (float) root.z);

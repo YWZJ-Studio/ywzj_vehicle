@@ -1,0 +1,16 @@
+{
+  "type": "ywzj_vehicle:vehicle_printing",
+  "materials": [
+    {
+      "tag": "forge:ingots/iron",
+      "count": 64
+    }
+  ],
+  "result": {
+    "item": "ywzj_vehicle:vehicle_spawn_item",
+    "nbt": {
+      "YwzjVehicleId": "ywzj_vehicle:j8"
+    }
+  },
+  "printingTime": 1200
+}

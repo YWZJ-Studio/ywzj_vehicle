@@ -72,6 +72,7 @@ public class AnimationController<T extends BaseAnimationContext> {
             String smName = entry.getKey();
             CompiledStateMachine<T> compiledSM = entry.getValue();
             AnimationStateMachine<T> instance = compiledSM.createInstance(context, timeSupplier);
+            compiledSM.entryState().onEnter(context, compiledSM.entryState());
             map.put(smName, instance);
         }
 

@@ -47,8 +47,8 @@ public class AllFluids {
 
                                 // 使用原版水的材质路径
                                 private static final ResourceLocation
-                                        STILL = new ResourceLocation("block/water_still"),
-                                        FLOW = new ResourceLocation("block/water_flow");
+                                        STILL = YwzjVehicle.resourceLocation("block/water_still"),
+                                        FLOW = YwzjVehicle.resourceLocation("block/water_flow");
 
                                 @Override
                                 public ResourceLocation getStillTexture() { return STILL; }

@@ -2,6 +2,7 @@ package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
@@ -10,6 +11,7 @@ import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -58,11 +60,24 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data.getGuidance(), weaponUnit, data.getWeaponId());
             if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
                 missileEntity.targetEntity = weaponUnit.getAimLockEntity();
+            } else if (data.getGuidance() == VehicleMissileWeaponData.Guidance.PRESET
+                    || data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
+                List<Vec3> positions = weaponUnit.aimContexts().stream().map(context -> context.position).toList();
+                double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+                double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+                double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+                AimContext currentAimContext = weaponUnit.aimContext();
+                Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
+                Vec3 start = new Vec3(x, y, z);
+                Vec3 end = start.add(targetVec.normalize().scale(256));
+                missileEntity.targetPos = VectorUtil.hitPosition(vehicle, start, end);
+                missileEntity.targetVec = targetVec;
             }
             missileEntity.damage = data.getDamage();
             missileEntity.explosion = data.getExplosion();
             missileEntity.maxSpeed = data.getMaxSpeed();
             missileEntity.maxG = data.getMaxG();
+            missileEntity.life = data.getLife();
             missileEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(missileEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());

@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.util.EntityUtil;
 
 import java.util.List;
 
@@ -77,7 +78,7 @@ public class Quadcopter extends RotaryWingVehicle {
             this.viewInfo.thirdPersonDistance = 8 + cableLength * 1.5f;
         } else {
             if (fakeOperatorPosition != null) {
-                keepChunkLoaded(fakeOperatorPosition);
+                EntityUtil.keepChunkLoaded(this, fakeOperatorPosition);
             }
         }
     }

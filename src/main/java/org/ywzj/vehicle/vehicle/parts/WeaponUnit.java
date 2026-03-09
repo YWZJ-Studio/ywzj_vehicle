@@ -57,6 +57,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     // 武器站炮闩
     private final List<Bolt> bolts = new ArrayList<>();
+    // 备弹数
+    private int ammoCapacity;
     // 当前使用的炮闩
     private int currentBoltIndex;
     // 发射模式
@@ -109,6 +111,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         } else {
             this.bolts.add(new Bolt(Vec3.ZERO, 0, 0, 0));
         }
+        this.ammoCapacity = data.getAmmoCapacity();
         this.firingMode = data.getFiringMode();
         this.parentWeaponUnitAim = data.isParentWeaponUnitAim();
         this.opticalSightOffset = data.getOpticalSightOffset();
@@ -122,7 +125,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.zoomMax = data.getZoomMax();
         this.zoom = this.zoomMin;
         this.crosshairStyle = data.getCrosshairStyle();
-
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
                 this::setCurrentWeaponIndex,
@@ -268,17 +270,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
             // 若为红外锁定，目标是否仍在锁定框内
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                double x = VehicleCrossHairOverlay.getScreenAimX();
-                double y = VehicleCrossHairOverlay.getScreenAimY();
-                Vec3 screenPos = VectorUtil.worldToScreen(aimLockEntity.getBoundingBox().getCenter());
-                if (screenPos.z < 0) {
-                    setAimLockEntity(null);
-                    return;
-                }
-                double dx = screenPos.x - x;
-                double dy = screenPos.y - y;
-                double distSq = dx * dx + dy * dy;
-                if (distSq > 64 * 64) {
+                Vec3 vLock = aimLockEntity.getBoundingBox().getCenter().subtract(worldPivotPosition());
+                Vec3 vAim = worldVec();
+                if (Math.toDegrees(VectorUtil.angleBetween(vLock, vAim)) > 30) {
                     setAimLockEntity(null);
                     return;
                 }
@@ -298,9 +292,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     Minecraft minecraft = Minecraft.getInstance();
                     Camera camera = minecraft.gameRenderer.getMainCamera();
                     Entity bestEntity = null;
-                    double minDistSq = Double.MAX_VALUE;
-                    double x = VehicleCrossHairOverlay.getScreenAimX();
-                    double y = VehicleCrossHairOverlay.getScreenAimY();
+                    double minDegree = Double.MAX_VALUE;
                     for (Entity entity : minecraft.level.entitiesForRendering()) {
                         // 基础校验
                         if (entity == camera.getEntity()
@@ -312,16 +304,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                                 || entity.distanceTo(vehicle) > 256) {
                             continue;
                         }
-                        Vec3 screenPos = VectorUtil.worldToScreen(entity.getBoundingBox().getCenter());
-                        if (screenPos.z < 0) {
-                            continue;
-                        }
-                        double dx = screenPos.x - x;
-                        double dy = screenPos.y - y;
-                        double distSq = dx * dx + dy * dy;
+                        Vec3 vLock = entity.getBoundingBox().getCenter().subtract(worldPivotPosition());
+                        Vec3 vAim = worldVec();
+                        double degree = Math.toDegrees(VectorUtil.angleBetween(vLock, vAim));
                         // 在锁定框内
-                        if (distSq < 64 * 64 && distSq < minDistSq) {
-                            minDistSq = distSq;
+                        if (degree <= 30 && degree < minDegree) {
+                            minDegree = degree;
                             bestEntity = entity;
                         }
                     }
@@ -333,6 +321,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 }
             }
         }
+    }
+
+    public int getAmmoCapacity() {
+        return ammoCapacity;
     }
 
     public Bolt getCurrentBolt() {
@@ -422,10 +414,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
         Quaternionf rotation = globalTransform.rotation();
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vec3 boltPosition = worldBoltPosition(bolt, vehicleRotation, globalTransform);
+        Vec3 boltPosition = worldBoltPosition(bolt, globalTransform);
         Vector3f worldRot = new Vector3f();
-        vehicleRotation.mul(rotation).getEulerAnglesYXZ(worldRot);
+        vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
         aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
         aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength));
@@ -435,17 +426,18 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public Vec3 worldCurrentBoltPosition() {
         Bolt bolt = getCurrentBolt();
         VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
-        return worldBoltPosition(bolt, vehicleRotation, globalTransform);
+        return worldBoltPosition(bolt, globalTransform);
     }
 
-    public Vec3 worldBoltPosition(Bolt bolt, Quaternionf vehicleRotation, VehicleCubeGroup.GlobalTransform globalTransform) {
+    public Vec3 worldBoltPosition(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform) {
         Quaternionf rotation = globalTransform.rotation();
         Vector3f boltOffset = new Vector3f((float) bolt.offset.x, (float) bolt.offset.y, (float) bolt.offset.z);
         rotation.transform(boltOffset);
         Vec3 pivot = globalTransform.offset();
-        Vector3f rotatedBoltOffset = vehicleRotation.transform(pivot.add(boltOffset.x, boltOffset.y, boltOffset.z).toVector3f());
-        return vehicle.position().add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
+        Vector3f rotatedBoltOffset = vehicle.rotYXZ().transform(pivot
+                .add(boltOffset.x, boltOffset.y, boltOffset.z).toVector3f()
+                .sub(vehicle.centerOffset.toVector3f()));
+        return vehicle.position().add(vehicle.centerOffset).add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
     }
 
     public Vec3 worldPivotPosition() {
@@ -609,19 +601,18 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnit != null) {
                 double x = VehicleCrossHairOverlay.getScreenAimX();
                 double y = VehicleCrossHairOverlay.getScreenAimY();
-                List<Entity> aimDetectedEntities = radarUnit.getDetectedEntities().stream().sorted(Comparator.comparingDouble(detectedObject -> {
-                    Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.detectedPosition);
-                    double dx = screenPos.x - x;
-                    double dy = screenPos.y - y;
-                    return dx * dx + dy * dy;
-                })).map(detectedObject -> detectedObject.entity).toList();
+                List<Entity> aimDetectedEntities = radarUnit.getDetectedEntities().stream()
+                        .map(detectedObject -> new Object[] {detectedObject.entity, VectorUtil.worldToScreen(detectedObject.detectedPosition)})
+                        .filter(pair -> ((Vec3) pair[1]).z > 0)
+                        .sorted(Comparator.comparingDouble(pair -> {
+                            double dx = ((Vec3) pair[1]).x - x;
+                            double dy = ((Vec3) pair[1]).y - y;
+                            return dx * dx + dy * dy;
+                        }))
+                        .map(pair -> (Entity) pair[0])
+                        .toList();
                 if (!aimDetectedEntities.isEmpty()) {
-                    Vec3 screenPos = VectorUtil.worldToScreen(aimDetectedEntities.get(0).position());
-                    double dx = screenPos.x - x;
-                    double dy = screenPos.y - y;
-                    if (dx * dx + dy * dy < 64 * 64) {
-                        setAimLockEntity(aimDetectedEntities.get(0));
-                    }
+                    setAimLockEntity(aimDetectedEntities.get(0));
                 }
             } else if (sensorType == WeaponUnitData.FireControlSensorType.IR) {
                 irSensorOn = !irSensorOn;
@@ -651,12 +642,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             radarUnit.setLockedEntity(aimLockEntity);
         }
         if (vehicle.level().isClientSide()) {
+            if (irTrackAlarmSound != null && aimLockEntity == null) {
+                irTrackAlarmSound.stop();
+                irTrackAlarmSound = null;
+            }
             // 红外锁定提示
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                if (irTrackAlarmSound != null && aimLockEntity == null) {
-                    irTrackAlarmSound.stop();
-                    irTrackAlarmSound = null;
-                }
                 if (irTrackAlarmSound == null && aimLockEntity != null) {
                     irTrackAlarmSound = new VehicleSound(AllSounds.IR_TRACK_ALARM.get(), 1f, 1f, 1f, true, 50, false, false, vehicle.getId());
                     irTrackAlarmSound.play();
@@ -764,6 +755,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void setCurrentWeaponIndex(int index) {
         this.currentWeaponIndex = index;
+        setAimLockEntity(null);
     }
 
     public int getCurrentWeaponIndex() {

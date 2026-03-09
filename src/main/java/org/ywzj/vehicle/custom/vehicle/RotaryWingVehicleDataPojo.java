@@ -7,8 +7,8 @@ public class RotaryWingVehicleDataPojo extends BaseVehicleDataPojo {
     @SerializedName("attributes")
     public RotaryWingAttributes attributes;
 
-    @SerializedName("landing_gear_part")
-    public String landingGearPart;
+    @SerializedName("landing_gear_part_id")
+    public String landingGearPartId;
 
     public static class RotaryWingAttributes {
 
@@ -41,6 +41,7 @@ public class RotaryWingVehicleDataPojo extends BaseVehicleDataPojo {
 
         @SerializedName("fast_roping_door_id")
         public String fastRopingDoorId;
+
     }
 
 }

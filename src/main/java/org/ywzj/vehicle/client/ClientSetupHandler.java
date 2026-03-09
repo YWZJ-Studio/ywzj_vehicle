@@ -37,12 +37,14 @@ import org.ywzj.vehicle.particle.TrackParticle;
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID)
 public class ClientSetupHandler {
 
+    @SuppressWarnings("removal")
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.NONE_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.WHEELED_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.TRACKED_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROTARY_WING_VEHICLE.get(), VehicleRender::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.FIXED_WING_VEHICLE.get(), VehicleRender::new));
 
 //        event.enqueueWork(() -> EntityRenderers.register(AllEntities.LAV150.get(), Lav150Renderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ZTL11.get(), Ztl11Renderer::new));
@@ -57,8 +59,6 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.AH64D.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.LAV_AD.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BGM_71_TOW.get(), VehicleRender::new));
-
-//        event.enqueueWork(() -> EntityRenderers.register(AllEntities.WHEELED_VEHICLE.get(), CommonWheeledVehicleRender::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BULLET.get(), BulletEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROCKET.get(), RocketEntityRenderer::new));
@@ -81,6 +81,7 @@ public class ClientSetupHandler {
     public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("vehicle", new VehicleOverlay());
         event.registerAboveAll("vehicle_rotary_wing", new RotaryWingVehicleOverlay());
+        event.registerAboveAll("vehicle_fixed_wing", new FixedWingVehicleOverlay());
         event.registerAboveAll("vehicle_crosshair", new VehicleCrossHairOverlay());
         event.registerAboveAll("vehicle_scope", new VehicleScopeOverlay());
         event.registerAboveAll("vehicle_weapon", new VehicleWeaponOverlay());

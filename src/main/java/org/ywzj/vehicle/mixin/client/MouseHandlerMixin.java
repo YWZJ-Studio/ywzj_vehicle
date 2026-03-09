@@ -16,10 +16,12 @@ public abstract class MouseHandlerMixin {
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"
-            )
+            ),
+            cancellable = true
     )
     private void beforePlayerTurn(CallbackInfo ci, @Local(name = "d2") double d2, @Local(name = "d3") double d3) {
-        LocalVehiclePlayer.instance.mouseTurn(d2, d3);
+        LocalVehiclePlayer.instance.playerTurn(d2, d3);
+        ci.cancel();
     }
 
 }

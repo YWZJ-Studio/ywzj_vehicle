@@ -39,6 +39,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected DefenseStats defenseStats;
     protected boolean withWarningReceiver;
     protected boolean protectPassenger;
+    protected Vec3 centerOffset;
     protected ResourceLocation structureModel;
     protected double structureLength;
     protected List<PartUnitEntry<?, ?>> parts;
@@ -98,6 +99,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.withWarningReceiver = pojo.withWarningReceiver;
         this.protectPassenger = pojo.protectPassenger;
 
+        this.centerOffset = pojo.centerOffset;
         this.structureModel = pojo.structureModel;
         var model = CommonAssetsManager.structureModelManager()
                 .getStructureModel(pojo.structureModel).orElseThrow();
@@ -128,7 +130,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
                 minZ = z2;
             }
         }
-        structureLength = maxZ - minZ;
+        this.structureLength = maxZ - minZ;
     }
 
     public void inject(T vehicle) {}
@@ -304,6 +306,10 @@ public class BaseVehicleData<T extends AbstractVehicle> {
 
     public boolean isProtectPassenger() {
         return protectPassenger;
+    }
+
+    public Vec3 getCenterOffset() {
+        return centerOffset;
     }
 
 }

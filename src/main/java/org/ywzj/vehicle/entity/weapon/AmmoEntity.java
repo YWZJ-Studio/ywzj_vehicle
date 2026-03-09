@@ -36,6 +36,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     public AbstractVehicle vehicle;
     private ResourceLocation weaponId;
     public Component name;
+    public int life;
     public float damage;
     public Explosion explosion;
     private double lerpX;

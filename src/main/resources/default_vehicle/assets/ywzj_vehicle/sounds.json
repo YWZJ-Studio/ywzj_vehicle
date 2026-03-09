@@ -150,6 +150,50 @@
     "sounds": ["ywzj_vehicle:vehicle/common/truck_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.truck_engine_run"
   },
+  "jet_engine_start": {
+    "sounds": ["ywzj_vehicle:vehicle/jet/jet_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.jet_engine_start"
+  },
+  "jet_engine_stop": {
+    "sounds": ["ywzj_vehicle:vehicle/jet/jet_engine_stop"],
+    "subtitle": "ywzj_vehicle.sounds.jet_engine_stop"
+  },
+  "jet_engine_run": {
+    "sounds": ["ywzj_vehicle:vehicle/jet/jet_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.jet_engine_run"
+  },
+  "jet_engine_thrust": {
+    "sounds": ["ywzj_vehicle:vehicle/jet/jet_engine_thrust"],
+    "subtitle": "ywzj_vehicle.sounds.jet_engine_thrust"
+  },
+  "jet_passby": {
+    "sounds": [
+      "ywzj_vehicle:vehicle/jet/jet_passby_001",
+      "ywzj_vehicle:vehicle/jet/jet_passby_002",
+      "ywzj_vehicle:vehicle/jet/jet_passby_003"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.jet_passby"
+  },
+  "piston_engine_start": {
+    "sounds": ["ywzj_vehicle:vehicle/piston/piston_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.piston_engine_start"
+  },
+  "piston_engine_stop": {
+    "sounds": ["ywzj_vehicle:vehicle/piston/piston_engine_stop"],
+    "subtitle": "ywzj_vehicle.sounds.piston_engine_stop"
+  },
+  "piston_engine_run": {
+    "sounds": ["ywzj_vehicle:vehicle/piston/piston_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.piston_engine_run"
+  },
+  "piston_engine_thrust": {
+    "sounds": ["ywzj_vehicle:vehicle/piston/piston_engine_thrust"],
+    "subtitle": "ywzj_vehicle.sounds.piston_engine_thrust"
+  },
+  "piston_passby": {
+    "sounds": ["ywzj_vehicle:vehicle/piston/piston_passby"],
+    "subtitle": "ywzj_vehicle.sounds.piston_passby"
+  },
   "lav150_engine_start": {
     "sounds": ["ywzj_vehicle:vehicle/lav150/lav150_engine_start"],
     "subtitle": "ywzj_vehicle.sounds.lav150_engine_start"

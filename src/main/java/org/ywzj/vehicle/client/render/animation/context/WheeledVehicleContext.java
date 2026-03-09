@@ -1,6 +1,5 @@
-package org.ywzj.vehicle.client.render.animation.context.wheeled;
+package org.ywzj.vehicle.client.render.animation.context;
 
-import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
 public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {

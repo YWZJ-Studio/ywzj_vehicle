@@ -1,0 +1,9 @@
+{
+  "type": "ywzj_vehicle:weapon",
+  "model": "ywzj_vehicle:entity/missile_pl_8",
+  "texture": "ywzj_vehicle:textures/entity/j8.png",
+  "sounds": {
+    "fire": "ywzj_vehicle:missile_launch",
+    "reload": "ywzj_vehicle:common_reload"
+  }
+}
