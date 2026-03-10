@@ -47,20 +47,32 @@ public class ProjectileUtilMixin {
         }
     }
 
-    @Inject(method = "getEntityHitResult(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;F)Lnet/minecraft/world/phys/EntityHitResult;",
-            at = @At("HEAD"), cancellable = true)
-    private static void onGetEntityHitResult(Level pLevel, Entity pProjectile, Vec3 pStartVec, Vec3 pEndVec, AABB pBoundingBox,
-                                           Predicate<Entity> pFilter, float pInflationAmount, CallbackInfoReturnable<EntityHitResult> cir) {
-        for (Entity entity : pLevel.getEntities(pProjectile, pBoundingBox, pFilter)) {
-            if (entity instanceof OBBEntity) {
-                Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, pStartVec, pEndVec);
-                if (closestHitPos != null) {
-                    cir.setReturnValue(new EntityHitResult(entity, closestHitPos));
-                } else {
-                    cir.setReturnValue(null);
-                }
-                return;
+    @Inject(
+            method = "getEntityHitResult(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/AABB;Ljava/util/function/Predicate;F)Lnet/minecraft/world/phys/EntityHitResult;",
+            at = @At("TAIL"),
+            cancellable = true
+    )
+    private static void onGetEntityHitResult(
+            Level pLevel,
+            Entity pProjectile,
+            Vec3 pStartVec,
+            Vec3 pEndVec,
+            AABB pBoundingBox,
+            Predicate<Entity> pFilter,
+            float pInflationAmount,
+            CallbackInfoReturnable<EntityHitResult> cir) {
+        EntityHitResult original = cir.getReturnValue();
+        if (original == null) {
+            return;
+        }
+        Entity entity = original.getEntity();
+        if (entity instanceof OBBEntity) {
+            EntityHitResult result = null;
+            Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, pStartVec, pEndVec);
+            if (closestHitPos != null) {
+                result = new EntityHitResult(original.getEntity(), closestHitPos);
             }
+            cir.setReturnValue(result);
         }
     }
 

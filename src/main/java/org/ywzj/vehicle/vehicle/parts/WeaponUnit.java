@@ -96,10 +96,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private VehicleCubeGroup xTurnGroup;
     // 武器与选射
     public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
+    public final List<AbstractVehicleWeapon<?>> secondaryWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> independentWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> indexedWeapons = new ArrayList<>();
     private int currentWeaponIndex = -1;
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
+    private int currentSecondaryWeaponIndex = -1;
+    public SyncDataHolder<Integer> currentSecondaryIndexHolder;
     private VehicleSound irTrackAlarmSound;
     private int ignoreRemoteRotTick;
 
@@ -131,7 +134,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 this::getCurrentWeaponIndex,
                 currentWeaponIndex
         );
+        this.currentSecondaryIndexHolder = this.getSyncData().define(
+                SyncDataSerializers.INT,
+                this::setCurrentSecondaryWeaponIndex,
+                this::getCurrentSecondaryWeaponIndex,
+                currentSecondaryWeaponIndex
+        );
         currentWeaponIndex = 0;
+        currentSecondaryWeaponIndex = 0;
     }
 
     @Override
@@ -140,11 +150,18 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.xTurnGroup = vehicleCubeGroupCopy.get(data.getRawXTurnGroup());
     }
 
-    public void switchWeapon(boolean next) {
-        int size = weapons.size();
-        this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
-        this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
-        this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+    public void switchWeapon(boolean secondary, boolean next) {
+        if (secondary) {
+            int size = secondaryWeapons.size();
+            this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
+            this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
+            this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+        } else {
+            int size = weapons.size();
+            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
+            this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
+            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+        }
     }
 
     public void initWeapon(int index) {
@@ -164,7 +181,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (vehicleWeaponIndex != null) {
                 WeaponUnit parent = this;
                 AbstractVehicleWeapon<?> weapon;
-                if (weaponInfo.partUnitId != null && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit) {
+                if (weaponInfo.partUnitId != null
+                        && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
+                        && subWeaponUnit != parent) {
                     if (subWeaponUnit.getParentWeaponUnit() == null) {
                         subWeaponUnit.setParentWeaponUnit(parent);
                     }
@@ -175,6 +194,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 }
                 if (vehicleWeaponIndex.data().independent) {
                     this.independentWeapons.add(weapon);
+                } else if (weaponInfo.secondary) {
+                    this.secondaryWeapons.add(weapon);
                 } else {
                     this.weapons.add(weapon);
                 }
@@ -198,7 +219,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             tickFireControl();
         }
         super.tick();
-        this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
+        getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
+        getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::tick);
         independentWeapons.forEach(AbstractVehicleWeapon::tick);
     }
 
@@ -581,9 +603,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             // 光电锁定
             if (sensorType == WeaponUnitData.FireControlSensorType.EO
                     && lockType == WeaponUnitData.FireControlLockType.AIM_HIT) {
-                Vec3 pivotPosition = worldPivotPosition();
-                Vec3 direction = aimLockPosition.subtract(pivotPosition).normalize();
-                EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, pivotPosition, pivotPosition.add(direction.scale(LocalVehiclePlayer.renderDistance())));
+                Vec3 opticalSightPosition = worldOpticalSightPosition();
+                Vec3 direction = aimLockPosition.subtract(opticalSightPosition).normalize();
+                EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, opticalSightPosition, opticalSightPosition.add(direction.scale(LocalVehiclePlayer.renderDistance())));
                 if (entityHit != null) {
                     Entity entity = entityHit.getEntity();
                     if (entity instanceof SightObstruction) {
@@ -753,13 +775,29 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return Optional.empty();
     }
 
+    public int getCurrentWeaponIndex() {
+        return currentWeaponIndex;
+    }
+
     public void setCurrentWeaponIndex(int index) {
         this.currentWeaponIndex = index;
         setAimLockEntity(null);
     }
 
-    public int getCurrentWeaponIndex() {
-        return currentWeaponIndex;
+    public Optional<AbstractVehicleWeapon<?>> getCurrentSecondaryWeapon() {
+        if (currentSecondaryWeaponIndex >= 0 && currentSecondaryWeaponIndex < secondaryWeapons.size()) {
+            return Optional.of(secondaryWeapons.get(currentSecondaryWeaponIndex));
+        }
+        return Optional.empty();
+    }
+
+    public int getCurrentSecondaryWeaponIndex() {
+        return currentSecondaryWeaponIndex;
+    }
+
+    public void setCurrentSecondaryWeaponIndex(int currentSecondaryWeaponIndex) {
+        this.currentSecondaryWeaponIndex = currentSecondaryWeaponIndex;
+        setAimLockEntity(null);
     }
 
     public List<AbstractVehicleWeapon<?>> getIndexedWeapons() {

@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -30,6 +31,8 @@ import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.pojo.Explosion;
+
+import java.util.List;
 
 public abstract class AmmoEntity extends Projectile implements IEntityAdditionalSpawnData {
 
@@ -104,6 +107,16 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                     vehicleExplosion.explode();
                 }
                 this.discard();
+            } else if (explosion.proximityFuze && tickCount > 5 && entityResult == null) {
+                AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
+                        .move(getLookAngle().normalize().scale(-explosion.proximityRadius * 2));
+                List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
+                        entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
+                if (!nearbyEntities.isEmpty() && explosion != null) {
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    vehicleExplosion.explode();
+                    this.discard();
+                }
             }
         }
     }

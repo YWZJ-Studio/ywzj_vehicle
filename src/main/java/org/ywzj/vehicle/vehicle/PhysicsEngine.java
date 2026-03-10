@@ -130,7 +130,8 @@ public class PhysicsEngine {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
                     }
-                    Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f, 0));
+                    float offsetY = (float) (physicsCube().offset().y - physicsCube.height / 2);
+                    Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f + offsetY, 0));
                     BlockPos testBlockPos = BlockPos.containing(testPos);
                     BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                     if (blockState.isSolid()) {

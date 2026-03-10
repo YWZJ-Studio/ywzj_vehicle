@@ -10,5 +10,6 @@
   "reload": {
     "time": 100,
     "ammo": "ywzj_vehicle:ammo_grenade"
-  }
+  },
+  "independent": true
 }

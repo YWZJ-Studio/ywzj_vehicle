@@ -1,5 +1,6 @@
 {
   "type": "ywzj_vehicle:grenade",
+  "grenade": "smoke",
   "name": "smoke_grenade_launcher",
   "damage": 10,
   "headshot_multiplier": 1.5,
@@ -8,5 +9,6 @@
   "reload": {
     "time": 100,
     "ammo": "ywzj_vehicle:ammo_grenade"
-  }
+  },
+  "independent": true
 }

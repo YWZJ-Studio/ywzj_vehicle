@@ -6,6 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class WeaponInfo {
 
+    /**
+     * 武器id
+     */
     @SerializedName("id")
     public ResourceLocation id;
 
@@ -19,9 +22,13 @@ public class WeaponInfo {
     @SerializedName("save_id")
     public String saveId;
 
-    public WeaponInfo(ResourceLocation id, String saveId, @Nullable String partUnitId) {
+    @SerializedName("secondary")
+    public boolean secondary;
+
+    public WeaponInfo(ResourceLocation id, @Nullable String partUnitId, boolean secondary, String saveId) {
         this.id = id;
         this.partUnitId = partUnitId;
+        this.secondary = secondary;
         this.saveId = saveId;
     }
 

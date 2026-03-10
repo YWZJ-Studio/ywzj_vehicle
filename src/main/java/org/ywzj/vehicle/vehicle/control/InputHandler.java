@@ -22,6 +22,7 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleDecoyFlare;
+import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
 
 import static org.ywzj.vehicle.all.AllKeys.*;
 
@@ -66,10 +67,21 @@ public class InputHandler {
                     }
                 } else if (TOGGLE_HOVER_MODE.matches(event.getKey(), event.getScanCode())) {
                     sendToggleHoverMode(vehicle);
+                } else if (SECONDARY_WEAPON_SWITCH.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), true, true));
+                    }
                 } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.independentWeapons.stream()
                                 .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleDecoyFlare)
+                                .forEach(AbstractVehicleWeapon::doClientShoot);
+                    }
+                } else if (SMOKE_GRENADE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        weaponUnit.independentWeapons.stream()
+                                .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleGrenade grenade
+                                        && "smoke".equals(grenade.getData().getGrenade()))
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
                 }
@@ -202,7 +214,7 @@ public class InputHandler {
             AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
             boolean previous = event.getScrollDelta() == -1;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
-                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), previous));
+                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), false, previous));
                 // 阻止滚轮事件传递给原版以避免物品栏切换
                 event.setCanceled(true);
             }
@@ -213,6 +225,13 @@ public class InputHandler {
         if (MAIN_WEAPON_SHOOT.isDown()) {
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                 weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
+            } else {
+                LocalVehiclePlayer.instance.sendMessage("tips.spotter");
+            }
+        }
+        if (SECONDARY_WEAPON_SHOOT.isDown()) {
+            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+                weaponUnit.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
             } else {
                 LocalVehiclePlayer.instance.sendMessage("tips.spotter");
             }

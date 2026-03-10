@@ -13,6 +13,12 @@ public class Explosion {
     @SerializedName("radius")
     public float radius;
 
+    @SerializedName("proximity_fuze")
+    public boolean proximityFuze = false;
+
+    @SerializedName("proximity_radius")
+    public float proximityRadius;
+
     @SerializedName("destroy_block")
     public boolean destroyBlock = false;
 

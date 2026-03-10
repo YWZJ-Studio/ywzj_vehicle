@@ -8,18 +8,21 @@ import java.util.function.Supplier;
 
 public record ClientVehicleSwitchWeapon(
         int vehicleEntityId,
+        boolean secondary,
         boolean next
 ) {
 
     public static void encode(ClientVehicleSwitchWeapon msg, net.minecraft.network.FriendlyByteBuf buf) {
         buf.writeInt(msg.vehicleEntityId);
+        buf.writeBoolean(msg.secondary);
         buf.writeBoolean(msg.next);
     }
 
     public static ClientVehicleSwitchWeapon decode(net.minecraft.network.FriendlyByteBuf buf) {
         int vehicleEntityId = buf.readInt();
+        boolean secondary = buf.readBoolean();
         boolean next = buf.readBoolean();
-        return new ClientVehicleSwitchWeapon(vehicleEntityId, next);
+        return new ClientVehicleSwitchWeapon(vehicleEntityId, secondary, next);
     }
 
     public static void onReceived(ClientVehicleSwitchWeapon msg, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -33,7 +36,7 @@ public record ClientVehicleSwitchWeapon(
                 if (serverPlayer.level().getEntity(msg.vehicleEntityId) instanceof AbstractVehicle vehicle) {
                     var partUnit = vehicle.getOwnOperatorUnit(serverPlayer);
                     if (partUnit instanceof WeaponUnit weaponUnit) {
-                        weaponUnit.switchWeapon(msg.next);
+                        weaponUnit.switchWeapon(msg.secondary, msg.next);
                     }
                 }
             });
