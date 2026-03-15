@@ -18,7 +18,9 @@ import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.parts.DecorationUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.structure.OBB;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -117,44 +119,65 @@ public class VectorUtil {
     }
 
     public static Vec3 closestHitObbPosition(Entity entity, Vec3 start, Vec3 end) {
-        Vec3 closestHitPos = null;
-        double minDistance = Double.MAX_VALUE;
         if (entity instanceof OBBEntity obbEntity) {
-            for (var obb : obbEntity.getOBBs()) {
-                var obbVec = obb.clip(start.toVector3f(), end.toVector3f()).orElse(null);
-                if (obbVec != null) {
-                    Vec3 hitPos = new Vec3(obbVec);
-                    double distance = hitPos.distanceToSqr(start);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestHitPos = hitPos;
-                    }
-                }
+            HitOBB hitOBB = obbHit(obbEntity.getOBBs(), start, end);
+            if (hitOBB != null) {
+                return hitOBB.hitPos;
             }
         }
-        return closestHitPos;
+        return null;
     }
 
     public static PartUnit<?> hitPartUnit(Entity entity, Vec3 start, Vec3 end) {
         if (entity instanceof AbstractVehicle vehicle) {
             double minDistance = Double.MAX_VALUE;
             PartUnit<?> closestPartUnit = null;
-            for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
-                for (var obb : partUnit.getOBBs()) {
-                    var obbVec = obb.clip(start.toVector3f(), end.toVector3f()).orElse(null);
-                    if (obbVec != null) {
-                        Vec3 hitPos = new Vec3(obbVec);
-                        double distance = hitPos.distanceToSqr(start);
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            closestPartUnit = partUnit;
-                        }
+            List<PartUnit<?>> partUnits = new ArrayList<>(vehicle.getPartUnits());
+            if (vehicle.level().isClientSide()) {
+                for (DecorationUnit decorationUnit : vehicle.getDecorationUnits().values()) {
+                    HitOBB hitOBB = obbHit(decorationUnit.getOBBs(), start, end);
+                    if (hitOBB != null && hitOBB.distance < minDistance) {
+                        minDistance = hitOBB.distance;
+                        closestPartUnit = decorationUnit;
                     }
+                }
+                if (closestPartUnit != null) {
+                    return closestPartUnit;
+                }
+            }
+            for (PartUnit<?> partUnit : partUnits) {
+                HitOBB hitOBB = obbHit(partUnit.getOBBs(), start, end);
+                if (hitOBB != null && hitOBB.distance < minDistance) {
+                    minDistance = hitOBB.distance;
+                    closestPartUnit = partUnit;
                 }
             }
             return closestPartUnit;
         }
         return null;
+    }
+
+    public record HitOBB(OBB obb, Vec3 hitPos, double distance) {}
+
+    private static HitOBB obbHit(List<OBB> obbs, Vec3 start, Vec3 end) {
+        double minDistance = Double.MAX_VALUE;
+        Vec3 minDistanceHitPos = null;
+        OBB minDistanceOBB = null;
+        Vector3f from = start.toVector3f();
+        Vector3f to = end.toVector3f();
+        for (var obb : obbs) {
+            var obbVec = obb.clip(from, to).orElse(null);
+            if (obbVec != null) {
+                Vec3 hitPos = new Vec3(obbVec);
+                double distance = hitPos.distanceTo(start);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    minDistanceHitPos = hitPos;
+                    minDistanceOBB = obb;
+                }
+            }
+        }
+        return minDistanceOBB == null ? null : new HitOBB(minDistanceOBB, minDistanceHitPos, minDistance);
     }
 
     public static Vec3 relativeRotPos(Entity entity, Vec3 worldPos, boolean reverse) {

@@ -55,6 +55,7 @@ public class FigureBoxBlockRenderer implements BlockEntityRenderer<FigureBoxBloc
             poseStack.scale(scale, scale, scale);
             poseStack.mulPose(Axis.YP.rotationDegrees(figureBoxBlockEntity.yRot));
             poseStack.mulPose(Axis.XP.rotationDegrees(figureBoxBlockEntity.xRot));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(figureBoxBlockEntity.zRot));
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             if (entity instanceof ItemEntity itemEntity) {
                 ItemStack itemStack = itemEntity.getItem();

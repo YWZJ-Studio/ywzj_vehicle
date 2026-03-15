@@ -104,6 +104,16 @@ public class Channel {
                 ServerVehicleExplosion::onServerMessageReceived,
                 Optional.of(PLAY_TO_CLIENT));
 
+        CHANNEL.registerMessage(PacketId.C_DECORATION_ACTION.value(), ClientDecorationAction.class,
+                ClientDecorationAction::encode, ClientDecorationAction::decode,
+                ClientDecorationAction::onClientMessageReceived,
+                Optional.of(PLAY_TO_SERVER));
+
+        CHANNEL.registerMessage(PacketId.S_DECORATION_ACTION.value(), ServerDecorationAction.class,
+                ServerDecorationAction::encode, ServerDecorationAction::decode,
+                ServerDecorationAction::onServerMessageReceived,
+                Optional.of(PLAY_TO_CLIENT));
+
         CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
@@ -130,6 +140,8 @@ enum PacketId {
     S_VEHICLE_CHANGE_DISPLAY(113),
     C_VEHICLE_CHANGE_DISPLAY(114),
     S_VEHICLE_EXPLOSION(115),
+    C_DECORATION_ACTION(116),
+    S_DECORATION_ACTION(117),
     S_SLICED_PACKET(200);
 
     private final int id;

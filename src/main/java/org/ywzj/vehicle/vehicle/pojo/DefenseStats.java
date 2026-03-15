@@ -7,7 +7,7 @@ public class DefenseStats {
     @SerializedName("damage_threshold")
     public float damageThreshold = 50;
 
-    @SerializedName("impact_kinetic_damage_coefficient")
-    public float impactKineticDamageCoefficient = 0.1f;
+    @SerializedName("impact_multiplier")
+    public float impactMultiplier = 0.1f;
 
 }

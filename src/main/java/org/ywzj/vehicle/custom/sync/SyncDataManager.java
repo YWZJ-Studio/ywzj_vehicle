@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SyncDataManager {
+
     private final Int2ReferenceMap<SyncDataSerializer<?>> syncedIdMap = new Int2ReferenceOpenHashMap<>();
     private final Reference2IntMap<SyncDataSerializer<?>> syncIdMap = new Reference2IntOpenHashMap<>();
     private final AtomicInteger nextIdTracker = new AtomicInteger();
-
     private static SyncDataManager INSTANCE;
 
     public static SyncDataManager get() {
@@ -142,7 +142,9 @@ public class SyncDataManager {
             manager.registerSerializer(SyncDataSerializers.INT);
             manager.registerSerializer(SyncDataSerializers.FLOAT);
             manager.registerSerializer(SyncDataSerializers.DOUBLE);
+            manager.registerSerializer(SyncDataSerializers.STRING);
             manager.registerSerializer(SyncDataSerializers.VEC3);
         }
     }
+
 }

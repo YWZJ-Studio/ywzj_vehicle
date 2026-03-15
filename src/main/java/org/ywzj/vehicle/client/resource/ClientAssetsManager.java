@@ -21,6 +21,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ public enum ClientAssetsManager {
     private AnimationControllerDefinitionManager animationControllerDefinitionManager;
     private DisplayManager vehicleDisplayManager;
     private DisplayManager weaponDisplayManager;
+    private DisplayManager decorationDisplayManager;
     private ScriptManager scriptManager;
     private InternalAssets internalAssets;
 
@@ -46,6 +48,7 @@ public enum ClientAssetsManager {
         // 具有模型、贴图、音效、动画的各类抽象实例
         vehicleDisplayManager = new DisplayManager("vehicle", scriptManager, ScriptContextFactory.get());
         weaponDisplayManager = new DisplayManager("weapon", scriptManager, ScriptContextFactory.get());
+        decorationDisplayManager = new DisplayManager("decoration", scriptManager, ScriptContextFactory.get());
 
         internalAssets = new InternalAssets();
 
@@ -55,6 +58,7 @@ public enum ClientAssetsManager {
         consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
         consumer.accept(weaponDisplayManager);
+        consumer.accept(decorationDisplayManager);
         consumer.accept(internalAssets);
 
         // 完成加载后清理临时数据
@@ -81,6 +85,8 @@ public enum ClientAssetsManager {
         animations.apply(animations.prepare(resourceManager, null), null, null);
         animationControllerDefinitionManager.apply(animationControllerDefinitionManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
+        weaponDisplayManager.apply(weaponDisplayManager.prepare(resourceManager, null), null, null);
+        decorationDisplayManager.apply(decorationDisplayManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
             try {
                 Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
@@ -89,7 +95,14 @@ public enum ClientAssetsManager {
                 exception.printStackTrace();
             }
         });
-        weaponDisplayManager.apply(weaponDisplayManager.prepare(resourceManager, null), null, null);
+        decorationDisplayManager.getDisplayMap().values().forEach(decorationDisplay -> {
+            try {
+                Minecraft.getInstance().textureManager.register(decorationDisplay.getTexture(), new SimpleTexture(decorationDisplay.getTexture()));
+                Minecraft.getInstance().textureManager.register(decorationDisplay.getSlotTexture(), new SimpleTexture(decorationDisplay.getSlotTexture()));
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+        });
     }
 
     @UnmodifiableView
@@ -145,6 +158,22 @@ public enum ClientAssetsManager {
             return Optional.empty();
         }
         return Optional.ofNullable(weaponDisplayManager.getDisplayMap().get(id));
+    }
+
+    @NotNull
+    public Optional<BaseDisplay> getDecorationDisplay(ResourceLocation id) {
+        if (decorationDisplayManager == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(decorationDisplayManager.getDisplayMap().get(id));
+    }
+
+    @NotNull
+    public List<BaseDisplay> getDecorationDisplays() {
+        if (decorationDisplayManager == null) {
+            return List.of();
+        }
+        return new ArrayList<>(decorationDisplayManager.getDisplayMap().values());
     }
 
     public Optional<AnimationControllerDefinition> getAnimationControllerDefinition(ResourceLocation id) {

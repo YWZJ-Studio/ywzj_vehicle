@@ -24,6 +24,7 @@ public class AllItems {
     public static final RegistryObject<Item> MACHINE_MAX_BLOCK = registerItem(AllTabs.Category.MISC, "machine_max_block", () -> new MachineMaxBlockItem(AllBlocks.MACHINE_MAX_BLOCK.get(), new Item.Properties().stacksTo(1)));
     public static final RegistryObject<RepairToolItem> REPAIR_TOOL = registerItem(AllTabs.Category.MISC, "repair_tool", RepairToolItem::new);
     public static final RegistryObject<VehicleDisplayToolItem> VEHICLE_DISPLAY_TOOL = registerItem(AllTabs.Category.MISC, "vehicle_display_tool", () -> new VehicleDisplayToolItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<DecorationItem> DECORATION_ITEM = registerItem(AllTabs.Category.MISC, "decoration_item", DecorationItem::new);
     public static final RegistryObject<Item> AMMO_CREATIVE = registerItem(AllTabs.Category.MISC, "ammo_creative", () -> new AmmoItem(new Item.Properties().stacksTo(1), AmmoItem.AmmoType.MACHINE_GUN));
     public static final RegistryObject<Item> AMMO_MACHINE_GUN = registerItem(AllTabs.Category.MISC, "ammo_machine_gun", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MACHINE_GUN));
     public static final RegistryObject<Item> AMMO_AUTO_CANNON = registerItem(AllTabs.Category.MISC, "ammo_auto_cannon", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AUTO_CANNON));

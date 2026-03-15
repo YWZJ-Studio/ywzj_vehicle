@@ -40,13 +40,13 @@ public class ClientMachineMaxAction {
     }
 
     public static void onClientMessageReceived(ClientMachineMaxAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         ctxSupplier.get().enqueueWork(() -> {
-            NetworkEvent.Context context = ctxSupplier.get();
             ServerPlayer serverPlayer = context.getSender();
             if (serverPlayer == null) {
                 return;
             }
-            context.setPacketHandled(true);
             Level level = serverPlayer.level();
             if (level.getBlockEntity(message.blockPos) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {
                 if (message.action == Action.CRAFT) {

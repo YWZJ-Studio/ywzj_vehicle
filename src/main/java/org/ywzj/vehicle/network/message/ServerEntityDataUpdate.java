@@ -15,6 +15,7 @@ public record ServerEntityDataUpdate (
         int partIndex,
         List<SyncDataEntry<?>> entries
 ) {
+
     public void encode(FriendlyByteBuf buf) {
         buf.writeInt(entityId);
         buf.writeInt(partIndex);
@@ -43,9 +44,10 @@ public record ServerEntityDataUpdate (
 
     public static void onServerMessageReceived(ServerEntityDataUpdate msg, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> SyncDataManager.onMessage(msg));
         }
-        context.setPacketHandled(true);
     }
+
 }

@@ -136,7 +136,7 @@ public class PhysicsEngine {
                     BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                     if (blockState.isSolid()) {
                         if (!isHalfBlock(touchPoint) || testPos.y < testBlockPos.getY() + 0.55) {
-                            velocity = new Vec3(velocity.x, Math.min(0.5f, velocity.y + 0.001f), velocity.z);
+                            velocity = new Vec3(velocity.x, Math.min(0.1f, velocity.y + 0.01f), velocity.z);
                         }
                     }
                 }

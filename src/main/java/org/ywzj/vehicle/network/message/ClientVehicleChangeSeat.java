@@ -29,8 +29,10 @@ public class ClientVehicleChangeSeat {
     }
 
     public static void onClientMessageReceived(ClientVehicleChangeSeat message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         ctxSupplier.get().enqueueWork(() -> {
-            ServerPlayer player = ctxSupplier.get().getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }

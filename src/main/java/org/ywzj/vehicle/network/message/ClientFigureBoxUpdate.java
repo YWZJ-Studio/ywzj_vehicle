@@ -20,6 +20,7 @@ public class ClientFigureBoxUpdate {
     public float zShift;
     public float xRot;
     public float yRot;
+    public float zRot;
 
     public ClientFigureBoxUpdate() {}
 
@@ -33,6 +34,7 @@ public class ClientFigureBoxUpdate {
         clientFigureBoxUpdate.zShift = buf.readFloat();
         clientFigureBoxUpdate.xRot = buf.readFloat();
         clientFigureBoxUpdate.yRot = buf.readFloat();
+        clientFigureBoxUpdate.zRot = buf.readFloat();
         return clientFigureBoxUpdate;
     }
 
@@ -45,16 +47,17 @@ public class ClientFigureBoxUpdate {
         buf.writeFloat(zShift);
         buf.writeFloat(xRot);
         buf.writeFloat(yRot);
+        buf.writeFloat(zRot);
     }
 
     public static void onClientMessageReceived(ClientFigureBoxUpdate message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         ctxSupplier.get().enqueueWork(() -> {
-            NetworkEvent.Context context = ctxSupplier.get();
             ServerPlayer serverPlayer = context.getSender();
             if (serverPlayer == null) {
                 return;
             }
-            context.setPacketHandled(true);
             Level level = serverPlayer.level();
             if (level.getBlockEntity(message.blockPos) instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
                 figureBoxBlockEntity.open = message.open;
@@ -64,6 +67,7 @@ public class ClientFigureBoxUpdate {
                 figureBoxBlockEntity.zShift = message.zShift;
                 figureBoxBlockEntity.xRot = message.xRot;
                 figureBoxBlockEntity.yRot = message.yRot;
+                figureBoxBlockEntity.zRot = message.zRot;
                 figureBoxBlockEntity.setChanged();
                 level.setBlockAndUpdate(figureBoxBlockEntity.getBlockPos(), figureBoxBlockEntity.getBlockState().setValue(FigureBoxBlock.OPEN, message.open));
             }

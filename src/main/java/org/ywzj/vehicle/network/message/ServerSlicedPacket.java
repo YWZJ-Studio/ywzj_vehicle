@@ -7,10 +7,8 @@ import org.ywzj.vehicle.network.SliceReassembler;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-// 切片后的同步数据包
 public record ServerSlicedPacket(UUID id, int index, int total, byte[] data) {
 
-    // encoder
     public static void encode(ServerSlicedPacket pkt, FriendlyByteBuf buf) {
         buf.writeUUID(pkt.id);
         buf.writeInt(pkt.index);
@@ -19,7 +17,6 @@ public record ServerSlicedPacket(UUID id, int index, int total, byte[] data) {
         buf.writeBytes(pkt.data);
     }
 
-    // decoder
     public static ServerSlicedPacket decode(FriendlyByteBuf buf) {
         UUID id = buf.readUUID();
         int index = buf.readInt();
@@ -30,12 +27,12 @@ public record ServerSlicedPacket(UUID id, int index, int total, byte[] data) {
         return new ServerSlicedPacket(id, index, total, data);
     }
 
-    // handler (client side)
     public static void handle(ServerSlicedPacket pkt, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
+        ctx.setPacketHandled(true);
         ctx.enqueueWork(() -> {
             SliceReassembler.receiveSlice(pkt.id, pkt.index, pkt.total, pkt.data);
         });
-        ctx.setPacketHandled(true);
     }
+
 }

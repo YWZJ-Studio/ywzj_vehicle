@@ -40,10 +40,10 @@ public record ServerVehicleFire (
 
     public static void onServerMessageReceived(ServerVehicleFire msg, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> handle(msg));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)

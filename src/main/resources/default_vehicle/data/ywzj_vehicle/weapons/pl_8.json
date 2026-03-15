@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:missile",
   "name": "PL-8",
-  "damage": 50,
+  "damage": 99,
   "max_speed": 6,
   "max_g": 10,
   "headshot_multiplier": 1.5,

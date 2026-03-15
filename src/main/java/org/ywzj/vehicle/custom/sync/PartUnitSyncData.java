@@ -21,6 +21,7 @@ import java.util.function.Supplier;
  * 你需要确保声明同步数据的顺序在两侧保持严格一致<br/>
  */
 public class PartUnitSyncData {
+
     private final PartUnit<?> partUnit;
     private final int intervalTick;
     private List<SyncDataHolder<?>> dataHolders = new ArrayList<>();
@@ -49,7 +50,7 @@ public class PartUnitSyncData {
 
     public void initialize() {
         this.dataHolders = List.copyOf(dataHolders);
-        isInitialized = true;
+        this.isInitialized = true;
     }
 
     public <T> SyncDataHolder<T> define(SyncDataSerializer<T> serializer, Consumer<T> setter,
@@ -70,7 +71,6 @@ public class PartUnitSyncData {
             holder.onUpdate(entry);
         }
     }
-
 
     public void tick() {
         int entityId = partUnit.getVehicle().getId();
@@ -107,4 +107,5 @@ public class PartUnitSyncData {
 
         return dirtyEntries;
     }
+
 }

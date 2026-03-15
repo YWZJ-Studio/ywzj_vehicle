@@ -114,6 +114,9 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             vehicle.lastRenderTime = System.currentTimeMillis();
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
+            // 渲染饰品
+            VehicleRender.renderDecorations(vehicle, model, pPoseStack, bufferSource, pPackedLight);
+
             model.applyPose(model.getBindPose());
             Quaternionf reset = new Quaternionf(0, 0, 0, 1);
             control.rotation.set(controlO);

@@ -34,6 +34,7 @@ public class ServerVehicleChangeDisplay {
 
     public static void onServerMessageReceived(ServerVehicleChangeDisplay message, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> {
                 if (Minecraft.getInstance().level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
@@ -41,7 +42,6 @@ public class ServerVehicleChangeDisplay {
                 }
             });
         }
-        context.setPacketHandled(true);
     }
 
 }

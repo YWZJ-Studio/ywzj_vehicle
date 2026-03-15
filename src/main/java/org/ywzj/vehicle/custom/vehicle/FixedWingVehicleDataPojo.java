@@ -22,6 +22,9 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
         @SerializedName("thrust_k")
         public float thrustK = 1.5f;
 
+        @SerializedName("ceiling")
+        public float ceiling = 512;
+
         @SerializedName("x_rot_input_step")
         public float xRotInputStep = 0.2f;
 

@@ -118,8 +118,10 @@ public class ClientVehicleAction {
     }
 
     public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         ctxSupplier.get().enqueueWork(() -> {
-            ServerPlayer player = ctxSupplier.get().getSender();
+            ServerPlayer player = context.getSender();
             if (player == null) {
                 return;
             }

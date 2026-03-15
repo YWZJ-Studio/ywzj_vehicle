@@ -53,7 +53,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected PartUnit<?> parentPartUnit;
     protected List<PartUnit<?>> subPartUnits = new ArrayList<>();
     protected T data;
-    private final PartUnitSyncData syncData;
+    protected PartUnitSyncData syncData;
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
@@ -196,6 +196,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Vec3 getPivotOffset() {
         return pivotOffset;
+    }
+
+    public void setPivotOffset(Vec3 pivotOffset) {
+        this.pivotOffset = pivotOffset;
     }
 
     public void setOwnerViewOffset(Vec3 ownerViewOffset) {

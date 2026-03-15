@@ -27,6 +27,7 @@ public record ClientVehicleSwitchWeapon(
 
     public static void onReceived(ClientVehicleSwitchWeapon msg, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isServer()) {
             context.enqueueWork(() -> {
                 var serverPlayer = context.getSender();
@@ -41,7 +42,6 @@ public record ClientVehicleSwitchWeapon(
                 }
             });
         }
-        context.setPacketHandled(true);
     }
 
 }

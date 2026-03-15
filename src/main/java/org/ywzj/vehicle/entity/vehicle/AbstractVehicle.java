@@ -60,6 +60,8 @@ import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
+import org.ywzj.vehicle.custom.part.data.PartUnitData;
+import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.item.VehicleItem;
@@ -72,6 +74,7 @@ import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
+import org.ywzj.vehicle.vehicle.parts.DecorationUnit;
 import org.ywzj.vehicle.vehicle.parts.DoorUnit;
 import org.ywzj.vehicle.vehicle.parts.PartUnit;
 import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
@@ -104,6 +107,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public List<Seat> seats;
     protected final List<PartUnit<?>> partUnits;
     protected Map<String, PartUnit<?>> partUnitMap;
+    protected final Map<String, DecorationUnit> decorationUnits;
     protected ViewInfo viewInfo;
     protected boolean viewZoomed;
     public EnergyInfo energyInfo;
@@ -125,6 +129,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public WarningReceiver warningReceiver;
     public PhysicsEngine physicsEngine;
     private final HashMap<LivingEntity, Vec3> dismountLocations;
+    protected boolean driverXYRotControl = false;
     public boolean uav;
     public boolean protectPassenger;
     protected boolean dataInitialized;
@@ -140,6 +145,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.controlUnit = new ControlUnit(this);
         this.partUnits = new ArrayList<>();
         this.partUnitMap = Map.of();
+        this.decorationUnits = new HashMap<>();
         this.vehicleCubeOBBs = new ArrayList<>();
         this.curbWeight = 1;
         this.viewInfo = new ViewInfo();
@@ -172,6 +178,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getVehicleId().toString());
         compound.putString(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID, this.getDisplayId().toString());
         compound.put("PartUnits", serializePartUnitsData());
+        compound.put("DecorationUnits", serializeDecorationUnitsData());
     }
 
     @Override
@@ -205,6 +212,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (compound.contains("PartUnits", Tag.TAG_COMPOUND)) {
             deserializePartUnitsData(compound.getCompound("PartUnits"));
         }
+        if (compound.contains("DecorationUnits", Tag.TAG_COMPOUND)) {
+            deserializeDecorationUnitsData(compound.getCompound("DecorationUnits"));
+        }
     }
 
     @NotNull
@@ -218,6 +228,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         buffer.writeResourceLocation(this.getVehicleId());
         buffer.writeResourceLocation(this.getDisplayId());
         buffer.writeNbt(serializePartUnitsData());
+        buffer.writeNbt(serializeDecorationUnitsData());
         buffer.writeInt(seats.size());
         for (Seat seat : seats) {
             buffer.writeInt(seat.passengerId);
@@ -231,6 +242,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.initData();
         this.initDisplayData();
         deserializePartUnitsData(buffer.readNbt());
+        deserializeDecorationUnitsData(buffer.readNbt());
         int[] passengerIdsBySeat = new int[buffer.readInt()];
         for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
             passengerIdsBySeat[index] = buffer.readInt();
@@ -240,7 +252,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     private CompoundTag serializePartUnitsData() {
         CompoundTag partUnitsTag = new CompoundTag();
-        this.getPartUnits().forEach((partUnit -> {
+        partUnits.forEach((partUnit -> {
             CompoundTag partTag = partUnit.serializeNBT();
             if (partTag.isEmpty()) {
                 return;
@@ -252,12 +264,40 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     private void deserializePartUnitsData(CompoundTag partUnitsTag) {
         if (partUnitsTag != null) {
-            this.getPartUnits().forEach(partUnit -> {
+            partUnits.forEach(partUnit -> {
                 if (partUnitsTag.contains(partUnit.getId(), Tag.TAG_COMPOUND)) {
                     CompoundTag partTag = partUnitsTag.getCompound(partUnit.getId());
                     partUnit.deserializeNBT(partTag);
                 }
             });
+        }
+    }
+
+    private CompoundTag serializeDecorationUnitsData() {
+        CompoundTag decorationUnitsTag = new CompoundTag();
+        decorationUnits.values().forEach((decorationUnit -> {
+            CompoundTag partTag = decorationUnit.serializeNBT();
+            if (partTag.isEmpty()) {
+                return;
+            }
+            decorationUnitsTag.put(decorationUnit.getId(), partTag);
+        }));
+        return decorationUnitsTag;
+    }
+
+    private void deserializeDecorationUnitsData(CompoundTag decorationUnitsTag) {
+        if (decorationUnitsTag == null) {
+            return;
+        }
+        for (String id : decorationUnitsTag.getAllKeys()) {
+            if (decorationUnitsTag.contains(id, Tag.TAG_COMPOUND)) {
+                PartUnitPojo partUnitPojo = new PartUnitPojo();
+                partUnitPojo.id = id;
+                DecorationUnit decorationUnit = new DecorationUnit(id.hashCode(), this, new PartUnitData(partUnitPojo));
+                CompoundTag partTag = decorationUnitsTag.getCompound(id);
+                decorationUnit.deserializeNBT(partTag);
+                decorationUnits.put(id, decorationUnit);
+            }
         }
     }
 
@@ -362,6 +402,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             aiStep();
         }
         tickParts();
+        tickDecorations();
         updateOBBs();
         if (level().isClientSide()) {
             tickSound();
@@ -630,6 +671,10 @@ public abstract class AbstractVehicle extends ContainerCraft
         partUnits.forEach(PartUnit::tick);
     }
 
+    protected void tickDecorations() {
+        decorationUnits.values().forEach(PartUnit::tick);
+    }
+
     protected void afterVehicleRot() {
         float dXRot = xRot - xRotO;
         float dYRot = yRot - yRotO;
@@ -639,7 +684,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         if (level().isClientSide()) {
             Player player = LocalVehiclePlayer.instance.getPlayer();
-            if (player.getVehicle() == this) {
+            if (player.getVehicle() == this && (!driverXYRotControl || player != getDriver())) {
                 boolean rotTp = viewInfo.passengerViewRot.rotByVehicleInThirdPerson && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON;
                 boolean rotOp = viewInfo.passengerViewRot.rotByVehicleInOperator && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR;
                 if (rotTp || rotOp) {
@@ -1043,6 +1088,10 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public Optional<PartUnit<?>> getPartUnit(String id) {
         return Optional.ofNullable(partUnitMap.get(id));
+    }
+
+    public Map<String, DecorationUnit> getDecorationUnits() {
+        return decorationUnits;
     }
 
     public List<VehicleCubeOBB> getVehicleCubeOBBs() {

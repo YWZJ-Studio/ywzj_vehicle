@@ -6,9 +6,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 public interface ICustomVehicle {
 
     String TAG_VEHICLE_ID = "YwzjVehicleId";
-
     String TAG_VEHICLE_DISPLAY_ID = "YwzjVehicleDisplayId";
-
     ResourceLocation EMPTY_ID = YwzjVehicle.modLocation("empty");
 
     ResourceLocation getVehicleId();

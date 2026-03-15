@@ -43,6 +43,7 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
+    public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
     public float yRotSpeedAcceleration = 1;
@@ -69,6 +70,7 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.driverXYRotControl = true;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -137,11 +139,6 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (!level().isClientSide() && fastRoping) {
             tickFastRoping();
         }
-    }
-
-    @Nullable
-    public LandingGearUnit getLandingGearUnit() {
-        return landingGear;
     }
 
     public void tickFastRoping() {
@@ -295,7 +292,7 @@ public class RotaryWingVehicle extends AbstractVehicle
             scale *= Math.min(2, Math.max(1, -dVV / 0.05));
         }
         // 高度越高，空气越稀薄，发动机出力与桨叶效率都会降低，约定在64格高的海平面以下才可达到满效率
-        double scaleAir = position().y < 64 ? 1 : Math.pow(255 - position().y, 0.2) / Math.pow(191, 0.2);
+        double scaleAir = position().y < 64 ? 1 : Math.pow(Math.max(0, ceiling - position().y), 0.2) / Math.pow(ceiling - 64, 0.2);
         // 螺旋桨方向的力
         Vec3 force = vP.scale(scale * scaleAir * mainRotorForce);
         // 桨叶水平方向的空速带来升力
@@ -463,6 +460,11 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     public float getCollectivePitch() {
         return entityData.get(COLLECTIVE_PITCH);
+    }
+
+    @Nullable
+    public LandingGearUnit getLandingGearUnit() {
+        return landingGear;
     }
 
     public boolean isLandingGearUp() {

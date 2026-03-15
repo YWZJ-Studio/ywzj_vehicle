@@ -31,6 +31,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
     public float zShift;
     public float xRot;
     public float yRot;
+    public float zRot;
 
     public FigureBoxBlockEntity(BlockPos pos, BlockState state) {
         super(AllBlockEntities.FIGURE_BOX_BLOCK_ENTITY.get(), pos, state);
@@ -92,6 +93,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
         tag.putFloat("zShift", zShift);
         tag.putFloat("xRot", xRot);
         tag.putFloat("yRot", yRot);
+        tag.putFloat("zRot", zRot);
     }
 
     @Override
@@ -108,6 +110,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
         zShift = tag.getFloat("zShift");
         xRot = tag.getFloat("xRot");
         yRot = tag.getFloat("yRot");
+        zRot = tag.getFloat("zRot");
         updateEntity();
     }
 

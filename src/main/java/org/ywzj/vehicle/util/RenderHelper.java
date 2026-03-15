@@ -2,12 +2,18 @@ package org.ywzj.vehicle.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import com.mojang.math.Axis;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.YwzjVehicle;
 
 public class RenderHelper {
 
@@ -192,6 +198,49 @@ public class RenderHelper {
         vertexconsumer.vertex(matrix4f, pMinX, pMaxY, pZ).color(f, f1, f2, f3).endVertex();
         vertexconsumer.vertex(matrix4f, pMaxX, pMaxY, pZ).color(f, f1, f2, f3).endVertex();
         vertexconsumer.vertex(matrix4f, pMaxX, pMinY, pZ).color(f, f1, f2, f3).endVertex();
+    }
+
+    public static void renderArrow3D(PoseStack poseStack, MultiBufferSource bufferSource, float w, float h, int r, int g, int b, int a) {
+        poseStack.pushPose();
+        {
+            long time = System.currentTimeMillis();
+            float bounce = (float) Math.sin((time % 1000L) / 1000.0f * Math.PI * 2) * 0.1f;
+            float hoverHeight = 0.8f;
+            poseStack.translate(0, hoverHeight + bounce, 0);
+
+            float spin = (time % 2000L) / 2000.0f * 360.0f;
+            poseStack.rotateAround(Axis.YP.rotationDegrees(spin), 0, 0, 0);
+            ResourceLocation whiteTexture = YwzjVehicle.resourceLocation("textures/misc/white.png");
+            VertexConsumer arrowBuilder = bufferSource.getBuffer(RenderType.entityCutout(whiteTexture));
+            Matrix4f pose = poseStack.last().pose();
+            Matrix3f normal = poseStack.last().normal();
+            int light = 15728880;
+            // 前面
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,   w, h, w,  -w, h, w,  -w, h, w,  r, g, b, a, light);
+            // 后面
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,  -w, h, -w,  w, h, -w,  w, h, -w, r, g, b, a, light);
+            // 左面
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,  -w, h, w,  -w, h, -w, -w, h, -w, r, g, b, a, light);
+            // 右面
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,   w, h, -w,  w, h, w,   w, h, w,  r, g, b, a, light);
+            // 顶面 (封口)
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, -w, h, -w, -w, h, w,   w, h, w,   w, h, -w, r, g, b, a, light);
+        }
+        poseStack.popPose();
+    }
+
+    /**
+     * 绘制用于纯色渲染的四边形/三角形面片
+     */
+    public static void renderSolidQuad(VertexConsumer builder, Matrix4f pose, Matrix3f normal,
+                                 float x1, float y1, float z1, float x2, float y2, float z2,
+                                 float x3, float y3, float z3, float x4, float y4, float z4,
+                                 int r, int g, int b, int a, int light) {
+        // 强制绑定到 UV(0, 0) 来获取贴图单色（搭配纯白贴图即可实现纯色渲染）
+        builder.vertex(pose, x1, y1, z1).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
+        builder.vertex(pose, x2, y2, z2).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
+        builder.vertex(pose, x3, y3, z3).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
+        builder.vertex(pose, x4, y4, z4).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
     }
 
 }

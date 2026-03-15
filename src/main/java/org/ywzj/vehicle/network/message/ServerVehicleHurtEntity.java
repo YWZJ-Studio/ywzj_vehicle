@@ -38,10 +38,10 @@ public class ServerVehicleHurtEntity {
 
     public static void onServerMessageReceived(ServerVehicleHurtEntity message, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(Minecraft.getInstance().level.getEntity(message.entityId) instanceof AbstractVehicle, message.kill));
         }
-        context.setPacketHandled(true);
     }
 
 }

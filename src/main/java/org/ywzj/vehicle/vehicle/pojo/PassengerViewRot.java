@@ -8,10 +8,10 @@ import com.google.gson.annotations.SerializedName;
 public class PassengerViewRot {
 
     @SerializedName("rot_by_vehicle_in_third_person")
-    public boolean rotByVehicleInThirdPerson;
+    public boolean rotByVehicleInThirdPerson = false;
 
     @SerializedName("rot_by_vehicle_in_operator")
-    public boolean rotByVehicleInOperator;
+    public boolean rotByVehicleInOperator = true;
 
     public PassengerViewRot() {}
 

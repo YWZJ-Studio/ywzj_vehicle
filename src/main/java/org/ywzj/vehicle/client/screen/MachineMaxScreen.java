@@ -55,8 +55,6 @@ public class MachineMaxScreen extends Screen {
     private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
     private final MachineMaxBlockEntity machineMaxBlockEntity;
     private AbstractVehicle vehicle;
-    private float yRot;
-    private float yRotO;
 
     public MachineMaxScreen(MachineMaxBlockEntity machineMaxBlockEntity) {
         super(Component.literal("Machine Max"));
@@ -90,8 +88,6 @@ public class MachineMaxScreen extends Screen {
 
     @Override
     public void tick() {
-        yRotO = yRot;
-        yRot += 2;
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }
@@ -102,7 +98,7 @@ public class MachineMaxScreen extends Screen {
         renderBackground(guiGraphics);
         drawMainBackground(guiGraphics);
         drawVehicleList(guiGraphics, mouseX, mouseY);
-        drawPreviewPanel(guiGraphics, partialTick);
+        drawPreviewPanel(guiGraphics);
         drawProgressBar(guiGraphics);
         drawReceipt(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
@@ -212,7 +208,7 @@ public class MachineMaxScreen extends Screen {
         );
     }
 
-    private void drawPreviewPanel(GuiGraphics guiGraphics, float partialTick) {
+    private void drawPreviewPanel(GuiGraphics guiGraphics) {
         int x = leftPos + ITEM_WIDTH + 30;
         int y = topPos + 15;
 
@@ -225,7 +221,6 @@ public class MachineMaxScreen extends Screen {
         if (vehicle == null) {
             return;
         }
-        vehicle.setYRot(Mth.lerp(partialTick, yRotO, yRot));
 
         double length = vehicle.getStructureLength();
         float scale = (float) (1 / Math.max(length, 3) * 100);
@@ -235,12 +230,12 @@ public class MachineMaxScreen extends Screen {
         poseStack.pushPose();
         {
             poseStack.translate(x + 55, y + 60, 512);
+            float rotation = (System.currentTimeMillis() % 10000) / 10000f * 360f;
             poseStack.mulPose(Axis.XP.rotationDegrees(165));
+            poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
             poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
-
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             dispatcher.setRenderShadow(false);
-
             Lighting.setupForEntityInInventory();
             RenderSystem.runAsFancy(() ->
                     dispatcher.render(
@@ -259,19 +254,21 @@ public class MachineMaxScreen extends Screen {
         if (vehicleDisplayOptional.isPresent()) {
             BaseDisplay vehicleDisplay = vehicleDisplayOptional.get();
             // 介绍
-            if (vehicleDisplay.getDescription() != null) {
-                poseStack.pushPose();
-                {
-                    int maxWidth = 135;
-                    poseStack.translate(x + 116, topPos + 20, 0);
-                    poseStack.scale(0.95f, 0.95f, 0.95f);
+            poseStack.pushPose();
+            {
+                int maxWidth = (int) ((imageWidth - ITEM_WIDTH - 35) / 1.06f);
+                poseStack.translate(x + 116, topPos + 20, 0);
+                poseStack.scale(0.95f, 0.95f, 0.95f);
+                if (vehicleDisplay.getDescription() != null) {
                     var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
                     for (int i = 0; i < lines.size(); i++) {
                         guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
                     }
+                } else {
+                    guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, 0xFFFFFFFF);
                 }
-                poseStack.popPose();
             }
+            poseStack.popPose();
         }
         if (machineMaxBlockEntity.hasProduct()) {
             guiGraphics.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, 0xFFFFFFFF);

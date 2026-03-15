@@ -28,7 +28,7 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
     }
 
     @Override
-    public void render(Quadcopter pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(Quadcopter vehicle, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.QUADCOPTER.getId()).orElse(null);
         if (display == null || display.getModel() == null) {
             return;
@@ -49,18 +49,18 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             BedrockBone ropeConnect = model.getBoneMap().get("rope_connect");
             BedrockBone rope = model.getBoneMap().get("rope");
 
-            float cableLength = pEntity.getEntityData().get(CABLE_LENGTH);
-            pEntity.propellerRotation += pEntity.getPower() / 5;
-            pEntity.propellerRotation %= 360;
+            float cableLength = vehicle.getEntityData().get(CABLE_LENGTH);
+            vehicle.propellerRotation += vehicle.getPower() / 5;
+            vehicle.propellerRotation %= 360;
 
-            propellerUp1.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-            propellerUp4.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-            propellerDown2.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-            propellerDown3.rotation.mul(Axis.YN.rotationDegrees(pEntity.propellerRotation));
-            propellerDown1.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
-            propellerDown4.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
-            propellerUp2.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
-            propellerUp3.rotation.mul(Axis.YN.rotationDegrees(-pEntity.propellerRotation));
+            propellerUp1.rotation.mul(Axis.YN.rotationDegrees(vehicle.propellerRotation));
+            propellerUp4.rotation.mul(Axis.YN.rotationDegrees(vehicle.propellerRotation));
+            propellerDown2.rotation.mul(Axis.YN.rotationDegrees(vehicle.propellerRotation));
+            propellerDown3.rotation.mul(Axis.YN.rotationDegrees(vehicle.propellerRotation));
+            propellerDown1.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
+            propellerDown4.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
+            propellerUp2.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
+            propellerUp3.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
 
             float d = 16 * cableLength;
             ropeConnect.y -= d;
@@ -70,13 +70,16 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             float diffY = (cube.y() * scale - cube.y()) * 1.8f;
             rope.y -= diffY;
 
-            super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             Vec3 root = new Vec3(0, 0, 0);
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.zRotO, pEntity.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-            pEntity.lastRenderTime = System.currentTimeMillis();
-            model.renderToBuffer(pPoseStack, builder, pEntity.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
+            vehicle.lastRenderTime = System.currentTimeMillis();
+            model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+
+            // 渲染饰品
+            VehicleRender.renderDecorations(vehicle, model, pPoseStack, bufferSource, pPackedLight);
 
             Quaternionf reset = new Quaternionf(0, 0, 0, 1);
             propellerUp1.rotation.set(reset);

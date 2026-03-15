@@ -33,12 +33,12 @@ public class ClientVehicleChangeDisplay {
 
     public static void onClientMessageReceived(ClientVehicleChangeDisplay message, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         context.enqueueWork(() -> {
             if (context.getSender().level().getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
                 vehicle.setDisplayId(message.displayId);
             }
         });
-        context.setPacketHandled(true);
     }
 
 }

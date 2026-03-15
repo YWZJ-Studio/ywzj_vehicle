@@ -36,8 +36,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         }
         pPoseStack.pushPose();
         {
+            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             Vec3 root = new Vec3(0, 0, 0);
-
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
@@ -127,7 +127,9 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
 
             vehicle.lastRenderTime = System.currentTimeMillis();
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+
+            // 渲染饰品
+            VehicleRender.renderDecorations(vehicle, model, pPoseStack, bufferSource, pPackedLight);
 
             model.applyPose(model.getBindPose());
         }

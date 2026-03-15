@@ -2,7 +2,7 @@
   "type": "ywzj_vehicle:cannon",
   "name": "GSh-23",
   "caliber": 23,
-  "damage": 10,
+  "damage": 30,
   "velocity": 32,
   "inaccuracy": 0.15,
   "recoil": 0.2,

@@ -1,12 +1,15 @@
 package org.ywzj.vehicle.vehicle.structure;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
 import org.joml.Math;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Codes based on @AnECanSaiTin's <a href="https://github.com/AnECanSaiTin/HitboxAPI">HitboxAPI</a>
@@ -109,6 +112,56 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
                 0, 0, 1,
                 aabbHalfExtents.x, aabbHalfExtents.y, aabbHalfExtents.z
         );
+    }
+
+    public record CubeOBB(BedrockBone bone, BedrockCube cube, OBB obb) {}
+
+    public static List<CubeOBB> getOBBsFromBone(BedrockBone bone, AbstractVehicle vehicle, HashSet<BedrockBone> namedBones) {
+        if (bone == null) {
+            return Collections.emptyList();
+        }
+        List<CubeOBB> cubeOBBS = new ArrayList<>();
+
+        Matrix4f globalMatrix = new Matrix4f();
+        for(BedrockBone parent = bone; parent != null; parent = parent.parent) {
+            globalMatrix.scaleLocal(parent.xScale, parent.yScale, parent.zScale);
+            globalMatrix.rotateLocal(parent.rotation);
+            globalMatrix.translateLocal(parent.x / 16.0F, parent.y / 16.0F, parent.z / 16.0F);
+        }
+        globalMatrix.rotateLocal(vehicle.rotYXZ());
+        globalMatrix.translateLocal((float) vehicle.position().x, (float) vehicle.position().y, (float) vehicle.position().z);
+
+        Quaternionf globalRotation = new Quaternionf();
+        globalMatrix.getUnnormalizedRotation(globalRotation);
+        Vector3f globalScale = new Vector3f();
+        globalMatrix.getScale(globalScale);
+
+        for (BedrockCube cube : bone.cubes) {
+            float lx = cube.x();
+            float ly = cube.y();
+            float lz = cube.z();
+            float lw = cube.width();
+            float lh = cube.height();
+            float ld = cube.depth();
+            Vector3f localCenter = new Vector3f(
+                    lx + lw / 2.0f,
+                    ly + lh / 2.0f,
+                    lz + ld / 2.0f
+            );
+            Vector3f worldCenter = new Vector3f();
+            globalMatrix.transformPosition(localCenter, worldCenter);
+            Vector3f worldExtents = new Vector3f(
+                    (lw / 2.0f) * java.lang.Math.abs(globalScale.x),
+                    (lh / 2.0f) * java.lang.Math.abs(globalScale.y),
+                    (ld / 2.0f) * java.lang.Math.abs(globalScale.z)
+            );
+            cubeOBBS.add(new CubeOBB(bone, cube, new OBB(worldCenter, worldExtents, new Quaternionf(globalRotation))));
+        }
+
+        bone.getChildren().stream()
+                .filter(child -> !namedBones.contains(child))
+                .forEach(child -> cubeOBBS.addAll(getOBBsFromBone(child, vehicle, namedBones)));
+        return cubeOBBS;
     }
 
     /**
@@ -461,4 +514,5 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
                 new Quaternionf(rotation)
         );
     }
+
 }

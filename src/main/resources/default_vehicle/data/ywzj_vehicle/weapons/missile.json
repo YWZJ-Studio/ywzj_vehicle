@@ -15,7 +15,7 @@
   "y_rot_min": -15,
   "explosion": {
     "explode": true,
-    "damage": 30,
+    "damage": 99,
     "radius": 5,
     "destroy_block": true
   }

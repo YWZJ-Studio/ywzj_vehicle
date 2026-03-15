@@ -1,0 +1,18 @@
+{
+  "name": "ah_6_controller",
+  "script": "ywzj_vehicle:ah_6",
+  "parameters": {},
+  "event_animations": {
+    "gun_fire": ["gun_shoot"]
+  },
+  "graph": {
+    "type": "additive",
+    "base": {
+      "type": "script",
+      "function": "updateBones"
+    },
+    "add": {
+      "type": "event_animation"
+    }
+  }
+}

@@ -230,6 +230,14 @@
     "sounds": ["ywzj_vehicle:vehicle/z10/z10_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.z10_engine_run"
   },
+  "ah_6_engine_start": {
+    "sounds": ["ywzj_vehicle:vehicle/ah_6/ah_6_engine_start"],
+    "subtitle": "ywzj_vehicle.sounds.ah_6_engine_start"
+  },
+  "ah_6_engine_run": {
+    "sounds": ["ywzj_vehicle:vehicle/ah_6/ah_6_engine_run"],
+    "subtitle": "ywzj_vehicle.sounds.ah_6_engine_run"
+  },
   "quadcopter_engine_run": {
     "sounds": ["ywzj_vehicle:vehicle/quadcopter/quadcopter_engine_run"],
     "subtitle": "ywzj_vehicle.sounds.quadcopter_engine_run"

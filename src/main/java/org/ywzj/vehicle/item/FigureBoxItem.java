@@ -20,6 +20,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -140,16 +141,18 @@ public class FigureBoxItem extends VehicleItem {
             Entity entity = type.create(level);
             entity.load(entityData);
             if (player.isShiftKeyDown()) {
-                // 仅放置方块
-                player.level().setBlock(pos, AllBlocks.FIGURE_BOX_BLOCK.get().defaultBlockState()
-                        .setValue(FigureBoxBlock.FACING, Direction.fromYRot(player.getYRot()).getOpposite()),
-                        1);
-                BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
-                    figureBoxBlockEntity.setEntity(entity);
-                    figureBoxBlockEntity.setChanged();
-                    player.getItemInHand(context.getHand()).shrink(1);
-                    return InteractionResult.SUCCESS;
+                // 放置手办盒
+                BlockState blockState = player.level().getBlockState(pos);
+                if (blockState.canBeReplaced()) {
+                    player.level().setBlock(pos, AllBlocks.FIGURE_BOX_BLOCK.get().defaultBlockState()
+                            .setValue(FigureBoxBlock.FACING, Direction.fromYRot(player.getYRot()).getOpposite()), 1);
+                    BlockEntity blockEntity = level.getBlockEntity(pos);
+                    if (blockEntity instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
+                        figureBoxBlockEntity.setEntity(entity);
+                        figureBoxBlockEntity.setChanged();
+                        player.getItemInHand(context.getHand()).shrink(1);
+                        return InteractionResult.SUCCESS;
+                    }
                 }
             } else {
                 // 释放内容物

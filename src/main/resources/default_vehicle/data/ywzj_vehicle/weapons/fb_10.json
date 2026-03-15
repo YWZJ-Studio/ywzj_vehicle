@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:missile",
   "name": "missile",
-  "damage": 30,
+  "damage": 99,
   "headshot_multiplier": 1.5,
   "recoil": 0.6,
   "shoot_interval": 1000,

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
@@ -14,11 +15,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
+import org.joml.Matrix4f;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientFigureBoxUpdate;
+
+import java.util.function.Consumer;
 
 public class FigureBoxScreen extends Screen {
 
@@ -31,10 +35,10 @@ public class FigureBoxScreen extends Screen {
 
     @Override
     protected void init() {
-        int centerX = this.width / 2;
-        int startY = 10;
+        int centerX = this.width / 4;
+        int startY = this.height / 2 - 128;
         int spacing = 24;
-        addRenderableWidget(new Checkbox(centerX + 60, startY + 6 * spacing, 100, 20,
+        addRenderableWidget(new Checkbox(centerX + 60, startY + 8 * spacing, 100, 20,
                 Component.translatable("check_box.figure_box.open"), figureBoxBlockEntity.open) {
             @Override
             public void onPress() {
@@ -46,31 +50,47 @@ public class FigureBoxScreen extends Screen {
                 updateServer();
             }
         });
-        createEditBox(centerX, startY + spacing, String.valueOf(figureBoxBlockEntity.scale),
+        addValueEditor(centerX, startY + spacing, String.valueOf(figureBoxBlockEntity.scale),
                 val -> figureBoxBlockEntity.scale = parseSafe(val, figureBoxBlockEntity.scale));
-        createEditBox(centerX, startY + spacing * 2, String.valueOf(figureBoxBlockEntity.xShift),
+        addValueEditor(centerX, startY + spacing * 2, String.valueOf(figureBoxBlockEntity.xShift),
                 val -> figureBoxBlockEntity.xShift = parseSafe(val, figureBoxBlockEntity.xShift));
-        createEditBox(centerX, startY + spacing * 3, String.valueOf(figureBoxBlockEntity.yShift),
+        addValueEditor(centerX, startY + spacing * 3, String.valueOf(figureBoxBlockEntity.yShift),
                 val -> figureBoxBlockEntity.yShift = parseSafe(val, figureBoxBlockEntity.yShift));
-        createEditBox(centerX, startY + spacing * 4, String.valueOf(figureBoxBlockEntity.zShift),
+        addValueEditor(centerX, startY + spacing * 4, String.valueOf(figureBoxBlockEntity.zShift),
                 val -> figureBoxBlockEntity.zShift = parseSafe(val, figureBoxBlockEntity.zShift));
-        createEditBox(centerX, startY + spacing * 5, String.valueOf(figureBoxBlockEntity.xRot),
-                val -> figureBoxBlockEntity.xRot = parseSafe(val, figureBoxBlockEntity.xRot));
-        createEditBox(centerX, startY + spacing * 6, String.valueOf(figureBoxBlockEntity.yRot),
-                val -> figureBoxBlockEntity.yRot = parseSafe(val, figureBoxBlockEntity.yRot));
-        addRenderableWidget(Button.builder(Component.translatable("button.figure_box.done"), (btn) -> {
+        addRenderableWidget(new RotationSlider(centerX - 50, startY + spacing * 5, 100, 20, figureBoxBlockEntity.xRot, val -> {
+            figureBoxBlockEntity.xRot = val;
+            updateServer();
+        }));
+        addRenderableWidget(new RotationSlider(centerX - 50, startY + spacing * 6, 100, 20, figureBoxBlockEntity.yRot, val -> {
+            figureBoxBlockEntity.yRot = val;
+            updateServer();
+        }));
+        addRenderableWidget(new RotationSlider(centerX - 50, startY + spacing * 7, 100, 20, figureBoxBlockEntity.zRot, val -> {
+            figureBoxBlockEntity.zRot = val;
+            updateServer();
+        }));
+        addRenderableWidget(Button.builder(Component.translatable("button.done"), (btn) -> {
             this.onClose();
-        }).bounds(centerX - 50, startY + spacing * 7 + 10, 100, 20).build());
+        }).bounds(centerX - 50, startY + spacing * 8 + 10, 100, 20).build());
     }
 
-    private EditBox createEditBox(int x, int y, String defaultValue, java.util.function.Consumer<String> responder) {
+    private void addValueEditor(int x, int y, String defaultValue, Consumer<String> responder) {
         EditBox editBox = new EditBox(this.font, x - 50, y, 100, 20, Component.empty());
-        editBox.setValue(defaultValue);
+        editBox.setValue(String.format("%.2f", Double.parseDouble(defaultValue)));
         editBox.setResponder(val -> {
             responder.accept(val);
             updateServer();
         });
-        return addRenderableWidget(editBox);
+        this.addRenderableWidget(editBox);
+        this.addRenderableWidget(Button.builder(Component.literal("+"), b -> {
+            float currentVal = parseSafe(editBox.getValue(), 0.0f);
+            editBox.setValue(String.format("%.2f", currentVal + 0.1f));
+        }).bounds(x + 52, y, 10, 10).build());
+        this.addRenderableWidget(Button.builder(Component.literal("-"), b -> {
+            float currentVal = parseSafe(editBox.getValue(), 0.0f);
+            editBox.setValue(String.format("%.2f", currentVal - 0.1f));
+        }).bounds(x + 52, y + 10, 10, 10).build());
     }
 
     private float parseSafe(String val, float fallback) {
@@ -91,37 +111,39 @@ public class FigureBoxScreen extends Screen {
         clientFigureBoxUpdate.zShift = figureBoxBlockEntity.zShift;
         clientFigureBoxUpdate.xRot = figureBoxBlockEntity.xRot;
         clientFigureBoxUpdate.yRot = figureBoxBlockEntity.yRot;
+        clientFigureBoxUpdate.zRot = figureBoxBlockEntity.zRot;
         Channel.CHANNEL.sendToServer(clientFigureBoxUpdate);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
-        int centerX = this.width / 2;
+        int centerX = this.width / 4;
         int leftShift = 105;
-        int startY = 10;
+        int startY = this.height / 2 - 128;
         int spacing = 24;
-        guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.scale"), centerX - leftShift, startY + spacing + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.x_shift"), centerX - leftShift, startY + spacing * 2 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.y_shift"), centerX - leftShift, startY + spacing * 3 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.z_shift"), centerX - leftShift, startY + spacing * 4 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.figure_box.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, 0xFFFFFF);
-        renderFigureBox(guiGraphics);
+        guiGraphics.drawString(font, Component.translatable("edit_box.scale"), centerX - leftShift, startY + spacing + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("edit_box.x_shift"), centerX - leftShift, startY + spacing * 2 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("edit_box.y_shift"), centerX - leftShift, startY + spacing * 3 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("edit_box.z_shift"), centerX - leftShift, startY + spacing * 4 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("slider.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, 0xFFFFFF);
+        drawFigureBox(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderFigureBox(GuiGraphics guiGraphics) {
+    private void drawFigureBox(GuiGraphics guiGraphics) {
         BlockRenderDispatcher blockDispatcher = Minecraft.getInstance().getBlockRenderer();
         BlockState state = figureBoxBlockEntity.getBlockState();
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
             Lighting.setupForEntityInInventory();
-            poseStack.translate((float) width / 2 + 110, 90, 512);
-            float scale = 64 / figureBoxBlockEntity.scale;
-            poseStack.scale(scale, -scale, scale);
-            poseStack.mulPose(Axis.XP.rotationDegrees(30));
+            poseStack.translate((float) width / 2 + 90, (float) height / 2, 512);
+            float scale = 128 / Math.max(0.01f, figureBoxBlockEntity.scale);
+            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.mulPose(Axis.XP.rotationDegrees(210));
             float yRot = 0f;
             if (!figureBoxBlockEntity.getBlockState().isAir()) {
                 Direction facing = figureBoxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
@@ -157,6 +179,30 @@ public class FigureBoxScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private static class RotationSlider extends AbstractSliderButton {
+
+        private final Consumer<Float> responder;
+
+        public RotationSlider(int x, int y, int width, int height, float initialValue, Consumer<Float> responder) {
+            super(x, y, width, height, Component.empty(), (initialValue + 180.0) / 360.0);
+            this.responder = responder;
+            this.updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            int rot = (int) (this.value * 360.0 - 180.0);
+            this.setMessage(Component.literal(String.format("%d°", rot)));
+        }
+
+        @Override
+        protected void applyValue() {
+            float rot = (float) (this.value * 360.0 - 180.0);
+            this.responder.accept(rot);
+        }
+
     }
 
 }

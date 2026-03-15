@@ -29,6 +29,12 @@ public class SyncDataSerializers {
             Double::equals
     );
 
+    public static final SyncDataSerializer<String> STRING = SyncDataSerializer.create(
+            FriendlyByteBuf::writeUtf,
+            FriendlyByteBuf::readUtf,
+            String::equals
+    );
+
     public static final SyncDataSerializer<Vec3> VEC3 = SyncDataSerializer.create(
             (friendlyByteBuf, vec3) -> friendlyByteBuf.writeVector3f(vec3.toVector3f()),
             friendlyByteBuf -> new Vec3(friendlyByteBuf.readFloat(), friendlyByteBuf.readFloat(), friendlyByteBuf.readFloat()),

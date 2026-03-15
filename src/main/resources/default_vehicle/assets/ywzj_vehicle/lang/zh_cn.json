@@ -15,6 +15,7 @@
   "ywzj_vehicle.lav_ad": "LAV-AD 防空装甲车",
   "ywzj_vehicle.bgm_71_tow": "BGM-71 TOW 反坦克导弹",
   "ywzj_vehicle.j8": "歼8",
+  "ywzj_vehicle.ah_6": "AH-6 小鸟直升机",
 
   "entity.ywzj_vehicle.dump_truck": "自卸卡车",
   "entity.ywzj_vehicle.lav150": "LAV-150 装甲车",
@@ -29,5 +30,6 @@
   "entity.ywzj_vehicle.ah64d": "AH-64D 阿帕奇",
   "entity.ywzj_vehicle.lav_ad": "LAV-AD 防空装甲车",
   "entity.ywzj_vehicle.bgm_71_tow": "BGM-71 TOW 反坦克导弹",
-  "entity.ywzj_vehicle.j8": "歼8"
+  "entity.ywzj_vehicle.j8": "歼8",
+  "entity.ywzj_vehicle.ah_6": "AH-6 小鸟直升机"
 }

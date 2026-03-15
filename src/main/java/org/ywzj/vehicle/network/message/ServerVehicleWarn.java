@@ -41,10 +41,10 @@ public class ServerVehicleWarn {
 
     public static void onServerMessageReceived(ServerVehicleWarn message, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> WarningReceiver.handle(message));
         }
-        context.setPacketHandled(true);
     }
 
 }

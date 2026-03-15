@@ -71,7 +71,9 @@ public class ClientVehicleMoveControl {
     }
 
     public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ctxSupplier.get().enqueueWork(() -> ControlUnit.onClientMessageReceived(message, ctxSupplier));
+        NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
+        context.enqueueWork(() -> ControlUnit.onClientMessageReceived(message, ctxSupplier));
     }
 
 }

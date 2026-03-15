@@ -48,6 +48,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
     public float thrust = 0.02f;
     public float thrustK = 1.5f;
+    public float ceiling = 512;
     public float xRotInputStep = 0.2f;
     public float yRotInputStep = 0.5f;
     public float zRotInputStep = 0.2f;
@@ -80,6 +81,7 @@ public class FixedWingVehicle extends AbstractVehicle
 
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.driverXYRotControl = true;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -377,7 +379,7 @@ public class FixedWingVehicle extends AbstractVehicle
         // 迎角
         double angelX = VectorUtil.angleBetween(airSpeed, upDirection) - Math.PI / 2;
         // 空气阻力
-        float scaleAir = position().y < 64 ? 1 : (float) (Math.pow(Math.max(0, 512 - position().y), 0.5) / Math.pow(448, 0.5));
+        float scaleAir = position().y < 64 ? 1 : (float) (Math.pow(Math.max(0, ceiling - position().y), 0.5) / Math.pow(ceiling - 64, 0.5));
         double liftToDragK = this.liftToDragK * scaleAir;
         double k = ((airDragKMax - airDragKMin) * Math.abs(Math.sin(angelX)) + airDragKMin);
         double al = airSpeed.length();

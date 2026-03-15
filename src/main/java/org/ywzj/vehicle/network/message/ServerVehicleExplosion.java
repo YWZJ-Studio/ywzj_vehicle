@@ -34,10 +34,10 @@ public record ServerVehicleExplosion(
 
     public static void onServerMessageReceived(ServerVehicleExplosion msg, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() -> VehicleExplosion.effect(msg));
         }
-        context.setPacketHandled(true);
     }
 
 }

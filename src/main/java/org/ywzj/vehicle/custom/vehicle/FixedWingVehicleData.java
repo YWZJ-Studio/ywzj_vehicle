@@ -12,6 +12,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
 
     public float thrust = 0.02f;
     public float thrustK = 1.5f;
+    public float ceiling = 512;
     public float xRotInputStep = 0.2f;
     public float yRotInputStep = 0.5f;
     public float zRotInputStep = 0.2f;
@@ -38,6 +39,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         super.build(pojo);
         this.thrust = pojo.attributes.thrust;
         this.thrustK = pojo.attributes.thrustK;
+        this.ceiling = pojo.attributes.ceiling;
         this.xRotInputStep = pojo.attributes.xRotInputStep;
         this.yRotInputStep = pojo.attributes.yRotInputStep;
         this.zRotInputStep = pojo.attributes.zRotInputStep;
@@ -57,24 +59,25 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     }
 
     public void inject(FixedWingVehicle vehicle) {
-        vehicle.thrust = thrust;
-        vehicle.thrustK = thrustK;
-        vehicle.xRotInputStep = xRotInputStep;
-        vehicle.yRotInputStep = yRotInputStep;
-        vehicle.zRotInputStep = zRotInputStep;
-        vehicle.airDragKMin = airDragKMin;
-        vehicle.airDragKMax = airDragKMax;
-        vehicle.liftToDragK = liftToDragK;
-        vehicle.xRotInputDragK = xRotInputDragK;
-        vehicle.yRotInputDragK = yRotInputDragK;
-        vehicle.zRotInputDragK = zRotInputDragK;
-        vehicle.landingGearDragK = landingGearDragK;
-        vehicle.turnRateBySpeed = turnRateBySpeed;
-        vehicle.xTurnRate = xTurnRate;
-        vehicle.yTurnRate = yTurnRate;
-        vehicle.zTurnRate = zTurnRate;
-        vehicle.vortexOffsets = vortexOffsets;
-        vehicle.landingGearPartId = landingGearPartId;
+        vehicle.thrust = this.thrust;
+        vehicle.thrustK = this.thrustK;
+        vehicle.ceiling = this.ceiling;
+        vehicle.xRotInputStep = this.xRotInputStep;
+        vehicle.yRotInputStep = this.yRotInputStep;
+        vehicle.zRotInputStep = this.zRotInputStep;
+        vehicle.airDragKMin = this.airDragKMin;
+        vehicle.airDragKMax = this.airDragKMax;
+        vehicle.liftToDragK = this.liftToDragK;
+        vehicle.xRotInputDragK = this.xRotInputDragK;
+        vehicle.yRotInputDragK = this.yRotInputDragK;
+        vehicle.zRotInputDragK = this.zRotInputDragK;
+        vehicle.landingGearDragK = this.landingGearDragK;
+        vehicle.turnRateBySpeed = this.turnRateBySpeed;
+        vehicle.xTurnRate = this.xTurnRate;
+        vehicle.yTurnRate = this.yTurnRate;
+        vehicle.zTurnRate = this.zTurnRate;
+        vehicle.vortexOffsets = this.vortexOffsets;
+        vehicle.landingGearPartId = this.landingGearPartId;
     }
 
 }
