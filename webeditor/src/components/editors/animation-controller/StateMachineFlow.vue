@@ -261,7 +261,7 @@ function onContextAddState() {
 
 function handleDeleteEdge(edgeId: string) {
   const edge = edges.value.find(e => e.id === edgeId);
-  if (edge?.data) {
+  if (edge?.data?.machineName && edge.data.fromState !== undefined && edge.data.transitionIndex !== undefined) {
     emit('deleteTransition', edge.data.machineName, edge.data.fromState, edge.data.transitionIndex);
   }
 }
@@ -322,6 +322,8 @@ onConnect((connection: Connection) => {
   const sourceData = sourceNode.data;
   const targetData = targetNode.data;
 
+  if (!sourceData?.machineName || !sourceData?.stateName || !targetData?.machineName || !targetData?.stateName) return;
+
   if (sourceData.machineName !== targetData.machineName) return;
 
   emit('createTransition', sourceData.machineName, sourceData.stateName, targetData.stateName);
@@ -332,7 +334,7 @@ onEdgesChange((changes: EdgeChange[]) => {
   if (deletions.length > 0) {
     deletions.forEach(d => {
       const edge = edges.value.find(e => e.id === d.id);
-      if (edge?.data) {
+      if (edge?.data?.machineName && edge.data.fromState !== undefined && edge.data.transitionIndex !== undefined) {
         emit('deleteTransition', edge.data.machineName, edge.data.fromState, edge.data.transitionIndex);
       }
     });

@@ -15,7 +15,7 @@
           :model-value="action.type ?? ''"
           size="small"
           style="flex:1"
-          @update:model-value="v => setActionType(idx, v)"
+          @update:model-value="(v: string) => setActionType(idx, v)"
         >
           <el-option v-for="t in ACTION_TYPES" :key="t" :label="t" :value="t" />
         </el-select>
@@ -26,15 +26,15 @@
       <template v-if="action.type === 'play_animation'">
         <div class="action-field">
           <span class="field-label">animation</span>
-          <el-input size="small" :model-value="action.animation ?? ''" @update:model-value="v => setField(idx, 'animation', v)" />
+          <el-input size="small" :model-value="action.animation ?? ''" @update:model-value="(v: any) => setField(idx, 'animation', v)" />
         </div>
         <div class="action-field">
           <span class="field-label">track</span>
-          <el-input size="small" :model-value="action.track ?? ''" @update:model-value="v => setField(idx, 'track', v)" />
+          <el-input size="small" :model-value="action.track ?? ''" @update:model-value="(v: any) => setField(idx, 'track', v)" />
         </div>
         <div class="action-field">
           <span class="field-label">play_type</span>
-          <el-select size="small" :model-value="action.play_type ?? ''" style="width:100%" @update:model-value="v => setField(idx, 'play_type', v)">
+          <el-select size="small" :model-value="action.play_type ?? ''" style="width:100%" @update:model-value="(v: any) => setField(idx, 'play_type', v)">
             <el-option label="PLAY_ONCE_STOP" value="PLAY_ONCE_STOP" />
             <el-option label="PLAY_ONCE_FREEZE" value="PLAY_ONCE_FREEZE" />
             <el-option label="LOOP" value="LOOP" />
@@ -46,7 +46,7 @@
       <template v-else-if="action.type === 'stop_animation'">
         <div class="action-field">
           <span class="field-label">track</span>
-          <el-input size="small" :model-value="action.track ?? ''" @update:model-value="v => setField(idx, 'track', v)" />
+          <el-input size="small" :model-value="action.track ?? ''" @update:model-value="(v: any) => setField(idx, 'track', v)" />
         </div>
       </template>
 
@@ -54,11 +54,11 @@
       <template v-else-if="action.type === 'set_variable'">
         <div class="action-field">
           <span class="field-label">name</span>
-          <el-input size="small" :model-value="action.name ?? ''" @update:model-value="v => setField(idx, 'name', v)" />
+          <el-input size="small" :model-value="action.name ?? ''" @update:model-value="(v: any) => setField(idx, 'name', v)" />
         </div>
         <div class="action-field">
           <span class="field-label">value</span>
-          <el-input size="small" :model-value="String(action.value ?? '')" @update:model-value="v => setField(idx, 'value', v)" />
+          <el-input size="small" :model-value="String(action.value ?? '')" @update:model-value="(v: any) => setField(idx, 'value', v)" />
         </div>
       </template>
 
@@ -66,7 +66,7 @@
       <template v-else-if="action.type === 'play_sound'">
         <div class="action-field">
           <span class="field-label">sound</span>
-          <el-input size="small" :model-value="action.sound ?? ''" @update:model-value="v => setField(idx, 'sound', v)" />
+          <el-input size="small" :model-value="action.sound ?? ''" @update:model-value="(v: any) => setField(idx, 'sound', v)" />
         </div>
       </template>
 
@@ -74,7 +74,7 @@
       <template v-else-if="action.type === 'script'">
         <div class="action-field">
           <span class="field-label">script</span>
-          <el-input size="small" type="textarea" :rows="2" :model-value="action.script ?? ''" @update:model-value="v => setField(idx, 'script', v)" />
+          <el-input size="small" type="textarea" :rows="2" :model-value="action.script ?? ''" @update:model-value="(v: any) => setField(idx, 'script', v)" />
         </div>
       </template>
     </div>

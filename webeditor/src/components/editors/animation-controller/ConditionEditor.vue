@@ -23,7 +23,7 @@
           size="small"
           placeholder="JS 表达式"
           style="flex:1"
-          @update:model-value="v => setField('script', v)"
+          @update:model-value="(v: any) => setField('script', v)"
         />
 
         <el-button size="small" text type="danger" :icon="Delete" @click="emit('update', null)" />
@@ -43,7 +43,7 @@
           size="small"
           placeholder="JS 表达式"
           style="flex:1"
-          @update:model-value="v => setNotScript(v)"
+          @update:model-value="(v: string) => setNotScript(v)"
         />
       </div>
     </template>
