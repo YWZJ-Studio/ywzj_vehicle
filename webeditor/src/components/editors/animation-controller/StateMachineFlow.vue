@@ -109,9 +109,9 @@ import { computed, ref, watch, reactive } from 'vue';
 import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
-import type { NodeMouseEvent, EdgeMouseEvent, NodeDragEvent, Connection, EdgeChange } from '@vue-flow/core';
+import type { Node, Edge, NodeMouseEvent, EdgeMouseEvent, NodeDragEvent, Connection, EdgeChange } from '@vue-flow/core';
 import { buildStateGraph } from '@/utils/animationControllerGraph';
-import type { AnimationControllerRoot } from '@/types/animationController';
+import type { AnimationControllerRoot, GraphNodeData, GraphEdgeData } from '@/types/animationController';
 import type { AnimationSelection } from '@/stores/animationControllerEditor';
 import TransitionEdge from './TransitionEdge.vue';
 
@@ -139,7 +139,7 @@ const nodes = computed(() => graphRef.value.nodes);
 const edges = computed(() => graphRef.value.edges);
 
 // highlight related edges/nodes based on selection
-const computedNodes = computed(() => {
+const computedNodes = computed<Node<GraphNodeData>[]>(() => {
   const sel = props.selectedId;
   if (!sel) return nodes.value;
 
@@ -151,11 +151,11 @@ const computedNodes = computed(() => {
     return {
       ...n,
       class: isHighlighted ? 'highlighted' : '',
-    } as typeof n;
+    } as Node<GraphNodeData>;
   });
 });
 
-const computedEdges = computed(() => {
+const computedEdges = computed<Edge<GraphEdgeData>[]>(() => {
   const sel = props.selectedId;
 
   return edges.value.map(e => {
@@ -177,7 +177,7 @@ const computedEdges = computed(() => {
         ? { stroke: '#ffd700', strokeWidth: 3 }
         : { stroke: 'rgba(150, 150, 170, 0.4)', strokeWidth: 1.5 },
       animated: isHighlighted,
-    } as typeof e;
+    } as Edge<GraphEdgeData>;
   });
 });
 
