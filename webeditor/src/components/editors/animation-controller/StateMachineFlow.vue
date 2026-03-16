@@ -148,7 +148,10 @@ const computedNodes = computed(() => {
 
   return nodes.value.map(n => {
     const isHighlighted = n.id === selectedEdge.source || n.id === selectedEdge.target;
-    return Object.assign({}, n, { class: isHighlighted ? 'highlighted' : '' });
+    return {
+      ...n,
+      class: isHighlighted ? 'highlighted' : '',
+    } as typeof n;
   });
 });
 
@@ -167,16 +170,14 @@ const computedEdges = computed(() => {
       }
     }
 
-    return Object.assign({}, e, {
+    return {
+      ...e,
       type: 'transition',
       style: isHighlighted
         ? { stroke: '#ffd700', strokeWidth: 3 }
         : { stroke: 'rgba(150, 150, 170, 0.4)', strokeWidth: 1.5 },
       animated: isHighlighted,
-      data: Object.assign({}, e.data, {
-        onDelete: () => handleDeleteEdge(e.id),
-      }),
-    });
+    } as typeof e;
   });
 });
 
