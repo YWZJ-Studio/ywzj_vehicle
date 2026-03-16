@@ -143,6 +143,7 @@ const computedNodes = computed<Node<GraphNodeData>[]>(() => {
   const sel = props.selectedId;
   if (!sel) return nodes.value;
 
+  // @ts-ignore TS2589: Type instantiation is excessively deep
   const selectedEdge = edges.value.find(e => e.id === sel);
   if (!selectedEdge) return nodes.value;
 
