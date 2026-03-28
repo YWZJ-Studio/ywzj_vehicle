@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.parts;
+package org.ywzj.vehicle.vehicle.part;
 
 import org.jetbrains.annotations.UnmodifiableView;
 import org.ywzj.vehicle.custom.part.data.DoorUnitData;

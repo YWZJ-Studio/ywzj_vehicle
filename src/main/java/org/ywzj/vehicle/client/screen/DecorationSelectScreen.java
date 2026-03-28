@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.screen;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -102,18 +103,22 @@ public class DecorationSelectScreen extends Screen {
                     if (slotTexture != null) {
                         guiGraphics.blit(slotTexture, slotX + 4, slotY + 4, 0, 0, 24, 24, 24, 24);
                     } else {
-                        PoseStack poseStack = guiGraphics.pose();
-                        poseStack.pushPose();
-                        {
-                            float scale = 24;
-                            poseStack.translate(slotX + 16, slotY + 16, 512);
-                            poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                            poseStack.mulPose(Axis.ZP.rotationDegrees(180));
-                            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
-                            VertexConsumer builder = guiGraphics.bufferSource().getBuffer(RenderType.entityCutout(display.getTexture()));
-                            display.getModel().renderToBuffer(poseStack, builder, 15728880, OverlayTexture.NO_OVERLAY);
+                        BedrockModel model = display.getModel();
+                        ResourceLocation texture = display.getTexture();
+                        if (model != null && texture != null) {
+                            PoseStack poseStack = guiGraphics.pose();
+                            poseStack.pushPose();
+                            {
+                                float scale = 24;
+                                poseStack.translate(slotX + 16, slotY + 16, 512);
+                                poseStack.mulPose(Axis.YP.rotationDegrees(180));
+                                poseStack.mulPose(Axis.ZP.rotationDegrees(180));
+                                poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+                                VertexConsumer builder = guiGraphics.bufferSource().getBuffer(RenderType.entityCutout(texture));
+                                model.renderToBuffer(poseStack, builder, 15728880, OverlayTexture.NO_OVERLAY);
+                            }
+                            poseStack.popPose();
                         }
-                        poseStack.popPose();
                     }
                 });
             }

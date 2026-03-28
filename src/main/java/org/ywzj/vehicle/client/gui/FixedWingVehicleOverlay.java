@@ -5,6 +5,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.client.render.util.Color;
@@ -49,11 +50,15 @@ public class FixedWingVehicleOverlay implements IGuiOverlay {
         // 信息
         var font = Minecraft.getInstance().font;
         int throttle = (int) fixedWingVehicle.getThrottleLevel();
-        Component text = Component.translatable("ui.vehicle_rotary_wing.throttle_level")
-                .withStyle(style -> style.withColor(ChatFormatting.GREEN))
-                .append(Component.translatable(throttle <= 100 ? String.valueOf(throttle) : "ui.war_emergency_power")
-                        .withStyle(style -> style.withColor(throttle <= 100 ? ChatFormatting.GREEN : ChatFormatting.RED))
-                );
+        MutableComponent text = Component.translatable("ui.vehicle_rotary_wing.throttle_level")
+                .withStyle(style -> style.withColor(ChatFormatting.GREEN));
+        if (throttle == 0 && fixedWingVehicle.controlUnit.backward && fixedWingVehicle.onGround()) {
+            text.append(Component.translatable("ui.brake")
+                    .withStyle(style -> style.withColor(ChatFormatting.RED)));
+        } else {
+            text.append(Component.translatable(throttle <= 100 ? String.valueOf(throttle) : "ui.war_emergency_power")
+                    .withStyle(style -> style.withColor(throttle <= 100 ? ChatFormatting.GREEN : ChatFormatting.RED)));
+        }
         guiGraphics.drawString(font,
                 text,
                 leftX, leftY + 12, Color.GREEN);

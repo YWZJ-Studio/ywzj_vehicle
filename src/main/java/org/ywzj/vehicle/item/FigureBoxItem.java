@@ -39,8 +39,8 @@ import java.util.function.Consumer;
 
 public class FigureBoxItem extends VehicleItem {
 
+    public static final String ENTITY_TYPE = "entityId";
     public static final String ENTITY_DATA = "entityData";
-    public static final String ENTITY_ID = "entityId";
 
     public FigureBoxItem(Properties pProperties) {
         super(pProperties);
@@ -74,7 +74,7 @@ public class FigureBoxItem extends VehicleItem {
         target.saveWithoutId(entityData);
         entityData.remove("Passengers");
         tag.put(ENTITY_DATA, entityData);
-        tag.putString(ENTITY_ID, EntityType.getKey(target.getType()).toString());
+        tag.putString(ENTITY_TYPE, EntityType.getKey(target.getType()).toString());
         itemStack.setTag(tag);
         target.discard();
         player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -117,7 +117,7 @@ public class FigureBoxItem extends VehicleItem {
                     CompoundTag entityData = new CompoundTag();
                     vehicle.saveWithoutId(entityData);
                     tag.put(ENTITY_DATA, entityData);
-                    tag.putString(ENTITY_ID, EntityType.getKey(vehicle.getType()).toString());
+                    tag.putString(ENTITY_TYPE, EntityType.getKey(vehicle.getType()).toString());
                     itemStack.setTag(tag);
                     player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
                     player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
@@ -133,10 +133,10 @@ public class FigureBoxItem extends VehicleItem {
             }
             return capture(itemStack, player, items.get(0));
         }
-        String entityId = tag.getString(ENTITY_ID);
+        String entityType = tag.getString(ENTITY_TYPE);
         CompoundTag entityData = tag.getCompound(ENTITY_DATA);
         BlockPos pos = context.getClickedPos().above();
-        EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
+        EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityType));
         if (type != null) {
             Entity entity = type.create(level);
             entity.load(entityData);
@@ -159,7 +159,7 @@ public class FigureBoxItem extends VehicleItem {
                 entity.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), 0);
                 level.addFreshEntity(entity);
                 tag.remove(ENTITY_DATA);
-                tag.remove(ENTITY_ID);
+                tag.remove(ENTITY_TYPE);
                 itemStack.setTag(tag);
                 player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.PLAYERS, 1.0F, 1.0F);
                 player.displayClientMessage(Component.translatable("tips.figure_box_release_entity"), true);
@@ -172,8 +172,8 @@ public class FigureBoxItem extends VehicleItem {
 
     @Override
     public void appendHoverText(ItemStack itemStack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (itemStack.hasTag() && itemStack.getTag().contains(ENTITY_ID)) {
-            tooltip.add(Component.translatable("tips.figure_box_with_entity").append(itemStack.getTag().getString(ENTITY_ID)));
+        if (itemStack.hasTag() && itemStack.getOrCreateTag().contains(ENTITY_TYPE)) {
+            tooltip.add(Component.translatable("tips.figure_box_with_entity").append(itemStack.getTag().getString(ENTITY_TYPE)));
         }
     }
 

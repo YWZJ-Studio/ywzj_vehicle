@@ -20,9 +20,6 @@ public class ViewInfo {
     @SerializedName("sound_distance")
     public float soundDistance = 1f;
 
-    @SerializedName("lock_passenger_y_body_rot")
-    public boolean lockPassengerYBodyRot = false;
-
     @SerializedName("passenger_view_rot")
     public PassengerViewRot passengerViewRot = new PassengerViewRot();
 

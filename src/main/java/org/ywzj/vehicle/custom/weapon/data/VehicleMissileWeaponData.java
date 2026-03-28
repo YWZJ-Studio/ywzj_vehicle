@@ -17,8 +17,26 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     @SerializedName("y_rot_min")
     private float yRotMin = -10f;
 
-    @SerializedName("max_speed")
-    private float maxSpeed = 5f;
+    @SerializedName("seeker_fov")
+    private float seekerFov = 30f;
+
+    @SerializedName("mass")
+    private float mass = 0.01f;
+
+    @SerializedName("thrust")
+    private float thrust = 0.01f;
+
+    @SerializedName("motor_burn_time")
+    private float motorBurnTime = 300f;
+
+    @SerializedName("drag_coefficient")
+    private float dragCoefficient = 0.005f;
+
+    @SerializedName("max_g")
+    private float maxG = 30f;
+
+    @SerializedName("reference_speed")
+    private float referenceSpeed = 3f;
 
     @SerializedName("explosion")
     private Explosion explosion = new Explosion();
@@ -26,75 +44,71 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     @SerializedName("guidance")
     private Guidance guidance = Guidance.SACLOS;
 
-    @SerializedName("max_g")
-    private float maxG = 3 * 9.8f / 20;
+    @SerializedName("homing_mode")
+    private HomingMode homingMode = HomingMode.INFRARED;
 
     public float getXRotMax() {
         return xRotMax;
-    }
-
-    public void setXRotMax(float xRotMax) {
-        this.xRotMax = xRotMax;
     }
 
     public float getXRotMin() {
         return xRotMin;
     }
 
-    public void setXRotMin(float xRotMin) {
-        this.xRotMin = xRotMin;
-    }
-
     public float getYRotMax() {
         return yRotMax;
-    }
-
-    public void setYRotMax(float yRotMax) {
-        this.yRotMax = yRotMax;
     }
 
     public float getYRotMin() {
         return yRotMin;
     }
 
-    public void setYRotMin(float yRotMin) {
-        this.yRotMin = yRotMin;
+    public float getSeekerFov() {
+        return seekerFov;
     }
 
-    public float getMaxSpeed() {
-        return maxSpeed;
+    public float getMass() {
+        return mass;
     }
 
-    public void setMaxSpeed(float maxSpeed) {
-        this.maxSpeed = maxSpeed;
+    public float getThrust() {
+        return thrust;
     }
 
-    public Explosion getExplosion() {
-        return explosion;
+    public float getMotorBurnTime() {
+        return motorBurnTime;
     }
 
-    public void setExplosion(Explosion explosion) {
-        this.explosion = explosion;
-    }
-
-    public Guidance getGuidance() {
-        return guidance;
-    }
-
-    public void setGuidance(Guidance guidance) {
-        this.guidance = guidance;
+    public float getDragCoefficient() {
+        return dragCoefficient;
     }
 
     public float getMaxG() {
         return maxG;
     }
 
-    public void setMaxG(float maxG) {
-        this.maxG = maxG;
+    public float getReferenceSpeed() {
+        return referenceSpeed;
+    }
+
+    public Explosion getExplosion() {
+        return explosion;
+    }
+
+    public Guidance getGuidance() {
+        return guidance;
+    }
+
+    public HomingMode getHomingMode() {
+        return homingMode;
     }
 
     public enum Guidance {
         SACLOS, HOMING, PRESET
+    }
+
+    public enum HomingMode {
+        INFRARED, ELECTRO_OPTICAL, SEMI_ACTIVE_RADAR, ACTIVE_RADAR
     }
 
 }

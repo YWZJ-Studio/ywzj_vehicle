@@ -31,9 +31,9 @@ import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.LandingGearUnit;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
@@ -55,6 +55,8 @@ public class FixedWingVehicle extends AbstractVehicle
     public float airDragKMin = 1f / 500;
     public float airDragKMax = 4f / 500;
     public float liftToDragK = 6;
+    public float angleOfAttackMin = -10f;
+    public float angleOfAttackMax = 25f;
     public float xRotInputDragK = 1f;
     public float yRotInputDragK = 1f / 4;
     public float zRotInputDragK = 1f / 8;
@@ -380,6 +382,7 @@ public class FixedWingVehicle extends AbstractVehicle
         double angelX = VectorUtil.angleBetween(airSpeed, upDirection) - Math.PI / 2;
         // 空气阻力
         float scaleAir = position().y < 64 ? 1 : (float) (Math.pow(Math.max(0, ceiling - position().y), 0.5) / Math.pow(ceiling - 64, 0.5));
+        scaleAir = (float) Math.max(0.001, scaleAir);
         double liftToDragK = this.liftToDragK * scaleAir;
         double k = ((airDragKMax - airDragKMin) * Math.abs(Math.sin(angelX)) + airDragKMin);
         double al = airSpeed.length();
@@ -388,15 +391,25 @@ public class FixedWingVehicle extends AbstractVehicle
         // 升力
         double aRaw = airSpeed.length();
         double degreeX = Math.toDegrees(angelX);
-        if (degreeX > -5 && degreeX < 25) { // 迎角有效区间
-            double fl = f * (liftToDragK + 2 * scaleAir * degreeX / 25); // 迎角额外升力
+        double fl;
+        if (degreeX >= angleOfAttackMin && degreeX <= angleOfAttackMax) {
+            // 升力区间
+            fl = f * (liftToDragK + 2 * scaleAir * degreeX / angleOfAttackMax);
+        } else {
+            // 失速区间
+            double exceed = (degreeX > angleOfAttackMax) ?
+                    (degreeX - angleOfAttackMax) :
+                    (angleOfAttackMin - degreeX);
+            fl = f * liftToDragK * Math.exp(-1 * exceed);
+        }
+        if (fl != 0) {
             airSpeed = airSpeed.add(upDirection.scale(fl / mass));
         }
         // 尾舵力
         double angelY = VectorUtil.angleBetween(airSpeed, leftDirection) - Math.PI / 2;
         double at = airSpeed.dot(forwardDirection);
-        double fl = at * at * 8 * k * Math.sin(angelY);
-        airSpeed = airSpeed.add(leftDirection.scale(fl / mass));
+        double ft = at * at * 8 * k * Math.sin(angelY);
+        airSpeed = airSpeed.add(leftDirection.scale(ft / mass));
         // 操控面与部件阻力
         double controlDrag = (Math.abs(xRotInput) * xRotInputDragK
                 + Math.abs(yRotInput) * yRotInputDragK
@@ -409,7 +422,7 @@ public class FixedWingVehicle extends AbstractVehicle
         al = airSpeed.length();
         Quaternionf q = rotYXZ();
         // 气动影响转动
-        double ke = al * turnRateBySpeed;
+        double ke = scaleAir * al * turnRateBySpeed;
         // 滚转
         if (zRotInput != 0) {
             double d = Math.min(zTurnRate, ke * zTurnRate);
@@ -455,9 +468,11 @@ public class FixedWingVehicle extends AbstractVehicle
     protected void tickParticle() {
         super.tickParticle();
         Vec3 airSpeed = getDeltaMovement();
-        if (airSpeed.length() > 0.5) {
+        if (airSpeed.length() > 1) {
             Vector3f[] axes = mainCubeOBB.obb().getAxes();
-            if (Math.abs(VectorUtil.angleBetween(airSpeed, new Vec3(axes[2]))) > Math.PI / 18) {
+            double angelX = VectorUtil.angleBetween(airSpeed, new Vec3(axes[1])) - Math.PI / 2;
+            double degreeX = Math.toDegrees(angelX);
+            if (degreeX < angleOfAttackMin * 3f || degreeX > angleOfAttackMax * 0.9f) {
                 vortexOffsets.forEach(offset -> {
                     Vec3 particlePos = relativeRotPos(position().add(offset), false);
                     level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 3.0F),

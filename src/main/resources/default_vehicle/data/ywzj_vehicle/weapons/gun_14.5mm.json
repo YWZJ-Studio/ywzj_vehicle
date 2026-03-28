@@ -5,7 +5,7 @@
   "tracer_r": 0.9,
   "tracer_g": 0.4,
   "tracer_b": 0.1,
-  "damage": 25,
+  "damage": 20,
   "velocity": 15,
   "headshot_multiplier": 1.5,
   "shoot_interval": 100,

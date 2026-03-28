@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializer;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerEntityDataUpdate;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 import java.util.ArrayList;
 import java.util.List;

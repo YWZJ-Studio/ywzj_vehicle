@@ -17,12 +17,12 @@ import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_DATA;
-import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_ID;
+import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_TYPE;
 
 public class FigureBoxBlockEntity extends BlockEntity {
 
     private Entity entity;
-    private String entityId;
+    private String entityType;
     private CompoundTag entityData;
     public boolean open;
     public float scale = 1f;
@@ -64,8 +64,8 @@ public class FigureBoxBlockEntity extends BlockEntity {
     }
 
     private void updateEntity() {
-        if (level != null && entityId != null && entityData != null) {
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
+        if (level != null && entityType != null && entityData != null) {
+            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityType));
             if (type != null) {
                 Entity entity = type.create(level);
                 entity.load(entityData);
@@ -83,7 +83,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
         if (entity != null) {
             CompoundTag entityData = new CompoundTag();
             entity.saveWithoutId(entityData);
-            tag.putString(ENTITY_ID, EntityType.getKey(entity.getType()).toString());
+            tag.putString(ENTITY_TYPE, EntityType.getKey(entity.getType()).toString());
             tag.put(ENTITY_DATA, entityData);
         }
         tag.putBoolean("open", open);
@@ -99,8 +99,8 @@ public class FigureBoxBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains(ENTITY_ID) && tag.contains(ENTITY_DATA)) {
-            entityId = tag.getString(ENTITY_ID);
+        if (tag.contains(ENTITY_TYPE) && tag.contains(ENTITY_DATA)) {
+            entityType = tag.getString(ENTITY_TYPE);
             entityData = tag.getCompound(ENTITY_DATA);
         }
         open = tag.getBoolean("open");

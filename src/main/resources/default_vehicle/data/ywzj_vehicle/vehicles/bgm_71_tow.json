@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:generic",
   "attributes": {},
-  "max_health": 10,
+  "max_health": 50,
   "view_info": {
     "third_person_center_offset": [0, 2, 0],
     "third_person_distance": 2,
@@ -25,8 +25,7 @@
         "left_leg_rot_x": 0,
         "right_leg_rot_x": 0
       },
-      "fire_control_sensor_type": "ir",
-      "fire_control_lock_type": "aim_frustum",
+      "fire_control_sensor_type": "eo",
       "crosshair_style": "circle",
       "rot_info": {
         "x_rot_speed": 3,

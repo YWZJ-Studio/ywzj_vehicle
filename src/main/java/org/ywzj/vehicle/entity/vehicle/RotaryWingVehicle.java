@@ -31,7 +31,7 @@ import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.parts.*;
+import org.ywzj.vehicle.vehicle.part.*;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.HashMap;
@@ -42,7 +42,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         implements IAnimationEntity<RotaryWingVehicle, RotaryWingVehicleContext> {
 
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
-    public float mainRotorForce = 1.4f * physicsEngine.gravityA * physicsEngine.mass;
+    public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.mass;
     public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -136,12 +136,14 @@ public class RotaryWingVehicle extends AbstractVehicle
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide() && fastRoping) {
-            tickFastRoping();
+        if (!level().isClientSide()) {
+            if (fastRoping) {
+                tickFastRoping();
+            }
         }
     }
 
-    public void tickFastRoping() {
+    protected void tickFastRoping() {
         fastRopingContexts.values().removeIf(context -> {
             context.rope.setPos(relativeRotPos(this.position().add(context.fixedNodeOffset), false));
             if (context.isTouchGround() || context.livingEntity.isShiftKeyDown()) {
@@ -151,73 +153,6 @@ public class RotaryWingVehicle extends AbstractVehicle
             context.tickDescending();
             return false;
         });
-    }
-
-    @NotNull
-    @Override
-    public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
-        if (fastRoping) {
-            FastRopingContext fastRopingContext = fastRopingContexts.get(pPassenger.getUUID());
-            if (fastRopingContext != null) {
-                return fastRopingContext.rope.position();
-            }
-        }
-        return super.getDismountLocationForPassenger(pPassenger);
-    }
-
-    @Override
-    public void onLeaveVehicle(LivingEntity pPassenger) {
-        super.onLeaveVehicle(pPassenger);
-        if (!level().isClientSide() && fastRoping) {
-            if (position().y - EntityUtil.getGroundY(level(), position()) < 8) {
-                return;
-            }
-            Vec3 dismountLocation;
-            if (fastRopingDoorId != null
-                    && partUnitMap.get(fastRopingDoorId) instanceof DoorUnit doorUnit) {
-                dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
-                doorUnit.setOn(true);
-            } else {
-                dismountLocation = getDismountLocationForPassenger(pPassenger);
-            }
-            FastRopingContext fastRopingContext = new FastRopingContext();
-            Rope rope = new Rope(AllEntities.ROPE.get(), level());
-            rope.setPos(dismountLocation);
-            level().addFreshEntity(rope);
-            fastRopingContext.rope = rope;
-            fastRopingContext.livingEntity = pPassenger;
-            fastRopingContext.fixedNodeOffset = relativeRotDirection(dismountLocation.subtract(this.position()), true);
-            fastRopingContexts.put(pPassenger.getUUID(), fastRopingContext);
-        }
-    }
-
-    @Override
-    public void onClientVehicleAction(ClientVehicleAction message, Player player) {
-        if (message.toggleLandingGear) {
-            SwitchableUnit<?> landingGearUnit = this.getLandingGearUnit();
-            if (landingGearUnit == null) {
-                player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
-            } else if (hasPower()) {
-                landingGearUnit.setOn(!isLandingGearUp());
-            }
-        }
-        if (message.toggleHoverMode) {
-            if (!hoverMode) {
-                hoverMode = true;
-                player.displayClientMessage(Component.translatable("tips.hover_mode_on"), true);
-            } else {
-                hoverMode = false;
-                player.displayClientMessage(Component.translatable("tips.hover_mode_off"), true);
-            }
-        }
-        super.onClientVehicleAction(message, player);
-    }
-
-    @Override
-    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
-        if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
-            weaponUnit.shoot(weaponIndex, aimContexts, operator);
-        }
     }
 
     @Override
@@ -310,7 +245,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (hoverMode) {
             controlUnit.xRot = 0;
             controlUnit.yRot = getYRot();
-            double vy = airSpeed.y - physicsEngine.gravityA;
+            double vy = airSpeed.y - physicsEngine.G;
             if (vy > 0.01) {
                 entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
             } else if (vy < -0.01) {
@@ -455,6 +390,73 @@ public class RotaryWingVehicle extends AbstractVehicle
             } else {
                 engineParticleTick += 1;
             }
+        }
+    }
+
+    @NotNull
+    @Override
+    public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
+        if (fastRoping) {
+            FastRopingContext fastRopingContext = fastRopingContexts.get(pPassenger.getUUID());
+            if (fastRopingContext != null) {
+                return fastRopingContext.rope.position();
+            }
+        }
+        return super.getDismountLocationForPassenger(pPassenger);
+    }
+
+    @Override
+    public void onLeaveVehicle(LivingEntity pPassenger) {
+        super.onLeaveVehicle(pPassenger);
+        if (!level().isClientSide() && fastRoping) {
+            if (position().y - EntityUtil.getGroundY(level(), position()) < 8) {
+                return;
+            }
+            Vec3 dismountLocation;
+            if (fastRopingDoorId != null
+                    && partUnitMap.get(fastRopingDoorId) instanceof DoorUnit doorUnit) {
+                dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
+                doorUnit.setOn(true);
+            } else {
+                dismountLocation = getDismountLocationForPassenger(pPassenger);
+            }
+            FastRopingContext fastRopingContext = new FastRopingContext();
+            Rope rope = new Rope(AllEntities.ROPE.get(), level());
+            rope.setPos(dismountLocation);
+            level().addFreshEntity(rope);
+            fastRopingContext.rope = rope;
+            fastRopingContext.livingEntity = pPassenger;
+            fastRopingContext.fixedNodeOffset = relativeRotDirection(dismountLocation.subtract(this.position()), true);
+            fastRopingContexts.put(pPassenger.getUUID(), fastRopingContext);
+        }
+    }
+
+    @Override
+    public void onClientVehicleAction(ClientVehicleAction message, Player player) {
+        if (message.toggleLandingGear) {
+            SwitchableUnit<?> landingGearUnit = this.getLandingGearUnit();
+            if (landingGearUnit == null) {
+                player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
+            } else if (hasPower()) {
+                landingGearUnit.setOn(!isLandingGearUp());
+            }
+        }
+        if (message.toggleHoverMode) {
+            if (!hoverMode) {
+                hoverMode = true;
+                player.displayClientMessage(Component.translatable("tips.hover_mode_on"), true);
+            } else {
+                hoverMode = false;
+                player.displayClientMessage(Component.translatable("tips.hover_mode_off"), true);
+            }
+        }
+        super.onClientVehicleAction(message, player);
+    }
+
+    @Override
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
+        if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
+            weaponUnit.shoot(weaponIndex, aimContexts, operator);
         }
     }
 

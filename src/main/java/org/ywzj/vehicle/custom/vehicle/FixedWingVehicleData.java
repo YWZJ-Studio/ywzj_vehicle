@@ -19,6 +19,8 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public float airDragKMin = 1f / 500;
     public float airDragKMax = 4f / 500;
     public float liftToDragK = 6;
+    public float angleOfAttackMin = -10f;
+    public float angleOfAttackMax = 25f;
     public float xRotInputDragK = 1f;
     public float yRotInputDragK = 1f / 4;
     public float zRotInputDragK = 1f / 8;
@@ -46,6 +48,8 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         this.airDragKMin = pojo.attributes.airDragKMin;
         this.airDragKMax = pojo.attributes.airDragKMax;
         this.liftToDragK = pojo.attributes.liftToDragK;
+        this.angleOfAttackMin = pojo.attributes.angleOfAttackMin;
+        this.angleOfAttackMax = pojo.attributes.angleOfAttackMax;
         this.xRotInputDragK = pojo.attributes.xRotInputDragK;
         this.yRotInputDragK = pojo.attributes.yRotInputDragK;
         this.zRotInputDragK = pojo.attributes.zRotInputDragK;
@@ -68,6 +72,8 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         vehicle.airDragKMin = this.airDragKMin;
         vehicle.airDragKMax = this.airDragKMax;
         vehicle.liftToDragK = this.liftToDragK;
+        vehicle.angleOfAttackMin = this.angleOfAttackMin;
+        vehicle.angleOfAttackMax = this.angleOfAttackMax;
         vehicle.xRotInputDragK = this.xRotInputDragK;
         vehicle.yRotInputDragK = this.yRotInputDragK;
         vehicle.zRotInputDragK = this.zRotInputDragK;

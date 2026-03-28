@@ -49,7 +49,7 @@ public class VehicleOverlay implements IGuiOverlay {
         if (!(vehicle instanceof NoneVehicle)) {
             renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
         }
-        renderTips(guiGraphics, screenWidth, screenHeight, vehicle);
+        renderTips(guiGraphics, screenWidth, screenHeight);
     }
 
     /**
@@ -153,22 +153,25 @@ public class VehicleOverlay implements IGuiOverlay {
         poseStack.popPose();
     }
 
-    public void renderTips(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
+    public void renderTips(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         guiGraphics.pose().pushPose();
         {
             guiGraphics.pose().translate(centerX, centerY, 0);
-            if (LocalVehiclePlayer.instance.controllingMissiles.stream().anyMatch(Entity::isAlive)) {
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.homing"), 0, -45, Color.GREEN);
+            if (LocalVehiclePlayer.instance.lostControl) {
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
+                        Component.translatable("ui.lost_control"),
+                        0, -45, Color.RED);
+            } else if (LocalVehiclePlayer.instance.currentG > 3 || LocalVehiclePlayer.instance.currentG < -1) {
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
+                        Component.translatable("ui.overload", String.format("%.1f", LocalVehiclePlayer.instance.currentG)).append("G"),
+                        0, -45, Color.RED);
+            } else if (!LocalVehiclePlayer.instance.missiles.isEmpty()) {
+                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
+                        Component.translatable("ui.homing"),
+                        0, -45, Color.GREEN);
                 tips.clear();
-            }
-            if (vehicle.warningReceiver != null) {
-                if (vehicle.warningReceiver.missileLaunchWarn) {
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.missile_incoming"), 0, -55, Color.RED);
-                } else if (vehicle.warningReceiver.radarLockWarn) {
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.being_locked"), 0, -55, Color.RED);
-                }
             }
             if (!tips.isEmpty()) {
                 for (Map.Entry<Long, Component> tip : tips.entrySet()) {

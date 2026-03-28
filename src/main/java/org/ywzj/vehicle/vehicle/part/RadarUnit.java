@@ -1,0 +1,225 @@
+package org.ywzj.vehicle.vehicle.part;
+
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.ywzj.vehicle.custom.part.data.RadarUnitData;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ClientRadarAction;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
+import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class RadarUnit extends RotatableUnit<RadarUnitData> {
+
+    private Vec3 radarOffset = Vec3.ZERO;
+    private String radarType;
+    private float scanSectorAngle;
+    private float maxScanDistance;
+    private final HashMap<Integer, DetectedObject> detectedObjects = new HashMap<>();
+    private Entity lockedEntity;
+    private boolean yRotAdd = true;
+    private boolean xRotAdd = true;
+
+    public RadarUnit(int index, AbstractVehicle vehicle, RadarUnitData data) {
+        super(index, vehicle, data);
+        this.radarType = data.getRadarType();
+        this.scanSectorAngle = data.getScanSectorAngle();
+        this.maxScanDistance = data.getMaxScanDistance();
+    }
+
+    @Override
+    public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
+        super.buildStructure(vehicleCubeGroupCopy);
+        if (structureGroup != null) {
+            this.radarOffset = structureGroup.pivotOffset;
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        tickTargets();
+        tickLock();
+        if (vehicle.level().isClientSide()) {
+            if (vehicle.hasPower()) {
+                tickScan();
+            } else {
+                detectedObjects.clear();
+            }
+        }
+    }
+
+    protected void tickRot() {
+        if (!vehicle.level().isClientSide()) {
+            if (lockedEntity != null) {
+                Vec3 radarPos = worldPosition(radarOffset);
+                Vec2 rot = worldVecToLocalRot(lockedEntity.position().subtract(radarPos));
+                if (yRotAdd) {
+                    yAimRot = rot.y + yRotSpeed / 4;
+                } else {
+                    yAimRot = rot.y - yRotSpeed / 4;
+                }
+                if (Math.abs(yAimRot - yRot) < yRotSpeed) {
+                    yRotAdd = !yRotAdd;
+                }
+            } else {
+                if (yAimRot >= yRotMax || yAimRot <= yRotMin) {
+                    yRotAdd = !yRotAdd;
+                }
+                if (xAimRot >= xRotMax || xAimRot <= xRotMin) {
+                    xRotAdd = !xRotAdd;
+                }
+                yAimRot = Mth.clamp(Mth.wrapDegrees(yAimRot + (yRotAdd ? yRotSpeed : -yRotSpeed)), yRotMin, yRotMax);
+                xAimRot = Mth.clamp(Mth.wrapDegrees(xAimRot + (xRotAdd ? xRotSpeed : -xRotSpeed)), xRotMin, xRotMax);
+            }
+        }
+        super.tickRot();
+    }
+
+    public void tickTargets() {
+        long timeNow = System.currentTimeMillis();
+        long life;
+        if (vehicle.level().isClientSide()) {
+            float range = Math.min(360, yRotMax - yRotMin);
+            life = (long) (range / yRotSpeed / 20 * 1000L) * 2;
+        } else {
+            life = 2000;
+        }
+        detectedObjects.values().removeIf(detectedObject -> detectedObject.detectedTime + life < timeNow);
+    }
+
+    public void tickScan() {
+        if (parentPartUnit == null) {
+            return;
+        }
+        if (LocalVehiclePlayer.instance.getPlayer() != parentPartUnit.getOwner()) {
+            return;
+        }
+
+        //todo: 测试
+//        Vec2 scanRot = worldRot();
+//        Vec3 radarPos = worldRadarPosition();
+//        float x1 = scanRot.x + scanSectorAngle / 2;
+//        float x2 = scanRot.x - scanSectorAngle / 2;
+//        Vec3 v1 = VectorUtil.rotToVec(x1, scanRot.y);
+//        Vec3 v2 = VectorUtil.rotToVec(x2, scanRot.y);
+//        for (int i = 0; i < 32; i++) {
+//            DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(i)));
+//            DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(i)));
+//        }
+
+        // 雷达扫描目标
+        List<Entity> entities = Radar.scanTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
+            Vec2 aimRot = aimRot(entityPos);
+            return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax)
+                    && !(Math.abs(aimRot.y - yRot) > yRotSpeed / 2)
+                    && !(Math.abs(aimRot.x - xRot) > scanSectorAngle / 2);
+        });
+        entities.forEach(this::detect);
+        // 将客户端搜索目标通知服务端
+        if (vehicle.tickCount % 20 == 0) {
+            for (DetectedObject detectedObject : detectedObjects.values()) {
+                if (detectedObject.entity instanceof AbstractVehicle) {
+                    ClientRadarAction clientRadarAction = new ClientRadarAction();
+                    clientRadarAction.action = ClientRadarAction.Action.SEARCH;
+                    clientRadarAction.toEntityId = detectedObject.entity.getId();
+                    Channel.CHANNEL.sendToServer(clientRadarAction);
+                }
+            }
+        }
+    }
+
+    public void detect(Entity entity) {
+        DetectedObject detectedObject = detectedObjects.get(entity.getId());
+        if (detectedObject != null) {
+            detectedObject.entity = entity;
+        }
+        AABB aabb = entity.getBoundingBox();
+        Vec3 detectedPosition = aabb.getCenter();
+        long timeNow = System.currentTimeMillis();
+        if (detectedObject == null) {
+            detectedObject = new DetectedObject();
+            detectedObject.entity = entity;
+            detectedObject.detectedPosition = detectedPosition;
+            detectedObject.detectedTime = timeNow;
+            detectedObjects.put(entity.getId(), detectedObject);
+        } else {
+            detectedObject.detectedPosition = detectedPosition;
+            detectedObject.detectedTime = timeNow;
+        }
+    }
+
+    public void tickLock() {
+        if (lockedEntity != null) {
+            if (!lockedEntity.isAlive()) {
+                setLockedEntity(null);
+                return;
+            }
+            if (detectedObjects.get(lockedEntity.getId()) == null) {
+                setLockedEntity(null);
+                return;
+            }
+        }
+    }
+
+    public HashMap<Integer, DetectedObject> getDetectedEntities() {
+        return detectedObjects;
+    }
+
+    public Vec3 worldRadarPosition() {
+        return worldPosition(radarOffset);
+    }
+
+    public String getRadarType() {
+        return radarType;
+    }
+
+    public float getScanSectorAngle() {
+        return scanSectorAngle;
+    }
+
+    public float getMaxScanDistance() {
+        return maxScanDistance;
+    }
+
+    public Entity getLockedEntity() {
+        return lockedEntity;
+    }
+
+    public void setLockedEntity(Entity lockedEntity) {
+        this.lockedEntity = lockedEntity;
+        if (lockedEntity == null) {
+            yRotAdd = true;
+            xRotAdd = true;
+        }
+        if (vehicle.level().isClientSide()) {
+            // 将客户端锁定目标通知服务端
+            ClientRadarAction clientRadarAction = new ClientRadarAction();
+            clientRadarAction.action = ClientRadarAction.Action.LOCK;
+            clientRadarAction.toEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
+            Channel.CHANNEL.sendToServer(clientRadarAction);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    protected void tickSound() {}
+
+    public static class DetectedObject {
+
+        public Entity entity;
+        public Vec3 detectedPosition;
+        public Long detectedTime;
+
+    }
+
+}

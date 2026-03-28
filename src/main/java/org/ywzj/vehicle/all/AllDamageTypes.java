@@ -13,10 +13,12 @@ import org.ywzj.vehicle.YwzjVehicle;
 public class AllDamageTypes {
 
     public static final ResourceKey<DamageType> BULLET;
+    public static final ResourceKey<DamageType> EXPLOSION;
     public static final ResourceKey<DamageType> VEHICLE_COLLISION;
 
     static {
         BULLET = ResourceKey.create(Registries.DAMAGE_TYPE, YwzjVehicle.modLocation("bullet"));
+        EXPLOSION = ResourceKey.create(Registries.DAMAGE_TYPE, YwzjVehicle.modLocation("explosion"));
         VEHICLE_COLLISION = ResourceKey.create(Registries.DAMAGE_TYPE, YwzjVehicle.modLocation("vehicle_collision"));
     }
 
@@ -28,6 +30,10 @@ public class AllDamageTypes {
 
         public static DamageSource bullet(RegistryAccess access, Entity bullet, Entity shooter, Vec3 damageSourcePosition) {
             return new DamageSource(getHolder(access, BULLET), bullet, shooter, damageSourcePosition);
+        }
+
+        public static DamageSource explosion(RegistryAccess access, Entity directEntity, Entity causingEntity, Vec3 damageSourcePosition) {
+            return new DamageSource(getHolder(access, EXPLOSION), directEntity, causingEntity, damageSourcePosition);
         }
 
         public static DamageSource vehicleCollision(RegistryAccess access, Entity vehicle, Entity driver, Vec3 damageSourcePosition) {

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.parts;
+package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
@@ -94,6 +94,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
             }
         }
     }
+
+    public void onRemoved() {}
 
     public void tick() {
         if (!this.getVehicle().level().isClientSide()) {

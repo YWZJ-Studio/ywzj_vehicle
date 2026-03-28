@@ -70,9 +70,14 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         if (player == null) {
             return;
         }
-        Entity entity = player.level().getEntity(events.get(0).entityId);
+        int entityId = events.get(0).entityId;
+        Entity entity = player.level().getEntity(entityId);
         if (entity == null) {
-            return;
+            LocalVehiclePlayer.ServerEntity serverEntity = LocalVehiclePlayer.instance.serverEntities.get(entityId);
+            if (serverEntity == null || serverEntity.entity == null) {
+                return;
+            }
+            entity = serverEntity.entity;
         }
         Vec3 viewVec;
         float scale;
@@ -104,17 +109,18 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
 
             entityRenderDispatcher.setRenderShadow(false);
+            Entity finalEntity = entity;
             RenderSystem.runAsFancy(() -> {
-                entityRenderDispatcher.render(entity, 0, 0,0, entity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
+                entityRenderDispatcher.render(finalEntity, 0, 0,0, finalEntity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
                 for (ServerHitVehicleEvent hitVehicleEvent : events) {
                     Vec3 start;
                     Vec3 end;
-                    if (entity instanceof AbstractVehicle vehicle) {
-                        start = vehicle.relativeRotPos(hitVehicleEvent.hitRelativePosition.add(vehicle.position()), false).subtract(entity.position());
+                    if (finalEntity instanceof AbstractVehicle vehicle) {
+                        start = vehicle.relativeRotPos(hitVehicleEvent.hitRelativePosition.add(vehicle.position()), false).subtract(finalEntity.position());
                         end = start.subtract(vehicle.relativeRotDirection(hitVehicleEvent.hitRelativeVector, false).normalize().scale(3));
                     } else {
-                        start = VectorUtil.relativeRotPos(entity, hitVehicleEvent.hitRelativePosition.add(entity.position()), false).subtract(entity.position());
-                        end = start.subtract(VectorUtil.relativeRotDirection(entity, hitVehicleEvent.hitRelativeVector, false).normalize().scale(3));
+                        start = VectorUtil.relativeRotPos(finalEntity, hitVehicleEvent.hitRelativePosition.add(finalEntity.position()), false).subtract(finalEntity.position());
+                        end = start.subtract(VectorUtil.relativeRotDirection(finalEntity, hitVehicleEvent.hitRelativeVector, false).normalize().scale(3));
                     }
                     renderRedLine(guiGraphics, start, end);
                 }

@@ -58,7 +58,8 @@ public abstract class CameraMixin {
 
     @Inject(method = "isDetached", at = @At("HEAD"), cancellable = true)
     public void isDetached(CallbackInfoReturnable<Boolean> cir) {
-        if (entity.getVehicle() instanceof AbstractVehicle
+        if (entity != null
+                && entity.getVehicle() instanceof AbstractVehicle
                 && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             cir.setReturnValue(true);
         }

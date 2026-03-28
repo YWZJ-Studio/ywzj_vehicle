@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.parts;
+package org.ywzj.vehicle.vehicle.part;
 
 import com.mojang.math.Axis;
 import net.minecraft.nbt.CompoundTag;
@@ -219,6 +219,15 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
             rotation.mul(baseRotatableUnit.structureGroup.globalTransform().rotation());
         }
         return rotation;
+    }
+
+    public Vec2 aimRot(Vec3 worldPosition) {
+        if (structureGroup == null) {
+            return new Vec2(0, 0);
+        }
+        Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(structureGroup.globalTransform().offset()), false);
+        Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
+        return worldVecToLocalRot(worldAim);
     }
 
     /**

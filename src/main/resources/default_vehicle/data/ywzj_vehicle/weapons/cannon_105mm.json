@@ -2,7 +2,7 @@
   "type": "ywzj_vehicle:cannon",
   "name": "105mm_cannon",
   "caliber": 105,
-  "damage": 79,
+  "damage": 1000,
   "headshot_multiplier": 1,
   "recoil": 1,
   "shoot_interval": 400,
@@ -13,7 +13,7 @@
   },
   "explosion": {
     "explode": true,
-    "damage": 50,
+    "damage": 100,
     "radius": 4,
     "destroy_block": true
   }

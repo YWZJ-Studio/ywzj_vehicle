@@ -19,7 +19,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
-import org.ywzj.vehicle.vehicle.parts.DecorationUnit;
+import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 
 import java.util.function.Consumer;
 

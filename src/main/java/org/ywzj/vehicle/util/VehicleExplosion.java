@@ -35,6 +35,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
@@ -79,7 +80,7 @@ public class VehicleExplosion {
         this.damage = damage;
         this.destroyBlocks = destroyBlocks && AllConfigs.common.canDestroyBlock.get();
         this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlock.get();
-        this.damageSource = level.damageSources().explosion(vehicle, source);
+        this.damageSource = AllDamageTypes.Sources.explosion(level.registryAccess(), vehicle, source, position);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
 

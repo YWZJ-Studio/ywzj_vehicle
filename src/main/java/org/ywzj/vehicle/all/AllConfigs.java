@@ -20,6 +20,7 @@ public class AllConfigs {
     public static CommonConfig common;
     public static ServerConfig server;
     public static List<String> figureBoxCaptureBlacklist = new ArrayList<>();
+    public static List<String> serverBroadcastEntityWhitelist = new ArrayList<>();
 
     public static void register(ModLoadingContext context) {
         Pair<CommonConfig, ForgeConfigSpec> specPairCommon = new ForgeConfigSpec.Builder().configure(CommonConfig::new);
@@ -33,20 +34,30 @@ public class AllConfigs {
 
     public static void loadExternal() {
         Path configDir = FMLPaths.CONFIGDIR.get().resolve("limitless_vehicle");
-        Path filePath = configDir.resolve("figure_box_capture_blacklist.txt");
+        Path figureBoxCaptureBlacklistPath = configDir.resolve("figure_box_capture_blacklist.txt");
+        Path serverBroadcastEntityWhitelistPath = configDir.resolve("server_broadcast_entity_whitelist.txt");
         try {
             if (Files.notExists(configDir)) Files.createDirectories(configDir);
-            if (Files.notExists(filePath)) {
+            if (Files.notExists(figureBoxCaptureBlacklistPath)) {
                 List<String> defaultLines = Arrays.asList(
                         "minecraft:ender_dragon",
                         "corpse:corpse",
                         "twilightforest:naga"
                 );
-                Files.write(filePath, defaultLines);
+                Files.write(figureBoxCaptureBlacklistPath, defaultLines);
+            }
+            if (Files.notExists(serverBroadcastEntityWhitelistPath)) {
+                List<String> defaultLines = Arrays.asList(
+                        "superbwarfare:.*"
+                );
+                Files.write(serverBroadcastEntityWhitelistPath, defaultLines);
             }
             figureBoxCaptureBlacklist.clear();
-            figureBoxCaptureBlacklist = Files.readAllLines(filePath);
+            figureBoxCaptureBlacklist = Files.readAllLines(figureBoxCaptureBlacklistPath);
             figureBoxCaptureBlacklist.removeIf(line -> line.startsWith("#") || line.trim().isEmpty());
+            serverBroadcastEntityWhitelist.clear();
+            serverBroadcastEntityWhitelist = Files.readAllLines(serverBroadcastEntityWhitelistPath);
+            serverBroadcastEntityWhitelist.removeIf(line -> line.startsWith("#") || line.trim().isEmpty());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -90,10 +101,13 @@ public class AllConfigs {
     public static class ServerConfig {
 
         public final ForgeConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
+        public final ForgeConfigSpec.ConfigValue<Integer> serverBroadcastEntitiesInterval;
 
         public ServerConfig(ForgeConfigSpec.Builder builder) {
-            showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离")
+            showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离（单位：block）")
                     .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
+            serverBroadcastEntitiesInterval = builder.comment("服务端向玩家广播其所在世界超视距实体的时间间隔（单位：tick）")
+                    .defineInRange("serverBroadcastEntitiesInterval", 5, 1, 72000);
         }
 
     }

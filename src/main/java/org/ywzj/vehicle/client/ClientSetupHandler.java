@@ -86,6 +86,7 @@ public class ClientSetupHandler {
         event.registerAboveAll("vehicle_scope", new VehicleScopeOverlay());
         event.registerAboveAll("vehicle_weapon", new VehicleWeaponOverlay());
         event.registerAboveAll("vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
+        event.registerAboveAll("vehicle_radar", new VehicleRadarOverlay());
         event.registerAboveAll("vehicle_debug", new VehicleDebugOverlay());
     }
 

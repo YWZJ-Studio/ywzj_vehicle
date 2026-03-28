@@ -5,9 +5,9 @@ import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.client.render.animation.util.AnimationHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.RotatableUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.RotatableUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 import java.util.List;
@@ -55,6 +55,10 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
 
     public boolean hasOwner(String id) {
         return getEntity().getPartUnit(id).map(part -> part.getOwner() != null).orElse(false);
+    }
+
+    public double getSpeed() {
+        return getEntity().getDeltaMovement().length();
     }
 
     public ControlUnit getControlUnit() {

@@ -13,13 +13,15 @@ import java.util.Optional;
 
 public class YwzjVehicleAPI {
 
-    public static void summon(Level level, Vec3 position, float yRot, ResourceLocation vehicleId, ResourceLocation displayId) {
+    public static AbstractVehicle summon(Level level, Vec3 position, float yRot, ResourceLocation vehicleId, ResourceLocation displayId) {
         Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isPresent()) {
             AbstractVehicle vehicle = vehicleDataOptional.get().construct(level, position, 0, yRot);
             vehicle.setDisplayId(displayId);
             level.addFreshEntity(vehicle);
+            return vehicle;
         }
+        return null;
     }
 
     public static void changeDisplay(AbstractVehicle vehicle, ResourceLocation displayId) {

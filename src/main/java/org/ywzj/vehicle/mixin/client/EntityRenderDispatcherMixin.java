@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.client.render.util.OBBRenderer;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 import java.util.List;
 import java.util.stream.Collectors;

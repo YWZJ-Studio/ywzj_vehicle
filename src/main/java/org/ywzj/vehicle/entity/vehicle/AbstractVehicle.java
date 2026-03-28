@@ -53,6 +53,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
+import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
@@ -74,10 +75,10 @@ import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
-import org.ywzj.vehicle.vehicle.parts.DecorationUnit;
-import org.ywzj.vehicle.vehicle.parts.DoorUnit;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.DecorationUnit;
+import org.ywzj.vehicle.vehicle.part.DoorUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
@@ -90,7 +91,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 import java.util.*;
 
 public abstract class AbstractVehicle extends ContainerCraft
-        implements OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
+        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -131,6 +132,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav;
+    public boolean remote;
     public boolean protectPassenger;
     protected boolean dataInitialized;
     private long destroyedTime;
@@ -250,6 +252,19 @@ public abstract class AbstractVehicle extends ContainerCraft
         setSeats(passengerIdsBySeat);
     }
 
+    public void writeData(CompoundTag data) {
+        data.putString(ICustomVehicle.TAG_VEHICLE_ID, getVehicleId().toString());
+        data.putBoolean("Destroyed", isDestroyed());
+    }
+
+    public void readData(CompoundTag data) {
+        if (data.contains("Destroyed")) {
+            entityData.set(DESTROYED, data.getBoolean("Destroyed"));
+        }
+    }
+
+    public void remoteTick() {}
+
     private CompoundTag serializePartUnitsData() {
         CompoundTag partUnitsTag = new CompoundTag();
         partUnits.forEach((partUnit -> {
@@ -311,6 +326,12 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+        partUnits.forEach((PartUnit::onRemoved));
+    }
+
     public void initDisplayData() {
         ClientAssetsManager.INSTANCE.getVehicleDisplay(this.getDisplayId()).ifPresent(this::initDisplayData);
     }
@@ -336,6 +357,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.energyInfo = vehicleData.getEnergyInfo();
         this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
         this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
+        this.physicsEngine.radarCrossSection = vehicleData.getPhysicsInfo().radarCrossSection;
         this.defenseStats = vehicleData.getDefenseStats();
         this.centerOffset = vehicleData.getCenterOffset();
         vehicleData.inject(this);
@@ -346,8 +368,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
         this.seats.addAll(partUnitsAndSeats.seats());
-        if (vehicleData.isWithWarningReceiver()) {
-            this.warningReceiver = new WarningReceiver();
+        if (vehicleData.withWarningReceiver()) {
+            this.warningReceiver = new WarningReceiver(this);
         }
         this.protectPassenger = vehicleData.isProtectPassenger();
         Map<String, PartUnit<?>> map = new HashMap<>();
@@ -407,6 +429,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (level().isClientSide()) {
             tickSound();
             tickParticle();
+            if (warningReceiver != null) {
+                warningReceiver.tick();
+            }
         } else {
             if (tickCount == 1) {
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
@@ -429,9 +454,6 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
         }
         afterVehicleRot();
-        if (viewInfo.lockPassengerYBodyRot) {
-            getPassengers().forEach(passenger -> passenger.setYBodyRot(getYRot()));
-        }
     }
 
     protected void tickEnergy() {
@@ -727,9 +749,16 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public AABB getAABB() {
+        if (remote) {
+            return AABB.ofSize(position(), 1, 1, 1);
+        }
+        List<OBB> vehicleOBBs = getOBBs();
+        if (vehicleOBBs.isEmpty()) {
+            return AABB.ofSize(position(), 1, 1, 1);
+        }
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        for (OBB obb : getOBBs()) {
+        for (OBB obb : vehicleOBBs) {
             Vector3f[] vertices = obb.getVertices();
             for (Vector3f v : vertices) {
                 if (v.x < minX) minX = v.x;
@@ -824,6 +853,10 @@ public abstract class AbstractVehicle extends ContainerCraft
             seat.partUnit.setOwner(null);
             seat.passengerId = -1;
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+        } else {
+            if (warningReceiver != null) {
+                warningReceiver.clear();
+            }
         }
     }
 
@@ -900,7 +933,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             } else if (message.lockEntity) {
                 PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
                 if (partUnit instanceof WeaponUnit weaponUnit) {
-                    weaponUnit.setAimLockEntity(player.level().getEntity(message.lockedEntityId));
+                    weaponUnit.setLockedEntity(player.level().getEntity(message.lockedEntityId));
                 }
             }
         }
@@ -1012,15 +1045,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (!(pPassenger instanceof LivingEntity living)) {
             super.positionRider(pPassenger, pCallback);
             return;
-        }
-        if (viewInfo.lockPassengerYBodyRot) {
-            float vehicleYaw = this.getYRot();
-            float delta = Mth.wrapDegrees(pPassenger.getYHeadRot() - vehicleYaw);
-            float limit = 45.0F;
-            delta = Mth.clamp(delta, -limit, limit);
-            float clampedYaw = vehicleYaw + delta;
-            pPassenger.setYHeadRot(clampedYaw);
-            pPassenger.setYRot(clampedYaw);
         }
         PartUnit<?> partUnit = getOwnOperatorUnit(living);
         if (partUnit != null) {

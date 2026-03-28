@@ -2,8 +2,9 @@ package org.ywzj.vehicle.custom.part.data;
 
 public class RadarUnitData extends RotatableUnitData {
 
+    protected String radarType;
     protected float scanSectorAngle;
-    protected float maxDistance;
+    protected float maxScanDistance;
 
     public RadarUnitData(String id) {
         super(id);
@@ -11,16 +12,21 @@ public class RadarUnitData extends RotatableUnitData {
 
     public RadarUnitData(RadarUnitPojo pojo) {
         super(pojo);
+        this.radarType = pojo.radarType;
         this.scanSectorAngle = pojo.scanSectorAngle;
-        this.maxDistance = pojo.maxDistance;
+        this.maxScanDistance = pojo.maxScanDistance;
+    }
+
+    public String getRadarType() {
+        return radarType;
     }
 
     public float getScanSectorAngle() {
         return scanSectorAngle;
     }
 
-    public float getMaxDistance() {
-        return maxDistance;
+    public float getMaxScanDistance() {
+        return maxScanDistance;
     }
 
 }

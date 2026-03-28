@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:missile",
   "name": "missile",
-  "damage": 999,
+  "damage": 1000,
   "headshot_multiplier": 1.5,
   "recoil": 0.6,
   "shoot_interval": 1000,
@@ -14,11 +14,10 @@
   "x_rot_min": -90,
   "y_rot_max": 180,
   "y_rot_min": -180,
-  "max_speed": 3,
   "explosion": {
     "explode": true,
-    "damage": 30,
-    "radius": 8,
+    "damage": 100,
+    "radius": 4,
     "destroy_block": true
   },
   "guidance": "HOMING"

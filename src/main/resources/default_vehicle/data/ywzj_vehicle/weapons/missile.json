@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:missile",
   "name": "missile",
-  "damage": 99,
+  "damage": 999,
   "headshot_multiplier": 1.5,
   "shoot_interval": 1000,
   "max_capacity": 8,
@@ -15,7 +15,7 @@
   "y_rot_min": -15,
   "explosion": {
     "explode": true,
-    "damage": 99,
+    "damage": 999,
     "radius": 5,
     "destroy_block": true
   }

@@ -7,7 +7,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.part.PartUnitType;
 import org.ywzj.vehicle.custom.part.PartUnitTypes;
 import org.ywzj.vehicle.custom.part.data.*;
-import org.ywzj.vehicle.vehicle.parts.*;
+import org.ywzj.vehicle.vehicle.part.*;
 
 public class AllPartUnitType {
 

@@ -9,7 +9,7 @@
     "turn_step": 2,
     "max_turn": 4
   },
-  "max_health": 10,
+  "max_health": 100,
   "view_info": {
     "third_person_center_offset": [0, 4, 0],
     "third_person_distance": 7,

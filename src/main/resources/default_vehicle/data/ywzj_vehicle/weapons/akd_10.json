@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:missile",
   "name": "AKD-10",
-  "damage": 99,
+  "damage": 1000,
   "headshot_multiplier": 1.5,
   "shoot_interval": 1000,
   "max_capacity": 8,
@@ -15,7 +15,7 @@
   "y_rot_min": -15,
   "explosion": {
     "explode": true,
-    "damage": 30,
+    "damage": 100,
     "radius": 5,
     "destroy_block": true
   }

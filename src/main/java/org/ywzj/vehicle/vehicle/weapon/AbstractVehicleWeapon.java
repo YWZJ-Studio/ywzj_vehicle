@@ -30,8 +30,8 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.AutoWeaponUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.AutoWeaponUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.Collections;
@@ -351,6 +351,10 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                 startReload();
             }
         }
+    }
+
+    public boolean withSeeker() {
+        return false;
     }
 
     public T getData() {

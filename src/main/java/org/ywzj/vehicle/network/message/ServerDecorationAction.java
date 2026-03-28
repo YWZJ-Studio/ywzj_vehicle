@@ -8,8 +8,8 @@ import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.DecorationAction;
-import org.ywzj.vehicle.vehicle.parts.DecorationUnit;
+import org.ywzj.vehicle.vehicle.part.DecorationAction;
+import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 
 import java.util.function.Supplier;
 

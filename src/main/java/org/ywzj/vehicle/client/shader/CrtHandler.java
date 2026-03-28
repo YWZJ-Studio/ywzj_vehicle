@@ -20,11 +20,11 @@ public class CrtHandler implements ResourceManagerReloadListener {
     private static PostChain postChain;
     private static int lastWidth = 0;
     private static int lastHeight = 0;
-    private static boolean isActive = false;
+    private static boolean active = false;
 
     public static void setActive(boolean active) {
-        if (isActive != active) {
-            isActive = active;
+        if (CrtHandler.active != active) {
+            CrtHandler.active = active;
             if (!active) {
                 cleanup();
             }
@@ -52,7 +52,7 @@ public class CrtHandler implements ResourceManagerReloadListener {
                 lastHeight = mc.getWindow().getHeight();
             } catch (Exception e) {
                 e.printStackTrace();
-                isActive = false;
+                active = false;
                 return false;
             }
         }
@@ -66,7 +66,7 @@ public class CrtHandler implements ResourceManagerReloadListener {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (!isActive) {
+        if (!active) {
             return;
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
@@ -83,8 +83,8 @@ public class CrtHandler implements ResourceManagerReloadListener {
         }
     }
 
-    public static boolean isIsActive() {
-        return isActive;
+    public static boolean isActive() {
+        return active;
     }
 
 }

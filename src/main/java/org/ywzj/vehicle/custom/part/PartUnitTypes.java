@@ -3,7 +3,7 @@ package org.ywzj.vehicle.custom.part;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.part.data.*;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
-import org.ywzj.vehicle.vehicle.parts.*;
+import org.ywzj.vehicle.vehicle.part.*;
 
 public class PartUnitTypes {
 

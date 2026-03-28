@@ -14,7 +14,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -24,11 +24,13 @@ import java.util.function.Function;
 public class PhysicsEngine {
 
     public static final double MAGIC_NUMBER = .943;
+    public static float G = 9.8f / 400;
     public final AbstractVehicle vehicle;
     public float mass = 1;
     public float bounce = 0.02f;
     public float rotA = 0.01f;
     public float rotV = 0;
+    public float radarCrossSection;
     public int rotTick;
     public Quaternionf stepRot;
     public Vector3f localRotAxisStart;
@@ -40,8 +42,6 @@ public class PhysicsEngine {
     public Vector3f planeU;
     public Vector3f planeV;
     public float friction = 0.005f;
-    public float gravityA = 1f / 20;
-    public float gravityVMax = 0.7f;
     public Vector3f velocity = new Vector3f(0, 0, 0);
     public Vector3f velocityO = new Vector3f(0, 0, 0);
     public boolean lockZRot;
@@ -197,8 +197,8 @@ public class PhysicsEngine {
             gravityCenter.add(a.mul((float) (physicsCube.height * 8)));
 
             // 升力影响
-            if (force.y >= gravityA * mass) {
-                velocity.y -= gravityA;
+            if (force.y >= G * mass) {
+                velocity.y -= G;
                 vehicle.setOnGround(false);
                 return new Vec3(velocity);
             }
@@ -207,7 +207,7 @@ public class PhysicsEngine {
             if (touchPoints.isEmpty()) {
                 centerRot(gravityCenter, axes);
                 rotV = Math.max(0, rotV - rotA / 3);
-                velocity.y -= gravityA;
+                velocity.y -= G;
                 vehicle.setOnGround(false);
                 return new Vec3(velocity);
             }
@@ -320,7 +320,7 @@ public class PhysicsEngine {
             } else {
                 // 重力在三轴方向上的分力所对应三面无接触点，则无支持力，因转动惯量而继续转动，因重力而自由落体
                 centerRot(gravityCenter, axes);
-                velocity.y -= gravityA;
+                velocity.y -= G;
                 return new Vec3(velocity);
             }
 
@@ -333,7 +333,6 @@ public class PhysicsEngine {
         } catch (Exception exception) {
             exception.printStackTrace();
         } finally {
-            velocity.y = Math.max(velocity.y, -gravityVMax);
             this.velocity = velocity;
         }
         return new Vec3(velocity);

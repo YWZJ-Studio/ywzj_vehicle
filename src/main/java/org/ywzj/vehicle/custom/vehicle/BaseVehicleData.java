@@ -17,7 +17,7 @@ import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
@@ -300,7 +300,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         return defenseStats;
     }
 
-    public boolean isWithWarningReceiver() {
+    public boolean withWarningReceiver() {
         return withWarningReceiver;
     }
 

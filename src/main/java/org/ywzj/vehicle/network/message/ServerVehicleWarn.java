@@ -9,34 +9,34 @@ import java.util.function.Supplier;
 
 public class ServerVehicleWarn {
 
-    public int fromVehicleId;
-    public int toVehicleId;
+    public int fromEntityId;
+    public int toEntityId;
     public WarnType warnType;
-    public boolean on;
+    public String info;
 
     public ServerVehicleWarn() {}
 
-    public ServerVehicleWarn(int fromVehicleId, int toVehicleId, WarnType warnType, boolean on) {
-        this.fromVehicleId = fromVehicleId;
-        this.toVehicleId = toVehicleId;
+    public ServerVehicleWarn(int fromEntityId, int toEntityId, WarnType warnType, String info) {
+        this.fromEntityId = fromEntityId;
+        this.toEntityId = toEntityId;
         this.warnType = warnType;
-        this.on = on;
+        this.info = info;
     }
 
     public static ServerVehicleWarn decode(FriendlyByteBuf buf) {
         ServerVehicleWarn data = new ServerVehicleWarn();
-        data.fromVehicleId = buf.readInt();
-        data.toVehicleId = buf.readInt();
+        data.fromEntityId = buf.readInt();
+        data.toEntityId = buf.readInt();
         data.warnType = buf.readEnum(WarnType.class);
-        data.on = buf.readBoolean();
+        data.info = buf.readUtf();
         return data;
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeInt(fromVehicleId);
-        buf.writeInt(toVehicleId);
+        buf.writeInt(fromEntityId);
+        buf.writeInt(toEntityId);
         buf.writeEnum(warnType);
-        buf.writeBoolean(on);
+        buf.writeUtf(info);
     }
 
     public static void onServerMessageReceived(ServerVehicleWarn message, Supplier<NetworkEvent.Context> ctxSupplier) {

@@ -7,12 +7,12 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.gui.VehicleOverlay;
-import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
@@ -38,6 +38,15 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             VehicleOverlay.tips.put(System.currentTimeMillis(), Component.translatable("ui.out_of_launch_limits"));
             return false;
         }
+        if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
+            if (missileWeaponUnit.getParentWeaponUnit() != null) {
+                missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
+            }
+            if (missileWeaponUnit.getLockedEntity() == null) {
+                LocalVehiclePlayer.instance.sendMessage("ui.need_lock_entity");
+                return false;
+            }
+        }
         return super.doClientShoot();
     }
 
@@ -57,10 +66,8 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         WeaponUnit weaponUnit = getWeaponUnit().getParentWeaponUnit() != null ? getWeaponUnit().getParentWeaponUnit() : getWeaponUnit();
 
         for (AimContext aimContext : aimContexts) {
-            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data.getGuidance(), weaponUnit, data.getWeaponId());
-            if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                missileEntity.targetEntity = weaponUnit.getAimLockEntity();
-            } else if (data.getGuidance() == VehicleMissileWeaponData.Guidance.PRESET
+            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data, weaponUnit);
+            if (data.getGuidance() == VehicleMissileWeaponData.Guidance.PRESET
                     || data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
                 List<Vec3> positions = weaponUnit.aimContexts().stream().map(context -> context.position).toList();
                 double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
@@ -72,16 +79,22 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
                 Vec3 end = start.add(targetVec.normalize().scale(256));
                 missileEntity.targetPos = VectorUtil.hitPosition(vehicle, start, end);
                 missileEntity.targetVec = targetVec;
+                if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
+                    missileEntity.targetEntity = weaponUnit.getLockedEntity();
+                }
             }
-            missileEntity.damage = data.getDamage();
-            missileEntity.explosion = data.getExplosion();
-            missileEntity.maxSpeed = data.getMaxSpeed();
-            missileEntity.maxG = data.getMaxG();
-            missileEntity.life = data.getLife();
-            missileEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
+            missileEntity.shoot(this.getVehicle(), this.getDisplayName(),
+                    aimContext.position, aimContext.direction.x, aimContext.direction.y,
+                    this.getWeaponUnit().getOwner());
+            missileEntity.setDeltaMovement(missileEntity.getDeltaMovement().add(vehicle.getDeltaMovement()));
             vehicle.level().addFreshEntity(missileEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }
+        return true;
+    }
+
+    @Override
+    public boolean withSeeker() {
         return true;
     }
 

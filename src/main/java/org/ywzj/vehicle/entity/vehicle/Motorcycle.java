@@ -9,7 +9,7 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.util.EntityUtil;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 

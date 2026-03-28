@@ -1,18 +1,13 @@
-package org.ywzj.vehicle.vehicle.parts;
+package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.math.Axis;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.*;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -22,15 +17,13 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
-import org.ywzj.vehicle.api.entity.SightObstruction;
-import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.client.gui.VehicleCrossHairOverlay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
+import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -43,6 +36,10 @@ import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.seeker.ElectroOptical;
+import org.ywzj.vehicle.vehicle.weapon.seeker.Infrared;
+import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
 
 import java.util.*;
 
@@ -84,12 +81,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private final List<WeaponUnit> subWeaponUnits = new ArrayList<>();
     // 火控
     private final WeaponUnitData.FireControlSensorType fireControlSensorType;
-    private final WeaponUnitData.FireControlLockType fireControlLockType;
-    private Entity aimLockEntity;
+    private Entity lockedEntity;
+    private int loseLockTick;
     private boolean parentWeaponUnitAim;
     private RadarUnit radarUnit;
-    private boolean irSensorOn;
-    private int irCoolingTick;
+    private boolean seekerOn;
+    private int lockCoolingTick;
     // 第三人称准心样式
     public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
     // OBB结构
@@ -121,7 +118,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.operatorViewOffset = data.getOperatorViewOffset();
         this.operatorOnWeaponUnit = data.isOperatorOnWeaponUnit();
         this.fireControlSensorType = data.getFireControlSensorType();
-        this.fireControlLockType = data.getFireControlLockType();
         this.opticalSightType = data.getOpticalSightType();
         this.withStabilizer = data.withStabilizer();
         this.zoomMin = data.getZoomMin();
@@ -209,6 +205,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (partUnitsView.get(subPartUnitId) instanceof RadarUnit radarUnit) {
                 this.radarUnit = radarUnit;
                 addSubPartUnit(radarUnit);
+                radarUnit.setParentPartUnit(this);
             }
         }
     }
@@ -217,6 +214,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void tick() {
         if (vehicle.level().isClientSide()) {
             tickFireControl();
+        } else {
+            // 通知雷达锁定给目标载具乘客
+            if (vehicle.tickCount % 2 == 0 && getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnit != null) {
+                Entity radarLockedEntity = radarUnit.getLockedEntity();
+                if (radarLockedEntity != null) {
+                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), radarLockedEntity.getId(), WarnType.RADAR_LOCK, radarUnit.getRadarType());
+                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> radarLockedEntity), packet);
+                }
+            }
         }
         super.tick();
         getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
@@ -257,100 +263,137 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             return;
         }
         if (getOwner() != LocalVehiclePlayer.instance.getPlayer()) {
-            aimLockEntity = null;
+            lockedEntity = null;
             return;
         }
-        if (aimLockEntity != null) {
-            aim(aimLockEntity.getBoundingBox().getCenter());
-            Vec3 checkStart = worldPivotPosition();
-            Vec3 checkEnd = aimLockEntity.position();
-            Level level = vehicle.level();
-            BlockHitResult result = level.clip(new ClipContext(checkStart, checkEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
-            // 锁定实体是否被不透光方块遮挡
-            if (result.getType() != HitResult.Type.MISS) {
-                BlockPos pos = result.getBlockPos();
-                BlockState state = level.getBlockState(pos);
-                if (!state.getCollisionShape(level, pos).isEmpty() && state.canOcclude()) {
-                    setAimLockEntity(null);
-                    return;
-                }
+        if (lockedEntity != null) {
+            Vec3 center = lockedEntity.getBoundingBox().getCenter();
+            // 武器站火控自动瞄准锁定目标
+            aim(center);
+            Entity checkEntity = null;
+            // 武器站火控是否仍能锁定目标
+            switch (getFireControlSensorType()) {
+                case IR -> checkEntity = Infrared.checkTarget(this, lockedEntity);
+                case EO -> checkEntity = ElectroOptical.checkTarget(this, lockedEntity);
+                case RF -> checkEntity = Radar.checkTarget(vehicle, getRadarDetectedEntities().stream()
+                        .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
             }
-            EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, checkStart, checkEnd);
-            if (entityHit != null) {
-                WeaponUnitData.FireControlSensorType sensorType = getFireControlSensorType();
-                Entity entity = entityHit.getEntity();
-                // 锁定实体是否被视觉遮挡
-                if (entity instanceof SightObstruction
-                        && (sensorType == WeaponUnitData.FireControlSensorType.IR || sensorType == WeaponUnitData.FireControlSensorType.EO)) {
-                    setAimLockEntity(null);
-                    return;
+            if (checkEntity != lockedEntity) {
+                if (radarUnit != null && radarUnit.getLockedEntity() == lockedEntity) {
+                    radarUnit.setLockedEntity(checkEntity);
                 }
-                // 锁定实体是否被干扰
-                if (entity instanceof TargetObstruction) {
-                    setAimLockEntity(entity);
-                }
+                setLockedEntity(checkEntity);
             }
-            // 若为红外锁定，目标是否仍在锁定框内
-            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                Vec3 vLock = aimLockEntity.getBoundingBox().getCenter().subtract(worldPivotPosition());
-                Vec3 vAim = worldVec();
-                if (Math.toDegrees(VectorUtil.angleBetween(vLock, vAim)) > 30) {
-                    setAimLockEntity(null);
-                    return;
+            // 雷达发生远程与本地实体切换
+            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnit != null && lockedEntity != null) {
+                RadarUnit.DetectedObject detectedObject = radarUnit.getDetectedEntities().get(lockedEntity.getId());
+                if (detectedObject != null && detectedObject.entity != lockedEntity) {
+                    if (radarUnit.getLockedEntity() == lockedEntity) {
+                        radarUnit.setLockedEntity(detectedObject.entity);
+                    }
+                    setLockedEntity(detectedObject.entity);
                 }
             }
             // 锁定实体是否已消失
-            if (aimLockEntity != null) {
-                if (!aimLockEntity.isAlive()) {
-                    setAimLockEntity(null);
+            if (lockedEntity != null) {
+                if (!lockedEntity.isAlive()) {
+                    if (loseLockTick > 20) {
+                        setLockedEntity(null);
+                    } else {
+                        loseLockTick += 1;
+                    }
                 }
             }
         }
-        // 红外导引头开启并冷却后搜索并锁定目标
-        else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-            if (isIrSensorOn()) {
-                irCoolingTick += 1;
-                if (irCoolingTick > 30) {
-                    Minecraft minecraft = Minecraft.getInstance();
-                    Camera camera = minecraft.gameRenderer.getMainCamera();
-                    Entity bestEntity = null;
-                    double minDegree = Double.MAX_VALUE;
-                    for (Entity entity : minecraft.level.entitiesForRendering()) {
-                        // 基础校验
-                        if (entity == camera.getEntity()
-                                || entity.getVehicle() != null
-                                || entity == this.vehicle
-                                || !entity.isAlive()
-                                || entity.isSpectator()
-                                || entity.getBoundingBox().getSize() < 1
-                                || entity.distanceTo(vehicle) > 256) {
-                            continue;
+        // 导引头开启并冷却后搜索并锁定目标
+        else if (isSeekerOn() && lockedEntity == null) {
+            lockCoolingTick += 1;
+            if (lockCoolingTick > 20) {
+                // 导弹
+                Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
+                if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
+                    Entity entity = null;
+                    // 红外
+                    if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                        entity = Infrared.findTarget(this, missile.getData().getSeekerFov());
+                    }
+                    // 雷达
+                    else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
+                        // 主动雷达弹需雷达扫描目标
+                        if (missile.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
+                            entity = Radar.findTarget(this, missile.getData().getSeekerFov());
                         }
-                        Vec3 vLock = entity.getBoundingBox().getCenter().subtract(worldPivotPosition());
-                        Vec3 vAim = worldVec();
-                        double degree = Math.toDegrees(VectorUtil.angleBetween(vLock, vAim));
-                        // 在锁定框内
-                        if (degree <= 30 && degree < minDegree) {
-                            minDegree = degree;
-                            bestEntity = entity;
+                        // 半主动雷达弹需雷达锁定目标
+                        else if (missile.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
+                            entity = getRadarUnit().getLockedEntity();
+                            if (entity != null) {
+                                Vec3 vLock = entity.getBoundingBox().getCenter().subtract(worldPivotPosition());
+                                Vec3 vAim = worldVec();
+                                double degree = Math.toDegrees(VectorUtil.angleBetween(vLock, vAim));
+                                if (degree > missile.getData().getSeekerFov()) {
+                                    entity = null;
+                                }
+                            }
                         }
                     }
-                    if (bestEntity != null) {
-                        setAimLockEntity(bestEntity);
-                        irSensorOn = false;
-                        irCoolingTick = 0;
+                    if (entity != null) {
+                        setLockedEntity(entity);
                     }
                 }
             }
         }
     }
 
-    public int getAmmoCapacity() {
-        return ammoCapacity;
+    @OnlyIn(Dist.CLIENT)
+    public void fireControlLock() {
+        if (radarUnit != null && radarUnit.getLockedEntity() != null) {
+            radarUnit.setLockedEntity(null);
+            return;
+        }
+        if (lockedEntity != null) {
+            setLockedEntity(null);
+        }
+        WeaponUnitData.FireControlSensorType sensorType = getFireControlSensorType();
+        // 光电锁定
+        if (sensorType == WeaponUnitData.FireControlSensorType.EO) {
+            Vec3 lookAtPos;
+            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON
+                    || LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                lookAtPos = LocalVehiclePlayer.instance.freeAimPos();
+            } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                lookAtPos = LocalVehiclePlayer.instance.scopeAimPos();
+            } else {
+                return;
+            }
+            Entity lockedEntity = ElectroOptical.findTarget(this, lookAtPos);
+            setLockedEntity(lockedEntity);
+        }
+        // 雷达锁定
+        if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnit != null) {
+            Entity lockedEntity = Radar.findTarget(this, 90);
+            if (lockedEntity != null) {
+                radarUnit.setLockedEntity(lockedEntity);
+            }
+        }
     }
 
-    public Bolt getCurrentBolt() {
-        return bolts.get(currentBoltIndex);
+    /**
+     * 导引头开关机
+     */
+    @OnlyIn(Dist.CLIENT)
+    public void toggleSeeker(Boolean on) {
+        Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
+        if (weaponOptional.isPresent() && weaponOptional.get().withSeeker()) {
+            if (on == null) {
+                seekerOn = !seekerOn;
+            } else {
+                seekerOn = on;
+            }
+            lockCoolingTick = 0;
+            if (lockedEntity != null) {
+                setLockedEntity(null);
+            }
+        }
     }
 
     public void shoot(int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
@@ -371,8 +414,20 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
-        if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-            setAimLockEntity(null);
+        WeaponUnit weaponUnit = this;
+        Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
+        if (weaponOptional.isEmpty() && parentWeaponUnit != null) {
+            weaponUnit = parentWeaponUnit;
+            weaponOptional = parentWeaponUnit.getCurrentWeapon();
+        }
+        // 导弹若为红外弹或主动雷达弹，发射后需重置引导头状态
+        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
+            if (missile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
+                VehicleMissileWeaponData.HomingMode homingMode = missile.getData().getHomingMode();
+                if (homingMode == VehicleMissileWeaponData.HomingMode.INFRARED || homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
+                    weaponUnit.toggleSeeker(false);
+                }
+            }
         }
     }
 
@@ -395,6 +450,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));
     }
 
+    @Override
     public Vec2 aimRot(Vec3 worldPosition) {
         if (xTurnGroup == null) {
             return new Vec2(0, 0);
@@ -544,6 +600,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
+    public int getAmmoCapacity() {
+        return ammoCapacity;
+    }
+
+    public Bolt getCurrentBolt() {
+        return bolts.get(currentBoltIndex);
+    }
+
     public List<Bolt> getBolts() {
         return bolts;
     }
@@ -580,97 +644,31 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void fireControlLock() {
-        if (aimLockEntity != null) {
-            setAimLockEntity(null);
-            return;
-        }
-        WeaponUnitData.FireControlLockType lockType = getFireControlLockType();
-        WeaponUnitData.FireControlSensorType sensorType = getFireControlSensorType();
-        if (lockType == WeaponUnitData.FireControlLockType.AIM_HIT
-                || lockType == WeaponUnitData.FireControlLockType.NONE) {
-            // 稳定器
-            Vec3 aimLockPosition;
-            if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON
-                    || LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-                aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(-LocalVehiclePlayer.CAMERA_UPWARD_ANGLE, 0);
-            } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                aimLockPosition = LocalVehiclePlayer.instance.cameraAimHit(0, 0);
-            } else {
-                return;
-            }
-            // 光电锁定
-            if (sensorType == WeaponUnitData.FireControlSensorType.EO
-                    && lockType == WeaponUnitData.FireControlLockType.AIM_HIT) {
-                Vec3 opticalSightPosition = worldOpticalSightPosition();
-                Vec3 direction = aimLockPosition.subtract(opticalSightPosition).normalize();
-                EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, opticalSightPosition, opticalSightPosition.add(direction.scale(LocalVehiclePlayer.renderDistance())));
-                if (entityHit != null) {
-                    Entity entity = entityHit.getEntity();
-                    if (entity instanceof SightObstruction) {
-                        setAimLockEntity(null);
-                    } else {
-                        setAimLockEntity(entity);
-                    }
-                } else {
-                    setAimLockEntity(null);
-                }
-            }
-        }
-        // 范围锁定
-        else if (lockType == WeaponUnitData.FireControlLockType.AIM_FRUSTUM) {
-            if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnit != null) {
-                double x = VehicleCrossHairOverlay.getScreenAimX();
-                double y = VehicleCrossHairOverlay.getScreenAimY();
-                List<Entity> aimDetectedEntities = radarUnit.getDetectedEntities().stream()
-                        .map(detectedObject -> new Object[] {detectedObject.entity, VectorUtil.worldToScreen(detectedObject.detectedPosition)})
-                        .filter(pair -> ((Vec3) pair[1]).z > 0)
-                        .sorted(Comparator.comparingDouble(pair -> {
-                            double dx = ((Vec3) pair[1]).x - x;
-                            double dy = ((Vec3) pair[1]).y - y;
-                            return dx * dx + dy * dy;
-                        }))
-                        .map(pair -> (Entity) pair[0])
-                        .toList();
-                if (!aimDetectedEntities.isEmpty()) {
-                    setAimLockEntity(aimDetectedEntities.get(0));
-                }
-            } else if (sensorType == WeaponUnitData.FireControlSensorType.IR) {
-                irSensorOn = !irSensorOn;
-                irCoolingTick = 0;
-                if (aimLockEntity != null) {
-                    setAimLockEntity(null);
-                }
-            }
-        }
-    }
-
     public Collection<RadarUnit.DetectedObject> getRadarDetectedEntities() {
         if (radarUnit != null) {
-            return radarUnit.getDetectedEntities();
+            return radarUnit.getDetectedEntities().values();
         }
         return List.of();
     }
 
-    public Entity getAimLockEntity() {
-        return aimLockEntity;
+    public Entity getLockedEntity() {
+        return lockedEntity;
     }
 
-    public void setAimLockEntity(Entity aimLockEntity) {
-        Entity lastAimLockEntity = this.aimLockEntity;
-        this.aimLockEntity = aimLockEntity;
-        if (radarUnit != null) {
-            radarUnit.setLockedEntity(aimLockEntity);
-        }
+    /**
+     * 武器站锁定目标
+     */
+    public void setLockedEntity(Entity lockedEntity) {
+        this.lockedEntity = lockedEntity;
+        loseLockTick = 0;
         if (vehicle.level().isClientSide()) {
-            if (irTrackAlarmSound != null && aimLockEntity == null) {
+            if (irTrackAlarmSound != null && lockedEntity == null) {
                 irTrackAlarmSound.stop();
                 irTrackAlarmSound = null;
             }
             // 红外锁定提示
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                if (irTrackAlarmSound == null && aimLockEntity != null) {
+                if (irTrackAlarmSound == null && lockedEntity != null) {
                     irTrackAlarmSound = new VehicleSound(AllSounds.IR_TRACK_ALARM.get(), 1f, 1f, 1f, true, 50, false, false, vehicle.getId());
                     irTrackAlarmSound.play();
                 }
@@ -679,20 +677,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             ClientVehicleAction action = new ClientVehicleAction();
             action.vehicleEntityId = vehicle.getId();
             action.lockEntity = true;
-            action.lockedEntityId = aimLockEntity == null ? -1 : aimLockEntity.getId();
+            action.lockedEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
             Channel.CHANNEL.sendToServer(action);
-        } else {
-            // 通知雷达锁定与脱锁给目标载具乘客
-            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
-                if (lastAimLockEntity != null) {
-                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), lastAimLockEntity.getId(), WarnType.RADAR_LOCK, false);
-                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-                }
-                if (aimLockEntity != null) {
-                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), aimLockEntity.getId(), WarnType.RADAR_LOCK, true);
-                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-                }
-            }
         }
     }
 
@@ -740,18 +726,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return fireControlSensorType;
     }
 
-    public WeaponUnitData.FireControlLockType getFireControlLockType() {
-        Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
-        if (weaponOptional.isPresent()) {
-            WeaponUnit weaponUnit = weaponOptional.get().getWeaponUnit();
-            if (weaponUnit == this) {
-                return fireControlLockType;
-            }
-            return weaponUnit.getFireControlLockType();
-        }
-        return fireControlLockType;
-    }
-
     public boolean isParentWeaponUnitAim() {
         return parentWeaponUnitAim;
     }
@@ -760,12 +734,16 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.parentWeaponUnitAim = parentWeaponUnitAim;
     }
 
-    public boolean isIrSensorOn() {
-        return irSensorOn;
+    public RadarUnit getRadarUnit() {
+        return radarUnit;
     }
 
-    public int getIrCoolingTick() {
-        return irCoolingTick;
+    public boolean isSeekerOn() {
+        return seekerOn;
+    }
+
+    public int getLockCoolingTick() {
+        return lockCoolingTick;
     }
 
     public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {
@@ -781,7 +759,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void setCurrentWeaponIndex(int index) {
         this.currentWeaponIndex = index;
-        setAimLockEntity(null);
+        setLockedEntity(null);
     }
 
     public Optional<AbstractVehicleWeapon<?>> getCurrentSecondaryWeapon() {
@@ -797,7 +775,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public void setCurrentSecondaryWeaponIndex(int currentSecondaryWeaponIndex) {
         this.currentSecondaryWeaponIndex = currentSecondaryWeaponIndex;
-        setAimLockEntity(null);
+        setLockedEntity(null);
     }
 
     public List<AbstractVehicleWeapon<?>> getIndexedWeapons() {
@@ -854,7 +832,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.baseRotatableUnit = baseWeaponUnit;
 
         this.fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
-        this.fireControlLockType = WeaponUnitData.FireControlLockType.NONE;
 
         currentWeaponIndex = 0;
     }

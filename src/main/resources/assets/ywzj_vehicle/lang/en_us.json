@@ -80,10 +80,14 @@
   "ui.vehicle_rotary_wing.fuel": "FUEL: %s",
   "ui.vehicle_rotary_wing.altitude": "ALT: %d",
   "ui.war_emergency_power": "WEP",
-  "ui.out_of_launch_limits": "Out of launch limits",
-  "ui.homing": "Homing",
-  "ui.missile_incoming": "Missile Incoming",
-  "ui.being_locked": "Being Locked",
+  "ui.brake": "BRK",
+  "ui.out_of_launch_limits": "OUT OF LAUNCH LIMITS",
+  "ui.need_lock_entity": "ENTITY LOCK IS REQUIRED",
+  "ui.homing": "HOMING",
+  "ui.missile_incoming": "MISSILE INCOMING",
+  "ui.being_locked": "BEING LOCKED",
+  "ui.overload": "OVERLOAD %d",
+  "ui.lost_control": "LOST CONTROL",
 
   "screen.no_description": "No description",
 
@@ -102,6 +106,7 @@
   "message.vehicle.damage_system.critical": "CRITICAL",
   "message.vehicle.damage_system.hurt": "DAMAGE",
   "message.vehicle.damage_system.hit": "HIT",
+  "message.vehicle.damage_system.explosion": "EXPLOSION",
 
   "commands.vehicle.reload.success": "§a§l[YWZJ]§r All vehicle packs reloaded! Time: %.3f ms",
 

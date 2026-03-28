@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -161,6 +162,51 @@ public class RenderHelper {
             }
         }
         poseStack.popPose();
+    }
+
+    public static void drawLine(PoseStack poseStack, Vec3 v, float thickness, int color, float dashLength, float gapLength) {
+        float vx = (float) v.x;
+        float vy = (float) v.z;
+        float totalLen = (float) Math.sqrt(vx * vx + vy * vy);
+        if (totalLen < 0.001f) {
+            return;
+        }
+        if (dashLength < 0) {
+            dashLength = totalLen;
+            gapLength = totalLen;
+        }
+
+        float dx = vx / totalLen;
+        float dy = vy / totalLen;
+        float nx = -dy * (thickness / 2f);
+        float ny = dx * (thickness / 2f);
+
+        Matrix4f mat = poseStack.last().pose();
+        RenderSystem.enableBlend();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        BufferBuilder bb = Tesselator.getInstance().getBuilder();
+        bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+        float a = (color >> 24 & 255) / 255f;
+        float rc = (color >> 16 & 255) / 255f;
+        float gc = (color >> 8 & 255) / 255f;
+        float bc = (color & 255) / 255f;
+
+        for (float cur = 0; cur < totalLen; cur += dashLength + gapLength) {
+            float end = Math.min(cur + dashLength, totalLen);
+
+            float xStart = dx * cur;
+            float yStart = dy * cur;
+            float xEnd = dx * end;
+            float yEnd = dy * end;
+
+            bb.vertex(mat, xStart - nx, yStart - ny, 0).color(rc, gc, bc, a).endVertex();
+            bb.vertex(mat, xStart + nx, yStart + ny, 0).color(rc, gc, bc, a).endVertex();
+            bb.vertex(mat, xEnd + nx, yEnd + ny, 0).color(rc, gc, bc, a).endVertex();
+            bb.vertex(mat, xEnd - nx, yEnd - ny, 0).color(rc, gc, bc, a).endVertex();
+        }
+
+        Tesselator.getInstance().end();
     }
 
     /**

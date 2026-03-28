@@ -33,9 +33,6 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("fire_control_sensor_type")
     public WeaponUnitData.FireControlSensorType fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
 
-    @SerializedName("fire_control_lock_type")
-    public WeaponUnitData.FireControlLockType fireControlLockType = WeaponUnitData.FireControlLockType.NONE;
-
     @SerializedName("optical_sight_type")
     public WeaponUnitData.OpticalSightType opticalSightType;
 

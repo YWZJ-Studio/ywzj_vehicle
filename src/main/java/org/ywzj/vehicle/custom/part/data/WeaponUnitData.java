@@ -29,7 +29,6 @@ public class WeaponUnitData extends RotatableUnitData {
     private float zoomMin;
     private float zoomMax;
     private FireControlSensorType fireControlSensorType;
-    private FireControlLockType fireControlLockType;
     private CrosshairStyle crosshairStyle;
     private List<WeaponInfo> weapons;
     private VehicleCubeGroup xTurnGroup;
@@ -48,7 +47,6 @@ public class WeaponUnitData extends RotatableUnitData {
         this.operatorViewOffset = pojo.operatorViewOffset;
         this.operatorOnWeaponUnit = pojo.operatorOnWeaponUnit;
         this.fireControlSensorType = pojo.fireControlSensorType;
-        this.fireControlLockType = pojo.fireControlLockType;
         this.opticalSightType = pojo.opticalSightType;
         this.withStabilizer = pojo.withStabilizer;
         this.zoomMin = pojo.zoomMin;
@@ -87,10 +85,6 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public FireControlSensorType getFireControlSensorType() {
         return fireControlSensorType;
-    }
-
-    public FireControlLockType getFireControlLockType() {
-        return fireControlLockType;
     }
 
     public OpticalSightType getOpticalSightType() {
@@ -221,18 +215,6 @@ public class WeaponUnitData extends RotatableUnitData {
         // 光电
         @SerializedName("eo")
         EO
-    }
-
-    public enum FireControlLockType {
-        // 不能锁定
-        @SerializedName("none")
-        NONE,
-        // 准心锁定
-        @SerializedName("aim_hit")
-        AIM_HIT,
-        // 视锥内锁定
-        @SerializedName("aim_frustum")
-        AIM_FRUSTUM
     }
 
     public enum CrosshairStyle {

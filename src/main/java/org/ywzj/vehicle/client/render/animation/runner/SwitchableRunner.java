@@ -11,7 +11,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
+import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
 
 /**
  * 简单的 SwitchableRunner 管理器，用于管理门、起落架等可开关结构的动画 Runner

@@ -32,6 +32,7 @@ public class GuiHelper {
         float green = (float)(color >> 8 & 255) / 255.0F;
         float blue = (float)(color & 255) / 255.0F;
 
+        RenderSystem.depthMask(false);
         drawCircle(
                 matrix, bufferbuilder,
                 x, y,
@@ -39,9 +40,8 @@ public class GuiHelper {
                 red, green, blue, alpha,
                 thickness, start, end
         );
-
         BufferUploader.drawWithShader(bufferbuilder.end());
-
+        RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
     }
 

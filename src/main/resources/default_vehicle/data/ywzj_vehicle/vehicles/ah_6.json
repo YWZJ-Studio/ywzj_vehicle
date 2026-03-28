@@ -1,7 +1,7 @@
 {
   "type": "ywzj_vehicle:rotary_wing_vehicle",
   "attributes": {
-    "main_rotor_force": 0.1,
+    "main_rotor_force": 0.0343,
     "ceiling": 256,
     "x_rot_speed_acceleration": 1.5,
     "x_rot_speed_max": 4.0,
@@ -11,7 +11,7 @@
     "z_rot_speed_max": 4.0,
     "max_air_speed": 1.2
   },
-  "max_health": 30,
+  "max_health": 800,
   "view_info": {
     "third_person_center_offset": [0, 6, 0],
     "third_person_distance": 14,
@@ -26,7 +26,7 @@
   },
   "defense_stats": {
     "damage_threshold": 10,
-    "impact_multiplier": 0.3
+    "impact_multiplier": 3
   },
   "with_warning_receiver": true,
   "structure_model": "ywzj_vehicle:vehicle/ah_6",

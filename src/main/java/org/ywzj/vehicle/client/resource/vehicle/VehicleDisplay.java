@@ -19,7 +19,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.ScriptManager;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.parts.SwitchableUnit;
+import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
 
 import java.util.*;
 

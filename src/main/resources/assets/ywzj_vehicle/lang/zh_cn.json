@@ -80,10 +80,14 @@
   "ui.vehicle_rotary_wing.fuel": "燃油: %s",
   "ui.vehicle_rotary_wing.altitude": "高度: %d",
   "ui.war_emergency_power": "加力",
+  "ui.brake": "制动",
   "ui.out_of_launch_limits": "超出射界",
+  "ui.need_lock_entity": "需要先锁定目标",
   "ui.homing": "制导中",
   "ui.missile_incoming": "敌导弹",
   "ui.being_locked": "敌跟踪",
+  "ui.overload": "过载 %d",
+  "ui.lost_control": "失控",
 
   "screen.no_description": "暂无介绍",
 
@@ -102,6 +106,7 @@
   "message.vehicle.damage_system.critical": "致命",
   "message.vehicle.damage_system.hurt": "伤害",
   "message.vehicle.damage_system.hit": "命中",
+  "message.vehicle.damage_system.explosion": "爆炸",
 
   "commands.vehicle.reload.success": "§a§l[YWZJ]§r 所有载具包已重新加载！耗时: %.3f ms",
 

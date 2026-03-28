@@ -20,6 +20,7 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_MED = registerSoundEvent("vehicle_hit_med", YwzjVehicle.modLocation("vehicle_hit_med"));
     public static final RegistryObject<SoundEvent> VEHICLE_HIT_BIG = registerSoundEvent("vehicle_hit_big", YwzjVehicle.modLocation("vehicle_hit_big"));
     public static final RegistryObject<SoundEvent> IR_TRACK_ALARM = registerSoundEvent("ir_track_alarm", YwzjVehicle.modLocation("ir_track_alarm"));
+    public static final RegistryObject<SoundEvent> RADAR_SEARCH_WARN = registerSoundEvent("radar_search_warn", YwzjVehicle.modLocation("radar_search_warn"));
     public static final RegistryObject<SoundEvent> RADAR_LOCK_WARN = registerSoundEvent("radar_lock_warn", YwzjVehicle.modLocation("radar_lock_warn"));
     public static final RegistryObject<SoundEvent> MISSILE_LAUNCH_WARN = registerSoundEvent("missile_launch_warn", YwzjVehicle.modLocation("missile_launch_warn"));
     public static final RegistryObject<SoundEvent> GUN_7_62MM_SHOT = registerSoundEvent("gun_7.62mm_shot", YwzjVehicle.modLocation("gun_7.62mm_shot"));

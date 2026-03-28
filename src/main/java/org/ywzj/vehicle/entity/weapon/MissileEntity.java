@@ -1,9 +1,9 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -19,6 +19,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -31,25 +32,50 @@ import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.PhysicsEngine;
+import org.ywzj.vehicle.vehicle.part.RadarUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
+import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
 
-public class MissileEntity extends AmmoEntity {
+import java.util.List;
 
-    public float maxSpeed;
+public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
+
+    public float seekerFov;
+    public float mass;
+    public float thrust;
+    public float motorBurnTime;
+    public float dragCoefficient;
+    public float maxG;
+    public float referenceSpeed;
+    public float activeRadarActivationRange = 1024;
+    private VehicleMissileWeaponData.Guidance guidance;
+    private VehicleMissileWeaponData.HomingMode homingMode;
+    public boolean activeRadarOn;
+    public int activeRadarLostTargetTick;
     public Entity targetEntity;
     public Vec3 targetVec;
     public Vec3 targetPos;
-    public int operatorId;
-    public float maxG;
-    private VehicleMissileWeaponData.Guidance guidance;
+    public int ownerId;
     private WeaponUnit weaponUnit;
     private VehicleSound sound;
 
-    public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData.Guidance guidance, WeaponUnit weaponUnit, ResourceLocation weaponId) {
-        super(entityType, level, weaponId);
-        this.guidance = guidance;
+    public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData data, WeaponUnit weaponUnit) {
+        super(entityType, level, data.getWeaponId());
+        this.seekerFov = data.getSeekerFov();
+        this.mass = data.getMass();
+        this.thrust = data.getThrust();
+        this.motorBurnTime = data.getMotorBurnTime();
+        this.dragCoefficient = data.getDragCoefficient();
+        this.maxG = data.getMaxG();
+        this.referenceSpeed = data.getReferenceSpeed();
+        this.guidance = data.getGuidance();
+        this.homingMode = data.getHomingMode();
         this.weaponUnit = weaponUnit;
+        this.damage = data.getDamage();
+        this.explosion = data.getExplosion();
+        this.life = data.getLife();
     }
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level) {
@@ -69,11 +95,17 @@ public class MissileEntity extends AmmoEntity {
     }
 
     @Override
+    public void remoteTick() {
+        updateOwner();
+    }
+
+    @Override
     public void tick() {
         super.tick();
         if (level().isClientSide()) {
             tickParticle();
             tickSound();
+            updateOwner();
         } else {
             tickGuidance();
             tickMove();
@@ -81,7 +113,7 @@ public class MissileEntity extends AmmoEntity {
             life -= 1;
             if (life < 0 && !isRemoved()) {
                 if (explosion != null) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, this.position(), explosion.radius, explosion.damage, explosion.destroyBlock);
                     vehicleExplosion.explode();
                 }
                 this.discard();
@@ -92,6 +124,22 @@ public class MissileEntity extends AmmoEntity {
     private void tickGuidance() {
         if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
             tickTrack();
+            if (targetEntity != null) {
+                targetPos = targetEntity.position();
+                // 主动弹雷达开机
+                if (homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR
+                        && targetEntity.distanceTo(this) <= activeRadarActivationRange) {
+                    activeRadarOn = true;
+                }
+            }
+            if (activeRadarOn && targetEntity == null) {
+                if (activeRadarLostTargetTick < 60) {
+                    activeRadarLostTargetTick += 1;
+                } else {
+                    // 主动弹雷达长时间脱锁则自爆
+                    life = 0;
+                }
+            }
             // 截射
             if (targetEntity != null) {
                 proportionalGuide(targetEntity, null);
@@ -131,30 +179,88 @@ public class MissileEntity extends AmmoEntity {
         if (targetVec != null && targetPos != null && this.position().distanceTo(targetPos) < 5f) {
             targetPos = VectorUtil.hitPosition(this, targetPos, targetPos.add(targetVec.scale(256)));
         }
-        EntityUtil.keepChunkLoaded(this, position());
-        EntityUtil.keepChunkLoaded(this, position().add(getLookAngle().normalize().scale(16)));
+        EntityUtil.keepChunkLoaded(this, this.position());
+        EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
         Vec3 velocity = this.getDeltaMovement();
+        Vec3 lookDir = this.getLookAngle();
+        // 推力
+        if (this.tickCount <= motorBurnTime) {
+            double acceleration = (this.thrust / this.mass);
+            velocity = velocity.add(lookDir.scale(acceleration));
+        }
+        // 空气阻力
+        double speedSqr = velocity.lengthSqr();
+        if (speedSqr > 0) {
+            Vec3 drag = velocity.normalize().scale(-dragCoefficient * speedSqr);
+            velocity = velocity.add(drag);
+        }
+        // 重力
+        velocity = velocity.subtract(0, PhysicsEngine.G, 0);
+        // 更新速度与位置
+        this.setDeltaMovement(velocity);
         double dx = this.getX() + velocity.x;
         double dy = this.getY() + velocity.y;
         double dz = this.getZ() + velocity.z;
         this.setPos(dx, dy, dz);
-        Vec3 v = this.getLookAngle().normalize();
-        this.setDeltaMovement(v.scale(maxSpeed));
+        // 自动归正
+        if (this.tickCount > motorBurnTime && targetEntity == null && targetPos == null) {
+            if (velocity.lengthSqr() > 0.01) {
+                Vec3 normVel = velocity.normalize();
+                double pitch = Math.toDegrees(-Math.asin(normVel.y));
+                double yaw = Math.toDegrees(Math.atan2(normVel.z, normVel.x)) - 90.0;
+                // 缓慢过渡到速度方向
+                this.setXRot((float) Mth.lerp(0.2, this.getXRot(), pitch));
+                this.setYRot((float) Mth.lerp(0.2, this.getYRot(), yaw));
+            }
+        }
     }
 
     private void tickTrack() {
-        Entity lastTargetEntity = targetEntity;
-        if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
-            // 雷达下持续从载机获取目标
-            targetEntity = weaponUnit.getAimLockEntity();
+        boolean radar = false;
+        if (homingMode == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
+            // 半主动雷达制导
+            if (weaponUnit.getRadarUnit() != null) {
+                // 持续从载机雷达获取目标
+                targetEntity = weaponUnit.getRadarUnit().getLockedEntity();
+                // 半主动雷达弹引导需告警
+                radar = true;
+            }
+        } else if (homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
+            // 主动雷达制导
+            if (targetEntity == null) {
+                // 若导弹丢失目标，且主动弹雷达未开机，则从载机雷达获取目标
+                if (weaponUnit.getRadarUnit() != null && !activeRadarOn) {
+                    targetEntity = weaponUnit.getRadarUnit().getLockedEntity();
+                }
+                // 若载机雷达无目标，或主动弹开机，则自行寻找目标
+                if (targetEntity == null) {
+                    List<Entity> detectedEntities = scanTargets();
+                    if (!detectedEntities.isEmpty()) {
+                        targetEntity = detectedEntities.get(0);
+                        // 主动弹雷达锁定需告警
+                        radar = true;
+                    }
+                }
+            } else {
+                // 主动弹雷达未开机，载机雷达是否仍扫描到目标
+                if (!activeRadarOn) {
+                    RadarUnit radarUnit = weaponUnit.getRadarUnit();
+                    if (radarUnit == null || !radarUnit.getDetectedEntities().containsKey(targetEntity.getId())) {
+                        targetEntity = null;
+                    }
+                }
+                // 主动弹雷达开机，导弹雷达是否仍扫描到目标
+                else {
+                    List<Entity> detectedEntities = scanTargets();
+                    targetEntity = Radar.checkTarget(this, detectedEntities, targetEntity);
+                    // 主动弹雷达锁定需告警
+                    radar = true;
+                }
+            }
         } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR
                 || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.EO) {
-            // 红外或光电下若丢失目标，则从载机获取目标
             if (targetEntity == null) {
-                targetEntity = weaponUnit.getAimLockEntity();
-                if (targetEntity == null) {
-                    return;
-                }
+                return;
             }
             Vec3 checkStart = this.position();
             Vec3 checkEnd = targetEntity.position();
@@ -171,31 +277,10 @@ public class MissileEntity extends AmmoEntity {
                 }
             }
         }
-        // 通知导弹锁定与脱锁给目标载具乘客
-        if (lastTargetEntity != targetEntity) {
-            if (lastTargetEntity != null) {
-                ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), lastTargetEntity.getId(), WarnType.MISSILE_LAUNCH, false);
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-            }
-            if (targetEntity != null) {
-                ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, true);
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-            }
-        }
-    }
-
-    @Override
-    public void onRemovedFromWorld() {
-        super.onRemovedFromWorld();
-        if (level().isClientSide()) {
-            localRemoveMissile();
-        } else {
-            if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
-                if (targetEntity != null) {
-                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, false);
-                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
-                }
-            }
+        // 通知导弹锁定给目标载具乘客
+        if (tickCount % 2 == 0 && targetEntity != null && radar) {
+            ServerVehicleWarn packet = new ServerVehicleWarn(this.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, "MSL");
+            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> targetEntity), packet);
         }
     }
 
@@ -217,17 +302,17 @@ public class MissileEntity extends AmmoEntity {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void localAddMissile() {
-        if (operatorId == LocalVehiclePlayer.instance.getPlayer().getId()) {
-            LocalVehiclePlayer.instance.controllingMissiles.add(this);
+    @Override
+    public void writeData(CompoundTag data) {
+        if (getOwner() != null) {
+            data.putInt("ownerId", getOwner().getId());
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void localRemoveMissile() {
-        if (operatorId == LocalVehiclePlayer.instance.getPlayer().getId()) {
-            LocalVehiclePlayer.instance.controllingMissiles.remove(this);
+    @Override
+    public void readData(CompoundTag data) {
+        if (data.contains("ownerId")) {
+            ownerId = data.getInt("ownerId");
         }
     }
 
@@ -240,9 +325,19 @@ public class MissileEntity extends AmmoEntity {
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
         super.readSpawnData(additionalData);
-        operatorId = additionalData.readInt();
-        if (level().isClientSide()) {
-            localAddMissile();
+        ownerId = additionalData.readInt();
+    }
+
+    private List<Entity> scanTargets() {
+        return Radar.scanTargets(this, this.position(), activeRadarActivationRange, entityPos -> {
+            Vec2 aimRot = VectorUtil.vecToRot(entityPos.subtract(this.position()));
+            return Math.abs(aimRot.x - getXRot()) <= seekerFov && Math.abs(aimRot.y - getYRot()) <= seekerFov;
+        });
+    }
+
+    private void updateOwner() {
+        if (ownerId == LocalVehiclePlayer.instance.getPlayer().getId()) {
+            LocalVehiclePlayer.instance.missiles.put(this, LocalVehiclePlayer.instance.getPlayer().tickCount);
         }
     }
 
@@ -252,8 +347,8 @@ public class MissileEntity extends AmmoEntity {
         Vec3 targetPos;
         Vec3 targetVel;
         if (target != null) {
-            targetPos = target.getEyePosition();
             targetVel = target.getDeltaMovement();
+            targetPos = target.getEyePosition().add(targetVel);
         } else {
             targetPos = pos;
             targetVel = Vec3.ZERO;
@@ -273,7 +368,7 @@ public class MissileEntity extends AmmoEntity {
                 ? desiredDir
                 : missileVel.normalize();
 
-        double N = 1.0; // PN 系数
+        double N = 256; // PN 系数
         Vec3 steering = desiredDir.subtract(currentDir).scale(N);
 
         // 截射目的地
@@ -290,30 +385,38 @@ public class MissileEntity extends AmmoEntity {
         float yRot = Mth.wrapDegrees((float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F);
 
         // 适配过载限制
-        // 逐步解锁最大过载，再降低
-        double accelNow;
-        if (this.tickCount < 5) {
-            accelNow = this.maxG * Math.pow((double) this.tickCount / 5, 2);
-        } else {
-            accelNow = Math.max(0, this.maxG * (1 - (double) (this.tickCount - 5) / 100));
-        }
         Vec3 vel = this.getDeltaMovement();
         double speed = vel.length();
-        if (speed < 1e-4) {
+
+        // 失速
+        if (speed < 0.2) {
             return;
         }
-        double maxOmega = accelNow / speed;
-        if (maxOmega == 0) {
-            return;
-        }
+
+        // 机动
+        double dynamicPressureFactor = Math.min(1.0, (speed * speed) / (referenceSpeed * referenceSpeed));
+        // 当前速度下物理能达到的最大过载
+        double availableG = this.maxG * dynamicPressureFactor;
+
+        // 角速度
+        double maxAccelLimit = availableG * PhysicsEngine.G;
+
+        // 根据向心加速度公式 a = v * omega  =>  omega = a / v (弧度/tick)
+        double maxOmega = maxAccelLimit / speed;
         double maxAnglePerTick = Math.toDegrees(maxOmega);
+
+        // 逐步解锁机动
+        if (this.tickCount < 5) {
+            maxAnglePerTick *= Math.pow((double) this.tickCount / 5.0, 2);
+        }
+
         float curX = this.getXRot();
         float curY = this.getYRot();
         float deltaX = Mth.wrapDegrees(xRot - curX);
         float deltaY = Mth.wrapDegrees(yRot - curY);
-        // 限制转向
         deltaX = Mth.clamp(deltaX, (float)-maxAnglePerTick, (float)maxAnglePerTick);
         deltaY = Mth.clamp(deltaY, (float)-maxAnglePerTick, (float)maxAnglePerTick);
+
         this.setXRot(curX + deltaX);
         this.setYRot(curY + deltaY);
     }

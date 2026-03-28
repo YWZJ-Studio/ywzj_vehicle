@@ -3,6 +3,7 @@ package org.ywzj.vehicle.vehicle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -10,7 +11,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.client.shader.CrtHandler;
+import org.ywzj.vehicle.client.shader.OverloadHandler;
 import org.ywzj.vehicle.client.shader.ThermalHandler;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -20,10 +24,10 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.control.InputHandler;
-import org.ywzj.vehicle.vehicle.parts.PartUnit;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 @OnlyIn(Dist.CLIENT)
@@ -48,14 +52,20 @@ public class LocalVehiclePlayer {
     public float playerLerpYRot;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
+    public float currentG = 1;
+    public float stamina = 100;
+    public boolean lostControl;
+    public int unconsciousnessTick;
+    public Vec3 lastVelocity = Vec3.ZERO;
     public double aimLocationDistance;
     public boolean outOfRangeFinding;
-    public HashSet<MissileEntity> controllingMissiles = new HashSet<>();
     public boolean mouseTurnedAfterScope;
     public AbstractVehicle.Seat seat;
     public ViewType viewType = ViewType.THIRD_PERSON;
-    public int tickCount;
+    public int onVehicleTickCount;
     private final ReentrantLock lock = new ReentrantLock();
+    public ConcurrentHashMap<Integer, ServerEntity> serverEntities = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<MissileEntity, Integer> missiles = new ConcurrentHashMap<>();
     static {
         instance = new LocalVehiclePlayer();
     }
@@ -74,13 +84,63 @@ public class LocalVehiclePlayer {
 
     public void tick() {
         if (onVehicle()) {
-            tickCount += 1;
+            onVehicleTickCount += 1;
         } else {
-            tickCount = 0;
+            onVehicleTickCount = 0;
         }
+        tickOverload();
+        tickRemote();
         tickLerp();
         tickAim();
         checkState();
+    }
+
+    private void tickOverload() {
+        if (!onVehicle()) {
+            currentG = 1;
+            stamina = 100;
+            lostControl = false;
+            return;
+        } else {
+            if (!OverloadHandler.isActive()) {
+                OverloadHandler.setActive(true);
+            }
+        }
+        stamina += stamina < 100 ? 1 : -1;
+        float gravity = PhysicsEngine.G * 400;
+        AbstractVehicle vehicle = getVehicle();
+        Vec3 currentVelocity = vehicle.getDeltaMovement();
+        Vec3 deltaV = currentVelocity.subtract(lastVelocity);
+        Vec3 accelerationVec = deltaV.scale(400);
+        Vec3 gravityVec = new Vec3(0, -gravity, 0);
+        Vec3 apparentAcceleration = accelerationVec.subtract(gravityVec);
+        Vec3 upDirection = new Vec3(vehicle.getMainCubeOBB().obb().getAxes()[1]).normalize();
+        double verticalAcceleration = apparentAcceleration.dot(upDirection);
+        currentG = (float) (verticalAcceleration / gravity);
+        if (lostControl) {
+            if (unconsciousnessTick > 0) {
+                unconsciousnessTick -= 1;
+                if (unconsciousnessTick <= 0) {
+                    lostControl = false;
+                }
+            }
+        } else {
+            float endureG = currentG - 1;
+            stamina = Mth.clamp(stamina - endureG * 0.2f, 0, 120);
+            if (stamina == 0 || stamina == 120) {
+                lostControl = true;
+                unconsciousnessTick = 60;
+            }
+        }
+        lastVelocity = currentVelocity;
+    }
+
+    private void tickRemote() {
+        serverEntities.values().forEach(serverEntity -> {
+            if (serverEntity.entity instanceof RemoteTickEntity entity) {
+                entity.remoteTick();
+            }
+        });
     }
 
     private void tickLerp() {
@@ -424,12 +484,19 @@ public class LocalVehiclePlayer {
     public void checkState() {
         Player player = getPlayer();
         AbstractVehicle vehicle = getVehicle();
-        if (CrtHandler.isIsActive()) {
+        if (CrtHandler.isActive()) {
             if (vehicle == null ||
                     (!(getVehicle().getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit
                             && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT)))
                 CrtHandler.setActive(false);
         }
+        if (OverloadHandler.isActive()) {
+            if (vehicle == null) {
+                OverloadHandler.setActive(false);
+            }
+        }
+        serverEntities.values().removeIf(serverEntity -> serverEntity.updateTick + AllConfigs.server.serverBroadcastEntitiesInterval.get() * 5 < player.tickCount);
+        missiles.values().removeIf(tickCount -> tickCount + 2 < player.tickCount);
     }
 
     /**
@@ -462,6 +529,11 @@ public class LocalVehiclePlayer {
 
     public void sendMessage(String message) {
         getPlayer().displayClientMessage(Component.translatable(message), true);
+    }
+
+    public static class ServerEntity {
+        public Entity entity;
+        public Integer updateTick;
     }
 
 }

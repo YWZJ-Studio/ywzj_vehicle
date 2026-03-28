@@ -43,6 +43,12 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
         @SerializedName("lift_to_drag_k")
         public float liftToDragK = 6;
 
+        @SerializedName("angle_of_attack_min")
+        public float angleOfAttackMin = -10f;
+
+        @SerializedName("angle_of_attack_max")
+        public float angleOfAttackMax = 25f;
+
         @SerializedName("x_rot_input_drag_k")
         public float xRotInputDragK = 1f;
 

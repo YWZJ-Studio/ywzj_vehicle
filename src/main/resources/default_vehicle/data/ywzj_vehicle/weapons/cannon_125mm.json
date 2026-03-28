@@ -2,7 +2,7 @@
   "type": "ywzj_vehicle:cannon",
   "name": "125mm_cannon",
   "caliber": 125,
-  "damage": 99,
+  "damage": 2000,
   "headshot_multiplier": 1,
   "recoil": 1,
   "shoot_interval": 400,
@@ -13,7 +13,7 @@
   },
   "explosion": {
     "explode": true,
-    "damage": 50,
+    "damage": 500,
     "radius": 4,
     "destroy_block": true
   }

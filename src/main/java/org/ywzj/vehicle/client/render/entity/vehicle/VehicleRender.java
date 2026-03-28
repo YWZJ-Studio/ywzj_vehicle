@@ -27,7 +27,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
-import org.ywzj.vehicle.vehicle.parts.DecorationUnit;
+import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 
 import java.util.Optional;
 

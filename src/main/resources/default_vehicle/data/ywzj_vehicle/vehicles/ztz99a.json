@@ -9,7 +9,7 @@
     "turn_acceleration": 1,
     "max_turn": 2
   },
-  "max_health": 300,
+  "max_health": 3000,
   "view_info": {
     "third_person_center_offset": [0, 3, 0],
     "third_person_distance": 7,
@@ -39,7 +39,6 @@
       },
       "optical_sight_offset": [0.719, 0.883, 0.14],
       "operator_view_offset": [0, 1.5, 0],
-      "fire_control_lock_type": "aim_hit",
       "optical_sight_type": "crt",
       "with_stabilizer": true,
       "zoom_max": 8,

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.parts;
+package org.ywzj.vehicle.vehicle.part;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

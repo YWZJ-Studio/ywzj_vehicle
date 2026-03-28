@@ -1,6 +1,9 @@
 package org.ywzj.vehicle.vehicle;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
@@ -26,9 +29,10 @@ public class DamageSystem {
                 }
             }
         }
-        double scale;
+        double scale = 1;
+        boolean explosion = damageSource.getMsgId().equals("ywzj_vehicle.explosion");
         Vec3 hitPos = null;
-        if (damageSource.getDirectEntity() instanceof Projectile) {
+        if (damageSource.getDirectEntity() instanceof Projectile || damageSource.getDirectEntity() instanceof AbstractVehicle) {
             hitPos = damageSource.getDirectEntity().position();
         }
         if (amount < vehicle.defenseStats.damageThreshold) {
@@ -37,7 +41,7 @@ public class DamageSystem {
         } else {
             if (hitPos == null) {
                 scale = 0.2;
-            } else {
+            } else if (!explosion) {
                 Vec3 hitVec = damageSource.getDirectEntity().getDeltaMovement();
                 OBB obb = vehicle.getMainCubeOBB().obb();
                 Vec3 corePos = vehicle.relativeRotPos(new Vec3(obb.center()), false);
@@ -50,7 +54,7 @@ public class DamageSystem {
         }
         amount *= (float) scale;
         if (hitPos != null) {
-            Component message;
+            MutableComponent message;
             if (scale >= 0.7) {
                 vehicle.playSound(AllSounds.VEHICLE_HIT_BIG.get(), 2, 1);
                 message = Component.translatable("message.vehicle.damage_system.critical");
@@ -69,12 +73,25 @@ public class DamageSystem {
                     }
                     HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(projectile.getOwner().getUUID(),
                             vehicle.getId(),
-                            vehicle.relativeRotPos(hitPos, true).subtract(vehicle.position()),
+                            vehicle.relativeRotPos(hitPos, true).subtract(vehicle.position().add(vehicle.centerOffset)),
                             vehicle.relativeRotDirection(projectile.getDeltaMovement(), true),
                             amount,
                             message);
                     MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
                 }
+            }
+            if (damageSource.getDirectEntity() instanceof AbstractVehicle && damageSource.getEntity() instanceof ServerPlayer serverPlayer) {
+                Vec3 direction = vehicle.getBoundingBox().getCenter().subtract(hitPos).normalize();
+                if (explosion) {
+                    message = message.append(" ").append(Component.translatable("message.vehicle.damage_system.explosion").withStyle(ChatFormatting.YELLOW));
+                }
+                HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(serverPlayer.getUUID(),
+                        vehicle.getId(),
+                        vehicle.relativeRotPos(hitPos, true).subtract(vehicle.position().add(vehicle.centerOffset)),
+                        vehicle.relativeRotDirection(direction, true),
+                        amount,
+                        message);
+                MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
             }
         } else {
             vehicle.playSound(vehicle.getHurtSound(damageSource), 2, 1);

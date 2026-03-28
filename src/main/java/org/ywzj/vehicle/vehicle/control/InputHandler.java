@@ -19,7 +19,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.parts.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleDecoyFlare;
 import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
@@ -84,6 +84,10 @@ public class InputHandler {
                                         && "smoke".equals(grenade.getData().getGrenade()))
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
+                } else if (TOGGLE_SEEKER.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        weaponUnit.toggleSeeker(null);
+                    }
                 }
             }
         } else if (event.getAction() == GLFW.GLFW_RELEASE) {
@@ -107,7 +111,7 @@ public class InputHandler {
         }
         if (event.getAction() == 0) {
             if (LocalVehiclePlayer.instance.onVehicle()) {
-                if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.tickCount > 5) {
+                if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.onVehicleTickCount > 5) {
                     AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
                     if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                         if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
@@ -164,6 +168,13 @@ public class InputHandler {
                 waitSwitchSeatTime = System.currentTimeMillis();
             }
             if (player.equals(vehicle.controlUnit.getOperator())) {
+                if (LocalVehiclePlayer.instance.lostControl) {
+                    ControlUnit controlUnit = new ControlUnit(vehicle);
+                    controlUnit.xRot = 0;
+                    controlUnit.yRot = playerYRotO;
+                    sendControl(vehicle, controlUnit);
+                    return;
+                }
                 ControlUnit controlUnit = new ControlUnit(vehicle);
                 controlUnit.forward = FORWARD.isDown();
                 controlUnit.backward = BACKWARD.isDown();

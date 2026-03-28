@@ -9,7 +9,7 @@
     "turn_step": 0.4,
     "max_turn": 2
   },
-  "max_health": 100,
+  "max_health": 2000,
   "view_info": {
     "third_person_center_offset": [0, 4, 0],
     "third_person_distance": 7,
@@ -58,7 +58,6 @@
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "turret_missile",
       "fire_control_sensor_type": "ir",
-      "fire_control_lock_type": "aim_frustum",
       "crosshair_style": "none",
       "is_seat": false,
       "base": "turret",
