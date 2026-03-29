@@ -15,6 +15,7 @@
   "ywzj_vehicle.lav_ad": "LAV-AD",
   "ywzj_vehicle.bgm_71_tow": "BGM-71 TOW",
   "ywzj_vehicle.ah_6": "AH-6",
+  "ywzj_vehicle.j10c": "J-10C",
 
   "entity.ywzj_vehicle.dump_truck": "Dump Truck",
   "entity.ywzj_vehicle.lav150": "LAV-150",
@@ -29,5 +30,6 @@
   "entity.ywzj_vehicle.ah64d": "AH-64D",
   "entity.ywzj_vehicle.lav_ad": "LAV-AD",
   "entity.ywzj_vehicle.bgm_71_tow": "BGM-71 TOW",
-  "entity.ywzj_vehicle.ah_6": "AH-6"
+  "entity.ywzj_vehicle.ah_6": "AH-6",
+  "entity.ywzj_vehicle.j10c": "J-10C"
 }
