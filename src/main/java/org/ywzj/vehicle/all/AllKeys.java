@@ -30,6 +30,7 @@ public class AllKeys {
     public static final KeyMapping TOGGLE_ENGINE = key("toggle_engine", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I);
     public static final KeyMapping TOGGLE_LANDING_GEAR = key("toggle_landing_gear", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G);
     public static final KeyMapping TOGGLE_HOVER_MODE = key("toggle_hover_mode", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z);
+    public static final KeyMapping TOGGLE_RADAR = key("toggle_radar", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_3);
 
     // 武器控制类
     public static final KeyMapping FIRE_CONTROL_LOCK = key("fire_control_lock", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R);
@@ -52,7 +53,7 @@ public class AllKeys {
     public static final KeyMapping CHANGE_SEAT = key("change_seat", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_GRAVE_ACCENT);
 
     private static final KeyMapping[] ALL_KEYS = {
-            FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT, TOGGLE_ENGINE, TOGGLE_LANDING_GEAR, TOGGLE_HOVER_MODE,
+            FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT, TOGGLE_ENGINE, TOGGLE_LANDING_GEAR, TOGGLE_HOVER_MODE, TOGGLE_RADAR,
             FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, SECONDARY_WEAPON_SHOOT, SECONDARY_WEAPON_SWITCH, MAGNIFICATION_CHANGE, DECOY_FLARE_LAUNCH, SMOKE_GRENADE_LAUNCH, TOGGLE_SEEKER,
             SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
             CHANGE_SEAT

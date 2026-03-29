@@ -20,5 +20,6 @@
     "radius": 8,
     "destroy_block": false
   },
-  "guidance": "HOMING"
+  "guidance": "HOMING",
+  "homing_mode": "SEMI_ACTIVE_RADAR"
 }

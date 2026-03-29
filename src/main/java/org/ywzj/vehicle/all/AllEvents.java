@@ -38,8 +38,6 @@ import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.command.RootCommand;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
-import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
@@ -234,8 +232,7 @@ public class AllEvents {
                     if (!target.isAlive()) {
                         continue;
                     }
-                    if (target instanceof RotaryWingVehicle
-                            || target instanceof FixedWingVehicle
+                    if (target instanceof AbstractVehicle
                             || target instanceof MissileEntity
                             || target instanceof TargetObstruction
                             || AllConfigs.serverBroadcastEntityWhitelist.stream()

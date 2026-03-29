@@ -20,5 +20,6 @@
     "radius": 4,
     "destroy_block": true
   },
-  "guidance": "HOMING"
+  "guidance": "HOMING",
+  "homing_mode": "ELECTRO_OPTICAL"
 }

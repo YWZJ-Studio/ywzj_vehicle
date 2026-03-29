@@ -40,47 +40,54 @@ public class VehicleRadarOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = weaponUnit.getVehicle();
-
-        double maxScanDistance = radarUnit.getMaxScanDistance();
-        double yRotMin = radarUnit.getYRotMin();
-        double yRotMax = radarUnit.getYRotMax();
-        double yRotO = radarUnit.yRotO;
-        double yRot = radarUnit.getYRot();
+        PoseStack poseStack = guiGraphics.pose();
         int centerX = screenWidth / 2 + 128;
         int centerY = screenHeight - 80;
-        float radius = 50.0f;
-        int radarColor = 0x4433FF33;
-        int lineColor = 0xFF00FF00;
-
-        Matrix4f matrix = guiGraphics.pose().last().pose();
-        // 扫描扇区
-        drawRadarSector(matrix, centerX, centerY, radius, (float)yRotMin, (float)yRotMax, 32, radarColor);
-        drawRotatedText(guiGraphics, maxScanDistance + " m", centerX, centerY, radius + 8, 0, Color.GREEN);
-        drawRotatedText(guiGraphics, yRotMin + "°", centerX - 8, centerY, radius + 8, (float) -yRotMin, Color.GREEN);
-        drawRotatedText(guiGraphics, yRotMax + "°", centerX + 8, centerY, radius + 8, (float) -yRotMax, Color.GREEN);
-        // 扫描线
-        if (radarUnit.getLockedEntity() == null) {
-            drawScanLine(matrix, centerX, centerY, radius, (float) Mth.lerp(partialTick, yRotO, yRot), 0.4f, lineColor);
-        }
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.translate(centerX, centerY, 0);
-            radarUnit.getDetectedEntities().values().forEach(detectedObject -> {
-                Vec3 v = detectedObject.detectedPosition.subtract(radarUnit.worldRadarPosition());
-                v = vehicle.relativeRotDirection(v, true);
-                double l = v.length() / maxScanDistance * radius;
-                v = v.normalize().scale(-l);
-                // 目标
-                drawTarget(guiGraphics, v.x, v.z, 1, Color.GREEN, detectedObject, radarUnit);
-                // 锁定线
-                Entity lockedEntity = radarUnit.getLockedEntity();
-                if (lockedEntity != null && lockedEntity == detectedObject.entity) {
-                    RenderHelper.drawLine(poseStack, v, 0.5f, Color.GREEN, 3, 1);
+        // 雷达
+        if (radarUnit.isOn()) {
+            double maxScanDistance = radarUnit.getMaxScanDistance();
+            double yRotMin = radarUnit.getYRotMin();
+            double yRotMax = radarUnit.getYRotMax();
+            double yRotO = radarUnit.yRotO;
+            double yRot = radarUnit.getYRot();
+            float radius = 50.0f;
+            int radarColor = 0x4433FF33;
+            int lineColor = 0xFF00FF00;
+            Matrix4f matrix = poseStack.last().pose();
+            poseStack.pushPose();
+            {
+                // 扫描扇区
+                if (yRotMax - yRotMin >= 360) {
+                    yRotMin = 0;
+                    yRotMax = 360;
+                } else {
+                    drawRotatedText(guiGraphics, yRotMin + "°", centerX - 8, centerY, radius + 8, (float) -yRotMin, Color.GREEN);
+                    drawRotatedText(guiGraphics, yRotMax + "°", centerX + 8, centerY, radius + 8, (float) -yRotMax, Color.GREEN);
                 }
-            });
+                drawRadarSector(matrix, centerX, centerY, radius, (float) yRotMin, (float) yRotMax, 32, radarColor);
+                drawRotatedText(guiGraphics, maxScanDistance + " m", centerX, centerY, radius + 8, 0, Color.GREEN);
+                // 扫描线
+                if (radarUnit.getLockedEntity() == null) {
+                    drawScanLine(matrix, centerX, centerY, radius, (float) Mth.lerp(partialTick, yRotO, yRot), 0.4f, lineColor);
+                }
+                poseStack.translate(centerX, centerY, 0);
+                radarUnit.getDetectedEntities().values().forEach(detectedObject -> {
+                    Vec3 v = detectedObject.detectedPosition.subtract(radarUnit.worldRadarPosition());
+                    v = vehicle.relativeRotDirection(v, true);
+                    double l = v.length() / maxScanDistance * radius;
+                    v = v.normalize().scale(-l);
+                    // 目标
+                    drawTarget(guiGraphics, v.x, v.z, 1, Color.GREEN, detectedObject, radarUnit);
+                    // 锁定线
+                    Entity lockedEntity = radarUnit.getLockedEntity();
+                    if (lockedEntity != null && lockedEntity == detectedObject.entity) {
+                        RenderHelper.drawLine(poseStack, v, 0.5f, Color.GREEN, 3, 1);
+                    }
+                });
+            }
+            poseStack.popPose();
         }
-        poseStack.popPose();
+        // RWR
         WarningReceiver warningReceiver = vehicle.warningReceiver;
         if (warningReceiver != null) {
             poseStack.pushPose();

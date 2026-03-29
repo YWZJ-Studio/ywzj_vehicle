@@ -11,6 +11,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.entity.PartEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -73,6 +74,7 @@ public class Infrared {
                     || entity.getVehicle() != null
                     || entity == weaponUnit.getVehicle()
                     || !entity.isAlive()
+                    || entity instanceof PartEntity<?>
                     || entity.isSpectator()
                     || entity.getBoundingBox().getSize() < 1
                     || entity.position().distanceTo(worldPivotPosition) > 256) {

@@ -19,6 +19,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleDecoyFlare;
@@ -67,6 +68,13 @@ public class InputHandler {
                     }
                 } else if (TOGGLE_HOVER_MODE.matches(event.getKey(), event.getScanCode())) {
                     sendToggleHoverMode(vehicle);
+                } else if (TOGGLE_RADAR.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        RadarUnit radarUnit = weaponUnit.getRadarUnit();
+                        if (radarUnit != null) {
+                            radarUnit.toggle(null);
+                        }
+                    }
                 } else if (SECONDARY_WEAPON_SWITCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), true, true));

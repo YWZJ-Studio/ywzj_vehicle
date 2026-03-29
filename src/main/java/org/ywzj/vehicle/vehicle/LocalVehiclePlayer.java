@@ -96,17 +96,25 @@ public class LocalVehiclePlayer {
     }
 
     private void tickOverload() {
+        if (stamina != 100) {
+            stamina += stamina < 100 ? 1 : -1;
+        }
+        if (lostControl) {
+            if (unconsciousnessTick > 0) {
+                unconsciousnessTick -= 1;
+                if (unconsciousnessTick <= 0) {
+                    lostControl = false;
+                }
+            }
+        }
         if (!onVehicle()) {
             currentG = 1;
-            stamina = 100;
-            lostControl = false;
             return;
         } else {
             if (!OverloadHandler.isActive()) {
                 OverloadHandler.setActive(true);
             }
         }
-        stamina += stamina < 100 ? 1 : -1;
         float gravity = PhysicsEngine.G * 400;
         AbstractVehicle vehicle = getVehicle();
         Vec3 currentVelocity = vehicle.getDeltaMovement();
@@ -117,16 +125,9 @@ public class LocalVehiclePlayer {
         Vec3 upDirection = new Vec3(vehicle.getMainCubeOBB().obb().getAxes()[1]).normalize();
         double verticalAcceleration = apparentAcceleration.dot(upDirection);
         currentG = (float) (verticalAcceleration / gravity);
-        if (lostControl) {
-            if (unconsciousnessTick > 0) {
-                unconsciousnessTick -= 1;
-                if (unconsciousnessTick <= 0) {
-                    lostControl = false;
-                }
-            }
-        } else {
+        if (!lostControl) {
             float endureG = currentG - 1;
-            stamina = Mth.clamp(stamina - endureG * 0.2f, 0, 120);
+            stamina = Mth.clamp(stamina - endureG * 0.8f, 0, 120);
             if (stamina == 0 || stamina == 120) {
                 lostControl = true;
                 unconsciousnessTick = 60;

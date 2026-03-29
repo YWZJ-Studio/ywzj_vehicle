@@ -12,7 +12,7 @@
   "max_health": 2000,
   "view_info": {
     "third_person_center_offset": [0, 4, 0],
-    "third_person_distance": 7,
+    "third_person_distance": 8,
     "third_person_center_offset_zoomed": [0, 5, 0],
     "third_person_distance_zoomed": 0,
     "sound_distance": 3
@@ -96,7 +96,7 @@
         "x_rot": -45
       },
       "scan_sector_angle": 80,
-      "max_distance": 256
+      "max_scan_distance": 4096
     }
   ]
 }

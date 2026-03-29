@@ -29,12 +29,14 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     private Entity lockedEntity;
     private boolean yRotAdd = true;
     private boolean xRotAdd = true;
+    private boolean on;
 
     public RadarUnit(int index, AbstractVehicle vehicle, RadarUnitData data) {
         super(index, vehicle, data);
         this.radarType = data.getRadarType();
         this.scanSectorAngle = data.getScanSectorAngle();
         this.maxScanDistance = data.getMaxScanDistance();
+        this.on = true;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         tickTargets();
         tickLock();
         if (vehicle.level().isClientSide()) {
-            if (vehicle.hasPower()) {
+            if (vehicle.hasPower() && on) {
                 tickScan();
             } else {
                 detectedObjects.clear();
@@ -160,15 +162,33 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     }
 
     public void tickLock() {
-        if (lockedEntity != null) {
-            if (!lockedEntity.isAlive()) {
-                setLockedEntity(null);
-                return;
+        if (vehicle.level().isClientSide()) {
+            if (lockedEntity != null) {
+                // 干扰物影响
+                Entity checkEntity = Radar.checkTarget(vehicle, detectedObjects.values().stream()
+                        .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
+                if (checkEntity != lockedEntity) {
+                    setLockedEntity(checkEntity);
+                }
+                // 雷达发生远程与本地实体切换
+                if (lockedEntity != null) {
+                    RadarUnit.DetectedObject detectedObject = getDetectedEntities().get(lockedEntity.getId());
+                    if (detectedObject != null && detectedObject.entity != lockedEntity) {
+                        setLockedEntity(detectedObject.entity);
+                    }
+                }
             }
-            if (detectedObjects.get(lockedEntity.getId()) == null) {
-                setLockedEntity(null);
-                return;
-            }
+        }
+    }
+
+    public void toggle(Boolean on) {
+        if (on == null) {
+            this.on = !this.on;
+        } else {
+            this.on = on;
+        }
+        if (!this.on) {
+            setLockedEntity(null);
         }
     }
 
@@ -209,6 +229,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
             clientRadarAction.toEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
             Channel.CHANNEL.sendToServer(clientRadarAction);
         }
+    }
+
+    public boolean isOn() {
+        return on;
     }
 
     @OnlyIn(Dist.CLIENT)

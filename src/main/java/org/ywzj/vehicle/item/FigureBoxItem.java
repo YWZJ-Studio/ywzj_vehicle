@@ -153,6 +153,9 @@ public class FigureBoxItem extends VehicleItem {
                         player.getItemInHand(context.getHand()).shrink(1);
                         return InteractionResult.SUCCESS;
                     }
+                } else {
+                    player.displayClientMessage(Component.translatable("tips.figure_box_place_failed"), true);
+                    return InteractionResult.FAIL;
                 }
             } else {
                 // 释放内容物

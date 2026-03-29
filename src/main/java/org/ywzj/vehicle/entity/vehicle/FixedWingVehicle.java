@@ -345,14 +345,26 @@ public class FixedWingVehicle extends AbstractVehicle
             yRotInput = (float) (Math.signum(yDiff) * Math.min(1, Math.abs(yDiff) * yRotInputStep * 40));
         }
         if (!(controlUnit.left || controlUnit.right)) {
+            float yRotDiff = VectorUtil.vecToRot(forwardDirection).y - controlUnit.yRot;
             double yDiff = aimVec.dot(leftDirection);
             float zRot = getZRot();
-            if (Math.abs(yDiff) <= 0.05) {
-                // 滚转自动回正
-                zRotInput = (-Math.signum(zRot) * Math.min(1, Math.abs(zRot) / 128));
+            if (Math.abs(yRotDiff) > 5) {
+                if (Math.abs(yDiff) <= 0.05) {
+                    // 滚转保持
+                    zRotInput = zRotInput / 4;
+                } else {
+                    // 滚转倾向目标位置
+                    zRotInput = (float) (Math.signum(-yDiff) * Math.min(1, Math.abs(yDiff) * zRotInputStep * 4));
+                }
             } else {
-                // 滚转倾向目标位置
-                zRotInput = (float) (Math.signum(-yDiff) * Math.min(1, Math.abs(yDiff) * zRotInputStep * 4));
+                // 滚转自动回正
+                float toZRotInput = -Math.signum(zRot) * Math.min(1, Math.abs(zRot) / 128);
+                float zRotInputDiff = toZRotInput - zRotInput;
+                if (Math.abs(zRotInputDiff) < zRotInputStep) {
+                    zRotInput = toZRotInput;
+                } else {
+                    zRotInput += Math.signum(zRotInputDiff) * zRotInputStep;
+                }
             }
         }
         double mass = physicsEngine.mass;

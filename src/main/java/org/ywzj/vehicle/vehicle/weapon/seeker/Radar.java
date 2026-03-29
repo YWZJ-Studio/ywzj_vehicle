@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.entity.PartEntity;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -58,6 +59,7 @@ public class Radar {
             }
             if (entity.getVehicle() != null
                     || !entity.isAlive()
+                    || entity instanceof PartEntity<?>
                     || entity.getBoundingBox().getSize() < 1
                     || entity.distanceToSqr(radarOwner) > maxScanDistanceSqr * rcs * rcs) {
                 continue;
@@ -152,7 +154,7 @@ public class Radar {
     }
 
     public static int rcsWeight(Entity radarEntity, Entity target) {
-        double v39 = Math.abs(target.getDeltaMovement().dot(radarEntity.getLookAngle()));
+        double v39 = Math.abs(target.getDeltaMovement().dot(target.position().subtract(radarEntity.position()).normalize()));
         float rcs = 1;
         if (target instanceof AbstractVehicle vehicle) {
             rcs = vehicle.physicsEngine.radarCrossSection;

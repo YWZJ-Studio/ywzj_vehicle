@@ -278,19 +278,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 case RF -> checkEntity = Radar.checkTarget(vehicle, getRadarDetectedEntities().stream()
                         .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
             }
+            // 干扰物影响
             if (checkEntity != lockedEntity) {
-                if (radarUnit != null && radarUnit.getLockedEntity() == lockedEntity) {
-                    radarUnit.setLockedEntity(checkEntity);
-                }
                 setLockedEntity(checkEntity);
             }
             // 雷达发生远程与本地实体切换
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnit != null && lockedEntity != null) {
                 RadarUnit.DetectedObject detectedObject = radarUnit.getDetectedEntities().get(lockedEntity.getId());
                 if (detectedObject != null && detectedObject.entity != lockedEntity) {
-                    if (radarUnit.getLockedEntity() == lockedEntity) {
-                        radarUnit.setLockedEntity(detectedObject.entity);
-                    }
                     setLockedEntity(detectedObject.entity);
                 }
             }
@@ -418,17 +413,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
         if (weaponOptional.isEmpty() && parentWeaponUnit != null) {
             weaponUnit = parentWeaponUnit;
-            weaponOptional = parentWeaponUnit.getCurrentWeapon();
         }
-        // 导弹若为红外弹或主动雷达弹，发射后需重置引导头状态
-        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
-            if (missile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-                VehicleMissileWeaponData.HomingMode homingMode = missile.getData().getHomingMode();
-                if (homingMode == VehicleMissileWeaponData.HomingMode.INFRARED || homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
-                    weaponUnit.toggleSeeker(false);
-                }
-            }
-        }
+        weaponUnit.toggleSeeker(false);
     }
 
     public void aim(Vec3 worldPos) {

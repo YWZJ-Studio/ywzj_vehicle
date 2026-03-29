@@ -32,7 +32,7 @@ public class DamageSystem {
         double scale = 1;
         boolean explosion = damageSource.getMsgId().equals("ywzj_vehicle.explosion");
         Vec3 hitPos = null;
-        if (damageSource.getDirectEntity() instanceof Projectile || damageSource.getDirectEntity() instanceof AbstractVehicle) {
+        if (damageSource.getDirectEntity() instanceof Projectile || (explosion && damageSource.getDirectEntity() != null)) {
             hitPos = damageSource.getDirectEntity().position();
         }
         if (amount < vehicle.defenseStats.damageThreshold) {

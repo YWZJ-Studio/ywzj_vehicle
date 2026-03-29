@@ -163,7 +163,7 @@ public class VehicleOverlay implements IGuiOverlay {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                         Component.translatable("ui.lost_control"),
                         0, -45, Color.RED);
-            } else if (LocalVehiclePlayer.instance.currentG > 3 || LocalVehiclePlayer.instance.currentG < -1) {
+            } else if (LocalVehiclePlayer.instance.currentG >= 2 || LocalVehiclePlayer.instance.currentG <= -1) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                         Component.translatable("ui.overload", String.format("%.1f", LocalVehiclePlayer.instance.currentG)).append("G"),
                         0, -45, Color.RED);
