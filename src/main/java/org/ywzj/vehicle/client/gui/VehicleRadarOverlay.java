@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.StringUtils;
@@ -164,6 +165,10 @@ public class VehicleRadarOverlay implements IGuiOverlay {
             if (!(detectedObject.entity instanceof MissileEntity)) {
                 guiGraphics.vLine(-2, -2, 3, color);
                 guiGraphics.vLine(3, -2, 3, color);
+                Team team = detectedObject.entity.getTeam();
+                if (team != null && team.isAlliedTo(LocalVehiclePlayer.instance.getPlayer().getTeam())) {
+                    guiGraphics.hLine(-2, 3, 4, color);
+                }
             }
             poseStack.translate(1, 1, 0);
             Vec3 velocity = detectedObject.entity.getDeltaMovement();

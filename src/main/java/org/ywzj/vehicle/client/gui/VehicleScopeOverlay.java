@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.client.render.util.Color;
@@ -245,6 +246,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                             poseStack.translate(screenPos.x, screenPos.y, 0);
                             RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
                             RenderHelper.drawSquare(guiGraphics, 0, 0, 10, Color.GREEN);
+                            alliesInfo(guiGraphics, detectedObject);
                             radarInfo(guiGraphics, poseStack, detectedObject);
                         }
                         poseStack.popPose();
@@ -269,6 +271,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                         RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 10, 3, Color.GREEN);
                     } else {
                         RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 15, 5, Color.GREEN);
+                        alliesInfo(guiGraphics, detectedObject);
                     }
                     radarInfo(guiGraphics, poseStack, detectedObject);
                 }
@@ -289,6 +292,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             poseStack.translate(0, 12, 0);
             RenderHelper.drawSquare(guiGraphics, 0, 0, 4, Color.GREEN);
             if (velocity.length() != 0) {
+                poseStack.translate(0.5, 0, 0);
                 Vec3 direction = velocity.normalize().scale(-8);
                 direction = vehicle.relativeRotDirection(direction, true);
                 RenderHelper.drawLine(poseStack, direction, 1f, color, -1, -1);
@@ -315,6 +319,20 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             guiGraphics.drawString(Minecraft.getInstance().font, String.format("%.2f m/s", approachRate), 0, 0, Color.GREEN, false);
         }
         poseStack.popPose();
+    }
+
+    private static void alliesInfo(GuiGraphics guiGraphics, RadarUnit.DetectedObject detectedObject) {
+        Team team = detectedObject.entity.getTeam();
+        // 友军标记
+        if (team != null && team.isAlliedTo(LocalVehiclePlayer.instance.getPlayer().getTeam())) {
+            Integer teamColor = team.getColor().getColor();
+            if (teamColor == null) {
+                teamColor = color;
+            } else {
+                teamColor = 0xFF000000 | teamColor;
+            }
+            guiGraphics.hLine(-6, 6, 17, teamColor);
+        }
     }
 
 }

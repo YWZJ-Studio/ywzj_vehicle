@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.tuple.Pair;
@@ -235,11 +236,19 @@ public class VehicleOverlay implements IGuiOverlay {
         {
             Font font = Minecraft.getInstance().font;
             int bgColor = 0xAA000000;
+            int nameColor = 0xFFFFFFFF;
             float barHalfWidth = (float) barWidth / 2;
             float barHalfHeight = (float) barHeight / 2;
             poseStack.translate(x, y + barHalfHeight - 8, 0);
             poseStack.scale(size, size, size);
-            guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, 0xFFFFFFFF);
+            Team team = vehicle.getTeam();
+            if (team != null) {
+                Integer teamColor = team.getColor().getColor();
+                if (teamColor != null) {
+                    nameColor = teamColor;
+                }
+            }
+            guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, nameColor);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -512, bgColor);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -512, 0xFF999999);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -512, 0xFF999999);

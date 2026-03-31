@@ -36,6 +36,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -133,6 +134,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected boolean driverXYRotControl = false;
     public boolean uav;
     public boolean remote;
+    public Team remoteTeam;
     public boolean protectPassenger;
     protected boolean dataInitialized;
     private long destroyedTime;
@@ -254,10 +256,26 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public void writeData(CompoundTag data) {
         data.putString(ICustomVehicle.TAG_VEHICLE_ID, getVehicleId().toString());
+        Entity driver = getDriver();
+        if (driver != null) {
+            data.putInt("driverId", driver.getId());
+            Team team = driver.getTeam();
+            if (team != null) {
+                data.putString("teamName", team.getName());
+            }
+        }
         data.putBoolean("Destroyed", isDestroyed());
     }
 
     public void readData(CompoundTag data) {
+        if (data.contains("driverId")) {
+            controlUnit.setOperatorId(data.getInt("driverId"));
+        }
+        if (data.contains("teamName")) {
+            remoteTeam = level().getScoreboard().getPlayerTeam(data.getString("teamName"));
+        } else {
+            remoteTeam = null;
+        }
         if (data.contains("Destroyed")) {
             entityData.set(DESTROYED, data.getBoolean("Destroyed"));
         }
@@ -1289,6 +1307,19 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public boolean isDestroyed() {
         return entityData.get(DESTROYED);
+    }
+
+    @Override
+    public Team getTeam() {
+        if (!remote) {
+            Entity driver = getDriver();
+            if (driver == null) {
+                return null;
+            }
+            return driver.getTeam();
+        } else {
+            return remoteTeam;
+        }
     }
 
     public Matrix4f getWheelsTransform(float ticks) {

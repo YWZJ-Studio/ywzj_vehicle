@@ -160,7 +160,7 @@ public class Radar {
             rcs = vehicle.physicsEngine.radarCrossSection;
         }
         // y = ln(1 + speed * rcs) * scale
-        return (int) (Math.log1p(v39 * rcs) * 1000);
+        return (int) (Math.log1p(v39 * rcs) * 100);
     }
 
 }

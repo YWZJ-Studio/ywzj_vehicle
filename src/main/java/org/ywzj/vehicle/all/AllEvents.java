@@ -137,7 +137,7 @@ public class AllEvents {
                             if (vehicle.getPassengers().stream()
                                     .anyMatch(entity -> entity instanceof ServerPlayer passenger
                                             && passenger.getTeam() != null
-                                            && !passenger.getTeam().equals(serverPlayer.getTeam()))) {
+                                            && !passenger.getTeam().isAlliedTo(serverPlayer.getTeam()))) {
                                 event.setCanceled(true);
                             }
                         }
