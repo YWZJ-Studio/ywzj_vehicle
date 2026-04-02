@@ -500,6 +500,11 @@ public class LocalVehiclePlayer {
         missiles.values().removeIf(tickCount -> tickCount + 2 < player.tickCount);
     }
 
+    public void clear() {
+        serverEntities.clear();
+        missiles.clear();
+    }
+
     /**
      * 抬头视线落点
      */

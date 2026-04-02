@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.all;
 
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +20,7 @@ import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.EntityTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -72,6 +74,14 @@ public class AllEvents {
         @SubscribeEvent
         public static void onRegisterCommands(RegisterCommandsEvent event) {
             RootCommand.register(event.getDispatcher());
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        @SubscribeEvent
+        public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+            if (event.getEntity() instanceof LocalPlayer) {
+                LocalVehiclePlayer.instance.clear();
+            }
         }
 
         @SubscribeEvent
@@ -232,7 +242,7 @@ public class AllEvents {
                     if (!target.isAlive()) {
                         continue;
                     }
-                    if (target instanceof AbstractVehicle
+                    if ((target instanceof AbstractVehicle vehicle && !vehicle.isDestroyed())
                             || target instanceof MissileEntity
                             || target instanceof TargetObstruction
                             || AllConfigs.serverBroadcastEntityWhitelist.stream()

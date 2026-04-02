@@ -55,7 +55,11 @@ public class Radar {
         for (Entity entity : level.isClientSide() ? getClientLevelEntities(radarOwner, scanBox) : level.getEntities(radarOwner, scanBox)) {
             float rcs = 1;
             if (entity instanceof AbstractVehicle vehicle) {
-                rcs = vehicle.physicsEngine.radarCrossSection;
+                if (vehicle.isDestroyed()) {
+                    continue;
+                } else {
+                    rcs = vehicle.physicsEngine.radarCrossSection;
+                }
             }
             if (entity.getVehicle() != null
                     || !entity.isAlive()

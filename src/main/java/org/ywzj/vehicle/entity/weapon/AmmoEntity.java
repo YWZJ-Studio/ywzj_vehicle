@@ -74,7 +74,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             if (result.getType() != HitResult.Type.MISS) {
                 // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
                 if (explosion != null && explosion.explode) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                     vehicleExplosion.explode();
                 }
                 this.discard();
@@ -87,7 +87,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 @Nullable Entity owner = this.getOwner();
                 // 攻击者
                 LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
-                DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, result.getLocation());
+                DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, entityResult.getLocation());
                 boolean kill = false;
                 boolean destroyedBeforeHurt = false;
                 if (entity instanceof AbstractVehicle vehicle) {
@@ -103,13 +103,15 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                     Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill));
                 }
                 if (explosion != null) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                     vehicleExplosion.explode();
                 }
                 this.discard();
-            } else if (explosion.proximityFuze && tickCount > 5 && entityResult == null) {
+            }
+            // 近炸
+            else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
                 AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
-                        .move(getLookAngle().normalize().scale(-explosion.proximityRadius * 2));
+                        .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
                 List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
                         entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
                 if (!nearbyEntities.isEmpty() && explosion != null) {

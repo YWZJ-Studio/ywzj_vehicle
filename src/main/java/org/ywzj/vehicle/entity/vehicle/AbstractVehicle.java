@@ -132,8 +132,9 @@ public abstract class AbstractVehicle extends ContainerCraft
     public PhysicsEngine physicsEngine;
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
-    public boolean uav;
-    public boolean remote;
+    public boolean uav = false;
+    public boolean collision = true;
+    public boolean remote = false;
     public Team remoteTeam;
     public boolean protectPassenger;
     protected boolean dataInitialized;
@@ -540,7 +541,10 @@ public abstract class AbstractVehicle extends ContainerCraft
 //        });
 
         // 碰撞
-        Vec3 velocity = physicsEngine.motionByImpact(touchPoints, axes, getDeltaMovement());
+        Vec3 velocity = getDeltaMovement();
+        if (collision) {
+            velocity = physicsEngine.motionByImpact(touchPoints, axes, velocity);
+        }
         // 阻力
         velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
         // 重力与旋转
@@ -1335,6 +1339,9 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public void push(@NotNull Entity pEntity) {
+        if (!collision) {
+            return;
+        }
         if (this.isPassengerOfSameVehicle(pEntity)) {
             return;
         }
@@ -1373,7 +1380,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public void support(Entity pEntity) {
-        if (pEntity.noPhysics || this.noPhysics) {
+        if (pEntity.noPhysics || this.noPhysics || !collision) {
             return;
         }
         AABB entityAABB = pEntity.getBoundingBox();

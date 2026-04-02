@@ -329,10 +329,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private List<Entity> scanTargets() {
-        return Radar.scanTargets(this, this.position(), activeRadarActivationRange, entityPos -> {
-            Vec2 aimRot = VectorUtil.vecToRot(entityPos.subtract(this.position()));
-            return Math.abs(aimRot.x - getXRot()) <= seekerFov && Math.abs(aimRot.y - getYRot()) <= seekerFov;
-        });
+        return Radar.scanTargets(this, this.position(), activeRadarActivationRange,
+                entityPos -> Math.toDegrees(VectorUtil.angleBetween(this.getLookAngle(), entityPos.subtract(this.position()))) <= seekerFov);
     }
 
     private void updateOwner() {
@@ -377,12 +375,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                 .scale(missileSpeed);
         Vec3 finalTargetPos = missilePos.add(newVel);
 
-        double d0 = finalTargetPos.x - missilePos.x;
-        double d1 = finalTargetPos.y - missilePos.y;
-        double d2 = finalTargetPos.z - missilePos.z;
-        double d3 = Math.sqrt(d0 * d0 + d2 * d2);
-        float xRot = Mth.wrapDegrees((float)(-(Mth.atan2(d1, d3) * (double)(180F / (float)Math.PI))));
-        float yRot = Mth.wrapDegrees((float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F);
+        Vec2 rot = VectorUtil.vecToRot(finalTargetPos.subtract(missilePos));
+        float xRot = rot.x;
+        float yRot = rot.y;
 
         // 适配过载限制
         Vec3 vel = this.getDeltaMovement();
