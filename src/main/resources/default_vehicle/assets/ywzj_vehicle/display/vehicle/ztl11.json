@@ -1,8 +1,10 @@
 {
+  "type": "ywzj_vehicle:wheeled_vehicle",
   "model": "ywzj_vehicle:entity/ztl11",
   "texture": "ywzj_vehicle:textures/entity/ztl11.png",
   "slot_texture": "ywzj_vehicle:textures/slot/ztl11.png",
   "animations": "ywzj_vehicle:entity/ztl11.animation",
+  "animation_controller": "ywzj_vehicle:ztl11_controller",
   "sounds": {
     "engine_start": "ywzj_vehicle:lav150_engine_start",
     "engine_idle": "ywzj_vehicle:truck_engine_idle",

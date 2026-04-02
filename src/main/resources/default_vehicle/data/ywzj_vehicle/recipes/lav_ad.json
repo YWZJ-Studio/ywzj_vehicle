@@ -3,7 +3,27 @@
   "materials": [
     {
       "tag": "forge:ingots/iron",
-      "count": 64
+      "count": 96
+    },
+    {
+      "tag": "forge:ingots/copper",
+      "count": 48
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 32
+    },
+    {
+      "item": "minecraft:glass_pane",
+      "count": 8
+    },
+    {
+      "item": "minecraft:dispenser",
+      "count": 4
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 4
     }
   ],
   "result": {
@@ -12,5 +32,5 @@
       "YwzjVehicleId": "ywzj_vehicle:lav_ad"
     }
   },
-  "printingTime": 1200
+  "printingTime": 1100
 }

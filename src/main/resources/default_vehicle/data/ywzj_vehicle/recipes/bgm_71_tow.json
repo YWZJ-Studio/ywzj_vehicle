@@ -3,7 +3,31 @@
   "materials": [
     {
       "tag": "forge:ingots/iron",
+      "count": 48
+    },
+    {
+      "tag": "forge:ingots/copper",
       "count": 32
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 24
+    },
+    {
+      "item": "minecraft:glass_pane",
+      "count": 4
+    },
+    {
+      "item": "minecraft:dispenser",
+      "count": 2
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 2
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "count": 8
     }
   ],
   "result": {
@@ -12,5 +36,5 @@
       "YwzjVehicleId": "ywzj_vehicle:bgm_71_tow"
     }
   },
-  "printingTime": 1200
+  "printingTime": 900
 }

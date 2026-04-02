@@ -4,6 +4,22 @@
     {
       "tag": "forge:ingots/iron",
       "count": 64
+    },
+    {
+      "tag": "forge:ingots/copper",
+      "count": 32
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 16
+    },
+    {
+      "item": "minecraft:glass_pane",
+      "count": 4
+    },
+    {
+      "item": "minecraft:furnace",
+      "count": 1
     }
   ],
   "result": {
@@ -12,5 +28,5 @@
       "YwzjVehicleId": "ywzj_vehicle:motorcycle"
     }
   },
-  "printingTime": 1200
+  "printingTime": 600
 }

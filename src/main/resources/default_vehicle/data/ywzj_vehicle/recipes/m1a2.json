@@ -3,7 +3,35 @@
   "materials": [
     {
       "tag": "forge:ingots/iron",
+      "count": 160
+    },
+    {
+      "tag": "forge:ingots/copper",
+      "count": 80
+    },
+    {
+      "item": "minecraft:redstone",
       "count": 64
+    },
+    {
+      "item": "minecraft:glass_pane",
+      "count": 16
+    },
+    {
+      "item": "minecraft:dispenser",
+      "count": 8
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 12
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "count": 24
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "count": 16
     }
   ],
   "result": {
@@ -12,5 +40,5 @@
       "YwzjVehicleId": "ywzj_vehicle:m1a2"
     }
   },
-  "printingTime": 1200
+  "printingTime": 1500
 }

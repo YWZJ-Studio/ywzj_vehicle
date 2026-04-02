@@ -3,7 +3,23 @@
   "materials": [
     {
       "tag": "forge:ingots/iron",
-      "count": 64
+      "count": 80
+    },
+    {
+      "tag": "forge:ingots/copper",
+      "count": 40
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 24
+    },
+    {
+      "item": "minecraft:glass_pane",
+      "count": 16
+    },
+    {
+      "item": "minecraft:furnace",
+      "count": 2
     }
   ],
   "result": {
@@ -12,5 +28,5 @@
       "YwzjVehicleId": "ywzj_vehicle:hiace"
     }
   },
-  "printingTime": 1200
+  "printingTime": 1000
 }

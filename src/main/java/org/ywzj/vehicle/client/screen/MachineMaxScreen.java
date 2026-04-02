@@ -46,6 +46,7 @@ public class MachineMaxScreen extends Screen {
     private int topPos;
     private int scrollOffset = 0;
     private static int selectedIndex = -1;
+    private static String filter = "";
     public int tickCount;
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private Button printingButton;
@@ -67,7 +68,6 @@ public class MachineMaxScreen extends Screen {
         this.imageHeight = height - 10;
         this.leftPos = (this.width - imageWidth) / 2;
         this.topPos = (this.height - imageHeight) / 2;
-        updateFilteredList("");
         int x = leftPos + 12;
         int y = topPos + 11;
         this.searchBox = new EditBox(this.font, x, y, ITEM_WIDTH - 2, ITEM_HEIGHT - 3, Component.literal("Search"));
@@ -81,8 +81,10 @@ public class MachineMaxScreen extends Screen {
                 .size(50, 20)
                 .build();
         this.addRenderableWidget(printingButton);
+        this.searchBox.setValue(filter);
+        updateFilteredList(filter);
         if (selectedIndex >= 0 && selectedIndex < filteredVehicleList.size()) {
-            onVehicleSelected(filteredVehicleList.get(selectedIndex).getKey());
+            onVehicleSelected(filteredVehicleList.get(selectedIndex).getValue());
         }
     }
 
@@ -127,10 +129,14 @@ public class MachineMaxScreen extends Screen {
     }
 
     private void updateFilteredList(String filter) {
+        MachineMaxScreen.filter = filter;
         this.filteredVehicleList = vehicleList.stream()
                 .filter(entry -> entry.getValue().getName().getString().toLowerCase().contains(filter.toLowerCase()))
                 .toList();
         this.scrollOffset = 0;
+        if (!this.filteredVehicleList.isEmpty()) {
+            onVehicleSelected(this.filteredVehicleList.get(0).getValue());
+        }
     }
 
     private void drawVehicleList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -256,7 +262,7 @@ public class MachineMaxScreen extends Screen {
             // 介绍
             poseStack.pushPose();
             {
-                int maxWidth = (int) ((imageWidth - ITEM_WIDTH - 35) / 1.06f);
+                int maxWidth = (int) ((imageWidth - ITEM_WIDTH - 35) / 1.6f);
                 poseStack.translate(x + 116, topPos + 20, 0);
                 poseStack.scale(0.95f, 0.95f, 0.95f);
                 if (vehicleDisplay.getDescription() != null) {
@@ -309,7 +315,7 @@ public class MachineMaxScreen extends Screen {
                         ItemStack stack = input.ingredient().getItems()[0];
                         int count = input.count();
                         guiGraphics.renderFakeItem(stack, currentX, currentY);
-                        String text = stack.getHoverName().getString() + " * " + count;
+                        String text = " * " + count;
                         guiGraphics.drawString(font, text, currentX + 20, currentY + 4, 0xFFFFFF);
                         if (mouseX >= currentX && mouseX <= currentX + 16 &&
                                 mouseY >= currentY && mouseY <= currentY + 16) {
@@ -330,7 +336,8 @@ public class MachineMaxScreen extends Screen {
                 int index = scrollOffset + ((int) mouseY - y) / ITEM_HEIGHT;
                 if (index >= 0 && index < filteredVehicleList.size()) {
                     selectedIndex = index;
-                    onVehicleSelected(filteredVehicleList.get(index).getKey());
+                    onVehicleSelected(filteredVehicleList.get(index).getValue());
+                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                     return true;
                 }
             }
@@ -348,27 +355,19 @@ public class MachineMaxScreen extends Screen {
         return true;
     }
 
-    private void onVehicleSelected(ResourceLocation vehicleId) {
-        if (machineMaxBlockEntity.craftingVehicleId != null) {
-            vehicleId = machineMaxBlockEntity.craftingVehicleId;
-        }
-        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
-        if (!vehicleDataOptional.isPresent()) {
-            return;
-        }
-        vehicle = vehicleDataOptional.get().construct(Minecraft.getInstance().level, Vec3.ZERO, 0, 0);
+    private void onVehicleSelected(BaseVehicleData<?> vehicleData) {
+        vehicle = vehicleData.construct(Minecraft.getInstance().level, Vec3.ZERO, 0, 0);
         vehicle.initData();
         vehicle.initDisplayData();
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }
-        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
+        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleData.getVehicleId());
         if (!recipeOptional.isPresent()) {
             printingButton.visible = false;
             return;
         }
         printingButton.visible = true;
-        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
     private void onCraft() {

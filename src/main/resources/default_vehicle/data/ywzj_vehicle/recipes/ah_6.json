@@ -7,30 +7,38 @@
     },
     {
       "tag": "forge:ingots/copper",
-      "count": 48
-    },
-    {
-      "item": "minecraft:redstone",
       "count": 32
     },
     {
+      "item": "minecraft:redstone",
+      "count": 16
+    },
+    {
       "item": "minecraft:glass_pane",
-      "count": 12
+      "count": 8
     },
     {
-      "item": "minecraft:furnace",
-      "count": 2
-    },
-    {
-      "item": "minecraft:piston",
+      "item": "minecraft:dispenser",
       "count": 4
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 4
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "count": 8
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "count": 8
     }
   ],
   "result": {
     "item": "ywzj_vehicle:vehicle_spawn_item",
     "nbt": {
-      "YwzjVehicleId": "ywzj_vehicle:dump_truck"
+      "YwzjVehicleId": "ywzj_vehicle:ah_6"
     }
   },
-  "printingTime": 1000
+  "printingTime": 1200
 }

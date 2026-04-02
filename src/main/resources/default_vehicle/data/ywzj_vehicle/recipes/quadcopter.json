@@ -3,7 +3,27 @@
   "materials": [
     {
       "tag": "forge:ingots/iron",
-      "count": 64
+      "count": 48
+    },
+    {
+      "tag": "forge:ingots/copper",
+      "count": 32
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 24
+    },
+    {
+      "item": "minecraft:glass_pane",
+      "count": 4
+    },
+    {
+      "item": "minecraft:dispenser",
+      "count": 4
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "count": 8
     }
   ],
   "result": {
@@ -12,5 +32,5 @@
       "YwzjVehicleId": "ywzj_vehicle:quadcopter"
     }
   },
-  "printingTime": 1200
+  "printingTime": 800
 }
