@@ -157,18 +157,20 @@ public class VehicleOverlay implements IGuiOverlay {
     public void renderTips(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
+        LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
         guiGraphics.pose().pushPose();
         {
             guiGraphics.pose().translate(centerX, centerY, 0);
-            if (LocalVehiclePlayer.instance.lostControl) {
+            if (localVehiclePlayer.lostControl) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                         Component.translatable("ui.lost_control"),
                         0, -45, Color.RED);
-            } else if (LocalVehiclePlayer.instance.currentG >= 2 || LocalVehiclePlayer.instance.currentG <= -1) {
+            } else if (localVehiclePlayer.endureTick > 5
+                    && (LocalVehiclePlayer.instance.currentG >= 2 || LocalVehiclePlayer.instance.currentG <= -1)) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                        Component.translatable("ui.overload", String.format("%.1f", LocalVehiclePlayer.instance.currentG)).append("G"),
+                        Component.translatable("ui.overload", String.format("%.1f", localVehiclePlayer.currentG)).append("G"),
                         0, -45, Color.RED);
-            } else if (!LocalVehiclePlayer.instance.missiles.isEmpty()) {
+            } else if (!localVehiclePlayer.missiles.isEmpty()) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                         Component.translatable("ui.homing"),
                         0, -45, Color.GREEN);

@@ -55,10 +55,11 @@ public class DamageSystem {
         amount *= (float) scale;
         if (hitPos != null) {
             MutableComponent message;
-            if (scale >= 0.7) {
+            float damageScale = amount / vehicle.getMaxHealth();
+            if (damageScale >= 0.5) {
                 vehicle.playSound(AllSounds.VEHICLE_HIT_BIG.get(), 2, 1);
                 message = Component.translatable("message.vehicle.damage_system.critical");
-            } else if (scale > 0.3) {
+            } else if (damageScale >= 0.25) {
                 vehicle.playSound(AllSounds.VEHICLE_HIT_MED.get(), 2, 1);
                 message = Component.translatable("message.vehicle.damage_system.hurt");
             } else {

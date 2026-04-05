@@ -167,7 +167,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
                 guiGraphics.vLine(3, -2, 3, color);
                 Team team = detectedObject.entity.getTeam();
                 if (team != null && team.isAlliedTo(LocalVehiclePlayer.instance.getPlayer().getTeam())) {
-                    guiGraphics.hLine(-2, 3, 4, color);
+                    guiGraphics.hLine(-2, 3, -3, color);
                 }
             }
             poseStack.translate(1, 1, 0);

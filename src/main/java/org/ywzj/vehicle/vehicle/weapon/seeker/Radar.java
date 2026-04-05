@@ -29,7 +29,7 @@ public class Radar {
         }
         // 干扰物
         List<TargetObstruction> obstructions = entities.stream()
-                .filter(entity -> entity instanceof TargetObstruction && entity.distanceTo(target) < 8)
+                .filter(entity -> entity instanceof TargetObstruction && entity.distanceTo(target) < 16)
                 .map(TargetObstruction.class::cast)
                 .toList();
         int rcsWeight = rcsWeight(fromEntity, target);
@@ -90,7 +90,7 @@ public class Radar {
         // 干扰物
         detectedEntities.removeIf(target -> {
             if (!(target instanceof TargetObstruction)) {
-                long nearby = targetObstructions.stream().filter(ob -> ((Entity) ob).distanceTo(target) < 8).count();
+                long nearby = targetObstructions.stream().filter(ob -> ((Entity) ob).distanceTo(target) < 16).count();
                 int weight = rcsWeight(radarOwner, target);
                 int totalWeight = weight + (int) nearby;
                 if (totalWeight == 0) {
@@ -164,7 +164,7 @@ public class Radar {
             rcs = vehicle.physicsEngine.radarCrossSection;
         }
         // y = ln(1 + speed * rcs) * scale
-        return (int) (Math.log1p(v39 * rcs) * 100);
+        return (int) (Math.log1p(v39 * rcs) * 1000);
     }
 
 }

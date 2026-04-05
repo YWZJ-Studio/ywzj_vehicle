@@ -53,6 +53,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     private VehicleMissileWeaponData.Guidance guidance;
     private VehicleMissileWeaponData.HomingMode homingMode;
     public boolean activeRadarOn;
+    public boolean activeRadarCatch;
     public int activeRadarLostTargetTick;
     public Entity targetEntity;
     public Vec3 targetVec;
@@ -227,34 +228,31 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             }
         } else if (homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
             // 主动雷达制导
-            if (targetEntity == null) {
-                // 若导弹丢失目标，且主动弹雷达未开机，则从载机雷达获取目标
-                if (weaponUnit.getRadarUnit() != null && !activeRadarOn) {
-                    targetEntity = weaponUnit.getRadarUnit().getLockedEntity();
+            if (activeRadarOn) {
+                List<Entity> detectedEntities = scanTargets();
+                Entity activeRadarTarget = null;
+                // 主动雷达是否能截获当前目标
+                if (targetEntity != null) {
+                    activeRadarTarget = Radar.checkTarget(this, detectedEntities, targetEntity);
+                    if (activeRadarTarget == targetEntity) {
+                        activeRadarCatch = true;
+                    }
                 }
-                // 若载机雷达无目标，或主动弹开机，则自行寻找目标
-                if (targetEntity == null) {
-                    List<Entity> detectedEntities = scanTargets();
+                // 若无目标，主动雷达截获一个扫描到的目标
+                if (activeRadarTarget == null) {
                     if (!detectedEntities.isEmpty()) {
                         targetEntity = detectedEntities.get(0);
-                        // 主动弹雷达锁定需告警
-                        radar = true;
+                        activeRadarCatch = true;
                     }
                 }
-            } else {
-                // 主动弹雷达未开机，载机雷达是否仍扫描到目标
-                if (!activeRadarOn) {
-                    RadarUnit radarUnit = weaponUnit.getRadarUnit();
-                    if (radarUnit == null || !radarUnit.getDetectedEntities().containsKey(targetEntity.getId())) {
-                        targetEntity = null;
-                    }
-                }
-                // 主动弹雷达开机，导弹雷达是否仍扫描到目标
-                else {
-                    List<Entity> detectedEntities = scanTargets();
-                    targetEntity = Radar.checkTarget(this, detectedEntities, targetEntity);
-                    // 主动弹雷达锁定需告警
-                    radar = true;
+                // 主动雷达锁定需告警
+                radar = true;
+            }
+            // 主动雷达截获目标前，载机雷达是否仍扫描到目标
+            if (!activeRadarCatch && targetEntity != null) {
+                RadarUnit radarUnit = weaponUnit.getRadarUnit();
+                if (radarUnit == null || !radarUnit.getDetectedEntities().containsKey(targetEntity.getId())) {
+                    targetEntity = null;
                 }
             }
         } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR

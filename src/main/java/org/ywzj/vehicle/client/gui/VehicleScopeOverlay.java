@@ -331,7 +331,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             } else {
                 teamColor = 0xFF000000 | teamColor;
             }
-            guiGraphics.hLine(-6, 6, 17, teamColor);
+            guiGraphics.hLine(-6, 6, -11, teamColor);
         }
     }
 

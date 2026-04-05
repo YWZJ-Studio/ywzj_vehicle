@@ -55,6 +55,7 @@ public class LocalVehiclePlayer {
     public float currentG = 1;
     public float stamina = 100;
     public boolean lostControl;
+    public int endureTick;
     public int unconsciousnessTick;
     public Vec3 lastVelocity = Vec3.ZERO;
     public double aimLocationDistance;
@@ -107,7 +108,9 @@ public class LocalVehiclePlayer {
                 }
             }
         }
-        if (!onVehicle()) {
+        AbstractVehicle vehicle = getVehicle();
+        if (vehicle == null || vehicle.uav) {
+            endureTick = 0;
             currentG = 1;
             return;
         } else {
@@ -116,7 +119,6 @@ public class LocalVehiclePlayer {
             }
         }
         float gravity = PhysicsEngine.G * 400;
-        AbstractVehicle vehicle = getVehicle();
         Vec3 currentVelocity = vehicle.getDeltaMovement();
         Vec3 deltaV = currentVelocity.subtract(lastVelocity);
         Vec3 accelerationVec = deltaV.scale(400);
@@ -126,6 +128,11 @@ public class LocalVehiclePlayer {
         double verticalAcceleration = apparentAcceleration.dot(upDirection);
         currentG = (float) (verticalAcceleration / gravity);
         if (!lostControl) {
+            if (currentG >= 2 || currentG <= -1) {
+                endureTick += 1;
+            } else if (endureTick > 0) {
+                endureTick -= 1;
+            }
             float endureG = currentG - 1;
             stamina = Mth.clamp(stamina - endureG * 0.8f, 0, 120);
             if (stamina == 0 || stamina == 120) {
@@ -324,14 +331,13 @@ public class LocalVehiclePlayer {
         }
     }
 
-    public void playerTurn(double pYRot, double pXRot) {
+    public boolean handlePlayerTurn(double pYRot, double pXRot) {
         if (pYRot == 0 && pXRot == 0) {
-            return;
+            return false;
         }
         Player player = getPlayer();
         if (!onVehicle()) {
-            player.turn(pYRot, pXRot);
-            return;
+            return false;
         }
         if (pYRot > 0.05 || pXRot > 0.05) {
             playerLerpSteps = 0;
@@ -345,7 +351,7 @@ public class LocalVehiclePlayer {
                     mouseTurnedAfterScope = true;
                 }
                 if (!mouseTurnedAfterScope) {
-                    return;
+                    return true;
                 }
                 pXRot *= 0.15f;
                 pYRot *= 0.15f;
@@ -371,7 +377,7 @@ public class LocalVehiclePlayer {
                     }
                     weaponUnit.setYAimRot(ry);
                 }
-                return;
+                return true;
             }
         }
         player.yRotO = player.getYRot();
@@ -389,6 +395,7 @@ public class LocalVehiclePlayer {
         player.setYRot((float) Math.toDegrees(-euler.y));
         player.setXRot(Mth.clamp((float) Math.toDegrees(euler.x), -90.0F, 90.0F));
         vehicle.onPassengerTurned(player);
+        return true;
     }
 
     public boolean onVehicle() {

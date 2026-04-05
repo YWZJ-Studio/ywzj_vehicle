@@ -168,7 +168,6 @@ public class AllEvents {
         public static void onLivingHurt(LivingHurtEvent event) {
             if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle && vehicle.protectPassenger) {
                 event.setCanceled(true);
-                vehicle.hurt(event.getSource(), event.getAmount() / 10);
             }
         }
 

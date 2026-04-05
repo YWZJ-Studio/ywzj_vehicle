@@ -1,27 +1,27 @@
 package org.ywzj.vehicle.mixin.client;
 
-import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 @Mixin(MouseHandler.class)
 public abstract class MouseHandlerMixin {
 
-    @Inject(
+    @WrapOperation(
             method = "turnPlayer",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"
-            ),
-            cancellable = true
+            )
     )
-    private void beforePlayerTurn(CallbackInfo ci, @Local(name = "d2") double d2, @Local(name = "d3") double d3) {
-        LocalVehiclePlayer.instance.playerTurn(d2, d3);
-        ci.cancel();
+    private void wrapPlayerTurn(LocalPlayer instance, double d2, double d3, Operation<Void> original) {
+        if (!LocalVehiclePlayer.instance.handlePlayerTurn(d2, d3)) {
+            original.call(instance, d2, d3);
+        }
     }
 
 }
