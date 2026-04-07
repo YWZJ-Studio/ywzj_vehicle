@@ -82,7 +82,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             }
             BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
             // 将单个命中是实体创建为单个内容的 list
-            if (entityResult != null && entityResult.getEntity() != vehicle) {
+            if (entityResult != null
+                    && entityResult.getEntity() != vehicle
+                    && !vehicle.getPassengers().contains(entityResult.getEntity())) {
                 Entity entity = entityResult.getEntity();
                 @Nullable Entity owner = this.getOwner();
                 // 攻击者

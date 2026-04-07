@@ -347,6 +347,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         if (lockedEntity != null) {
             setLockedEntity(null);
+            return;
         }
         WeaponUnitData.FireControlSensorType sensorType = getFireControlSensorType();
         // 光电锁定
@@ -413,8 +414,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
         if (weaponOptional.isEmpty() && parentWeaponUnit != null) {
             weaponUnit = parentWeaponUnit;
+            weaponOptional = weaponUnit.getCurrentWeapon();
         }
-        weaponUnit.toggleSeeker(false);
+        if (weaponOptional.isPresent()) {
+            if (weaponOptional.get() instanceof VehicleMissile vehicleMissile
+                    && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
+                weaponUnit.toggleSeeker(false);
+            }
+        }
     }
 
     public void aim(Vec3 worldPos) {
@@ -453,7 +460,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
         AimContext aimContext = aimContext();
         Vec3 start = new Vec3(x, y, z);
-        Vec3 end = start.add(VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize().scale(256));
+        Vec3 end = start.add(VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize().scale(1024));
         return VectorUtil.hitPosition(vehicle, start, end);
     }
 

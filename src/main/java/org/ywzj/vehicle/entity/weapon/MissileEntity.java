@@ -125,7 +125,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     private void tickGuidance() {
         if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
             tickTrack();
-            if (targetEntity != null) {
+            if (tickCount >= 20 && targetEntity != null) {
                 targetPos = targetEntity.position();
                 // 主动弹雷达开机
                 if (homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR
@@ -143,13 +143,13 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             }
             // 截射
             if (targetEntity != null) {
-                proportionalGuide(targetEntity, null);
+                intercept(targetEntity, null);
             } else if (targetPos != null) {
-                proportionalGuide(null, targetPos);
+                intercept(null, targetPos);
             }
         } else if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
             if (targetPos != null) {
-                proportionalGuide(null, targetPos);
+                intercept(null, targetPos);
             }
         } else if (guidance == VehicleMissileWeaponData.Guidance.SACLOS) {
             Vec2 rot = weaponUnit.worldRot();
@@ -337,79 +337,85 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         }
     }
 
-    public void proportionalGuide(Entity target, Vec3 pos) {
+    public void intercept(Entity target, Vec3 pos) {
         Vec3 missilePos = this.position();
         Vec3 missileVel = this.getDeltaMovement();
+        double missileSpeed = missileVel.length();
         Vec3 targetPos;
         Vec3 targetVel;
         if (target != null) {
             targetVel = target.getDeltaMovement();
             targetPos = target.getEyePosition().add(targetVel);
         } else {
-            targetPos = pos;
             targetVel = Vec3.ZERO;
+            targetPos = pos;
         }
-
-        Vec3 relPos = targetPos.subtract(missilePos);
-        Vec3 relVel = targetVel.subtract(missileVel);
-
-        double missileSpeed = missileVel.length();
-        double closingSpeed = missileSpeed - relVel.dot(relPos.normalize());
-        double t = relPos.length() / Math.max(closingSpeed, 0.1);
-
+        double targetSpeedSq = targetVel.lengthSqr();
+        // 追及相遇时间
+        Vec3 d = targetPos.subtract(missilePos);
+        double a = targetSpeedSq - (missileSpeed * missileSpeed);
+        double b = 2.0 * d.dot(targetVel);
+        double c = d.lengthSqr();
+        double t = -1.0;
+        if (Math.abs(a) < 1e-5) {
+            if (b < 0) t = -c / b;
+        } else {
+            double discriminant = b * b - 4 * a * c;
+            if (discriminant >= 0) {
+                double t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                double t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                // 取最小的正数时间
+                if (t1 > 0 && t2 > 0) {
+                    t = Math.min(t1, t2);
+                } else {
+                    t = Math.max(t1, t2);
+                }
+            }
+        }
+        // 如果无解（例如目标比导弹快且正在远离），降级为简单的纯追踪或一阶近似
+        if (t <= 0) {
+            Vec3 relVel = targetVel.subtract(missileVel);
+            double closingSpeed = missileSpeed - relVel.dot(d.normalize());
+            t = d.length() / Math.max(closingSpeed, 0.1);
+        }
+        // 拦截点
         Vec3 interceptPos = targetPos.add(targetVel.scale(t));
-
-        Vec3 desiredDir = interceptPos.subtract(missilePos).normalize();
-        Vec3 currentDir = missileVel.lengthSqr() < 1e-4
-                ? desiredDir
-                : missileVel.normalize();
-
-        double N = 256; // PN 系数
-        Vec3 steering = desiredDir.subtract(currentDir).scale(N);
-
-        // 截射目的地
-        Vec3 newVel = missileVel.add(steering)
-                .normalize()
-                .scale(missileSpeed);
-        Vec3 finalTargetPos = missilePos.add(newVel);
-
-        Vec2 rot = VectorUtil.vecToRot(finalTargetPos.subtract(missilePos));
-        float xRot = rot.x;
-        float yRot = rot.y;
-
-        // 适配过载限制
-        Vec3 vel = this.getDeltaMovement();
-        double speed = vel.length();
-
-        // 失速
-        if (speed < 0.2) {
-            return;
+        // 导弹当前速度与推力下，飞向拦截点的修正指向
+        Vec3 desiredDir;
+        double acceleration = (this.thrust / this.mass);
+        Vec3 targetDir = interceptPos.subtract(missilePos).normalize();
+        double dot = missileVel.dot(targetDir);
+        double magSq = missileSpeed * missileSpeed;
+        double discriminant = dot * dot - (magSq - acceleration * acceleration);
+        if (discriminant < 0) {
+            desiredDir = targetDir.scale(dot * PhysicsEngine.MAGIC_NUMBER * 4).subtract(missileVel);
+        } else {
+            double k = dot + Math.sqrt(discriminant);
+            desiredDir = targetDir.scale(k).subtract(missileVel);
         }
-
-        // 机动
-        double dynamicPressureFactor = Math.min(1.0, (speed * speed) / (referenceSpeed * referenceSpeed));
+        Vec2 rot = VectorUtil.vecToRot(desiredDir);
+        float targetXRot = rot.x;
+        float targetYRot = rot.y;
+        // 适配过载限制与空气动力学
+        double dynamicPressureFactor = Math.min(1.0, (missileSpeed * missileSpeed) / (referenceSpeed * referenceSpeed));
         // 当前速度下物理能达到的最大过载
         double availableG = this.maxG * dynamicPressureFactor;
-
-        // 角速度
+        // 向心加速度公式 a = v * omega  =>  omega = a / v (弧度/tick)
         double maxAccelLimit = availableG * PhysicsEngine.G;
-
-        // 根据向心加速度公式 a = v * omega  =>  omega = a / v (弧度/tick)
-        double maxOmega = maxAccelLimit / speed;
+        double maxOmega = maxAccelLimit / missileSpeed;
         double maxAnglePerTick = Math.toDegrees(maxOmega);
-
-        // 逐步解锁机动
+        // 刚发射时的出架延迟/逐步解锁机动
         if (this.tickCount < 5) {
             maxAnglePerTick *= Math.pow((double) this.tickCount / 5.0, 2);
         }
-
+        // 平滑施加角速度
         float curX = this.getXRot();
         float curY = this.getYRot();
-        float deltaX = Mth.wrapDegrees(xRot - curX);
-        float deltaY = Mth.wrapDegrees(yRot - curY);
+        float deltaX = Mth.wrapDegrees(targetXRot - curX);
+        float deltaY = Mth.wrapDegrees(targetYRot - curY);
+        // 限制在最大转向角速度内
         deltaX = Mth.clamp(deltaX, (float)-maxAnglePerTick, (float)maxAnglePerTick);
         deltaY = Mth.clamp(deltaY, (float)-maxAnglePerTick, (float)maxAnglePerTick);
-
         this.setXRot(curX + deltaX);
         this.setYRot(curY + deltaY);
     }

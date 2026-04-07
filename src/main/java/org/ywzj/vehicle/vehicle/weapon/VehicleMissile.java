@@ -7,6 +7,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.gui.VehicleOverlay;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
@@ -42,7 +43,8 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             if (missileWeaponUnit.getParentWeaponUnit() != null) {
                 missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
             }
-            if (missileWeaponUnit.getLockedEntity() == null) {
+            if (missileWeaponUnit.getLockedEntity() == null
+                    && missileWeaponUnit.getFireControlSensorType() != WeaponUnitData.FireControlSensorType.EO) {
                 LocalVehiclePlayer.instance.sendMessage("ui.need_lock_entity");
                 return false;
             }
@@ -76,7 +78,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
                 AimContext currentAimContext = weaponUnit.aimContext();
                 Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
                 Vec3 start = new Vec3(x, y, z);
-                Vec3 end = start.add(targetVec.normalize().scale(256));
+                Vec3 end = start.add(targetVec.normalize().scale(1024));
                 missileEntity.targetPos = VectorUtil.hitPosition(vehicle, start, end);
                 missileEntity.targetVec = targetVec;
                 if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {

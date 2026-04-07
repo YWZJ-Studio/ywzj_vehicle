@@ -527,8 +527,10 @@ public class LocalVehiclePlayer {
     }
 
     public void rangeFinding(Vec3 worldPos) {
-        aimLocationDistance = getPlayer().position().distanceTo(worldPos);
-        outOfRangeFinding = aimLocationDistance > renderDistance();
+        double renderDistance = renderDistance();
+        double aimLocationDistance = getPlayer().position().distanceTo(worldPos);
+        this.outOfRangeFinding = aimLocationDistance > renderDistance;
+        this.aimLocationDistance = Math.min(aimLocationDistance, renderDistance);
     }
 
     public WeaponUnit getWeaponUnit() {

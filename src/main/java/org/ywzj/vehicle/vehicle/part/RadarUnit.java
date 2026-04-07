@@ -131,12 +131,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         // 将客户端搜索目标通知服务端
         if (vehicle.tickCount % 20 == 0) {
             for (DetectedObject detectedObject : detectedObjects.values()) {
-                if (detectedObject.entity instanceof AbstractVehicle) {
-                    ClientRadarAction clientRadarAction = new ClientRadarAction();
-                    clientRadarAction.action = ClientRadarAction.Action.SEARCH;
-                    clientRadarAction.toEntityId = detectedObject.entity.getId();
-                    Channel.CHANNEL.sendToServer(clientRadarAction);
-                }
+                ClientRadarAction clientRadarAction = new ClientRadarAction();
+                clientRadarAction.action = ClientRadarAction.Action.SEARCH;
+                clientRadarAction.toEntityId = detectedObject.entity.getId();
+                Channel.CHANNEL.sendToServer(clientRadarAction);
             }
         }
     }
