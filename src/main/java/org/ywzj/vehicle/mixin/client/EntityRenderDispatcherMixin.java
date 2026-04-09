@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.client.render.util.OBBRenderer;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 import java.util.List;
@@ -33,6 +34,11 @@ public class EntityRenderDispatcherMixin {
                 OBBRenderer.INSTANCE.render(pEntity.position(),
                         vehicle.getDecorationUnits().values().stream().map(PartUnit::getOBBs).flatMap(List::stream).collect(Collectors.toList()),
                         pMatrixStack, pBuffer, 1, 0, 0, 1, pPartialTicks);
+                if (vehicle instanceof FixedWingVehicle fixedWingVehicle) {
+                    OBBRenderer.INSTANCE.render(pEntity.position(),
+                            List.of(fixedWingVehicle.aerodynamicCubeOBB.obb()),
+                            pMatrixStack, pBuffer, 0, 1, 1, 1, pPartialTicks);
+                }
             }
         }
     }

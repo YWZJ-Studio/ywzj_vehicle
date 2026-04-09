@@ -361,7 +361,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public void initDisplayData(BaseDisplay display) {}
 
-    public void initData(BaseVehicleData vehicleData) {
+    private void initData(BaseVehicleData vehicleData) {
         if (vehicleData == null) {
             YwzjVehicle.LOGGER.error("No vehicle data found for {}", vehicleId);
             this.discard();
@@ -375,13 +375,13 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
         this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
+        this.physicsEngine.center = vehicleData.getPhysicsInfo().center;
         this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
         this.physicsEngine.radarCrossSection = vehicleData.getPhysicsInfo().radarCrossSection;
         this.defenseStats = vehicleData.getDefenseStats();
         this.centerOffset = vehicleData.getCenterOffset();
-        vehicleData.inject(this);
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
-        this.vehicleCubeOBBs = vehicleStruct.obbs();
+        this.vehicleCubeOBBs.addAll(vehicleStruct.obbs());
         this.mainCubeOBB = vehicleStruct.mainCubeOBB();
         this.structureLength = vehicleData.getStructureLength();
         BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
@@ -396,6 +396,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             map.put(partUnit.getId(), partUnit);
         }
         this.partUnitMap = map;
+        vehicleData.inject(this);
         updateOBBs();
         this.dataInitialized = true;
     }
@@ -548,7 +549,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         // 阻力
         velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
         // 重力与旋转
-        velocity = physicsEngine.rotAndFallByGravity(touchPoints, new Vector3f(0, 0, 0), axes, force.toVector3f(), velocity.toVector3f());
+        velocity = physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f(), velocity.toVector3f());
         physicsEngine.velocityO = physicsEngine.velocity;
 
         setDeltaMovement(velocity);
@@ -581,7 +582,8 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public boolean isInvulnerableTo(@NotNull DamageSource source) {
-        return super.isInvulnerableTo(source) || source.is(DamageTypes.PLAYER_ATTACK);
+        return super.isInvulnerableTo(source)
+                || (!AllConfigs.common.allowMeleeDamageVehicle.get() && source.is(DamageTypes.PLAYER_ATTACK));
     }
 
     @Override

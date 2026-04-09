@@ -158,18 +158,18 @@ public enum VehiclePackLoader implements RepositorySource {
             PackMeta packMeta = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
 
             if (packMeta == null) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read packMeta json: {}", path.getFileName());
-                return null;
+                throw new RuntimeException("Failed to read packMeta json");
             }
 
             if (packMeta.getNamespace() == null) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Failed to read namespace: {}", path.getFileName());
-                return null;
+                throw new RuntimeException("Failed to read namespace");
             }
 
-            if (packMeta.getDependencies() != null && !modVersionAllMatch(packMeta)) {
-                YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", path.getFileName());
-                return null;
+            if (packMeta.getDependencies() != null) {
+                List<String> incompatible = modVersionAllMatch(packMeta);
+                if (!incompatible.isEmpty()) {
+                    throw new RuntimeException("Mod version mismatch: " + String.join(", ", incompatible));
+                }
             }
 
             return new VehiclePack(path, packMeta);
@@ -192,18 +192,18 @@ public enum VehiclePackLoader implements RepositorySource {
                 PackMeta packMeta = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
 
                 if (packMeta == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read packMeta json: {}", path.getFileName());
-                    return null;
+                    throw new RuntimeException("Failed to read packMeta json");
                 }
 
                 if (packMeta.getNamespace() == null) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Failed to read namespace: {}", path.getFileName());
-                    return null;
+                    throw new RuntimeException("Failed to read namespace");
                 }
 
-                if (packMeta.getDependencies() != null && !modVersionAllMatch(packMeta)) {
-                    YwzjVehicle.LOGGER.warn(MARKER, "Mod version mismatch: {}", path.getFileName());
-                    return null;
+                if (packMeta.getDependencies() != null) {
+                    List<String> incompatible = modVersionAllMatch(packMeta);
+                    if (!incompatible.isEmpty()) {
+                        throw new RuntimeException("Mod version mismatch: " + String.join(", ", incompatible));
+                    }
                 }
 
                 return new VehiclePack(path, packMeta);
@@ -223,37 +223,42 @@ public enum VehiclePackLoader implements RepositorySource {
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)){
             for (Path entry : stream) {
-                VehiclePack vehiclePack = null;
-                if (Files.isDirectory(entry)) {
-                    vehiclePack = fromDirPath(entry);
-                } else if (entry.toString().endsWith(".zip")) {
-                    vehiclePack = fromZipPath(entry);
-                }
-                if (vehiclePack != null) {
-                    if (namespaces.contains(vehiclePack.meta().getNamespace())) {
-                        YwzjVehicle.LOGGER.error(MARKER, "- {}, Duplicated namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
-                        continue;
+                try {
+                    VehiclePack vehiclePack = null;
+                    if (Files.isDirectory(entry)) {
+                        vehiclePack = fromDirPath(entry);
+                    } else if (entry.toString().endsWith(".zip")) {
+                        vehiclePack = fromZipPath(entry);
                     }
-                    namespaces.add(vehiclePack.meta().getNamespace());
-                    YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
-                    vehiclePacks.add(vehiclePack);
+                    if (vehiclePack != null) {
+                        if (namespaces.contains(vehiclePack.meta().getNamespace())) {
+                            YwzjVehicle.LOGGER.error(MARKER, "- {}, Duplicated namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
+                            continue;
+                        }
+                        namespaces.add(vehiclePack.meta().getNamespace());
+                        YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
+                        vehiclePacks.add(vehiclePack);
+                    }
+                } catch (RuntimeException runtimeException) {
+                    throw new RuntimeException("Failed to load vehicle pack: " + entry + "\n" + runtimeException.getMessage());
                 }
             }
-        } catch (IOException e) {
-            YwzjVehicle.LOGGER.error(MARKER, "Failed to scan extensions from {}. Error: {}", path, e);
+        } catch (IOException ioException) {
+            YwzjVehicle.LOGGER.error(MARKER, "Failed to scan vehicle packs from {}. Error: {}", path, ioException);
         }
 
         return vehiclePacks;
     }
 
-    private static boolean modVersionAllMatch(PackMeta info) throws InvalidVersionSpecificationException {
+    private static List<String> modVersionAllMatch(PackMeta info) throws InvalidVersionSpecificationException {
         HashMap<String, String> dependencies = info.getDependencies();
-        for (String modId : dependencies.keySet()) {
-            if (!modVersionMatch(modId, dependencies.get(modId))) {
-                return false;
+        List<String> incompatible = new ArrayList<>();
+        for (Map.Entry<String, String> modIdAndVersion : dependencies.entrySet()) {
+            if (!modVersionMatch(modIdAndVersion.getKey(), modIdAndVersion.getValue())) {
+                incompatible.add(modIdAndVersion.getKey() + ": " + modIdAndVersion.getValue());
             }
         }
-        return true;
+        return incompatible;
     }
 
     private static boolean modVersionMatch(String modId, String version) throws InvalidVersionSpecificationException {

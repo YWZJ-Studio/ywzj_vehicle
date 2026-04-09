@@ -35,6 +35,7 @@ import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +47,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> YAW_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
+    public VehicleCubeOBB aerodynamicCubeOBB;
     public float thrust = 0.02f;
     public float thrustK = 1.5f;
     public float ceiling = 512;
@@ -192,6 +194,12 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
+    public void updateOBBs() {
+        super.updateOBBs();
+        aerodynamicCubeOBB.update(this);
+    }
+
+    @Override
     protected void tickEnergy() {
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             float fuel = cap.getFuel();
@@ -291,7 +299,7 @@ public class FixedWingVehicle extends AbstractVehicle
     @Override
     protected Vec3 tickMove() {
         // 三个正交轴
-        Vector3f[] axes = mainCubeOBB.obb().getAxes();
+        Vector3f[] axes = aerodynamicCubeOBB.obb().getAxes();
         Vec3 forwardDirection = new Vec3(axes[2]);
         Vec3 upDirection = new Vec3(axes[1]);
         Vec3 leftDirection = new Vec3(axes[0]);

@@ -272,8 +272,8 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                     } else {
                         RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 15, 5, Color.GREEN);
                         alliesInfo(guiGraphics, detectedObject);
+                        radarInfo(guiGraphics, poseStack, detectedObject);
                     }
-                    radarInfo(guiGraphics, poseStack, detectedObject);
                 }
                 poseStack.popPose();
             }

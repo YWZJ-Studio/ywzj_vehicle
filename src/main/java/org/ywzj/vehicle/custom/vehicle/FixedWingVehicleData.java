@@ -1,15 +1,19 @@
 package org.ywzj.vehicle.custom.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.List;
 
 public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
 
+    public VehicleCubeOBB aerodynamicCubeOBB;
     public float thrust = 0.02f;
     public float thrustK = 1.5f;
     public float ceiling = 512;
@@ -39,6 +43,14 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
 
     public void build(FixedWingVehicleDataPojo pojo) {
         super.build(pojo);
+        var model = CommonAssetsManager.structureModelManager()
+                .getStructureModel(pojo.structureModel).orElseThrow();
+        BedrockBone bone = model.getBoneMap().get("aerodynamic_structure");
+        if (bone != null) {
+            this.aerodynamicCubeOBB = largestVehicleCubeOBB(bone);
+        } else {
+            this.aerodynamicCubeOBB = this.mainCubeOBB;
+        }
         this.thrust = pojo.attributes.thrust;
         this.thrustK = pojo.attributes.thrustK;
         this.ceiling = pojo.attributes.ceiling;
@@ -63,6 +75,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     }
 
     public void inject(FixedWingVehicle vehicle) {
+        vehicle.aerodynamicCubeOBB = new VehicleCubeOBB(this.aerodynamicCubeOBB);
         vehicle.thrust = this.thrust;
         vehicle.thrustK = this.thrustK;
         vehicle.ceiling = this.ceiling;

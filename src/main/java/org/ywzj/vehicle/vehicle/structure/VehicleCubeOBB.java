@@ -211,6 +211,10 @@ public class VehicleCubeOBB {
         return depth;
     }
 
+    public double volume() {
+        return width * height * depth;
+    }
+
     public static class CubePoint {
 
         private final VehicleCubeOBB vehicleCubeOBB;

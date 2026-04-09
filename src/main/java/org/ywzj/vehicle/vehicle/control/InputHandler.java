@@ -39,7 +39,9 @@ public class InputHandler {
 
     @SubscribeEvent
     public static void onKey(InputEvent.Key event) {
-        if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) {
+        var mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
         if (event.getAction() == GLFW.GLFW_PRESS) {
@@ -57,7 +59,7 @@ public class InputHandler {
                         }
                     }
                 } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
-                    Minecraft.getInstance().player.sendOpenInventory();
+                    player.sendOpenInventory();
                 } else if (TOGGLE_ENGINE.matches(event.getKey(), event.getScanCode())) {
                     sendToggleEngine(vehicle);
                 } else if (TOGGLE_LANDING_GEAR.matches(event.getKey(), event.getScanCode())) {
@@ -114,7 +116,7 @@ public class InputHandler {
     public static void onKey(InputEvent.MouseButton event) {
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || player.isSpectator() || mc.gameMode == null) {
+        if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
         if (event.getAction() == 0) {
@@ -139,7 +141,7 @@ public class InputHandler {
         if (event.phase != TickEvent.Phase.START) return;
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || player.isSpectator() || mc.gameMode == null) {
+        if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
         freeCamera = FREE_CAMERA.isDown();

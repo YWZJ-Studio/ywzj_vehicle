@@ -18,6 +18,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
+import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
@@ -265,7 +266,7 @@ public class MachineMaxScreen extends Screen {
                 int maxWidth = (int) ((imageWidth - ITEM_WIDTH - 35) / 1.6f);
                 poseStack.translate(x + 116, topPos + 20, 0);
                 poseStack.scale(0.95f, 0.95f, 0.95f);
-                if (vehicleDisplay.getDescription() != null) {
+                if (!StringUtils.isEmpty(vehicleDisplay.getDescription())) {
                     var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
                     for (int i = 0; i < lines.size(); i++) {
                         guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);

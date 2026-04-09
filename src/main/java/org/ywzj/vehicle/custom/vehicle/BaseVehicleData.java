@@ -193,16 +193,12 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     }
 
     private void buildMainCube(BedrockModel model) {
-        BedrockBone mainBone = model.getBoneMap().get("main_structure");
-        if (mainBone != null) {
-            if (mainBone.cubes.isEmpty()) {
+        BedrockBone main = model.getBoneMap().get("main_structure");
+        if (main != null) {
+            mainCubeOBB = largestVehicleCubeOBB(main);
+            if (mainCubeOBB == null) {
                 YwzjVehicle.LOGGER.warn("main_structure has no cubes: {}", getName());
-                return;
             }
-            List<BedrockCube> mainCubes = new ArrayList<>(mainBone.cubes);
-            mainCubes.sort(Comparator.comparingDouble(cube -> cube.width() * cube.height() * cube.depth()));
-            VehicleCubeGroup group = new VehicleCubeGroup(null, mainBone.rotation, new Vec3(mainBone.x / 16, mainBone.y / 16, mainBone.z / 16));
-            mainCubeOBB = VehicleCubeOBB.init(group, mainCubes.get(0));
         } else {
             if (vehicleBodyOBBs.isEmpty()) {
                 YwzjVehicle.LOGGER.warn("vehicleBodyOBBs is empty: {}", getName());
@@ -210,6 +206,34 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             }
             vehicleBodyOBBs.sort(Comparator.comparingDouble(vehicleBodyOBB -> -vehicleBodyOBB.depth * vehicleBodyOBB.width * vehicleBodyOBB.height));
             mainCubeOBB = vehicleBodyOBBs.get(0);
+        }
+    }
+
+    public VehicleCubeOBB largestVehicleCubeOBB(BedrockBone bone) {
+        VehicleCubeOBB[] maxHolder = new VehicleCubeOBB[1];
+        VehicleCubeGroup group = new VehicleCubeGroup(
+                null,
+                bone.rotation,
+                new Vec3(bone.x / 16.0, bone.y / 16.0, bone.z / 16.0)
+        );
+        findMaxRecursive(bone, group, maxHolder);
+        return maxHolder[0];
+    }
+
+    private void findMaxRecursive(BedrockBone bone, VehicleCubeGroup group, VehicleCubeOBB[] maxHolder) {
+        for (BedrockCube cube : bone.cubes) {
+            VehicleCubeOBB currentOBB = VehicleCubeOBB.init(group, cube);
+            if (maxHolder[0] == null || currentOBB.volume() > maxHolder[0].volume()) {
+                maxHolder[0] = currentOBB;
+            }
+        }
+        for (BedrockBone child : bone.getChildren()) {
+            VehicleCubeGroup childGroup = new VehicleCubeGroup(
+                    group,
+                    child.rotation,
+                    new Vec3(child.x / 16.0, child.y / 16.0, child.z / 16.0)
+            );
+            findMaxRecursive(child, childGroup, maxHolder);
         }
     }
 

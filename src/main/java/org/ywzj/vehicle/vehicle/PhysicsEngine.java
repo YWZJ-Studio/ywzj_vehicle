@@ -27,6 +27,7 @@ public class PhysicsEngine {
     public static float G = 9.8f / 400;
     public final AbstractVehicle vehicle;
     public float mass = 1;
+    public Vec3 center;
     public float bounce = 0.02f;
     public float rotA = 0.01f;
     public float rotV = 0;
@@ -189,11 +190,12 @@ public class PhysicsEngine {
     /**
      * 受重力影响下的自由落体与三轴滚动
      */
-    public Vec3 rotAndFallByGravity(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f gravityCenter, Vector3f[] axes, Vector3f force, Vector3f velocity) {
+    public Vec3 rotAndFallByGravity(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vector3f force, Vector3f velocity) {
         var physicsCube = vehicle.getMainCubeOBB();
         try {
             // 加速度使得重心偏移
             Vector3f a = new Vector3f(velocity).sub(this.velocityO);
+            Vector3f gravityCenter = center.toVector3f();
             gravityCenter.add(a.mul((float) (physicsCube.height * 8)));
 
             // 升力影响

@@ -65,6 +65,7 @@ public class AllConfigs {
 
     public static class CommonConfig {
 
+        public final ForgeConfigSpec.ConfigValue<Boolean> allowMeleeDamageVehicle;
         public final ForgeConfigSpec.ConfigValue<Boolean> canDestroyBlock;
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlock;
         public final ForgeConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
@@ -76,6 +77,8 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
+            allowMeleeDamageVehicle = builder.comment("近战是否能伤害载具")
+                    .define("allowMeleeDamageVehicle", false);
             canDestroyBlock = builder.comment("载具是否能破坏方块")
                     .define("canDestroyBlock", true);
             explosionDropBlock = builder.comment("爆炸是否掉落方块")

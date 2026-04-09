@@ -5,8 +5,19 @@ import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class VehicleAerialBombWeaponData extends BaseVehicleWeaponData {
 
+    @SerializedName("fuse_delay_tick")
+    private int fuseDelayTick = 60;
+
     @SerializedName("explosion")
     private Explosion explosion = new Explosion();
+
+    public int getFuseDelayTick() {
+        return fuseDelayTick;
+    }
+
+    public void setFuseDelayTick(int fuseDelayTick) {
+        this.fuseDelayTick = fuseDelayTick;
+    }
 
     public Explosion getExplosion() {
         return explosion;
