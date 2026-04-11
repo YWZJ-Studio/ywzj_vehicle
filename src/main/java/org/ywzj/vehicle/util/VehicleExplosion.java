@@ -40,6 +40,7 @@ import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
+import org.ywzj.vehicle.particle.ExplosionCloudOption;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.HashSet;
@@ -215,54 +216,105 @@ public class VehicleExplosion {
         double y = serverVehicleExplosion.y();
         double z = serverVehicleExplosion.z();
         float radius = serverVehicleExplosion.radius();
-        level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.0f, 0.6f);
-        double spread = radius * 0.3;
-        int count = (int) (radius * radius * 2);
-        for (int i = 0; i < count; i++) {
-            level.addParticle(
-                    ParticleTypes.EXPLOSION, true,
-                    x + (level.random.nextDouble() - 0.5) * 2 * spread * 2,
-                    y + (level.random.nextDouble() - 0.2) * 3 * spread * 2,
-                    z + (level.random.nextDouble() - 0.5) * 2 * spread * 2,
-                    0, 0.02, 0
-            );
+
+        if (radius <= 2) {
+            smallExplosionEffect(level, player, x, y, z);
+        } else if (radius <= 8) {
+            mediumExplosionEffect(level, player, x, y, z);
+        } else {
+            largeExplosionEffect(level, player, x, y, z, radius);
         }
-        level.addParticle(ParticleTypes.FLASH, true, x, y, z, 0, 0, 0);
-        int smokeCount = (int) (radius * 16);
-        for (int i = 0; i < smokeCount; i++) {
-            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true,
-                    x + (level.random.nextDouble() - 0.5) * 2 * radius,
-                    y + (level.random.nextDouble() - 0.5) * 2 * radius * 0.2,
-                    z + (level.random.nextDouble() - 0.5) * 2 * radius,
-                    0, 0.02, 0
-            );
-            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true,
-                    x + (level.random.nextDouble() - 0.5) * 2 * radius * 0.6,
-                    y + (level.random.nextDouble() - 0.5) * 2 * radius,
-                    z + (level.random.nextDouble() - 0.5) * 2 * radius * 0.6,
-                    0, 0.02, 0
-            );
-        }
-        for (int i = 0; i < (int) (radius * 5); i++) {
-            level.addParticle(ParticleTypes.FLAME, true,
-                    x + (level.random.nextDouble() - 0.5) * 2 * radius,
-                    y + (level.random.nextDouble() - 0.5) * 2 * radius,
-                    z + (level.random.nextDouble() - 0.5) * 2 * radius,
-                    (level.random.nextDouble() - 0.5) * 2 * 0.1, 0.1, (level.random.nextDouble() - 0.5) * 2 * 0.1
-            );
-        }
-        for (int i = 0; i < (int) (radius * 10); i++) {
-            level.addParticle(ParticleTypes.CLOUD, true,
-                    x + (level.random.nextDouble() - 0.5) * 2 * radius * 1.2,
-                    y + 0.1,
-                    z + (level.random.nextDouble() - 0.5) * 2 * radius * 1.2,
-                    (level.random.nextDouble() - 0.5) * 2 * 0.2, 0, (level.random.nextDouble() - 0.5) * 2 * 0.2
-            );
-        }
+
         FirstPersonHandler.shakePos = new Vec3(x, y, z);
         FirstPersonHandler.shakeRadius = 16 * radius;
         FirstPersonHandler.shakeTime = Math.min(FirstPersonHandler.shakeTime + 8 + radius * 0.1, 10);
         FirstPersonHandler.shakeAmplitude = 0.1 + 0.1 * radius;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void smallExplosionEffect(Level level, Player player, double x, double y, double z) {
+        level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.0f, 1.0f);
+        level.addParticle(ParticleTypes.FLASH, true, x, y, z, 0, 0, 0);
+        addParticles(level, ParticleTypes.EXPLOSION, x, y, z, 2, 0, 0.02, 0, 0);
+        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 2, 0.1, 0.1, 0.1, 0.02);
+        addParticles(level, ParticleTypes.LARGE_SMOKE, x, y, z, 1, 0.2, 0.2, 0.2, 0.02);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void mediumExplosionEffect(Level level, Player player, double x, double y, double z) {
+        level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0f, 0.7f);
+        // 爆闪
+        addParticles(level, ParticleTypes.FLASH, x, y + 0.5, z, 8, 2, 2, 2, 0);
+        // 地面扬尘
+        addParticles(level, ParticleTypes.LARGE_SMOKE, x, y + 1, z, 10, 16, 1, 16, 0.01);
+        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 40, 16, 0.05, 16, 0);
+        // 橙色火焰云
+        for (int i = 0; i < 40; i++) {
+            Vec3 v = randomHemisphereDir(level).scale(0.2);
+            level.addParticle(new ExplosionCloudOption(1f, 0.35f + level.random.nextFloat() * 0.15f, 0f, 6, 2.0f, -0.01f),
+                    true, x, y + 0.5, z, v.x, v.y, v.z);
+        }
+        // 水中爆炸
+        if (level.getBlockState(BlockPos.containing(x, y, z)).is(net.minecraft.world.level.block.Blocks.WATER)) {
+            addParticles(level, ParticleTypes.CLOUD, x, y + 3, z, 20, 1, 3, 1, 0.01);
+            addParticles(level, ParticleTypes.FALLING_WATER, x, y + 3, z, 50, 1.5, 4, 1.5, 1);
+            addParticles(level, ParticleTypes.BUBBLE_COLUMN_UP, x, y, z, 60, 3, 0.5, 3, 0.1);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void largeExplosionEffect(Level level, Player player, double x, double y, double z, double radius) {
+        level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8.0f, 0.5f);
+        // 爆闪
+        addParticles(level, ParticleTypes.FLASH, x, y + 3, z, 60, radius / 2, 5, radius / 2, 0);
+        // 地面扬尘
+        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 120, radius, 0.05, radius, 0);
+        // 巨型火焰云
+        for (int i = 0; i < 200; i++) {
+            Vec3 v = randomHemisphereDir(level).scale(1.0 + level.random.nextDouble() * 0.5);
+            float heat = level.random.nextFloat();
+            level.addParticle(new ExplosionCloudOption(1f, 0.25f + heat * 0.25f, 0f, 100, 4.5f + heat * 2, -0.003f),
+                    true, x, y + 1, z, v.x * 2, v.y, v.z * 2);
+        }
+        // 多层高速环形冲击波
+        for (int h = 0; h < 4; h++) {
+            int segments = 200;
+            double waveSpeed = 4.0 - h * 0.4;
+            double yOff = 0.5 + h * 0.4;
+            float brightness = 1.0f - h * 0.1f;
+            for (int i = 0; i < segments; i++) {
+                double angle = 2 * Math.PI * i / segments;
+                level.addParticle(new ExplosionCloudOption(brightness, brightness, brightness, 16 - h * 2, 3.0f - h * 0.4f, 0f),
+                        true, x, y + yOff, z, Math.cos(angle) * waveSpeed, 0.02, Math.sin(angle) * waveSpeed);
+            }
+        }
+        // 水中爆炸
+        if (level.getBlockState(BlockPos.containing(x, y, z)).is(net.minecraft.world.level.block.Blocks.WATER)) {
+            addParticles(level, ParticleTypes.CLOUD, x, y + 3, z, 200, 4, 8, 4, 0.01);
+            addParticles(level, ParticleTypes.FALLING_WATER, x, y + 3, z, 500, 5, 10, 5, 1);
+            addParticles(level, ParticleTypes.BUBBLE_COLUMN_UP, x, y, z, 350, 8, 1, 8, 0.1);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static Vec3 randomHemisphereDir(Level level) {
+        return new Vec3(
+                level.random.nextDouble() - 0.5,
+                level.random.nextDouble() * 0.6,
+                level.random.nextDouble() - 0.5
+        ).normalize();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void addParticles(Level level, net.minecraft.core.particles.ParticleOptions particle,
+                                     double x, double y, double z,
+                                     int count, double xSpread, double ySpread, double zSpread, double speed) {
+        for (int i = 0; i < count; i++) {
+            double ox = (level.random.nextDouble() - 0.5) * 2 * xSpread;
+            double oy = (level.random.nextDouble() - 0.5) * 2 * ySpread;
+            double oz = (level.random.nextDouble() - 0.5) * 2 * zSpread;
+            level.addParticle(particle, true, x + ox, y + oy, z + oz, ox * speed, oy * speed + 0.02, oz * speed);
+        }
     }
 
     private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPos>> pDropPositionArray, ItemStack pStack, BlockPos pPos) {

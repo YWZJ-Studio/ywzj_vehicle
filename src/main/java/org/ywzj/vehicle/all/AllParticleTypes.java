@@ -11,6 +11,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.particle.DustSmokeOption;
+import org.ywzj.vehicle.particle.ExplosionCloudOption;
 
 public class AllParticleTypes {
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, YwzjVehicle.MOD_ID);
@@ -29,6 +30,10 @@ public class AllParticleTypes {
 
     public static final RegistryObject<SimpleParticleType> SMOKE_CLOUD = PARTICLE_TYPES.register("smoke_cloud",
             () -> new SimpleParticleType(true));
+
+    public static final RegistryObject<ParticleType<ExplosionCloudOption>> EXPLOSION_CLOUD = PARTICLE_TYPES.register("explosion_cloud",
+            () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.DESERIALIZER)
+    );
 
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
