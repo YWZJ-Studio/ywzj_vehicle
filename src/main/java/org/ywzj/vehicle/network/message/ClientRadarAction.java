@@ -45,14 +45,14 @@ public class ClientRadarAction {
             if (player.getVehicle() instanceof AbstractVehicle vehicle) {
                 PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
                 if (partUnit instanceof WeaponUnit weaponUnit) {
-                    RadarUnit radarUnit = weaponUnit.getRadarUnit();
-                    if (radarUnit == null) {
+                    RadarUnit mainRadarUnit = weaponUnit.getMainRadarUnit();
+                    if (mainRadarUnit == null) {
                         return;
                     }
                     Level level = player.level();
                     Entity toEntity = level.getEntity(message.toEntityId);
                     if (message.action == Action.LOCK) {
-                        radarUnit.setLockedEntity(toEntity);
+                        mainRadarUnit.setLockedEntity(toEntity);
                     } else if (message.action == Action.SEARCH) {
                         // 通知雷达搜索给目标载具乘客
                         if (toEntity instanceof AbstractVehicle) {
@@ -60,11 +60,11 @@ public class ClientRadarAction {
                             serverVehicleWarn.fromEntityId = vehicle.getId();
                             serverVehicleWarn.toEntityId = message.toEntityId;
                             serverVehicleWarn.warnType = WarnType.RADAR_SEARCH;
-                            serverVehicleWarn.info = radarUnit.getRadarType();
+                            serverVehicleWarn.info = mainRadarUnit.getRadarType();
                             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> toEntity), serverVehicleWarn);
                         }
                         if (toEntity != null) {
-                            radarUnit.detect(toEntity);
+                            mainRadarUnit.detect(toEntity);
                         }
                     }
                 }

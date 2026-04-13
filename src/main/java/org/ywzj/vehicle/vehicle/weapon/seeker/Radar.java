@@ -104,8 +104,7 @@ public class Radar {
         return detectedEntities;
     }
 
-    public static Entity findTarget(WeaponUnit weaponUnit, float fov) {
-        RadarUnit radarUnit = weaponUnit.getRadarUnit();
+    public static Entity findTarget(RadarUnit radarUnit, float fov, WeaponUnit weaponUnit) {
         if (radarUnit == null) {
             return null;
         }
@@ -125,7 +124,7 @@ public class Radar {
             // 基础校验
             if (entity == camera.getEntity()
                     || entity.getVehicle() != null
-                    || entity == weaponUnit.getVehicle()
+                    || entity == radarUnit.getVehicle()
                     || !entity.isAlive()
                     || entity.isSpectator()
                     || entity.getBoundingBox().getSize() < 1

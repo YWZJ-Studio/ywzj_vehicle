@@ -220,9 +220,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         boolean radar = false;
         if (homingMode == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
             // 半主动雷达制导
-            if (weaponUnit.getRadarUnit() != null) {
+            if (weaponUnit.getMainRadarUnit() != null) {
                 // 持续从载机雷达获取目标
-                targetEntity = weaponUnit.getRadarUnit().getLockedEntity();
+                targetEntity = weaponUnit.getMainRadarUnit().getLockedEntity();
                 // 半主动雷达弹引导需告警
                 radar = true;
             }
@@ -250,8 +250,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             }
             // 主动雷达截获目标前，载机雷达是否仍扫描到目标
             if (!activeRadarCatch && targetEntity != null) {
-                RadarUnit radarUnit = weaponUnit.getRadarUnit();
-                if (radarUnit == null || !radarUnit.getDetectedEntities().containsKey(targetEntity.getId())) {
+                RadarUnit mainRadarUnit = weaponUnit.getMainRadarUnit();
+                if (mainRadarUnit == null || !mainRadarUnit.getDetectedEntities().containsKey(targetEntity.getId())) {
                     targetEntity = null;
                 }
             }

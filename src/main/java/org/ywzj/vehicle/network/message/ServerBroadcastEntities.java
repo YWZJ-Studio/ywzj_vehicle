@@ -15,7 +15,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
 import java.util.ArrayList;
@@ -77,10 +76,6 @@ public class ServerBroadcastEntities {
         }
         WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
         if (weaponUnit == null) {
-            return;
-        }
-        RadarUnit radarUnit = weaponUnit.getRadarUnit();
-        if (radarUnit == null) {
             return;
         }
         Level level = Minecraft.getInstance().level;

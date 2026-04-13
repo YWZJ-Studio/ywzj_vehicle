@@ -18,6 +18,7 @@ import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
@@ -241,6 +242,19 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         public Entity entity;
         public Vec3 detectedPosition;
         public Long detectedTime;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DetectedObject that = (DetectedObject) o;
+            return Objects.equals(entity, that.entity);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(entity);
+        }
 
     }
 

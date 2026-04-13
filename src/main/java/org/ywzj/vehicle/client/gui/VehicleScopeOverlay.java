@@ -233,10 +233,10 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             }
         }
         // 雷达锁定目标
-        RadarUnit radarUnit = weaponUnit.getRadarUnit();
-        if (radarUnit != null) {
-            if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnit.getLockedEntity() != null) {
-                RadarUnit.DetectedObject detectedObject = weaponUnit.getRadarUnit().getDetectedEntities().get(radarUnit.getLockedEntity().getId());
+        RadarUnit mainRadarUnit = weaponUnit.getMainRadarUnit();
+        if (mainRadarUnit != null) {
+            if (sensorType == WeaponUnitData.FireControlSensorType.RF && mainRadarUnit.getLockedEntity() != null) {
+                RadarUnit.DetectedObject detectedObject = weaponUnit.getMainRadarUnit().getDetectedEntities().get(mainRadarUnit.getLockedEntity().getId());
                 if (detectedObject != null) {
                     Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.entity.position());
                     if (screenPos.z >= 0) {
@@ -255,7 +255,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             }
             // 雷达可锁定的目标
             for (RadarUnit.DetectedObject detectedObject : weaponUnit.getRadarDetectedEntities()) {
-                Entity lockedEntity = radarUnit.getLockedEntity();
+                Entity lockedEntity = mainRadarUnit.getLockedEntity();
                 if (lockedEntity != null && detectedObject.entity.getId() == lockedEntity.getId()) {
                     continue;
                 }

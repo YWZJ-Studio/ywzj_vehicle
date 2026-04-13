@@ -84,7 +84,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private Entity lockedEntity;
     private int loseLockTick;
     private boolean parentWeaponUnitAim;
-    private RadarUnit radarUnit;
+    private List<RadarUnit> radarUnits = new ArrayList<>();
     private boolean seekerOn;
     private int lockCoolingTick;
     // 第三人称准心样式
@@ -203,7 +203,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         // 雷达
         for (String subPartUnitId : data.getSubPartUnitIds()) {
             if (partUnitsView.get(subPartUnitId) instanceof RadarUnit radarUnit) {
-                this.radarUnit = radarUnit;
+                radarUnits.add(radarUnit);
                 addSubPartUnit(radarUnit);
                 radarUnit.setParentPartUnit(this);
             }
@@ -216,10 +216,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             tickFireControl();
         } else {
             // 通知雷达锁定给目标载具乘客
-            if (vehicle.tickCount % 2 == 0 && getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnit != null) {
-                Entity radarLockedEntity = radarUnit.getLockedEntity();
+            if (vehicle.tickCount % 2 == 0 && getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && !radarUnits.isEmpty()) {
+                RadarUnit mainRadarUnit = getMainRadarUnit();
+                Entity radarLockedEntity = mainRadarUnit.getLockedEntity();
                 if (radarLockedEntity != null) {
-                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), radarLockedEntity.getId(), WarnType.RADAR_LOCK, radarUnit.getRadarType());
+                    ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), radarLockedEntity.getId(), WarnType.RADAR_LOCK, mainRadarUnit.getRadarType());
                     Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> radarLockedEntity), packet);
                 }
             }
@@ -283,8 +284,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 setLockedEntity(checkEntity);
             }
             // 雷达发生远程与本地实体切换
-            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnit != null && lockedEntity != null) {
-                RadarUnit.DetectedObject detectedObject = radarUnit.getDetectedEntities().get(lockedEntity.getId());
+            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnits != null && lockedEntity != null) {
+                RadarUnit.DetectedObject detectedObject = null;
+                for (RadarUnit radarUnit : radarUnits) {
+                    detectedObject = radarUnit.getDetectedEntities().get(lockedEntity.getId());
+                    if (detectedObject != null) {
+                        break;
+                    }
+                }
                 if (detectedObject != null && detectedObject.entity != lockedEntity) {
                     setLockedEntity(detectedObject.entity);
                 }
@@ -316,11 +323,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
                         // 主动雷达弹需雷达扫描目标
                         if (missile.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
-                            entity = Radar.findTarget(this, missile.getData().getSeekerFov());
+                            entity = Radar.findTarget(getMainRadarUnit(), missile.getData().getSeekerFov(), this);
                         }
                         // 半主动雷达弹需雷达锁定目标
                         else if (missile.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
-                            entity = getRadarUnit().getLockedEntity();
+                            entity = getMainRadarUnit().getLockedEntity();
                             if (entity != null) {
                                 Vec3 vLock = entity.getBoundingBox().getCenter().subtract(worldPivotPosition());
                                 Vec3 vAim = worldVec();
@@ -341,9 +348,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     public void fireControlLock() {
-        if (radarUnit != null && radarUnit.getLockedEntity() != null) {
-            radarUnit.setLockedEntity(null);
-            return;
+        if (!radarUnits.isEmpty()) {
+            RadarUnit mainRadarUnit = getMainRadarUnit();
+            if (mainRadarUnit.getLockedEntity() != null) {
+                mainRadarUnit.setLockedEntity(null);
+                return;
+            }
         }
         if (lockedEntity != null) {
             setLockedEntity(null);
@@ -365,10 +375,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             setLockedEntity(lockedEntity);
         }
         // 雷达锁定
-        if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnit != null) {
-            Entity lockedEntity = Radar.findTarget(this, 90);
+        if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnits != null) {
+            RadarUnit mainRadarUnit = getMainRadarUnit();
+            Entity lockedEntity = Radar.findTarget(mainRadarUnit, 90, this);
             if (lockedEntity != null) {
-                radarUnit.setLockedEntity(lockedEntity);
+                mainRadarUnit.setLockedEntity(lockedEntity);
             }
         }
     }
@@ -638,10 +649,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Collection<RadarUnit.DetectedObject> getRadarDetectedEntities() {
-        if (radarUnit != null) {
-            return radarUnit.getDetectedEntities().values();
+        Set<RadarUnit.DetectedObject> radarDetectedEntities = new HashSet<>();
+        for (RadarUnit radarUnit : radarUnits) {
+            radarDetectedEntities.addAll(radarUnit.getDetectedEntities().values());
         }
-        return List.of();
+        return radarDetectedEntities;
     }
 
     public Entity getLockedEntity() {
@@ -727,8 +739,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.parentWeaponUnitAim = parentWeaponUnitAim;
     }
 
-    public RadarUnit getRadarUnit() {
-        return radarUnit;
+    public List<RadarUnit> getRadarUnits() {
+        return radarUnits;
+    }
+
+    public RadarUnit getMainRadarUnit() {
+        if (radarUnits.isEmpty()) {
+            return null;
+        }
+        return radarUnits.get(0);
     }
 
     public boolean isSeekerOn() {

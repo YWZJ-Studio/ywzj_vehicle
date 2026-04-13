@@ -72,8 +72,7 @@ public class InputHandler {
                     sendToggleHoverMode(vehicle);
                 } else if (TOGGLE_RADAR.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
-                        RadarUnit radarUnit = weaponUnit.getRadarUnit();
-                        if (radarUnit != null) {
+                        for (RadarUnit radarUnit : weaponUnit.getRadarUnits()) {
                             radarUnit.toggle(null);
                         }
                     }
