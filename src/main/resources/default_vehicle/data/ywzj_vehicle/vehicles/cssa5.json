@@ -63,7 +63,6 @@
       "fire_control_sensor_type": "rf",
       "crosshair_style": "none",
       "is_seat": false,
-      "base": "turret",
       "rot_info": {
         "x_rot_speed": 1.5,
         "y_rot_speed": 0,
@@ -77,7 +76,6 @@
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "turret_smoke_grenade",
       "is_seat": false,
-      "base": "turret",
       "rot_info": {
         "x_rot_speed": 0,
         "y_rot_speed": 0
@@ -89,7 +87,6 @@
       "type": "ywzj_vehicle:radar",
       "structure_bone": "radar",
       "is_seat": false,
-      "base": "turret",
       "rot_info": {
         "x_rot_speed": 0,
         "y_rot_speed": 15,

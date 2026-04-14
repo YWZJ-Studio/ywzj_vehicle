@@ -84,7 +84,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private Entity lockedEntity;
     private int loseLockTick;
     private boolean parentWeaponUnitAim;
-    private List<RadarUnit> radarUnits = new ArrayList<>();
+    private final List<RadarUnit> radarUnits = new ArrayList<>();
     private boolean seekerOn;
     private int lockCoolingTick;
     // 第三人称准心样式
@@ -578,9 +578,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                         .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
                 if (structureGroup != null) {
                     rotationO.mul(structureGroup.baseRotation);
-                }
-                if (baseRotatableUnit != null && baseRotatableUnit.structureGroup != null) {
-                    rotationO.mul(baseRotatableUnit.structureGroup.globalTransform().rotation());
+                    if (structureGroup.parent != null) {
+                        rotationO.mul(structureGroup.parent.globalTransform().rotation());
+                    }
                 }
                 Vector3f localVec = VectorUtil.rotToVec(xRot, yRot).toVector3f();
                 Quaternionf relativeRot = baseRot().invert().mul(rotationO);
@@ -841,7 +841,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.opticalSightOffset = opticalSightOffset;
         this.operatorViewOffset = operatorViewOffset;
         this.seatOffset = seatOffset;
-        this.baseRotatableUnit = baseWeaponUnit;
 
         this.fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
 

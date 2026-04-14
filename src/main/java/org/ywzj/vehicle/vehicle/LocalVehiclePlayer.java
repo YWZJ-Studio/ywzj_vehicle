@@ -275,7 +275,6 @@ public class LocalVehiclePlayer {
             AbstractVehicle vehicle = getVehicle();
             PartUnit<?> partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
             if (partUnit instanceof WeaponUnit weaponUnit) {
-                CrtHandler.setActive(false);
                 ThermalHandler.setActive(false);
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
@@ -295,9 +294,6 @@ public class LocalVehiclePlayer {
                 } else if (toViewType == ViewType.SCOPE) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
                         return;
-                    }
-                    if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
-                        CrtHandler.setActive(true);
                     }
                     Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
                             weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
@@ -490,11 +486,14 @@ public class LocalVehiclePlayer {
     public void checkState() {
         Player player = getPlayer();
         AbstractVehicle vehicle = getVehicle();
-        if (CrtHandler.isActive()) {
-            if (vehicle == null ||
-                    (!(getVehicle().getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit
-                            && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT)))
-                CrtHandler.setActive(false);
+        boolean crt = vehicle != null
+                && viewType == ViewType.SCOPE
+                && vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit
+                && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT;
+        if (CrtHandler.isActive() && !crt) {
+            CrtHandler.setActive(false);
+        } else if (!CrtHandler.isActive() && crt) {
+            CrtHandler.setActive(true);
         }
         if (OverloadHandler.isActive()) {
             if (vehicle == null) {

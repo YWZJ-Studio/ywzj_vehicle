@@ -5,9 +5,6 @@ import org.ywzj.vehicle.vehicle.pojo.RotInfo;
 
 public class RotatableUnitPojo extends PartUnitPojo {
 
-    @SerializedName("base")
-    public String base = null;
-
     @SerializedName("rot_info")
     public RotInfo rotInfo;
 

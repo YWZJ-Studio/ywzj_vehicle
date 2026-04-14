@@ -7,10 +7,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
@@ -27,6 +29,7 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 
@@ -92,62 +95,52 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             double length = Math.max(4, vehicle.getStructureLength());
             float scale = (float) (0.5f * 10 / length);
             poseStack.scale(scale, scale, scale);
-            PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer());
-            if (playerPartUnit instanceof RotatableUnit rotatableUnit) {
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-vehicle.getYRot()));
+            Player player = LocalVehiclePlayer.instance.getPlayer();
+            PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(player);
+            if (playerPartUnit instanceof RotatableUnit<?> rotatableUnit) {
                 float yRot = rotatableUnit.worldRot().y - vehicle.getYRot();
                 poseStack.mulPose(Axis.ZP.rotationDegrees(-yRot));
             }
             int expansion = 10;
             for (VehicleCubeOBB vehicleCubeOBB : vehicle.getVehicleCubeOBBs()) {
-                double offsetX = vehicleCubeOBB.offset().x * expansion;
-                double offsetZ = vehicleCubeOBB.offset().z * expansion;
-                poseStack.translate(-offsetX, -offsetZ, 0);
-                int bodyCubeHalfWidth = (int) (vehicleCubeOBB.width / 2 * expansion);
-                int bodyCubeHalfDepth = (int) (vehicleCubeOBB.depth / 2 * expansion);
-                drawRectByCorner(guiGraphics, -bodyCubeHalfWidth, bodyCubeHalfWidth, -bodyCubeHalfDepth, bodyCubeHalfDepth, Color.GREEN, 1);
-                poseStack.translate(offsetX, offsetZ, 0);
+                renderCubeOBB(vehicle, vehicleCubeOBB, expansion, poseStack, guiGraphics, Color.GREEN);
             }
-            vehicle.getPartUnits().stream()
-                    .filter(partUnit -> partUnit instanceof WeaponUnit weaponUnit
-                            && weaponUnit.getParentWeaponUnit() == null
-                            && weaponUnit.getBaseRotatableUnit() == null
-                            && weaponUnit.isSeat())
-                    .map(partUnit -> (WeaponUnit) partUnit)
-                    .forEach(weaponUnit -> renderVehiclePart(guiGraphics, poseStack, weaponUnit, expansion));
+            for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
+                for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
+                    renderCubeOBB(vehicle, partCubeOBB, expansion, poseStack, guiGraphics, partUnit.getOwner() == player ? Color.BLUE : Color.GREEN);
+                }
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
+                        for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
+                            renderCubeOBB(vehicle, partCubeOBB, expansion, poseStack, guiGraphics, partUnit.getOwner() == player ? Color.BLUE : Color.GREEN);
+                        }
+                    }
+                }
+            }
         }
         poseStack.popPose();
     }
 
-    public void renderVehiclePart(GuiGraphics guiGraphics, PoseStack poseStack, WeaponUnit weaponUnit, int expansion) {
-        Vec3 pivotOffset = weaponUnit.getPivotOffset();
-        if (weaponUnit.getBaseRotatableUnit() != null) {
-            pivotOffset = pivotOffset.subtract(weaponUnit.getBaseRotatableUnit().getPivotOffset());
-        }
-        int color = Color.GREEN;
-        if (weaponUnit.getOwner() == LocalVehiclePlayer.instance.getPlayer()) {
-            color = Color.BLUE;
-        }
-        double pivotOffsetX = pivotOffset.x * expansion;
-        double pivotOffsetY = pivotOffset.z * expansion;
-        poseStack.translate(-pivotOffsetX, -pivotOffsetY, 0);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(weaponUnit.getYRot()));
-        for (VehicleCubeOBB partCubeOBB : weaponUnit.getPartCubeOBBs()) {
-            Vec3 pivotOffset2 = weaponUnit.getPivotOffset();
-            double offsetX = (partCubeOBB.offset().x - pivotOffset2.x) * expansion;
-            double offsetZ = (partCubeOBB.offset().z - pivotOffset2.z) * expansion;
+    private void renderCubeOBB(AbstractVehicle vehicle, VehicleCubeOBB cubeOBB, double expansion, PoseStack poseStack, GuiGraphics guiGraphics, int color) {
+        OBB obb = cubeOBB.obb();
+        Vec3 center = new Vec3(obb.center());
+        Vec3 offset = center.subtract(vehicle.position());
+        double offsetX = offset.x * expansion;
+        double offsetZ = offset.z * expansion;
+        poseStack.pushPose();
+        {
             poseStack.translate(-offsetX, -offsetZ, 0);
-            int partHalfWidth = (int) (partCubeOBB.width / 2 * expansion);
-            int partHalfDepth = (int) (partCubeOBB.depth / 2 * expansion);
-            drawRectByCorner(guiGraphics, -partHalfWidth, partHalfWidth, -partHalfDepth, partHalfDepth, color, 1);
+            Vector3f rot = new Vector3f();
+            obb.rotation().getEulerAnglesYXZ(rot);
+            poseStack.mulPose(Axis.ZP.rotation(-rot.y));
+            int bodyCubeHalfWidth = (int) (cubeOBB.width / 2 * expansion);
+            int bodyCubeHalfDepth = (int) (cubeOBB.depth / 2 * expansion);
+            drawRectByCorner(guiGraphics, -bodyCubeHalfWidth, bodyCubeHalfWidth, -bodyCubeHalfDepth, bodyCubeHalfDepth,
+                    color, 1);
             poseStack.translate(offsetX, offsetZ, 0);
         }
-        weaponUnit.getSubRotatableUnits().forEach(subRotatableUnit -> {
-            if (subRotatableUnit.isSeat() && subRotatableUnit instanceof WeaponUnit subWeaponUnit) {
-                renderVehiclePart(guiGraphics, poseStack, subWeaponUnit, expansion);
-            }
-        });
-        poseStack.mulPose(Axis.ZP.rotationDegrees(-weaponUnit.getYRot()));
-        poseStack.translate(pivotOffsetX, pivotOffsetY, 0);
+        poseStack.popPose();
     }
 
     public void renderGroundVehicle(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {

@@ -8,7 +8,6 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -21,8 +20,6 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,9 +44,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public float xRotMin = -90;
     public float yRotMax = Float.MAX_VALUE;
     public float yRotMin = -Float.MAX_VALUE;
-
-    protected RotatableUnit<?> baseRotatableUnit;
-    protected List<RotatableUnit<?>> subRotatableUnits = new ArrayList<>();
     public boolean needPower = true;
 
     private VehicleSound turnYSoundInstance;
@@ -82,18 +76,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
             structureGroup.baseRotation.getEulerAnglesYXZ(selfRot);
             this.xSelfRot = (float) Math.toDegrees(selfRot.x);
             this.ySelfRot = (float) Math.toDegrees(-selfRot.y);
-        }
-    }
-
-    @Override
-    public void combineAndInit(@UnmodifiableView Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
-        super.combineAndInit(partUnitsView, vehicle);
-        if (data.getBase() != null) {
-            PartUnit<?> basePart = partUnitsView.get(data.getBase());
-            if (basePart instanceof RotatableUnit<?> base) {
-                this.setBaseRotatableUnit(base);
-                base.addSubRotatableUnits(this);
-            }
         }
     }
 
@@ -214,9 +196,9 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         Quaternionf rotation = vehicle.rotYXZ();
         if (structureGroup != null) {
             rotation.mul(structureGroup.baseRotation);
-        }
-        if (baseRotatableUnit != null && baseRotatableUnit.structureGroup != null) {
-            rotation.mul(baseRotatableUnit.structureGroup.globalTransform().rotation());
+            if (structureGroup.parent != null) {
+                rotation.mul(structureGroup.parent.globalTransform().rotation());
+            }
         }
         return rotation;
     }
@@ -250,10 +232,10 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     }
 
     public Vec3 worldPositionWithBaseRot(Vec3 offsetFromVehicle) {
-        if (baseRotatableUnit == null || baseRotatableUnit.structureGroup == null) {
+        if (structureGroup == null || structureGroup.parent == null) {
             return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
         }
-        return worldPositionWithGroupRot(offsetFromVehicle, baseRotatableUnit.structureGroup);
+        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup.parent);
     }
 
     public Vec3 worldPositionWithSelfRot(Vec3 offsetFromVehicle) {
@@ -387,22 +369,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public void setYRemoteAimRot(float yRemoteAimRot) {
         this.yRemoteAimRot = yRemoteAimRot;
-    }
-
-    public RotatableUnit<?> getBaseRotatableUnit() {
-        return baseRotatableUnit;
-    }
-
-    public void setBaseRotatableUnit(RotatableUnit<?> baseRotatableUnit) {
-        this.baseRotatableUnit = baseRotatableUnit;
-    }
-
-    public void addSubRotatableUnits(RotatableUnit<?> rotatableUnit) {
-        this.subRotatableUnits.add(rotatableUnit);
-    }
-
-    public List<RotatableUnit<?>> getSubRotatableUnits() {
-        return subRotatableUnits;
     }
 
     @Deprecated
