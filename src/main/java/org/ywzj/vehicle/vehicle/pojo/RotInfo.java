@@ -5,10 +5,10 @@ import com.google.gson.annotations.SerializedName;
 public class RotInfo {
 
     @SerializedName("x_rot_speed")
-    public float xRotSpeed = 1.0f;
+    public float xRotSpeed = 0f;
 
     @SerializedName("y_rot_speed")
-    public float yRotSpeed = 1.0f;
+    public float yRotSpeed = 0f;
 
     @SerializedName("x_rot_max")
     public float xRotMax = 90;

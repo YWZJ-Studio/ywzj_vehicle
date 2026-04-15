@@ -2,10 +2,15 @@ package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.math.Axis;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,6 +42,7 @@ import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 import org.ywzj.vehicle.vehicle.weapon.seeker.ElectroOptical;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Infrared;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
@@ -171,33 +177,51 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void combineAndInit(Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
         super.combineAndInit(partUnitsView, vehicle);
         int index = 0;
+        WeaponUnit parent = this;
         // 武器
         for (var weaponInfo : data.getWeapons()) {
-            VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(weaponInfo.id).orElse(null);
-            if (vehicleWeaponIndex != null) {
-                WeaponUnit parent = this;
-                AbstractVehicleWeapon<?> weapon;
+            // 武器站加入武器列表
+            if (weaponInfo.id == null) {
                 if (weaponInfo.partUnitId != null
-                        && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
-                        && subWeaponUnit != parent) {
-                    if (subWeaponUnit.getParentWeaponUnit() == null) {
-                        subWeaponUnit.setParentWeaponUnit(parent);
+                        && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit
+                        && agentWeaponUnit != parent) {
+                    if (agentWeaponUnit.getParentWeaponUnit() == null) {
+                        agentWeaponUnit.setParentWeaponUnit(parent);
                     }
-                    parent.addSubWeaponUnit(subWeaponUnit);
-                    weapon = vehicleWeaponIndex.create(vehicle, subWeaponUnit, index, weaponInfo.saveId);
-                } else {
-                    weapon = vehicleWeaponIndex.create(vehicle, parent, index, weaponInfo.saveId);
+                    parent.addSubWeaponUnit(agentWeaponUnit);
+                    VehicleWeaponAgent weaponAgent = new VehicleWeaponAgent(vehicle, agentWeaponUnit, index);
+                    weapons.add(weaponAgent);
+                    indexedWeapons.add(weaponAgent);
+                    index += 1;
                 }
-                if (vehicleWeaponIndex.data().independent) {
-                    this.independentWeapons.add(weapon);
-                } else if (weaponInfo.secondary) {
-                    this.secondaryWeapons.add(weapon);
-                } else {
-                    this.weapons.add(weapon);
+            }
+            // 武器实现加入武器列表
+            else {
+                VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(weaponInfo.id).orElse(null);
+                if (vehicleWeaponIndex != null) {
+                    AbstractVehicleWeapon<?> weapon;
+                    if (weaponInfo.partUnitId != null
+                            && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
+                            && subWeaponUnit != parent) {
+                        if (subWeaponUnit.getParentWeaponUnit() == null) {
+                            subWeaponUnit.setParentWeaponUnit(parent);
+                        }
+                        parent.addSubWeaponUnit(subWeaponUnit);
+                        weapon = vehicleWeaponIndex.create(vehicle, subWeaponUnit, index, weaponInfo.saveId);
+                    } else {
+                        weapon = vehicleWeaponIndex.create(vehicle, parent, index, weaponInfo.saveId);
+                    }
+                    if (vehicleWeaponIndex.data().independent) {
+                        independentWeapons.add(weapon);
+                    } else if (weaponInfo.secondary) {
+                        secondaryWeapons.add(weapon);
+                    } else {
+                        weapons.add(weapon);
+                    }
+                    weapon.defineSyncData(this.getSyncData());
+                    indexedWeapons.add(weapon);
+                    index += 1;
                 }
-                weapon.defineSyncData(this.getSyncData());
-                indexedWeapons.add(weapon);
-                index += 1;
             }
         }
         // 雷达
@@ -226,9 +250,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         super.tick();
-        getCurrentWeapon().ifPresent(AbstractVehicleWeapon::tick);
-        getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::tick);
-        independentWeapons.forEach(AbstractVehicleWeapon::tick);
+        weapons.forEach(AbstractVehicleWeapon::tick);
     }
 
     @Override
@@ -344,6 +366,18 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean onInteract(Player player, InteractionHand hand) {
+        if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
+            switchWeapon(false, true);
+            //todo: 细化
+            AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
+            player.displayClientMessage(Component.literal("切换至: ").append(weapon.getDisplayName()), true);
+            vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
+        }
+        return false;
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -707,6 +741,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return parentWeaponUnit;
     }
 
+    public WeaponUnit getRootParentWeaponUnit() {
+        WeaponUnit rootParentWeaponUnit = parentWeaponUnit;
+        while (rootParentWeaponUnit.getParentWeaponUnit() != null) {
+            rootParentWeaponUnit = rootParentWeaponUnit.getParentWeaponUnit();
+        }
+        return rootParentWeaponUnit;
+    }
+
     public void setParentWeaponUnit(WeaponUnit parentWeaponUnit) {
         this.parentWeaponUnit = parentWeaponUnit;
     }
@@ -754,13 +796,28 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return seekerOn;
     }
 
+    public float getSeekerFov() {
+        Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
+        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
+            return missile.getData().getSeekerFov();
+        }
+        return 30;
+    }
+
     public int getLockCoolingTick() {
         return lockCoolingTick;
     }
 
     public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {
         if (currentWeaponIndex >= 0 && currentWeaponIndex < weapons.size()) {
-            return Optional.of(weapons.get(currentWeaponIndex));
+            AbstractVehicleWeapon<?> currentWeapon = weapons.get(currentWeaponIndex);
+            while (currentWeapon instanceof VehicleWeaponAgent weaponAgent) {
+                Optional<AbstractVehicleWeapon<?>> weapon = weaponAgent.getWeaponUnit().getCurrentWeapon();
+                if (weapon.isPresent()) {
+                    currentWeapon = weapon.get();
+                }
+            }
+            return Optional.of(currentWeapon);
         }
         return Optional.empty();
     }
@@ -800,11 +857,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
         CompoundTag weaponTag = new CompoundTag();
         this.indexedWeapons.forEach(weapon -> {
-            CompoundTag tag1 = weapon.serializeNBT();
-            if (tag1.isEmpty()) {
-                return;
+            String serializeId = weapon.getSerializeId();
+            if (serializeId != null) {
+                CompoundTag weaponData = weapon.serializeNBT();
+                if (weaponData.isEmpty()) {
+                    return;
+                }
+                weaponTag.put(serializeId, weaponData);
             }
-            weaponTag.put(weapon.getSerializeId(), tag1);
         });
         tag.put("WeaponTag", weaponTag);
         return tag;
@@ -817,7 +877,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         CompoundTag weaponTag = nbt.getCompound("WeaponTag");
         this.indexedWeapons.forEach(weapon -> {
             if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
-                weapon.deserializeNBT(weaponTag.getCompound(weapon.getSerializeId()));
+                String serializeId = weapon.getSerializeId();
+                if (serializeId != null) {
+                    weapon.deserializeNBT(weaponTag.getCompound(serializeId));
+                }
             }
         });
     }

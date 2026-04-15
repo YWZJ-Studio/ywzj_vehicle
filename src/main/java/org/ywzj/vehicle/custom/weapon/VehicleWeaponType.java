@@ -23,6 +23,7 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D extends Ba
         VehicleWeaponType.DataSerializer<D> dataSerializer,
         VehicleWeaponType.WeaponUnitFactory<T, D> factory
 ) {
+
     @Nullable
     public T create(AbstractVehicle vehicle, WeaponUnit unit, int index, D data, String serializeId) {
         return factory.create(vehicle, unit, index, data, serializeId);
@@ -53,6 +54,7 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D extends Ba
     }
 
     public static class Builder<T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> {
+
         private final ResourceLocation id;
         private DataSerializer<D> dataSerializer;
         private WeaponUnitFactory<T, D> factory;
@@ -78,5 +80,7 @@ public record VehicleWeaponType<T extends AbstractVehicleWeapon<D>, D extends Ba
         public VehicleWeaponType<T, D> build() {
             return new VehicleWeaponType<>(id, dataSerializer, factory);
         }
+
     }
+
 }

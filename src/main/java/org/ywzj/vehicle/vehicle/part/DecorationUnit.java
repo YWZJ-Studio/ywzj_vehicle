@@ -96,7 +96,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         }
     }
 
-    public boolean onEntityInteract(Player player, InteractionHand hand) {
+    public boolean onInteract(Player player, InteractionHand hand) {
         if (player.level().isClientSide() && hand == InteractionHand.MAIN_HAND && player.isShiftKeyDown()) {
             openScreen();
         }

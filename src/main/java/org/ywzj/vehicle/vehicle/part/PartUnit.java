@@ -103,7 +103,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         }
     }
 
-    public boolean onEntityInteract(Player player, InteractionHand hand) {
+    public boolean onInteract(Player player, InteractionHand hand) {
         return true;
     }
 

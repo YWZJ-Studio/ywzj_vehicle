@@ -218,7 +218,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                         }
                     }
                     // 光电锁定
-                    else if (sensorType == WeaponUnitData.FireControlSensorType.EO) {
+                    if (sensorType == WeaponUnitData.FireControlSensorType.EO) {
                         RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
                     }
                 }

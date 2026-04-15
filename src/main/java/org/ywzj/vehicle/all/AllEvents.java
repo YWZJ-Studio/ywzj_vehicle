@@ -119,7 +119,7 @@ public class AllEvents {
                 Vec3 eyePosition = player.getEyePosition();
                 PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
                 if (partUnit != null) {
-                    if (!partUnit.onEntityInteract(player, event.getHand())) {
+                    if (!partUnit.onInteract(player, event.getHand())) {
                         event.setCanceled(true);
                     }
                     return;

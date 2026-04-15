@@ -9,6 +9,7 @@ public class WeaponInfo {
     /**
      * 武器id
      */
+    @Nullable
     @SerializedName("id")
     public ResourceLocation id;
 
@@ -25,7 +26,7 @@ public class WeaponInfo {
     @SerializedName("secondary")
     public boolean secondary;
 
-    public WeaponInfo(ResourceLocation id, @Nullable String partUnitId, boolean secondary, String saveId) {
+    public WeaponInfo(@Nullable ResourceLocation id, @Nullable String partUnitId, boolean secondary, String saveId) {
         this.id = id;
         this.partUnitId = partUnitId;
         this.secondary = secondary;

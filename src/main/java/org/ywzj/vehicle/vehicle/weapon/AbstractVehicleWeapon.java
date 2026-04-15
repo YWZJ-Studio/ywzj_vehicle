@@ -47,8 +47,8 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> implements INBTSerializable<CompoundTag> {
 
-    private final AbstractVehicle vehicle;
-    private final WeaponUnit weaponUnit;
+    protected final AbstractVehicle vehicle;
+    protected final WeaponUnit weaponUnit;
     private final int index;
     private final T data;
     private final String serializeId;
@@ -93,13 +93,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         return true;
     }
 
-    public void onSwitchTo() {
-        // 可选覆盖
-    }
+    public void onSwitchTo() {}
 
-    public void onSwitchFrom() {
-        this.reloadTime = 0;
-    }
+    public void onSwitchFrom() {}
 
     public void setRemainAmmo(int remainAmmo) {
         this.remainAmmo = remainAmmo;
@@ -138,7 +134,13 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
             return false;
         }
 
-        int partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
+        int partUnitIndex;
+        Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
+        if (weaponOptional.isPresent() && weaponOptional.get() == this) {
+            partUnitIndex = weaponUnit.getIndex();
+        } else {
+            partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
+        }
         List<AimContext> aimContexts;
         if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
             aimContexts = Collections.singletonList(weaponUnit.aimContext());

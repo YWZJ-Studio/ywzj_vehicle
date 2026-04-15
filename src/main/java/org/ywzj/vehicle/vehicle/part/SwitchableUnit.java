@@ -17,7 +17,7 @@ public class SwitchableUnit<T extends PartUnitData> extends PartUnit<T> {
         this.getSyncData().define(SyncDataSerializers.BOOLEAN, this::setOn, this::isOn, false);
     }
 
-    public boolean onEntityInteract(Player player, InteractionHand hand) {
+    public boolean onInteract(Player player, InteractionHand hand) {
         if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
             if (!on) {
                 this.on = true;

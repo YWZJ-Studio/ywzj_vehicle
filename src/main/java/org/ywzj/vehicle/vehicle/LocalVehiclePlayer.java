@@ -178,7 +178,7 @@ public class LocalVehiclePlayer {
             weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                 WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
                 if (currentWeaponUnit.isParentWeaponUnitAim()) {
-                    currentWeaponUnit = currentWeaponUnit.getParentWeaponUnit();
+                    currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
                 }
                 weaponHitPosO = weaponHitPos;
                 weaponHitPos = currentWeaponUnit.aimHitPosition();

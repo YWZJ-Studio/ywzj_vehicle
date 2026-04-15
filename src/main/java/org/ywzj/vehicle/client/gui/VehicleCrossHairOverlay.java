@@ -24,10 +24,6 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
-import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
-import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
-
-import java.util.Optional;
 
 import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
@@ -98,26 +94,22 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                                     }
                                 }
                                 // 导引头大圈
-                                Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
-                                if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
-                                    weaponUnit = missile.getWeaponUnit();
-                                    Vec2 rot = weaponUnit.worldRot();
-                                    Vec3 screenPosUp = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                            .add(VectorUtil.rotToVec(rot.x - missile.getData().getSeekerFov(), rot.y).normalize().scale(256)));
-                                    Vec3 screenPosDown = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                            .add(VectorUtil.rotToVec(rot.x + missile.getData().getSeekerFov(), rot.y).normalize().scale(256)));
-                                    Vec3 screenPosCenter = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                            .add(VectorUtil.rotToVec(rot.x, rot.y).normalize().scale(256)));
-                                    double px = screenPosDown.x - screenPosUp.x;
-                                    double py = screenPosDown.y - screenPosUp.y;
-                                    float r = (float) Math.sqrt(px * px + py * py) / 2;
-                                    poseStack.pushPose();
-                                    {
-                                        poseStack.translate(screenPosCenter.x - x, screenPosCenter.y - y, 0);
-                                        GuiHelper.drawCircle(poseStack, 0, 0, r, aimCircleColor, 0.01f, 0, 0);
-                                    }
-                                    poseStack.popPose();
+                                Vec2 rot = weaponUnit.worldRot();
+                                Vec3 screenPosUp = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
+                                        .add(VectorUtil.rotToVec(rot.x - weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
+                                Vec3 screenPosDown = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
+                                        .add(VectorUtil.rotToVec(rot.x + weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
+                                Vec3 screenPosCenter = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
+                                        .add(VectorUtil.rotToVec(rot.x, rot.y).normalize().scale(256)));
+                                double px = screenPosDown.x - screenPosUp.x;
+                                double py = screenPosDown.y - screenPosUp.y;
+                                float r = (float) Math.sqrt(px * px + py * py) / 2;
+                                poseStack.pushPose();
+                                {
+                                    poseStack.translate(screenPosCenter.x - x, screenPosCenter.y - y, 0);
+                                    GuiHelper.drawCircle(poseStack, 0, 0, r, aimCircleColor, 0.01f, 0, 0);
                                 }
+                                poseStack.popPose();
                             }
                         }
                         weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
@@ -171,7 +163,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                     WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
                     if (currentWeaponUnit.isParentWeaponUnitAim()) {
-                        currentWeaponUnit = currentWeaponUnit.getParentWeaponUnit();
+                        currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
                     }
                     Vec3 screenHitPos = VectorUtil.worldToScreen(currentWeaponUnit.aimHitPosition());
                     if (screenHitPos.z >= 0) {

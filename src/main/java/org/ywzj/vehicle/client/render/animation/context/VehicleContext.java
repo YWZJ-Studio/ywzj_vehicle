@@ -9,6 +9,7 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 
 import java.util.List;
 import java.util.Optional;
@@ -99,10 +100,32 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
         if (partUnitOptional.get() instanceof WeaponUnit weaponUnit) {
             List<AbstractVehicleWeapon<?>> indexedWeapons = weaponUnit.getIndexedWeapons();
             if (weaponIndex >= 0 && weaponIndex < indexedWeapons.size()) {
-                return indexedWeapons.get(weaponIndex).getRemainAmmo();
+                AbstractVehicleWeapon<?> weapon = indexedWeapons.get(weaponIndex);
+                if (weapon instanceof VehicleWeaponAgent weaponAgent) {
+                    return weaponAgent.getWeaponUnit().getCurrentWeapon().get().getRemainAmmo();
+                }
+                return weapon.getRemainAmmo();
             }
         }
         return 0;
+    }
+
+    public String getWeaponName(String id, int weaponIndex) {
+        Optional<PartUnit<?>> partUnitOptional = getEntity().getPartUnit(id);
+        if (partUnitOptional.isEmpty()) {
+            return "";
+        }
+        if (partUnitOptional.get() instanceof WeaponUnit weaponUnit) {
+            List<AbstractVehicleWeapon<?>> indexedWeapons = weaponUnit.getIndexedWeapons();
+            if (weaponIndex >= 0 && weaponIndex < indexedWeapons.size()) {
+                AbstractVehicleWeapon<?> weapon = indexedWeapons.get(weaponIndex);
+                if (weapon instanceof VehicleWeaponAgent weaponAgent) {
+                    return weaponAgent.getWeaponUnit().getCurrentWeapon().get().getDisplayName().getString();
+                }
+                return weapon.getDisplayName().getString();
+            }
+        }
+        return "";
     }
 
     public long lastRenderTime() {

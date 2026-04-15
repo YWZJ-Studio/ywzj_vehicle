@@ -32,7 +32,7 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
     }
 
     @Override
-    public boolean onEntityInteract(Player player, InteractionHand hand) {
+    public boolean onInteract(Player player, InteractionHand hand) {
         return true;
     }
 

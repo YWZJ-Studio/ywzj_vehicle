@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
@@ -7,11 +8,14 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.PacketDistributor;
 import org.ywzj.vehicle.custom.part.data.RadarUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientRadarAction;
+import org.ywzj.vehicle.network.message.ServerVehicleWarn;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
 
@@ -68,9 +72,9 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                 Vec3 radarPos = worldPosition(radarOffset);
                 Vec2 rot = worldVecToLocalRot(lockedEntity.position().subtract(radarPos));
                 if (yRotAdd) {
-                    yAimRot = rot.y + yRotSpeed / 4;
+                    yAimRot = rot.y + yRotSpeed / 2;
                 } else {
-                    yAimRot = rot.y - yRotSpeed / 4;
+                    yAimRot = rot.y - yRotSpeed / 2;
                 }
                 if (Math.abs(yAimRot - yRot) < yRotSpeed) {
                     yRotAdd = !yRotAdd;
@@ -91,14 +95,26 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
     public void tickTargets() {
         long timeNow = System.currentTimeMillis();
-        long life;
-        if (vehicle.level().isClientSide()) {
-            float range = Math.min(360, yRotMax - yRotMin);
-            life = (long) (range / yRotSpeed / 20 * 1000L) * 2;
-        } else {
-            life = 2000;
-        }
+        float range = Math.min(360, yRotMax - yRotMin);
+        long life = Math.max((long) (range / yRotSpeed / 20 * 1000L) * 4, 100);
         detectedObjects.values().removeIf(detectedObject -> detectedObject.detectedTime + life < timeNow);
+        // 服务端通知雷达搜索给目标载具乘客
+        if (!vehicle.level().isClientSide() && vehicle.tickCount % 20 == 0) {
+            detectedObjects.values().forEach(detectedObject -> {
+                if (detectedObject.entity instanceof AbstractVehicle toVehicle) {
+                    ServerVehicleWarn serverVehicleWarn = new ServerVehicleWarn();
+                    serverVehicleWarn.fromEntityId = this.vehicle.getId();
+                    serverVehicleWarn.toEntityId = toVehicle.getId();
+                    serverVehicleWarn.warnType = WarnType.RADAR_SEARCH;
+                    serverVehicleWarn.info = getRadarType();
+                    for (Entity entity : toVehicle.getPassengers()) {
+                        if (entity instanceof ServerPlayer player) {
+                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleWarn);
+                        }
+                    }
+                }
+            });
+        }
     }
 
     public void tickScan() {
@@ -110,15 +126,17 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         }
 
         //todo: 测试
-//        Vec2 scanRot = worldRot();
-//        Vec3 radarPos = worldRadarPosition();
-//        float x1 = scanRot.x + scanSectorAngle / 2;
-//        float x2 = scanRot.x - scanSectorAngle / 2;
-//        Vec3 v1 = VectorUtil.rotToVec(x1, scanRot.y);
-//        Vec3 v2 = VectorUtil.rotToVec(x2, scanRot.y);
-//        for (int i = 0; i < 32; i++) {
-//            DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(i)));
-//            DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(i)));
+//        if (LocalVehiclePlayer.instance.getWeaponUnit().getMainRadarUnit() == this) {
+//            Vec2 scanRot = worldRot();
+//            Vec3 radarPos = worldRadarPosition();
+//            float x1 = scanRot.x + scanSectorAngle / 2;
+//            float x2 = scanRot.x - scanSectorAngle / 2;
+//            Vec3 v1 = VectorUtil.rotToVec(x1, scanRot.y);
+//            Vec3 v2 = VectorUtil.rotToVec(x2, scanRot.y);
+//            for (int i = 0; i < 32; i++) {
+//                DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(i)), this);
+//                DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(i)), this);
+//            }
 //        }
 
         // 雷达扫描目标
@@ -129,14 +147,12 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                     && !(Math.abs(aimRot.x - xRot) > scanSectorAngle / 2);
         });
         entities.forEach(this::detect);
-        // 将客户端搜索目标通知服务端
-        if (vehicle.tickCount % 20 == 0) {
-            for (DetectedObject detectedObject : detectedObjects.values()) {
-                ClientRadarAction clientRadarAction = new ClientRadarAction();
-                clientRadarAction.action = ClientRadarAction.Action.SEARCH;
-                clientRadarAction.toEntityId = detectedObject.entity.getId();
-                Channel.CHANNEL.sendToServer(clientRadarAction);
-            }
+        // 客户端通知雷达搜索给服务端
+        for (DetectedObject detectedObject : detectedObjects.values()) {
+            ClientRadarAction clientRadarAction = new ClientRadarAction();
+            clientRadarAction.action = ClientRadarAction.Action.SEARCH;
+            clientRadarAction.toEntityId = detectedObject.entity.getId();
+            Channel.CHANNEL.sendToServer(clientRadarAction);
         }
     }
 

@@ -30,7 +30,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         VehicleMissileWeaponData data = this.getData();
         WeaponUnit missileWeaponUnit = getWeaponUnit();
         if (missileWeaponUnit.isParentWeaponUnitAim()) {
-            missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
+            missileWeaponUnit = missileWeaponUnit.getRootParentWeaponUnit();
         }
         if (missileWeaponUnit.getXRot() < data.getXRotMin()
                 || missileWeaponUnit.getXRot() > data.getXRotMax()
@@ -40,9 +40,6 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             return false;
         }
         if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-            if (missileWeaponUnit.getParentWeaponUnit() != null) {
-                missileWeaponUnit = missileWeaponUnit.getParentWeaponUnit();
-            }
             if (missileWeaponUnit.getLockedEntity() == null
                     && missileWeaponUnit.getFireControlSensorType() != WeaponUnitData.FireControlSensorType.EO) {
                 LocalVehiclePlayer.instance.sendMessage("ui.need_lock_entity");
@@ -65,8 +62,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         var vehicle = getVehicle();
         var data = this.getData();
 
-        WeaponUnit weaponUnit = getWeaponUnit().getParentWeaponUnit() != null ? getWeaponUnit().getParentWeaponUnit() : getWeaponUnit();
-
+        WeaponUnit weaponUnit = getWeaponUnit().getRootParentWeaponUnit();
         for (AimContext aimContext : aimContexts) {
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data, weaponUnit);
             if (data.getGuidance() == VehicleMissileWeaponData.Guidance.PRESET

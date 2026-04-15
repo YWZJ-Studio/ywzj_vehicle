@@ -46,7 +46,8 @@ public class VehicleRadarOverlay implements IGuiOverlay {
             List<RadarUnit> radarUnits = weaponUnit.getRadarUnits();
             if (!radarUnits.isEmpty()) {
                 poseStack.translate(centerX - (radarUnits.size() - 1) * 32, centerY, 0);
-                float radius = 50.0f / radarUnits.size() / 0.6f;
+                int radarCount = radarUnits.size();
+                float radius = radarCount == 1 ? 50.0f : 50.0f / radarCount / 0.6f;
                 for (RadarUnit radarUnit : radarUnits) {
                     // 雷达
                     if (!radarUnit.isOn()) {
