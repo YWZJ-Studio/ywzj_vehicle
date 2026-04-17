@@ -58,8 +58,8 @@ public class VehicleRadarOverlay implements IGuiOverlay {
                     double yRotMax = radarUnit.getYRotMax();
                     double yRotO = radarUnit.yRotO;
                     double yRot = radarUnit.getYRot();
-                    int radarColor = 0x4433FF33;
-                    int lineColor = 0xFF00FF00;
+                    int radarColor = Color.RADAR_SECTOR;
+                    int lineColor = Color.GREEN;
                     Matrix4f matrix = poseStack.last().pose();
                     // 扫描扇区
                     if (yRotMax - yRotMin >= 360) {
@@ -119,7 +119,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 3, Color.GREEN, 0.1f, 0, 0);
                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 25, Color.GREEN, 0.01f, 0, 0);
                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 20, Color.GREEN, 0.01f, 0, 0);
-                GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 25, 0x33000000, 1f, 0, 0);
+                GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 25, Color.BG_DARK_DIM, 1f, 0, 0);
                 for (Map.Entry<Integer, WarningReceiver.WarnTarget> warnTargetEntry : warningReceiver.targets.entrySet()) {
                     Entity entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(warnTargetEntry.getKey());
                     WarningReceiver.WarnTarget warnTarget = warnTargetEntry.getValue();

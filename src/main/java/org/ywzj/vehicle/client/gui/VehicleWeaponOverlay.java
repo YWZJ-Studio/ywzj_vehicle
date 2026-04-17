@@ -143,20 +143,13 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
             int bgCol = active ? COL_BG_ACTIVE : COL_BG;
             RenderHelper.fill(gg, RenderType.guiOverlay(), tx, tabTop, tx2, tabBot, 0, bgCol);
 
+            gg.hLine(tx, tx2 - 1, tabTop, Color.GREEN);
             if (active) {
-                gg.hLine(tx, tx2 - 1, tabTop, Color.GREEN);
                 gg.hLine(tx + 1, tx2 - 2, tabTop + 1, Color.GREEN);
-            } else {
-                gg.hLine(tx, tx2 - 1, tabTop, Color.GREEN);
             }
 
             if (i > 0) {
                 gg.vLine(tx, tabTop, tabBot - 1, Color.GREEN);
-            }
-
-            if (active) {
-                if (i > 0)             gg.vLine(tx + 1,  tabTop + 2, tabBot - 1, 0xFF1E5025);
-                if (i < tabCount - 1)  gg.vLine(tx2 - 2, tabTop + 2, tabBot - 1, 0xFF1E5025);
             }
 
             int textCol = active ? COL_TAB_ACTIVE : COL_TAB_TEXT;
@@ -186,8 +179,6 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
         gg.vLine(cardLeft,             cardTop, cardTop + VehicleWeaponOverlay.CARD_H - 1,  COL_BORDER);
         gg.vLine(cardLeft + VehicleWeaponOverlay.CARD_W - 1, cardTop, cardTop + VehicleWeaponOverlay.CARD_H - 1,  COL_BORDER);
 
-        gg.hLine(cardLeft + 1, cardLeft + VehicleWeaponOverlay.CARD_W - 2, cardTop + 2, 0xFF0F3015);
-
         int padding     = 5;
         int contentLeft = cardLeft + padding;
         int contentTop  = cardTop  + padding;
@@ -204,7 +195,7 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
         } else {
             String ammoStr = remainAmmo + " / " + maxAmmo;
             int ammoCol = remainAmmo == 0 ? COL_RELOAD
-                        : remainAmmo <= maxAmmo / 4 ? 0xFFFFAA00
+                        : remainAmmo <= maxAmmo / 4 ? Color.AMMO_WARNING
                         : COL_AMMO;
             gg.drawString(font, ammoStr, contentLeft, ammoY, ammoCol, false);
         }
@@ -213,11 +204,11 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
         int barH = 3;
         float ammoFrac = maxAmmo > 0 ? (float) remainAmmo / maxAmmo : 0f;
         RenderHelper.fill(gg, RenderType.guiOverlay(),
-                contentLeft, barY, contentLeft + textAreaW * 0.8f, barY + barH, 0, 0xFF0F2210);
+                contentLeft, barY, contentLeft + textAreaW * 0.8f, barY + barH, 0, Color.AMMO_BAR_BG);
         int filledW = (int) (textAreaW * 0.8f * ammoFrac);
         if (filledW > 0) {
             int barFgCol = remainAmmo == 0 ? COL_RELOAD
-                         : remainAmmo <= maxAmmo / 4 ? 0xFFE8A020
+                         : remainAmmo <= maxAmmo / 4 ? Color.AMMO_WARNING
                          : COL_RING_FG;
             RenderHelper.fill(gg, RenderType.guiOverlay(),
                     contentLeft, barY, contentLeft + filledW, barY + barH, 0, barFgCol);
@@ -233,7 +224,7 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
             String secAmmo = secWeapon.getRemainAmmo() + "/" + secWeapon.getMaxCapacity();
             int secAmmoCol = secWeapon.getReloadTime() > 0 ? COL_RELOAD
                     : secWeapon.getRemainAmmo() == 0 ? COL_RELOAD
-                    : secWeapon.getRemainAmmo() <= secWeapon.getMaxCapacity() / 4 ? 0xFFFFAA00
+                    : secWeapon.getRemainAmmo() <= secWeapon.getMaxCapacity() / 4 ? Color.AMMO_WARNING
                     : COL_AMMO;
             int secNameY = cardTop + padding;
             int secAmmoY = secNameY + font.lineHeight + 1;
@@ -250,7 +241,7 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
             String indepAmmo = indep.getRemainAmmo() + "/" + indep.getMaxCapacity();
             int indepAmmoCol = indep.getReloadTime() > 0 ? COL_RELOAD
                     : indep.getRemainAmmo() == 0 ? COL_RELOAD
-                    : indep.getRemainAmmo() <= indep.getMaxCapacity() / 4 ? 0xFFFFAA00
+                    : indep.getRemainAmmo() <= indep.getMaxCapacity() / 4 ? Color.AMMO_WARNING
                     : COL_AMMO;
             int indepNameY = cardTop + VehicleWeaponOverlay.CARD_H / 2 - 4;
             int indepAmmoY = indepNameY + font.lineHeight + 1;

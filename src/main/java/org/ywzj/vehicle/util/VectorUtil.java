@@ -3,7 +3,6 @@ package org.ywzj.vehicle.util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.*;
@@ -26,6 +25,7 @@ import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
@@ -93,13 +93,44 @@ public class VectorUtil {
     public static EntityHitResult hitEntity(Entity shooter, Vec3 start, Vec3 end) {
         Vec3 direction = end.subtract(start);
         AABB aabb = shooter.getBoundingBox().expandTowards(direction).inflate(1.0);
-        return ProjectileUtil.getEntityHitResult(shooter.level(), shooter, start, end, aabb, entity ->
+        Level level = shooter.level();
+        Predicate<Entity> filter = entity ->
                 (entity.isPickable() || entity instanceof SightObstruction || entity instanceof TargetObstruction)
                         && !entity.isSpectator()
                         && entity != shooter
                         && entity != shooter.getVehicle()
                         && !(shooter.getVehicle() != null && shooter.getVehicle() == entity.getVehicle())
-                        && !shooter.getPassengers().contains(entity));
+                        && !shooter.getPassengers().contains(entity);
+        double d0 = Double.MAX_VALUE;
+        Entity entity = null;
+        for (Entity hitEntity : level.getEntities(shooter, aabb, filter)) {
+            AABB boundingBox = hitEntity.getBoundingBox().inflate(0.3);
+            Vec3 hitPosition = null;
+            if (boundingBox.contains(start)) {
+                hitPosition = start;
+            } else {
+                Optional<Vec3> optional = boundingBox.clip(start, end);
+                if (optional.isPresent()) {
+                    hitPosition = optional.get();
+                }
+            }
+            if (hitPosition != null) {
+                double d1 = start.distanceToSqr(hitPosition);
+                if (d1 < d0) {
+                    entity = hitEntity;
+                    d0 = d1;
+                }
+            }
+        }
+        if (entity instanceof OBBEntity) {
+            EntityHitResult result = null;
+            Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, start, end);
+            if (closestHitPos != null) {
+                result = new EntityHitResult(entity, closestHitPos);
+            }
+            return result;
+        }
+        return entity == null ? null : new EntityHitResult(entity);
     }
 
     public static Pair<Entity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {

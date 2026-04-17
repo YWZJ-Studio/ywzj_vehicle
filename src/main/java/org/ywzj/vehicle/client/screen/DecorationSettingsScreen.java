@@ -16,6 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
@@ -142,13 +143,13 @@ public class DecorationSettingsScreen extends Screen {
         int startY = this.height / 2 - 128;
         int leftShift = 105;
         int spacing = 24;
-        guiGraphics.drawString(font, Component.translatable("edit_box.scale"), centerX - leftShift, startY + spacing + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.x_shift"), centerX - leftShift, startY + spacing * 2 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.y_shift"), centerX - leftShift, startY + spacing * 3 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.z_shift"), centerX - leftShift, startY + spacing * 4 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("slider.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("edit_box.scale"), centerX - leftShift, startY + spacing + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("edit_box.x_shift"), centerX - leftShift, startY + spacing * 2 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("edit_box.y_shift"), centerX - leftShift, startY + spacing * 3 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("edit_box.z_shift"), centerX - leftShift, startY + spacing * 4 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("slider.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, Color.WHITE);
         drawPreview(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }

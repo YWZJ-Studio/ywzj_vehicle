@@ -16,6 +16,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -57,7 +58,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             boolean isHelicopter = vehicle instanceof RotaryWingVehicle;
-            int color = isHelicopter ?  0xFF00FF00 : 0xFFFFFFFF;
+            int color = isHelicopter ? Color.GREEN : Color.WHITE;
             PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(player);
             if (operatorUnit instanceof WeaponUnit weaponUnit) {
                 if (showAim) {
@@ -143,8 +144,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         int maxReload  = weapon.getData().getReload().getTime();
         if (reloadTime > 0 && maxReload > 0) {
             float reloadFrac = 1f - (float) reloadTime / maxReload;
-            int reloadArcColor = 0xCCFF6040;
-            GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, 1f, 0x66162A18);
+            int reloadArcColor = Color.RELOAD_ARC;
+            GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, 1f, Color.RELOAD_ARC_BG);
             GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, reloadFrac, reloadArcColor);
         }
     }

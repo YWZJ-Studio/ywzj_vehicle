@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -58,21 +59,21 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         var font = Minecraft.getInstance().font;
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.rpm", (int) rotaryWingVehicle.getPower()),
-                leftX, leftY, 0x00FF00);
+                leftX, leftY, Color.GREEN);
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.collective_pitch", (int) rotaryWingVehicle.getCollectivePitch()),
-                leftX, leftY + 12, 0x00FF00);
+                leftX, leftY + 12, Color.GREEN);
         int speed = (int) (new Vec3(rotaryWingVehicle.getDeltaMovement().x, 0, rotaryWingVehicle.getDeltaMovement().z).length() * 72); // 20 * 3.6 = 72
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.speed", speed),
-                leftX, leftY + 24, 0x00FF00);
+                leftX, leftY + 24, Color.GREEN);
         String fuelTime = secondsToHms(rotaryWingVehicle.getEnergy() / rotaryWingVehicle.energyInfo.energyConsumptionPerTick / 20);
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.fuel", fuelTime),
-                leftX, leftY + 36, 0x00FF00);
+                leftX, leftY + 36, Color.GREEN);
         guiGraphics.drawString(font,
                 Component.translatable("ui.vehicle_rotary_wing.altitude", (int) rotaryWingVehicle.getY()),
-                (int) (centerX + 62), (int) (leftY + 24), 0x00FF00);
+                (int) (centerX + 62), (int) (leftY + 24), Color.GREEN);
     }
 
     /**
@@ -84,7 +85,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         int heightX = (int) (centerX + 110);
         for (int step = 0; step < 17; step++) {
             boolean flag = step % 4 == 0;
-            guiGraphics.fill((flag ? heightX : heightX + 5), heightY, heightX + 10, heightY + 1, 0xFF00FF00);
+            guiGraphics.fill((flag ? heightX : heightX + 5), heightY, heightX + 10, heightY + 1, Color.GREEN);
             heightY += 3;
         }
         // 高度变化箭头
@@ -104,7 +105,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             buf.vertex(pose.last().pose(), 6, 3, 0).color(0, 255, 0, 255).endVertex();
             buf.vertex(pose.last().pose(), 6, -3, 0).color(0, 255, 0, 255).endVertex();
             Tesselator.getInstance().end();
-            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (rotaryWingVehicle.getDeltaMovement().y * 20)), 12, -4, 0x00FF00);
+            guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (rotaryWingVehicle.getDeltaMovement().y * 20)), 12, -4, Color.GREEN);
 
             RenderSystem.disableBlend();
         }
@@ -132,7 +133,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             pose.pushPose();
             {
                 pose.scale(0.5f, 1f, 0.5f);
-                guiGraphics.fill(-1, 0, 1, (int) -arrowLength, 0xFF00FF00);
+                guiGraphics.fill(-1, 0, 1, (int) -arrowLength, Color.GREEN);
             }
             pose.popPose();
 
@@ -158,18 +159,18 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         pose.pushPose();
         {
             if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                guiGraphics.fill(-17, 0, -13, 1, 0xFF00FF00);
-                guiGraphics.fill(-12, 0, -8, 1, 0xFF00FF00);
-                guiGraphics.fill(-7, 0, -3, 1, 0xFF00FF00);
-                guiGraphics.fill(3, 0, 7, 1, 0xFF00FF00);
-                guiGraphics.fill(8, 0, 12, 1, 0xFF00FF00);
-                guiGraphics.fill(13, 0, 17, 1, 0xFF00FF00);
+                guiGraphics.fill(-17, 0, -13, 1, Color.GREEN);
+                guiGraphics.fill(-12, 0, -8, 1, Color.GREEN);
+                guiGraphics.fill(-7, 0, -3, 1, Color.GREEN);
+                guiGraphics.fill(3, 0, 7, 1, Color.GREEN);
+                guiGraphics.fill(8, 0, 12, 1, Color.GREEN);
+                guiGraphics.fill(13, 0, 17, 1, Color.GREEN);
                 pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(vehicle.getZRot())));
                 pose.scale(1f, 0.6f, 1f);
-                guiGraphics.fill(-11, 0, -2, 1, 0xFF00FF00);
-                guiGraphics.fill(-3, 0, -2, 3, 0xFF00FF00);
-                guiGraphics.fill(2, 0, 3, 3, 0xFF00FF00);
-                guiGraphics.fill(2, 0, 11, 1, 0xFF00FF00);
+                guiGraphics.fill(-11, 0, -2, 1, Color.GREEN);
+                guiGraphics.fill(-3, 0, -2, 3, Color.GREEN);
+                guiGraphics.fill(2, 0, 3, 3, Color.GREEN);
+                guiGraphics.fill(2, 0, 11, 1, Color.GREEN);
             } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
                 pose.pushPose();
                 {
@@ -198,13 +199,13 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(vehicle.getZRot())));
                 guiGraphics.enableScissor(0, (int) (centerY + 21), guiGraphics.guiWidth(), (int) (centerY + 89));
                 while (baseY <= range) {
-                    guiGraphics.fill(-17, baseY, -13, baseY + 1, 0xFF00FF00);
-                    guiGraphics.fill(-12, baseY, -8, baseY + 1, 0xFF00FF00);
-                    guiGraphics.fill(-7, baseY, -3, baseY + 1, 0xFF00FF00);
-                    guiGraphics.fill(3, baseY, 7, baseY + 1, 0xFF00FF00);
-                    guiGraphics.fill(8, baseY, 12, baseY + 1, 0xFF00FF00);
-                    guiGraphics.fill(13, baseY, 17, baseY + 1, 0xFF00FF00);
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, rot + "", 32, baseY - 3, 0x00FF00);
+                    guiGraphics.fill(-17, baseY, -13, baseY + 1, Color.GREEN);
+                    guiGraphics.fill(-12, baseY, -8, baseY + 1, Color.GREEN);
+                    guiGraphics.fill(-7, baseY, -3, baseY + 1, Color.GREEN);
+                    guiGraphics.fill(3, baseY, 7, baseY + 1, Color.GREEN);
+                    guiGraphics.fill(8, baseY, 12, baseY + 1, Color.GREEN);
+                    guiGraphics.fill(13, baseY, 17, baseY + 1, Color.GREEN);
+                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, rot + "", 32, baseY - 3, Color.GREEN);
                     baseY += gap;
                     rot -= interval;
                 }

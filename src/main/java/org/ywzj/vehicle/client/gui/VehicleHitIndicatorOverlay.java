@@ -26,6 +26,7 @@ import org.joml.Math;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.util.RenderHelper;
@@ -97,8 +98,8 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             double modelX = screenWidth - (double) screenWidth / 8;
             double modelY = (double) screenHeight / 2;
             guiGraphics.pose().translate(modelX, modelY + (double) screenHeight / 5, 0);
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, topEvent.message, 0, -55, 0xFFFFFFFF);
-            RenderHelper.drawCenteredString(guiGraphics, Minecraft.getInstance().font, String.format("-%.2f", damage), 0, -45, 0xFFFF0000);
+            guiGraphics.drawCenteredString(Minecraft.getInstance().font, topEvent.message, 0, -55, Color.WHITE);
+            RenderHelper.drawCenteredString(guiGraphics, Minecraft.getInstance().font, String.format("-%.2f", damage), 0, -45, Color.RED);
 
             Vec3 root = new Vec3(0, 0, 0);
             guiGraphics.pose().rotateAround(Axis.XP.rotationDegrees(pitch + 180), (float) root.x, (float) root.y, (float) root.z);

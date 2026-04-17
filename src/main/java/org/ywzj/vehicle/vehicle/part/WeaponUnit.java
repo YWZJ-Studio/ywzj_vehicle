@@ -380,11 +380,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
             if (player.getItemInHand(hand).getItem() == AllItems.MODDING_TOOL.get()) {
                 switchWeapon(false, true);
-
-                //todo: 细化
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
-                player.displayClientMessage(Component.literal("切换至: ").append(weapon.getDisplayName()), true);
-
+                player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true);
                 vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
             } else {
                 player.displayClientMessage(Component.translatable("tips.need_modding_tool"), true);
@@ -828,9 +825,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (currentWeaponIndex >= 0 && currentWeaponIndex < weapons.size()) {
             AbstractVehicleWeapon<?> currentWeapon = weapons.get(currentWeaponIndex);
             while (currentWeapon instanceof VehicleWeaponAgent weaponAgent) {
-                Optional<AbstractVehicleWeapon<?>> weapon = weaponAgent.getWeaponUnit().getCurrentWeapon();
-                if (weapon.isPresent()) {
-                    currentWeapon = weapon.get();
+                Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
+                if (weaponOptional.isPresent()) {
+                    currentWeapon = weaponOptional.get();
                 }
             }
             return Optional.of(currentWeapon);

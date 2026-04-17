@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -75,7 +76,7 @@ public class MachineMaxScreen extends Screen {
         this.searchBox.setResponder(this::updateFilteredList);
         this.searchBox.setBordered(true);
         this.searchBox.active = true;
-        this.searchBox.setTextColor(0xFFFFFF);
+        this.searchBox.setTextColor(Color.WHITE);
         this.addRenderableWidget(searchBox);
         this.printingButton = Button.builder(Component.translatable("button.machine_max.printing"), button -> onCraft())
                 .pos(width - 60, topPos + 145)
@@ -117,7 +118,7 @@ public class MachineMaxScreen extends Screen {
                 topPos,
                 leftPos + imageWidth,
                 topPos + imageHeight,
-                0xFF1C1C1C
+                Color.BG_SCREEN
         );
         // 预览框背景
         guiGraphics.fill(
@@ -125,7 +126,7 @@ public class MachineMaxScreen extends Screen {
                 topPos + 10,
                 leftPos + imageWidth - 10,
                 topPos + 130,
-                0xFF2A2A2A
+                Color.BG_PANEL
         );
     }
 
@@ -144,7 +145,7 @@ public class MachineMaxScreen extends Screen {
         int x = leftPos + 10;
         int y = topPos + 10 + ITEM_HEIGHT;
 
-        guiGraphics.fill(x, y, x + ITEM_WIDTH, y + 180, 0xFF252525);
+        guiGraphics.fill(x, y, x + ITEM_WIDTH, y + 180, Color.BG_LIST);
 
         int start = scrollOffset;
         int end = Math.min(start + VISIBLE_ITEMS, filteredVehicleList.size());
@@ -160,11 +161,11 @@ public class MachineMaxScreen extends Screen {
 
             int bgColor;
             if (selected) {
-                bgColor = 0xFF3F6DB5;
+                bgColor = Color.ITEM_SELECTED;
             } else if (hovered) {
-                bgColor = 0xFF3A3A3A;
+                bgColor = Color.SCROLLBAR_TRACK;
             } else {
-                bgColor = 0xFF303030;
+                bgColor = Color.ITEM_NORMAL;
             }
 
             guiGraphics.fill(
@@ -180,7 +181,7 @@ public class MachineMaxScreen extends Screen {
                     filteredVehicleList.get(i).getValue().getName(),
                     x + 6,
                     itemY + 5,
-                    0xFFFFFF
+                    Color.WHITE
             );
         }
 
@@ -193,7 +194,7 @@ public class MachineMaxScreen extends Screen {
         int barWidth = 6;
         int barHeight = VISIBLE_ITEMS * ITEM_HEIGHT;
 
-        guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFF3A3A3A);
+        guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, Color.SCROLLBAR_TRACK);
 
         if (filteredVehicleList.size() <= VISIBLE_ITEMS) {
             return;
@@ -211,7 +212,7 @@ public class MachineMaxScreen extends Screen {
                 knobY,
                 barX + barWidth,
                 knobY + knobHeight,
-                0xFFAAAAAA
+                Color.SCROLLBAR_KNOB
         );
     }
 
@@ -219,7 +220,7 @@ public class MachineMaxScreen extends Screen {
         int x = leftPos + ITEM_WIDTH + 30;
         int y = topPos + 15;
 
-        guiGraphics.fill(x, y, x + 110, y + 90, 0xFF111111);
+        guiGraphics.fill(x, y, x + 110, y + 90, Color.BG_PREVIEW);
 
         if (selectedIndex < 0 || selectedIndex >= filteredVehicleList.size()) {
             return;
@@ -269,16 +270,16 @@ public class MachineMaxScreen extends Screen {
                 if (!StringUtils.isEmpty(vehicleDisplay.getDescription())) {
                     var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
                     for (int i = 0; i < lines.size(); i++) {
-                        guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
+                        guiGraphics.drawString(font, lines.get(i), 0, i * 9, Color.WHITE);
                     }
                 } else {
-                    guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, 0xFFFFFFFF);
+                    guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, Color.WHITE);
                 }
             }
             poseStack.popPose();
         }
         if (machineMaxBlockEntity.hasProduct()) {
-            guiGraphics.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, 0xFFFFFFFF);
+            guiGraphics.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, Color.WHITE);
         }
     }
 
@@ -286,8 +287,8 @@ public class MachineMaxScreen extends Screen {
         int x = leftPos + ITEM_WIDTH + 30;
         int y = topPos + 110;
 
-        guiGraphics.fill(x, y, x + 110, y + 10, 0xFF3A3A3A);
-        guiGraphics.fill(x, y, x + (int) (110 * machineMaxBlockEntity.progress), y + 10, 0xFF4CAF50);
+        guiGraphics.fill(x, y, x + 110, y + 10, Color.SCROLLBAR_TRACK);
+        guiGraphics.fill(x, y, x + (int) (110 * machineMaxBlockEntity.progress), y + 10, Color.GREEN);
     }
 
     private void drawReceipt(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -300,7 +301,7 @@ public class MachineMaxScreen extends Screen {
         ResourceLocation vehicleId = filteredVehicleList.get(selectedIndex).getKey();
         Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
         if (!recipeOptional.isPresent()) {
-            guiGraphics.drawString(font, Component.translatable("tips.no_recipe"), x, y, 0xFFFFFF);
+            guiGraphics.drawString(font, Component.translatable("tips.no_recipe"), x, y, Color.WHITE);
             return;
         }
         recipeOptional.ifPresent(recipe -> {
@@ -317,7 +318,7 @@ public class MachineMaxScreen extends Screen {
                         int count = input.count();
                         guiGraphics.renderFakeItem(stack, currentX, currentY);
                         String text = " * " + count;
-                        guiGraphics.drawString(font, text, currentX + 20, currentY + 4, 0xFFFFFF);
+                        guiGraphics.drawString(font, text, currentX + 20, currentY + 4, Color.WHITE);
                         if (mouseX >= currentX && mouseX <= currentX + 16 &&
                                 mouseY >= currentY && mouseY <= currentY + 16) {
                             this.hoveredStack = stack;

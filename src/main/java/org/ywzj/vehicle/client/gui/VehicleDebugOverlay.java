@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.command.sub.DebugCommand;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -34,20 +35,19 @@ public class VehicleDebugOverlay implements IGuiOverlay {
                     return;
                 }
 
-                guiGraphics.drawString(Minecraft.getInstance().font, "载具: " + vehicle.getDisplayName(), leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "载具: " + vehicle.getDisplayName(), leftX, leftY, Color.WHITE);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "整备质量: " + vehicle.curbWeight, leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "整备质量: " + vehicle.curbWeight, leftX, leftY, Color.WHITE);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "物理质量: " + vehicle.physicsEngine.mass, leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "物理质量: " + vehicle.physicsEngine.mass, leftX, leftY, Color.WHITE);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "功率: " + vehicle.getPower() + "%", leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "功率: " + vehicle.getPower() + "%", leftX, leftY, Color.WHITE);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "油量: " + vehicle.getEnergy() + "/" + vehicle.energyInfo.energyCapacity, leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "油量: " + vehicle.getEnergy() + "/" + vehicle.energyInfo.energyCapacity, leftX, leftY, Color.WHITE);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "耗油: " + vehicle.energyInfo.energyConsumptionPerTick + "/t", leftX, leftY, 0xFFFFFF);
+                guiGraphics.drawString(Minecraft.getInstance().font, "耗油: " + vehicle.energyInfo.energyConsumptionPerTick + "/t", leftX, leftY, Color.WHITE);
                 leftY += 10;
-                guiGraphics.drawString(Minecraft.getInstance().font, "速度: " + new Vec3(vehicle.physicsEngine.velocity), leftX, leftY, 0xFFFFFF);
-                leftY += 10;
+                guiGraphics.drawString(Minecraft.getInstance().font, "速度: " + new Vec3(vehicle.physicsEngine.velocity), leftX, leftY, Color.WHITE);
             }
         }
     }

@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.network.Channel;
@@ -59,7 +60,7 @@ public class DecorationSelectScreen extends Screen {
         searchBox.setResponder(this::updateFilteredList);
         searchBox.setBordered(true);
         searchBox.active = true;
-        searchBox.setTextColor(0xFFFFFF);
+        searchBox.setTextColor(Color.WHITE);
         this.addRenderableWidget(searchBox);
     }
 
@@ -80,7 +81,7 @@ public class DecorationSelectScreen extends Screen {
     }
 
     private void drawDisplayList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.fill(leftPos - 2, topPos - 2, leftPos + GRID_WIDTH + 2, topPos + GRID_HEIGHT + 2, 0xFF252525);
+        guiGraphics.fill(leftPos - 2, topPos - 2, leftPos + GRID_WIDTH + 2, topPos + GRID_HEIGHT + 2, Color.BG_LIST);
 
         for (int row = 0; row < VISIBLE_ROWS; row++) {
             for (int col = 0; col < COLUMNS; col++) {
@@ -94,7 +95,7 @@ public class DecorationSelectScreen extends Screen {
                         mouseY >= slotY && mouseY < slotY + SLOT_SIZE;
                 boolean isSelected = (index == selectedIndex);
 
-                int bgColor = isSelected ? 0xFF3F6DB5 : (isHovered ? 0xFF5A5A5A : 0xFF3A3A3A);
+                int bgColor = isSelected ? Color.ITEM_SELECTED : (isHovered ? Color.ITEM_HOVERED : Color.SCROLLBAR_TRACK);
                 guiGraphics.fill(slotX + 1, slotY + 1, slotX + SLOT_SIZE - 1, slotY + SLOT_SIZE - 1, bgColor);
 
                 ResourceLocation displayId = filteredDecorationDisplayIds.get(index);
@@ -131,7 +132,7 @@ public class DecorationSelectScreen extends Screen {
         int size = filteredDecorationDisplayIds.size();
         int totalRows = (int) Math.ceil((double) size / COLUMNS);
 
-        guiGraphics.fill(x, y, x + barWidth, y + GRID_HEIGHT, 0xFF3A3A3A);
+        guiGraphics.fill(x, y, x + barWidth, y + GRID_HEIGHT, Color.SCROLLBAR_TRACK);
 
         if (totalRows <= VISIBLE_ROWS) return;
 
@@ -140,7 +141,7 @@ public class DecorationSelectScreen extends Screen {
         int movable = GRID_HEIGHT - knobHeight;
         int knobY = y + (int) (movable * (scrollOffset / (float) maxScrollOffset));
 
-        guiGraphics.fill(x, knobY, x + barWidth, knobY + knobHeight, 0xFFAAAAAA);
+        guiGraphics.fill(x, knobY, x + barWidth, knobY + knobHeight, Color.SCROLLBAR_KNOB);
     }
 
     private void drawPreview(GuiGraphics guiGraphics) {
@@ -173,7 +174,7 @@ public class DecorationSelectScreen extends Screen {
         poseStack.pushPose();
         {
             // 装饰名
-            guiGraphics.drawCenteredString(this.font, selectedDisplayId.getPath(), previewX, previewY + 40, 0xFFFFFF);
+            guiGraphics.drawCenteredString(this.font, selectedDisplayId.getPath(), previewX, previewY + 40, Color.WHITE);
             // 介绍
             int padding = 10;
             int x1 = width / 2;
@@ -183,10 +184,10 @@ public class DecorationSelectScreen extends Screen {
             if (display.getDescription() != null) {
                 var lines = font.split(Component.literal(display.getDescription()), maxWidth);
                 for (int i = 0; i < lines.size(); i++) {
-                    guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
+                    guiGraphics.drawString(font, lines.get(i), 0, i * 9, Color.WHITE);
                 }
             } else {
-                guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, 0xFFFFFFFF);
+                guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, Color.WHITE);
             }
         }
         poseStack.popPose();

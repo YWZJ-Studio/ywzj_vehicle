@@ -19,6 +19,7 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
+import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientFigureBoxUpdate;
 
@@ -122,13 +123,13 @@ public class FigureBoxScreen extends Screen {
         int leftShift = 105;
         int startY = this.height / 2 - 128;
         int spacing = 24;
-        guiGraphics.drawString(font, Component.translatable("edit_box.scale"), centerX - leftShift, startY + spacing + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.x_shift"), centerX - leftShift, startY + spacing * 2 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.y_shift"), centerX - leftShift, startY + spacing * 3 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("edit_box.z_shift"), centerX - leftShift, startY + spacing * 4 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("slider.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("edit_box.scale"), centerX - leftShift, startY + spacing + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("edit_box.x_shift"), centerX - leftShift, startY + spacing * 2 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("edit_box.y_shift"), centerX - leftShift, startY + spacing * 3 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("edit_box.z_shift"), centerX - leftShift, startY + spacing * 4 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("slider.x_rot"), centerX - leftShift, startY + spacing * 5 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, Color.WHITE);
+        guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, Color.WHITE);
         drawFigureBox(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }

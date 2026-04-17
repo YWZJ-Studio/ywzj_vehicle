@@ -25,8 +25,13 @@ import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class VehicleOverlay implements IGuiOverlay {
@@ -140,16 +145,16 @@ public class VehicleOverlay implements IGuiOverlay {
             float fuelPercent = vehicle.getEnergy() / vehicle.energyInfo.energyCapacity * 100;
             float powerPercent = vehicle.getPower();
             guiGraphics.drawString(Minecraft.getInstance().font,
-                    "FUEL:", 90, -40, 0xFFFFFFFF);
+                    "FUEL:", 90, -40, Color.WHITE);
             guiGraphics.drawString(Minecraft.getInstance().font,
                     String.format("%.1f%%", fuelPercent),
-                    118, -40, fuelPercent < 5 ? 0xFFFF0000 : 0xFFFFFFFF);
+                    118, -40, fuelPercent < 5 ? Color.RED : Color.WHITE);
             guiGraphics.drawString(Minecraft.getInstance().font,
                     "POWER:",
-                    90, -30, 0xFFFFFFFF);
+                    90, -30, Color.WHITE);
             guiGraphics.drawString(Minecraft.getInstance().font,
                     String.format("%.1f%%", powerPercent),
-                    124, -30, powerPercent < 30 ? 0xFFFF0000 : 0xFFFFFFFF);
+                    124, -30, powerPercent < 30 ? Color.RED : Color.WHITE);
         }
         poseStack.popPose();
     }
@@ -228,7 +233,63 @@ public class VehicleOverlay implements IGuiOverlay {
                     renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
                 }
                 poseStack.popPose();
+                Vec3 eyePosition = player.getEyePosition();
+                PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    renderWeaponList(guiGraphics, weaponUnit);
+                }
             }
+        }
+    }
+
+    /**
+     * 可选武器列表
+     */
+    private void renderWeaponList(GuiGraphics guiGraphics, WeaponUnit weaponUnit) {
+        var weapons = weaponUnit.weapons;
+        if (weapons.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+        int screenWidth = mc.getWindow().getGuiScaledWidth();
+        int screenHeight = mc.getWindow().getGuiScaledHeight();
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
+        int cardWidth = 90;
+        int cardHeight = 14;
+        int cardPadding = 2;
+        int listX = centerX + 24;
+        int currentWeaponIndex = weaponUnit.getCurrentWeaponIndex();
+        int totalHeight = weapons.size() * (cardHeight + cardPadding) - cardPadding;
+        int listY = centerY - totalHeight / 2;
+        RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
+                listX - 2, listY - 2,
+                listX + cardWidth + 2, listY + totalHeight + 2,
+                -512, Color.BG_DARK);
+        PoseStack poseStack = guiGraphics.pose();
+        for (int i = 0; i < weapons.size(); i++) {
+            var weapon = weapons.get(i);
+            while (weapon instanceof VehicleWeaponAgent weaponAgent) {
+                Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
+                if (weaponOptional.isPresent()) {
+                    weapon = weaponOptional.get();
+                }
+            }
+            int cardY = listY + i * (cardHeight + cardPadding);
+            boolean selected = (i == currentWeaponIndex);
+            int cardBg = selected ? Color.BG_SELECTED : Color.BG_DARK;
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
+                    listX, cardY,
+                    listX + cardWidth, cardY + cardHeight,
+                    -512, cardBg);
+            String name = weapon.getDisplayName().getString();
+            int textColor = selected ? Color.GREEN : Color.WHITE;
+            poseStack.pushPose();
+            poseStack.translate(listX + 4, cardY + (cardHeight - font.lineHeight) / 2f + 1, 0);
+            poseStack.scale(0.85f, 0.85f, 0.85f);
+            guiGraphics.drawString(font, name, 0, 0, textColor, false);
+            poseStack.popPose();
         }
     }
 
@@ -237,8 +298,7 @@ public class VehicleOverlay implements IGuiOverlay {
         poseStack.pushPose();
         {
             Font font = Minecraft.getInstance().font;
-            int bgColor = 0xAA000000;
-            int nameColor = 0xFFFFFFFF;
+            int nameColor = Color.WHITE;
             float barHalfWidth = (float) barWidth / 2;
             float barHalfHeight = (float) barHeight / 2;
             poseStack.translate(x, y + barHalfHeight - 8, 0);
@@ -251,11 +311,11 @@ public class VehicleOverlay implements IGuiOverlay {
                 }
             }
             guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, nameColor);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -512, bgColor);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -512, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -512, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, -512, 0xFF999999);
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, -512, 0xFF999999);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -512, Color.BG_DARK);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -512, Color.GRAY);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -512, Color.GRAY);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, -512, Color.GRAY);
+            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, -512, Color.GRAY);
 
             float health = vehicle.getHealth();
             float maxHealth = vehicle.getMaxHealth();
@@ -291,7 +351,7 @@ public class VehicleOverlay implements IGuiOverlay {
                         guiGraphics, RenderType.guiOverlay(),
                         -barHalfWidth + Math.min(filledWidth, lastFilledWidth), -barHalfHeight,
                         -barHalfWidth + Math.max(filledWidth, lastFilledWidth), barHalfHeight,
-                        -512, 0xFFFFFFFF
+                        -512, Color.WHITE
                 );
             }
 
@@ -299,11 +359,11 @@ public class VehicleOverlay implements IGuiOverlay {
             {
                 String text = String.format("%.0f/%.0f", health, maxHealth);
                 poseStack.translate(0, -3.5, 0);
-                RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, 0xFFFFFFFF);
+                RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, Color.WHITE);
                 if (healthDiff > 0) {
-                    RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 1 + barHeight, 0xFFFF0000);
+                    RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 1 + barHeight, Color.RED);
                 } else if (healthDiff < 0 && !vehicle.isDestroyed()) {
-                    RenderHelper.drawCenteredString(guiGraphics, font, "+" + String.format("%.2f", -healthDiff), barWidth / 2, 1 + barHeight, 0xFF00FF00);
+                    RenderHelper.drawCenteredString(guiGraphics, font, "+" + String.format("%.2f", -healthDiff), barWidth / 2, 1 + barHeight, Color.GREEN);
                 }
             }
             poseStack.popPose();
