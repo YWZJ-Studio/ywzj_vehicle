@@ -62,17 +62,13 @@ public class VehicleOverlay implements IGuiOverlay {
      * 乘员组
      */
     public static void renderCrew(GuiGraphics guiGraphics, int centerX, int centerY, AbstractVehicle vehicle) {
-        int x = centerX - 140;
+        int x = centerX - 160;
         int y = centerY + guiGraphics.guiHeight() / 5;
         for (int index = 0; index < vehicle.seats.size(); index++) {
             Integer playerId = vehicle.seats.get(index).passengerId;
             Entity entity = null;
-//            PartUnit<?> partUnit = null;
             if (playerId != null) {
                 entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
-//                if (entity instanceof LivingEntity livingEntity) {
-//                    partUnit = vehicle.getOwnOperatorUnit(livingEntity);
-//                }
             }
             String info = "[]";
             if (entity != null) {
@@ -235,7 +231,7 @@ public class VehicleOverlay implements IGuiOverlay {
                 poseStack.popPose();
                 Vec3 eyePosition = player.getEyePosition();
                 PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
-                if (partUnit instanceof WeaponUnit weaponUnit) {
+                if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive()) {
                     renderWeaponList(guiGraphics, weaponUnit);
                 }
             }

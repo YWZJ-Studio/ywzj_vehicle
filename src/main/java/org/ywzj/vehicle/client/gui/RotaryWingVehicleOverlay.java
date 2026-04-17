@@ -7,9 +7,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.joml.Matrix3f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -37,13 +41,12 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             pose.pushPose();
             {
                 if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                    pose.translate(centerX, centerY, 0);
+                    renderSpeedInfo(guiGraphics, partialTick, centerX, centerY, rotaryWingVehicle);
+                    renderRollInfo(guiGraphics, partialTick, centerX, centerY, 1f, rotaryWingVehicle, viewType);
                 } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-                    pose.translate(centerX + 75, centerY + 55, 0);
-                    pose.scale(0.7f, 0.7f, 0.7f);
+                    renderSpeedInfo(guiGraphics, partialTick, centerX - 95, centerY + 75, rotaryWingVehicle);
+                    renderRollInfo(guiGraphics, partialTick, centerX - 95, centerY + 75, 0.7f, rotaryWingVehicle, viewType);
                 }
-                renderSpeedInfo(guiGraphics, rotaryWingVehicle);
-                renderRollInfo(guiGraphics, centerX, centerY, rotaryWingVehicle, viewType);
             }
             pose.popPose();
         }
@@ -115,8 +118,28 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
     /**
      * 速度信息
      */
-    public static void renderSpeedInfo(GuiGraphics guiGraphics, RotaryWingVehicle rotaryWingVehicle) {
-        Vec3 v = rotaryWingVehicle.relativeRotDirection(rotaryWingVehicle.getDeltaMovement(), true);
+    public static void renderSpeedInfo(GuiGraphics guiGraphics, float partialTick, float centerX, float centerY, RotaryWingVehicle rotaryWingVehicle) {
+        Quaternionf q = new Quaternionf();
+        q.rotateY((float) Math.toRadians(-Mth.lerp(partialTick, rotaryWingVehicle.yRotO, rotaryWingVehicle.getYRot())))
+                .rotateX((float) Math.toRadians(Mth.lerp(partialTick, rotaryWingVehicle.xRotO, rotaryWingVehicle.getXRot())))
+                .rotateZ((float) Math.toRadians(Mth.lerp(partialTick, rotaryWingVehicle.zRotO, rotaryWingVehicle.getZRot())));
+        Matrix3f axisRollMat = new Matrix3f();
+        q.get(axisRollMat);
+        axisRollMat = axisRollMat.transpose();
+        Vec3 vo = LocalVehiclePlayer.instance.lastVelocity;
+        Vec3 v = rotaryWingVehicle.getDeltaMovement();
+        Vec3 worldDirection = new Vec3(Mth.lerp(partialTick, vo.x, v.x), Mth.lerp(partialTick, vo.y, v.y), Mth.lerp(partialTick, vo.z, v.z));
+        Vector3f relativePos = new Vector3f(
+                (float) (worldDirection.x() - rotaryWingVehicle.centerOffset.x),
+                (float) (worldDirection.y() - rotaryWingVehicle.centerOffset.y),
+                (float) (worldDirection.z() - rotaryWingVehicle.centerOffset.z)
+        );
+        axisRollMat.transform(relativePos);
+        v = new Vec3(
+                relativePos.x + rotaryWingVehicle.centerOffset.x,
+                relativePos.y + rotaryWingVehicle.centerOffset.y,
+                relativePos.z + rotaryWingVehicle.centerOffset.z
+        );
         float arrowLength = (float) (15.0f * v.length() / rotaryWingVehicle.maxAirSpeed);
         float arrowSize = 4.0f;
         PoseStack pose = guiGraphics.pose();
@@ -126,7 +149,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-            pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(rotaryWingVehicle.getZRot())));
+            pose.translate(centerX, centerY, 0);
             pose.mulPose(Axis.ZP.rotation((float) Math.atan2(-v.x, v.z)));
 
             // 速度线主干
@@ -154,10 +177,12 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
     /**
      * 滚转信息
      */
-    public static void renderRollInfo(GuiGraphics guiGraphics, float centerX, float centerY, AbstractVehicle vehicle, LocalVehiclePlayer.ViewType viewType) {
+    public static void renderRollInfo(GuiGraphics guiGraphics, float partialTick, float centerX, float centerY, float scale, AbstractVehicle vehicle, LocalVehiclePlayer.ViewType viewType) {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         {
+            pose.translate(centerX, centerY, 0);
+            pose.scale(scale, scale, scale);
             if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 guiGraphics.fill(-17, 0, -13, 1, Color.GREEN);
                 guiGraphics.fill(-12, 0, -8, 1, Color.GREEN);
@@ -165,7 +190,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 guiGraphics.fill(3, 0, 7, 1, Color.GREEN);
                 guiGraphics.fill(8, 0, 12, 1, Color.GREEN);
                 guiGraphics.fill(13, 0, 17, 1, Color.GREEN);
-                pose.mulPose(Axis.ZP.rotation((float) Math.toRadians(vehicle.getZRot())));
+                pose.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTick, vehicle.zRotO, vehicle.getZRot())));
                 pose.scale(1f, 0.6f, 1f);
                 guiGraphics.fill(-11, 0, -2, 1, Color.GREEN);
                 guiGraphics.fill(-3, 0, -2, 3, Color.GREEN);
@@ -187,7 +212,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                     RenderSystem.disableBlend();
                 }
                 pose.popPose();
-                double xRot = -vehicle.getXRot();
+                double xRot = -Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot());
                 int range = 50;
                 float interval = 5;
                 float gap = range / interval;
@@ -195,9 +220,9 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                 double value = xRot + range / gap * interval;
                 int rot = (int) (Math.floor(value / interval) * interval);
                 double mod = ((xRot % interval) + interval) % interval;
+                pose.mulPose(Axis.ZP.rotationDegrees(-Mth.lerp(partialTick, vehicle.zRotO, vehicle.getZRot())));
                 pose.translate(0, mod / interval * gap, 0);
-                pose.mulPose(Axis.ZP.rotation((float) -Math.toRadians(vehicle.getZRot())));
-                guiGraphics.enableScissor(0, (int) (centerY + 21), guiGraphics.guiWidth(), (int) (centerY + 89));
+                guiGraphics.enableScissor(0, (int) (centerY - 35), guiGraphics.guiWidth(), (int) (centerY + 33));
                 while (baseY <= range) {
                     guiGraphics.fill(-17, baseY, -13, baseY + 1, Color.GREEN);
                     guiGraphics.fill(-12, baseY, -8, baseY + 1, Color.GREEN);

@@ -33,9 +33,7 @@ public class FixedWingVehicleOverlay implements IGuiOverlay {
             PoseStack pose = guiGraphics.pose();
             pose.pushPose();
             {
-                pose.translate(centerX + 75, centerY + 55, 0);
-                pose.scale(0.7f, 0.7f, 0.7f);
-                RotaryWingVehicleOverlay.renderRollInfo(guiGraphics, centerX, centerY, fixedWingVehicle, viewType);
+                RotaryWingVehicleOverlay.renderRollInfo(guiGraphics, partialTick, centerX - 95, centerY + 75, 0.7f, fixedWingVehicle, viewType);
             }
             pose.popPose();
         }

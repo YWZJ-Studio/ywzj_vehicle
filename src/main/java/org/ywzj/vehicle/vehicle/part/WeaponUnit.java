@@ -377,7 +377,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public boolean onInteract(Player player, InteractionHand hand) {
-        if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
+        if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND && isInteractive()) {
             if (player.getItemInHand(hand).getItem() == AllItems.MODDING_TOOL.get()) {
                 switchWeapon(false, true);
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
@@ -386,8 +386,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             } else {
                 player.displayClientMessage(Component.translatable("tips.need_modding_tool"), true);
             }
+            return false;
         }
-        return false;
+        return true;
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -784,6 +785,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             return weaponOptional.get().getWeaponUnit().getFireControlSensorType();
         }
         return fireControlSensorType;
+    }
+
+    public boolean isInteractive() {
+        return parentWeaponUnit != null;
     }
 
     public boolean isParentWeaponUnitAim() {

@@ -46,7 +46,8 @@
         "ywzj_vehicle:cannon_120mm",
         {
           "id": "ywzj_vehicle:gun_12.7mm",
-          "part_unit_id": "turret_machine_gun"
+          "part_unit_id": "turret_machine_gun",
+          "secondary": true
         },
         {
           "id": "ywzj_vehicle:launcher_smoke_grenade",

@@ -89,16 +89,24 @@ public enum ClientAssetsManager {
         decorationDisplayManager.apply(decorationDisplayManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
             try {
-                Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
-                Minecraft.getInstance().textureManager.register(vehicleDisplay.getSlotTexture(), new SimpleTexture(vehicleDisplay.getSlotTexture()));
+                if (vehicleDisplay.getTexture() != null) {
+                    Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
+                }
+                if (vehicleDisplay.getSlotTexture() != null) {
+                    Minecraft.getInstance().textureManager.register(vehicleDisplay.getSlotTexture(), new SimpleTexture(vehicleDisplay.getSlotTexture()));
+                }
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
         });
         decorationDisplayManager.getDisplayMap().values().forEach(decorationDisplay -> {
             try {
-                Minecraft.getInstance().textureManager.register(decorationDisplay.getTexture(), new SimpleTexture(decorationDisplay.getTexture()));
-                Minecraft.getInstance().textureManager.register(decorationDisplay.getSlotTexture(), new SimpleTexture(decorationDisplay.getSlotTexture()));
+                if (decorationDisplay.getTexture() != null) {
+                    Minecraft.getInstance().textureManager.register(decorationDisplay.getTexture(), new SimpleTexture(decorationDisplay.getTexture()));
+                }
+                if (decorationDisplay.getSlotTexture() != null) {
+                    Minecraft.getInstance().textureManager.register(decorationDisplay.getSlotTexture(), new SimpleTexture(decorationDisplay.getSlotTexture()));
+                }
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
