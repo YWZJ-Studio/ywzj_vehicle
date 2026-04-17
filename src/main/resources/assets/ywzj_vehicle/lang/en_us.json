@@ -5,7 +5,7 @@
   "item.ywzj_vehicle.uav_controller": "UAV Controller",
   "item.ywzj_vehicle.figure_box": "Figure Box",
   "item.ywzj_vehicle.repair_tool": "Welding Torch",
-  "item.ywzj_vehicle.vehicle_display_tool": "Display Tool",
+  "item.ywzj_vehicle.modding_tool": "Modding Tool",
   "item.ywzj_vehicle.decoration_item": "Decoration",
   "item.ywzj_vehicle.ammo_creative": "Creative Ammo",
   "item.ywzj_vehicle.ammo_machine_gun": "Machine Gun Ammo",
@@ -74,6 +74,8 @@
   "tips.gear_down": "Gear Down",
   "tips.hover_mode_on": "Hover Mode On",
   "tips.hover_mode_off": "Hover Mode Off",
+  "tips.use_weapon": "Use Weapon: %s",
+  "tips.need_modding_tool": "Need Modding Tool",
 
   "ui.stabilizer_on": "STAB ON",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",

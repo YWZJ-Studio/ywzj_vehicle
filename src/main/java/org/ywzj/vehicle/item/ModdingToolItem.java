@@ -11,9 +11,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.client.screen.VehicleDisplayToolScreen;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-public class VehicleDisplayToolItem extends VehicleItem {
+public class ModdingToolItem extends VehicleItem {
 
-    public VehicleDisplayToolItem(Properties pProperties) {
+    public ModdingToolItem(Properties pProperties) {
         super(pProperties);
     }
 

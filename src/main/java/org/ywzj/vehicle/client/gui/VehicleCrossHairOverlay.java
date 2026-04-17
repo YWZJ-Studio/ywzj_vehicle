@@ -24,6 +24,7 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
@@ -67,6 +68,12 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     float alpha =  FREE_CAMERA.isDown() ? 0.25f : 0.5f;
                     int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
                     GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
+                    // 装填进度
+                    weaponUnit.getCurrentWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
+                    weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
+                    if (!weaponUnit.independentWeapons.isEmpty()) {
+                        renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
+                    }
                     guiGraphics.pose().popPose();
                 }
                 if (showHit) {
@@ -128,6 +135,17 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 // 目标
                 VehicleScopeOverlay.renderAimLockTarget(guiGraphics, partialTick);
             }
+        }
+    }
+
+    private static void renderReloadProgress(GuiGraphics guiGraphics, AbstractVehicleWeapon<?> weapon, float arcRadius, float thickness) {
+        int reloadTime = weapon.getReloadTime();
+        int maxReload  = weapon.getData().getReload().getTime();
+        if (reloadTime > 0 && maxReload > 0) {
+            float reloadFrac = 1f - (float) reloadTime / maxReload;
+            int reloadArcColor = 0xCCFF6040;
+            GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, 1f, 0x66162A18);
+            GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, reloadFrac, reloadArcColor);
         }
     }
 

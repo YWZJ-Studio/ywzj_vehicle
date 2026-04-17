@@ -20,6 +20,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -158,11 +159,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+            if (getOwner() instanceof Player player) {
+                player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentSecondaryWeapon().get().getDisplayName()), true);
+            }
         } else {
             int size = weapons.size();
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+            if (getOwner() instanceof Player player) {
+                player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentWeapon().get().getDisplayName()), true);
+            }
         }
     }
 
@@ -250,7 +257,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         super.tick();
-        weapons.forEach(AbstractVehicleWeapon::tick);
+        indexedWeapons.forEach(AbstractVehicleWeapon::tick);
     }
 
     @Override
@@ -371,11 +378,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @Override
     public boolean onInteract(Player player, InteractionHand hand) {
         if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
-            switchWeapon(false, true);
-            //todo: 细化
-            AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
-            player.displayClientMessage(Component.literal("切换至: ").append(weapon.getDisplayName()), true);
-            vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
+            if (player.getItemInHand(hand).getItem() == AllItems.MODDING_TOOL.get()) {
+                switchWeapon(false, true);
+
+                //todo: 细化
+                AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
+                player.displayClientMessage(Component.literal("切换至: ").append(weapon.getDisplayName()), true);
+
+                vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
+            } else {
+                player.displayClientMessage(Component.translatable("tips.need_modding_tool"), true);
+            }
         }
         return false;
     }
@@ -743,6 +756,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     public WeaponUnit getRootParentWeaponUnit() {
         WeaponUnit rootParentWeaponUnit = parentWeaponUnit;
+        if (rootParentWeaponUnit == null) {
+            return this;
+        }
         while (rootParentWeaponUnit.getParentWeaponUnit() != null) {
             rootParentWeaponUnit = rootParentWeaponUnit.getParentWeaponUnit();
         }

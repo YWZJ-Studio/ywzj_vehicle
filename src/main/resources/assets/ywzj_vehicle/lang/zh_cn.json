@@ -5,7 +5,7 @@
   "item.ywzj_vehicle.uav_controller": "无人机遥控器",
   "item.ywzj_vehicle.figure_box": "手办盒",
   "item.ywzj_vehicle.repair_tool": "焊枪",
-  "item.ywzj_vehicle.vehicle_display_tool": "皮肤工具",
+  "item.ywzj_vehicle.modding_tool": "改装工具",
   "item.ywzj_vehicle.decoration_item": "装饰",
   "item.ywzj_vehicle.ammo_creative": "创造模式弹药",
   "item.ywzj_vehicle.ammo_machine_gun": "机枪弹药",
@@ -74,6 +74,8 @@
   "tips.gear_down": "起落架: 放下",
   "tips.hover_mode_on": "悬停模式: 开",
   "tips.hover_mode_off": "悬停模式: 关",
+  "tips.use_weapon": "选择武器: %s",
+  "tips.need_modding_tool": "需要改装工具",
 
   "ui.stabilizer_on": "稳定器开",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",

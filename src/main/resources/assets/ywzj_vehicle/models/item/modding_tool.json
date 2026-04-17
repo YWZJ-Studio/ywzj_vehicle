@@ -2,7 +2,7 @@
   "credit": "Made with Blockbench",
   "parent": "item/generated",
   "textures": {
-    "layer0": "ywzj_vehicle:item/vehicle_display_tool"
+    "layer0": "ywzj_vehicle:item/modding_tool"
   },
   "display": {
     "gui": {

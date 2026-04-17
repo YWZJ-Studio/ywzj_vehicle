@@ -112,9 +112,6 @@ public class AllEvents {
         public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
             ItemStack itemStack = event.getItemStack();
             Player player = event.getEntity();
-            if (itemStack.getItem() instanceof VehicleItem vehicleItem) {
-                vehicleItem.interactEntity(itemStack, player, event.getTarget(), event.getHand());
-            }
             if (event.getTarget() instanceof AbstractVehicle vehicle) {
                 Vec3 eyePosition = player.getEyePosition();
                 PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
@@ -132,6 +129,9 @@ public class AllEvents {
                         event.setCanceled(true);
                     }
                 }
+            }
+            if (itemStack.getItem() instanceof VehicleItem vehicleItem) {
+                vehicleItem.interactEntity(itemStack, player, event.getTarget(), event.getHand());
             }
         }
 

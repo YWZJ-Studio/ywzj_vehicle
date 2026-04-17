@@ -2,6 +2,9 @@ package org.ywzj.vehicle.client.render.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.shader.ModShaders;
@@ -56,6 +59,62 @@ public class GuiHelper {
         buf.vertex(matrix,cx + radius, cy + radius, 0).color(r, g, b, a).uv(1, 1).normal(thickness, start, end).endVertex();
         buf.vertex(matrix,cx + radius, cy - radius, 0).color(r, g, b, a).uv(1, 0).normal(thickness, start, end).endVertex();
         buf.vertex(matrix,cx - radius, cy - radius, 0).color(r, g, b, a).uv(0, 0).normal(thickness, start, end).endVertex();
+    }
+
+    /**
+     * 截断字符串至最大像素宽度，超出加省略号
+     * */
+    public static String truncateText(Font font, String text, int maxPx) {
+        if (font.width(text) <= maxPx) return text;
+        String ellipsis = "..";
+        int ellW = font.width(ellipsis);
+        while (text.length() > 0 && font.width(text) + ellW > maxPx) {
+            text = text.substring(0, text.length() - 1);
+        }
+        return text + ellipsis;
+    }
+
+    /**
+     * 绘制扇形弧（用于进度圈）。
+     * startFrac / endFrac ∈ [0, 1]，从 12 点方向顺时针。
+     */
+    public static void drawArc(GuiGraphics gg, float cx, float cy, float radius, float thickness,
+                               float startFrac, float endFrac, int color) {
+        if (endFrac <= startFrac) return;
+
+        float a = ((color >> 24) & 255) / 255f;
+        float r = ((color >> 16) & 255) / 255f;
+        float g = ((color >>  8) & 255) / 255f;
+        float b = ((color      ) & 255) / 255f;
+
+        float inner = radius - thickness;
+        int   segs  = Math.max(4, (int)(64 * (endFrac - startFrac)));
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder buf = tess.getBuilder();
+        buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+
+        PoseStack.Pose last = gg.pose().last();
+
+        for (int i = 0; i <= segs; i++) {
+            float frac = startFrac + (endFrac - startFrac) * i / segs;
+            // 从 -π/2（12点）顺时针
+            double ang = (frac * 2 * Math.PI) - Math.PI / 2;
+            float cos = (float) Math.cos(ang);
+            float sin = (float) Math.sin(ang);
+
+            buf.vertex(last.pose(), cx + cos * radius, cy + sin * radius, 0)
+                    .color(r, g, b, a).endVertex();
+            buf.vertex(last.pose(), cx + cos * inner, cy + sin * inner, 0)
+                    .color(r, g, b, a).endVertex();
+        }
+
+        tess.end();
+        RenderSystem.disableBlend();
     }
 
 }
