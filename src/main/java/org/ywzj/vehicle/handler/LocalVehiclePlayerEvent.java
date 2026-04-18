@@ -35,10 +35,14 @@ public class LocalVehiclePlayerEvent {
         Entity entity = event.getCamera().getEntity();
         if (entity instanceof LivingEntity livingEntity && entity.equals(LocalVehiclePlayer.instance.getPlayer())) {
             if (entity.getVehicle() instanceof AbstractVehicle vehicle
-                    && vehicle.getOwnOperatorUnit(livingEntity) instanceof WeaponUnit weaponUnit
-                    && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                VehicleScopeOverlay.fov = (float) magnificationToFov(1 + (weaponUnit.getZoom() - 1), event.getFOV());
-                event.setFOV(VehicleScopeOverlay.fov);
+                    && vehicle.getOwnOperatorUnit(livingEntity) instanceof WeaponUnit weaponUnit) {
+                if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                    VehicleScopeOverlay.fov = (float) magnificationToFov(1 + (weaponUnit.getZoom() - 1), event.getFOV());
+                    event.setFOV(VehicleScopeOverlay.fov);
+                } else if (vehicle.isViewZoomed()) {
+                    VehicleScopeOverlay.fov = (float) magnificationToFov(2f, event.getFOV());
+                    event.setFOV(VehicleScopeOverlay.fov);
+                }
             }
         }
     }

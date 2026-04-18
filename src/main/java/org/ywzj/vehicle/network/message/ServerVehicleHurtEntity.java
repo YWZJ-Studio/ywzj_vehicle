@@ -1,10 +1,8 @@
 package org.ywzj.vehicle.network.message;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
-import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.function.Supplier;
 
@@ -12,19 +10,22 @@ public class ServerVehicleHurtEntity {
 
     public int vehicleEntityId;
     public int entityId;
+    public boolean hitVehicle;
     public boolean kill;
 
     public ServerVehicleHurtEntity() {}
 
-    public ServerVehicleHurtEntity(int vehicleEntityId, int entityId, boolean kill) {
+    public ServerVehicleHurtEntity(int vehicleEntityId, int entityId, boolean hitVehicle, boolean kill) {
         this.vehicleEntityId = vehicleEntityId;
         this.entityId = entityId;
+        this.hitVehicle = hitVehicle;
         this.kill = kill;
     }
 
     public static void encode(ServerVehicleHurtEntity msg, FriendlyByteBuf buf) {
         buf.writeInt(msg.vehicleEntityId);
         buf.writeInt(msg.entityId);
+        buf.writeBoolean(msg.hitVehicle);
         buf.writeBoolean(msg.kill);
     }
 
@@ -32,6 +33,7 @@ public class ServerVehicleHurtEntity {
         ServerVehicleHurtEntity serverVehicleHurtEntity = new ServerVehicleHurtEntity();
         serverVehicleHurtEntity.vehicleEntityId = buf.readInt();
         serverVehicleHurtEntity.entityId = buf.readInt();
+        serverVehicleHurtEntity.hitVehicle = buf.readBoolean();
         serverVehicleHurtEntity.kill = buf.readBoolean();
         return serverVehicleHurtEntity;
     }
@@ -40,7 +42,7 @@ public class ServerVehicleHurtEntity {
         NetworkEvent.Context context = ctxSupplier.get();
         context.setPacketHandled(true);
         if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(Minecraft.getInstance().level.getEntity(message.entityId) instanceof AbstractVehicle, message.kill));
+            context.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(message.hitVehicle, message.kill));
         }
     }
 

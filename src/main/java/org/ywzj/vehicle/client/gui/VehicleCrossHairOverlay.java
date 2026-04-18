@@ -64,18 +64,21 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 if (showAim) {
                     double x = Mth.lerp(partialTick, screenAimXO, screenAimX);
                     double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
-                    guiGraphics.pose().pushPose();
-                    guiGraphics.pose().translate(x, y, 0);
-                    float alpha =  FREE_CAMERA.isDown() ? 0.25f : 0.5f;
-                    int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
-                    GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
-                    // 装填进度
-                    weaponUnit.getCurrentWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
-                    weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
-                    if (!weaponUnit.independentWeapons.isEmpty()) {
-                        renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
+                    PoseStack poseStack = guiGraphics.pose();
+                    poseStack.pushPose();
+                    {
+                        poseStack.translate(x, y, 0);
+                        float alpha =  FREE_CAMERA.isDown() ? 0.25f : 0.5f;
+                        int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
+                        GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
+                        // 装填进度
+                        weaponUnit.getCurrentWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
+                        weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
+                        if (!weaponUnit.independentWeapons.isEmpty()) {
+                            renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
+                        }
                     }
-                    guiGraphics.pose().popPose();
+                    poseStack.popPose();
                 }
                 if (showHit) {
                     double x = Mth.lerp(partialTick, screenHitXO, screenHitX);
@@ -139,7 +142,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
         }
     }
 
-    private static void renderReloadProgress(GuiGraphics guiGraphics, AbstractVehicleWeapon<?> weapon, float arcRadius, float thickness) {
+    public static void renderReloadProgress(GuiGraphics guiGraphics, AbstractVehicleWeapon<?> weapon, float arcRadius, float thickness) {
         int reloadTime = weapon.getReloadTime();
         int maxReload  = weapon.getData().getReload().getTime();
         if (reloadTime > 0 && maxReload > 0) {

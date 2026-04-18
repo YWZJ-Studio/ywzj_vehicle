@@ -15,6 +15,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.EntityBasedExplosionDamageCalculator;
 import net.minecraft.world.level.Explosion;
@@ -190,7 +191,14 @@ public class VehicleExplosion {
             if (excludedEntities != null && excludedEntities.contains(entity)) {
                 continue;
             }
-            double distance = entity.position().distanceTo(new Vec3(x, y, z));
+            if (entity instanceof ItemEntity) {
+                continue;
+            }
+            if (entity instanceof Projectile projectile && projectile.getOwner() == damageSource.getEntity()) {
+                continue;
+            }
+            Vec3 position = new Vec3(x, y, z);
+            double distance = entity.position().distanceTo(position);
             if (distance > radius) {
                 continue;
             }
@@ -200,10 +208,10 @@ public class VehicleExplosion {
             if (entity instanceof LivingEntity livingEntity) {
                 LivingHurtEvent hurtEvent = new LivingHurtEvent(livingEntity, damageSource, (float) damage);
                 if (!MinecraftForge.EVENT_BUS.post(hurtEvent)) {
-                    entity.hurt(damageSource, hurtEvent.getAmount());
+                    EntityUtil.hurt(damageSource, entity, hurtEvent.getAmount());
                 }
             } else {
-                entity.hurt(damageSource, (float) damage);
+                EntityUtil.hurt(damageSource, entity, (float) damage);
             }
         }
     }

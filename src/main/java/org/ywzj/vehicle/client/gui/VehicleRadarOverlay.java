@@ -77,7 +77,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
                     }
                     radarUnit.getDetectedEntities().values().forEach(detectedObject -> {
                         Vec3 v = detectedObject.detectedPosition.subtract(radarUnit.worldRadarPosition());
-                        v = vehicle.relativeRotDirection(v, true);
+                        v = radarUnit.worldVecToLocalVec(v);
                         double l = v.length() / maxScanDistance * radius;
                         v = v.normalize().scale(-l);
                         // 目标
@@ -179,7 +179,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
             Vec3 velocity = detectedObject.entity.getDeltaMovement();
             if (velocity.length() != 0) {
                 Vec3 direction = velocity.normalize().scale(-5);
-                direction = radarUnit.getVehicle().relativeRotDirection(direction, true);
+                direction = radarUnit.worldVecToLocalVec(direction);
                 RenderHelper.drawLine(poseStack, direction, 0.8f, color, -1, -1);
             }
         }

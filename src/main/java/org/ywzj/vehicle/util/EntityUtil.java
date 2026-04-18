@@ -4,8 +4,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -13,11 +16,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.compat.SuperbWarfareCompat;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
+import org.ywzj.vehicle.network.message.ServerVehicleHurtEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +36,24 @@ public class EntityUtil {
     public static void keepChunkLoaded(Entity entity, Vec3 position) {
         ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
         ((ServerLevel) entity.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, entity.getId());
+    }
+
+    public static void hurt(DamageSource source, Entity entity, float damage) {
+        boolean kill = false;
+        boolean destroyedBeforeHurt = false;
+        if (entity instanceof AbstractVehicle vehicle) {
+            destroyedBeforeHurt = vehicle.isDestroyed();
+        }
+        entity.hurt(source, damage);
+        if (entity instanceof AbstractVehicle vehicle) {
+            kill = !destroyedBeforeHurt && vehicle.isDestroyed();
+        } else if (entity instanceof LivingEntity livingEntity) {
+            kill = livingEntity.isDeadOrDying();
+        }
+        if (source.getEntity() instanceof ServerPlayer serverPlayer
+                && serverPlayer.getVehicle() instanceof AbstractVehicle vehicle) {
+            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), entity instanceof AbstractVehicle, kill));
+        }
     }
 
     @Nullable

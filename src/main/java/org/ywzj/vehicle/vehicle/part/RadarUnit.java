@@ -96,7 +96,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     public void tickTargets() {
         long timeNow = System.currentTimeMillis();
         float range = Math.min(360, yRotMax - yRotMin);
-        long life = Math.max((long) (range / yRotSpeed / 20 * 1000L) * 4, 100);
+        long life = Math.max((long) (range / yRotSpeed / 20 * 1000L) * 2, 100);
         detectedObjects.values().removeIf(detectedObject -> detectedObject.detectedTime + life < timeNow);
         // 服务端通知雷达搜索给目标载具乘客
         if (!vehicle.level().isClientSide() && vehicle.tickCount % 20 == 0) {

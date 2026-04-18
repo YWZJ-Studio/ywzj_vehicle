@@ -56,28 +56,55 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             Vec3 posO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
             Vec3 pos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
-            guiGraphics.pose().pushPose();
+            PoseStack poseStack = guiGraphics.pose();
+            poseStack.pushPose();
             {
-                guiGraphics.pose().translate(
+                poseStack.translate(
                         Mth.lerp(partialTick, posO.x, pos.x),
                         Mth.lerp(partialTick, posO.y, pos.y),
                         0);
                 if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT) {
-                    drawSquare(guiGraphics, 0, 0, 5, color);
-                    guiGraphics.fill(0, -32, 1, -8, color);
-                    guiGraphics.fill(0, 8, 1, 32, color);
-                    guiGraphics.fill(-32, 0, -8, 1, color);
-                    guiGraphics.fill(32, 0, 8, 1, color);
+                    poseStack.pushPose();
+                    {
+                        poseStack.translate(-0.5, -0.5, 0);
+                        drawSquare(guiGraphics, 0, 0, 5, color);
+                    }
+                    poseStack.popPose();
+                    poseStack.pushPose();
+                    {
+                        poseStack.translate(-0.5, 0, 0);
+                        guiGraphics.fill(0, -32, 1, -8, color);
+                        guiGraphics.fill(0, 8, 1, 32, color);
+                    }
+                    poseStack.popPose();
+                    poseStack.pushPose();
+                    {
+                        poseStack.translate(0, -0.5, 0);
+                        guiGraphics.fill(-32, 0, -8, 1, color);
+                        guiGraphics.fill(32, 0, 8, 1, color);
+                    }
+                    poseStack.popPose();
                     guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                             (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
                                     + (int) LocalVehiclePlayer.instance.aimLocationDistance + " m", 0, 40, color);
                     guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
                     guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.withStabilizer() ? Component.translatable("ui.stabilizer_on").getString() : "", 36, 28, color);
                 } else {
-                    RenderHelper.drawRect(guiGraphics, 0, 0, 1, 1, color, 1f);
+                    poseStack.pushPose();
+                    {
+                        poseStack.translate(-0.5, -0.5, 0);
+                        RenderHelper.drawRect(guiGraphics, 0, 0, 1, 1, color, 1f);
+                    }
+                    poseStack.popPose();
+                }
+                // 装填进度
+                weaponUnit.getCurrentWeapon().ifPresent(weapon -> VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
+                weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
+                if (!weaponUnit.independentWeapons.isEmpty()) {
+                    VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
                 }
             }
-            guiGraphics.pose().popPose();
+            poseStack.popPose();
         }
         // 目标
         renderAimLockTarget(guiGraphics, partialTick);

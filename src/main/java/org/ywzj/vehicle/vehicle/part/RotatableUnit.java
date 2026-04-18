@@ -187,9 +187,12 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         return new Vec3(baseRot().transform(VectorUtil.rotToVec(xRot, yRot).toVector3f()));
     }
 
+    public Vec3 worldVecToLocalVec(Vec3 worldVec) {
+        return new Vec3(baseRot().conjugate().transform(worldVec.toVector3f()));
+    }
+
     public Vec2 worldVecToLocalRot(Vec3 worldVec) {
-        Vector3f localAim = baseRot().conjugate().transform(worldVec.toVector3f());
-        return VectorUtil.vecToRot(new Vec3(localAim));
+        return VectorUtil.vecToRot(worldVecToLocalVec(worldVec));
     }
 
     public Quaternionf baseRot() {

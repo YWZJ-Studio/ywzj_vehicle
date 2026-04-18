@@ -5,12 +5,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -20,12 +18,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.network.PacketDistributor;
-import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ServerVehicleHurtEntity;
 import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -40,6 +34,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     private ResourceLocation weaponId;
     public Component name;
     public int life;
+    public float headShot;
     public float damage;
     public Explosion explosion;
     private double lerpX;
@@ -63,64 +58,48 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     }
 
     protected void tickHit() {
-        //todo: 细化
-        if (!level().isClientSide()) {
-            // 子弹在 tick 起始的位置
-            Vec3 startVec = this.position();
-            // 子弹在 tick 结束的位置
-            Vec3 endVec = startVec.add(this.getDeltaMovement());
-            // 子弹的碰撞检测
-            BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-            if (result.getType() != HitResult.Type.MISS) {
-                // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
-                if (explosion != null && explosion.explode) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                    vehicleExplosion.explode();
-                }
-                this.discard();
-                return;
+        // 子弹在 tick 起始的位置
+        Vec3 startVec = this.position();
+        // 子弹在 tick 结束的位置
+        Vec3 endVec = startVec.add(this.getDeltaMovement());
+        // 子弹的碰撞检测
+        BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        if (result.getType() != HitResult.Type.MISS) {
+            // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
+            if (explosion != null && explosion.explode) {
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                vehicleExplosion.explode();
             }
-            BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
-            // 将单个命中是实体创建为单个内容的 list
-            if (entityResult != null
-                    && entityResult.getEntity() != vehicle
-                    && !vehicle.getPassengers().contains(entityResult.getEntity())) {
-                Entity entity = entityResult.getEntity();
-                @Nullable Entity owner = this.getOwner();
-                // 攻击者
-                LivingEntity attacker = owner instanceof LivingEntity ? (LivingEntity) owner : null;
-                DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, attacker, entityResult.getLocation());
-                boolean kill = false;
-                boolean destroyedBeforeHurt = false;
-                if (entity instanceof AbstractVehicle vehicle) {
-                    destroyedBeforeHurt = vehicle.isDestroyed();
-                }
-                entity.hurt(source, damage);
-                if (entity instanceof AbstractVehicle vehicle) {
-                    kill = !destroyedBeforeHurt && vehicle.isDestroyed();
-                } else if (entity instanceof LivingEntity livingEntity) {
-                    kill = livingEntity.isDeadOrDying();
-                }
-                if (owner instanceof ServerPlayer serverPlayer) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), kill));
-                }
-                if (explosion != null) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                    vehicleExplosion.explode();
-                }
-                this.discard();
+            this.discard();
+            return;
+        }
+        BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
+        // 将单个命中是实体创建为单个内容的 list
+        if (entityResult != null
+                && entityResult.getEntity() != vehicle
+                && !vehicle.getPassengers().contains(entityResult.getEntity())) {
+            Entity entity = entityResult.getEntity();
+            Entity owner = this.getOwner();
+            // 伤害实体
+            boolean headshot = entityResult.isHeadshot();
+            DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, owner, entityResult.getLocation());
+            EntityUtil.hurt(source, entity, headshot ? damage * this.headShot : damage);
+            if (explosion != null && explosion.explode) {
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                vehicleExplosion.explode();
             }
-            // 近炸
-            else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
-                AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
-                        .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
-                List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
-                        entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
-                if (!nearbyEntities.isEmpty() && explosion != null) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                    vehicleExplosion.explode();
-                    this.discard();
-                }
+            this.discard();
+        }
+        // 近炸
+        else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
+            AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
+                    .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
+            List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
+                    entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
+            if (!nearbyEntities.isEmpty() && explosion != null) {
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                vehicleExplosion.explode();
+                this.discard();
             }
         }
     }
