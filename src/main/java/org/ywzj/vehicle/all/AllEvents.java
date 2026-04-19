@@ -48,6 +48,7 @@ import org.ywzj.vehicle.network.message.ServerBroadcastEntities;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
@@ -230,45 +231,47 @@ public class AllEvents {
                 return;
             }
             MinecraftServer server = event.getServer();
-            if (server.getTickCount() % AllConfigs.server.serverBroadcastEntitiesInterval.get() != 0) {
-                return;
-            }
             for (ServerLevel level : server.getAllLevels()) {
-                // 对符合条件的超视距实体进行广播
-                // 目前仅供雷达使用
-                List<Entity> entities = new ArrayList<>();
-                for (Entity target : level.getEntities().getAll()) {
-                    if (!target.isAlive()) {
+                VehicleExplosion.tick(level);
+            }
+            if (server.getTickCount() % AllConfigs.server.serverBroadcastEntitiesInterval.get() == 0) {
+                for (ServerLevel level : server.getAllLevels()) {
+                    // 对符合条件的超视距实体进行广播
+                    // 目前仅供雷达使用
+                    List<Entity> entities = new ArrayList<>();
+                    for (Entity target : level.getEntities().getAll()) {
+                        if (!target.isAlive()) {
+                            continue;
+                        }
+                        if ((target instanceof AbstractVehicle vehicle && !vehicle.isDestroyed())
+                                || target instanceof MissileEntity
+                                || target instanceof TargetObstruction
+                                || AllConfigs.serverBroadcastEntityWhitelist.stream()
+                                .anyMatch(entityType -> ForgeRegistries.ENTITY_TYPES.getKey(target.getType()).toString().matches(entityType))) {
+                            entities.add(target);
+                        }
+                    }
+                    if (entities.isEmpty()) {
                         continue;
                     }
-                    if ((target instanceof AbstractVehicle vehicle && !vehicle.isDestroyed())
-                            || target instanceof MissileEntity
-                            || target instanceof TargetObstruction
-                            || AllConfigs.serverBroadcastEntityWhitelist.stream()
-                            .anyMatch(entityType -> ForgeRegistries.ENTITY_TYPES.getKey(target.getType()).toString().matches(entityType))) {
-                        entities.add(target);
+                    ServerBroadcastEntities serverBroadcastEntities = new ServerBroadcastEntities();
+                    serverBroadcastEntities.entities = new ArrayList<>();
+                    for (Entity target : entities) {
+                        CompoundTag data = new CompoundTag();
+                        if (target instanceof RemoteTickEntity targetRemoteTickEntity) {
+                            targetRemoteTickEntity.writeData(data);
+                        }
+                        serverBroadcastEntities.entities.add(new ServerBroadcastEntities.BroadcastEntity(target.getId(),
+                                EntityType.getKey(target.getType()),
+                                target.position(),
+                                target.getDeltaMovement(),
+                                data));
                     }
-                }
-                if (entities.isEmpty()) {
-                    continue;
-                }
-                ServerBroadcastEntities serverBroadcastEntities = new ServerBroadcastEntities();
-                serverBroadcastEntities.entities = new ArrayList<>();
-                for (Entity target : entities) {
-                    CompoundTag data = new CompoundTag();
-                    if (target instanceof RemoteTickEntity targetRemoteTickEntity) {
-                        targetRemoteTickEntity.writeData(data);
-                    }
-                    serverBroadcastEntities.entities.add(new ServerBroadcastEntities.BroadcastEntity(target.getId(),
-                            EntityType.getKey(target.getType()),
-                            target.position(),
-                            target.getDeltaMovement(),
-                            data));
-                }
-                for (ServerPlayer player : level.players()) {
-                    Entity vehicle = player.getVehicle();
-                    if (vehicle instanceof AbstractVehicle) {
-                        Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverBroadcastEntities);
+                    for (ServerPlayer player : level.players()) {
+                        Entity vehicle = player.getVehicle();
+                        if (vehicle instanceof AbstractVehicle) {
+                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverBroadcastEntities);
+                        }
                     }
                 }
             }
