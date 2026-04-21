@@ -75,6 +75,9 @@
           "part_unit_id": "pl_8"
         },
         {
+          "part_unit_id": "variable_weapon_1"
+        },
+        {
           "id": "ywzj_vehicle:decoy_flare",
           "part_unit_id": "decoy_flare"
         }
@@ -124,6 +127,52 @@
         "x_rot_speed": 0,
         "y_rot_speed": 0
       }
+    },
+    {
+      "id": "variable_weapon_1",
+      "name": "variable_weapon_1",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "variable_weapon_1",
+      "render_selected_weapon": true,
+      "is_seat": false,
+      "weapons": [
+        {
+          "part_unit_id": "variable_weapon_nuke_1"
+        },
+        {
+          "part_unit_id": "variable_weapon_pl_12_1"
+        }
+      ]
+    },
+    {
+      "id": "variable_weapon_nuke_1",
+      "name": "nuke",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "variable_weapon_1",
+      "render_model": true,
+      "ammo_capacity": 1,
+      "fire_control_sensor_type": "eo",
+      "is_seat": false,
+      "parent_weapon_unit_aim": true,
+      "crosshair_style": "none",
+      "weapons": [
+        "ywzj_vehicle:nuclear_gravity_bomb"
+      ]
+    },
+    {
+      "id": "variable_weapon_pl_12_1",
+      "name": "pl_12",
+      "type": "ywzj_vehicle:weapon",
+      "structure_bone": "variable_weapon_1",
+      "render_model": true,
+      "ammo_capacity": 1,
+      "fire_control_sensor_type": "rf",
+      "is_seat": false,
+      "parent_weapon_unit_aim": true,
+      "crosshair_style": "none",
+      "weapons": [
+        "ywzj_vehicle:pl_12"
+      ]
     },
     {
       "id": "decoy_flare",

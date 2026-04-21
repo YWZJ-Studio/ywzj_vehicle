@@ -75,7 +75,7 @@
   "tips.hover_mode_on": "Hover Mode On",
   "tips.hover_mode_off": "Hover Mode Off",
   "tips.use_weapon": "Use Weapon: %s",
-  "tips.use_modding_tool": "Use Modding Tool",
+  "tips.sneak_use_modding_tool": "Sneak and use Modding Tool",
   "tips.edit_decoration": "Sneak and right-click to edit",
 
   "ui.stabilizer_on": "STAB ON",

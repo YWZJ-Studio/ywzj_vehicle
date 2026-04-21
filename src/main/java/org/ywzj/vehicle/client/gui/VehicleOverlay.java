@@ -30,8 +30,6 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
-import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
-import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 
 import java.util.Map;
 import java.util.Optional;
@@ -257,7 +255,11 @@ public class VehicleOverlay implements IGuiOverlay {
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
-        int cardWidth = 90;
+        int maxNameWidth = 0;
+        for (var weapon : weapons) {
+            maxNameWidth = Math.max(maxNameWidth, font.width(weaponUnit.proxyWeapon(weapon).getDisplayName().getString()));
+        }
+        int cardWidth = maxNameWidth + 8;
         int cardHeight = 14;
         int cardPadding = 2;
         int listX = centerX + 24;
@@ -270,13 +272,7 @@ public class VehicleOverlay implements IGuiOverlay {
                 -512, Color.BG_DARK);
         PoseStack poseStack = guiGraphics.pose();
         for (int i = 0; i < weapons.size(); i++) {
-            var weapon = weapons.get(i);
-            while (weapon instanceof VehicleWeaponAgent weaponAgent) {
-                Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
-                if (weaponOptional.isPresent()) {
-                    weapon = weaponOptional.get();
-                }
-            }
+            var weapon = weaponUnit.proxyWeapon(weapons.get(i));
             int cardY = listY + i * (cardHeight + cardPadding);
             boolean selected = (i == currentWeaponIndex);
             int cardBg = selected ? Color.BG_SELECTED : Color.BG_DARK;
@@ -292,7 +288,7 @@ public class VehicleOverlay implements IGuiOverlay {
                 guiGraphics.drawString(font, name, 0, 0, textColor, true);
                 if (i == weapons.size() - 1) {
                     poseStack.translate(-4, 16, 0);
-                    guiGraphics.drawString(font, Component.translatable("tips.use_modding_tool"), 0, 0, Color.WHITE, true);
+                    guiGraphics.drawString(font, Component.translatable("tips.sneak_use_modding_tool"), 0, 0, Color.WHITE, true);
                 }
             }
             poseStack.popPose();

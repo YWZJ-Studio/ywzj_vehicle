@@ -20,7 +20,7 @@ public class ModdingToolItem extends VehicleItem {
     @Override
     public InteractionResult interactEntity(ItemStack stack, Player player, Entity target, InteractionHand pHand) {
         if (player.level().isClientSide) {
-            if (pHand == InteractionHand.MAIN_HAND) {
+            if (pHand == InteractionHand.MAIN_HAND && !player.isShiftKeyDown()) {
                 if (target instanceof AbstractVehicle vehicle) {
                     openScreen(vehicle);
                 }
