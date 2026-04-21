@@ -30,6 +30,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private float zoomMax;
     private FireControlSensorType fireControlSensorType;
     private CrosshairStyle crosshairStyle;
+    private boolean renderSelectedWeapon;
     private List<WeaponInfo> weapons;
     private VehicleCubeGroup xTurnGroup;
 
@@ -52,6 +53,7 @@ public class WeaponUnitData extends RotatableUnitData {
         this.zoomMin = pojo.zoomMin;
         this.zoomMax = pojo.zoomMax;
         this.crosshairStyle = pojo.crosshairStyle;
+        this.renderSelectedWeapon = pojo.renderSelectedWeapon;
         this.weapons = pojo.weapons;
     }
 
@@ -105,6 +107,10 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public CrosshairStyle getCrosshairStyle() {
         return crosshairStyle;
+    }
+
+    public boolean isRenderSelectedWeapon() {
+        return renderSelectedWeapon;
     }
 
     public List<WeaponInfo> getWeapons() {

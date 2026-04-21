@@ -190,8 +190,8 @@ public class DecorationItem extends VehicleItem {
         if (decorationBoneName != null) {
             ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
             clientDecorationAction.action = ClientDecorationAction.Action.SET;
-            clientDecorationAction.decorationDisplayId = itemStack.getOrCreateTag().getString(TAG_DECORATION_DISPLAY_ID);
-            if (StringUtils.isEmpty(clientDecorationAction.decorationDisplayId)) {
+            clientDecorationAction.displayId = itemStack.getOrCreateTag().getString(TAG_DECORATION_DISPLAY_ID);
+            if (StringUtils.isEmpty(clientDecorationAction.displayId)) {
                 return;
             }
             clientDecorationAction.vehicleId = vehicle.getId();

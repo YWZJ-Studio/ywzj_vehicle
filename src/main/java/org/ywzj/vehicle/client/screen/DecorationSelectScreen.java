@@ -224,7 +224,7 @@ public class DecorationSelectScreen extends Screen {
         this.selectedDisplayId = displayId;
         ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
         clientDecorationAction.action = ClientDecorationAction.Action.UPDATE_ITEM;
-        clientDecorationAction.decorationDisplayId = displayId.toString();
+        clientDecorationAction.displayId = displayId.toString();
         Channel.CHANNEL.sendToServer(clientDecorationAction);
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }

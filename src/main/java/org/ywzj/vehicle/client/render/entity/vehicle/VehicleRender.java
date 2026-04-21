@@ -1,7 +1,5 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -17,19 +15,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.RenderHelper;
-import org.ywzj.vehicle.vehicle.part.DecorationUnit;
-
-import java.util.Optional;
 
 import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
@@ -72,63 +62,14 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
             model.renderSpecialBones(pPoseStack, bufferSource, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-            // 渲染饰品
-            renderDecorations(vehicle, model, pPoseStack, bufferSource, pPackedLight);
+            // 渲染部件
+            vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
+            vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
             // 复原模型
             model.applyPose(model.getBindPose());
             vehicle.lastRenderTime = System.currentTimeMillis();
         }
         pPoseStack.popPose();
-    }
-
-    public static void renderDecorations(AbstractVehicle vehicle, BedrockModel vehicleModel, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        for (DecorationUnit decorationUnit : vehicle.getDecorationUnits().values()) {
-            Optional<BaseDisplay> decorationDisplayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(YwzjVehicle.resourceLocation(decorationUnit.decorationDisplayId));
-            if (decorationDisplayOptional.isEmpty()) {
-                continue;
-            }
-            BaseDisplay decorationDisplay =  decorationDisplayOptional.get();
-            BedrockModel decorationModel = decorationDisplay.getModel();
-            ResourceLocation decorationTexture = decorationDisplay.getTexture();
-            if (decorationModel == null || decorationTexture == null) {
-                continue;
-            }
-            BedrockBone bone = vehicleModel.getBoneMap().get(decorationUnit.baseBoneName);
-            if (bone == null) {
-                continue;
-            }
-            Quaternionf globalRotation = new Quaternionf(bone.rotation);
-            globalRotation.rotateYXZ((float) Math.toRadians(-decorationUnit.selfYRot),
-                    (float) Math.toRadians(decorationUnit.selfXRot),
-                    (float) Math.toRadians(decorationUnit.selfZRot));
-            Vector3f offset = bone.rotation.transform(decorationUnit.offsetFromBone.toVector3f());
-            Vector3f globalPivot = new Vector3f(bone.x / 16.0F + offset.x, bone.y / 16.0F + offset.y, bone.z / 16.0F + offset.z);
-            BedrockBone parent = bone.parent;
-            while (parent != null) {
-                parent.rotation.transform(globalPivot);
-                globalPivot.add(parent.x / 16, parent.y / 16, parent.z / 16);
-                globalRotation.premul(parent.rotation);
-                parent = parent.parent;
-            }
-            Vector3f rot = new Vector3f();
-            globalRotation.getEulerAnglesYXZ(rot);
-            pPoseStack.pushPose();
-            {
-                pPoseStack.translate(globalPivot.x, globalPivot.y, globalPivot.z);
-                pPoseStack.scale(decorationUnit.scale, decorationUnit.scale, decorationUnit.scale);
-                pPoseStack.rotateAround(Axis.YP.rotation(rot.y), 0, 0, 0);
-                pPoseStack.rotateAround(Axis.XP.rotation(rot.x), 0, 0, 0);
-                pPoseStack.rotateAround(Axis.ZP.rotation(rot.z), 0, 0, 0);
-                decorationUnit.offsetFromVehicle = new Vec3(globalPivot);
-                decorationUnit.rotation = globalRotation;
-                VertexConsumer decorationBuilder = bufferSource.getBuffer(RenderType.entityCutout(decorationTexture));
-                decorationModel.renderToBuffer(pPoseStack, decorationBuilder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-                if (decorationUnit.setting) {
-                    RenderHelper.renderArrow3D(pPoseStack, bufferSource, 0.15f, 0.3f, 0, 255, 0, 255);
-                }
-            }
-            pPoseStack.popPose();
-        }
     }
 
     @SubscribeEvent

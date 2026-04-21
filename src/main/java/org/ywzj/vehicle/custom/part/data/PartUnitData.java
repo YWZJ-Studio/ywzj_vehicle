@@ -2,6 +2,7 @@ package org.ywzj.vehicle.custom.part.data;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
@@ -24,6 +25,9 @@ public class PartUnitData {
     protected PassengerPose passengerPose;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
+    protected boolean renderModel;
+    protected ResourceLocation displayId;
+    protected Vec3 displayOffset;
     protected List<String> subPartUnitIds;
     protected VehicleCubeGroup structureGroup;
     protected List<VehicleCubeOBB> partCubeOBBs;
@@ -45,6 +49,9 @@ public class PartUnitData {
         this.seatOffset = pojo.seatOffset;
         this.passengerPose = pojo.passengerPose;
         this.ownerViewOffset = pojo.ownerViewOffset;
+        this.renderModel = pojo.renderModel;
+        this.displayId = pojo.displayId;
+        this.displayOffset = pojo.displayOffset;
         this.subPartUnitIds = pojo.subPartUnitIds;
         this.initData(pojo);
     }
@@ -126,6 +133,18 @@ public class PartUnitData {
 
     public Vec3 getPivotOffset() {
         return pivotOffset;
+    }
+
+    public boolean isRenderModel() {
+        return renderModel;
+    }
+
+    public ResourceLocation getDisplayId() {
+        return displayId;
+    }
+
+    public Vec3 getDisplayOffset() {
+        return displayOffset;
     }
 
     public List<String> getSubPartUnitIds() {

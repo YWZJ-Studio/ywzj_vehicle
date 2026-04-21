@@ -2,8 +2,11 @@ package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -50,6 +53,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected PassengerPose passengerPose;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
+    protected boolean renderModel;
+    protected ResourceLocation displayId;
+    protected Vec3 displayOffset;
     protected PartUnit<?> parentPartUnit;
     protected List<PartUnit<?>> subPartUnits = new ArrayList<>();
     protected T data;
@@ -67,6 +73,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.passengerPose = data.getPassengerPose();
         this.ownerViewOffset = data.getOwnerViewOffset();
         this.pivotOffset = data.getPivotOffset();
+        this.renderModel = data.isRenderModel();
+        this.displayId = data.getDisplayId();
+        this.displayOffset = data.getDisplayOffset();
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
     }
@@ -96,6 +105,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     public void onRemoved() {}
+
+    @OnlyIn(Dist.CLIENT)
+    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {}
 
     public void tick() {
         if (!this.getVehicle().level().isClientSide()) {
@@ -202,6 +214,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public void setPivotOffset(Vec3 pivotOffset) {
         this.pivotOffset = pivotOffset;
+    }
+
+    public ResourceLocation getDisplayId() {
+        return displayId;
+    }
+
+    public Vec3 getDisplayOffset() {
+        return displayOffset;
     }
 
     public void setOwnerViewOffset(Vec3 ownerViewOffset) {

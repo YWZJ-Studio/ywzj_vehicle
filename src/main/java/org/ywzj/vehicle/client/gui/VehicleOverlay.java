@@ -20,11 +20,14 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.render.util.Color;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
@@ -233,6 +236,8 @@ public class VehicleOverlay implements IGuiOverlay {
                 PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
                 if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive()) {
                     renderWeaponList(guiGraphics, weaponUnit);
+                } else if (partUnit instanceof DecorationUnit decorationUnit) {
+                    renderDecorationTips(guiGraphics, decorationUnit);
                 }
             }
         }
@@ -282,11 +287,53 @@ public class VehicleOverlay implements IGuiOverlay {
             String name = weapon.getDisplayName().getString();
             int textColor = selected ? Color.GREEN : Color.WHITE;
             poseStack.pushPose();
-            poseStack.translate(listX + 4, cardY + (cardHeight - font.lineHeight) / 2f + 1, 0);
-            poseStack.scale(0.85f, 0.85f, 0.85f);
-            guiGraphics.drawString(font, name, 0, 0, textColor, false);
+            {
+                poseStack.translate(listX + 4, cardY + (cardHeight - font.lineHeight) / 2f + 1, 0);
+                guiGraphics.drawString(font, name, 0, 0, textColor, true);
+                if (i == weapons.size() - 1) {
+                    poseStack.translate(-4, 16, 0);
+                    guiGraphics.drawString(font, Component.translatable("tips.use_modding_tool"), 0, 0, Color.WHITE, true);
+                }
+            }
             poseStack.popPose();
         }
+    }
+
+    private void renderDecorationTips(GuiGraphics guiGraphics, DecorationUnit decorationUnit) {
+        Optional<BaseDisplay> decorationDisplayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(decorationUnit.getDisplayId());
+        if (decorationDisplayOptional.isEmpty()) {
+            return;
+        }
+        BaseDisplay decorationDisplay =  decorationDisplayOptional.get();
+        String displayId = decorationDisplay.getDisplayId().toString();
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+        int screenWidth = mc.getWindow().getGuiScaledWidth();
+        int screenHeight = mc.getWindow().getGuiScaledHeight();
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
+        int cardWidth = font.width(displayId) + 6;
+        int cardHeight = 64;
+        int cardPadding = 16;
+        int listX = centerX + 32;
+        int listY = centerY - cardHeight / 2 + 16;
+        RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
+                listX - 2, listY - 2,
+                listX + cardWidth + 2, listY + cardPadding + 2,
+                -512, Color.BG_DARK);
+        RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
+                listX, listY,
+                listX + cardWidth, listY + cardPadding,
+                -512, Color.BG_DARK);
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.translate(listX + 4, listY + (float) font.lineHeight / 2, 0);
+            guiGraphics.drawString(font, decorationDisplay.getDisplayId().toString(), 0, 0, Color.WHITE, true);
+            poseStack.translate(-4, 16, 0);
+            guiGraphics.drawString(font, Component.translatable("tips.edit_decoration"), 0, 0, Color.WHITE, true);
+        }
+        poseStack.popPose();
     }
 
     public void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight, AbstractVehicle vehicle, float size) {

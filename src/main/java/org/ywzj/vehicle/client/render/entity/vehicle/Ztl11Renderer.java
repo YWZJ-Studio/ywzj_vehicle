@@ -128,8 +128,9 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
             vehicle.lastRenderTime = System.currentTimeMillis();
             model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
-            // 渲染饰品
-            VehicleRender.renderDecorations(vehicle, model, pPoseStack, bufferSource, pPackedLight);
+            // 渲染部件
+            vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
+            vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
 
             model.applyPose(model.getBindPose());
         }

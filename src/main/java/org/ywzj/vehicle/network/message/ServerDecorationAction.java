@@ -19,7 +19,7 @@ public class ServerDecorationAction extends DecorationAction {
 
     public ServerDecorationAction(DecorationAction decorationAction) {
         this.action = decorationAction.action;
-        this.decorationDisplayId = decorationAction.decorationDisplayId;
+        this.displayId = decorationAction.displayId;
         this.vehicleId = decorationAction.vehicleId;
         this.decorationUnitId = decorationAction.decorationUnitId;
         this.baseBoneName = decorationAction.baseBoneName;
@@ -33,7 +33,7 @@ public class ServerDecorationAction extends DecorationAction {
     public static ServerDecorationAction decode(FriendlyByteBuf buf) {
         ServerDecorationAction serverDecorationAction = new ServerDecorationAction();
         serverDecorationAction.action = buf.readEnum(Action.class);
-        serverDecorationAction.decorationDisplayId = buf.readUtf();
+        serverDecorationAction.displayId = buf.readUtf();
         serverDecorationAction.vehicleId = buf.readInt();
         serverDecorationAction.decorationUnitId = buf.readUtf();
         if (serverDecorationAction.action == Action.REMOVE) {
@@ -50,7 +50,7 @@ public class ServerDecorationAction extends DecorationAction {
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeEnum(action);
-        buf.writeUtf(decorationDisplayId);
+        buf.writeUtf(displayId);
         buf.writeInt(vehicleId);
         buf.writeUtf(decorationUnitId);
         if (action == Action.REMOVE) {

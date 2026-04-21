@@ -26,7 +26,7 @@ public class ClientDecorationAction extends DecorationAction {
     public static ClientDecorationAction decode(FriendlyByteBuf buf) {
         ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
         clientDecorationAction.action = buf.readEnum(Action.class);
-        clientDecorationAction.decorationDisplayId = buf.readUtf();
+        clientDecorationAction.displayId = buf.readUtf();
         if (clientDecorationAction.action == Action.UPDATE_ITEM) {
             return clientDecorationAction;
         }
@@ -46,7 +46,7 @@ public class ClientDecorationAction extends DecorationAction {
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeEnum(action);
-        buf.writeUtf(decorationDisplayId);
+        buf.writeUtf(displayId);
         if (action == Action.UPDATE_ITEM) {
             return;
         }
@@ -74,7 +74,7 @@ public class ClientDecorationAction extends DecorationAction {
             if (message.action == Action.UPDATE_ITEM) {
                 ItemStack itemStack = player.getItemInHand(InteractionHand.MAIN_HAND);
                 if (itemStack.getItem() instanceof DecorationItem) {
-                    itemStack.getOrCreateTag().putString(DecorationItem.TAG_DECORATION_DISPLAY_ID, message.decorationDisplayId);
+                    itemStack.getOrCreateTag().putString(DecorationItem.TAG_DECORATION_DISPLAY_ID, message.displayId);
                 }
             } else if (player.level().getEntity(message.vehicleId) instanceof AbstractVehicle vehicle) {
                 if (message.action == Action.SET) {
@@ -97,7 +97,7 @@ public class ClientDecorationAction extends DecorationAction {
                 } else if (message.action == Action.REMOVE) {
                     vehicle.getDecorationUnits().remove(message.decorationUnitId);
                     ItemStack itemStack = AllItems.DECORATION_ITEM.get().getDefaultInstance();
-                    itemStack.getOrCreateTag().putString(DecorationItem.TAG_DECORATION_DISPLAY_ID, message.decorationDisplayId);
+                    itemStack.getOrCreateTag().putString(DecorationItem.TAG_DECORATION_DISPLAY_ID, message.displayId);
                     player.level().addFreshEntity(new ItemEntity(player.level(), player.getX(), player.getY(), player.getZ(), itemStack));
                     ServerDecorationAction serverDecorationAction = new ServerDecorationAction(message);
                     Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), serverDecorationAction);

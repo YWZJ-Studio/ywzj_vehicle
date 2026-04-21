@@ -12,7 +12,7 @@ function updateBones(context) {
     if (control.forward || control.backward) {
         d2 = control.forward ? 10 : -10
     } else {
-        d2 = Math.max(-10, Math.min(10, (control.xRot - context.getXRot()) / 30 * 10))
+        d2 = Math.max(-10, Math.min(10, (control.xRot - context.getLerpXRot()) / 30 * 10))
     }
 
     const builder = createPoseBuilder()

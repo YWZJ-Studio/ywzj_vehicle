@@ -1,11 +1,17 @@
 package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -25,6 +31,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
@@ -96,6 +103,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private int lockCoolingTick;
     // 第三人称准心样式
     public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
+    // 是否仅渲染选中武器的部件模型
+    public boolean renderSelectedWeapon;
     // OBB结构
     private VehicleCubeGroup xTurnGroup;
     // 武器与选射
@@ -131,6 +140,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.zoomMax = data.getZoomMax();
         this.zoom = this.zoomMin;
         this.crosshairStyle = data.getCrosshairStyle();
+        this.renderSelectedWeapon = data.isRenderSelectedWeapon();
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
                 this::setCurrentWeaponIndex,
@@ -239,6 +249,52 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 radarUnit.setParentPartUnit(this);
             }
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        weapons.forEach(weapon -> {
+            AbstractVehicleWeapon<?> proxyWeapon = proxyWeapon(weapon);
+            ClientAssetsManager.INSTANCE.getWeaponDisplay(proxyWeapon.getData().getWeaponId()).ifPresent(weaponDisplay -> {
+                BedrockModel model = weaponDisplay.getModel();
+                if (model == null) {
+                    return;
+                }
+                ResourceLocation texture = weaponDisplay.getTexture();
+                if (texture == null) {
+                    return;
+                }
+                WeaponUnit weaponUnit = proxyWeapon.getWeaponUnit();
+                if (weaponUnit == null) {
+                    return;
+                }
+                if (!weaponUnit.renderModel) {
+                    return;
+                }
+                if (weaponUnit.parentWeaponUnit != null && weaponUnit.parentWeaponUnit.renderSelectedWeapon) {
+                    if (weaponUnit.parentWeaponUnit.getCurrentWeapon().get().getWeaponUnit() != this) {
+                        return;
+                    }
+                }
+                VehicleCubeGroup xTurnGroup = weaponUnit.xTurnGroup;
+                if (xTurnGroup == null) {
+                    return;
+                }
+                int boltsSize = weaponUnit.getBolts().size();
+                int remainAmmo = Math.min(proxyWeapon.getRemainAmmo(), boltsSize);
+                for (int index = boltsSize - 1; index > boltsSize - 1 - remainAmmo; index -= 1) {
+                    Bolt bolt = weaponUnit.getBolts().get(index);
+                    pPoseStack.pushPose();
+                    {
+                        Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
+                        pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
+                        VertexConsumer decorationBuilder = bufferSource.getBuffer(RenderType.entityCutout(texture));
+                        model.renderToBuffer(pPoseStack, decorationBuilder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                    }
+                    pPoseStack.popPose();
+                }
+            });
+        });
     }
 
     @Override
@@ -383,8 +439,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
                 player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true);
                 vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
-            } else {
-                player.displayClientMessage(Component.translatable("tips.need_modding_tool"), true);
             }
             return false;
         }
@@ -826,15 +880,19 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return lockCoolingTick;
     }
 
+    public AbstractVehicleWeapon<?> proxyWeapon(AbstractVehicleWeapon<?> weapon) {
+        while (weapon instanceof VehicleWeaponAgent weaponAgent) {
+            Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
+            if (weaponOptional.isPresent()) {
+                weapon = weaponOptional.get();
+            }
+        }
+        return weapon;
+    }
+
     public Optional<AbstractVehicleWeapon<?>> getCurrentWeapon() {
         if (currentWeaponIndex >= 0 && currentWeaponIndex < weapons.size()) {
-            AbstractVehicleWeapon<?> currentWeapon = weapons.get(currentWeaponIndex);
-            while (currentWeapon instanceof VehicleWeaponAgent weaponAgent) {
-                Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
-                if (weaponOptional.isPresent()) {
-                    currentWeapon = weaponOptional.get();
-                }
-            }
+            AbstractVehicleWeapon<?> currentWeapon = proxyWeapon(weapons.get(currentWeaponIndex));
             return Optional.of(currentWeapon);
         }
         return Optional.empty();

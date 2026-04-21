@@ -75,7 +75,8 @@
   "tips.hover_mode_on": "Hover Mode On",
   "tips.hover_mode_off": "Hover Mode Off",
   "tips.use_weapon": "Use Weapon: %s",
-  "tips.need_modding_tool": "Need Modding Tool",
+  "tips.use_modding_tool": "Use Modding Tool",
+  "tips.edit_decoration": "Sneak and right-click to edit",
 
   "ui.stabilizer_on": "STAB ON",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",

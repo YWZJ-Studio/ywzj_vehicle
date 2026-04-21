@@ -5,7 +5,7 @@ import net.minecraft.world.phys.Vec3;
 public class DecorationAction {
 
     public Action action;
-    public String decorationDisplayId;
+    public String displayId;
     public int vehicleId;
     public String decorationUnitId;
     public String baseBoneName;

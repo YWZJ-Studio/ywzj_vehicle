@@ -75,7 +75,8 @@
   "tips.hover_mode_on": "悬停模式: 开",
   "tips.hover_mode_off": "悬停模式: 关",
   "tips.use_weapon": "选择武器: %s",
-  "tips.need_modding_tool": "需要改装工具",
+  "tips.use_modding_tool": "使用改装工具",
+  "tips.edit_decoration": "下蹲右键以编辑",
 
   "ui.stabilizer_on": "稳定器开",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",

@@ -109,8 +109,8 @@ public class DecorationSettingsScreen extends Screen {
     private void updateServer() {
         ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
         clientDecorationAction.action = ClientDecorationAction.Action.SET;
-        clientDecorationAction.decorationDisplayId = decorationUnit.decorationDisplayId;
-        if (StringUtils.isEmpty(clientDecorationAction.decorationDisplayId)) {
+        clientDecorationAction.displayId = decorationUnit.getDisplayId().toString();
+        if (StringUtils.isEmpty(clientDecorationAction.displayId)) {
             return;
         }
         clientDecorationAction.vehicleId = decorationUnit.getVehicle().getId();
@@ -127,8 +127,8 @@ public class DecorationSettingsScreen extends Screen {
     private void removeDecoration() {
         ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
         clientDecorationAction.action = ClientDecorationAction.Action.REMOVE;
-        clientDecorationAction.decorationDisplayId = decorationUnit.decorationDisplayId;
-        if (StringUtils.isEmpty(clientDecorationAction.decorationDisplayId)) {
+        clientDecorationAction.displayId = decorationUnit.getDisplayId().toString();
+        if (StringUtils.isEmpty(clientDecorationAction.displayId)) {
             return;
         }
         clientDecorationAction.vehicleId = decorationUnit.getVehicle().getId();
