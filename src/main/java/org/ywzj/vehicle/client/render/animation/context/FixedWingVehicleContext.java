@@ -10,7 +10,7 @@ public class FixedWingVehicleContext extends VehicleContext<FixedWingVehicle> {
     }
 
     public float getThrottleLevel() {
-        return entity.getThrottleLevel();
+        return Mth.lerp(partialTick, entity.throttleLevelO, entity.throttleLevel);
     }
 
     public float getPitchInput() {

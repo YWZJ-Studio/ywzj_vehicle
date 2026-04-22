@@ -68,6 +68,8 @@ public class FixedWingVehicle extends AbstractVehicle
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
+    public float throttleLevelO;
+    public float throttleLevel;
     public float pitchInput;
     public float pitchInputO;
     public float yawInput;
@@ -120,7 +122,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         if (compound.contains("ThrottleLevel")) {
-            entityData.set(THROTTLE_LEVEL, Mth.clamp(compound.getFloat("ThrottleLevel"), 0, 100));
+            setThrottleLevel(Mth.clamp(compound.getFloat("ThrottleLevel"), 0, 100));
         }
         if (landingGear != null) {
             landingGear.setOn(isLandingGearUp());
@@ -188,9 +190,7 @@ public class FixedWingVehicle extends AbstractVehicle
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide()) {
-            tickInput();
-        }
+        tickInput();
     }
 
     @Override
@@ -211,12 +211,16 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     private void tickInput() {
+        throttleLevelO = throttleLevel;
         pitchInputO = pitchInput;
-        pitchInput = getPitchInput();
         yawInputO = yawInput;
-        yawInput = getYawInput();
         rollInputO = rollInput;
-        rollInput = getRollInput();
+        if (level().isClientSide()) {
+            throttleLevel = getThrottleLevel();
+            pitchInput = getPitchInput();
+            yawInput = getYawInput();
+            rollInput = getRollInput();
+        }
     }
 
     @Override
@@ -319,7 +323,7 @@ public class FixedWingVehicle extends AbstractVehicle
                 }
             }
         }
-        entityData.set(THROTTLE_LEVEL, Math.max(0f, throttleLevel));
+        setThrottleLevel(Math.max(0f, throttleLevel));
         // 三个杆量
         tickInput();
         float xRotInput = pitchInput;
@@ -526,6 +530,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     public void setThrottleLevel(float value) {
+        throttleLevel = value;
         this.entityData.set(THROTTLE_LEVEL, value);
     }
 
@@ -534,6 +539,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     public void setPitchInput(float value) {
+        pitchInput = value;
         this.entityData.set(PITCH_INPUT, value);
     }
 
@@ -542,6 +548,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     public void setYawInput(float value) {
+        yawInput = value;
         this.entityData.set(YAW_INPUT, value);
     }
 
@@ -550,6 +557,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     public void setRollInput(float value) {
+        rollInput = value;
         this.entityData.set(ROLL_INPUT, value);
     }
 

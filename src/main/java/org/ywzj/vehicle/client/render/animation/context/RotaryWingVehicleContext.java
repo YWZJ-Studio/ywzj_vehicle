@@ -10,7 +10,7 @@ public class RotaryWingVehicleContext extends VehicleContext<RotaryWingVehicle> 
     }
 
     public float getCollectivePitch() {
-        return entity.getCollectivePitch();
+        return Mth.lerp(partialTick, entity.collectivePitchO, entity.collectivePitch);
     }
 
     public float getPitchInput() {

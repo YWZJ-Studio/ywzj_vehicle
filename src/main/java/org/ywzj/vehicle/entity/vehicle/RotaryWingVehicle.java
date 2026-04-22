@@ -62,6 +62,8 @@ public class RotaryWingVehicle extends AbstractVehicle
     public String fastRopingDoorId;
     public HashMap<UUID, FastRopingContext> fastRopingContexts = new HashMap<>();
     public float propellerRotation;
+    public float collectivePitch;
+    public float collectivePitchO;
     public float pitchInput;
     public float pitchInputO;
     public float rollInput;
@@ -109,7 +111,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         if (compound.contains("CollectivePitch")) {
-            entityData.set(COLLECTIVE_PITCH, Mth.clamp(compound.getFloat("CollectivePitch"), 0, 100));
+            setCollectivePitch(Mth.clamp(compound.getFloat("CollectivePitch"), 0, 100));
         }
         if (landingGear != null) {
             landingGear.setOn(isLandingGearUp());
@@ -152,9 +154,11 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     private void tickInput() {
+        collectivePitchO = collectivePitch;
         pitchInputO = pitchInput;
         rollInputO = rollInput;
         if (level().isClientSide()) {
+            collectivePitch = getCollectivePitch();
             pitchInput = getPitchInput();
             rollInput = getRollInput();
         } else {
@@ -241,7 +245,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         } else if (controlUnit.down) {
             collectivePitch -= 5;
         }
-        entityData.set(COLLECTIVE_PITCH, Mth.clamp(collectivePitch, 0f, 100f));
+        setCollectivePitch(Mth.clamp(collectivePitch, 0f, 100f));
 
         airSpeed = getDeltaMovement();
         // 引擎转速与浆距得出力系数，该值越高，桨叶效率越高，则出力越高
@@ -275,9 +279,9 @@ public class RotaryWingVehicle extends AbstractVehicle
             controlUnit.yRot = getYRot();
             double vy = airSpeed.y - physicsEngine.G;
             if (vy > 0.01) {
-                entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
+                setCollectivePitch(Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
             } else if (vy < -0.01) {
-                entityData.set(COLLECTIVE_PITCH, Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
+                setCollectivePitch(Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
             }
         }
 
@@ -490,6 +494,11 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     public float getCollectivePitch() {
         return entityData.get(COLLECTIVE_PITCH);
+    }
+
+    public void setCollectivePitch(float value) {
+        collectivePitch = value;
+        this.entityData.set(COLLECTIVE_PITCH, value);
     }
 
     public float getPitchInput() {
