@@ -119,11 +119,8 @@ dependencies {
         jarJar.ranged(it, "[1.8.0,2.0.0)")
     }
     // SBM
-//    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.5-forge+mc1.20.1"))) {
-//        jarJar.ranged(it, "[2.1.5,)")
-//    }
-    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.1.6-forge+mc1.20.1"))) {
-        jarJar.ranged(it, "[2.1.6,)")
+    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.2.2-forge+mc1.20.1"))) {
+        jarJar.ranged(it, "[2.2.2,)")
     }
     compileOnly("com.maydaymemory:mae:1.1.0") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'

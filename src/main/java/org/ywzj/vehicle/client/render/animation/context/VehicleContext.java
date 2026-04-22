@@ -2,7 +2,6 @@ package org.ywzj.vehicle.client.render.animation.context;
 
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
-import net.minecraft.util.Mth;
 import org.ywzj.vehicle.client.render.animation.util.AnimationHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
@@ -53,18 +52,6 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
 
     public float getZRot() {
         return getEntity().getZRot();
-    }
-
-    public float getLerpXRot() {
-        return Mth.lerp(partialTick, getEntity().xRotO, getEntity().getXRot());
-    }
-
-    public float getLerpYRot() {
-        return Mth.lerp(partialTick, getEntity().yRotO, getEntity().getYRot());
-    }
-
-    public float getLerpZRot() {
-        return Mth.lerp(partialTick, getEntity().zRotO, getEntity().getZRot());
     }
 
     public boolean hasOwner(String id) {

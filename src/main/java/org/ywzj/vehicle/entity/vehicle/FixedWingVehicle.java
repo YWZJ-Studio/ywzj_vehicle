@@ -537,20 +537,20 @@ public class FixedWingVehicle extends AbstractVehicle
         this.entityData.set(PITCH_INPUT, value);
     }
 
-    public float getRollInput() {
-        return this.entityData.get(ROLL_INPUT);
-    }
-
-    public void setRollInput(float value) {
-        this.entityData.set(ROLL_INPUT, value);
-    }
-
     public float getYawInput() {
         return this.entityData.get(YAW_INPUT);
     }
 
     public void setYawInput(float value) {
         this.entityData.set(YAW_INPUT, value);
+    }
+
+    public float getRollInput() {
+        return this.entityData.get(ROLL_INPUT);
+    }
+
+    public void setRollInput(float value) {
+        this.entityData.set(ROLL_INPUT, value);
     }
 
     public boolean isLandingGearUp() {

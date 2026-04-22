@@ -42,6 +42,8 @@ public class RotaryWingVehicle extends AbstractVehicle
         implements IAnimationEntity<RotaryWingVehicle, RotaryWingVehicleContext> {
 
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.mass;
     public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
@@ -60,7 +62,10 @@ public class RotaryWingVehicle extends AbstractVehicle
     public String fastRopingDoorId;
     public HashMap<UUID, FastRopingContext> fastRopingContexts = new HashMap<>();
     public float propellerRotation;
-    public long lastRenderTime;
+    public float pitchInput;
+    public float pitchInputO;
+    public float rollInput;
+    public float rollInputO;
     public String landingGearPartId;
     public LandingGearUnit landingGear;
     private VehicleSound engineStartSoundInstance;
@@ -90,6 +95,8 @@ public class RotaryWingVehicle extends AbstractVehicle
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(COLLECTIVE_PITCH, 0f);
+        this.entityData.define(PITCH_INPUT, 0f);
+        this.entityData.define(ROLL_INPUT, 0f);
     }
 
     @Override
@@ -139,6 +146,27 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (!level().isClientSide()) {
             if (fastRoping) {
                 tickFastRoping();
+            }
+        }
+        tickInput();
+    }
+
+    private void tickInput() {
+        pitchInputO = pitchInput;
+        rollInputO = rollInput;
+        if (level().isClientSide()) {
+            pitchInput = getPitchInput();
+            rollInput = getRollInput();
+        } else {
+            if (controlUnit.left || controlUnit.right) {
+                setRollInput(controlUnit.left ? -1 : 1);
+            } else {
+                setRollInput(0);
+            }
+            if (controlUnit.forward || controlUnit.backward) {
+                setPitchInput(controlUnit.forward ? -1 : 1);
+            } else {
+                setPitchInput(Mth.clamp((controlUnit.xRot - getXRot()) / 30, -1f, 1f));
             }
         }
     }
@@ -462,6 +490,22 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     public float getCollectivePitch() {
         return entityData.get(COLLECTIVE_PITCH);
+    }
+
+    public float getPitchInput() {
+        return this.entityData.get(PITCH_INPUT);
+    }
+
+    public void setPitchInput(float value) {
+        this.entityData.set(PITCH_INPUT, value);
+    }
+
+    public float getRollInput() {
+        return this.entityData.get(ROLL_INPUT);
+    }
+
+    public void setRollInput(float value) {
+        this.entityData.set(ROLL_INPUT, value);
     }
 
     @Nullable
