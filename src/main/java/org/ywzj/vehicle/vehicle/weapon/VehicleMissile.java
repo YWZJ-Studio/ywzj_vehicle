@@ -73,9 +73,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
                 double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
                 AimContext currentAimContext = weaponUnit.aimContext();
                 Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
-                Vec3 start = new Vec3(x, y, z);
-                Vec3 end = start.add(targetVec.normalize().scale(1024));
-                missileEntity.targetPos = VectorUtil.hitPosition(vehicle, start, end);
+                missileEntity.targetPos = new Vec3(x, y, z).add(targetVec.normalize().scale(512));
                 missileEntity.targetVec = targetVec;
                 if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
                     missileEntity.targetEntity = weaponUnit.getLockedEntity();

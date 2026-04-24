@@ -1211,6 +1211,18 @@ public abstract class AbstractVehicle extends ContainerCraft
         return q;
     }
 
+    public Vector3f[] axes() {
+        Vector3f[] axes = new Vector3f[]{
+                new Vector3f(1, 0, 0),
+                new Vector3f(0, 1, 0),
+                new Vector3f(0, 0, 1)};
+        Quaternionf rotation = rotYXZ();
+        rotation.transform(axes[0]);
+        rotation.transform(axes[1]);
+        rotation.transform(axes[2]);
+        return axes;
+    }
+
     /**
      * 某世界坐标随载具三轴旋转后或前的新坐标
      */

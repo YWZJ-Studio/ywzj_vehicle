@@ -112,6 +112,7 @@ public class LocalVehiclePlayer {
         if (vehicle == null || vehicle.uav) {
             endureTick = 0;
             currentG = 1;
+            lastVelocity = Vec3.ZERO;
             return;
         } else {
             if (!OverloadHandler.isActive()) {
