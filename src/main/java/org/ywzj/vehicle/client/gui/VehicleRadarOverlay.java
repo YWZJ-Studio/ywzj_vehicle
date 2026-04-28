@@ -2,17 +2,17 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.render.util.Color;
@@ -29,10 +29,13 @@ import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import java.util.List;
 import java.util.Map;
 
-public class VehicleRadarOverlay implements IGuiOverlay {
+public class VehicleRadarOverlay implements LayeredDraw.Layer {
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
         WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
         if (weaponUnit == null) {
             return;
@@ -209,10 +212,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferbuilder = tesselator.getBuilder();
-
-        bufferbuilder.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder bufferbuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
         // 颜色拆解
         float a = (float)(color >> 24 & 255) / 255.0F;
@@ -221,17 +221,17 @@ public class VehicleRadarOverlay implements IGuiOverlay {
         float b = (float)(color & 255) / 255.0F;
 
         // 中心点
-        bufferbuilder.vertex(matrix, (float)cx, (float)cy, 0).color(r_col, g, b, a).endVertex();
+        bufferbuilder.addVertex(matrix, (float)cx, (float)cy, 0).setColor(r_col, g, b, a);
 
         for (int i = 0; i <= segments; i++) {
             float angle = startDeg + (endDeg - startDeg) * ((float)i / segments);
             float rad = -(float) Math.toRadians(angle + 90);
             float x = cx + (float)Math.cos(rad) * r;
             float y = cy + (float)Math.sin(rad) * r;
-            bufferbuilder.vertex(matrix, x, y, 0).color(r_col, g, b, a).endVertex();
+            bufferbuilder.addVertex(matrix, x, y, 0).setColor(r_col, g, b, a);
         }
 
-        tesselator.end();
+        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
         RenderSystem.disableBlend();
     }
 
@@ -243,11 +243,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferbuilder = tesselator.getBuilder();
-
-        // 使用 QUADS (四边形) 模式来模拟粗线
-        bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder bufferbuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         float a = (float)(color >> 24 & 255) / 255.0F;
         float r_col = (float)(color >> 16 & 255) / 255.0F;
@@ -272,15 +268,15 @@ public class VehicleRadarOverlay implements IGuiOverlay {
         // C: 终点右偏移   | D: 终点左偏移
 
         // 点 A (靠近圆心左侧)
-        bufferbuilder.vertex(matrix, cx - perpX * halfWidth, cy - perpY * halfWidth, 0).color(r_col, g, b, a).endVertex();
+        bufferbuilder.addVertex(matrix, cx - perpX * halfWidth, cy - perpY * halfWidth, 0).setColor(r_col, g, b, a);
         // 点 B (靠近圆心右侧)
-        bufferbuilder.vertex(matrix, cx + perpX * halfWidth, cy + perpY * halfWidth, 0).color(r_col, g, b, a).endVertex();
+        bufferbuilder.addVertex(matrix, cx + perpX * halfWidth, cy + perpY * halfWidth, 0).setColor(r_col, g, b, a);
         // 点 C (靠近边缘右侧)
-        bufferbuilder.vertex(matrix, cx + dirX * r + perpX * halfWidth, cy + dirY * r + perpY * halfWidth, 0).color(r_col, g, b, a).endVertex();
+        bufferbuilder.addVertex(matrix, cx + dirX * r + perpX * halfWidth, cy + dirY * r + perpY * halfWidth, 0).setColor(r_col, g, b, a);
         // 点 D (靠近边缘左侧)
-        bufferbuilder.vertex(matrix, cx + dirX * r - perpX * halfWidth, cy + dirY * r - perpY * halfWidth, 0).color(r_col, g, b, a).endVertex();
+        bufferbuilder.addVertex(matrix, cx + dirX * r - perpX * halfWidth, cy + dirY * r - perpY * halfWidth, 0).setColor(r_col, g, b, a);
 
-        tesselator.end();
+        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
     }
 
 }

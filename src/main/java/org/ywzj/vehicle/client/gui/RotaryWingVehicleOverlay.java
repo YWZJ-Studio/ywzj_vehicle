@@ -3,14 +3,14 @@ package org.ywzj.vehicle.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.joml.Matrix3f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -19,10 +19,13 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
-public class RotaryWingVehicleOverlay implements IGuiOverlay {
+public class RotaryWingVehicleOverlay implements LayeredDraw.Layer {
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
         if (!LocalVehiclePlayer.instance.onVehicle()) {
             return;
         }
@@ -102,12 +105,11 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
             heightY = (int) (centerY + 3 + (24 * -rotaryWingVehicle.getDeltaMovement().y));
             heightX = (int) (centerX + 123);
             pose.translate(heightX, heightY, 0);
-            BufferBuilder buf = Tesselator.getInstance().getBuilder();
-            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            buf.vertex(pose.last().pose(), 0, 0, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(pose.last().pose(), 6, 3, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(pose.last().pose(), 6, -3, 0).color(0, 255, 0, 255).endVertex();
-            Tesselator.getInstance().end();
+            var buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.addVertex(pose.last().pose(), 0, 0, 0).setColor(0, 255, 0, 255);
+            buf.addVertex(pose.last().pose(), 6, 3, 0).setColor(0, 255, 0, 255);
+            buf.addVertex(pose.last().pose(), 6, -3, 0).setColor(0, 255, 0, 255);
+            BufferUploader.drawWithShader(buf.buildOrThrow());
             guiGraphics.drawString(Minecraft.getInstance().font, String.valueOf((int) (rotaryWingVehicle.getDeltaMovement().y * 20)), 12, -4, Color.GREEN);
 
             RenderSystem.disableBlend();
@@ -162,12 +164,11 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
 
             // 速度线箭头
             float endY = -arrowLength - 3;
-            BufferBuilder buf = Tesselator.getInstance().getBuilder();
-            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            buf.vertex(pose.last().pose(), 0, endY, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(pose.last().pose(), -arrowSize / 2, endY + arrowSize, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(pose.last().pose(), arrowSize / 2, endY + arrowSize, 0).color(0, 255, 0, 255).endVertex();
-            Tesselator.getInstance().end();
+            var buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.addVertex(pose.last().pose(), 0, endY, 0).setColor(0, 255, 0, 255);
+            buf.addVertex(pose.last().pose(), -arrowSize / 2, endY + arrowSize, 0).setColor(0, 255, 0, 255);
+            buf.addVertex(pose.last().pose(), arrowSize / 2, endY + arrowSize, 0).setColor(0, 255, 0, 255);
+            BufferUploader.drawWithShader(buf.buildOrThrow());
 
             RenderSystem.disableBlend();
         }
@@ -203,12 +204,11 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
                     RenderSystem.enableBlend();
                     RenderSystem.defaultBlendFunc();
                     RenderSystem.setShader(GameRenderer::getPositionColorShader);
-                    BufferBuilder buf = Tesselator.getInstance().getBuilder();
-                    buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-                    buf.vertex(pose.last().pose(), -19, 0, 0).color(0, 255, 0, 255).endVertex();
-                    buf.vertex(pose.last().pose(), -19 -arrowSize / 2, -arrowSize / 2, 0).color(0, 255, 0, 255).endVertex();
-                    buf.vertex(pose.last().pose(), -19 -arrowSize / 2, arrowSize / 2, 0).color(0, 255, 0, 255).endVertex();
-                    Tesselator.getInstance().end();
+                    var buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                    buf.addVertex(pose.last().pose(), -19, 0, 0).setColor(0, 255, 0, 255);
+                    buf.addVertex(pose.last().pose(), -19 -arrowSize / 2, -arrowSize / 2, 0).setColor(0, 255, 0, 255);
+                    buf.addVertex(pose.last().pose(), -19 -arrowSize / 2, arrowSize / 2, 0).setColor(0, 255, 0, 255);
+                    BufferUploader.drawWithShader(buf.buildOrThrow());
                     RenderSystem.disableBlend();
                 }
                 pose.popPose();

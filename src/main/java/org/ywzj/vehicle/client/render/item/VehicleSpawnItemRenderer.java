@@ -10,10 +10,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.item.VehicleSpawnItem;
@@ -33,7 +35,7 @@ public class VehicleSpawnItemRenderer extends BlockEntityWithoutLevelRenderer {
     @Override
     public void renderByItem(@Nonnull ItemStack itemStack, @Nonnull ItemDisplayContext transformType, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
         if (itemStack.getItem() instanceof VehicleSpawnItem) {
-            CompoundTag tag = itemStack.getOrCreateTag();
+            CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
             ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString(TAG_VEHICLE_ID));
             var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
             poseStack.pushPose();
@@ -46,14 +48,14 @@ public class VehicleSpawnItemRenderer extends BlockEntityWithoutLevelRenderer {
                             poseStack.mulPose(Axis.YN.rotationDegrees(-45f));
                         }
                         VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(slotTexture));
-                        VEHICLE_SPAWN_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                        VEHICLE_SPAWN_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
                         poseStack.popPose();
                         return;
                     }
                 }
                 poseStack.translate(0.5, 0.5, 0.5);
                 VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(MissingTextureAtlasSprite.getLocation()));
-                VEHICLE_SPAWN_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                VEHICLE_SPAWN_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
             }
             poseStack.popPose();
         }

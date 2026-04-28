@@ -1,18 +1,22 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.util.VehicleExplosion;
-
-import java.util.function.Supplier;
-
 public record ServerVehicleExplosion(
         int sourceEntityId,
         double x,
         double y,
         double z,
         float radius
-) {
+) implements CustomPacketPayload {
+
+    public static final CustomPacketPayload.Type<ServerVehicleExplosion> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "server_vehicle_explosion"));
+    public static final StreamCodec<FriendlyByteBuf, ServerVehicleExplosion> STREAM_CODEC = StreamCodec.of((buf, msg) -> encode(msg, buf), ServerVehicleExplosion::decode);
 
     public static void encode(ServerVehicleExplosion msg, FriendlyByteBuf buf) {
         buf.writeInt(msg.sourceEntityId);
@@ -32,12 +36,13 @@ public record ServerVehicleExplosion(
         );
     }
 
-    public static void onServerMessageReceived(ServerVehicleExplosion msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> VehicleExplosion.effect(msg));
-        }
+    public static void handle(ServerVehicleExplosion msg, IPayloadContext ctxSupplier) {
+        ctxSupplier.enqueueWork(() -> VehicleExplosion.effect(msg));
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

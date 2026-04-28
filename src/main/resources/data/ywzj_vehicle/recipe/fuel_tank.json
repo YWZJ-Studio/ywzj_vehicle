@@ -1,11 +1,11 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    { "item": "ywzj_vehicle:fuel_tank" },
+    { "item": "minecraft:bucket" },
     { "item": "minecraft:coal" }
   ],
   "result": {
-    "item": "ywzj_vehicle:fuel_tank",
+    "id": "ywzj_vehicle:fuel_tank",
     "count": 1
   }
 }

@@ -14,11 +14,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
 
 import java.util.ArrayList;
@@ -66,10 +66,10 @@ public class VehicleDisplayToolScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawVehiclePreview(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void updateFilteredList(String filter) {
@@ -135,7 +135,7 @@ public class VehicleDisplayToolScreen extends Screen {
             poseStack.translate((double) width / 2 + 60, (double) height / 2, 512);
             poseStack.mulPose(Axis.XP.rotationDegrees(165));
             poseStack.mulPose(Axis.YP.rotationDegrees(45));
-            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             dispatcher.setRenderShadow(false);
             Lighting.setupForEntityInInventory();
@@ -191,16 +191,16 @@ public class VehicleDisplayToolScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (filteredVariableDisplayIds.size() > VISIBLE_ITEMS) {
-            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(delta), 0, filteredVariableDisplayIds.size() - VISIBLE_ITEMS);
+            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(deltaY), 0, filteredVariableDisplayIds.size() - VISIBLE_ITEMS);
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     private void onDisplaySelected(ResourceLocation displayId) {
-        Channel.CHANNEL.sendToServer(new ClientVehicleChangeDisplay(vehicle.getId(), displayId));
+        PacketDistributor.sendToServer(new ClientVehicleChangeDisplay(vehicle.getId(), displayId));
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 

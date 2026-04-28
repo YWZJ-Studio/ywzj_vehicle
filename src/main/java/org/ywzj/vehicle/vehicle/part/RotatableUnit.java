@@ -1,13 +1,14 @@
 package org.ywzj.vehicle.vehicle.part;
 
 import com.mojang.math.Axis;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Math;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -249,16 +250,16 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag tag = super.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        CompoundTag tag = super.serializeNBT(provider);
         tag.putFloat("xRot", this.xRot);
         tag.putFloat("yRot", this.yRot);
         return tag;
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        super.deserializeNBT(provider, nbt);
         this.xRot = nbt.getFloat("xRot");
         this.xRotO = this.xRot;
         this.xAimRot = this.xRot;

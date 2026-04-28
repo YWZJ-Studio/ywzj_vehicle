@@ -1,9 +1,8 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -16,8 +15,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
+import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BlockRayTrace;
@@ -28,7 +26,7 @@ import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 import java.util.List;
 
-public abstract class AmmoEntity extends Projectile implements IEntityAdditionalSpawnData {
+public abstract class AmmoEntity extends Projectile implements IEntityWithComplexSpawn {
 
     public AbstractVehicle vehicle;
     private ResourceLocation weaponId;
@@ -48,6 +46,8 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         super(pEntityType, pLevel);
         this.weaponId = weaponId;
     }
+
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
 
     @Override
     public void tick() {
@@ -105,29 +105,21 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     }
 
     @Override
-    protected void defineSynchedData() {}
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
-
-    @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeComponent(name);
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
+        buffer.writeUtf(name.getString());
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
         buffer.writeResourceLocation(weaponId);
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
-        name = additionalData.readComponent();
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
+        name = Component.translatable(additionalData.readUtf());
         additionalData.readInt();
         weaponId = additionalData.readResourceLocation();
     }
 
     @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYRot, float pXRot, int pLerpSteps, boolean pTeleport) {
+    public void lerpTo(double pX, double pY, double pZ, float pYRot, float pXRot, int pLerpSteps) {
         this.lerpX = pX;
         this.lerpY = pY;
         this.lerpZ = pZ;

@@ -1,15 +1,17 @@
 package org.ywzj.vehicle.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -21,8 +23,8 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 
@@ -32,6 +34,13 @@ import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_DATA;
 import static org.ywzj.vehicle.item.FigureBoxItem.ENTITY_TYPE;
 
 public class FigureBoxBlock extends HorizontalEntityBlock {
+
+    public static final MapCodec<FigureBoxBlock> CODEC = simpleCodec(FigureBoxBlock::new);
+
+    @Override
+    public MapCodec<FigureBoxBlock> codec() {
+        return CODEC;
+    }
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
@@ -47,10 +56,10 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
-            if (level.isClientSide) {
+            if (level.isClientSide()) {
                 openScreen(figureBoxBlockEntity);
                 return InteractionResult.SUCCESS;
             }
@@ -64,12 +73,12 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
             ItemStack itemStack = AllItems.FIGURE_BOX.get().getDefaultInstance().copy();
             Entity entity = figureBoxBlockEntity.getEntity();
             if (entity != null) {
-                CompoundTag tag = itemStack.getOrCreateTag();
+                CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                 CompoundTag entityData = new CompoundTag();
                 entity.saveWithoutId(entityData);
                 tag.putString(ENTITY_TYPE, EntityType.getKey(entity.getType()).toString());
                 tag.put(ENTITY_DATA, entityData);
-                itemStack.setTag(tag);
+                itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             }
             return List.of(itemStack);
         }

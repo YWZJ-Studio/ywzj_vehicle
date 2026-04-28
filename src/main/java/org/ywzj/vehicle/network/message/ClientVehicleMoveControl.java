@@ -1,13 +1,17 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
 
-import java.util.function.Supplier;
+public class ClientVehicleMoveControl implements CustomPacketPayload {
 
-public class ClientVehicleMoveControl {
-
+    public static final StreamCodec<FriendlyByteBuf, ClientVehicleMoveControl> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ClientVehicleMoveControl::decode);
+    public static final CustomPacketPayload.Type<ClientVehicleMoveControl> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "vehicle_move_control"));
     public int vehicleEntityId;
     public boolean forward;
     public boolean backward;
@@ -70,10 +74,13 @@ public class ClientVehicleMoveControl {
         buf.writeBoolean(yRotKeep);
     }
 
-    public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        context.enqueueWork(() -> ControlUnit.onClientMessageReceived(message, ctxSupplier));
+    public static void handle(ClientVehicleMoveControl message, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> ControlUnit.onClientMessageReceived(message, ctx));
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

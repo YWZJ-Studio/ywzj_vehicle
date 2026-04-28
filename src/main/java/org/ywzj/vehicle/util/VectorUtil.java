@@ -6,11 +6,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.*;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-@Mod.EventBusSubscriber(Dist.CLIENT)
+@EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
 
     public static double fov = 70;
@@ -37,6 +37,9 @@ public class VectorUtil {
     // 感谢 Minecraft-Ping-Wheel 开源
     // https://github.com/LukenSkyne/Minecraft-Ping-Wheel/blob/138295954dab9d2451ad19e16d8d413ef018a2d8/common/src/main/java/nx/pingwheel/common/helper/MathUtils.java#L15
     public static Vec3 worldToScreen(Vec3 pos) {
+        if (pos == null) {
+            return Vec3.ZERO;
+        }
         var mc = Minecraft.getInstance();
         var window = mc.getWindow();
         var camera = mc.gameRenderer.getMainCamera();

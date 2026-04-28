@@ -9,8 +9,6 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.mozillaa.javascript.Context;
 import org.mozillaa.javascript.ContextFactory;
@@ -23,7 +21,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-@OnlyIn(Dist.CLIENT)
 public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLocation, Script>> {
 
     private final FileToIdConverter filetoidconverter = new FileToIdConverter("scripts", ".js");

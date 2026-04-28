@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -15,9 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.loading.FMLLoader;
 import org.apache.commons.lang3.time.StopWatch;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
@@ -41,11 +40,11 @@ public class ReloadCommand {
     private static int reload(CommandContext<CommandSourceStack> context) {
         StopWatch watch = StopWatch.createStarted();
         {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            if (FMLLoader.getDist().isClient()) {
                 LocalPlayer player = Minecraft.getInstance().player;
                 ClientAssetsManager.INSTANCE.reload(Minecraft.getInstance().getResourceManager());
                 CreativeModeTabs.tryRebuildTabContents(player.connection.enabledFeatures(), true, player.level().registryAccess());
-            });
+            }
             MinecraftServer server = context.getSource().getServer();
             CommonAssetsManager.INSTANCE.reload(server.getResourceManager());
             reloadAllVehicles(context.getSource());
@@ -81,7 +80,7 @@ public class ReloadCommand {
             }
         }
         for (VehicleSnapshot snapshot : snapshots) {
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(snapshot.type());
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(snapshot.type());
             if (type == null) {
                 continue;
             }

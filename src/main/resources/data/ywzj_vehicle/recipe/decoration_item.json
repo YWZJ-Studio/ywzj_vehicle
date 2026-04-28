@@ -7,7 +7,7 @@
     { "tag": "minecraft:wool" }
   ],
   "result": {
-    "item": "ywzj_vehicle:decoration_item",
+    "id": "ywzj_vehicle:decoration_item",
     "count": 1
   }
 }

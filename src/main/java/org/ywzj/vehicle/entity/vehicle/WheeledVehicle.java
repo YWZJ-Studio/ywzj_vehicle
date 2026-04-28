@@ -76,10 +76,10 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(FORWARD_SPEED, 0f);
-        this.entityData.define(TURN_ANGLE, 0f);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(FORWARD_SPEED, 0f);
+        builder.define(TURN_ANGLE, 0f);
     }
 
     @Override

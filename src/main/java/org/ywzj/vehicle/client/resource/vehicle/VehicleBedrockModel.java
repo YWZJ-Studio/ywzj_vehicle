@@ -6,8 +6,8 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.Bedr
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.render.ModRenderTypes;
@@ -80,10 +80,9 @@ public class VehicleBedrockModel extends BedrockModel {
         }
         setSpecialBoneVisible(true);
         for (var entry : specialBoneEntries) {
-            //todo
             VertexConsumer buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
             poseStack.pushPose();
-            poseStack.mulPoseMatrix(getGlobalTransform(entry.bone));
+            poseStack.last().pose().mul(getGlobalTransform(entry.bone));
             entry.bone.render(poseStack, buffer, packedLight, packedOverlay);
             poseStack.popPose();
         }

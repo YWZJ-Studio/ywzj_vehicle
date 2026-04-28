@@ -83,13 +83,12 @@ public class RopeRenderer extends EntityRenderer<Rope> {
     }
 
     private void addVertex(VertexConsumer builder, Matrix4f matrix, float x, float y, float z, float u, float v, int light) {
-        builder.vertex(matrix, x, y, z)
-                .color(255, 255, 255, 255)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(light)
-                .normal(0, 1, 0)
-                .endVertex();
+        builder.addVertex(matrix, x, y, z)
+                .setColor(255, 255, 255, 255)
+                .setUv(u, v)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setUv2(light & 0xFFFF, light >> 16 & 0xFFFF)
+                .setNormal(0, 1, 0);
     }
 
     @Override

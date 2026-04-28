@@ -2,11 +2,13 @@ package org.ywzj.vehicle.item;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraft.world.item.component.CustomData;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.client.render.item.PlainTextureItemRenderer;
 
 import java.util.function.Consumer;
@@ -19,13 +21,14 @@ public class PlainTextureItem extends Item {
 
     public ItemStack createInstance(ResourceLocation textureLocation) {
         ItemStack itemStack = new ItemStack(this);
-        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         tag.putString("textureLocation", textureLocation.toString());
-        itemStack.setTag(tag);
+        itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return itemStack;
     }
 
     @Override
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 

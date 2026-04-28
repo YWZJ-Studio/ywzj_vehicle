@@ -1,0 +1,39 @@
+{
+  "type": "ywzj_vehicle:vehicle_printing",
+  "materials": [
+    {
+      "count": 96,
+      "ingredient": { "tag": "c:ingots/iron" }
+    },
+    {
+      "count": 48,
+      "ingredient": { "tag": "c:ingots/copper" }
+    },
+    {
+      "count": 32,
+      "ingredient": { "item": "minecraft:redstone" }
+    },
+    {
+      "count": 12,
+      "ingredient": { "item": "minecraft:glass_pane" }
+    },
+    {
+      "count": 2,
+      "ingredient": { "item": "minecraft:furnace" }
+    },
+    {
+      "count": 4,
+      "ingredient": { "item": "minecraft:piston" }
+    }
+  ],
+  "result": {
+    "id": "ywzj_vehicle:vehicle_spawn_item",
+    "count": 1,
+    "components": {
+      "minecraft:custom_data": {
+        "YwzjVehicleId": "ywzj_vehicle:dump_truck"
+      }
+    }
+  },
+  "printingTime": 1000
+}

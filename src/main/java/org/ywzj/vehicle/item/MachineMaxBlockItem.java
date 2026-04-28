@@ -5,7 +5,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.client.render.item.MachineMaxBlockItemRenderer;
 
 import java.util.function.Consumer;
@@ -17,6 +17,7 @@ public class MachineMaxBlockItem extends BlockItem {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 

@@ -1,11 +1,9 @@
 package org.ywzj.vehicle.api.scripts;
 
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 
 public enum ParticleUtil {
@@ -15,10 +13,10 @@ public enum ParticleUtil {
 
     public ParticleOptionsWrapper buildParticleOptions(String particleName, String params) {
         ResourceLocation location = YwzjVehicle.resourceLocation(particleName);
-        if (!ForgeRegistries.PARTICLE_TYPES.containsKey(location)) {
+        if (!net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.containsKey(location)) {
             return null;
         }
-        var type = ForgeRegistries.PARTICLE_TYPES.getValue(YwzjVehicle.resourceLocation(particleName));
+        var type = net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.get(YwzjVehicle.resourceLocation(particleName));
         if (type == null) {
             return null;
         }
@@ -30,7 +28,8 @@ public enum ParticleUtil {
     }
 
     private static <T extends ParticleOptions> T readParticle(String params, ParticleType<T> pType) throws CommandSyntaxException {
-        return pType.getDeserializer().fromCommand(pType, new StringReader(params));
+        // TODO: getDeserializer() removed in 1.21.1 — migrate to codec system
+        return null; // return pType.getDeserializer().fromCommand(pType, new StringReader(params));
     }
 
 }

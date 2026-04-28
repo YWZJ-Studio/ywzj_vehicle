@@ -2,10 +2,10 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     { "item": "minecraft:iron_ingot" },
-    { "item": "minecraft:fire_charge" }
+    { "item": "minecraft:gunpowder" }
   ],
   "result": {
-    "item": "ywzj_vehicle:repair_tool",
-    "count": 1
+    "id": "ywzj_vehicle:ammo_decoy_flare",
+    "count": 8
   }
 }

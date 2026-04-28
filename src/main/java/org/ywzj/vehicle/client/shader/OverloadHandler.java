@@ -6,15 +6,15 @@ import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.util.PostPassesGetter;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class OverloadHandler implements ResourceManagerReloadListener {
 
     public static final ResourceLocation CRT_EFFECT_PATH = YwzjVehicle.resourceLocation("ywzj_vehicle:shaders/post/overload.json");
@@ -73,7 +73,7 @@ public class OverloadHandler implements ResourceManagerReloadListener {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             Minecraft minecraft = Minecraft.getInstance();
             ensureChain(minecraft);
-            postChain.process(event.getPartialTick());
+            postChain.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
             if (postChain instanceof PostPassesGetter getter) {
                 for (PostPass pass : getter.getPasses()) {
                     float stamina = LocalVehiclePlayer.instance.stamina;

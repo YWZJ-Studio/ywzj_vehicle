@@ -8,7 +8,7 @@
     { "item": "minecraft:gunpowder" }
   ],
   "result": {
-    "item": "ywzj_vehicle:ammo_artillery",
+    "id": "ywzj_vehicle:ammo_artillery",
     "count": 4
   }
 }

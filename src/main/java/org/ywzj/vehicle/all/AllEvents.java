@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.all;
 
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -13,37 +14,35 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.event.AddPackFindersEvent;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.EntityMountEvent;
-import net.minecraftforge.event.entity.EntityTeleportEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.ExplosionEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.server.ServerLifecycleHooks;
-import org.ywzj.vehicle.YwzjVehicle;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityMountEvent;
+import net.neoforged.neoforge.event.entity.EntityTeleportEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.ExplosionEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
-import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.command.RootCommand;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
+import org.ywzj.vehicle.item.FuelTankItem;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerBroadcastEntities;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
@@ -59,18 +58,30 @@ import java.util.List;
 
 public class AllEvents {
 
-    @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber
     public static class AllModEvents {
+
+        @SubscribeEvent
+        public static void onRegisterCaps(RegisterCapabilitiesEvent event) {
+            event.registerItem(Capabilities.FluidHandler.ITEM, (stack, context) -> {
+                        if (stack.getItem() instanceof FuelTankItem) {
+                            return new FuelTankItem.FuelTankFluidHandler(
+                                    stack,
+                                    stack.getMaxDamage(),
+                                    AllFluids.FUEL_SOURCE.get(),
+                                    stack.getMaxDamage()
+                            );
+                        }
+                        return null;
+                    },
+                    AllItems.FUEL_TANK.get()
+            );
+        }
 
         @SubscribeEvent
         public static void onAddPackFinders(AddPackFindersEvent event) {
             event.addRepositorySource(VehiclePackLoader.INSTANCE);
         }
-
-    }
-
-    @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-    public static class AllForgeEvents {
 
         @SubscribeEvent
         public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -166,9 +177,9 @@ public class AllEvents {
         }
 
         @SubscribeEvent
-        public static void onLivingHurt(LivingHurtEvent event) {
+        public static void onLivingHurt(LivingDamageEvent.Pre event) {
             if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle && vehicle.protectPassenger) {
-                event.setCanceled(true);
+                event.setNewDamage(0);
             }
         }
 
@@ -180,9 +191,9 @@ public class AllEvents {
                 if (entity instanceof AbstractVehicle) {
                     iterator.remove();
                     Explosion explosion = event.getExplosion();
-                    Vec3 explosionPos = explosion.getPosition();
+                    Vec3 explosionPos = explosion.center();
                     float explosionRadius = ((ExplosionAccessor) explosion).getRadius() * 2.0F;
-                    if (!entity.ignoreExplosion()) {
+                    if (!entity.ignoreExplosion(explosion)) {
                         double distanceRatio = Math.sqrt(entity.distanceToSqr(explosionPos)) / explosionRadius;
                         if (distanceRatio <= 1.0D) {
                             double dx = entity.getX() - explosionPos.x;
@@ -193,7 +204,7 @@ public class AllEvents {
                                 double visibilityFactor = Explosion.getSeenPercent(explosionPos, entity);
                                 double impactStrength = (1.0D - distanceRatio) * visibilityFactor;
                                 float damage = (float) ((int) ((impactStrength * impactStrength + impactStrength) / 2.0D * 7.0D * explosionRadius + 1.0D));
-                                entity.hurt(explosion.getDamageSource(), damage);
+                                entity.hurt(entity.level().damageSources().explosion(explosion), damage);
                             }
                         }
                     }
@@ -201,14 +212,6 @@ public class AllEvents {
             }
         }
 
-        @SubscribeEvent
-        public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-            if (event.getObject() instanceof AbstractVehicle) {
-                event.addCapability(YwzjVehicle.modLocation("vehicle_capability"), new VehicleCapabilityProvider());
-            }
-        }
-
-        @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void onVehicleFire(VehicleFireEvent.Post event) {
             if (event.isClientSide()) {
@@ -221,15 +224,12 @@ public class AllEvents {
         public static void onHitVehicle(HitVehicleEvent event) {
             ServerPlayer serverPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(event.shooterUuid);
             if (serverPlayer != null) {
-                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerHitVehicleEvent(event));
+                PacketDistributor.sendToPlayer(serverPlayer, new ServerHitVehicleEvent(event));
             }
         }
 
         @SubscribeEvent
-        public static void onServerTick(TickEvent.ServerTickEvent event) {
-            if (event.phase != TickEvent.Phase.END) {
-                return;
-            }
+        public static void onServerTick(ServerTickEvent.Post event) {
             MinecraftServer server = event.getServer();
             for (ServerLevel level : server.getAllLevels()) {
                 VehicleExplosion.tick(level);
@@ -247,7 +247,7 @@ public class AllEvents {
                                 || target instanceof MissileEntity
                                 || target instanceof TargetObstruction
                                 || AllConfigs.serverBroadcastEntityWhitelist.stream()
-                                .anyMatch(entityType -> ForgeRegistries.ENTITY_TYPES.getKey(target.getType()).toString().matches(entityType))) {
+                                .anyMatch(entityType -> BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString().matches(entityType))) {
                             entities.add(target);
                         }
                     }
@@ -270,7 +270,7 @@ public class AllEvents {
                     for (ServerPlayer player : level.players()) {
                         Entity vehicle = player.getVehicle();
                         if (vehicle instanceof AbstractVehicle) {
-                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverBroadcastEntities);
+                            PacketDistributor.sendToPlayer(player, serverBroadcastEntities);
                         }
                     }
                 }

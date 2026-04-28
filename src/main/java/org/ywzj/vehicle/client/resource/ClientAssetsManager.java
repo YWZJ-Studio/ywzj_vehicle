@@ -9,8 +9,8 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -90,10 +90,10 @@ public enum ClientAssetsManager {
         vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
             try {
                 if (vehicleDisplay.getTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
+                    Minecraft.getInstance().getTextureManager().register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
                 }
                 if (vehicleDisplay.getSlotTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(vehicleDisplay.getSlotTexture(), new SimpleTexture(vehicleDisplay.getSlotTexture()));
+                    Minecraft.getInstance().getTextureManager().register(vehicleDisplay.getSlotTexture(), new SimpleTexture(vehicleDisplay.getSlotTexture()));
                 }
             } catch (Exception exception) {
                 exception.printStackTrace();
@@ -102,10 +102,10 @@ public enum ClientAssetsManager {
         decorationDisplayManager.getDisplayMap().values().forEach(decorationDisplay -> {
             try {
                 if (decorationDisplay.getTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(decorationDisplay.getTexture(), new SimpleTexture(decorationDisplay.getTexture()));
+                    Minecraft.getInstance().getTextureManager().register(decorationDisplay.getTexture(), new SimpleTexture(decorationDisplay.getTexture()));
                 }
                 if (decorationDisplay.getSlotTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(decorationDisplay.getSlotTexture(), new SimpleTexture(decorationDisplay.getSlotTexture()));
+                    Minecraft.getInstance().getTextureManager().register(decorationDisplay.getSlotTexture(), new SimpleTexture(decorationDisplay.getSlotTexture()));
                 }
             } catch (Exception exception) {
                 exception.printStackTrace();

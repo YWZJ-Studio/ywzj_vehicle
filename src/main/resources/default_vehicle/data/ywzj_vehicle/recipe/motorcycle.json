@@ -1,0 +1,35 @@
+{
+  "type": "ywzj_vehicle:vehicle_printing",
+  "materials": [
+    {
+      "count": 64,
+      "ingredient": { "tag": "c:ingots/iron" }
+    },
+    {
+      "count": 32,
+      "ingredient": { "tag": "c:ingots/copper" }
+    },
+    {
+      "count": 16,
+      "ingredient": { "item": "minecraft:redstone" }
+    },
+    {
+      "count": 4,
+      "ingredient": { "item": "minecraft:glass_pane" }
+    },
+    {
+      "count": 1,
+      "ingredient": { "item": "minecraft:furnace" }
+    }
+  ],
+  "result": {
+    "id": "ywzj_vehicle:vehicle_spawn_item",
+    "count": 1,
+    "components": {
+      "minecraft:custom_data": {
+        "YwzjVehicleId": "ywzj_vehicle:motorcycle"
+      }
+    }
+  },
+  "printingTime": 600
+}

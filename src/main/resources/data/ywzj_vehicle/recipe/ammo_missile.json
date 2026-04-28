@@ -7,7 +7,7 @@
     { "item": "minecraft:redstone" }
   ],
   "result": {
-    "item": "ywzj_vehicle:ammo_missile",
+    "id": "ywzj_vehicle:ammo_missile",
     "count": 4
   }
 }

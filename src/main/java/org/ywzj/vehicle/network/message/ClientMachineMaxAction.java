@@ -2,12 +2,15 @@ package org.ywzj.vehicle.network.message;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
 import org.ywzj.vehicle.recipe.VehiclePrintingRecipe;
@@ -15,10 +18,11 @@ import org.ywzj.vehicle.recipe.VehiclePrintingRecipe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
-public class ClientMachineMaxAction {
+public class ClientMachineMaxAction implements CustomPacketPayload {
 
+    public static final StreamCodec<FriendlyByteBuf, ClientMachineMaxAction> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ClientMachineMaxAction::decode);
+    public static final CustomPacketPayload.Type<ClientMachineMaxAction> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "machine_max_action"));
     public BlockPos blockPos;
     public ResourceLocation craftingVehicleId;
     public Action action;
@@ -39,33 +43,26 @@ public class ClientMachineMaxAction {
         buf.writeEnum(action);
     }
 
-    public static void onClientMessageReceived(ClientMachineMaxAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        ctxSupplier.get().enqueueWork(() -> {
-            ServerPlayer serverPlayer = context.getSender();
-            if (serverPlayer == null) {
-                return;
-            }
-            Level level = serverPlayer.level();
-            if (level.getBlockEntity(message.blockPos) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {
-                if (message.action == Action.CRAFT) {
-                    if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
-                        return;
-                    }
-                    Optional<? extends Recipe<?>> recipeOptional = level.getRecipeManager().byKey(message.craftingVehicleId);
-                    if (!recipeOptional.isPresent()) {
-                        return;
-                    }
-                    if (recipeOptional.get() instanceof VehiclePrintingRecipe vehiclePrintingRecipe) {
-                        if (hasIngredients(serverPlayer, vehiclePrintingRecipe)) {
-                            consumeIngredients(serverPlayer, vehiclePrintingRecipe);
-                            machineMaxBlockEntity.craft(message.craftingVehicleId, vehiclePrintingRecipe);
-                        }
+    public static void handle(ClientMachineMaxAction message, IPayloadContext ctx) {
+        ServerPlayer serverPlayer = (ServerPlayer) ctx.player();
+        Level level = serverPlayer.level();
+        if (level.getBlockEntity(message.blockPos) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {
+            if (message.action == Action.CRAFT) {
+                if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
+                    return;
+                }
+                Optional<RecipeHolder<?>> recipeOptional = level.getRecipeManager().byKey(message.craftingVehicleId);
+                if (!recipeOptional.isPresent()) {
+                    return;
+                }
+                if (recipeOptional.get().value() instanceof VehiclePrintingRecipe vehiclePrintingRecipe) {
+                    if (hasIngredients(serverPlayer, vehiclePrintingRecipe)) {
+                        consumeIngredients(serverPlayer, vehiclePrintingRecipe);
+                        machineMaxBlockEntity.craft(message.craftingVehicleId, vehiclePrintingRecipe);
                     }
                 }
             }
-        });
+        }
     }
 
     private static boolean hasIngredients(ServerPlayer player, VehiclePrintingRecipe recipe) {
@@ -116,6 +113,11 @@ public class ClientMachineMaxAction {
 
     public enum Action {
         CRAFT
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

@@ -1,23 +1,21 @@
 package org.ywzj.vehicle.custom.serialize;
 
 import com.google.gson.*;
-import net.minecraft.util.GsonHelper;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.crafting.CraftingHelper;
 
 import java.lang.reflect.Type;
 
 public class IngredientSerializer implements JsonDeserializer<Ingredient> {
+
+    @Override
     public Ingredient deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx) throws JsonParseException {
-        if (GsonHelper.isStringValue(json.getAsJsonPrimitive())) {
-            String str = json.getAsString();
-
-            JsonObject object = new JsonObject();
-            object.addProperty("type", "minecraft:item");
-            object.addProperty("item", str);
-
-            return CraftingHelper.getIngredient(object, false);
+        if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("item", json.getAsString());
+            return Ingredient.CODEC.parse(JsonOps.INSTANCE, obj).getOrThrow(JsonParseException::new);
         }
-        return CraftingHelper.getIngredient(json, false);
+        return Ingredient.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow(JsonParseException::new);
     }
+
 }

@@ -1,38 +1,41 @@
 package org.ywzj.vehicle.all;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.particle.ExplosionCloudOption;
 
 public class AllParticleTypes {
-    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, YwzjVehicle.MOD_ID);
 
-    public static final RegistryObject<ParticleType<DustSmokeOption>> DUST_SMOKE = PARTICLE_TYPES.register("dust_smoke",
-            () -> createOptions(DustSmokeOption.CODEC, DustSmokeOption.DESERIALIZER)
+    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(net.minecraft.core.registries.Registries.PARTICLE_TYPE, YwzjVehicle.MOD_ID);
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<DustSmokeOption>> DUST_SMOKE = PARTICLE_TYPES.register("dust_smoke",
+            () -> createOptions(DustSmokeOption.CODEC, DustSmokeOption.STREAM_CODEC)
     );
 
-    public static final RegistryObject<SimpleParticleType> DUST_STONE = PARTICLE_TYPES.register("dust_stone",
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> DUST_STONE = PARTICLE_TYPES.register("dust_stone",
             () -> new SimpleParticleType(false)
     );
 
-    public static final RegistryObject<SimpleParticleType> TRACK = PARTICLE_TYPES.register("track",
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> TRACK = PARTICLE_TYPES.register("track",
             () -> new SimpleParticleType(false)
     );
 
-    public static final RegistryObject<SimpleParticleType> SMOKE_CLOUD = PARTICLE_TYPES.register("smoke_cloud",
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SMOKE_CLOUD = PARTICLE_TYPES.register("smoke_cloud",
             () -> new SimpleParticleType(true));
 
-    public static final RegistryObject<ParticleType<ExplosionCloudOption>> EXPLOSION_CLOUD = PARTICLE_TYPES.register("explosion_cloud",
-            () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.DESERIALIZER)
+    public static final DeferredHolder<ParticleType<?>, ParticleType<ExplosionCloudOption>> EXPLOSION_CLOUD = PARTICLE_TYPES.register("explosion_cloud",
+            () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.STREAM_CODEC)
     );
 
     public static void register(IEventBus eventBus) {
@@ -40,10 +43,13 @@ public class AllParticleTypes {
     }
 
     @SuppressWarnings("deprecation")
-    public static <T extends ParticleOptions> ParticleType<T> createOptions(Codec<T> codec, ParticleOptions.Deserializer<T> deserializer) {
-        return new ParticleType<>(false, deserializer) {
-            public @NotNull Codec<T> codec() {
-                return codec;
+    public static <T extends ParticleOptions> ParticleType<T> createOptions(Codec<T> codec, StreamCodec<? super FriendlyByteBuf, T> streamCodec) {
+        return new ParticleType<>(false) {
+            public @NotNull MapCodec<T> codec() {
+                return codec.fieldOf("particle");
+            }
+            public @NotNull StreamCodec<? super FriendlyByteBuf, T> streamCodec() {
+                return streamCodec;
             }
         };
     }

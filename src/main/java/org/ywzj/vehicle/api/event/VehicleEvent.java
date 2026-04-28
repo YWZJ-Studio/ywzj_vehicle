@@ -1,9 +1,10 @@
 package org.ywzj.vehicle.api.event;
 
-import net.minecraftforge.event.entity.EntityEvent;
+import net.neoforged.bus.api.ICancellableEvent;
+import net.neoforged.neoforge.event.entity.EntityEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-public class VehicleEvent extends EntityEvent {
+public abstract class VehicleEvent extends EntityEvent implements ICancellableEvent {
 
     private final AbstractVehicle vehicle;
 

@@ -13,12 +13,12 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 
@@ -121,7 +121,7 @@ public class DecorationSettingsScreen extends Screen {
         clientDecorationAction.selfYRot = decorationUnit.selfYRot;
         clientDecorationAction.selfZRot = decorationUnit.selfZRot;
         clientDecorationAction.offsetFromBone = decorationUnit.offsetFromBone;
-        Channel.CHANNEL.sendToServer(clientDecorationAction);
+        PacketDistributor.sendToServer(clientDecorationAction);
     }
 
     private void removeDecoration() {
@@ -133,12 +133,13 @@ public class DecorationSettingsScreen extends Screen {
         }
         clientDecorationAction.vehicleId = decorationUnit.getVehicle().getId();
         clientDecorationAction.decorationUnitId = decorationUnit.getId();
-        Channel.CHANNEL.sendToServer(clientDecorationAction);
+        PacketDistributor.sendToServer(clientDecorationAction);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         int centerX = this.width / 4;
         int startY = this.height / 2 - 128;
         int leftShift = 105;
@@ -151,7 +152,6 @@ public class DecorationSettingsScreen extends Screen {
         guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, Color.WHITE);
         guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, Color.WHITE);
         drawPreview(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void drawPreview(GuiGraphics guiGraphics) {
@@ -162,7 +162,7 @@ public class DecorationSettingsScreen extends Screen {
             poseStack.translate((float) width / 2 + 80 + viewShiftX, (float) height / 2 + viewShiftY, 512);
             double length = vehicle.getStructureLength();
             float scale = 300 * (float) (1 / length / 1.2) * this.viewScale;
-            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
             poseStack.mulPose(Axis.XP.rotationDegrees(viewRotX));
             poseStack.mulPose(Axis.YP.rotationDegrees(viewRotY));
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
@@ -202,12 +202,12 @@ public class DecorationSettingsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double pMouseX, double pMouseY, double pDelta) {
-        boolean isHandled = super.mouseScrolled(pMouseX, pMouseY, pDelta);
+    public boolean mouseScrolled(double pMouseX, double pMouseY, double pDeltaX, double pDeltaY) {
+        boolean isHandled = super.mouseScrolled(pMouseX, pMouseY, pDeltaX, pDeltaY);
         if (!isHandled) {
-            if (pDelta > 0) {
+            if (pDeltaY > 0) {
                 this.viewScale *= 1.1f;
-            } else if (pDelta < 0) {
+            } else if (pDeltaY < 0) {
                 this.viewScale *= 0.9f;
             }
             this.viewScale = Math.max(0.1f, Math.min(this.viewScale, 10.0f));

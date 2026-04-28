@@ -3,6 +3,7 @@ package org.ywzj.vehicle.blockentity;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -116,8 +117,8 @@ public class MachineMaxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         if (craftingVehicleId != null) {
             tag.putString("craftingVehicleId", craftingVehicleId.toString());
         }
@@ -128,8 +129,8 @@ public class MachineMaxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains("craftingVehicleId")) {
             craftingVehicleId = YwzjVehicle.resourceLocation(tag.getString("craftingVehicleId"));
             if (level != null && level.isClientSide()) {
@@ -189,15 +190,15 @@ public class MachineMaxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
+        saveAdditional(tag, registries);
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        loadAdditional(tag, registries);
     }
 
     @Override
@@ -206,8 +207,8 @@ public class MachineMaxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
-        handleUpdateTag(packet.getTag());
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);
     }
 
 }

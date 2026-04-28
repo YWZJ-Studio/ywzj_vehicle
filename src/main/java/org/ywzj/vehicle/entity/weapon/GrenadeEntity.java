@@ -4,9 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -24,16 +22,14 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.NotNull;
+import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 
 import java.util.function.Predicate;
 
-public abstract class GrenadeEntity extends Projectile implements IEntityAdditionalSpawnData {
+public abstract class GrenadeEntity extends Projectile implements IEntityWithComplexSpawn {
 
     protected static final EntityDataAccessor<Boolean> EXPLODED = SynchedEntityData.defineId(GrenadeEntity.class, EntityDataSerializers.BOOLEAN);
     private ResourceLocation weaponId;
@@ -56,14 +52,8 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         super(type, level);
     }
 
-    protected void defineSynchedData() {
-        this.getEntityData().define(EXPLODED, false);
-    }
-
-    @NotNull
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(EXPLODED, false);
     }
 
     @Override
@@ -171,7 +161,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
             case X -> deltaMovement.multiply(-factor/1.5, factor, factor);
             case Y -> {
                 Vec3 newVec = deltaMovement.multiply(factor, -factor/2.5, factor);
-                if (newVec.y() < this.getGravity()) {
+                if (newVec.y() < this.getGrenadeGravity()) {
                     newVec = newVec.multiply(1, 0, 1);
                 }
                 yield newVec;
@@ -227,7 +217,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         this.setDeltaMovement(vec3.scale(f));
         if (!this.isNoGravity()) {
             Vec3 vec31 = this.getDeltaMovement();
-            this.setDeltaMovement(vec31.x, vec31.y - (double)this.getGravity(), vec31.z);
+            this.setDeltaMovement(vec31.x, vec31.y - (double)this.getGrenadeGravity(), vec31.z);
         }
 
         this.setPos(x, y, z);
@@ -299,7 +289,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         this.setTailParticle(data.getTailParticles());
     }
 
-    public float getGravity() {
+    public float getGrenadeGravity() {
         return gravity;
     }
 
@@ -360,7 +350,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         buffer.writeInt(life);
         buffer.writeFloat(gravity);
         buffer.writeDouble(bounceFactor);
@@ -368,7 +358,7 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
         buffer.writeBoolean(brokeOnGround);
         if (tailParticle != null) {
             buffer.writeBoolean(true);
-            EntityDataSerializers.PARTICLE.write(buffer, tailParticle);
+            ParticleTypes.STREAM_CODEC.encode(buffer, tailParticle);
         } else {
             buffer.writeBoolean(false);
         }
@@ -376,14 +366,14 @@ public abstract class GrenadeEntity extends Projectile implements IEntityAdditio
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         life = additionalData.readInt();
         gravity = additionalData.readFloat();
         bounceFactor = additionalData.readDouble();
         shouldBounce = additionalData.readBoolean();
         brokeOnGround = additionalData.readBoolean();
         if (additionalData.readBoolean()) {
-            tailParticle = EntityDataSerializers.PARTICLE.read(additionalData);
+            tailParticle = ParticleTypes.STREAM_CODEC.decode(additionalData);
         } else {
             tailParticle = null;
         }

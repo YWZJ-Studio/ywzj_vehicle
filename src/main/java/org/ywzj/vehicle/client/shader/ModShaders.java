@@ -1,34 +1,23 @@
 package org.ywzj.vehicle.client.shader;
 
-import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterShadersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import org.ywzj.vehicle.YwzjVehicle;
 
 import java.io.IOException;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class ModShaders {
 
     private static final ResourceLocation CIRCLE_SHADER_LOCATION = YwzjVehicle.modLocation("circle");
     private static ShaderInstance circleShader;
-
-    public static final VertexFormat HUD_CIRCLE = new VertexFormat(
-            ImmutableMap.<String, VertexFormatElement>builder()
-                    .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                    .put("Color", DefaultVertexFormat.ELEMENT_COLOR)
-                    .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
-                    .put("Normal", DefaultVertexFormat.ELEMENT_NORMAL)
-                    .build()
-    );
-
+    public static final VertexFormat HUD_CIRCLE = DefaultVertexFormat.BLOCK;
     @SubscribeEvent
     public static void registerShaders(RegisterShadersEvent event) throws IOException {
         event.registerShader(

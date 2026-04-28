@@ -1,21 +1,26 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
-public class ClientVehicleAction {
+public class ClientVehicleAction implements CustomPacketPayload {
 
+    public static final StreamCodec<FriendlyByteBuf, ClientVehicleAction> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ClientVehicleAction::decode);
+    public static final CustomPacketPayload.Type<ClientVehicleAction> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "vehicle_action"));
     public int vehicleEntityId;
     public boolean leaveVehicle;
     public boolean toggleEngine;
@@ -117,25 +122,23 @@ public class ClientVehicleAction {
         }
     }
 
-    public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        ctxSupplier.get().enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) {
-                return;
-            }
-            Level level = player.level();
-            Entity entity = level.getEntity(message.vehicleEntityId);
-            if (!(entity instanceof AbstractVehicle vehicle)) {
-                return;
-            }
-            if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
-                vehicle.onClientVehicleAction(message, player);
-            } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
-                vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);
-            }
-        });
+    public static void handle(ClientVehicleAction message, IPayloadContext ctx) {
+        Player player = ctx.player();
+        Level level = player.level();
+        Entity entity = level.getEntity(message.vehicleEntityId);
+        if (!(entity instanceof AbstractVehicle vehicle)) {
+            return;
+        }
+        if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
+            vehicle.onClientVehicleAction(message, player);
+        } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
+            vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);
+        }
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

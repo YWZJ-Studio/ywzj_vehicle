@@ -3,6 +3,7 @@ package org.ywzj.vehicle.item;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -11,10 +12,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.item.VehicleSpawnItemRenderer;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -33,14 +35,15 @@ public class VehicleSpawnItem extends Item {
 
     public ItemStack createInstance(ResourceLocation vehicleId) {
         ItemStack itemStack = new ItemStack(this);
-        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         tag.putString(TAG_VEHICLE_ID, vehicleId.toString());
-        itemStack.setHoverName(Component.translatable(vehicleId.getNamespace() + "." + vehicleId.getPath()));
-        itemStack.setTag(tag);
+        itemStack.set(DataComponents.ITEM_NAME, Component.translatable(vehicleId.getNamespace() + "." + vehicleId.getPath()));
+        itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return itemStack;
     }
 
     @Override
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 
@@ -71,7 +74,7 @@ public class VehicleSpawnItem extends Item {
         BlockPos blockPos = context.getClickedPos().above();
         Vec3 position = new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ());
         ItemStack itemStack = player.getItemInHand(context.getHand());
-        CompoundTag tag = itemStack.getTag();
+        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString(TAG_VEHICLE_ID));
         Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isPresent()) {

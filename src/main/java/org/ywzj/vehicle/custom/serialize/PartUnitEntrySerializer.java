@@ -21,7 +21,7 @@ public class PartUnitEntrySerializer implements JsonDeserializer<PartUnitEntry<?
         if (id == null) {
             throw new JsonParseException("Invalid PartUnit Type id: " + typeId);
         }
-        var partUnitType = ModRegistries.PART_UNIT_TYPE_SUPPLIER.get().getValue(id);
+        var partUnitType = ModRegistries.PART_UNIT_TYPE.get(id);
         if (partUnitType == null) {
             throw new JsonParseException("Invalid PartUnit Type: " + typeId);
         }

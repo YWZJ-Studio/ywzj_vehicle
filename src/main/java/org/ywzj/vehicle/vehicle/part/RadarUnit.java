@@ -6,12 +6,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.custom.part.data.RadarUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientRadarAction;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -109,7 +108,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                     serverVehicleWarn.info = getRadarType();
                     for (Entity entity : toVehicle.getPassengers()) {
                         if (entity instanceof ServerPlayer player) {
-                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleWarn);
+                            PacketDistributor.sendToPlayer(player, serverVehicleWarn);
                         }
                     }
                 }
@@ -152,7 +151,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
             ClientRadarAction clientRadarAction = new ClientRadarAction();
             clientRadarAction.action = ClientRadarAction.Action.SEARCH;
             clientRadarAction.toEntityId = detectedObject.entity.getId();
-            Channel.CHANNEL.sendToServer(clientRadarAction);
+            PacketDistributor.sendToServer(clientRadarAction);
         }
     }
 
@@ -242,7 +241,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
             ClientRadarAction clientRadarAction = new ClientRadarAction();
             clientRadarAction.action = ClientRadarAction.Action.LOCK;
             clientRadarAction.toEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
-            Channel.CHANNEL.sendToServer(clientRadarAction);
+            PacketDistributor.sendToServer(clientRadarAction);
         }
     }
 

@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -10,11 +11,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
@@ -27,7 +28,6 @@ import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AutoWeaponUnit;
@@ -124,7 +124,9 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
 
     @OnlyIn(Dist.CLIENT)
     public boolean doClientShoot() {
-        if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player))) {
+        VehicleFireEvent.Pre __VehicleFireEvent_Pre = new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player);
+        NeoForge.EVENT_BUS.post(__VehicleFireEvent_Pre);
+        if (__VehicleFireEvent_Pre.isCanceled()) {
             return false;
         }
         if (isCoolingDown()) {
@@ -236,7 +238,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         action.shoot = true;
         action.weaponIndex = weaponIndex;
         action.aimContexts = aimContexts;
-        Channel.CHANNEL.sendToServer(action);
+        PacketDistributor.sendToServer(action);
     }
 
     public boolean hasAmmo() {
@@ -264,16 +266,14 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         if (vehicle.level().isClientSide()) {
             return 0;
         }
-        return vehicle.getCapability(ForgeCapabilities.ITEM_HANDLER).map(cap -> {
-            int total = 0;
-            for (int i = 0; i < cap.getSlots(); i++) {
-                ItemStack stack = cap.getStackInSlot(i);
-                if (isAmmoForWeapon(stack)) {
-                    total += stack.getCount();
-                }
+        int total = 0;
+        for (int i = 0; i < vehicle.getItemHandler().getSlots(); i++) {
+            ItemStack stack = vehicle.getItemHandler().getStackInSlot(i);
+            if (isAmmoForWeapon(stack)) {
+                total += stack.getCount();
             }
-            return total;
-        }).orElse(0);
+        }
+        return total;
     }
 
     /**
@@ -284,18 +284,16 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         if (vehicle.level().isClientSide()) {
             return false;
         }
-        return vehicle.getCapability(ForgeCapabilities.ITEM_HANDLER).map(cap -> {
-            for (int i = 0; i < cap.getSlots(); i++) {
-                ItemStack stack = cap.getStackInSlot(i);
-                if (stack.getItem() == AllItems.AMMO_CREATIVE.get()) {
-                    return true;
-                }
-                if (isAmmoForWeapon(stack)) {
-                    return true;
-                }
+        for (int i = 0; i < vehicle.getItemHandler().getSlots(); i++) {
+            ItemStack stack = vehicle.getItemHandler().getStackInSlot(i);
+            if (stack.getItem() == AllItems.AMMO_CREATIVE.get()) {
+                return true;
             }
-            return false;
-        }).orElse(false);
+            if (isAmmoForWeapon(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isAmmoForWeapon(ItemStack stack) {
@@ -403,14 +401,14 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     @Override
-    public CompoundTag serializeNBT() {
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         var tag = new CompoundTag();
         tag.putInt("RemainAmmo", remainAmmo);
         return tag;
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
+    public void deserializeNBT(@org.jetbrains.annotations.NotNull HolderLookup.Provider provider, @org.jetbrains.annotations.NotNull CompoundTag nbt) {
         this.remainAmmo = nbt.getInt("RemainAmmo");
     }
 

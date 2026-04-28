@@ -2,6 +2,7 @@ package org.ywzj.vehicle.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,13 +17,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.compat.SuperbWarfareCompat;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleHurtEntity;
 
 import java.util.ArrayList;
@@ -52,7 +50,7 @@ public class EntityUtil {
         }
         if (source.getEntity() instanceof ServerPlayer serverPlayer
                 && serverPlayer.getVehicle() instanceof AbstractVehicle vehicle) {
-            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), entity instanceof AbstractVehicle, kill));
+            PacketDistributor.sendToPlayer(serverPlayer, new ServerVehicleHurtEntity(vehicle.getId(), entity.getId(), entity instanceof AbstractVehicle, kill));
         }
     }
 
@@ -122,8 +120,8 @@ public class EntityUtil {
                 return null;
             }
         }
-        if (SuperbWarfareCompat.isLoaded()) {
-            BulletHitResult superbWarfareHitResult = SuperbWarfareCompat.getHitResult(bulletEntity, entity, startVec, endVec);
+        if (false) { // SuperbWarfareCompat not yet ported
+            BulletHitResult superbWarfareHitResult = null; // TODO: SuperbWarfareCompat not yet ported
             if (superbWarfareHitResult != null) {
                 return superbWarfareHitResult;
             }
@@ -136,7 +134,7 @@ public class EntityUtil {
             return null;
         }
         Vec3 hitBoxPos = hitPos.subtract(entity.position());
-        ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+        ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
 
         // 没有配置的默认给一个
         boolean headshot = false;

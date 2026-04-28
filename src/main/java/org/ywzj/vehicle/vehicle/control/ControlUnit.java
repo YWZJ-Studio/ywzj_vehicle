@@ -3,11 +3,9 @@ package org.ywzj.vehicle.vehicle.control;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
-
-import java.util.function.Supplier;
 
 public class ControlUnit {
 
@@ -96,12 +94,12 @@ public class ControlUnit {
         yRotKeep = controlUnit.yRotKeep;
     }
 
-    public static void onClientMessageReceived(ClientVehicleMoveControl message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        if (ctxSupplier.get().getSender() != null) {
-            Level level = ctxSupplier.get().getSender().level();
+    public static void onClientMessageReceived(ClientVehicleMoveControl message, IPayloadContext ctx) {
+        if (ctx.player() != null) {
+            Level level = ctx.player().level();
             Entity entity = level.getEntity(message.vehicleEntityId);
             if (entity instanceof AbstractVehicle vehicle) {
-                if (ctxSupplier.get().getSender() != vehicle.controlUnit.operator) {
+                if (ctx.player() != vehicle.controlUnit.operator) {
                     return;
                 }
                 vehicle.controlUnit.forward = message.forward;

@@ -38,9 +38,9 @@ public class Quadcopter extends RotaryWingVehicle {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CABLE_LENGTH, 0f);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CABLE_LENGTH, 0f);
     }
 
     @Override
@@ -145,8 +145,8 @@ public class Quadcopter extends RotaryWingVehicle {
     }
 
     @Override
-    public void onRemovedFromWorld() {
-        super.onRemovedFromWorld();
+    public void onRemovedFromLevel() {
+        super.onRemovedFromLevel();
         if (!level().isClientSide()) {
             if (getDriver() instanceof ServerPlayer serverPlayer && fakeOperator != null) {
                 onLeaveVehicle(serverPlayer);

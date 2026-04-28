@@ -1,13 +1,13 @@
 package org.ywzj.vehicle.client.gui;
 
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.command.sub.DebugCommand;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -15,10 +15,10 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.UUID;
 
-public class VehicleDebugOverlay implements IGuiOverlay {
+public class VehicleDebugOverlay implements LayeredDraw.Layer {
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         if (!LocalVehiclePlayer.instance.onVehicle() || !DebugCommand.DEBUG) {
             return;
         }

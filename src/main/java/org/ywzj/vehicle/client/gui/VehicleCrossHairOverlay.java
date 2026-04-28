@@ -2,19 +2,19 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
@@ -31,8 +31,8 @@ import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
-public class VehicleCrossHairOverlay implements IGuiOverlay {
+@EventBusSubscriber(value = Dist.CLIENT)
+public class VehicleCrossHairOverlay implements LayeredDraw.Layer {
 
     private static double screenHitXO = 0;
     private static double screenHitYO = 0;
@@ -47,7 +47,8 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
     private static boolean showAim = true;
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
             return;
         }
@@ -154,10 +155,7 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            return;
-        }
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || !player.isAlive()) {

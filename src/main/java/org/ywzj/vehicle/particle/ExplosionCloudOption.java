@@ -1,16 +1,12 @@
 package org.ywzj.vehicle.particle;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.network.codec.StreamCodec;
 import org.ywzj.vehicle.all.AllParticleTypes;
-
-import java.util.Locale;
 
 public record ExplosionCloudOption(int color, int endColor, int life, float size, float gravity) implements ParticleOptions {
 
@@ -23,28 +19,10 @@ public record ExplosionCloudOption(int color, int endColor, int life, float size
                     Codec.FLOAT.fieldOf("gravity").forGetter(ExplosionCloudOption::gravity)
             ).apply(builder, ExplosionCloudOption::new));
 
-    @SuppressWarnings("deprecation")
-    public static final Deserializer<ExplosionCloudOption> DESERIALIZER = new Deserializer<>() {
-        @Override
-        public ExplosionCloudOption fromCommand(ParticleType<ExplosionCloudOption> particleType, StringReader reader) throws CommandSyntaxException {
-            reader.expect(' ');
-            int color = reader.readInt();
-            reader.expect(' ');
-            int endColor = reader.readInt();
-            reader.expect(' ');
-            int life = reader.readInt();
-            reader.expect(' ');
-            float size = reader.readFloat();
-            reader.expect(' ');
-            float gravity = reader.readFloat();
-            return new ExplosionCloudOption(color, endColor, life, size, gravity);
-        }
-
-        @Override
-        public ExplosionCloudOption fromNetwork(ParticleType<ExplosionCloudOption> particleType, FriendlyByteBuf buffer) {
-            return new ExplosionCloudOption(buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readFloat(), buffer.readFloat());
-        }
-    };
+    public static final StreamCodec<FriendlyByteBuf, ExplosionCloudOption> STREAM_CODEC = StreamCodec.of(
+            (buf, option) -> option.writeToNetwork(buf),
+            buf -> new ExplosionCloudOption(buf.readInt(), buf.readInt(), buf.readInt(), buf.readFloat(), buf.readFloat())
+    );
 
     /** 单色构造器（endColor 默认纯黑，即渐变到黑色） */
     public ExplosionCloudOption(float r, float g, float b, int life, float size, float gravity) {
@@ -76,19 +54,12 @@ public record ExplosionCloudOption(int color, int endColor, int life, float size
         return AllParticleTypes.EXPLOSION_CLOUD.get();
     }
 
-    @Override
     public void writeToNetwork(FriendlyByteBuf buffer) {
         buffer.writeInt(this.color);
         buffer.writeInt(this.endColor);
         buffer.writeInt(this.life);
         buffer.writeFloat(this.size);
         buffer.writeFloat(this.gravity);
-    }
-
-    @Override
-    public String writeToString() {
-        return String.format(Locale.ROOT, "%s %d %d %d %.2f %.2f",
-                ForgeRegistries.PARTICLE_TYPES.getKey(this.getType()), this.color, this.endColor, this.life, this.size, this.gravity);
     }
 
 }

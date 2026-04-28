@@ -3,10 +3,7 @@ package org.ywzj.vehicle.client.particle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class DustStoneParticle extends TextureSheetParticle {
     public static DustStoneParticleProvider provider(SpriteSet spriteSet) {
         return new DustStoneParticleProvider(spriteSet);

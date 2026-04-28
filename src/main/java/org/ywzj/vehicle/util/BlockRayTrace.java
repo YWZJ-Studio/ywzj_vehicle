@@ -24,7 +24,7 @@ public final class BlockRayTrace {
             BlockState blockState = level.getBlockState(blockPos);
             // 这里添加判断方块是否可以穿透，如果可以穿透则返回 null
 //            List<String> ids = AmmoConfig.PASS_THROUGH_BLOCKS.get();
-//            ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(blockState.getBlock());
+//            ResourceLocation blockId = NeoForgeRegistries.BLOCKS.getKey(blockState.getBlock());
 //            if (blockId != null) {
 //                return null;
 //            }

@@ -11,7 +11,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.PartEntity;
+import net.neoforged.neoforge.entity.PartEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;

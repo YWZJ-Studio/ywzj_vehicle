@@ -8,7 +8,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
@@ -18,15 +17,12 @@ import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 
-@Mod.EventBusSubscriber
-@ParametersAreNonnullByDefault
 public class VehicleDataManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IVehicleDataManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleDataManager");
@@ -71,7 +67,7 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
                     continue;
                 }
 
-                var dataType = ModRegistries.VEHICLE_DATA_TYPE_SUPPLIER.get().getValue(typeId);
+                var dataType = ModRegistries.VEHICLE_DATA_TYPE.get(typeId);
                 if (dataType == null) {
                     YwzjVehicle.LOGGER.warn(MARKER, "Failed to load vehicle data: {}, unknown type {}", vehicleId, typeId);
                     continue;

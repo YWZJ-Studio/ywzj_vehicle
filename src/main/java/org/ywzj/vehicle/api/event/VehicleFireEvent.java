@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.api.event;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.eventbus.api.Cancelable;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
@@ -26,7 +25,6 @@ public abstract class VehicleFireEvent extends VehicleEvent {
      * 在服务端侧，当载具武器准备开火前触发<br />
      * 取消该事件可阻止载具开火
      */
-    @Cancelable
     public static class Pre extends VehicleFireEvent {
         public Pre(AbstractVehicle vehicle, AbstractVehicleWeapon<?> weapon, @Nullable LivingEntity operator) {
             super(vehicle, weapon, operator);

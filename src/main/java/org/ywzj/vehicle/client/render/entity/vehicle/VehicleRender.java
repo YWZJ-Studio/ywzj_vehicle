@@ -11,9 +11,9 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -23,7 +23,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> {
 
     public VehicleRender(EntityRendererProvider.Context pContext) {

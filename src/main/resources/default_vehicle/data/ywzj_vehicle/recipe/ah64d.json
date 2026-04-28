@@ -1,0 +1,47 @@
+{
+  "type": "ywzj_vehicle:vehicle_printing",
+  "materials": [
+    {
+      "count": 128,
+      "ingredient": { "tag": "c:ingots/iron" }
+    },
+    {
+      "count": 96,
+      "ingredient": { "tag": "c:ingots/copper" }
+    },
+    {
+      "count": 64,
+      "ingredient": { "item": "minecraft:redstone" }
+    },
+    {
+      "count": 20,
+      "ingredient": { "item": "minecraft:glass_pane" }
+    },
+    {
+      "count": 8,
+      "ingredient": { "item": "minecraft:dispenser" }
+    },
+    {
+      "count": 10,
+      "ingredient": { "item": "minecraft:diamond" }
+    },
+    {
+      "count": 32,
+      "ingredient": { "item": "minecraft:gold_ingot" }
+    },
+    {
+      "count": 24,
+      "ingredient": { "item": "minecraft:lapis_lazuli" }
+    }
+  ],
+  "result": {
+    "id": "ywzj_vehicle:vehicle_spawn_item",
+    "count": 1,
+    "components": {
+      "minecraft:custom_data": {
+        "YwzjVehicleId": "ywzj_vehicle:ah64d"
+      }
+    }
+  },
+  "printingTime": 1400
+}

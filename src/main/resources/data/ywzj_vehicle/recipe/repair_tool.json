@@ -2,10 +2,10 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     { "item": "minecraft:iron_ingot" },
-    { "item": "minecraft:redstone" }
+    { "item": "minecraft:fire_charge" }
   ],
   "result": {
-    "item": "ywzj_vehicle:uav_controller",
+    "id": "ywzj_vehicle:repair_tool",
     "count": 1
   }
 }

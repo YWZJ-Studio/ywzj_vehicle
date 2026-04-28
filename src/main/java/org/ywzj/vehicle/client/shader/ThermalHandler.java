@@ -14,13 +14,13 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.ywzj.vehicle.YwzjVehicle;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class ThermalHandler implements ResourceManagerReloadListener {
 
     private static final ResourceLocation THERMAL_EFFECT = YwzjVehicle.resourceLocation("ywzj_vehicle:shaders/post/thermal.json");
@@ -66,9 +66,9 @@ public class ThermalHandler implements ResourceManagerReloadListener {
             return;
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick(), event.getFrustum(), event.getCamera());
+            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick().getGameTimeDeltaPartialTick(false), event.getFrustum(), event.getCamera());
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            applyPostProcess(event.getPartialTick());
+            applyPostProcess(event.getPartialTick().getGameTimeDeltaPartialTick(false));
         }
     }
 

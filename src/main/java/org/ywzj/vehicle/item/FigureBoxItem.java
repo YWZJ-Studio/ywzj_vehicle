@@ -4,6 +4,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,15 +17,16 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.all.AllConfigs;
@@ -47,6 +50,7 @@ public class FigureBoxItem extends VehicleItem {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 
@@ -65,7 +69,7 @@ public class FigureBoxItem extends VehicleItem {
     }
 
     public static InteractionResult capture(ItemStack itemStack, Player player, Entity target) {
-        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         if (tag.contains(ENTITY_DATA)) {
             player.displayClientMessage(Component.translatable("tips.figure_box_has_entity"), true);
             return InteractionResult.FAIL;
@@ -75,7 +79,7 @@ public class FigureBoxItem extends VehicleItem {
         entityData.remove("Passengers");
         tag.put(ENTITY_DATA, entityData);
         tag.putString(ENTITY_TYPE, EntityType.getKey(target.getType()).toString());
-        itemStack.setTag(tag);
+        itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         target.discard();
         player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
         player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
@@ -108,7 +112,7 @@ public class FigureBoxItem extends VehicleItem {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
-        CompoundTag tag = itemStack.getOrCreateTag();
+        CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         if (!tag.contains(ENTITY_DATA)) {
             // 若右击打印机方块
             if (level.getBlockEntity(new BlockPos(context.getClickedPos())) instanceof MachineMaxBlockEntity machineMaxBlockEntity) {
@@ -118,7 +122,7 @@ public class FigureBoxItem extends VehicleItem {
                     vehicle.saveWithoutId(entityData);
                     tag.put(ENTITY_DATA, entityData);
                     tag.putString(ENTITY_TYPE, EntityType.getKey(vehicle.getType()).toString());
-                    itemStack.setTag(tag);
+                    itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
                     player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.PLAYERS, 1.0F, 1.0F);
                     player.displayClientMessage(Component.translatable("tips.figure_box_entity_saved"), true);
                     return InteractionResult.SUCCESS;
@@ -136,7 +140,7 @@ public class FigureBoxItem extends VehicleItem {
         String entityType = tag.getString(ENTITY_TYPE);
         CompoundTag entityData = tag.getCompound(ENTITY_DATA);
         BlockPos pos = context.getClickedPos().above();
-        EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityType));
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(YwzjVehicle.resourceLocation(entityType));
         if (type != null) {
             Entity entity = type.create(level);
             entity.load(entityData);
@@ -163,7 +167,7 @@ public class FigureBoxItem extends VehicleItem {
                 level.addFreshEntity(entity);
                 tag.remove(ENTITY_DATA);
                 tag.remove(ENTITY_TYPE);
-                itemStack.setTag(tag);
+                itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
                 player.level().playSound(null, player.blockPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.PLAYERS, 1.0F, 1.0F);
                 player.displayClientMessage(Component.translatable("tips.figure_box_release_entity"), true);
                 return InteractionResult.SUCCESS;
@@ -174,9 +178,9 @@ public class FigureBoxItem extends VehicleItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack itemStack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (itemStack.hasTag() && itemStack.getOrCreateTag().contains(ENTITY_TYPE)) {
-            tooltip.add(Component.translatable("tips.figure_box_with_entity").append(itemStack.getTag().getString(ENTITY_TYPE)));
+    public void appendHoverText(ItemStack itemStack, Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
+        if (itemStack.has(DataComponents.CUSTOM_DATA) && itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().contains(ENTITY_TYPE)) {
+            tooltip.add(Component.translatable("tips.figure_box_with_entity").append(itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getString(ENTITY_TYPE)));
         }
     }
 

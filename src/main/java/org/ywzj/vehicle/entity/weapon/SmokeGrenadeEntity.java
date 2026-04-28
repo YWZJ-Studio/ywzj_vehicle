@@ -5,7 +5,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
@@ -17,12 +16,8 @@ public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChan
         super(AllEntities.SMOKE_GRENADE.get(), entity, level, weaponId);
     }
 
-    public SmokeGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.SMOKE_GRENADE.get(), level);
-    }
-
-    public SmokeGrenadeEntity(EntityType<SmokeGrenadeEntity> type, Level level) {
-        super(type, level);
+    public SmokeGrenadeEntity(EntityType<? extends SmokeGrenadeEntity> entityType, Level level) {
+        super(entityType, level);
     }
 
     public AABB getAABB() {

@@ -4,14 +4,13 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.all.AllBlocks;
@@ -34,8 +33,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.particle.TrackParticle;
 
-@OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class ClientSetupHandler {
 
     @SuppressWarnings("removal")
@@ -79,16 +77,16 @@ public class ClientSetupHandler {
     }
 
     @SubscribeEvent
-    public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("vehicle", new VehicleOverlay());
-        event.registerAboveAll("vehicle_rotary_wing", new RotaryWingVehicleOverlay());
-        event.registerAboveAll("vehicle_fixed_wing", new FixedWingVehicleOverlay());
-        event.registerAboveAll("vehicle_crosshair", new VehicleCrossHairOverlay());
-        event.registerAboveAll("vehicle_scope", new VehicleScopeOverlay());
-        event.registerAboveAll("vehicle_weapon", new VehicleWeaponOverlay());
-        event.registerAboveAll("vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
-        event.registerAboveAll("vehicle_radar", new VehicleRadarOverlay());
-        event.registerAboveAll("vehicle_debug", new VehicleDebugOverlay());
+    public static void onRegisterHud(RegisterGuiLayersEvent event) {
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle"), new VehicleOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_rotary_wing"), new RotaryWingVehicleOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_fixed_wing"), new FixedWingVehicleOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_crosshair"), new VehicleCrossHairOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_scope"), new VehicleScopeOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_weapon"), new VehicleWeaponOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_hit_indicator"), new VehicleHitIndicatorOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_radar"), new VehicleRadarOverlay());
+        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_debug"), new VehicleDebugOverlay());
     }
 
     @SubscribeEvent

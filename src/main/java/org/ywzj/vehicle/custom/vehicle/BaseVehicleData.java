@@ -3,13 +3,13 @@ package org.ywzj.vehicle.custom.vehicle;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllEntities;
@@ -63,8 +63,8 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     }
 
     protected AbstractVehicle fromRegistries(Level level, Vec3 position, float xRot, float yRot) {
-        if (ForgeRegistries.ENTITY_TYPES.containsKey(vehicleId)) {
-            EntityType<?> vehicleType = ForgeRegistries.ENTITY_TYPES.getValue(vehicleId);
+        if (BuiltInRegistries.ENTITY_TYPE.containsKey(vehicleId)) {
+            EntityType<?> vehicleType = BuiltInRegistries.ENTITY_TYPE.get(vehicleId);
             Entity entity = vehicleType.create(level);
             if (entity instanceof AbstractVehicle vehicle) {
                 vehicle.setPos(position);

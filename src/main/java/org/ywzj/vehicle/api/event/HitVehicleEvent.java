@@ -2,7 +2,7 @@ package org.ywzj.vehicle.api.event;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 import java.util.UUID;
 

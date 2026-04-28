@@ -8,7 +8,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +24,6 @@ import java.util.Optional;
 
 import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 
-@Mod.EventBusSubscriber
 @ParametersAreNonnullByDefault
 public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IVehicleWeaponManager {
 
@@ -100,7 +98,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
     private static Map<ResourceLocation, VehicleWeaponIndex<?, ?>> parseIndexes(
             Map<ResourceLocation, JsonElement> map
     ) {
-        var registry = ModRegistries.VEHICLE_WEAPON_TYPE_SUPPLIER.get();
+        var registry = ModRegistries.VEHICLE_WEAPON_TYPE;
         if (registry == null) {
             YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data: registry is null. Is the game in a broken state?");
             return Map.of();
@@ -125,9 +123,9 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
                     YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data {}: invalid weapon type weaponId: {}", weaponId, rawType);
                     continue;
                 }
-                var weaponType = registry.getValue(typeId);
+                var weaponType = registry.get(typeId);
                 if (weaponType != null) {
-                    VehicleWeaponIndex index = weaponType.parseAndLoad(weaponId, weaponData);
+                    var index = weaponType.parseAndLoad(weaponId, weaponData);
                     if (index != null) {
                         if (index.data().getWeaponId() == null) {
                             index.data().setWeaponId(weaponId);

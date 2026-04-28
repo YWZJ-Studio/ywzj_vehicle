@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.client.render.item.RepairItemRenderer;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
@@ -31,6 +32,7 @@ public class RepairToolItem extends VehicleItem {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 
@@ -53,7 +55,7 @@ public class RepairToolItem extends VehicleItem {
     }
 
     @Override
-    public int getUseDuration(ItemStack pStack) {
+    public int getUseDuration(ItemStack pStack, LivingEntity entity) {
         return 72000;
     }
 
@@ -98,22 +100,23 @@ public class RepairToolItem extends VehicleItem {
                     }
                 } else if (hitResult.getEntity() instanceof LivingEntity livingEntity) {
                     livingEntity.hurt(pLevel.damageSources().playerAttack((Player) pLivingEntity), 2.0F);
-                    livingEntity.setSecondsOnFire(3);
+                    livingEntity.igniteForSeconds(3);
                 }
             }
-            pStack.hurtAndBreak(2, pLivingEntity, e -> e.broadcastBreakEvent(e.getUsedItemHand()));
+            pStack.hurtAndBreak(2, pLivingEntity, EquipmentSlot.MAINHAND);
         }
 
     }
 
     @Override
+    @SuppressWarnings("removal")
     public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
         return true;
     }
 
     @Override
     public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand pHand) {
-        return null;
+        return InteractionResult.PASS;
     }
 
 }

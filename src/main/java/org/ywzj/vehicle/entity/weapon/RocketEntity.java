@@ -8,11 +8,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PlayMessages;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -21,16 +19,12 @@ public class RocketEntity extends AmmoEntity {
 
     private VehicleSound sound;
 
-    public RocketEntity(EntityType<? extends Projectile> entityType, Level level) {
-        super(entityType, level, null);
-    }
-
     public RocketEntity(EntityType<? extends Projectile> entityType, Level level, ResourceLocation weaponId) {
         super(entityType, level, weaponId);
     }
 
-    public RocketEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.ROCKET.get(), level, null);
+    public RocketEntity(EntityType<? extends RocketEntity> entityType, Level level) {
+        super(entityType, level, null);
     }
 
     public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {

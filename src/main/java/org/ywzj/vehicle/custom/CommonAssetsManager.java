@@ -3,20 +3,19 @@ package org.ywzj.vehicle.custom;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.custom.IStructureModelManager;
 import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.SliceReassembler;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber
 public class CommonAssetsManager {
 
     public static CommonAssetsManager INSTANCE;
@@ -60,40 +59,38 @@ public class CommonAssetsManager {
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeMap(INSTANCE.structureModelManager.getCache(),
                     FriendlyByteBuf::writeResourceLocation,
-                    FriendlyByteBuf::writeUtf);
+                    (b, s) -> b.writeUtf(s));
             buf.writeMap(INSTANCE.vehicleWeaponManager.getCache(),
                     FriendlyByteBuf::writeResourceLocation,
-                    FriendlyByteBuf::writeUtf);
+                    (b, s) -> b.writeUtf(s));
             buf.writeMap(INSTANCE.vehicleDataManager.getCache(),
                     FriendlyByteBuf::writeResourceLocation,
-                    FriendlyByteBuf::writeUtf);
-
+                    (b, s) -> b.writeUtf(s));
             // 切片发送
             var packets = SliceReassembler.sliceData(buf);
 
             for (var packet : packets) {
                 if (event.getPlayer() != null) {
-                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(event::getPlayer), packet);
+                    PacketDistributor.sendToPlayer(event.getPlayer(), packet);
                 } else {
-                    Channel.CHANNEL.send(PacketDistributor.ALL.noArg(), packet);
+                    PacketDistributor.sendToAllPlayers(packet);
                 }
             }
         }
     }
 
     // 收到所有数据包后组装数据并重载
-    public static void fromNetwork(FriendlyByteBuf buf) {
-        try {
-            var structureModelMap = buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf);
-            var vehicleWeaponMap = buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf);
-            var vehicleDataMap = buf.readMap(FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readUtf);
-
-            StructureModelManager.fromNetwork(structureModelMap);
-            VehicleWeaponManager.fromNetwork(vehicleWeaponMap);
-            VehicleDataManager.fromNetwork(vehicleDataMap);
-        } catch (Exception exception) {
-            YwzjVehicle.LOGGER.error("Failed to read common assets from network", exception);
-        }
+    public static void fromNetwork(FriendlyByteBuf byteBuf) {
+         try {
+             var structureModelMap = byteBuf.readMap(FriendlyByteBuf::readResourceLocation, buf -> buf.readUtf());
+             var vehicleWeaponMap = byteBuf.readMap(FriendlyByteBuf::readResourceLocation, buf -> buf.readUtf());
+             var vehicleDataMap = byteBuf.readMap(FriendlyByteBuf::readResourceLocation, buf -> buf.readUtf());
+             StructureModelManager.fromNetwork(structureModelMap);
+             VehicleWeaponManager.fromNetwork(vehicleWeaponMap);
+             VehicleDataManager.fromNetwork(vehicleDataMap);
+         } catch (Exception exception) {
+             YwzjVehicle.LOGGER.error("Failed to read common assets from network", exception);
+         }
     }
 
     public static IStructureModelManager structureModelManager() {

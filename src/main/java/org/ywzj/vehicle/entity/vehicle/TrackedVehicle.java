@@ -10,8 +10,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
@@ -81,10 +81,10 @@ public class TrackedVehicle extends AbstractVehicle
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(FORWARD_SPEED, 0f);
-        this.entityData.define(TURN_SPEED, 0f);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(FORWARD_SPEED, 0f);
+        builder.define(TURN_SPEED, 0f);
     }
 
     @Override

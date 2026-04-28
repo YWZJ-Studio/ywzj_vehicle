@@ -7,8 +7,8 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
@@ -65,7 +65,7 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
                     continue;
                 }
 
-                var dataType = ModRegistries.VEHICLE_DISPLAY_TYPE_SUPPLIER.get().getValue(typeId);
+                var dataType = ModRegistries.VEHICLE_DISPLAY_TYPE.get(typeId);
                 if (dataType == null) {
                     YwzjVehicle.LOGGER.warn(marker, "Failed to load vehicle display: {}, unknown type {}", displayIdAndDataJson.getKey(), typeId);
                     continue;

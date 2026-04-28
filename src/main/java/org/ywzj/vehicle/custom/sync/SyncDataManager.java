@@ -7,20 +7,19 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializer;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerEntityDataUpdate;
 
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber
 public class SyncDataManager {
 
     private final Int2ReferenceMap<SyncDataSerializer<?>> syncedIdMap = new Int2ReferenceOpenHashMap<>();
@@ -117,10 +116,7 @@ public class SyncDataManager {
                 if (entries.isEmpty()) {
                     return;
                 }
-                Channel.CHANNEL.send(
-                        PacketDistributor.PLAYER.with(()-> player),
-                        new ServerEntityDataUpdate(vehicle.getId(), partUnit.getIndex(), entries)
-                );
+                PacketDistributor.sendToPlayer(player, new ServerEntityDataUpdate(vehicle.getId(), partUnit.getIndex(), entries));
             });
         }
     }
@@ -133,7 +129,7 @@ public class SyncDataManager {
         }
     }
 
-    @Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber
     public static class Setup {
         @SubscribeEvent
         public static void onCommonSetupEvent(FMLCommonSetupEvent event) {

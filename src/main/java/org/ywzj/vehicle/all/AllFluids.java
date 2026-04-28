@@ -1,36 +1,38 @@
 package org.ywzj.vehicle.all;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.SoundActions;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.SoundActions;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 
 import java.util.function.Consumer;
 
 public class AllFluids {
 
-    public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, YwzjVehicle.MOD_ID);
-    public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, YwzjVehicle.MOD_ID);
-    public static final DeferredRegister<net.minecraft.world.level.block.Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, YwzjVehicle.MOD_ID);
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, YwzjVehicle.MOD_ID);
+    public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, YwzjVehicle.MOD_ID);
+    public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(Registries.FLUID, YwzjVehicle.MOD_ID);
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK, YwzjVehicle.MOD_ID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, YwzjVehicle.MOD_ID);
 
-    public static final RegistryObject<FluidType> FUEL_FLUID_TYPE = FLUID_TYPES.register("fuel", () ->
+    public static final DeferredHolder<FluidType, FluidType> FUEL_FLUID_TYPE = FLUID_TYPES.register("fuel", () ->
             new FluidType(FluidType.Properties.create()
                     .descriptionId("block." + YwzjVehicle.MOD_ID + ".fuel")
                     .fallDistanceModifier(0F)
@@ -42,6 +44,7 @@ public class AllFluids {
                     .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
                     .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY)) {
                         @Override
+                        @SuppressWarnings("removal")
                         public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                             consumer.accept(new IClientFluidTypeExtensions() {
 
@@ -65,16 +68,16 @@ public class AllFluids {
                         }
                     });
 
-    public static final RegistryObject<FlowingFluid> FUEL_SOURCE = FLUIDS.register("fuel", () ->
-            new ForgeFlowingFluid.Source(AllFluids.FUEL_PROPERTIES));
-    public static final RegistryObject<FlowingFluid> FUEL_FLOWING = FLUIDS.register("fuel_flowing", () ->
-            new ForgeFlowingFluid.Flowing(AllFluids.FUEL_PROPERTIES));
-    public static final RegistryObject<LiquidBlock> FUEL_BLOCK = BLOCKS.register("fuel_block", () ->
-            new LiquidBlock(FUEL_SOURCE, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW).noCollission().strength(100.0F).pushReaction(PushReaction.DESTROY).noLootTable()));
-    public static final RegistryObject<Item> FUEL_BUCKET = ITEMS.register("fuel_bucket", () ->
-            new BucketItem(FUEL_SOURCE, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+    public static final DeferredHolder<Fluid, FlowingFluid> FUEL_SOURCE = FLUIDS.register("fuel", () ->
+            new BaseFlowingFluid.Source(AllFluids.FUEL_PROPERTIES));
+    public static final DeferredHolder<Fluid, FlowingFluid> FUEL_FLOWING = FLUIDS.register("fuel_flowing", () ->
+            new BaseFlowingFluid.Flowing(AllFluids.FUEL_PROPERTIES));
+    public static final DeferredHolder<net.minecraft.world.level.block.Block, LiquidBlock> FUEL_BLOCK = BLOCKS.register("fuel_block", () ->
+            new LiquidBlock(FUEL_SOURCE.get(), BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW).noCollission().strength(100.0F).pushReaction(PushReaction.DESTROY).noLootTable()));
+    public static final DeferredHolder<Item, Item> FUEL_BUCKET = ITEMS.register("fuel_bucket", () ->
+            new BucketItem(FUEL_SOURCE.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
-    private static final ForgeFlowingFluid.Properties FUEL_PROPERTIES = new ForgeFlowingFluid.Properties(
+    private static final BaseFlowingFluid.Properties FUEL_PROPERTIES = new BaseFlowingFluid.Properties(
             FUEL_FLUID_TYPE, FUEL_SOURCE, FUEL_FLOWING)
             .slopeFindDistance(2)
             .levelDecreasePerBlock(1)

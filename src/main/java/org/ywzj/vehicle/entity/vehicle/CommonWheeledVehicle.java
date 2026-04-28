@@ -5,7 +5,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -24,17 +23,13 @@ public class CommonWheeledVehicle extends WheeledVehicle  {
             .sized(1f, 1f)
             .updateInterval(1)
             .clientTrackingRange(16)
-            .setCustomClientFactory(CommonWheeledVehicle::new)
+            // .setCustomClientFactory(CommonWheeledVehicle::new) // removed in NeoForge 1.21.1
             .build("common_wheeled_vehicle");
 
     private ResourceLocation vehicleId = ICustomVehicle.EMPTY_ID;
 
     public CommonWheeledVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-    }
-
-    public CommonWheeledVehicle(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        this(TYPE, level);
     }
 
 //    @Override

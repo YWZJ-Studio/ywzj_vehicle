@@ -1,10 +1,8 @@
 package org.ywzj.vehicle.api.event;
 
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraftforge.eventbus.api.Cancelable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-@Cancelable
 public class VehicleAttackEvent extends VehicleEvent {
 
     private final DamageSource source;

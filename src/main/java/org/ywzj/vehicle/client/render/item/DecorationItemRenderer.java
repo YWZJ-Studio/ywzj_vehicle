@@ -10,10 +10,12 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.item.DecorationItem;
@@ -31,7 +33,7 @@ public class DecorationItemRenderer extends BlockEntityWithoutLevelRenderer {
     @Override
     public void renderByItem(@Nonnull ItemStack itemStack, @Nonnull ItemDisplayContext transformType, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
         if (itemStack.getItem() instanceof DecorationItem) {
-            CompoundTag tag = itemStack.getOrCreateTag();
+            CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
             ResourceLocation decorationDisplayId = YwzjVehicle.resourceLocation(tag.getString(DecorationItem.TAG_DECORATION_DISPLAY_ID));
             var display = ClientAssetsManager.INSTANCE.getDecorationDisplay(decorationDisplayId).orElse(null);
             poseStack.pushPose();
@@ -46,18 +48,18 @@ public class DecorationItemRenderer extends BlockEntityWithoutLevelRenderer {
                             poseStack.mulPose(Axis.YN.rotationDegrees(-45f));
                         }
                         VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(slotTexture));
-                        DECORATION_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                        DECORATION_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
                         poseStack.popPose();
                         return;
                     } else if (model != null && texture != null) {
                         VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(texture));
-                        model.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                        model.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
                         poseStack.popPose();
                         return;
                     }
                 }
                 VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(YwzjVehicle.modLocation("textures/item/decoration_item.png")));
-                DECORATION_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                DECORATION_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
             }
             poseStack.popPose();
         }

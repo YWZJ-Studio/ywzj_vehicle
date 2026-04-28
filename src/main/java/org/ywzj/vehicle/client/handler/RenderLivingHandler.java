@@ -1,17 +1,16 @@
 package org.ywzj.vehicle.client.handler;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import org.ywzj.vehicle.YwzjVehicle;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class RenderLivingHandler {
 
     @SubscribeEvent
-    public static void onRenderLiving(RenderLivingEvent event) {
+    public static void onRenderLiving(RenderLivingEvent.Pre event) {
         if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle) {
             if (vehicle.uav) {
                 event.setCanceled(true);

@@ -1,13 +1,17 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
 
-import java.util.function.Supplier;
+public class ServerVehicleHurtEntity implements CustomPacketPayload {
 
-public class ServerVehicleHurtEntity {
-
+    public static final StreamCodec<FriendlyByteBuf, ServerVehicleHurtEntity> STREAM_CODEC = StreamCodec.of((buf, msg) -> encode(msg, buf), ServerVehicleHurtEntity::decode);
+    public static final CustomPacketPayload.Type<ServerVehicleHurtEntity> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "vehicle_hurt_entity"));
     public int vehicleEntityId;
     public int entityId;
     public boolean hitVehicle;
@@ -38,12 +42,13 @@ public class ServerVehicleHurtEntity {
         return serverVehicleHurtEntity;
     }
 
-    public static void onServerMessageReceived(ServerVehicleHurtEntity message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(message.hitVehicle, message.kill));
-        }
+    public static void handle(ServerVehicleHurtEntity message, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> VehicleHitIndicatorOverlay.markHitTimestamp(message.hitVehicle, message.kill));
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

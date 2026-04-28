@@ -1,6 +1,8 @@
 package org.ywzj.vehicle.blockentity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
@@ -10,8 +12,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -37,14 +37,6 @@ public class FigureBoxBlockEntity extends BlockEntity {
         super(AllBlockEntities.FIGURE_BOX_BLOCK_ENTITY.get(), pos, state);
     }
 
-    @Override
-    public AABB getRenderBoundingBox() {
-        AABB baseBox = super.getRenderBoundingBox();
-        return baseBox.inflate(scale + Math.abs(xShift),
-                scale + Math.abs(yShift),
-                scale + Math.abs(zShift));
-    }
-
     public Entity getEntity() {
         return entity;
     }
@@ -65,7 +57,7 @@ public class FigureBoxBlockEntity extends BlockEntity {
 
     private void updateEntity() {
         if (level != null && entityType != null && entityData != null) {
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityType));
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(YwzjVehicle.resourceLocation(entityType));
             if (type != null) {
                 Entity entity = type.create(level);
                 entity.load(entityData);
@@ -78,8 +70,8 @@ public class FigureBoxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         if (entity != null) {
             CompoundTag entityData = new CompoundTag();
             entity.saveWithoutId(entityData);
@@ -97,8 +89,8 @@ public class FigureBoxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         if (tag.contains(ENTITY_TYPE) && tag.contains(ENTITY_DATA)) {
             entityType = tag.getString(ENTITY_TYPE);
             entityData = tag.getCompound(ENTITY_DATA);
@@ -121,15 +113,15 @@ public class FigureBoxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
+        saveAdditional(tag, registries);
         return tag;
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        loadAdditional(tag, registries);
     }
 
     @Override
@@ -138,8 +130,8 @@ public class FigureBoxBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
-        handleUpdateTag(packet.getTag());
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);
     }
 
 }

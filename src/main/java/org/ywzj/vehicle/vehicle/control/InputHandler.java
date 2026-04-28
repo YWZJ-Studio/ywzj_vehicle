@@ -3,17 +3,16 @@ package org.ywzj.vehicle.vehicle.control;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
@@ -27,7 +26,7 @@ import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
 
 import static org.ywzj.vehicle.all.AllKeys.*;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class InputHandler {
 
     public static boolean freeCamera;
@@ -78,7 +77,7 @@ public class InputHandler {
                     }
                 } else if (SECONDARY_WEAPON_SWITCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
-                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), true, true));
+                        PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), true, true));
                     }
                 } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
@@ -112,7 +111,7 @@ public class InputHandler {
     }
 
     @SubscribeEvent
-    public static void onKey(InputEvent.MouseButton event) {
+    public static void onKey(InputEvent.MouseButton.Post event) {
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
@@ -136,8 +135,7 @@ public class InputHandler {
     }
 
     @SubscribeEvent
-    public static void checkKey(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) return;
+    public static void checkKey(ClientTickEvent.Pre event) {
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
@@ -232,9 +230,9 @@ public class InputHandler {
         }
         if (LocalVehiclePlayer.instance.onVehicle()) {
             AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-            boolean previous = event.getScrollDelta() == -1;
+            boolean previous = event.getScrollDeltaY() == -1;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
-                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), false, previous));
+                PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), false, previous));
                 // 阻止滚轮事件传递给原版以避免物品栏切换
                 event.setCanceled(true);
             }
@@ -277,42 +275,42 @@ public class InputHandler {
         control.xRotKeep = controlUnit.xRotKeep;
         control.yRot = controlUnit.yRot;
         control.yRotKeep = controlUnit.yRotKeep;
-        Channel.CHANNEL.sendToServer(control);
+        PacketDistributor.sendToServer(control);
     }
 
     private static void sendChangeSeat(AbstractVehicle vehicle, int toSeat) {
         ClientVehicleChangeSeat changeSeat = new ClientVehicleChangeSeat();
         changeSeat.vehicleEntityId = vehicle.getId();
         changeSeat.toSeat = toSeat;
-        Channel.CHANNEL.sendToServer(changeSeat);
+        PacketDistributor.sendToServer(changeSeat);
     }
 
     private static void sendLeaveVehicle(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.leaveVehicle = true;
-        Channel.CHANNEL.sendToServer(action);
+        PacketDistributor.sendToServer(action);
     }
 
     private static void sendToggleEngine(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleEngine = true;
-        Channel.CHANNEL.sendToServer(action);
+        PacketDistributor.sendToServer(action);
     }
 
     private static void sendToggleLandingGear(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleLandingGear = true;
-        Channel.CHANNEL.sendToServer(action);
+        PacketDistributor.sendToServer(action);
     }
 
     private static void sendToggleHoverMode(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleHoverMode = true;
-        Channel.CHANNEL.sendToServer(action);
+        PacketDistributor.sendToServer(action);
     }
 
 }

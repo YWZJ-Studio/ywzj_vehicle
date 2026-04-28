@@ -2,11 +2,13 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     { "item": "minecraft:iron_ingot" },
-    { "item": "minecraft:gunpowder" },
+    { "item": "minecraft:iron_ingot" },
+    { "item": "minecraft:iron_ingot" },
+    { "item": "minecraft:iron_ingot" },
     { "item": "minecraft:gunpowder" }
   ],
   "result": {
-    "item": "ywzj_vehicle:ammo_rocket",
+    "id": "ywzj_vehicle:ammo_aerial_bomb",
     "count": 4
   }
 }

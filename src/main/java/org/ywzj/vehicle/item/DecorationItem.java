@@ -4,6 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,12 +14,14 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -29,7 +32,6 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.screen.DecorationSelectScreen;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.structure.OBB;
@@ -48,6 +50,7 @@ public class DecorationItem extends VehicleItem {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 
@@ -190,7 +193,7 @@ public class DecorationItem extends VehicleItem {
         if (decorationBoneName != null) {
             ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
             clientDecorationAction.action = ClientDecorationAction.Action.SET;
-            clientDecorationAction.displayId = itemStack.getOrCreateTag().getString(TAG_DECORATION_DISPLAY_ID);
+            clientDecorationAction.displayId = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getString(TAG_DECORATION_DISPLAY_ID);
             if (StringUtils.isEmpty(clientDecorationAction.displayId)) {
                 return;
             }
@@ -204,7 +207,7 @@ public class DecorationItem extends VehicleItem {
             clientDecorationAction.selfYRot = (float) Math.toDegrees(-rot.y);
             clientDecorationAction.selfZRot = (float) Math.toDegrees(rot.z);
             clientDecorationAction.offsetFromBone = decorationOffset;
-            Channel.CHANNEL.sendToServer(clientDecorationAction);
+            PacketDistributor.sendToServer(clientDecorationAction);
         }
     }
 

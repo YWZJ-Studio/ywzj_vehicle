@@ -2,14 +2,17 @@ package org.ywzj.vehicle.network.message;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-import java.util.function.Supplier;
+public class ServerVehicleChangeDisplay implements CustomPacketPayload {
 
-public class ServerVehicleChangeDisplay {
-
+    public static final StreamCodec<FriendlyByteBuf, ServerVehicleChangeDisplay> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ServerVehicleChangeDisplay::decode);
+    public static final CustomPacketPayload.Type<ServerVehicleChangeDisplay> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "server_vehicle_change_display"));
     public int vehicleEntityId;
     public ResourceLocation displayId;
 
@@ -32,16 +35,15 @@ public class ServerVehicleChangeDisplay {
         buf.writeResourceLocation(displayId);
     }
 
-    public static void onServerMessageReceived(ServerVehicleChangeDisplay message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> {
-                if (Minecraft.getInstance().level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
-                    vehicle.setDisplayId(message.displayId);
-                }
-            });
+    public static void handle(ServerVehicleChangeDisplay message, IPayloadContext ctx) {
+        if (Minecraft.getInstance().level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
+            vehicle.setDisplayId(message.displayId);
         }
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

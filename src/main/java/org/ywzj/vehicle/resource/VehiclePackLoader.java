@@ -2,20 +2,16 @@ package org.ywzj.vehicle.resource;
 
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import cpw.mods.jarhandling.SecureJar;
 import net.minecraft.SharedConstants;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.*;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.server.packs.resources.IoSupplier;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.resource.DelegatingPackResources;
-import net.minecraftforge.resource.PathPackResources;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLPaths;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
@@ -109,44 +105,31 @@ public enum VehiclePackLoader implements RepositorySource {
 
     private List<Pack> vehiclePacksAsResource() {
         List<Pack> packs = new ArrayList<>();
-        List<PathPackResources> extensionPacks = new ArrayList<>();
+        List<PackResources> extensionPacks = new ArrayList<>();
+        PackResources openPrimary;
         for (VehiclePack vehiclePack : vehiclePacks) {
-            PathPackResources packResources = new PathPackResources(vehiclePack.meta.getNamespace(), false, vehiclePack.path) {
-
-                private final SecureJar secureJar = SecureJar.from(vehiclePack.path);
-
-                @NotNull
-                protected Path resolve(String... paths) {
-                    if (paths.length < 1) {
-                        throw new IllegalArgumentException("Missing path");
-                    } else {
-                        return this.secureJar.getPath(String.join("/", paths));
-                    }
-                }
-
-                public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
-                    return super.getResource(type, location);
-                }
-
-                public void listResources(PackType type, String namespace, String path, ResourceOutput resourceOutput) {
-                    super.listResources(type, namespace, path, resourceOutput);
-                }
-
-            };
+            PackLocationInfo locationInfo = new PackLocationInfo(vehiclePack.meta.getNamespace(), Component.empty(), PackSource.BUILT_IN, Optional.empty());
+            if (Files.isDirectory(vehiclePack.path)) {
+                openPrimary = new PathPackResources.PathResourcesSupplier(vehiclePack.path).openPrimary(locationInfo);
+            } else {
+                openPrimary = new FilePackResources.FileResourcesSupplier(vehiclePack.path).openPrimary(locationInfo);
+            }
+            PackResources packResources = openPrimary;
             extensionPacks.add(packResources);
-            Pack pack = Pack.readMetaAndCreate("ywzj_vehicle_resources_" + vehiclePack.meta.getNamespace(),
-                    Component.translatable(vehiclePack.meta.getTitle()),
-                    true,
-                    (id) -> new DelegatingPackResources(id,
-                            false,
-                            new PackMetadataSection(Component.translatable(vehiclePack.meta.getDescription()), SharedConstants.getCurrentVersion().getPackVersion(packType)), extensionPacks) {
-                                public IoSupplier<InputStream> getRootResource(String... paths) {
-                                    if (paths.length == 1 && paths[0].equals("pack.png")) {
-                                        return packResources.getRootResource("pack.png");
-                                    }
-                                    return null;
-                                }
-                            }, packType, Pack.Position.BOTTOM, PackSource.BUILT_IN);
+            PackMetadataSection metadataSection = new PackMetadataSection(Component.translatable(vehiclePack.meta.getDescription()), SharedConstants.getCurrentVersion().getPackVersion(packType));
+            DelegatingPackResources delegatingPackResources = new DelegatingPackResources(locationInfo, metadataSection, extensionPacks) {
+                @Override
+                public IoSupplier<InputStream> getRootResource(String... paths) {
+                    if (paths.length == 1 && paths[0].equals("pack.png")) {
+                        return packResources.getRootResource("pack.png");
+                    }
+                    return null;
+                }
+            };
+            Pack pack = Pack.readMetaAndCreate(locationInfo,
+                    delegatingPackResources,
+                    packType,
+                    new PackSelectionConfig(true, Pack.Position.BOTTOM, false));
             packs.add(pack);
         }
         return packs;
@@ -181,7 +164,7 @@ public enum VehiclePackLoader implements RepositorySource {
     }
 
     private static VehiclePack fromZipPath(Path path)  {
-        try(ZipFile zipFile = new ZipFile(path.toFile())){
+        try (ZipFile zipFile = new ZipFile(path.toFile())) {
             ZipEntry packMetaEntry = zipFile.getEntry("vehicle_pack.meta.json");
             if (packMetaEntry == null) {
                 YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), "No vehicle_pack.meta.json found");

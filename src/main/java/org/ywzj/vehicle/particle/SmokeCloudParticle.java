@@ -5,10 +5,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class SmokeCloudParticle extends TextureSheetParticle {
 
     public static SmokeCloudParticleProvider provider(SpriteSet spriteSet) {
@@ -61,11 +58,6 @@ public class SmokeCloudParticle extends TextureSheetParticle {
     @Override
     public void render(VertexConsumer pBuffer, Camera pRenderInfo, float pPartialTicks) {
         super.render(pBuffer, pRenderInfo, pPartialTicks);
-    }
-
-    @Override
-    public boolean shouldCull() {
-        return true;
     }
 
 }

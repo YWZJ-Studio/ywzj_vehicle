@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "${mod_license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+authors = "${mod_authors}"
+logoFile="logo.png"
+description = '''Limitless Vehicle (Open Beta). The current features and art assets are under development and do not represent the final quality of the game.''''
+
+[[dependencies.${ mod_id }]]
+modId = "neoforge"
+mandatory = true
+versionRange = "${loader_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${ mod_id }]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[mixins]]
+config = "mixins.ywzj_vehicle.json"

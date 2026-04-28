@@ -6,8 +6,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -20,7 +21,6 @@ import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.control.InputHandler;
@@ -252,7 +252,7 @@ public class LocalVehiclePlayer {
                     control.partUnitIndex = weaponUnit.getIndex();
                     control.xAimRot = weaponUnit.getXAimRot();
                     control.yAimRot = weaponUnit.getYAimRot();
-                    Channel.CHANNEL.sendToServer(control);
+                    PacketDistributor.sendToServer(control);
                     weaponUnit.getSubWeaponUnits().forEach(subWeaponUnit -> subWeaponUnit.aim(hitPosition));
                     rangeFinding(hitPosition);
                 } catch (Exception exception) {

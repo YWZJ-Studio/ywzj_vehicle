@@ -1,19 +1,23 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.DecorationAction;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
+public class ServerDecorationAction extends DecorationAction implements CustomPacketPayload {
 
-import java.util.function.Supplier;
-
-public class ServerDecorationAction extends DecorationAction {
+    public static final CustomPacketPayload.Type<ServerDecorationAction> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "server_decoration_action"));
+    public static final StreamCodec<FriendlyByteBuf, ServerDecorationAction> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ServerDecorationAction::decode);
 
     public ServerDecorationAction() {}
 
@@ -64,28 +68,29 @@ public class ServerDecorationAction extends DecorationAction {
         buf.writeVector3f(offsetFromBone.toVector3f());
     }
 
-    public static void onServerMessageReceived(ServerDecorationAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        ctxSupplier.get().enqueueWork(() -> {
-            Player player = LocalVehiclePlayer.instance.getPlayer();
-            if (player.level().getEntity(message.vehicleId) instanceof AbstractVehicle vehicle) {
-                if (message.action == Action.SET) {
-                    DecorationUnit decorationUnit = vehicle.getDecorationUnits().get(message.decorationUnitId);
-                    if (decorationUnit != null) {
-                        decorationUnit.update(message);
-                    } else {
-                        PartUnitPojo pojo = new PartUnitPojo();
-                        pojo.id = message.decorationUnitId;
-                        decorationUnit = new DecorationUnit(pojo.id.hashCode(), vehicle, new PartUnitData(pojo));
-                        decorationUnit.update(message);
-                        vehicle.getDecorationUnits().put(message.decorationUnitId, decorationUnit);
-                    }
-                } else if (message.action == Action.REMOVE) {
-                    vehicle.getDecorationUnits().remove(message.decorationUnitId);
+    public static void handle(ServerDecorationAction message, IPayloadContext ctx) {
+        Player player = LocalVehiclePlayer.instance.getPlayer();
+        if (player.level().getEntity(message.vehicleId) instanceof AbstractVehicle vehicle) {
+            if (message.action == Action.SET) {
+                DecorationUnit decorationUnit = vehicle.getDecorationUnits().get(message.decorationUnitId);
+                if (decorationUnit != null) {
+                    decorationUnit.update(message);
+                } else {
+                    PartUnitPojo pojo = new PartUnitPojo();
+                    pojo.id = message.decorationUnitId;
+                    decorationUnit = new DecorationUnit(pojo.id.hashCode(), vehicle, new PartUnitData(pojo));
+                    decorationUnit.update(message);
+                    vehicle.getDecorationUnits().put(message.decorationUnitId, decorationUnit);
                 }
+            } else if (message.action == Action.REMOVE) {
+                vehicle.getDecorationUnits().remove(message.decorationUnitId);
             }
-        });
+        }
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

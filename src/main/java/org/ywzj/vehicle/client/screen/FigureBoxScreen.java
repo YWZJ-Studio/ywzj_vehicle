@@ -14,13 +14,13 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.util.Color;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientFigureBoxUpdate;
 
 import java.util.function.Consumer;
@@ -39,18 +39,19 @@ public class FigureBoxScreen extends Screen {
         int centerX = this.width / 4;
         int startY = this.height / 2 - 128;
         int spacing = 24;
-        addRenderableWidget(new Checkbox(centerX + 60, startY + 8 * spacing, 100, 20,
-                Component.translatable("check_box.figure_box.open"), figureBoxBlockEntity.open) {
-            @Override
-            public void onPress() {
-                super.onPress();
-                figureBoxBlockEntity.open = this.selected();
-                Minecraft.getInstance().level.setBlock(figureBoxBlockEntity.getBlockPos(),
-                        figureBoxBlockEntity.getBlockState().setValue(FigureBoxBlock.OPEN, figureBoxBlockEntity.open),
-                        3);
-                updateServer();
-            }
-        });
+        this.addRenderableWidget(Checkbox.builder(Component.translatable("check_box.figure_box.open"), this.font)
+                .pos(centerX + 60, startY + 8 * spacing)
+                .selected(figureBoxBlockEntity.open)
+                .onValueChange((checkbox, selected) -> {
+                    figureBoxBlockEntity.open = selected;
+                    if (this.minecraft.level != null) {
+                        this.minecraft.level.setBlock(figureBoxBlockEntity.getBlockPos(),
+                                figureBoxBlockEntity.getBlockState().setValue(FigureBoxBlock.OPEN, selected),
+                                3);
+                    }
+                    updateServer();
+                })
+                .build());
         addValueEditor(centerX, startY + spacing, String.valueOf(figureBoxBlockEntity.scale),
                 val -> figureBoxBlockEntity.scale = parseSafe(val, figureBoxBlockEntity.scale));
         addValueEditor(centerX, startY + spacing * 2, String.valueOf(figureBoxBlockEntity.xShift),
@@ -113,12 +114,13 @@ public class FigureBoxScreen extends Screen {
         clientFigureBoxUpdate.xRot = figureBoxBlockEntity.xRot;
         clientFigureBoxUpdate.yRot = figureBoxBlockEntity.yRot;
         clientFigureBoxUpdate.zRot = figureBoxBlockEntity.zRot;
-        Channel.CHANNEL.sendToServer(clientFigureBoxUpdate);
+        PacketDistributor.sendToServer(clientFigureBoxUpdate);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         int centerX = this.width / 4;
         int leftShift = 105;
         int startY = this.height / 2 - 128;
@@ -131,7 +133,6 @@ public class FigureBoxScreen extends Screen {
         guiGraphics.drawString(font, Component.translatable("slider.y_rot"), centerX - leftShift, startY + spacing * 6 + 5, Color.WHITE);
         guiGraphics.drawString(font, Component.translatable("slider.z_rot"), centerX - leftShift, startY + spacing * 7 + 5, Color.WHITE);
         drawFigureBox(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void drawFigureBox(GuiGraphics guiGraphics) {
@@ -143,7 +144,7 @@ public class FigureBoxScreen extends Screen {
             Lighting.setupForEntityInInventory();
             poseStack.translate((float) width / 2 + 90, (float) height / 2, 512);
             float scale = 128 / Math.max(0.01f, figureBoxBlockEntity.scale);
-            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
             poseStack.mulPose(Axis.XP.rotationDegrees(210));
             float yRot = 0f;
             if (!figureBoxBlockEntity.getBlockState().isAir()) {

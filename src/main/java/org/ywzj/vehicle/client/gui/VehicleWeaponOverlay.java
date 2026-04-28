@@ -1,14 +1,12 @@
 package org.ywzj.vehicle.client.gui;
 
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -23,8 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
-public class VehicleWeaponOverlay implements IGuiOverlay {
+public class VehicleWeaponOverlay implements LayeredDraw.Layer {
 
     private static final int CARD_W        = 130;
     private static final int CARD_H        = 58;
@@ -47,8 +44,9 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
     private record WeaponEntry(AbstractVehicleWeapon<?> weapon, String abbr) {}
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick,
-                       int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
 
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (!instance.onVehicle()) return;

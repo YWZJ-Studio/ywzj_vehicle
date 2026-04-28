@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -94,11 +94,11 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(COLLECTIVE_PITCH, 0f);
-        this.entityData.define(PITCH_INPUT, 0f);
-        this.entityData.define(ROLL_INPUT, 0f);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(COLLECTIVE_PITCH, 0f);
+        builder.define(PITCH_INPUT, 0f);
+        builder.define(ROLL_INPUT, 0f);
     }
 
     @Override
@@ -119,13 +119,13 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
         buffer.writeBoolean(isLandingGearUp());
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf buffer) {
+    public void readSpawnData(RegistryFriendlyByteBuf buffer) {
         super.readSpawnData(buffer);
         if (landingGear != null) {
             landingGear.setOn(isLandingGearUp());

@@ -14,7 +14,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 
 import java.util.Comparator;
@@ -26,12 +25,8 @@ public class ActiveProtectionGrenadeEntity extends GrenadeEntity {
         super(AllEntities.APS_GRENADE.get(), entity, level, weaponId);
     }
 
-    public ActiveProtectionGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.APS_GRENADE.get(), level);
-    }
-
-    public ActiveProtectionGrenadeEntity(EntityType<ActiveProtectionGrenadeEntity> type, Level level) {
-        super(type, level);
+    public ActiveProtectionGrenadeEntity(EntityType<? extends ActiveProtectionGrenadeEntity> entityType, Level level) {
+        super(entityType, level);
     }
 
     @Override

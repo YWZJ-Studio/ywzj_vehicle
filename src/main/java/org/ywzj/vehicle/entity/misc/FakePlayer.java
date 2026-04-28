@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -71,7 +72,7 @@ public class FakePlayer extends Mob {
     }
 
     @Override
-    protected void dropAllDeathLoot(DamageSource source) {}
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean flag) {}
 
     @Override
     public Component getName() {
@@ -83,9 +84,9 @@ public class FakePlayer extends Mob {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(NAME, DEFAULT_NAME);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(NAME, DEFAULT_NAME);
     }
 
     @Override

@@ -15,11 +15,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
 
 import java.util.ArrayList;
@@ -66,10 +66,10 @@ public class DecorationSelectScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawPreview(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void updateFilteredList(String filter) {
@@ -114,7 +114,7 @@ public class DecorationSelectScreen extends Screen {
                                 poseStack.translate(slotX + 16, slotY + 16, 512);
                                 poseStack.mulPose(Axis.YP.rotationDegrees(180));
                                 poseStack.mulPose(Axis.ZP.rotationDegrees(180));
-                                poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+                                poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
                                 VertexConsumer builder = guiGraphics.bufferSource().getBuffer(RenderType.entityCutout(texture));
                                 model.renderToBuffer(poseStack, builder, 15728880, OverlayTexture.NO_OVERLAY);
                             }
@@ -165,7 +165,7 @@ public class DecorationSelectScreen extends Screen {
             float rotation = (System.currentTimeMillis() % 10000) / 10000f * 360f;
             poseStack.mulPose(Axis.XP.rotationDegrees(165));
             poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
-            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
             // 装饰模型
             VertexConsumer builder = guiGraphics.bufferSource().getBuffer(RenderType.entityCutout(display.getTexture()));
             display.getModel().renderToBuffer(poseStack, builder, 15728880, OverlayTexture.NO_OVERLAY);
@@ -210,14 +210,14 @@ public class DecorationSelectScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         int totalRows = (int) Math.ceil((double) filteredDecorationDisplayIds.size() / COLUMNS);
         if (totalRows > VISIBLE_ROWS) {
             int maxScrollOffset = totalRows - VISIBLE_ROWS;
-            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(delta), 0, maxScrollOffset);
+            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(deltaY), 0, maxScrollOffset);
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     private void onDisplaySelected(ResourceLocation displayId) {
@@ -225,7 +225,7 @@ public class DecorationSelectScreen extends Screen {
         ClientDecorationAction clientDecorationAction = new ClientDecorationAction();
         clientDecorationAction.action = ClientDecorationAction.Action.UPDATE_ITEM;
         clientDecorationAction.displayId = displayId.toString();
-        Channel.CHANNEL.sendToServer(clientDecorationAction);
+        PacketDistributor.sendToServer(clientDecorationAction);
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 

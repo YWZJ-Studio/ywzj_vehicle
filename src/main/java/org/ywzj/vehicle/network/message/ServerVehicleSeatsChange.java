@@ -1,13 +1,17 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
-import java.util.function.Supplier;
+public class ServerVehicleSeatsChange implements CustomPacketPayload {
 
-public class ServerVehicleSeatsChange {
-
+    public static final StreamCodec<FriendlyByteBuf, ServerVehicleSeatsChange> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ServerVehicleSeatsChange::decode);
+    public static final CustomPacketPayload.Type<ServerVehicleSeatsChange> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "vehicle_seats_change"));
     public int vehicleEntityId;
     public int[] passengerIdsBySeat;
 
@@ -40,9 +44,13 @@ public class ServerVehicleSeatsChange {
         }
     }
 
-    public static void onServerMessageReceived(ServerVehicleSeatsChange message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ctxSupplier.get().setPacketHandled(true);
-        ctxSupplier.get().enqueueWork(() -> AbstractVehicle.onServerVehicleSeatsChange(message));
+    public static void handle(ServerVehicleSeatsChange message, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> AbstractVehicle.onServerVehicleSeatsChange(message));
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

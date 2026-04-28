@@ -6,15 +6,15 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.event.RegisterBedrockMode
 import com.github.mcmodderanchor.simplebedrockmodel.v1.resource.BedrockModelResourceSet;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.resource.RawResourceLoader;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.ywzj.vehicle.YwzjVehicle;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public class BedrockModelLoader {
 
     public static final RawResourceLoader COMMON_LOADER = new RawResourceLoader() {

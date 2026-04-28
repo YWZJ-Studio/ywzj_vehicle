@@ -2,11 +2,8 @@ package org.ywzj.vehicle.client.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.particle.ExplosionCloudOption;
 
-@OnlyIn(Dist.CLIENT)
 public class ExplosionCloudParticle extends TextureSheetParticle {
 
     public static ExplosionCloudParticleProvider provider(SpriteSet spriteSet) {

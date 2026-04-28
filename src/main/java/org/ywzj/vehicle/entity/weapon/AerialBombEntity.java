@@ -9,10 +9,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PlayMessages;
-import org.ywzj.vehicle.all.AllEntities;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -26,16 +24,12 @@ public class AerialBombEntity extends AmmoEntity {
     private VehicleSound soundWhistle;
     private VehicleSound soundIncoming;
 
-    public AerialBombEntity(EntityType<? extends Projectile> entityType, Level level) {
-        super(AllEntities.ROCKET.get(), level, null);
-    }
-
     public AerialBombEntity(EntityType<? extends Projectile> entityType, Level level, ResourceLocation weaponId) {
         super(entityType, level, weaponId);
     }
 
-    public AerialBombEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.AERIAL_BOMB.get(), level, null);
+    public AerialBombEntity(EntityType<? extends AerialBombEntity> entityType, Level level) {
+        super(entityType, level, null);
     }
 
     public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {

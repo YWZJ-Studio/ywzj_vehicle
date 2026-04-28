@@ -1,9 +1,15 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import org.ywzj.vehicle.YwzjVehicle;
 
-public class ServerSoundEvent {
+public class ServerSoundEvent implements CustomPacketPayload {
 
+    public static final StreamCodec<FriendlyByteBuf, ServerSoundEvent> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ServerSoundEvent::decode);
+    public static final CustomPacketPayload.Type<ServerSoundEvent> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "sound_event"));
     public int entityId;
     public String soundName;
     public float volume;
@@ -39,6 +45,11 @@ public class ServerSoundEvent {
         buf.writeUtf(soundName);
         buf.writeFloat(volume);
         buf.writeBoolean(on);
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

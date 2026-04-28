@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.shader.ModShaders;
@@ -24,9 +25,7 @@ public class GuiHelper {
         if (shader == null) return; // Shader 尚未加载
         RenderSystem.setShader(() -> shader);
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferbuilder = tesselator.getBuilder();
-        bufferbuilder.begin(VertexFormat.Mode.QUADS, ModShaders.HUD_CIRCLE);
+        BufferBuilder bufferbuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, ModShaders.HUD_CIRCLE);
 
         Matrix4f matrix = poseStack.last().pose();
 
@@ -43,7 +42,7 @@ public class GuiHelper {
                 red, green, blue, alpha,
                 thickness, start, end
         );
-        BufferUploader.drawWithShader(bufferbuilder.end());
+        BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
     }
@@ -54,11 +53,27 @@ public class GuiHelper {
             float r, float g, float b, float a,
             float thickness, float start, float end
     ) {
-        // We encode thickness,start,end into the normal attribute (x,y,z)
-        buf.vertex(matrix, cx - radius, cy + radius, 0).color(r, g, b, a).uv(0, 1).normal(thickness, start, end).endVertex();
-        buf.vertex(matrix,cx + radius, cy + radius, 0).color(r, g, b, a).uv(1, 1).normal(thickness, start, end).endVertex();
-        buf.vertex(matrix,cx + radius, cy - radius, 0).color(r, g, b, a).uv(1, 0).normal(thickness, start, end).endVertex();
-        buf.vertex(matrix,cx - radius, cy - radius, 0).color(r, g, b, a).uv(0, 0).normal(thickness, start, end).endVertex();
+        int fullBright = LightTexture.FULL_BRIGHT;
+        buf.addVertex(matrix, cx - radius, cy + radius, 0)
+                .setColor(r, g, b, a)
+                .setUv(0, 1)
+                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
+                .setNormal(thickness, start, end);
+        buf.addVertex(matrix, cx + radius, cy + radius, 0)
+                .setColor(r, g, b, a)
+                .setUv(1, 1)
+                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
+                .setNormal(thickness, start, end);
+        buf.addVertex(matrix, cx + radius, cy - radius, 0)
+                .setColor(r, g, b, a)
+                .setUv(1, 0)
+                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
+                .setNormal(thickness, start, end);
+        buf.addVertex(matrix, cx - radius, cy - radius, 0)
+                .setColor(r, g, b, a)
+                .setUv(0, 0)
+                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
+                .setNormal(thickness, start, end);
     }
 
     /**
@@ -94,9 +109,7 @@ public class GuiHelper {
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-        Tesselator tess = Tesselator.getInstance();
-        BufferBuilder buf = tess.getBuilder();
-        buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
         PoseStack.Pose last = gg.pose().last();
 
@@ -107,13 +120,13 @@ public class GuiHelper {
             float cos = (float) Math.cos(ang);
             float sin = (float) Math.sin(ang);
 
-            buf.vertex(last.pose(), cx + cos * radius, cy + sin * radius, 0)
-                    .color(r, g, b, a).endVertex();
-            buf.vertex(last.pose(), cx + cos * inner, cy + sin * inner, 0)
-                    .color(r, g, b, a).endVertex();
+            buf.addVertex(last.pose(), cx + cos * radius, cy + sin * radius, 0)
+                    .setColor(r, g, b, a);
+            buf.addVertex(last.pose(), cx + cos * inner, cy + sin * inner, 0)
+                    .setColor(r, g, b, a);
         }
 
-        tess.end();
+        BufferUploader.drawWithShader(buf.buildOrThrow());
         RenderSystem.disableBlend();
     }
 

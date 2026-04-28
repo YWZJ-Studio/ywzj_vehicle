@@ -2,49 +2,46 @@ package org.ywzj.vehicle.all;
 
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.IForgeRegistry;
-import net.minecraftforge.registries.NewRegistryEvent;
-import net.minecraftforge.registries.RegistryBuilder;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.registries.NewRegistryEvent;
+import net.neoforged.neoforge.registries.RegistryBuilder;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplayType;
 import org.ywzj.vehicle.custom.part.PartUnitType;
 import org.ywzj.vehicle.custom.vehicle.VehicleDataType;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponType;
 
-import java.util.function.Supplier;
-
-@Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber
 public class ModRegistries {
 
-    public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE = ResourceKey.createRegistryKey(
+    public static final ResourceKey<Registry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE_KEY = ResourceKey.createRegistryKey(
             YwzjVehicle.modLocation("vehicle_weapon_type")
     );
-    public static Supplier<IForgeRegistry<VehicleWeaponType<?, ?>>> VEHICLE_WEAPON_TYPE_SUPPLIER;
+    public static Registry<VehicleWeaponType<?, ?>> VEHICLE_WEAPON_TYPE;
 
-    public static final ResourceKey<Registry<PartUnitType<?, ?>>> PART_UNIT_TYPE = ResourceKey.createRegistryKey(
+    public static final ResourceKey<Registry<PartUnitType<?, ?>>> PART_UNIT_TYPE_KEY = ResourceKey.createRegistryKey(
             YwzjVehicle.modLocation("part_unit_type")
     );
-    public static Supplier<IForgeRegistry<PartUnitType<?, ?>>> PART_UNIT_TYPE_SUPPLIER;
+    public static Registry<PartUnitType<?, ?>> PART_UNIT_TYPE;
 
-    public static final ResourceKey<Registry<VehicleDataType<?>>> VEHICLE_DATA_TYPE = ResourceKey.createRegistryKey(
+    public static final ResourceKey<Registry<VehicleDataType<?>>> VEHICLE_DATA_TYPE_KEY = ResourceKey.createRegistryKey(
             YwzjVehicle.modLocation("vehicle_data_type")
     );
-    public static Supplier<IForgeRegistry<VehicleDataType<?>>> VEHICLE_DATA_TYPE_SUPPLIER;
+    public static Registry<VehicleDataType<?>> VEHICLE_DATA_TYPE;
 
-    public static final ResourceKey<Registry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE = ResourceKey.createRegistryKey(
+    public static final ResourceKey<Registry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE_KEY = ResourceKey.createRegistryKey(
             YwzjVehicle.modLocation("vehicle_display_type")
     );
-    public static Supplier<IForgeRegistry<VehicleDisplayType<?>>> VEHICLE_DISPLAY_TYPE_SUPPLIER;
+    public static Registry<VehicleDisplayType<?>> VEHICLE_DISPLAY_TYPE;
 
     @SubscribeEvent
+    @SuppressWarnings("unchecked")
     public static void registerRegistries(NewRegistryEvent event) {
-        VEHICLE_WEAPON_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleWeaponType<?, ?>>().setName(VEHICLE_WEAPON_TYPE.location()));
-        PART_UNIT_TYPE_SUPPLIER = event.create(new RegistryBuilder<PartUnitType<?, ?>>().setName(PART_UNIT_TYPE.location()));
-        VEHICLE_DATA_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleDataType<?>>().setName(VEHICLE_DATA_TYPE.location()));
-        VEHICLE_DISPLAY_TYPE_SUPPLIER = event.create(new RegistryBuilder<VehicleDisplayType<?>>()
-                .disableSync().setName(VEHICLE_DISPLAY_TYPE.location()));
+        VEHICLE_WEAPON_TYPE = event.create(new RegistryBuilder<>(VEHICLE_WEAPON_TYPE_KEY));
+        PART_UNIT_TYPE = event.create(new RegistryBuilder<>(PART_UNIT_TYPE_KEY));
+        VEHICLE_DATA_TYPE = event.create(new RegistryBuilder<>(VEHICLE_DATA_TYPE_KEY));
+        VEHICLE_DISPLAY_TYPE = event.create(new RegistryBuilder<>(VEHICLE_DISPLAY_TYPE_KEY));
     }
 
 }

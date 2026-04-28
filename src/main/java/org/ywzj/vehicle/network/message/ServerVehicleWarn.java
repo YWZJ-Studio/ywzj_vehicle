@@ -1,14 +1,18 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
 
-import java.util.function.Supplier;
+public class ServerVehicleWarn implements CustomPacketPayload {
 
-public class ServerVehicleWarn {
-
+    public static final StreamCodec<FriendlyByteBuf, ServerVehicleWarn> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ServerVehicleWarn::decode);
+    public static final CustomPacketPayload.Type<ServerVehicleWarn> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "vehicle_warn"));
     public int fromEntityId;
     public int toEntityId;
     public WarnType warnType;
@@ -39,12 +43,15 @@ public class ServerVehicleWarn {
         buf.writeUtf(info);
     }
 
-    public static void onServerMessageReceived(ServerVehicleWarn message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> WarningReceiver.handle(message));
+    public static void handle(ServerVehicleWarn message, IPayloadContext ctx) {
+        if (ctx.flow().isClientbound()) {
+            ctx.enqueueWork(() -> WarningReceiver.handle(message));
         }
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

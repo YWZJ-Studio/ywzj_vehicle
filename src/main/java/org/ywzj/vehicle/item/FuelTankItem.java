@@ -1,22 +1,17 @@
 package org.ywzj.vehicle.item;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.YwzjVehicle;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStack;
 import org.ywzj.vehicle.all.AllConfigs;
-import org.ywzj.vehicle.all.AllFluids;
+import org.ywzj.vehicle.all.AllDataComponents;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
@@ -27,60 +22,42 @@ public class FuelTankItem extends VehicleItem {
     }
 
     @Override
-    public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand pHand) {
-        if (!player.level().isClientSide) {
-            if (pHand == InteractionHand.MAIN_HAND) {
-                if (target instanceof AbstractVehicle vehicle) {
-                    ItemStack fuelTankItemStack = player.getItemInHand(pHand);
-                    int amount = fuelTankItemStack.getMaxDamage() - fuelTankItemStack.getDamageValue();
-                    amount = (int) (vehicle.addEnergy((float) amount / 1000) * 1000);
-                    ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(fuelTankItemStack, amount);
-                    return InteractionResult.sidedSuccess(player.level().isClientSide);
-                }
+    public InteractionResult interactEntity(ItemStack stack, Player player, Entity target, InteractionHand hand) {
+        if (!player.level().isClientSide && hand == InteractionHand.MAIN_HAND) {
+            if (target instanceof AbstractVehicle vehicle) {
+                int amount = stack.getMaxDamage() - stack.getDamageValue();
+                amount = (int) (vehicle.addEnergy((float) amount / 1000) * 1000);
+                ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(stack, amount);
+                return InteractionResult.SUCCESS;
             }
         }
-        return InteractionResult.sidedSuccess(player.level().isClientSide);
-    }
-
-    @Override
-    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        Fluid fluid = AllFluids.FUEL_SOURCE.get();
-        if (stack.hasTag() && stack.getTag().contains("Fluid")) {
-            ResourceLocation fluidId = YwzjVehicle.resourceLocation(stack.getTag().getCompound("Fluid").getString("FluidName"));
-            fluid = ForgeRegistries.FLUIDS.getValue(fluidId);
-            if (fluid == null) {
-                fluid = AllFluids.FUEL_SOURCE.get();
-            }
-        }
-        int capacity = stack.getMaxDamage();
-        int amount = capacity - stack.getDamageValue();
-        return new FluidHandler(stack, capacity, amount, fluid);
+        return InteractionResult.PASS;
     }
 
     public void remain(ItemStack stack, int amount) {
-        super.setDamage(stack, stack.getMaxDamage() - amount);
-        stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM)
-                .ifPresent(handler -> {
-                    if (handler instanceof FluidHandler fluidHandler) {
-                        fluidHandler.syncFluidWithDamage();
-                    }
-                });
+        setDamage(stack, stack.getMaxDamage() - amount);
+        var handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        if (handler instanceof FuelTankFluidHandler fluidHandler) {
+            fluidHandler.syncFluidWithDamage();
+        }
     }
 
-    public static class FluidHandler extends FluidHandlerItemStack {
+    public static class FuelTankFluidHandler extends FluidHandlerItemStack {
 
         private final int capacity;
 
-        public FluidHandler(ItemStack container, int capacity, int amount, Fluid fluid) {
-            super(container, capacity);
+        public FuelTankFluidHandler(ItemStack container, int capacity, Fluid fluid, int amount) {
+            super(AllDataComponents.FLUID, container, capacity);
             this.capacity = capacity;
-            this.setFluid(new FluidStack(fluid, amount));
+            setFluid(new FluidStack(fluid, amount));
         }
 
         @Override
         public boolean canFillFluidType(FluidStack fluid) {
-            String name = fluid.getFluid().getFluidType().toString();
-            return AllConfigs.common.fuelNameWhiteList.get().stream().anyMatch(name::contains);
+            String id = BuiltInRegistries.FLUID.getKey(fluid.getFluid()).toString();
+            return AllConfigs.common.fuelNameWhiteList.get()
+                    .stream()
+                    .anyMatch(id::contains);
         }
 
         @Override
@@ -101,11 +78,10 @@ public class FuelTankItem extends VehicleItem {
             if (container.isEmpty() || !container.isDamageableItem()) {
                 return;
             }
-            FluidStack fluid = getFluid();
             int maxDamage = container.getMaxDamage();
-            float fillRatio = (float) fluid.getAmount() / capacity;
-            int damage = Math.round((1.0f - fillRatio) * maxDamage);
-            container.setDamageValue(Math.min(Math.max(damage, 0), maxDamage));
+            float ratio = (float) getFluid().getAmount() / capacity;
+            int damage = Math.round((1.0f - ratio) * maxDamage);
+            container.setDamageValue(Math.clamp(damage, 0, maxDamage));
         }
 
         public void syncFluidWithDamage() {
@@ -114,12 +90,11 @@ public class FuelTankItem extends VehicleItem {
             }
             int damage = container.getDamageValue();
             int maxDamage = container.getMaxDamage();
-            float fillRatio = 1.0f - (float) damage / maxDamage;
-            FluidStack current = getFluid();
-            if (!current.isEmpty()) {
-                int newAmount = Math.round(capacity * fillRatio);
-                current.setAmount(newAmount);
-                setFluid(current);
+            float ratio = 1.0f - (float) damage / maxDamage;
+            FluidStack fluid = getFluid();
+            if (!fluid.isEmpty()) {
+                fluid.setAmount(Math.round(capacity * ratio));
+                setFluid(fluid);
             }
         }
 

@@ -2,12 +2,11 @@ package org.ywzj.vehicle.handler;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.ywzj.vehicle.client.gui.VehicleScopeOverlay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -15,13 +14,13 @@ import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
 import static org.ywzj.vehicle.util.MathUtil.magnificationToFov;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class LocalVehiclePlayerEvent {
 
     @SubscribeEvent(receiveCanceled = true)
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.side == LogicalSide.CLIENT && event.phase == TickEvent.Phase.END) {
-            if (event.player == LocalVehiclePlayer.instance.getPlayer()) {
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity().level().isClientSide()) {
+            if (event.getEntity() == LocalVehiclePlayer.instance.getPlayer()) {
                 LocalVehiclePlayer.instance.tick();
             }
         }

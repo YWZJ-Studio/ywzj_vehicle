@@ -5,16 +5,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderHandEvent;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderHandEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class FirstPersonHandler {
 
     public static float zRot;
@@ -58,7 +58,7 @@ public class FirstPersonHandler {
         double yaw = event.getYaw();
         double pitch = event.getPitch();
         double roll = event.getRoll();
-        shakeTime = Mth.lerp(0.05 * Minecraft.getInstance().getDeltaFrameTime(), shakeTime, 0.0);
+        shakeTime = Mth.lerp(0.05 * Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), shakeTime, 0.0);
         if (shakeTime > 0) {
             double shakeRadiusAmplitude = 1 - Mth.clamp(minecraft.player.position().distanceTo(shakePos) / shakeRadius, 0, 1);
             yaw = yaw + (shakeTime * Math.sin(1.2 * Math.PI * shakeTime) * shakeAmplitude * shakeRadiusAmplitude * (onVehicle ? 0.15 : 1.0));

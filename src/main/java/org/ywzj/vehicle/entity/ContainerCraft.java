@@ -1,12 +1,11 @@
 package org.ywzj.vehicle.entity;
 
-import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.Entity;
@@ -23,10 +22,8 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.wrapper.InvWrapper;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -38,7 +35,7 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
 
     private static final EntityDataAccessor<Float> HEALTH = SynchedEntityData.defineId(ContainerCraft.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> MAX_HEALTH = SynchedEntityData.defineId(ContainerCraft.class, EntityDataSerializers.FLOAT);
-    private LazyOptional<?> itemHandler = LazyOptional.of(() -> new InvWrapper(this));
+    private final InvWrapper itemHandler = new InvWrapper(this);
     protected double lerpX;
     protected double lerpY;
     protected double lerpZ;
@@ -52,21 +49,21 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(HEALTH, -1F);
-        this.entityData.define(MAX_HEALTH, -1F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(HEALTH, -1F);
+        builder.define(MAX_HEALTH, -1F);
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
-        ContainerHelper.saveAllItems(compound, this.getItemStacks());
+        ContainerHelper.saveAllItems(compound, this.getItemStacks(), this.registryAccess());
         compound.putFloat("MaxHealth", this.getMaxHealth());
         compound.putFloat("Health", this.getHealth());
     }
 
     @Override
     public void readAdditionalSaveData(@NotNull CompoundTag compound) {
-        ContainerHelper.loadAllItems(compound, this.getItemStacks());
+        ContainerHelper.loadAllItems(compound, this.getItemStacks(), this.registryAccess());
         if (compound.contains("MaxHealth", 99)) {
             this.setMaxHealth(compound.getFloat("MaxHealth"));
         }
@@ -76,7 +73,7 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     }
 
     @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements, boolean pTeleport) {
+    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements) {
         this.lerpX = pX;
         this.lerpY = pY;
         this.lerpZ = pZ;
@@ -104,6 +101,10 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         if (f > 0.0F) {
             this.setHealth(f + pHealAmount);
         }
+    }
+
+    public InvWrapper getItemHandler() {
+        return itemHandler;
     }
 
     public float getHealth() {
@@ -235,12 +236,12 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     }
 
     @Override
-    public @Nullable ResourceLocation getLootTable() {
+    public @Nullable ResourceKey<LootTable> getLootTable() {
         return null;
     }
 
     @Override
-    public void setLootTable(@Nullable ResourceLocation pLootTable) {}
+    public void setLootTable(@Nullable ResourceKey<LootTable> pLootTable) {}
 
     @Override
     public long getLootTableSeed() {
@@ -256,30 +257,6 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
             return ChestMenu.sixRows(pContainerId, pPlayerInventory, this);
         }
         return null;
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER && this.hasContainer()) {
-            return itemHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        if (this.hasContainer()) {
-            itemHandler.invalidate();
-        }
-    }
-
-    @Override
-    public void reviveCaps() {
-        super.reviveCaps();
-        if (this.hasContainer()) {
-            itemHandler = LazyOptional.of(() -> new InvWrapper(this));
-        }
     }
 
     @Override

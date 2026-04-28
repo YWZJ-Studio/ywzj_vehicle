@@ -8,7 +8,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllSounds;
@@ -78,7 +78,7 @@ public class DamageSystem {
                             vehicle.relativeRotDirection(projectile.getDeltaMovement(), true),
                             amount,
                             message);
-                    MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
+                    NeoForge.EVENT_BUS.post(hitVehicleEvent);
                 }
             }
             if (damageSource.getDirectEntity() instanceof AbstractVehicle && damageSource.getEntity() instanceof ServerPlayer serverPlayer) {
@@ -92,7 +92,7 @@ public class DamageSystem {
                         vehicle.relativeRotDirection(direction, true),
                         amount,
                         message);
-                MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
+                NeoForge.EVENT_BUS.post(hitVehicleEvent);
             }
         } else {
             vehicle.playSound(vehicle.getHurtSound(damageSource), 2, 1);

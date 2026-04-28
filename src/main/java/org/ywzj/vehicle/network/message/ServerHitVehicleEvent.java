@@ -2,16 +2,20 @@ package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
 
-import java.util.function.Supplier;
+public class ServerHitVehicleEvent implements CustomPacketPayload {
 
-public class ServerHitVehicleEvent {
-
+    public static final StreamCodec<FriendlyByteBuf, ServerHitVehicleEvent> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ServerHitVehicleEvent::decode);
+    public static final CustomPacketPayload.Type<ServerHitVehicleEvent> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "hit_vehicle_event"));
     public int entityId;
     public Vec3 hitRelativePosition;
     public Vec3 hitRelativeVector;
@@ -34,7 +38,7 @@ public class ServerHitVehicleEvent {
         vehicleSeatsChange.hitRelativePosition = new Vec3(buf.readVector3f());
         vehicleSeatsChange.hitRelativeVector = new Vec3(buf.readVector3f());
         vehicleSeatsChange.damage = buf.readFloat();
-        vehicleSeatsChange.message = buf.readComponent();
+        vehicleSeatsChange.message = Component.translatable(buf.readUtf());
         return vehicleSeatsChange;
     }
 
@@ -43,24 +47,26 @@ public class ServerHitVehicleEvent {
         buf.writeVector3f(hitRelativePosition.toVector3f());
         buf.writeVector3f(hitRelativeVector.toVector3f());
         buf.writeFloat(damage);
-        buf.writeComponent(message);
+        buf.writeUtf(message.getString());
     }
 
-    public static void onServerMessageReceived(ServerHitVehicleEvent message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        ctxSupplier.get().setPacketHandled(true);
+    public static void handle(ServerHitVehicleEvent message, IPayloadContext ctx) {
         if (!AllConfigs.common.hitIndicator.get()) {
             return;
         }
-        ctxSupplier.get().enqueueWork(() -> {
-            VehicleHitIndicatorOverlay.lastHitTime = System.currentTimeMillis();
-            if (!VehicleHitIndicatorOverlay.events.isEmpty() && VehicleHitIndicatorOverlay.events.get(0).entityId != message.entityId) {
-                VehicleHitIndicatorOverlay.events.clear();
-            }
-            VehicleHitIndicatorOverlay.events.add(message);
-            if (VehicleHitIndicatorOverlay.events.size() > 128) {
-                VehicleHitIndicatorOverlay.events.remove(0);
-            }
-        });
+        VehicleHitIndicatorOverlay.lastHitTime = System.currentTimeMillis();
+        if (!VehicleHitIndicatorOverlay.events.isEmpty() && VehicleHitIndicatorOverlay.events.get(0).entityId != message.entityId) {
+            VehicleHitIndicatorOverlay.events.clear();
+        }
+        VehicleHitIndicatorOverlay.events.add(message);
+        if (VehicleHitIndicatorOverlay.events.size() > 128) {
+            VehicleHitIndicatorOverlay.events.remove(0);
+        }
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

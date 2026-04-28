@@ -1,17 +1,20 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -20,10 +23,11 @@ import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
-public class ServerBroadcastEntities {
+public class ServerBroadcastEntities implements CustomPacketPayload {
 
+    public static final StreamCodec<FriendlyByteBuf, ServerBroadcastEntities> STREAM_CODEC = StreamCodec.of((buf, msg) -> encode(msg, buf), ServerBroadcastEntities::decode);
+    public static final CustomPacketPayload.Type<ServerBroadcastEntities> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "broadcast_entities"));
     public List<BroadcastEntity> entities;
 
     public record BroadcastEntity(int entityId, ResourceLocation entityType, Vec3 entityPosition, Vec3 entityVelocity, CompoundTag data) {}
@@ -61,12 +65,8 @@ public class ServerBroadcastEntities {
         return message;
     }
 
-    public static void onServerMessageReceived(ServerBroadcastEntities message, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context context = ctxSupplier.get();
-        context.setPacketHandled(true);
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> handle(message));
-        }
+    public static void handle(ServerBroadcastEntities message, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> handle(message));
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -86,7 +86,7 @@ public class ServerBroadcastEntities {
             ConcurrentHashMap<Integer, LocalVehiclePlayer.ServerEntity> serverEntities = LocalVehiclePlayer.instance.serverEntities;
             LocalVehiclePlayer.ServerEntity serverEntity = serverEntities.get(broadcastEntity.entityId);
             if (serverEntity == null) {
-                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(broadcastEntity.entityType);
+                EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(broadcastEntity.entityType);
                 Entity entity = type.create(level);
                 if (entity != null) {
                     entity.load(broadcastEntity.data);
@@ -120,6 +120,11 @@ public class ServerBroadcastEntities {
                 serverEntity.updateTick = LocalVehiclePlayer.instance.getPlayer().tickCount;
             }
         }
+    }
+
+    @Override
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
 }

@@ -11,11 +11,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PlayMessages;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -28,16 +26,12 @@ public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
     public static final int LIFE = 200;
     private VehicleSound tailSound;
 
-    public DecoyFlareEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel, DECOY_FLARE_ID);
-    }
-
     public DecoyFlareEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
         super(pEntityType, pLevel, weaponId);
     }
 
-    public DecoyFlareEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.DECOY_FLARE.get(), level, DECOY_FLARE_ID);
+    public DecoyFlareEntity(EntityType<? extends DecoyFlareEntity> entityType, Level level) {
+        super(entityType, level, DECOY_FLARE_ID);
     }
 
     public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {
@@ -111,9 +105,6 @@ public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
             tailSound.play();
         }
     }
-
-    @Override
-    protected void defineSynchedData() {}
 
     @Override
     public boolean shouldRender(double x, double y, double z) {

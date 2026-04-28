@@ -18,16 +18,18 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
@@ -50,10 +52,10 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
             .build(new CacheLoader<>() {
                 @Override
                 public Entity load(ItemStack stack) {
-                    CompoundTag tag = stack.getOrCreateTag();
+                    CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                     String entityId = tag.getString("entityId");
                     CompoundTag entityData = tag.getCompound("entityData");
-                    EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityId));
+                    EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(YwzjVehicle.resourceLocation(entityId));
                     if (type != null) {
                         Entity entity = type.create(Minecraft.getInstance().level);
                         if (entity != null) {
@@ -89,7 +91,7 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                     isGui = false;
                 }
                 blockDispatcher.renderSingleBlock(state, poseStack, pBuffer, pPackedLight, pPackedOverlay, ModelData.EMPTY, null);
-                CompoundTag tag = itemStack.getOrCreateTag();
+                CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                 if (tag.contains("entityId") && tag.contains("entityData")) {
                     try {
                         Entity entity = entityCache.getUnchecked(itemStack);
@@ -107,7 +109,7 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                                     if (texture != MissingTextureAtlasSprite.getTexture()) {
                                         poseStack.translate(0.5, 0.6, 0);
                                         VertexConsumer buffer = pBuffer.getBuffer(RenderType.text(slotTexture));
-                                        VEHICLE_SLOT_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                        VEHICLE_SLOT_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
                                         poseStack.popPose();
                                         return;
                                     }

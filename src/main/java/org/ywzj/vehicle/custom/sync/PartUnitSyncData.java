@@ -1,11 +1,8 @@
 package org.ywzj.vehicle.custom.sync;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializer;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerEntityDataUpdate;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 
@@ -64,7 +61,7 @@ public class PartUnitSyncData {
         return holder;
     }
 
-    @OnlyIn(Dist.CLIENT)
+
     public void onUpdateReceived(List<SyncDataEntry<?>> entries) {
         for (var entry : entries) {
             var holder = dataHolders.get(entry.index());
@@ -78,10 +75,7 @@ public class PartUnitSyncData {
             var dirtyEntries = packDirty(false);
             if (!dirtyEntries.isEmpty()) {
                 var message = new ServerEntityDataUpdate(entityId, partUnit.getIndex(), dirtyEntries);
-                Channel.CHANNEL.send(
-                        PacketDistributor.TRACKING_ENTITY.with(partUnit::getVehicle),
-                        message
-                );
+                PacketDistributor.sendToPlayersTrackingEntity(partUnit.getVehicle(), message);
             }
         }
     }

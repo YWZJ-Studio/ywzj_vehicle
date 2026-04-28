@@ -3,7 +3,7 @@ package org.ywzj.vehicle.entity.vehicle;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -23,7 +23,6 @@ import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
-import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.render.animation.context.FixedWingVehicleContext;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -104,12 +103,12 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(THROTTLE_LEVEL, 0f);
-        this.entityData.define(PITCH_INPUT, 0f);
-        this.entityData.define(YAW_INPUT, 0f);
-        this.entityData.define(ROLL_INPUT, 0f);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(THROTTLE_LEVEL, 0f);
+        builder.define(PITCH_INPUT, 0f);
+        builder.define(YAW_INPUT, 0f);
+        builder.define(ROLL_INPUT, 0f);
     }
 
     @Override
@@ -130,13 +129,13 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
         buffer.writeBoolean(isLandingGearUp());
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf buffer) {
+    public void readSpawnData(RegistryFriendlyByteBuf buffer) {
         super.readSpawnData(buffer);
         if (landingGear != null) {
             landingGear.setOn(isLandingGearUp());
@@ -201,13 +200,9 @@ public class FixedWingVehicle extends AbstractVehicle
 
     @Override
     protected void tickEnergy() {
-        getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
-            float fuel = cap.getFuel();
-            fuel = org.joml.Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100 * getThrottleLevel() / 100);
-            physicsEngine.mass = curbWeight + fuel;
-            entityData.set(ENERGY, fuel);
-            setEnergy(fuel);
-        });
+        float energy = getEnergy();
+        energy = org.joml.Math.max(0, energy - energyInfo.energyConsumptionPerTick * getPower() / 100 * getThrottleLevel() / 100);
+        setEnergy(energy);
     }
 
     private void tickInput() {

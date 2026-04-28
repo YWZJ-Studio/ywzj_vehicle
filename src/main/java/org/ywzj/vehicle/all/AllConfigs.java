@@ -1,10 +1,9 @@
 package org.ywzj.vehicle.all;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class AllConfigs {
 
     public static CommonConfig common;
@@ -23,12 +21,12 @@ public class AllConfigs {
     public static List<String> serverBroadcastEntityWhitelist = new ArrayList<>();
 
     public static void register(ModLoadingContext context) {
-        Pair<CommonConfig, ForgeConfigSpec> specPairCommon = new ForgeConfigSpec.Builder().configure(CommonConfig::new);
+        Pair<CommonConfig, ModConfigSpec> specPairCommon = new ModConfigSpec.Builder().configure(CommonConfig::new);
         common = specPairCommon.getLeft();
-        context.registerConfig(ModConfig.Type.COMMON, specPairCommon.getRight());
-        Pair<ServerConfig, ForgeConfigSpec> specPairServer = new ForgeConfigSpec.Builder().configure(ServerConfig::new);
+        context.getActiveContainer().registerConfig(ModConfig.Type.COMMON, specPairCommon.getRight());
+        Pair<ServerConfig, ModConfigSpec> specPairServer = new ModConfigSpec.Builder().configure(ServerConfig::new);
         server = specPairServer.getLeft();
-        context.registerConfig(ModConfig.Type.SERVER, specPairServer.getRight());
+        context.getActiveContainer().registerConfig(ModConfig.Type.SERVER, specPairServer.getRight());
         loadExternal();
     }
 
@@ -65,18 +63,18 @@ public class AllConfigs {
 
     public static class CommonConfig {
 
-        public final ForgeConfigSpec.ConfigValue<Boolean> allowMeleeDamageVehicle;
-        public final ForgeConfigSpec.ConfigValue<Boolean> canDestroyBlock;
-        public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlock;
-        public final ForgeConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
-        public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
-        public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
-        public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
-        public final ForgeConfigSpec.ConfigValue<Boolean> hitIndicator;
-        public final ForgeConfigSpec.ConfigValue<Boolean> checkTeamOnEnterVehicle;
-        public final ForgeConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
+        public final ModConfigSpec.ConfigValue<Boolean> allowMeleeDamageVehicle;
+        public final ModConfigSpec.ConfigValue<Boolean> canDestroyBlock;
+        public final ModConfigSpec.ConfigValue<Boolean> explosionDropBlock;
+        public final ModConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
+        public final ModConfigSpec.ConfigValue<Boolean> selfRighting;
+        public final ModConfigSpec.ConfigValue<Boolean> infiniteFuel;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
+        public final ModConfigSpec.ConfigValue<Boolean> hitIndicator;
+        public final ModConfigSpec.ConfigValue<Boolean> checkTeamOnEnterVehicle;
+        public final ModConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
 
-        public CommonConfig(ForgeConfigSpec.Builder builder) {
+        public CommonConfig(ModConfigSpec.Builder builder) {
             allowMeleeDamageVehicle = builder.comment("近战是否能伤害载具")
                     .define("allowMeleeDamageVehicle", false);
             canDestroyBlock = builder.comment("载具是否能破坏方块")
@@ -103,10 +101,10 @@ public class AllConfigs {
 
     public static class ServerConfig {
 
-        public final ForgeConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
-        public final ForgeConfigSpec.ConfigValue<Integer> serverBroadcastEntitiesInterval;
+        public final ModConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
+        public final ModConfigSpec.ConfigValue<Integer> serverBroadcastEntitiesInterval;
 
-        public ServerConfig(ForgeConfigSpec.Builder builder) {
+        public ServerConfig(ModConfigSpec.Builder builder) {
             showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离（单位：block）")
                     .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
             serverBroadcastEntitiesInterval = builder.comment("服务端向玩家广播其所在世界超视距实体的时间间隔（单位：tick）")

@@ -6,8 +6,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -15,13 +17,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.joml.Math;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -36,8 +36,8 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import java.util.ArrayList;
 import java.util.List;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
-public class VehicleHitIndicatorOverlay implements IGuiOverlay {
+@EventBusSubscriber(value = Dist.CLIENT)
+public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
 
     private static final ResourceLocation HIT_COMMON = YwzjVehicle.modLocation("textures/ui/hit_common.png");
     private static final ResourceLocation HIT_VEHICLE = YwzjVehicle.modLocation("textures/ui/hit_vehicle.png");
@@ -50,14 +50,16 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
     public static long lastHitTime = System.currentTimeMillis();
 
     @SubscribeEvent(receiveCanceled = true)
-    public static void onRenderOverlay(RenderGuiOverlayEvent.Pre event) {
-        if (event.getOverlay().id().equals(VanillaGuiOverlay.CROSSHAIR.id())) {
+    public static void onRenderOverlay(RenderGuiLayerEvent.Pre event) {
+        if (event.getName().equals(VanillaGuiLayers.CROSSHAIR)) {
             renderHitMarker(event.getGuiGraphics());
         }
     }
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
         if (!AllConfigs.common.hitIndicator.get()) {
             return;
         }
@@ -105,7 +107,7 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
             guiGraphics.pose().rotateAround(Axis.XP.rotationDegrees(pitch + 180), (float) root.x, (float) root.y, (float) root.z);
             guiGraphics.pose().rotateAround(Axis.YP.rotationDegrees(yaw), (float) root.x, (float) root.y, (float) root.z);
 
-            guiGraphics.pose().mulPoseMatrix((new Matrix4f()).scaling(scale, scale, -scale));
+            guiGraphics.pose().last().pose().mul((new Matrix4f()).scaling(scale, scale, -scale));
             Lighting.setupForEntityInInventory();
             EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
 
@@ -142,14 +144,12 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         float offset = 0.01f;
         for (int i = -1; i <= 2; i++) {
             for (int j = -1; j <= 2; j++) {
-                lineConsumer.vertex(matrix, (float) (start.x + i * offset), (float) start.y, (float) (start.z + j * offset))
-                        .color(r, g, b, a)
-                        .normal(0, 1, -100)
-                        .endVertex();
-                lineConsumer.vertex(matrix, (float) (end.x + i * offset), (float) end.y, (float) (end.z + j * offset))
-                        .color(r, g, b, a)
-                        .normal(0, 1, -100)
-                        .endVertex();
+                lineConsumer.addVertex(matrix, (float) (start.x + i * offset), (float) start.y, (float) (start.z + j * offset))
+                        .setColor(r, g, b, a)
+                        .setNormal(0, 1, -100);
+                lineConsumer.addVertex(matrix, (float) (end.x + i * offset), (float) end.y, (float) (end.z + j * offset))
+                        .setColor(r, g, b, a)
+                        .setNormal(0, 1, -100);
             }
         }
     }

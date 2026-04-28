@@ -17,7 +17,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 public class LivingEntityRendererMixin<T extends LivingEntity> {
 
     @Inject(method = "setupRotations", at = @At("HEAD"), cancellable = true)
-    public void setupRotations(T entity, PoseStack pPoseStack, float pAgeInTicks, float pRotationYaw, float pPartialTicks, CallbackInfo ci) {
+    public void setupRotations(T entity, PoseStack pPoseStack, float pAgeInTicks, float pRotationYaw, float pPartialTicks, float p_320045_, CallbackInfo ci) {
         if (entity.getRootVehicle() != entity && entity.getRootVehicle() instanceof AbstractVehicle vehicle) {
             float yRotDiff = Mth.wrapDegrees(180 + pRotationYaw - Mth.lerp(pPartialTicks, vehicle.yRotO, vehicle.getYRot()));
             Quaternionf q = new Quaternionf();

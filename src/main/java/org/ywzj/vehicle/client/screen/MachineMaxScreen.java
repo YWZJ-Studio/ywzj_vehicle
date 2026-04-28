@@ -16,8 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
@@ -27,7 +28,6 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientMachineMaxAction;
 import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
 import org.ywzj.vehicle.recipe.VehiclePrintingRecipe;
@@ -99,13 +99,13 @@ public class MachineMaxScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         drawMainBackground(guiGraphics);
         drawVehicleList(guiGraphics, mouseX, mouseY);
         drawPreviewPanel(guiGraphics);
         drawProgressBar(guiGraphics);
         drawReceipt(guiGraphics, mouseX, mouseY);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
         if (!this.hoveredStack.isEmpty()) {
             guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
         }
@@ -241,7 +241,7 @@ public class MachineMaxScreen extends Screen {
             float rotation = (System.currentTimeMillis() % 10000) / 10000f * 360f;
             poseStack.mulPose(Axis.XP.rotationDegrees(165));
             poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
-            poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             dispatcher.setRenderShadow(false);
             Lighting.setupForEntityInInventory();
@@ -299,13 +299,13 @@ public class MachineMaxScreen extends Screen {
             return;
         }
         ResourceLocation vehicleId = filteredVehicleList.get(selectedIndex).getKey();
-        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
+        Optional<RecipeHolder<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
         if (!recipeOptional.isPresent()) {
             guiGraphics.drawString(font, Component.translatable("tips.no_recipe"), x, y, Color.WHITE);
             return;
         }
         recipeOptional.ifPresent(recipe -> {
-            if (recipe instanceof VehiclePrintingRecipe vehicleRecipe) {
+            if (recipe.value() instanceof VehiclePrintingRecipe vehicleRecipe) {
                 List<VehiclePrintingIngredient> inputs = vehicleRecipe.getInputs();
                 for (int index = 0; index < inputs.size(); index++) {
                     int column = index / 5;
@@ -348,9 +348,9 @@ public class MachineMaxScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (filteredVehicleList.size() > VISIBLE_ITEMS) {
-            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(delta),
+            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(deltaY),
                     0,
                     filteredVehicleList.size() - VISIBLE_ITEMS);
         }
@@ -364,7 +364,7 @@ public class MachineMaxScreen extends Screen {
         if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
             printingButton.active = false;
         }
-        Optional<? extends Recipe<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleData.getVehicleId());
+        Optional<RecipeHolder<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleData.getVehicleId());
         if (!recipeOptional.isPresent()) {
             printingButton.visible = false;
             return;
@@ -381,7 +381,7 @@ public class MachineMaxScreen extends Screen {
             }
             clientMachineMaxAction.blockPos = machineMaxBlockEntity.getBlockPos();
             clientMachineMaxAction.action = ClientMachineMaxAction.Action.CRAFT;
-            Channel.CHANNEL.sendToServer(clientMachineMaxAction);
+            PacketDistributor.sendToServer(clientMachineMaxAction);
             machineMaxBlockEntity.bedrockBoneWrappers.clear();
         }
     }

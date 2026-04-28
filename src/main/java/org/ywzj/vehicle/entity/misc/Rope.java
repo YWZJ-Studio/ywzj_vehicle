@@ -3,6 +3,7 @@ package org.ywzj.vehicle.entity.misc;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -77,7 +78,7 @@ public class Rope extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {}
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag pCompound) {}

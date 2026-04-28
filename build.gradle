@@ -2,181 +2,75 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
-    id 'org.spongepowered.mixin' version '0.7.+'
+    id 'net.neoforged.moddev' version '2.0.141'
 }
 
 version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = "${mod_id}-${minecraft_version}"
+    archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
-minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-
-    copyIdeResources = true
-
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-
-    runs {
-        configureEach {
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {
-            // 使用 JetBrainsRuntime 时需要的参数，否则无法热重载
-            // 如果你使用别的 JDK，那么可以删除这一行
-            workingDirectory project.file('run/client_1')
-            jvmArgs "-XX:+AllowEnhancedClassRedefinition"
-            jvmArgs "-Xmx4g"
-            property 'forge.enabledGameTestNamespaces', mod_id
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-        }
-
-        client2 {
-            parent minecraft.runs.client
-            args '--username', 'Ranpoes'
-            workingDirectory project.file('run/client_2')
-            property 'forge.enabledGameTestNamespaces', mod_id
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-        }
-
-        server {
-            workingDirectory project.file('run/server')
-            property 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        gameTestServer {
-            property 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        data {
-            workingDirectory project.file('run-data')
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
-    }
-}
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+neoForge {
+    version = neo_version
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    runs {
+        client {
+            client()
+            gameDirectory = project.file('run/client_1')
+        }
+
+        client2 {
+            client()
+            gameDirectory = project.file('run/client_2')
+            programArguments.addAll("--username", "Ranpoes")
+        }
+
+        server {
+            server()
+            gameDirectory = project.file('run/server')
+        }
+    }
+}
+
 repositories {
     mavenCentral()
-    flatDir {
-        dir 'libs'
-    }
-    maven {
-        url = "https://repo.spongepowered.org/repository/maven-public/"
-    }
     maven {
         url "https://cursemaven.com"
         content {
             includeGroup "curse.maven"
         }
     }
-    maven {
-        // location of the maven that hosts JEI files since January 2023
-        // Patchouli
-        name = "Jared's maven"
-        url = "https://maven.blamejared.com/"
-    }
-    maven {
-        // location of a maven mirror for JEI files, as a fallback
-        name = "Mod Maven"
-        url = "https://modmaven.k-4u.nl"
-    }
-    maven {
-        url = "https://api.modrinth.com/maven"
-    }
-    maven {
-        name = "Valkyrien Skies"
-        url = "https://maven.valkyrienskies.org"
-    }
-    maven {
-        name = "Kotlin for Forge"
-        url = "https://thedarkcolour.github.io/KotlinForForge/"
+    flatDir {
+        dir 'libs'
     }
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-
-    // JS支持
-    jarJar(minecraftLibrary("ywzj:rhino-1.8.1-SNAPSHOT:1")) {
-        jarJar.ranged(it, "[1.8.0,2.0.0)")
-    }
-    // SBM
-    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.2.2-forge+mc1.20.1"))) {
-        jarJar.ranged(it, "[2.2.2,)")
-    }
+    jarJar(implementation('ywzj:rhino-1.8.1-SNAPSHOT:1'))
+    jarJar(implementation('com.github.mcmodderanchor:simplebedrockmodel:2.2.1-neoforge+mc1.21.1'))
     compileOnly("com.maydaymemory:mae:1.1.0") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
-    // mixinextras
-    compileOnly annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.6")
-    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.3.6")) {
-        jarJar.ranged(it, "[0.3.6,)")
-    }
-    // JEI
-    compileOnly fg.deobf("mezz.jei:jei-1.20.1-common-api:${jei_version}")
-    compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge-api:${jei_version}")
-    runtimeOnly fg.deobf("mezz.jei:jei-1.20.1-forge:15.20.0.104")
-    // 各类模组的兼容性测试
-    runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
-    runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
-    // tacz
-    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626")
-    // sbw
-    implementation fg.deobf("curse.maven:superb-warfare-1218165:7292685")
-    implementation fg.deobf("curse.maven:curios-309927:6418456")
-    implementation fg.deobf("curse.maven:geckolib-388172:7553267")
-    // vs
-    compileOnly("org.valkyrienskies.core:api:1.1.0+") {
-        exclude group: 'org.joml', module: 'joml'
-    }
-    compileOnly fg.deobf("curse.maven:valkyrien-skies-258371:7568034")
-    compileOnly fg.deobf("curse.maven:eureka-ships-654384:7419758")
-    compileOnly("thedarkcolour:kotlinforforge:4.11.0")
-    // create
-    compileOnly fg.deobf("curse.maven:create-328085:7178761")
 
-    if (!project.gradle.startParameter.taskNames.any { it.contains("runServer") }) {
-        runtimeOnly fg.deobf("maven.modrinth:embeddium:0.3.31+mc1.20.1")
-        runtimeOnly fg.deobf("curse.maven:rubidium-extra-654373:6101745")
-        runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
-    }
+    implementation "curse.maven:jei-238222:7420587"
 
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-}
-
-tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [
-            minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
-            forge_version: forge_version, forge_version_range: forge_version_range,
-            loader_version_range: loader_version_range,
-            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors: mod_authors, mod_description: mod_description,
-    ]
-    inputs.properties replaceProperties
-
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
-    }
+    additionalRuntimeClasspath 'ywzj:rhino-1.8.1-SNAPSHOT:1'
 }
 
 tasks.named('jar', Jar).configure {
@@ -184,26 +78,39 @@ tasks.named('jar', Jar).configure {
         attributes([
                 'Specification-Title'     : mod_id,
                 'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1', // We are version 1 of ourselves
+                'Specification-Version'   : '1',
                 'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Version'  : project.version,
                 'Implementation-Vendor'   : mod_authors,
                 'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
-    finalizedBy 'reobfJar'
 }
 
-// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing:
-// tasks.named('publish').configure {
-//     dependsOn 'reobfJar'
-// }
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description,
+    ]
+    inputs.properties replaceProperties
 
-// Example configuration to allow publishing using the maven-publish plugin
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifact jar
+            artifact tasks.named('jarJar')
         }
     }
     repositories {
@@ -213,11 +120,6 @@ publishing {
     }
 }
 
-mixin {
-    config 'mixins.ywzj_vehicle.json'
-    add sourceSets.main, "ywzj_vehicle.refmap.json"
-}
-
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.encoding = 'UTF-8'
 }

@@ -3,9 +3,11 @@ package org.ywzj.vehicle.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
@@ -15,8 +17,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.render.util.Color;
@@ -35,12 +35,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class VehicleOverlay implements IGuiOverlay {
+public class VehicleOverlay implements LayeredDraw.Layer {
 
     public static ConcurrentHashMap<Long, Component> tips = new ConcurrentHashMap<>();
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
         renderLookAt(guiGraphics, partialTick);
         LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
         if (!localVehiclePlayer.onVehicle()) {
@@ -121,12 +124,11 @@ public class VehicleOverlay implements IGuiOverlay {
             poseStack.popPose();
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            BufferBuilder buf = Tesselator.getInstance().getBuilder();
-            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            buf.vertex(poseStack.last().pose(), 0, 23, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(poseStack.last().pose(), -3, 29, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(poseStack.last().pose(), 3, 29, 0).color(0, 255, 0, 255).endVertex();
-            Tesselator.getInstance().end();
+            BufferBuilder buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            buf.addVertex(poseStack.last().pose(), 0, 23, 0).setColor(0, 255, 0, 255);
+            buf.addVertex(poseStack.last().pose(), -3, 29, 0).setColor(0, 255, 0, 255);
+            buf.addVertex(poseStack.last().pose(), 3, 29, 0).setColor(0, 255, 0, 255);
+            BufferUploader.drawWithShader(buf.buildOrThrow());
             RenderSystem.disableBlend();
         }
         poseStack.popPose();

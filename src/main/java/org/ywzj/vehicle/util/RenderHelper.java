@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.YwzjVehicle;
 
@@ -30,30 +29,26 @@ public class RenderHelper {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buf = tesselator.getBuilder();
-        buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
         PoseStack poseStack = guiGraphics.pose();
         for (int i = 0; i <= 64; i++) {
             double ang = Math.PI * 2 * i / 64;
             float cos = (float) Math.cos(ang);
             float sin = (float) Math.sin(ang);
             // 外圈
-            buf.vertex(poseStack.last().pose(),
+            buf.addVertex(poseStack.last().pose(),
                             cx + cos * radius,
                             cy + sin * radius,
                             0)
-                    .color(r, g, b, a)
-                    .endVertex();
+                    .setColor(r, g, b, a);
             // 内圈
-            buf.vertex(poseStack.last().pose(),
+            buf.addVertex(poseStack.last().pose(),
                             cx + cos * (radius - 0.5f),
                             cy + sin * (radius - 0.5f),
                             0)
-                    .color(r, g, b, a)
-                    .endVertex();
+                    .setColor(r, g, b, a);
         }
-        tesselator.end();
+        BufferUploader.drawWithShader(buf.buildOrThrow());
         RenderSystem.disableBlend();
     }
 
@@ -184,8 +179,7 @@ public class RenderHelper {
         Matrix4f mat = poseStack.last().pose();
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder bb = Tesselator.getInstance().getBuilder();
-        bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         float a = (color >> 24 & 255) / 255f;
         float rc = (color >> 16 & 255) / 255f;
@@ -200,13 +194,13 @@ public class RenderHelper {
             float xEnd = dx * end;
             float yEnd = dy * end;
 
-            bb.vertex(mat, xStart - nx, yStart - ny, 0).color(rc, gc, bc, a).endVertex();
-            bb.vertex(mat, xStart + nx, yStart + ny, 0).color(rc, gc, bc, a).endVertex();
-            bb.vertex(mat, xEnd + nx, yEnd + ny, 0).color(rc, gc, bc, a).endVertex();
-            bb.vertex(mat, xEnd - nx, yEnd - ny, 0).color(rc, gc, bc, a).endVertex();
+            bb.addVertex(mat, xStart - nx, yStart - ny, 0).setColor(rc, gc, bc, a);
+            bb.addVertex(mat, xStart + nx, yStart + ny, 0).setColor(rc, gc, bc, a);
+            bb.addVertex(mat, xEnd + nx, yEnd + ny, 0).setColor(rc, gc, bc, a);
+            bb.addVertex(mat, xEnd - nx, yEnd - ny, 0).setColor(rc, gc, bc, a);
         }
 
-        Tesselator.getInstance().end();
+        BufferUploader.drawWithShader(bb.buildOrThrow());
     }
 
     /**
@@ -240,10 +234,10 @@ public class RenderHelper {
         float f1 = (float) FastColor.ARGB32.green(pColor) / 255.0F;
         float f2 = (float) FastColor.ARGB32.blue(pColor) / 255.0F;
         VertexConsumer vertexconsumer = guiGraphics.bufferSource().getBuffer(pRenderType);
-        vertexconsumer.vertex(matrix4f, pMinX, pMinY, pZ).color(f, f1, f2, f3).endVertex();
-        vertexconsumer.vertex(matrix4f, pMinX, pMaxY, pZ).color(f, f1, f2, f3).endVertex();
-        vertexconsumer.vertex(matrix4f, pMaxX, pMaxY, pZ).color(f, f1, f2, f3).endVertex();
-        vertexconsumer.vertex(matrix4f, pMaxX, pMinY, pZ).color(f, f1, f2, f3).endVertex();
+        vertexconsumer.addVertex(matrix4f, pMinX, pMinY, pZ).setColor(f, f1, f2, f3);
+        vertexconsumer.addVertex(matrix4f, pMinX, pMaxY, pZ).setColor(f, f1, f2, f3);
+        vertexconsumer.addVertex(matrix4f, pMaxX, pMaxY, pZ).setColor(f, f1, f2, f3);
+        vertexconsumer.addVertex(matrix4f, pMaxX, pMinY, pZ).setColor(f, f1, f2, f3);
     }
 
     public static void renderArrow3D(PoseStack poseStack, MultiBufferSource bufferSource, float w, float h, int r, int g, int b, int a) {
@@ -258,19 +252,19 @@ public class RenderHelper {
             poseStack.rotateAround(Axis.YP.rotationDegrees(spin), 0, 0, 0);
             ResourceLocation whiteTexture = YwzjVehicle.resourceLocation("textures/misc/white.png");
             VertexConsumer arrowBuilder = bufferSource.getBuffer(RenderType.entityCutout(whiteTexture));
-            Matrix4f pose = poseStack.last().pose();
-            Matrix3f normal = poseStack.last().normal();
+            PoseStack.Pose poseEntry = poseStack.last();
+            Matrix4f pose = poseEntry.pose();
             int light = 15728880;
             // 前面
-            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,   w, h, w,  -w, h, w,  -w, h, w,  r, g, b, a, light);
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, poseEntry, 0, 0, 0,   w, h, w,  -w, h, w,  -w, h, w,  r, g, b, a, light);
             // 后面
-            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,  -w, h, -w,  w, h, -w,  w, h, -w, r, g, b, a, light);
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, poseEntry, 0, 0, 0,  -w, h, -w,  w, h, -w,  w, h, -w, r, g, b, a, light);
             // 左面
-            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,  -w, h, w,  -w, h, -w, -w, h, -w, r, g, b, a, light);
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, poseEntry, 0, 0, 0,  -w, h, w,  -w, h, -w, -w, h, -w, r, g, b, a, light);
             // 右面
-            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, 0, 0, 0,   w, h, -w,  w, h, w,   w, h, w,  r, g, b, a, light);
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, poseEntry, 0, 0, 0,   w, h, -w,  w, h, w,   w, h, w,  r, g, b, a, light);
             // 顶面 (封口)
-            RenderHelper.renderSolidQuad(arrowBuilder, pose, normal, -w, h, -w, -w, h, w,   w, h, w,   w, h, -w, r, g, b, a, light);
+            RenderHelper.renderSolidQuad(arrowBuilder, pose, poseEntry, -w, h, -w, -w, h, w,   w, h, w,   w, h, -w, r, g, b, a, light);
         }
         poseStack.popPose();
     }
@@ -278,15 +272,15 @@ public class RenderHelper {
     /**
      * 绘制用于纯色渲染的四边形/三角形面片
      */
-    public static void renderSolidQuad(VertexConsumer builder, Matrix4f pose, Matrix3f normal,
+    public static void renderSolidQuad(VertexConsumer builder, Matrix4f pose, PoseStack.Pose poseEntry,
                                  float x1, float y1, float z1, float x2, float y2, float z2,
                                  float x3, float y3, float z3, float x4, float y4, float z4,
                                  int r, int g, int b, int a, int light) {
         // 强制绑定到 UV(0, 0) 来获取贴图单色（搭配纯白贴图即可实现纯色渲染）
-        builder.vertex(pose, x1, y1, z1).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-        builder.vertex(pose, x2, y2, z2).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-        builder.vertex(pose, x3, y3, z3).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
-        builder.vertex(pose, x4, y4, z4).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0, 1, 0).endVertex();
+        builder.addVertex(pose, x1, y1, z1).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setUv2(light & 0xFFFF, light >> 16 & 0xFFFF).setNormal(poseEntry, 0, 1, 0);
+        builder.addVertex(pose, x2, y2, z2).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setUv2(light & 0xFFFF, light >> 16 & 0xFFFF).setNormal(poseEntry, 0, 1, 0);
+        builder.addVertex(pose, x3, y3, z3).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setUv2(light & 0xFFFF, light >> 16 & 0xFFFF).setNormal(poseEntry, 0, 1, 0);
+        builder.addVertex(pose, x4, y4, z4).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setUv2(light & 0xFFFF, light >> 16 & 0xFFFF).setNormal(poseEntry, 0, 1, 0);
     }
 
 }

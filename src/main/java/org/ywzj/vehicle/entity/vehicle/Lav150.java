@@ -32,11 +32,6 @@ public class Lav150 extends WheeledVehicle {
     }
 
     @Override
-    public double getPassengersRidingOffset() {
-        return 0.8f;
-    }
-
-    @Override
     public SoundEvent getEngineStartSound() {
         return AllSounds.LAV150_ENGINE_START.get();
     }

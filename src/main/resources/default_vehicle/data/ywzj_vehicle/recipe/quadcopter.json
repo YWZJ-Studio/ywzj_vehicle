@@ -1,0 +1,39 @@
+{
+  "type": "ywzj_vehicle:vehicle_printing",
+  "materials": [
+    {
+      "count": 48,
+      "ingredient": { "tag": "c:ingots/iron" }
+    },
+    {
+      "count": 32,
+      "ingredient": { "tag": "c:ingots/copper" }
+    },
+    {
+      "count": 24,
+      "ingredient": { "item": "minecraft:redstone" }
+    },
+    {
+      "count": 4,
+      "ingredient": { "item": "minecraft:glass_pane" }
+    },
+    {
+      "count": 4,
+      "ingredient": { "item": "minecraft:dispenser" }
+    },
+    {
+      "count": 8,
+      "ingredient": { "item": "minecraft:lapis_lazuli" }
+    }
+  ],
+  "result": {
+    "id": "ywzj_vehicle:vehicle_spawn_item",
+    "count": 1,
+    "components": {
+      "minecraft:custom_data": {
+        "YwzjVehicleId": "ywzj_vehicle:quadcopter"
+      }
+    }
+  },
+  "printingTime": 800
+}
