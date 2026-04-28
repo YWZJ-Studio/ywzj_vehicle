@@ -433,7 +433,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public boolean onInteract(Player player, InteractionHand hand) {
-        if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND && isInteractive()) {
+        if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND && isInteractive() && player.isShiftKeyDown()) {
             if (player.getItemInHand(hand).getItem() == AllItems.MODDING_TOOL.get()) {
                 switchWeapon(false, true);
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();

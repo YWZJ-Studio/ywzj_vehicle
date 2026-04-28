@@ -334,6 +334,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         Vec3 missilePos = this.position();
         Vec3 missileVel = this.getDeltaMovement();
         double missileSpeed = missileVel.length();
+        if (missileSpeed == 0) {
+            return;
+        }
         Vec3 targetPos;
         Vec3 targetVel;
         if (target != null) {

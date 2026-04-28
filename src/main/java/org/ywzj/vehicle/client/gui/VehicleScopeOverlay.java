@@ -29,7 +29,6 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
-import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 
@@ -116,34 +115,37 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
     }
 
     public void renderVehicleHeading(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
-            poseStack.translate(centerX + 116, centerY + 80, 0);
-            double length = Math.max(4, vehicle.getStructureLength());
-            float scale = (float) (0.5f * 10 / length);
+            poseStack.translate(screenWidth / 2f + 116f, screenHeight / 2f + 80f, 0f);
+            float scale = (float) (5.0 / Math.max(4.0, vehicle.getStructureLength()));
             poseStack.scale(scale, scale, scale);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(-vehicle.getYRot()));
+            float zRot = 180f;
             Player player = LocalVehiclePlayer.instance.getPlayer();
             PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(player);
             if (playerPartUnit instanceof RotatableUnit<?> rotatableUnit) {
-                float yRot = rotatableUnit.worldRot().y - vehicle.getYRot();
-                poseStack.mulPose(Axis.ZP.rotationDegrees(-yRot));
+                zRot -= rotatableUnit.worldRot().y - vehicle.getYRot();
             }
-            int expansion = 10;
+            poseStack.mulPose(Axis.ZP.rotationDegrees(zRot));
+            Vec3 pos = vehicle.position();
+            Vector3f[] axes = vehicle.axes();
+            Vector3f axisX = axes[0];
+            Vector3f axisZ = axes[2];
+            float vehicleYRotRad = (float) Math.toRadians(vehicle.getYRot());
+            Vector3f rotCache = new Vector3f();
             for (VehicleCubeOBB vehicleCubeOBB : vehicle.getVehicleCubeOBBs()) {
-                renderCubeOBB(vehicle, vehicleCubeOBB, expansion, poseStack, guiGraphics, Color.GREEN);
+                renderCubeOBB(vehicleCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, Color.GREEN);
             }
             for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
+                int color = partUnit.getOwner() == player ? Color.BLUE : Color.GREEN;
                 for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
-                    renderCubeOBB(vehicle, partCubeOBB, expansion, poseStack, guiGraphics, partUnit.getOwner() == player ? Color.BLUE : Color.GREEN);
+                    renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
                 }
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
                         for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
-                            renderCubeOBB(vehicle, partCubeOBB, expansion, poseStack, guiGraphics, partUnit.getOwner() == player ? Color.BLUE : Color.GREEN);
+                            renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
                         }
                     }
                 }
@@ -152,24 +154,20 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
         poseStack.popPose();
     }
 
-    private void renderCubeOBB(AbstractVehicle vehicle, VehicleCubeOBB cubeOBB, double expansion, PoseStack poseStack, GuiGraphics guiGraphics, int color) {
-        OBB obb = cubeOBB.obb();
-        Vec3 center = new Vec3(obb.center());
-        Vec3 offset = center.subtract(vehicle.position());
-        double offsetX = offset.x * expansion;
-        double offsetZ = offset.z * expansion;
+    private void renderCubeOBB(VehicleCubeOBB cubeOBB, Vec3 pos, Vector3f axisX, Vector3f axisZ, float vehicleYRotRad, Vector3f rotCache, PoseStack poseStack, GuiGraphics guiGraphics, int color) {
+        Vec3 center = new Vec3(cubeOBB.obb().center());
+        double dx = center.x - pos.x;
+        double dy = center.y - pos.y;
+        double dz = center.z - pos.z;
+        float offsetX = (float) ((dx * axisX.x() + dy * axisX.y() + dz * axisX.z()) * 10.0);
+        float offsetZ = (float) ((dx * axisZ.x() + dy * axisZ.y() + dz * axisZ.z()) * 10.0);
         poseStack.pushPose();
-        {
-            poseStack.translate(-offsetX, -offsetZ, 0);
-            Vector3f rot = new Vector3f();
-            obb.rotation().getEulerAnglesYXZ(rot);
-            poseStack.mulPose(Axis.ZP.rotation(-rot.y));
-            int bodyCubeHalfWidth = (int) (cubeOBB.width / 2 * expansion);
-            int bodyCubeHalfDepth = (int) (cubeOBB.depth / 2 * expansion);
-            drawRectByCorner(guiGraphics, -bodyCubeHalfWidth, bodyCubeHalfWidth, -bodyCubeHalfDepth, bodyCubeHalfDepth,
-                    color, 1);
-            poseStack.translate(offsetX, offsetZ, 0);
-        }
+        poseStack.translate(offsetX, offsetZ, 0f);
+        cubeOBB.obb().rotation().getEulerAnglesYXZ(rotCache);
+        poseStack.mulPose(Axis.ZP.rotation(-vehicleYRotRad - rotCache.y));
+        int hw = (int) (cubeOBB.width * 5.0);
+        int hd = (int) (cubeOBB.depth * 5.0);
+        drawRectByCorner(guiGraphics, -hw, hw, -hd, hd, color, 1);
         poseStack.popPose();
     }
 

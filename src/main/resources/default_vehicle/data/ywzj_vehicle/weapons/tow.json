@@ -1,6 +1,6 @@
 {
   "type": "ywzj_vehicle:missile",
-  "name": "missile",
+  "name": "BGM-71 TOW",
   "damage": 1000,
   "headshot_multiplier": 1.5,
   "recoil": 0.6,
@@ -20,6 +20,13 @@
     "radius": 4,
     "destroy_block": true
   },
+  "seeker_fov": 30,
+  "mass": 0.05,
+  "thrust": 0.02,
+  "motor_burn_time": 600,
+  "drag_coefficient": 0.005,
+  "max_g": 18,
+  "reference_speed": 2,
   "guidance": "HOMING",
   "homing_mode": "ELECTRO_OPTICAL"
 }
