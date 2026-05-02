@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.vehicle.structure;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
@@ -251,14 +250,14 @@ public class VehicleCubeOBB {
 
     public static class CubePointContext {
 
-        private BlockPos blockPos;
+        private Vec3 blockPos;
         private BlockState blockState;
 
-        public BlockPos blockPos() {
+        public Vec3 blockPos() {
             return blockPos;
         }
 
-        public void setBlockPos(BlockPos blockPos) {
+        public void setBlockPos(Vec3 blockPos) {
             this.blockPos = blockPos;
         }
 

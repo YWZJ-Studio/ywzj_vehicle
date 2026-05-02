@@ -73,6 +73,9 @@ public class Radar {
                 continue;
             }
             // 速度门
+            if (entity.getDeltaMovement().length() < 0.1f) {
+                continue;
+            }
             if (entity.getDeltaMovement().subtract(radarOwner.getDeltaMovement()).length() < 0.1f) {
                 continue;
             }

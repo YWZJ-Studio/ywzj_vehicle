@@ -20,7 +20,6 @@ import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkHooks;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.BlockRayTrace;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
@@ -43,6 +42,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     private double lerpYRot;
     private double lerpXRot;
     private int lerpSteps;
+    protected boolean keepChunkLoaded = false;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
         super(pEntityType, pLevel);
@@ -54,6 +54,11 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         super.tick();
         if (level().isClientSide()) {
             tickLerp();
+        } else {
+            if (keepChunkLoaded) {
+                EntityUtil.keepChunkLoaded(this, this.position());
+                EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
+            }
         }
     }
 
@@ -63,7 +68,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         // 子弹在 tick 结束的位置
         Vec3 endVec = startVec.add(this.getDeltaMovement());
         // 子弹的碰撞检测
-        BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
         if (result.getType() != HitResult.Type.MISS) {
             // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {

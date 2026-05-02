@@ -118,7 +118,7 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
-        if (event.getAction() == 0) {
+        if (event.getAction() == GLFW.GLFW_PRESS) {
             if (LocalVehiclePlayer.instance.onVehicle()) {
                 if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.onVehicleTickCount > 5) {
                     AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();

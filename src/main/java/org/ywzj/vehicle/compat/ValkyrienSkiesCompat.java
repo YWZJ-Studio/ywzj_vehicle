@@ -80,7 +80,7 @@ class ValkyrienSkiesCompatImplementation {
             Vector3f worldPos = point.worldPos(axes);
             BlockPos blockPos = getPosFromShips(level, new Vector3d(worldPos));
             if (blockPos != null) {
-                point.cubePointContext.setBlockPos(blockPos);
+                point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
                 point.cubePointContext.setBlockState(level.getBlockState(blockPos));
                 touchPoints.add(point);
             }

@@ -27,6 +27,7 @@ public class RocketEntity extends AmmoEntity {
 
     public RocketEntity(EntityType<? extends Projectile> entityType, Level level, ResourceLocation weaponId) {
         super(entityType, level, weaponId);
+        this.keepChunkLoaded = true;
     }
 
     public RocketEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {

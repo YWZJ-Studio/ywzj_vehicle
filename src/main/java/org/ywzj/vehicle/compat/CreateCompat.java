@@ -69,7 +69,7 @@ class CreateCompatImplementation {
                 if (collidableBBsOptional.isPresent()) {
                     List<AABB> collidableBBs = collidableBBsOptional.get();
                     if (collidableBBs.stream().anyMatch(bb -> bb.move(contraptionEntity.position()).contains(worldPos))) {
-                        point.cubePointContext.setBlockPos(blockPos);
+                        point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
                         point.cubePointContext.setBlockState(null);
                         touchPoints.add(point);
                     }

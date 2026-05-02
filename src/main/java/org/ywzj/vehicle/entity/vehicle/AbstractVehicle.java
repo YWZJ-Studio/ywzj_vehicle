@@ -527,7 +527,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
             BlockState blockState = level().getBlockState(blockPos);
             if (blockState.isSolid()) {
-                point.cubePointContext.setBlockPos(blockPos);
+                point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
                 point.cubePointContext.setBlockState(blockState);
                 touchPoints.add(point);
             }

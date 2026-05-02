@@ -28,7 +28,6 @@ import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
-import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -77,6 +76,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.damage = data.getDamage();
         this.explosion = data.getExplosion();
         this.life = data.getLife();
+        this.keepChunkLoaded = true;
     }
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level) {
@@ -180,8 +180,6 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (targetVec != null && targetPos != null && this.position().distanceTo(targetPos) < 5f) {
             targetPos = VectorUtil.hitPosition(this, targetPos, targetPos.add(targetVec.scale(256)));
         }
-        EntityUtil.keepChunkLoaded(this, this.position());
-        EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
         Vec3 velocity = this.getDeltaMovement();
         Vec3 lookDir = this.getLookAngle();
         // 推力

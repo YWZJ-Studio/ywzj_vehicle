@@ -391,9 +391,9 @@ public class PhysicsEngine {
             return;
         }
         if (yRange >= mainCubeOBB.spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
-            climbPoints.sort(Comparator.comparingInt(p -> -p.cubePointContext.blockPos().getY()));
+            climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
             VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-            double liftHeight = liftPoint.cubePointContext.blockPos().getY() + (isHalfBlock(liftPoint) ? 0.55f : 1f);
+            double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint) ? 0.55f : 1f);
             Vec3 offset = mainCubeOBB.offset().subtract(0, mainCubeOBB.height / 2, 0);
             Vec3 bottomPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
             double toLift = Mth.clamp(liftHeight - bottomPos.y, 0, vehicle.maxUpStep());
