@@ -151,7 +151,7 @@
       "structure_bone": "variable_weapon_1",
       "render_model": true,
       "ammo_capacity": 1,
-      "fire_control_sensor_type": "eo",
+      "fire_control_sensor_type": "ccip",
       "is_seat": false,
       "parent_weapon_unit_aim": true,
       "crosshair_style": "none",

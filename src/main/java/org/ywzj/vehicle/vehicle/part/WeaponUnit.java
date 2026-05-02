@@ -363,6 +363,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 case EO -> checkEntity = ElectroOptical.checkTarget(this, lockedEntity);
                 case RF -> checkEntity = Radar.checkTarget(vehicle, getRadarDetectedEntities().stream()
                         .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
+                default -> {}
             }
             // 干扰物影响
             if (checkEntity != lockedEntity) {

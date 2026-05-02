@@ -22,10 +22,12 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.util.CcipUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.control.InputHandler;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -182,7 +184,14 @@ public class LocalVehiclePlayer {
                     currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
                 }
                 weaponHitPosO = weaponHitPos;
-                weaponHitPos = currentWeaponUnit.aimHitPosition();
+                if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP
+                        && weaponUnit.getCurrentWeapon().isPresent()
+                        && weaponUnit.getCurrentWeapon().get() instanceof VehicleAerialBomb) {
+                    Vec3 releasePos = weaponUnit.worldPivotPosition().add(0, 0, 0);
+                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement());
+                } else {
+                    weaponHitPos = currentWeaponUnit.aimHitPosition();
+                }
             });
         }
         cameraXO = cameraX;

@@ -220,7 +220,10 @@ public class WeaponUnitData extends RotatableUnitData {
         RF,
         // 光电
         @SerializedName("eo")
-        EO
+        EO,
+        // 连续计算弹着点
+        @SerializedName("ccip")
+        CCIP
     }
 
     public enum CrosshairStyle {
