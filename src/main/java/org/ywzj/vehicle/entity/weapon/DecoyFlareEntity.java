@@ -18,7 +18,6 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.BlockRayTrace;
 
 public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
 
@@ -52,7 +51,7 @@ public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
             }
             Vec3 startVec = this.position();
             Vec3 endVec = startVec.add(this.getDeltaMovement());
-            BlockHitResult result = BlockRayTrace.rayTraceBlocks(this.level(), new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
             if (result.getType() != HitResult.Type.MISS) {
                 this.discard();
                 return;

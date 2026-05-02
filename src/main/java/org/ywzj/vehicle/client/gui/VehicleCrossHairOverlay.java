@@ -8,7 +8,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -202,9 +201,7 @@ public class VehicleCrossHairOverlay implements LayeredDraw.Layer {
 
     private static @NotNull Vec3 getHitScreenPos(Vec3 start, float xRot, float yRot, Player player) {
         Vec3 end = start.add(VectorUtil.rotToVec(xRot, yRot).normalize().scale(128));
-        var result = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        Vec3 hitPos = result.getLocation();
-        return VectorUtil.worldToScreen(hitPos);
+        return VectorUtil.worldToScreen(VectorUtil.hitPosition(player, start, end));
     }
 
     public static double getScreenAimX() {

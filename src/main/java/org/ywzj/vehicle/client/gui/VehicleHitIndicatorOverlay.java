@@ -226,6 +226,7 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
             graphics.blit(hitMarker, 0, 0, sizeHalf, sizeHalf, sizeHalf, sizeHalf, size, size);
             poseStack.popPose();
 
+            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
             RenderSystem.disableBlend();
         }
         poseStack.popPose();

@@ -26,6 +26,7 @@ public class AerialBombEntity extends AmmoEntity {
 
     public AerialBombEntity(EntityType<? extends Projectile> entityType, Level level, ResourceLocation weaponId) {
         super(entityType, level, weaponId);
+        this.keepChunkLoaded = true;
     }
 
     public AerialBombEntity(EntityType<? extends AerialBombEntity> entityType, Level level) {
