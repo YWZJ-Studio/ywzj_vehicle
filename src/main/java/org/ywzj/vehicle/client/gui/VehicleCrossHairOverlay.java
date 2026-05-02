@@ -27,17 +27,10 @@ import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
-import static org.ywzj.vehicle.util.RenderHelper.drawReticle;
-import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
+import static org.ywzj.vehicle.util.RenderHelper.*;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleCrossHairOverlay implements IGuiOverlay {
-
-    private static double screenHitXO = 0;
-    private static double screenHitYO = 0;
-    private static double screenHitX = 0;
-    private static double screenHitY = 0;
-    private static boolean showHit = true;
 
     private static double screenAimXO = 0;
     private static double screenAimYO = 0;
@@ -79,9 +72,11 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     }
                     poseStack.popPose();
                 }
-                if (showHit) {
-                    double x = Mth.lerp(partialTick, screenHitXO, screenHitX);
-                    double y = Mth.lerp(partialTick, screenHitYO, screenHitY);
+                Vec3 screenHitPosO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
+                Vec3 screenHitPos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
+                if (screenHitPos.z >= 0) {
+                    double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
+                    double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
                     PoseStack poseStack = guiGraphics.pose();
                     poseStack.pushPose();
                     {
@@ -123,12 +118,16 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                             }
                         }
                         weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                            WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
-                            if (crosshairStyle != null) {
-                                switch (crosshairStyle) {
-                                    case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
-                                    case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
-                                    case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
+                            if (vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
+                                drawCross(guiGraphics, 0, 0, 20, Color.GREEN);
+                            } else {
+                                WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
+                                if (crosshairStyle != null) {
+                                    switch (crosshairStyle) {
+                                        case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
+                                        case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
+                                        case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
+                                    }
                                 }
                             }
                         });
@@ -180,23 +179,6 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                 } else  {
                     showAim = false;
                 }
-                // 瞄准落点
-                weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                    WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
-                    if (currentWeaponUnit.isParentWeaponUnitAim()) {
-                        currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
-                    }
-                    Vec3 screenHitPos = VectorUtil.worldToScreen(currentWeaponUnit.aimHitPosition());
-                    if (screenHitPos.z >= 0) {
-                        screenHitXO = screenHitX;
-                        screenHitYO = screenHitY;
-                        screenHitX = screenHitPos.x;
-                        screenHitY = screenHitPos.y;
-                        showHit = true;
-                    } else {
-                        showHit = false;
-                    }
-                });
             }
         }
     }
