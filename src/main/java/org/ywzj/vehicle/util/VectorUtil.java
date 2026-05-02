@@ -16,6 +16,7 @@ import org.joml.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
+import org.ywzj.vehicle.compat.sable.SableCompat;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
@@ -72,6 +73,9 @@ public class VectorUtil {
         ClipContext blockContext = new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, shooter);
         BlockHitResult blockHitResult = level.clip(blockContext);
         Vec3 blockHitPos = blockHitResult.getLocation();
+        if (blockHitResult.getType() != BlockHitResult.Type.MISS && SableCompat.isLoaded()) {
+            blockHitPos = SableCompat.transform(shooter.level(), blockHitPos);
+        }
         double blockDistance = blockHitPos.distanceTo(start);
         EntityHitResult entityHit = hitEntity(shooter, start, end);
         Vec3 hitPoint = blockHitPos;

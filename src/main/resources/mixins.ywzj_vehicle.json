@@ -1,5 +1,6 @@
 {
   "required": true,
+  "plugin": "org.ywzj.vehicle.mixin.plugin.MixinPlugin",
   "package": "org.ywzj.vehicle.mixin",
   "compatibilityLevel": "JAVA_21",
   "minVersion": "0.8",
@@ -22,6 +23,9 @@
     "common.ExplosionAccessor",
     "common.LivingEntityMixin",
     "common.PlayerMixin",
-    "common.ProjectileUtilMixin"
+    "common.ProjectileUtilMixin",
+    "create.ContraptionColliderMixin",
+    "sable.AbstractVehicleSableMixin",
+    "sable.SubLevelEntityCollisionMixin"
   ]
 }

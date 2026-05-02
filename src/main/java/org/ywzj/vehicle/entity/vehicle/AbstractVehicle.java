@@ -1444,6 +1444,11 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.lerpZRot = entityData.get(Z_ROT);
     }
 
+    @Override
+    public float maxUpStep() {
+        return 1.0F;
+    }
+
     public void aiStep() {
         Vec3 v = this.getDeltaMovement();
         double dx = v.x;

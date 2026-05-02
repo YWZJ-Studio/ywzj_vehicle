@@ -9,7 +9,7 @@ version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = mod_id
+    archivesName = "${mod_id}-${minecraft_version}"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -31,6 +31,7 @@ neoForge {
         client {
             client()
             gameDirectory = project.file('run/client_1')
+            jvmArgument("-XX:+AllowEnhancedClassRedefinition")
         }
 
         client2 {
@@ -54,6 +55,13 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+    maven {
+        url = "https://maven.ryanhcode.dev/releases"
+    }
     flatDir {
         dir 'libs'
     }
@@ -68,7 +76,20 @@ dependencies {
         exclude group: 'org.joml', module: 'joml'
     }
 
+    // spark
+    implementation "curse.maven:spark-361579:6225208"
+    // performance
+    implementation "curse.maven:sodium-394468:6382651"
+    implementation "curse.maven:irisshaders-455508:6661598"
+    // JEI
     implementation "curse.maven:jei-238222:7420587"
+    // worldedit
+    implementation "curse.maven:worldedit-225608:5830452"
+    // create
+    implementation "curse.maven:create-328085:7963363"
+    implementation "curse.maven:sable-1312371:8003927"
+    compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-${project.minecraft_version}:${project.sable_companion_version}")
+    implementation "maven.modrinth:create-aeronautics:1.1.3+mc1.21.1"
 
     additionalRuntimeClasspath 'ywzj:rhino-1.8.1-SNAPSHOT:1'
 }

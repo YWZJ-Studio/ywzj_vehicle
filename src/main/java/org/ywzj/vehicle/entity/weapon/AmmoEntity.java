@@ -17,6 +17,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.ywzj.vehicle.all.AllDamageTypes;
+import org.ywzj.vehicle.compat.sable.SableCompat;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -102,7 +103,11 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
             List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
                     entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
             if (!nearbyEntities.isEmpty() && explosion != null) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                Vec3 explosionPosition = position();
+                if (SableCompat.isLoaded()) {
+                    explosionPosition = SableCompat.transformInverse(level(), nearbyEntities.getFirst().position(), explosionPosition);
+                }
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, explosionPosition, explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
                 this.discard();
             }

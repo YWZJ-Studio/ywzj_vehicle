@@ -70,8 +70,11 @@ public class OverloadHandler implements ResourceManagerReloadListener {
         if (!active) {
             return;
         }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null) {
+            return;
+        }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            Minecraft minecraft = Minecraft.getInstance();
             ensureChain(minecraft);
             postChain.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
             if (postChain instanceof PostPassesGetter getter) {

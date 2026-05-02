@@ -11,6 +11,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.entity.misc.RadarMarkerEntity;
 import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.weapon.*;
@@ -168,6 +169,17 @@ public class AllEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<Lavad>> LAV_AD = registerVehicle("lav_ad", Lavad::new);
 
     public static final DeferredHolder<EntityType<?>, EntityType<Bgm71tow>> BGM_71_TOW = registerVehicle("bgm_71_tow", Bgm71tow::new);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RadarMarkerEntity>> RADAR_MARKER = ENTITIES.register("radar_marker",
+            () -> EntityType.Builder.of(RadarMarkerEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(1F, 1F)
+                    .clientTrackingRange(1024)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("radar_marker"));
 
     public static <T extends AbstractVehicle> DeferredHolder<EntityType<?>, EntityType<T>> registerVehicle(
             String name, EntityType.EntityFactory<T> factory

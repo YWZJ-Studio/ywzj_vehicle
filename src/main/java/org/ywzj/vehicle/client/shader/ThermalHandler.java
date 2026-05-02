@@ -65,6 +65,9 @@ public class ThermalHandler implements ResourceManagerReloadListener {
         if (!isActive) {
             return;
         }
+        if (Minecraft.getInstance().screen != null) {
+            return;
+        }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
             prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick().getGameTimeDeltaPartialTick(false), event.getFrustum(), event.getCamera());
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {

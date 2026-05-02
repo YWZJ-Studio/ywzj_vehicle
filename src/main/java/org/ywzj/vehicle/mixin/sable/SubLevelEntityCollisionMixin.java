@@ -1,19 +1,19 @@
-package org.ywzj.vehicle.mixin.create;
+package org.ywzj.vehicle.mixin.sable;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.simibubi.create.content.contraptions.ContraptionCollider;
+import dev.ryanhcode.sable.sublevel.entity_collision.SubLevelEntityCollision;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 
-@Mixin(ContraptionCollider.class)
-public class ContraptionColliderMixin {
+@Mixin(SubLevelEntityCollision.class)
+public class SubLevelEntityCollisionMixin {
 
     @WrapOperation(
-            method = "collideEntities",
+            method = "collide",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/Entity;getBoundingBox()Lnet/minecraft/world/phys/AABB;"

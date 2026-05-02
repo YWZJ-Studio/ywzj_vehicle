@@ -22,6 +22,7 @@ public class MixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.contains("tacz")) return getClass("com.tacz.guns.GunMod");
+        if (mixinClassName.contains("sable")) return getClass("dev.ryanhcode.sable.Sable");
         return true;
     }
 

@@ -1,16 +1,16 @@
 package org.ywzj.vehicle.compat;
 
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
+import com.simibubi.create.foundation.collision.CollisionList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
@@ -18,9 +18,8 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber
 public class CreateCompat {
 
     private static final String MOD_ID = "create";
@@ -65,10 +64,9 @@ class CreateCompatImplementation {
             Vec3 worldPos = new Vec3(point.worldPos(axes));
             BlockPos blockPos = BlockPos.containing(worldPos);
             contraptionEntities.forEach(contraptionEntity -> {
-                Optional<List<AABB>> collidableBBsOptional = contraptionEntity.getContraption().getSimplifiedEntityColliders();
-                if (collidableBBsOptional.isPresent()) {
-                    List<AABB> collidableBBs = collidableBBsOptional.get();
-                    if (collidableBBs.stream().anyMatch(bb -> bb.move(contraptionEntity.position()).contains(worldPos))) {
+                CollisionList simplifiedEntityColliders = contraptionEntity.getContraption().getSimplifiedEntityColliders();
+                if (simplifiedEntityColliders != null) {
+                    if (contains(simplifiedEntityColliders, worldPos)) {
                         point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
                         point.cubePointContext.setBlockState(null);
                         touchPoints.add(point);
@@ -77,6 +75,19 @@ class CreateCompatImplementation {
             });
         }
         event.getTouchPoints().addAll(touchPoints);
+    }
+
+    public static boolean contains(CollisionList collisionList, Vec3 pos) {
+        double px = pos.x;
+        double py = pos.y;
+        double pz = pos.z;
+        for (int i = 0; i < collisionList.size; i++) {
+            if (Math.abs(px - collisionList.centerX[i]) > collisionList.extentsX[i]) continue;
+            if (Math.abs(py - collisionList.centerY[i]) > collisionList.extentsY[i]) continue;
+            if (Math.abs(pz - collisionList.centerZ[i]) > collisionList.extentsZ[i]) continue;
+            return true;
+        }
+        return false;
     }
 
 }

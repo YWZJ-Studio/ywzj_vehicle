@@ -38,6 +38,7 @@ import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.command.RootCommand;
+import org.ywzj.vehicle.entity.misc.RadarMarkerEntity;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.item.FuelTankItem;
@@ -246,6 +247,7 @@ public class AllEvents {
                         if ((target instanceof AbstractVehicle vehicle && !vehicle.isDestroyed())
                                 || target instanceof MissileEntity
                                 || target instanceof TargetObstruction
+                                || target instanceof RadarMarkerEntity
                                 || AllConfigs.serverBroadcastEntityWhitelist.stream()
                                 .anyMatch(entityType -> BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString().matches(entityType))) {
                             entities.add(target);
