@@ -128,7 +128,7 @@ public class RotaryWingVehicleOverlay implements LayeredDraw.Layer {
         Matrix3f axisRollMat = new Matrix3f();
         q.get(axisRollMat);
         axisRollMat = axisRollMat.transpose();
-        Vec3 vo = LocalVehiclePlayer.instance.lastVelocity;
+        Vec3 vo = rotaryWingVehicle.deltaMovementO;
         Vec3 v = rotaryWingVehicle.getDeltaMovement();
         Vec3 worldDirection = new Vec3(Mth.lerp(partialTick, vo.x, v.x), Mth.lerp(partialTick, vo.y, v.y), Mth.lerp(partialTick, vo.z, v.z));
         Vector3f relativePos = new Vector3f(

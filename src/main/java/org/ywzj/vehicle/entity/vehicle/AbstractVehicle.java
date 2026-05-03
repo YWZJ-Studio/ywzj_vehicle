@@ -111,6 +111,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public DefenseStats defenseStats;
     public Vec3 centerOffset;
     public float curbWeight;
+    public Vec3 deltaMovementO;
     private float xRot;
     public float xRotO;
     private float lerpXRot;
@@ -431,6 +432,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     @Override
     public void tick() {
         super.tick();
+        deltaMovementO = getDeltaMovement();
         tickPosAndRot();
         if (!this.isRemoved()) {
             aiStep();
