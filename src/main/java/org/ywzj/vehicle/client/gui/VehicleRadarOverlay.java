@@ -281,6 +281,7 @@ public class VehicleRadarOverlay implements IGuiOverlay {
         bufferbuilder.vertex(matrix, cx + dirX * r - perpX * halfWidth, cy + dirY * r - perpY * halfWidth, 0).color(r_col, g, b, a).endVertex();
 
         tesselator.end();
+        RenderSystem.disableBlend();
     }
 
 }

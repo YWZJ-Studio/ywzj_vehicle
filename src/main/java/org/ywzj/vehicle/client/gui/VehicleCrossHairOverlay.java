@@ -72,67 +72,71 @@ public class VehicleCrossHairOverlay implements IGuiOverlay {
                     }
                     poseStack.popPose();
                 }
-                Vec3 screenHitPosO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
-                Vec3 screenHitPos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
-                if (screenHitPos.z >= 0) {
-                    double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
-                    double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
-                    PoseStack poseStack = guiGraphics.pose();
-                    poseStack.pushPose();
-                    {
-                        poseStack.translate(x, y, 0);
-                        if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR
-                                || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
-                            // 导引头
-                            if (weaponUnit.isSeekerOn()) {
-                                float alpha = 0.4f;
-                                // 导引头冷却中提示
-                                alpha += (float) Math.sin((double) weaponUnit.getLockCoolingTick() / 5 * Math.PI) * 0.2f;
-                                int aimCircleColor = (color & (weaponUnit.getLockedEntity() == null ? 0x00FFFFFF : 0x00FF0000)) | ((int) (alpha * 255) << 24);
-                                // 导引头小圈
-                                if (weaponUnit.getLockedEntity() == null) {
-                                    if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                                        GuiHelper.drawCircle(poseStack, 0, 0, 15, aimCircleColor, 0.03f, 0, 0);
-                                    } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
-                                        GuiHelper.drawCircle(poseStack, 0, 0, 5, aimCircleColor, 0.05f, 0, 0);
-                                        GuiHelper.drawCircle(poseStack, 0, 0, 4, aimCircleColor, 0.06f, 0, 0);
+                Vec3 weaponHitPosO = LocalVehiclePlayer.instance.weaponHitPosO;
+                Vec3 weaponHitPos = LocalVehiclePlayer.instance.weaponHitPos;
+                if (weaponHitPosO != null && weaponHitPos != null) {
+                    Vec3 screenHitPosO = VectorUtil.worldToScreen(weaponHitPosO);
+                    Vec3 screenHitPos = VectorUtil.worldToScreen(weaponHitPos);
+                    if (screenHitPos.z >= 0) {
+                        double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
+                        double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
+                        PoseStack poseStack = guiGraphics.pose();
+                        poseStack.pushPose();
+                        {
+                            poseStack.translate(x, y, 0);
+                            if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR
+                                    || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
+                                // 导引头
+                                if (weaponUnit.isSeekerOn()) {
+                                    float alpha = 0.4f;
+                                    // 导引头冷却中提示
+                                    alpha += (float) Math.sin((double) weaponUnit.getLockCoolingTick() / 5 * Math.PI) * 0.2f;
+                                    int aimCircleColor = (color & (weaponUnit.getLockedEntity() == null ? 0x00FFFFFF : 0x00FF0000)) | ((int) (alpha * 255) << 24);
+                                    // 导引头小圈
+                                    if (weaponUnit.getLockedEntity() == null) {
+                                        if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                                            GuiHelper.drawCircle(poseStack, 0, 0, 15, aimCircleColor, 0.03f, 0, 0);
+                                        } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
+                                            GuiHelper.drawCircle(poseStack, 0, 0, 5, aimCircleColor, 0.05f, 0, 0);
+                                            GuiHelper.drawCircle(poseStack, 0, 0, 4, aimCircleColor, 0.06f, 0, 0);
+                                        }
+                                    }
+                                    // 导引头大圈
+                                    Vec2 rot = weaponUnit.worldRot();
+                                    Vec3 screenPosUp = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
+                                            .add(VectorUtil.rotToVec(rot.x - weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
+                                    Vec3 screenPosDown = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
+                                            .add(VectorUtil.rotToVec(rot.x + weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
+                                    Vec3 screenPosCenter = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
+                                            .add(VectorUtil.rotToVec(rot.x, rot.y).normalize().scale(256)));
+                                    double px = screenPosDown.x - screenPosUp.x;
+                                    double py = screenPosDown.y - screenPosUp.y;
+                                    float r = (float) Math.sqrt(px * px + py * py) / 2;
+                                    poseStack.pushPose();
+                                    {
+                                        poseStack.translate(screenPosCenter.x - x, screenPosCenter.y - y, 0);
+                                        GuiHelper.drawCircle(poseStack, 0, 0, r, aimCircleColor, 0.01f, 0, 0);
+                                    }
+                                    poseStack.popPose();
+                                }
+                            }
+                            weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                                if (vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
+                                    drawCross(guiGraphics, 0, 0, 20, Color.GREEN);
+                                } else {
+                                    WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
+                                    if (crosshairStyle != null) {
+                                        switch (crosshairStyle) {
+                                            case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
+                                            case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
+                                            case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
+                                        }
                                     }
                                 }
-                                // 导引头大圈
-                                Vec2 rot = weaponUnit.worldRot();
-                                Vec3 screenPosUp = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                        .add(VectorUtil.rotToVec(rot.x - weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
-                                Vec3 screenPosDown = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                        .add(VectorUtil.rotToVec(rot.x + weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
-                                Vec3 screenPosCenter = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                        .add(VectorUtil.rotToVec(rot.x, rot.y).normalize().scale(256)));
-                                double px = screenPosDown.x - screenPosUp.x;
-                                double py = screenPosDown.y - screenPosUp.y;
-                                float r = (float) Math.sqrt(px * px + py * py) / 2;
-                                poseStack.pushPose();
-                                {
-                                    poseStack.translate(screenPosCenter.x - x, screenPosCenter.y - y, 0);
-                                    GuiHelper.drawCircle(poseStack, 0, 0, r, aimCircleColor, 0.01f, 0, 0);
-                                }
-                                poseStack.popPose();
-                            }
+                            });
                         }
-                        weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                            if (vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
-                                drawCross(guiGraphics, 0, 0, 20, Color.GREEN);
-                            } else {
-                                WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
-                                if (crosshairStyle != null) {
-                                    switch (crosshairStyle) {
-                                        case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
-                                        case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
-                                        case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
-                                    }
-                                }
-                            }
-                        });
+                        poseStack.popPose();
                     }
-                    poseStack.popPose();
                 }
                 // 目标
                 VehicleScopeOverlay.renderAimLockTarget(guiGraphics, partialTick);
