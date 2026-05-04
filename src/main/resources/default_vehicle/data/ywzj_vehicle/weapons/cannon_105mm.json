@@ -1,6 +1,6 @@
 {
   "type": "ywzj_vehicle:cannon",
-  "name": "105mm_cannon",
+  "name": "105mm Cannon",
   "caliber": 105,
   "damage": 1000,
   "headshot_multiplier": 1,
