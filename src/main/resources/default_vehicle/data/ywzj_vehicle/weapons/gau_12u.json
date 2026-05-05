@@ -1,6 +1,6 @@
 {
   "type": "ywzj_vehicle:cannon",
-  "name": "auto_cannon",
+  "name": "GAU-12/U",
   "caliber": 25,
   "damage": 30,
   "velocity": 16,

@@ -20,7 +20,7 @@
     "radius": 8,
     "proximity_fuze": true,
     "proximity_radius": 2,
-    "destroy_block": false
+    "destroy_block": true
   },
   "seeker_fov": 30,
   "mass": 0.05,

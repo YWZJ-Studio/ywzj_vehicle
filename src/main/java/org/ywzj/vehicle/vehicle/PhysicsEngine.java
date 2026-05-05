@@ -26,12 +26,16 @@ public class PhysicsEngine {
     public static final double MAGIC_NUMBER = .943;
     public static float G = 9.8f / 400;
     public final AbstractVehicle vehicle;
+    public float radarCrossSection;
     public float mass = 1;
     public Vec3 center;
     public float bounce = 0.02f;
-    public float rotA = 0.01f;
+    public float support = 0.3f;
+    public float angularDampingGround = 0.88f;
+    public float angularDampingAir = 0.96f;
+    public float torqueScale = 4.0f;
+    public float maxRotV = 0.3f;
     public float rotV = 0;
-    public float radarCrossSection;
     public int rotTick;
     public Quaternionf stepRot;
     public Vector3f localRotAxisStart;
@@ -137,7 +141,7 @@ public class PhysicsEngine {
                     BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                     if (blockState.isSolid()) {
                         if (!isHalfBlock(touchPoint) || testPos.y < testBlockPos.getY() + 0.55) {
-                            velocity = new Vec3(velocity.x, Math.min(0.1f, velocity.y + 0.01f), velocity.z);
+                            velocity = new Vec3(velocity.x, Math.min(support, velocity.y + 0.01f), velocity.z);
                         }
                     }
                 }
@@ -197,25 +201,24 @@ public class PhysicsEngine {
             Vector3f a = new Vector3f(velocity).sub(this.velocityO);
             Vector3f gravityCenter = center.toVector3f();
             gravityCenter.add(a.mul((float) (physicsCube.height * 8)));
-
             // 升力影响
             if (force.y >= G * mass) {
                 velocity.y -= G;
                 vehicle.setOnGround(false);
                 return new Vec3(velocity);
             }
-
             // 无任何接触，因转动惯量而继续转动，因重力而自由落体
             if (touchPoints.isEmpty()) {
                 centerRot(gravityCenter, axes);
-                rotV = Math.max(0, rotV - rotA / 3);
+                rotV *= angularDampingAir;
+                if (rotV < 0.001f) {
+                    rotV = 0;
+                }
                 velocity.y -= G;
                 vehicle.setOnGround(false);
                 return new Vec3(velocity);
             }
-
             vehicle.setOnGround(true);
-
             // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
             List<VehicleCubeOBB.CubeFace> faces = new ArrayList<>();
             Vector3f gWorldDirection = new Vector3f(0, -1, 0);
@@ -245,20 +248,17 @@ public class PhysicsEngine {
                     })
                     .map(VehicleCubeOBB.CubePoint::obbLocalPos)
                     .toList();
-
             // 重力方向在局部坐标系下的向量
             float gx = gWorldDirection.dot(axes[0]);
             float gy = gWorldDirection.dot(axes[1]);
             float gz = gWorldDirection.dot(axes[2]);
             Vector3f gLocalDirection = new Vector3f(gx, gy, gz);
-
             // 重力、受力点投影到重力为法向量的平面上
             Vector2f gc = getPlaneXY(gLocalDirection, gravityCenter);
             HashMap<Vector2f, Vector3f> points = new HashMap<>();
             for (Vector3f forcePoint : localForcePoints) {
                 points.put(getPlaneXY(null, forcePoint), forcePoint);
             }
-
             if (localForcePoints.size() > 2) {
                 localRotAxisStartO = localRotAxisStart;
                 localRotAxisEndO = localRotAxisEnd;
@@ -311,25 +311,39 @@ public class PhysicsEngine {
                 localRotAxisStart = localForcePoints.get(0);
                 localRotAxisEnd = localForcePoints.get(1);
             } else if (localForcePoints.size() == 1) {
+                // 从接触点到重心的向量，投影到支撑平面上
                 Vector3f v = new Vector3f(gravityCenter).sub(localForcePoints.get(0));
-                if (v.x == 0 && v.z == 0) {
+                Vector3f vProj = new Vector3f(v).sub(new Vector3f(gLocalDirection).mul(v.dot(gLocalDirection)));
+                float len = vProj.length();
+                if (len < 0.0001f) {
                     rotV = 0;
                     return new Vec3(velocity);
                 }
-                v = new Vector3f(v.z, 0, v.x).normalize();
-                localRotAxisStart = new Vector3f(localForcePoints.get(0)).add(v);
-                localRotAxisEnd = localForcePoints.get(0);
+                // 旋转轴在支撑平面内，垂直于vProj：axis = gLocal × vProj
+                Vector3f axisDir = new Vector3f(gLocalDirection).cross(vProj).normalize();
+                float axisHalfLen = 0.5f;
+                localRotAxisStart = new Vector3f(axisDir).mul(axisHalfLen).add(localForcePoints.get(0));
+                localRotAxisEnd = new Vector3f(axisDir).mul(-axisHalfLen).add(localForcePoints.get(0));
             } else {
                 // 重力在三轴方向上的分力所对应三面无接触点，则无支持力，因转动惯量而继续转动，因重力而自由落体
+                rotV *= angularDampingAir;
+                if (rotV < 0.001f) rotV = 0;
                 centerRot(gravityCenter, axes);
                 velocity.y -= G;
                 return new Vec3(velocity);
             }
-
             checkDirection(gravityCenter);
             rotLoss(gc);
             localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
-            rotV = Math.min(rotV + rotA, 0.3f);
+            // 基于力矩和转动惯量计算角加速度
+            // 合力 = 重力 + 外部推力（force在局部坐标系下的投影）
+            Vector3f netForceLocal = new Vector3f(gLocalDirection).mul(G * mass);
+            netForceLocal.add(force.dot(axes[0]), force.dot(axes[1]), force.dot(axes[2]));
+            float torque = computeTorque(localRotAxisStart, localRotAxisEnd, gravityCenter, netForceLocal);
+            float moi = computeMomentOfInertia(localRotAxisStart, localRotAxisEnd, physicsCube, mass, gravityCenter);
+            float angularAccel = moi > 0.001f ? torqueScale * torque / moi : 0;
+            rotV = rotV * angularDampingGround + angularAccel;
+            rotV = Math.min(rotV, maxRotV);
             rot(axes);
             return new Vec3(velocity);
         } catch (Exception exception) {
@@ -519,6 +533,37 @@ public class PhysicsEngine {
         }
         return cubePoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
                 || cubePoint.cubePointContext.blockState().getBlock() instanceof SlabBlock;
+    }
+
+    /**
+     * 计算合力绕旋转轴的力矩标量
+     * τ = (r × F) · axis
+     */
+    private float computeTorque(Vector3f axisStart, Vector3f axisEnd, Vector3f com, Vector3f netForceLocal) {
+        Vector3f r = new Vector3f(com).sub(axisStart);
+        Vector3f torqueVec = r.cross(netForceLocal);
+        Vector3f axis = new Vector3f(axisEnd).sub(axisStart).normalize();
+        return Math.abs(torqueVec.dot(axis));
+    }
+
+    /**
+     * 计算长方体绕任意空间轴（过枢轴点）的转动惯量
+     * 使用主轴转动惯量 + 平行轴定理
+     */
+    private float computeMomentOfInertia(Vector3f axisStart, Vector3f axisEnd, VehicleCubeOBB cube, float mass, Vector3f com) {
+        float w = (float) cube.getWidth();
+        float h = (float) cube.getHeight();
+        float d = (float) cube.getDepth();
+        float Ix = mass / 12f * (h * h + d * d);
+        float Iy = mass / 12f * (w * w + d * d);
+        float Iz = mass / 12f * (w * w + h * h);
+        Vector3f axis = new Vector3f(axisEnd).sub(axisStart).normalize();
+        float I_center = Ix * axis.x * axis.x + Iy * axis.y * axis.y + Iz * axis.z * axis.z;
+        Vector3f r = new Vector3f(com).sub(axisStart);
+        Vector3f projOnAxis = new Vector3f(axis).mul(r.dot(axis));
+        Vector3f perp = new Vector3f(r).sub(projOnAxis);
+        float distSq = perp.lengthSquared();
+        return I_center + mass * distSq;
     }
 
 }

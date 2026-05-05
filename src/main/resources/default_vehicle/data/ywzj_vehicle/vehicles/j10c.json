@@ -102,7 +102,7 @@
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "pl_12",
       "render_model": true,
-      "ammo_capacity": 6,
+      "ammo_capacity": 5,
       "fire_control_sensor_type": "rf",
       "is_seat": false,
       "parent_weapon_unit_aim": true,

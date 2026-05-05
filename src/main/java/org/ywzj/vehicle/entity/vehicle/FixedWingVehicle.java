@@ -87,6 +87,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.driverXYRotControl = true;
+        this.physicsEngine.support = 0.1f;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -421,6 +422,7 @@ public class FixedWingVehicle extends AbstractVehicle
                     (angleOfAttackMin - degreeX);
             fl = f * liftToDragK * Math.exp(-1 * exceed);
         }
+        Vec3 force = upDirection.scale(fl);
         if (fl != 0) {
             airSpeed = airSpeed.add(upDirection.scale(fl / mass));
         }
@@ -480,7 +482,7 @@ public class FixedWingVehicle extends AbstractVehicle
         setPitchInput(xRotInput);
         setYawInput(yRotInput);
         setRollInput(zRotInput);
-        return Vec3.ZERO;
+        return force;
     }
 
     @Override

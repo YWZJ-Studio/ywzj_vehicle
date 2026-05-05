@@ -1,6 +1,6 @@
 {
   "type": "ywzj_vehicle:cannon",
-  "name": "120mm_cannon",
+  "name": "120mm Cannon",
   "caliber": 120,
   "damage": 2000,
   "headshot_multiplier": 1,

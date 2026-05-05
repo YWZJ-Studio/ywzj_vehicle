@@ -1,6 +1,6 @@
 {
   "type": "ywzj_vehicle:cannon",
-  "name": "14.5mm_gun",
+  "name": "14.5mm Gun",
   "caliber": 14.5,
   "tracer_r": 0.9,
   "tracer_g": 0.4,
