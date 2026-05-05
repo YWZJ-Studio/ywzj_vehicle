@@ -78,6 +78,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.driverXYRotControl = true;
+        this.physicsEngine.support = 0.1f;
         this.physicsEngine.lockCenterRot = true;
     }
 
