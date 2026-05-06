@@ -507,8 +507,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (weaponIndex < indexedWeapons.size()) {
             AbstractVehicleWeapon<?> weapon = indexedWeapons.get(weaponIndex);
             VehicleFireEvent.Pre __VehicleFireEvent_Pre = new VehicleFireEvent.Pre(vehicle, weapon, operator);
-        NeoForge.EVENT_BUS.post(__VehicleFireEvent_Pre);
-        if (__VehicleFireEvent_Pre.isCanceled()) {
+            NeoForge.EVENT_BUS.post(__VehicleFireEvent_Pre);
+            if (__VehicleFireEvent_Pre.isCanceled()) {
                 return;
             }
             if (weapon.shoot(aimContexts, operator)) {

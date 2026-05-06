@@ -30,7 +30,7 @@ public class VehiclePrintingRecipe implements CraftingRecipe {
 
     @Override
     public ItemStack assemble(CraftingInput craftingInput, HolderLookup.Provider provider) {
-        return null;
+        return result.copy();
     }
 
     @Override
@@ -40,7 +40,7 @@ public class VehiclePrintingRecipe implements CraftingRecipe {
 
     @Override
     public ItemStack getResultItem(HolderLookup.Provider provider) {
-        return null;
+        return result.copy();
     }
 
     @Override

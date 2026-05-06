@@ -277,6 +277,7 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
         bufferbuilder.addVertex(matrix, cx + dirX * r - perpX * halfWidth, cy + dirY * r - perpY * halfWidth, 0).setColor(r_col, g, b, a);
 
         BufferUploader.drawWithShader(bufferbuilder.buildOrThrow());
+        RenderSystem.disableBlend();
     }
 
 }
