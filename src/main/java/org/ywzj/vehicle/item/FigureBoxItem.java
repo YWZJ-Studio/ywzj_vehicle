@@ -91,6 +91,10 @@ public class FigureBoxItem extends VehicleItem {
             if (AllConfigs.common.figureBoxOnlyCaptureVehicle.get() && !(target instanceof AbstractVehicle)) {
                 return InteractionResult.PASS;
             }
+            if (target instanceof AbstractVehicle vehicle
+                    && vehicle.getPassengers().stream().anyMatch(entity -> entity instanceof Player)) {
+                return InteractionResult.PASS;
+            }
             String entityId = EntityType.getKey(target.getType()).toString();
             if (AllConfigs.figureBoxCaptureBlacklist.contains(entityId)) {
                 return InteractionResult.PASS;
