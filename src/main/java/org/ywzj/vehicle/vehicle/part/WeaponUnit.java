@@ -84,6 +84,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public WeaponUnitData.OpticalSightType opticalSightType;
     // 是否有双向稳定器
     private final boolean withStabilizer;
+    // 是否有热成像仪
+    private final boolean withThermalImager;
     // 开镜缩放倍率
     private final float zoomMin;
     private final float zoomMax;
@@ -141,6 +143,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.zoom = this.zoomMin;
         this.crosshairStyle = data.getCrosshairStyle();
         this.renderSelectedWeapon = data.isRenderSelectedWeapon();
+        this.withThermalImager = data.withThermalImager();
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
                 this::setCurrentWeaponIndex,
@@ -736,6 +739,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return withStabilizer;
     }
 
+    public boolean withThermalImager() {
+        return withThermalImager;
+    }
+
     public float getZoom() {
         return zoom;
     }
@@ -968,6 +975,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                       Vec3 opticalSightOffset, Vec3 operatorViewOffset, Vec3 seatOffset, WeaponUnit baseWeaponUnit) {
         super(id, index, vehicle);
         this.withStabilizer = false;
+        this.withThermalImager = false;
         this.zoomMin = 1;
         this.zoomMax = 8;
         this.zoom = this.zoomMin;

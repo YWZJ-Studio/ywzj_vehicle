@@ -44,18 +44,19 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (event.getAction() == GLFW.GLFW_PRESS) {
-            if (LocalVehiclePlayer.instance.onVehicle()) {
-                AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-                WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
+            if (instance.onVehicle()) {
+                AbstractVehicle vehicle = instance.getVehicle();
+                WeaponUnit weaponUnit = instance.getWeaponUnit();
                 if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
-                    LocalVehiclePlayer.instance.switchViewType(null);
+                    instance.switchViewType(null);
                 } else if (SWITCH_SCOPE.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
-                        if (LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-                            LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.SCOPE);
+                        if (instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
+                            instance.switchViewType(LocalVehiclePlayer.ViewType.SCOPE);
                         } else {
-                            LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
+                            instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
                         }
                     }
                 } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
@@ -97,12 +98,17 @@ public class InputHandler {
                     if (weaponUnit != null) {
                         weaponUnit.toggleSeeker(null);
                     }
+                } else if (TOGGLE_THERMAL_IMAGING.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null && weaponUnit.withThermalImager()
+                            && instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                        instance.thermalImaging = !instance.thermalImaging;
+                    }
                 }
             }
         } else if (event.getAction() == GLFW.GLFW_RELEASE) {
-            if (LocalVehiclePlayer.instance.onVehicle()) {
+            if (instance.onVehicle()) {
                 if (FREE_CAMERA.matches(event.getKey(), event.getScanCode())) {
-                    LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
+                    LocalVehiclePlayer localVehiclePlayer = instance;
                     localVehiclePlayer.playerLerpXRot = playerXRotO;
                     localVehiclePlayer.playerLerpYRot = playerYRotO;
                     localVehiclePlayer.playerLerpSteps = 8;
@@ -119,15 +125,16 @@ public class InputHandler {
             return;
         }
         if (event.getAction() == GLFW.GLFW_PRESS) {
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
             if (LocalVehiclePlayer.instance.onVehicle()) {
-                if (MAGNIFICATION_CHANGE.isDown() && LocalVehiclePlayer.instance.onVehicleTickCount > 5) {
-                    AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+                if (MAGNIFICATION_CHANGE.isDown() && instance.onVehicleTickCount > 5) {
+                    AbstractVehicle vehicle = instance.getVehicle();
                     if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                        if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                             weaponUnit.switchZoom();
                         }
                     }
-                    if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                    if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                         vehicle.toggleViewZoom();
                     }
                 }

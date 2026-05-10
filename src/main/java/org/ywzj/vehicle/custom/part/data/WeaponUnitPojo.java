@@ -39,6 +39,9 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("with_stabilizer")
     public boolean withStabilizer = false;
 
+    @SerializedName("with_thermal_imager")
+    public boolean withThermalImager = false;
+
     @SerializedName("zoom_min")
     public float zoomMin = 1;
 

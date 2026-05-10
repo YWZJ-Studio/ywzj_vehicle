@@ -50,6 +50,7 @@
       "operator_view_offset": [0, 0.6, 1.2],
       "optical_sight_type": "crt",
       "with_stabilizer": true,
+      "with_thermal_imager": true,
       "zoom_max": 12,
       "weapons": [
         {

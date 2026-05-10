@@ -88,7 +88,6 @@ public class FixedWingVehicle extends AbstractVehicle
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.driverXYRotControl = true;
-        this.physicsEngine.support = 0.1f;
         this.physicsEngine.lockCenterRot = true;
     }
 

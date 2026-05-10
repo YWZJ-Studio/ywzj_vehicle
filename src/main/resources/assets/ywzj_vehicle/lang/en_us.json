@@ -38,6 +38,7 @@
   "key.ywzj_vehicle.toggle_landing_gear.desc": "Toggle Landing Gear",
   "key.ywzj_vehicle.toggle_hover_mode.desc": "Toggle Hover Mode",
   "key.ywzj_vehicle.toggle_radar.desc": "Toggle Radar",
+  "key.ywzj_vehicle.toggle_thermal_imaging.desc": "Toggle Thermal Imaging",
   "key.ywzj_vehicle.fire_control_lock.desc": "FCS Lock",
   "key.ywzj_vehicle.main_weapon_shoot.desc": "Fire Main Weapon",
   "key.ywzj_vehicle.secondary_weapon_shoot.desc": "Fire Secondary Weapon",

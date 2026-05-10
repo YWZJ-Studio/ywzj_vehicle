@@ -41,6 +41,7 @@
       "operator_view_offset": [0, 1.5, 0],
       "optical_sight_type": "crt",
       "with_stabilizer": true,
+      "with_thermal_imager": true,
       "zoom_max": 12,
       "sub_part_unit_ids": ["radar"],
       "weapons": [
