@@ -62,6 +62,7 @@ public class LocalVehiclePlayer {
     public Vec3 lastVelocity = Vec3.ZERO;
     public double aimLocationDistance;
     public boolean outOfRangeFinding;
+    public boolean thermalImaging;
     public boolean mouseTurnedAfterScope;
     public AbstractVehicle.Seat seat;
     public ViewType viewType = ViewType.THIRD_PERSON;
@@ -111,7 +112,7 @@ public class LocalVehiclePlayer {
             }
         }
         AbstractVehicle vehicle = getVehicle();
-        if (vehicle == null || vehicle.uav) {
+        if (vehicle == null || vehicle.uav || vehicle.onGround()) {
             endureTick = 0;
             currentG = 1;
             lastVelocity = Vec3.ZERO;
@@ -285,7 +286,6 @@ public class LocalVehiclePlayer {
             AbstractVehicle vehicle = getVehicle();
             PartUnit<?> partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
             if (partUnit instanceof WeaponUnit weaponUnit) {
-                ThermalHandler.setActive(false);
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
                         if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
@@ -505,6 +505,17 @@ public class LocalVehiclePlayer {
         } else if (!CrtHandler.isActive() && crt) {
             CrtHandler.setActive(true);
         }
+        if (CrtHandler.isActive()) {
+            if (ThermalHandler.isActive() && !thermalImaging) {
+                ThermalHandler.setActive(false);
+            } else if (!ThermalHandler.isActive() && thermalImaging) {
+                ThermalHandler.setActive(true);
+            }
+        } else {
+            if (ThermalHandler.isActive()) {
+                ThermalHandler.setActive(false);
+            }
+        }
         if (OverloadHandler.isActive()) {
             if (vehicle == null) {
                 OverloadHandler.setActive(false);
@@ -517,6 +528,9 @@ public class LocalVehiclePlayer {
     public void clear() {
         serverEntities.clear();
         missiles.clear();
+        CrtHandler.setActive(false);
+        ThermalHandler.setActive(false);
+        OverloadHandler.setActive(false);
     }
 
     /**

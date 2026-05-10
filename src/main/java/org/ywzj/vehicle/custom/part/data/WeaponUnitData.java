@@ -26,6 +26,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private boolean operatorOnWeaponUnit;
     private OpticalSightType opticalSightType;
     private boolean withStabilizer;
+    private boolean withThermalImager;
     private float zoomMin;
     private float zoomMax;
     private FireControlSensorType fireControlSensorType;
@@ -50,6 +51,7 @@ public class WeaponUnitData extends RotatableUnitData {
         this.fireControlSensorType = pojo.fireControlSensorType;
         this.opticalSightType = pojo.opticalSightType;
         this.withStabilizer = pojo.withStabilizer;
+        this.withThermalImager = pojo.withThermalImager;
         this.zoomMin = pojo.zoomMin;
         this.zoomMax = pojo.zoomMax;
         this.crosshairStyle = pojo.crosshairStyle;
@@ -95,6 +97,10 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public boolean withStabilizer() {
         return withStabilizer;
+    }
+
+    public boolean withThermalImager() {
+        return withThermalImager;
     }
 
     public float getZoomMin() {

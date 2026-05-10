@@ -30,7 +30,6 @@ public class PhysicsEngine {
     public float mass = 1;
     public Vec3 center;
     public float bounce = 0.02f;
-    public float support = 0.3f;
     public float angularDampingGround = 0.88f;
     public float angularDampingAir = 0.96f;
     public float torqueScale = 4.0f;
@@ -141,7 +140,7 @@ public class PhysicsEngine {
                     BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                     if (blockState.isSolid()) {
                         if (!isHalfBlock(touchPoint) || testPos.y < testBlockPos.getY() + 0.55) {
-                            velocity = new Vec3(velocity.x, Math.min(support, velocity.y + 0.01f), velocity.z);
+                            velocity = new Vec3(velocity.x, Math.min(0.1, velocity.y + 0.01f), velocity.z);
                         }
                     }
                 }

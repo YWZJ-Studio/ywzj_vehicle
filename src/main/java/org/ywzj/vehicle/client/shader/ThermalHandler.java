@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.client.shader;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -28,11 +27,9 @@ public class ThermalHandler implements ResourceManagerReloadListener {
     private static PostChain thermalChain;
     private static int lastWidth = 0;
     private static int lastHeight = 0;
-    private static boolean seeThroughWalls = true;
-
-    public static void setSeeThroughWalls(boolean seeThrough) {
-        seeThroughWalls = seeThrough;
-    }
+    private static boolean seeThroughWalls = false;
+    private static final double THERMAL_RANGE = 256.0;
+    private static final double THERMAL_RANGE_SQ = THERMAL_RANGE * THERMAL_RANGE;
 
     public static void setActive(boolean active) {
         if (isActive != active) {
@@ -61,7 +58,6 @@ public class ThermalHandler implements ResourceManagerReloadListener {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        setSeeThroughWalls(false);
         if (!isActive) {
             return;
         }
@@ -93,6 +89,7 @@ public class ThermalHandler implements ResourceManagerReloadListener {
             lastWidth = mc.getWindow().getWidth();
             lastHeight = mc.getWindow().getHeight();
             thermalChain.resize(lastWidth, lastHeight);
+            seeThroughWalls = false;
         }
         return true;
     }
@@ -105,7 +102,6 @@ public class ThermalHandler implements ResourceManagerReloadListener {
 
         if (!ensureChain(mc)) return;
 
-        // 获取 Buffer
         RenderTarget thermalBuffer = thermalChain.getTempTarget("thermal_buffer");
         if (thermalBuffer == null) {
             return;
@@ -113,13 +109,12 @@ public class ThermalHandler implements ResourceManagerReloadListener {
 
         thermalBuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
         thermalBuffer.clear(Minecraft.ON_OSX);
+
+        // 复制主深度缓冲以实现方块遮挡，仅首次成功前尝试
         if (!seeThroughWalls) {
-            // 修复：如果主渲染目标启用了模板缓冲（例如使用了TACZ的瞄具），
-            // 必须同步启用 thermalBuffer 的模板缓冲，否则 copyDepthFrom 会因格式不匹配而失败。
             if (mc.getMainRenderTarget().isStencilEnabled() && !thermalBuffer.isStencilEnabled()) {
                 thermalBuffer.enableStencil();
             }
-
             try {
                 thermalBuffer.copyDepthFrom(mc.getMainRenderTarget());
             } catch (Throwable ignored) {
@@ -132,11 +127,13 @@ public class ThermalHandler implements ResourceManagerReloadListener {
 
         poseStack.pushPose();
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        RenderSystem.enablePolygonOffset();
-        RenderSystem.polygonOffset(-1.0F, -1.0F);
         mc.getEntityRenderDispatcher().setRenderShadow(false);
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (isHotEntity(entity) && mc.getEntityRenderDispatcher().shouldRender(entity, frustum, cameraPos.x(), cameraPos.y(), cameraPos.z()) || entity.hasIndirectPassenger(mc.player)) {
+            if (entity.distanceToSqr(cameraPos) > THERMAL_RANGE_SQ) {
+                continue;
+            }
+            if (mc.getEntityRenderDispatcher().shouldRender(entity, frustum, cameraPos.x(), cameraPos.y(), cameraPos.z())
+                    || entity.hasIndirectPassenger(mc.player)) {
                 double lerpX = Mth.lerp(partialTick, entity.xo, entity.getX());
                 double lerpY = Mth.lerp(partialTick, entity.yo, entity.getY());
                 double lerpZ = Mth.lerp(partialTick, entity.zo, entity.getZ());
@@ -156,7 +153,6 @@ public class ThermalHandler implements ResourceManagerReloadListener {
         }
 
         bufferSource.endBatch();
-        RenderSystem.disablePolygonOffset();
         poseStack.popPose();
 
         mc.getMainRenderTarget().bindWrite(true);
@@ -169,17 +165,10 @@ public class ThermalHandler implements ResourceManagerReloadListener {
             thermalChain.process(partialTick);
         } catch (Exception e) {
             e.printStackTrace();
-            cleanup(); // 发生错误时清理，尝试下一帧重建
+            cleanup();
         }
 
         Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
     }
 
-    private static boolean isHotEntity(Entity entity) {
-        if (entity == Minecraft.getInstance().player && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
-            return false;
-        }
-//        return entity instanceof LivingEntity || entity.isOnFire();
-        return true;
-    }
 }

@@ -38,6 +38,7 @@
   "key.ywzj_vehicle.toggle_landing_gear.desc": "起落架升降",
   "key.ywzj_vehicle.toggle_hover_mode.desc": "悬停模式开关",
   "key.ywzj_vehicle.toggle_radar.desc": "雷达开关",
+  "key.ywzj_vehicle.toggle_thermal_imaging.desc": "热成像开关",
   "key.ywzj_vehicle.fire_control_lock.desc": "火控锁定",
   "key.ywzj_vehicle.main_weapon_shoot.desc": "主武器射击",
   "key.ywzj_vehicle.secondary_weapon_shoot.desc": "副武器射击",
