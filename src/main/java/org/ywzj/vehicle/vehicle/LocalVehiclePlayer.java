@@ -496,9 +496,12 @@ public class LocalVehiclePlayer {
     public void checkState() {
         Player player = getPlayer();
         AbstractVehicle vehicle = getVehicle();
-        boolean crt = vehicle != null
-                && viewType == ViewType.SCOPE
-                && vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit
+        WeaponUnit weaponUnit = null;
+        if (vehicle != null && vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit ownWeaponUnit) {
+            weaponUnit = ownWeaponUnit;
+        }
+        boolean crt = viewType == ViewType.SCOPE
+                && weaponUnit != null
                 && weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.CRT;
         if (CrtHandler.isActive() && !crt) {
             CrtHandler.setActive(false);
@@ -506,10 +509,14 @@ public class LocalVehiclePlayer {
             CrtHandler.setActive(true);
         }
         if (CrtHandler.isActive()) {
-            if (ThermalHandler.isActive() && !thermalImaging) {
+            if (weaponUnit != null && weaponUnit.withThermalImager()) {
+                if (ThermalHandler.isActive() && !thermalImaging) {
+                    ThermalHandler.setActive(false);
+                } else if (!ThermalHandler.isActive() && thermalImaging) {
+                    ThermalHandler.setActive(true);
+                }
+            } else if (ThermalHandler.isActive()) {
                 ThermalHandler.setActive(false);
-            } else if (!ThermalHandler.isActive() && thermalImaging) {
-                ThermalHandler.setActive(true);
             }
         } else {
             if (ThermalHandler.isActive()) {
