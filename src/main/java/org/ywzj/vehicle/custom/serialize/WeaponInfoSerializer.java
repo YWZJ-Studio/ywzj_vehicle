@@ -17,14 +17,15 @@ public class WeaponInfoSerializer implements JsonDeserializer<WeaponInfo> {
                 throw new JsonParseException("Invalid weapon info string: " + str);
             }
             String saveId = id.toString();
-            return new WeaponInfo(id, null, false, saveId);
+            return new WeaponInfo(id, null, null, false, saveId);
         } else if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
             String id = GsonHelper.getAsString(obj, "id", null);
             String partUnitId = GsonHelper.getAsString(obj, "part_unit_id", null);
+            String weaponBayUnitId = GsonHelper.getAsString(obj, "weapon_bay_unit_id", null);
             boolean secondary = GsonHelper.getAsBoolean(obj, "secondary", false);
             String saveId = GsonHelper.getAsString(obj, "save_id", partUnitId);
-            return new WeaponInfo(id == null ? null : ResourceLocation.tryParse(id), partUnitId, secondary, saveId);
+            return new WeaponInfo(id == null ? null : ResourceLocation.tryParse(id), partUnitId, weaponBayUnitId, secondary, saveId);
         } else {
             throw new JsonParseException("Invalid weapon info format: " + json);
         }

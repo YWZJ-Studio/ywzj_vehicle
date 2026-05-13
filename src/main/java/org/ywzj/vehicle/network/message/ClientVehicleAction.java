@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.ArrayList;
@@ -21,9 +22,10 @@ public class ClientVehicleAction {
     public boolean toggleEngine;
     public boolean toggleLandingGear;
     public boolean toggleHoverMode;
+    public boolean togglePartUnitState;
+    public int partUnitIndex;
     public boolean lockEntity;
     public int lockedEntityId;
-    public int partUnitIndex;
     public boolean shoot;
     public int weaponIndex;
     public List<AimContext> aimContexts = new ArrayList<>();
@@ -49,6 +51,11 @@ public class ClientVehicleAction {
         }
         control.toggleHoverMode = buf.readBoolean();
         if (control.toggleHoverMode) {
+            return control;
+        }
+        control.togglePartUnitState = buf.readBoolean();
+        if (control.togglePartUnitState) {
+            control.partUnitIndex = buf.readInt();
             return control;
         }
         control.lockEntity = buf.readBoolean();
@@ -92,6 +99,11 @@ public class ClientVehicleAction {
         if (toggleHoverMode) {
             return;
         }
+        buf.writeBoolean(togglePartUnitState);
+        if (togglePartUnitState) {
+            buf.writeInt(partUnitIndex);
+            return;
+        }
         buf.writeBoolean(lockEntity);
         if (lockEntity) {
             buf.writeInt(lockedEntityId);
@@ -130,7 +142,12 @@ public class ClientVehicleAction {
             if (!(entity instanceof AbstractVehicle vehicle)) {
                 return;
             }
-            if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
+            if (message.togglePartUnitState) {
+                if (message.partUnitIndex < vehicle.getPartUnits().size()
+                        && vehicle.getPartUnits().get(message.partUnitIndex) instanceof SwitchableUnit<?> switchableUnit) {
+                    switchableUnit.setOn(!switchableUnit.isOn());
+                }
+            } else if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
                 vehicle.onClientVehicleAction(message, player);
             } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
                 vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);

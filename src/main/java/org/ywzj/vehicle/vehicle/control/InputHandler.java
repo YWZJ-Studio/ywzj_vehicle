@@ -103,6 +103,10 @@ public class InputHandler {
                             && instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                         instance.thermalImaging = !instance.thermalImaging;
                     }
+                } else if (TOGGLE_WEAPON_BAY.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        weaponUnit.toggleCurrentWeaponBay();
+                    }
                 }
             }
         } else if (event.getAction() == GLFW.GLFW_RELEASE) {

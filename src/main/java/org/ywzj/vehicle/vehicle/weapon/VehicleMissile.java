@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -47,6 +48,21 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             }
         }
         return super.doClientShoot();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void onClientFire() {
+        int ignitionDelayTick = getData().getIgnitionDelayTick();
+        if (ignitionDelayTick > 0) {
+            new Thread(() -> {
+                try {
+                    Thread.sleep(ignitionDelayTick * 50L);
+                } catch (InterruptedException e) {}
+                Minecraft.getInstance().execute(super::onClientFire);
+            }).start();
+        } else {
+            super.onClientFire();
+        }
     }
 
     @Override

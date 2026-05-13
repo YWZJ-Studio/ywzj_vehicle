@@ -79,4 +79,13 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<WeaponBayUnit, PartUnitData> WEAPON_BAY =
+            PartUnitType.Builder.<WeaponBayUnit, PartUnitData>of(YwzjVehicle.modLocation("weapon_bay"))
+                    .setFactory(WeaponBayUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, PartUnitPojo.class);
+                        return new PartUnitData(pojo);
+                    })
+                    .build();
+
 }

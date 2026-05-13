@@ -20,15 +20,23 @@ public class WeaponInfo {
     @SerializedName("part_unit_id")
     public String partUnitId;
 
-    @SerializedName("save_id")
-    public String saveId;
+    /**
+     * 弹仓的载具部件ID
+     */
+    @Nullable
+    @SerializedName("weapon_bay_unit_id")
+    public String weaponBayUnitId;
 
     @SerializedName("secondary")
     public boolean secondary;
 
-    public WeaponInfo(@Nullable ResourceLocation id, @Nullable String partUnitId, boolean secondary, String saveId) {
+    @SerializedName("save_id")
+    public String saveId;
+
+    public WeaponInfo(@Nullable ResourceLocation id, @Nullable String partUnitId, @Nullable String weaponBayUnitId, boolean secondary, String saveId) {
         this.id = id;
         this.partUnitId = partUnitId;
+        this.weaponBayUnitId = weaponBayUnitId;
         this.secondary = secondary;
         this.saveId = saveId;
     }

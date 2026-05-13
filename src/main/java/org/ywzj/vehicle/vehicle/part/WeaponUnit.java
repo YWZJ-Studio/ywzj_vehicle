@@ -114,6 +114,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public final List<AbstractVehicleWeapon<?>> secondaryWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> independentWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> indexedWeapons = new ArrayList<>();
+    // 弹仓
+    public final Map<AbstractVehicleWeapon<?>, WeaponBayUnit> weaponBayUnits = new HashMap<>();
     private int currentWeaponIndex = -1;
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private int currentSecondaryWeaponIndex = -1;
@@ -212,6 +214,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     VehicleWeaponAgent weaponAgent = new VehicleWeaponAgent(vehicle, agentWeaponUnit, index);
                     weapons.add(weaponAgent);
                     indexedWeapons.add(weaponAgent);
+                    if (weaponInfo.weaponBayUnitId != null
+                            && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
+                        weaponBayUnits.put(weaponAgent, weaponBayUnit);
+                    }
                     index += 1;
                 }
             }
@@ -240,6 +246,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     }
                     weapon.defineSyncData(this.getSyncData());
                     indexedWeapons.add(weapon);
+                    if (weaponInfo.weaponBayUnitId != null
+                            && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
+                        weaponBayUnits.put(weapon, weaponBayUnit);
+                    }
                     index += 1;
                 }
             }
@@ -509,6 +519,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void shoot(int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (weaponIndex < indexedWeapons.size()) {
             AbstractVehicleWeapon<?> weapon = indexedWeapons.get(weaponIndex);
+            WeaponBayUnit weaponBayUnit = weaponBayUnits.get(weapon);
+            if (weaponBayUnit != null && !weaponBayUnit.isOn()) {
+                weaponBayUnit.setOn(true);
+                return;
+            }
             if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, weapon, operator))) {
                 return;
             }
@@ -520,6 +535,20 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
             }
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void toggleCurrentWeaponBay() {
+        getCurrentWeapon().ifPresent(weapon -> {
+            WeaponBayUnit weaponBayUnit = weaponBayUnits.get(weapon);
+            if (weaponBayUnit != null) {
+                ClientVehicleAction action = new ClientVehicleAction();
+                action.vehicleEntityId = vehicle.getId();
+                action.partUnitIndex = weaponBayUnit.getIndex();
+                action.togglePartUnitState = true;
+                Channel.CHANNEL.sendToServer(action);
+            }
+        });
     }
 
     @OnlyIn(Dist.CLIENT)

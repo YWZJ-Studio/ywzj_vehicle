@@ -29,6 +29,8 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<RadarUnit, RadarUnitData>> RADAR = register(PartUnitTypes.RADAR);
 
+    public static final RegistryObject<PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
+
     private static <T extends PartUnit<D>, D extends PartUnitData> RegistryObject<PartUnitType<T, D>> register(
             PartUnitType<T, D> type
     ) {

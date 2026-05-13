@@ -34,6 +34,9 @@ public class BaseVehicleDataPojo {
     @SerializedName("protect_passenger")
     public boolean protectPassenger = true;
 
+    @SerializedName("experimental")
+    public boolean experimental = false;
+
     @SerializedName("center_offset")
     public Vec3 centerOffset = Vec3.ZERO;
 
