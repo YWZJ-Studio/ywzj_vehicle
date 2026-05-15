@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.client.render.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -41,7 +41,7 @@ public class RocketEntityRenderer extends EntityRenderer<RocketEntity> {
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
 
             BedrockModel model = null;
-            VertexConsumer builder = null;
+            ResourceLocation texture = null;
             Optional<BaseDisplay> weaponDisplayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(pEntity.getWeaponId());
             if (weaponDisplayOptional.isPresent()) {
                 BaseDisplay weaponDisplay = weaponDisplayOptional.get();
@@ -49,16 +49,21 @@ public class RocketEntityRenderer extends EntityRenderer<RocketEntity> {
                     model = weaponDisplay.getModel();
                 }
                 if (weaponDisplay.getTexture() != null) {
-                    builder = bufferSource.getBuffer(RenderType.entityCutout(weaponDisplay.getTexture()));
+                    texture = weaponDisplay.getTexture();
                 }
             }
             if (model == null) {
                 model = BedrockModelLoader.getModel(YwzjVehicle.modLocation("entity/rocket_57mm"));
             }
-            if (builder == null) {
-                builder = bufferSource.getBuffer(RenderType.entityCutout(YwzjVehicle.modLocation("textures/entity/rocket_57mm.png")));
+            if (texture == null) {
+                texture = YwzjVehicle.modLocation("textures/entity/rocket_57mm.png");
             }
-            model.renderToBuffer(pPoseStack, builder, pPackedLight, OverlayTexture.NO_OVERLAY);
+            model.renderToBuffer(pPoseStack, bufferSource,
+                    RenderType.entityCutout(texture),
+                    BedrockModelRenderTypes.polyMeshCutout(texture),
+                    pPackedLight,
+                    OverlayTexture.pack(0f, false)
+            );
         }
         pPoseStack.popPose();
     }

@@ -31,6 +31,15 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
     @SerializedName("tail_particles")
     private ParticleOptions tailParticles = ParticleTypes.SMOKE;
 
+    @SerializedName("explosion_damage")
+    private float explosionDamage = 0;
+
+    @SerializedName("explosion_radius")
+    private float explosionRadius = 0;
+
+    @SerializedName("destroy_block")
+    private boolean destroyBlock = false;
+
     public String getGrenade() {
         return grenade;
     }
@@ -62,6 +71,18 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
     @Nullable
     public ParticleOptions getTailParticles() {
         return tailParticles;
+    }
+
+    public float getExplosionDamage() {
+        return explosionDamage;
+    }
+
+    public float getExplosionRadius() {
+        return explosionRadius;
+    }
+
+    public boolean isDestroyBlock() {
+        return destroyBlock;
     }
 
 }

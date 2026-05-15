@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -301,8 +301,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     {
                         Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
                         pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
-                        VertexConsumer decorationBuilder = bufferSource.getBuffer(RenderType.entityCutout(texture));
-                        model.renderToBuffer(pPoseStack, decorationBuilder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                        model.renderToBuffer(pPoseStack, bufferSource,
+                                RenderType.entityCutout(texture),
+                                BedrockModelRenderTypes.polyMeshCutout(texture),
+                                vehicle.isDestroyed() ? 64 : pPackedLight,
+                                OverlayTexture.pack(0f, false)
+                        );
                     }
                     pPoseStack.popPose();
                 }

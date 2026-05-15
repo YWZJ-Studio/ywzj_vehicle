@@ -31,9 +31,7 @@ import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
-import org.ywzj.vehicle.vehicle.part.PartUnit;
-import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.*;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -68,6 +66,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
+    public List<AfterburnerOffset> afterburnerOffsets;
     public float throttleLevelO;
     public float throttleLevel;
     public float pitchInput;
@@ -191,6 +190,11 @@ public class FixedWingVehicle extends AbstractVehicle
     public void tick() {
         super.tick();
         tickInput();
+        for (PartUnit<?> partUnit : partUnits) {
+            if (partUnit instanceof AfterburnerUnit afterburner) {
+                afterburner.setOn(getThrottleLevel() > 100);
+            }
+        }
     }
 
     @Override

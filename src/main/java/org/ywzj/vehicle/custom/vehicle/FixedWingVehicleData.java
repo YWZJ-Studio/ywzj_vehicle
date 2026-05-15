@@ -7,9 +7,14 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
+import org.ywzj.vehicle.vehicle.part.AfterburnerOffset;
+import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
 
@@ -34,11 +39,28 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
+    public List<AfterburnerOffset> afterburnerOffsets;
     public String landingGearPartId;
 
     @Override
     public AbstractVehicle fromCustom(Level level) {
-       return new FixedWingVehicle(AllEntities.FIXED_WING_VEHICLE.get(), level);
+        return new FixedWingVehicle(AllEntities.FIXED_WING_VEHICLE.get(), level);
+    }
+
+    @Override
+    public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
+        PartUnitsAndSeats result = super.createPartUnits(vehicle);
+        if (afterburnerOffsets == null || afterburnerOffsets.isEmpty()) {
+            return result;
+        }
+        Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>(result.partUnitMap());
+        int index = partUnitMap.size();
+        for (AfterburnerOffset offset : afterburnerOffsets) {
+            AfterburnerUnit unit = new AfterburnerUnit(index, vehicle, offset.getOffset(), offset.getScale());
+            partUnitMap.put(unit.getId(), unit);
+            index++;
+        }
+        return new PartUnitsAndSeats(partUnitMap, result.seats());
     }
 
     public void build(FixedWingVehicleDataPojo pojo) {
@@ -71,6 +93,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         this.yTurnRate = pojo.attributes.yTurnRate;
         this.zTurnRate = pojo.attributes.zTurnRate;
         this.vortexOffsets = pojo.attributes.vortexOffsets;
+        this.afterburnerOffsets = pojo.attributes.afterburnerOffsets;
         this.landingGearPartId = pojo.landingGearPartId;
     }
 
@@ -96,6 +119,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         vehicle.yTurnRate = this.yTurnRate;
         vehicle.zTurnRate = this.zTurnRate;
         vehicle.vortexOffsets = this.vortexOffsets;
+        vehicle.afterburnerOffsets = this.afterburnerOffsets;
         vehicle.landingGearPartId = this.landingGearPartId;
     }
 

@@ -1,10 +1,10 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.maydaymemory.mae.basic.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -38,7 +38,6 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
         pPoseStack.pushPose();
         {
             BedrockModel model = display.getModel();
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
 
             BedrockBone wheel1 = model.getBoneMap().get("wheel3");
             BedrockBone wheel2 = model.getBoneMap().get("wheel6");
@@ -112,7 +111,12 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
             vehicle.lastRenderTime = System.currentTimeMillis();
-            model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            model.renderToBuffer(pPoseStack, bufferSource,
+                    RenderType.entityCutout(display.getTexture()),
+                    BedrockModelRenderTypes.polyMeshCutout(display.getTexture()),
+                    vehicle.isDestroyed() ? 64 : pPackedLight,
+                    OverlayTexture.pack(0f, false)
+            );
 
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));

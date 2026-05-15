@@ -67,6 +67,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.MISSILE.get(), MissileEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.SMOKE_GRENADE.get(), GrenadeEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.APS_GRENADE.get(), GrenadeEntityRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.FRAG_GRENADE.get(), GrenadeEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));

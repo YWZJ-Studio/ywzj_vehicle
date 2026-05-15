@@ -1,9 +1,9 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -147,8 +147,12 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             pPoseStack.rotateAround(Axis.ZP.rotation(rot.z), 0, 0, 0);
             offsetFromVehicle = new Vec3(globalPivot);
             rotation = globalRotation;
-            VertexConsumer decorationBuilder = bufferSource.getBuffer(RenderType.entityCutout(decorationTexture));
-            decorationModel.renderToBuffer(pPoseStack, decorationBuilder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            decorationModel.renderToBuffer(pPoseStack, bufferSource,
+                    RenderType.entityCutout(decorationTexture),
+                    BedrockModelRenderTypes.polyMeshCutout(decorationTexture),
+                    vehicle.isDestroyed() ? 64 : pPackedLight,
+                    OverlayTexture.pack(0f, false)
+            );
             if (setting) {
                 RenderHelper.renderArrow3D(pPoseStack, bufferSource, 0.15f, 0.3f, 0, 255, 0, 255);
             }

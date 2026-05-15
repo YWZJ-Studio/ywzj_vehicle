@@ -1,8 +1,8 @@
 package org.ywzj.vehicle.client.screen;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -115,8 +115,12 @@ public class DecorationSelectScreen extends Screen {
                                 poseStack.mulPose(Axis.YP.rotationDegrees(180));
                                 poseStack.mulPose(Axis.ZP.rotationDegrees(180));
                                 poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
-                                VertexConsumer builder = guiGraphics.bufferSource().getBuffer(RenderType.entityCutout(texture));
-                                model.renderToBuffer(poseStack, builder, 15728880, OverlayTexture.NO_OVERLAY);
+                                model.renderToBuffer(poseStack, guiGraphics.bufferSource(),
+                                        RenderType.entityCutout(texture),
+                                        BedrockModelRenderTypes.polyMeshCutout(texture),
+                                        15728880,
+                                        OverlayTexture.pack(0f, false)
+                                );
                             }
                             poseStack.popPose();
                         }
@@ -167,8 +171,12 @@ public class DecorationSelectScreen extends Screen {
             poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
             poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
             // 装饰模型
-            VertexConsumer builder = guiGraphics.bufferSource().getBuffer(RenderType.entityCutout(display.getTexture()));
-            display.getModel().renderToBuffer(poseStack, builder, 15728880, OverlayTexture.NO_OVERLAY);
+            display.getModel().renderToBuffer(poseStack, guiGraphics.bufferSource(),
+                    RenderType.entityCutout(display.getTexture()),
+                    BedrockModelRenderTypes.polyMeshCutout(display.getTexture()),
+                    15728880,
+                    OverlayTexture.pack(0f, false)
+            );
         }
         poseStack.popPose();
         poseStack.pushPose();

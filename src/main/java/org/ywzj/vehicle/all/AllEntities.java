@@ -90,6 +90,17 @@ public class AllEntities {
                     .fireImmune()
                     .build("aps_grenade"));
 
+    public static final RegistryObject<EntityType<FragGrenadeEntity>> FRAG_GRENADE = ENTITIES.register("frag_grenade",
+            () -> EntityType.Builder.<FragGrenadeEntity>of(FragGrenadeEntity::new, MobCategory.MISC)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .setTrackingRange(16)
+                    .setUpdateInterval(1)
+                    .setCustomClientFactory(FragGrenadeEntity::new)
+                    .sized(0.3f, 0.3f)
+                    .noSave()
+                    .fireImmune()
+                    .build("frag_grenade"));
+
     public static final RegistryObject<EntityType<DecoyFlareEntity>> DECOY_FLARE = ENTITIES.register("decoy_flare",
             () -> EntityType.Builder.<DecoyFlareEntity>of(DecoyFlareEntity::new, MobCategory.MISC)
                     .noSave()

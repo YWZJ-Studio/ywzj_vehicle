@@ -5,6 +5,7 @@ import net.minecraft.world.entity.LivingEntity;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.ActiveProtectionGrenadeEntity;
+import org.ywzj.vehicle.entity.weapon.FragGrenadeEntity;
 import org.ywzj.vehicle.entity.weapon.SmokeGrenadeEntity;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
@@ -50,6 +51,18 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 activeProtectionGrenade.setXRot(aimContext.direction.x);
                 activeProtectionGrenade.setYRot(aimContext.direction.y);
                 vehicle.level().addFreshEntity(activeProtectionGrenade);
+                vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
+            }
+            if ("frag".equals(data.getGrenade())) {
+                FragGrenadeEntity fragGrenade = new FragGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
+                fragGrenade.setBaseData(data);
+                fragGrenade.setExplosionData(data.getExplosionDamage(), data.getExplosionRadius(), data.isDestroyBlock());
+                fragGrenade.vehicle = vehicle;
+                fragGrenade.setPos(aimContext.position);
+                fragGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
+                fragGrenade.setXRot(aimContext.direction.x);
+                fragGrenade.setYRot(aimContext.direction.y);
+                vehicle.level().addFreshEntity(fragGrenade);
                 vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
             }
         }

@@ -91,7 +91,7 @@ public class InputHandler {
                     if (weaponUnit != null) {
                         weaponUnit.independentWeapons.stream()
                                 .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleGrenade grenade
-                                        && "smoke".equals(grenade.getData().getGrenade()))
+                                        && ("smoke".equals(grenade.getData().getGrenade()) || "frag".equals(grenade.getData().getGrenade())))
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
                 } else if (TOGGLE_SEEKER.matches(event.getKey(), event.getScanCode())) {

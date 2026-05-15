@@ -1,0 +1,20 @@
+{
+  "type": "ywzj_vehicle:grenade",
+  "grenade": "frag",
+  "name": "frag_grenade_launcher",
+  "damage": 10,
+  "velocity": 15,
+  "shoot_interval": 400,
+  "max_capacity": 8,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_grenade"
+  },
+  "independent": true,
+  "life_time": 200,
+  "gravity": 0.07,
+  "should_bounce": false,
+  "broke_on_ground": true,
+  "explosion_damage": 50,
+  "explosion_radius": 5
+}
