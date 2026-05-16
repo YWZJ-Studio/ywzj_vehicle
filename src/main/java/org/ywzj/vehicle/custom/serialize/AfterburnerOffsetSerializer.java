@@ -3,7 +3,7 @@ package org.ywzj.vehicle.custom.serialize;
 import com.google.gson.*;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.vehicle.part.AfterburnerOffset;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 
 import java.lang.reflect.Type;
 

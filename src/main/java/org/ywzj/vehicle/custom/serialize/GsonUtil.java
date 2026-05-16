@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
-import org.ywzj.vehicle.vehicle.part.AfterburnerOffset;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 
 public class GsonUtil {

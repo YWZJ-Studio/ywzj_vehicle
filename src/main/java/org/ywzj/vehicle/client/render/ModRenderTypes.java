@@ -25,11 +25,42 @@ public class ModRenderTypes extends RenderType {
                 .setOverlayState(OVERLAY)
                 .setWriteMaskState(COLOR_WRITE)
                 .createCompositeState(false);
-        return RenderType.create("ywzj_vehicle:muzzle_flash", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, false, state);
+        return RenderType.create("ywzj_vehicle:muzzle_flash",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                256,
+                true,
+                false,
+                state);
+    });
+
+    private static final Function<ResourceLocation, RenderType> POLY_MESH_TRANSPARENT = Util.memoize((location) -> {
+        RenderStateShard.TextureStateShard shard = new RenderStateShard.TextureStateShard(location, false, false);
+        RenderType.CompositeState state = RenderType.CompositeState.builder()
+                .setTextureState(shard)
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setOverlayState(OVERLAY)
+                .setLightmapState(LIGHTMAP)
+                .createCompositeState(true);
+        return create(
+                "ywzj_vehicle:poly_mesh_translucent",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.TRIANGLES,
+                256,
+                true,
+                true,
+                state
+        );
     });
 
     public static RenderType muzzleFlash(ResourceLocation texture) {
         return MUZZLE_FLASH.apply(texture);
+    }
+
+    public static RenderType polyMeshTransparent(ResourceLocation texture) {
+        return POLY_MESH_TRANSPARENT.apply(texture);
     }
 
 }

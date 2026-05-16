@@ -296,14 +296,16 @@ public class RotaryWingVehicle extends AbstractVehicle
             } else if (yDiff < 0) {
                 yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration * shrink);
             }
-            if (Math.abs(yDiff) > 3) {
-                if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
-                    yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
+            if (yRotSpeed != 0) {
+                if (Math.abs(yDiff) > 3) {
+                    if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
+                        yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
+                    }
+                    this.setYRot(this.getYRot() + yRotSpeed);
+                } else {
+                    yRotSpeed = 0;
+                    this.setYRot(controlUnit.yRot);
                 }
-                this.setYRot(this.getYRot() + yRotSpeed);
-            } else {
-                yRotSpeed = 0;
-                this.setYRot(controlUnit.yRot);
             }
         } else {
             if (controlUnit.rightYaw) {
@@ -312,7 +314,9 @@ public class RotaryWingVehicle extends AbstractVehicle
             if (controlUnit.leftYaw) {
                 yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
             }
-            this.setYRot(this.getYRot() + yRotSpeed);
+            if (yRotSpeed != 0) {
+                this.setYRot(this.getYRot() + yRotSpeed);
+            }
         }
 
         if (!(controlUnit.forward || controlUnit.backward) && !controlUnit.xRotKeep) {
@@ -323,11 +327,13 @@ public class RotaryWingVehicle extends AbstractVehicle
             } else if (xDiff < 0) {
                 xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration * shrink);
             }
-            if (Math.abs(xDiff) > 3) {
-                this.setXRot(this.getXRot() + xRotSpeed);
-            } else {
-                xRotSpeed = 0;
-                this.setXRot(controlUnit.xRot);
+            if (xRotSpeed != 0) {
+                if (Math.abs(xDiff) > 3) {
+                    this.setXRot(this.getXRot() + xRotSpeed);
+                } else {
+                    xRotSpeed = 0;
+                    this.setXRot(controlUnit.xRot);
+                }
             }
         } else {
             if (controlUnit.forward) {
@@ -336,7 +342,9 @@ public class RotaryWingVehicle extends AbstractVehicle
             if (controlUnit.backward) {
                 xRotSpeed = Math.max(-xRotSpeedMax, xRotSpeed - xRotSpeedAcceleration);
             }
-            this.setXRot(this.getXRot() + xRotSpeed);
+            if (xRotSpeed != 0) {
+                this.setXRot(this.getXRot() + xRotSpeed);
+            }
         }
 
         if (!(controlUnit.left || controlUnit.right)) {
@@ -347,11 +355,13 @@ public class RotaryWingVehicle extends AbstractVehicle
             } else if (zDiff < 0) {
                 zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration * shrink);
             }
-            if (Math.abs(zDiff) > 3) {
-                this.setZRot(this.getZRot() + zRotSpeed);
-            } else {
-                zRotSpeed = 0;
-                this.setZRot(0);
+            if (zRotSpeed != 0) {
+                if (Math.abs(zDiff) > 3) {
+                    this.setZRot(this.getZRot() + zRotSpeed);
+                } else {
+                    zRotSpeed = 0;
+                    this.setZRot(0);
+                }
             }
         } else {
             if (controlUnit.right) {
@@ -360,7 +370,9 @@ public class RotaryWingVehicle extends AbstractVehicle
             if (controlUnit.left) {
                 zRotSpeed = Math.max(-zRotSpeedMax, zRotSpeed - zRotSpeedAcceleration);
             }
-            this.setZRot(this.getZRot() + zRotSpeed);
+            if (zRotSpeed != 0) {
+                this.setZRot(this.getZRot() + zRotSpeed);
+            }
         }
         yRotSpeed = Math.signum(yRotSpeed) * (Math.max(0, Math.abs(yRotSpeed) - 0.1f));
         xRotSpeed = Math.signum(xRotSpeed) * (Math.max(0, Math.abs(xRotSpeed) - 0.1f));

@@ -1,14 +1,11 @@
 package org.ywzj.vehicle.client.screen;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -19,6 +16,7 @@ import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
 
@@ -104,7 +102,7 @@ public class DecorationSelectScreen extends Screen {
                     if (slotTexture != null) {
                         guiGraphics.blit(slotTexture, slotX + 4, slotY + 4, 0, 0, 24, 24, 24, 24);
                     } else {
-                        BedrockModel model = display.getModel();
+                        VehicleBedrockModel model = display.getModel();
                         ResourceLocation texture = display.getTexture();
                         if (model != null && texture != null) {
                             PoseStack poseStack = guiGraphics.pose();
@@ -115,12 +113,8 @@ public class DecorationSelectScreen extends Screen {
                                 poseStack.mulPose(Axis.YP.rotationDegrees(180));
                                 poseStack.mulPose(Axis.ZP.rotationDegrees(180));
                                 poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
-                                model.renderToBuffer(poseStack, guiGraphics.bufferSource(),
-                                        RenderType.entityCutout(texture),
-                                        BedrockModelRenderTypes.polyMeshCutout(texture),
-                                        15728880,
-                                        OverlayTexture.pack(0f, false)
-                                );
+                                model.renderToBuffer(poseStack, guiGraphics.bufferSource(), texture, 15728880);
+                                model.renderSpecialBones(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
                             }
                             poseStack.popPose();
                         }
@@ -171,12 +165,9 @@ public class DecorationSelectScreen extends Screen {
             poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
             poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
             // 装饰模型
-            display.getModel().renderToBuffer(poseStack, guiGraphics.bufferSource(),
-                    RenderType.entityCutout(display.getTexture()),
-                    BedrockModelRenderTypes.polyMeshCutout(display.getTexture()),
-                    15728880,
-                    OverlayTexture.pack(0f, false)
-            );
+            VehicleBedrockModel model = display.getModel();
+            model.renderToBuffer(poseStack, guiGraphics.bufferSource(), display.getTexture(), 15728880);
+            model.renderSpecialBones(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
         }
         poseStack.popPose();
         poseStack.pushPose();

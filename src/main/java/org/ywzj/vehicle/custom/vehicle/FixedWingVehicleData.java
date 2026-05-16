@@ -7,9 +7,9 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
-import org.ywzj.vehicle.vehicle.part.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.LinkedHashMap;
@@ -56,7 +56,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>(result.partUnitMap());
         int index = partUnitMap.size();
         for (AfterburnerOffset offset : afterburnerOffsets) {
-            AfterburnerUnit unit = new AfterburnerUnit(index, vehicle, offset.getOffset(), offset.getScale());
+            AfterburnerUnit unit = new AfterburnerUnit(index, vehicle, offset.offset(), offset.scale());
             partUnitMap.put(unit.getId(), unit);
             index++;
         }

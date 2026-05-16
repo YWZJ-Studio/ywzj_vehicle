@@ -19,6 +19,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 import java.util.HashSet;
@@ -81,14 +82,10 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
                 Vec3 root = new Vec3(0, 0, 0);
                 poseStack.rotateAround(Axis.YP.rotationDegrees(135), (float) root.x, (float) root.y, (float) root.z);
                 machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = bedrockBoneWrapper.visible);
-                BedrockModel vehicleModel = machineMaxBlockEntity.vehicleDisplay.getModel();
+                VehicleBedrockModel vehicleModel = machineMaxBlockEntity.vehicleDisplay.getModel();
                 vehicleModel.applyPose(vehicleModel.getBindPose());
-                vehicleModel.renderToBuffer(poseStack, bufferSource,
-                        RenderType.entityCutout(machineMaxBlockEntity.vehicleDisplay.getTexture()),
-                        BedrockModelRenderTypes.polyMeshCutout(machineMaxBlockEntity.vehicleDisplay.getTexture()),
-                        packedLight,
-                        OverlayTexture.pack(0f, false)
-                );
+                vehicleModel.renderToBuffer(poseStack, bufferSource, machineMaxBlockEntity.vehicleDisplay.getTexture(), packedLight);
+                vehicleModel.renderSpecialBones(poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY);
                 machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = true);
             }
             poseStack.popPose();

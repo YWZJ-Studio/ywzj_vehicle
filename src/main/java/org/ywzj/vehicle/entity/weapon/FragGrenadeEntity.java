@@ -10,13 +10,12 @@ import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VehicleExplosion;
+import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class FragGrenadeEntity extends GrenadeEntity {
 
     public AbstractVehicle vehicle;
-    private float explosionDamage;
-    private float explosionRadius;
-    private boolean destroyBlock;
+    private Explosion explosion;
 
     public FragGrenadeEntity(Entity shooter, Level level, ResourceLocation weaponId) {
         super(AllEntities.FRAG_GRENADE.get(), shooter, level, weaponId);
@@ -30,10 +29,8 @@ public class FragGrenadeEntity extends GrenadeEntity {
         super(type, level);
     }
 
-    public void setExplosionData(float damage, float radius, boolean destroyBlock) {
-        this.explosionDamage = damage;
-        this.explosionRadius = radius;
-        this.destroyBlock = destroyBlock;
+    public void setExplosionData(Explosion explosion) {
+        this.explosion = explosion;
     }
 
     @Override
@@ -47,9 +44,9 @@ public class FragGrenadeEntity extends GrenadeEntity {
 
     @Override
     public void onDeath(HitResult hitResult) {
-        if (!this.isRemoved() && explosionRadius > 0) {
+        if (!this.isRemoved() && explosion != null && explosion.radius > 0) {
             VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this, this.vehicle, this.position(),
-                    explosionRadius, explosionDamage, destroyBlock);
+                    explosion.radius, explosion.damage, explosion.destroyBlock);
             vehicleExplosion.explode();
         }
         this.discard();
@@ -58,17 +55,18 @@ public class FragGrenadeEntity extends GrenadeEntity {
     @Override
     public void writeSpawnData(FriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
-        buffer.writeFloat(explosionDamage);
-        buffer.writeFloat(explosionRadius);
-        buffer.writeBoolean(destroyBlock);
+        buffer.writeFloat(explosion != null ? explosion.damage : 0);
+        buffer.writeFloat(explosion != null ? explosion.radius : 0);
+        buffer.writeBoolean(explosion != null && explosion.destroyBlock);
     }
 
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
         super.readSpawnData(additionalData);
-        explosionDamage = additionalData.readFloat();
-        explosionRadius = additionalData.readFloat();
-        destroyBlock = additionalData.readBoolean();
+        explosion = new Explosion();
+        explosion.damage = additionalData.readFloat();
+        explosion.radius = additionalData.readFloat();
+        explosion.destroyBlock = additionalData.readBoolean();
     }
 
 }

@@ -146,6 +146,8 @@ dependencies {
     // 各类模组的兼容性测试
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
+    // ar
+    runtimeOnly fg.deobf("maven.modrinth:acceleratedrendering:1.0.8-1.20.1-alpha")
     // tacz
     implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626")
     // sbw

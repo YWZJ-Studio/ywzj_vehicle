@@ -56,7 +56,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
             if ("frag".equals(data.getGrenade())) {
                 FragGrenadeEntity fragGrenade = new FragGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 fragGrenade.setBaseData(data);
-                fragGrenade.setExplosionData(data.getExplosionDamage(), data.getExplosionRadius(), data.isDestroyBlock());
+                fragGrenade.setExplosionData(data.getExplosion());
                 fragGrenade.vehicle = vehicle;
                 fragGrenade.setPos(aimContext.position);
                 fragGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());

@@ -346,6 +346,11 @@ public class LocalVehiclePlayer {
         if (pYRot > 0.05 || pXRot > 0.05) {
             playerLerpSteps = 0;
         }
+        if (player.getXRot() > 80 && pXRot > 0) {
+            pXRot = 0;
+        } else if (player.getXRot() < -80 && pXRot < 0) {
+            pXRot = 0;
+        }
         AbstractVehicle vehicle = getVehicle();
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
             if (viewType == LocalVehiclePlayer.ViewType.SCOPE) {

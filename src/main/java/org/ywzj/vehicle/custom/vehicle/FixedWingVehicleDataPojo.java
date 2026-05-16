@@ -2,7 +2,7 @@ package org.ywzj.vehicle.custom.vehicle;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.vehicle.part.AfterburnerOffset;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 
 import java.util.ArrayList;
 import java.util.List;

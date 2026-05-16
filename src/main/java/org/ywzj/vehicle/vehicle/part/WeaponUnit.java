@@ -1,11 +1,9 @@
 package org.ywzj.vehicle.vehicle.part;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -32,6 +30,7 @@ import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
@@ -269,7 +268,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         weapons.forEach(weapon -> {
             AbstractVehicleWeapon<?> proxyWeapon = proxyWeapon(weapon);
             ClientAssetsManager.INSTANCE.getWeaponDisplay(proxyWeapon.getData().getWeaponId()).ifPresent(weaponDisplay -> {
-                BedrockModel model = weaponDisplay.getModel();
+                VehicleBedrockModel model = weaponDisplay.getModel();
                 if (model == null) {
                     return;
                 }
@@ -301,12 +300,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     {
                         Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
                         pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
-                        model.renderToBuffer(pPoseStack, bufferSource,
-                                RenderType.entityCutout(texture),
-                                BedrockModelRenderTypes.polyMeshCutout(texture),
-                                vehicle.isDestroyed() ? 64 : pPackedLight,
-                                OverlayTexture.pack(0f, false)
-                        );
+                        model.renderToBuffer(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
+                        model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
                     }
                     pPoseStack.popPose();
                 }
