@@ -1,10 +1,15 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -12,6 +17,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -70,6 +76,19 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         // 子弹的碰撞检测
         BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
         if (result.getType() != HitResult.Type.MISS) {
+            // 子弹击中方块时，播放少量方块材质破坏粒子
+            BlockPos hitPos = result.getBlockPos();
+            BlockState hitBlock = this.level().getBlockState(hitPos);
+            if (this.level() instanceof ServerLevel serverLevel) {
+                Vec3 normal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
+                Vec3 spawnLoc = result.getLocation().add(normal.scale(0.3));
+                BlockParticleOption option = new BlockParticleOption(ParticleTypes.BLOCK, hitBlock);
+                for (ServerPlayer player : serverLevel.players()) {
+                    if (player.distanceToSqr(spawnLoc) < 128 * 128) {
+                        serverLevel.sendParticles(player, option, true, spawnLoc.x, spawnLoc.y, spawnLoc.z, 5, 0, 0, 0, 0.1);
+                    }
+                }
+            }
             // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);

@@ -399,24 +399,26 @@ public class LocalVehiclePlayer {
                 return true;
             }
         }
-        player.yRotO = player.getYRot();
         player.xRotO = player.getXRot();
+        player.yRotO = player.getYRot();
         float fX = (float) (pXRot * 0.15F);
         float fY = (float) (pYRot * 0.15F);
+        Quaternionf rot;
         if (viewType == ViewType.OPERATOR) {
             playerLocalXRot = Mth.wrapDegrees(playerLocalXRot + fX);
             playerLocalYRot = Mth.wrapDegrees(playerLocalYRot + fY);
-            Quaternionf rot = vehicle.rotYXZ();
+            rot = vehicle.rotYXZ();
             rot.rotateY((float) Math.toRadians(-playerLocalYRot));
             rot.rotateX((float) Math.toRadians(playerLocalXRot));
-            Vector3f euler = new Vector3f();
-            rot.getEulerAnglesYXZ(euler);
-            player.setXRot((float) Math.toDegrees(euler.x));
-            player.setYRot((float) Math.toDegrees(-euler.y));
         } else {
-            player.setXRot(player.getXRot() + fX);
-            player.setYRot(player.getYRot() + fY);
+            rot = new Quaternionf();
+            rot.rotateY((float) Math.toRadians(-player.getYRot() - fY));
+            rot.rotateX((float) Math.toRadians(player.getXRot() + fX));
         }
+        Vector3f euler = new Vector3f();
+        rot.getEulerAnglesYXZ(euler);
+        player.setXRot((float) Math.toDegrees(euler.x));
+        player.setYRot((float) Math.toDegrees(-euler.y));
         vehicle.onPassengerTurned(player);
         return true;
     }
