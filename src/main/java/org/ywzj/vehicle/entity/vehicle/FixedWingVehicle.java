@@ -194,11 +194,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public void tick() {
         super.tick();
         tickInput();
-        for (PartUnit<?> partUnit : partUnits) {
-            if (partUnit instanceof AfterburnerUnit afterburner) {
-                afterburner.setOn(getThrottleLevel() > 100);
-            }
-        }
+        tickAfterburner();
     }
 
     @Override
@@ -228,6 +224,14 @@ public class FixedWingVehicle extends AbstractVehicle
             pitchInput = getPitchInput();
             yawInput = getYawInput();
             rollInput = getRollInput();
+        }
+    }
+
+    private void tickAfterburner() {
+        for (PartUnit<?> partUnit : partUnits) {
+            if (partUnit instanceof AfterburnerUnit afterburner) {
+                afterburner.setOn(hasPower() && getThrottleLevel() > 100);
+            }
         }
     }
 

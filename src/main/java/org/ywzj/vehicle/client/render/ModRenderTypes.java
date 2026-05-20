@@ -44,8 +44,7 @@ public class ModRenderTypes extends RenderType {
                 .setOverlayState(OVERLAY)
                 .setLightmapState(LIGHTMAP)
                 .createCompositeState(true);
-        return create(
-                "ywzj_vehicle:poly_mesh_translucent",
+        return create("ywzj_vehicle:poly_mesh_transparent",
                 DefaultVertexFormat.NEW_ENTITY,
                 VertexFormat.Mode.TRIANGLES,
                 256,

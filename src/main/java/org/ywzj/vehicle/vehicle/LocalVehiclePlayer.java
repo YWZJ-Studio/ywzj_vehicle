@@ -52,6 +52,8 @@ public class LocalVehiclePlayer {
     public float playerLerpSteps;
     public float playerLerpXRot;
     public float playerLerpYRot;
+    public float playerLocalXRot;
+    public float playerLocalYRot;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
     public float currentG = 1;
@@ -219,21 +221,27 @@ public class LocalVehiclePlayer {
                         weaponUnit.aim(freeAimPos());
                     }
                 }
-                cameraAimRotX = player.getXRot();
-                cameraAimRotY = player.getYRot();
-                if (viewType != ViewType.THIRD_PERSON) {
-                    float yRotDiff = Mth.wrapDegrees(player.getYRot() - vehicle.getYRot());
-                    float xRotDiff = Mth.wrapDegrees(player.getXRot() - vehicle.getXRot());
-                    Quaternionf q = new Quaternionf();
-                    q.rotateY((float) Math.toRadians(vehicle.getYRot()))
-                            .rotateX((float) Math.toRadians(vehicle.getXRot()))
-                            .rotateZ((float) Math.toRadians(vehicle.getZRot()));
-                    q.rotateY((float) Math.toRadians(-yRotDiff));
-                    q.rotateX((float) Math.toRadians(xRotDiff));
+                if (viewType == ViewType.OPERATOR) {
+                    Quaternionf vehicleRot = vehicle.rotYXZ();
+                    Quaternionf playerWorldRot = new Quaternionf();
+                    playerWorldRot.rotateY((float) Math.toRadians(-player.getYRot()));
+                    playerWorldRot.rotateX((float) Math.toRadians(player.getXRot()));
+                    Quaternionf invVehicleRot = new Quaternionf(vehicleRot).invert();
+                    Quaternionf localRot = invVehicleRot.mul(playerWorldRot);
+                    Vector3f localEuler = new Vector3f();
+                    localRot.getEulerAnglesYXZ(localEuler);
+                    playerLocalXRot = (float) Math.toDegrees(localEuler.x);
+                    playerLocalYRot = (float) Math.toDegrees(-localEuler.y);
+                    vehicleRot.rotateY((float) Math.toRadians(-playerLocalYRot));
+                    vehicleRot.rotateX((float) Math.toRadians(playerLocalXRot));
                     Vector3f rot = new Vector3f();
-                    q.getEulerAnglesYXZ(rot);
+                    vehicleRot.getEulerAnglesYXZ(rot);
+                    cameraAimRotX = (float) Math.toDegrees(rot.x);
+                    cameraAimRotY = (float) Math.toDegrees(-rot.y);
                     cameraAimRotZ = (float) Math.toDegrees(rot.z);
                 } else {
+                    cameraAimRotX = player.getXRot();
+                    cameraAimRotY = player.getYRot();
                     cameraAimRotZ = 0;
                 }
             } catch (Exception exception) {
@@ -346,10 +354,12 @@ public class LocalVehiclePlayer {
         if (pYRot > 0.05 || pXRot > 0.05) {
             playerLerpSteps = 0;
         }
-        if (player.getXRot() > 80 && pXRot > 0) {
-            pXRot = 0;
-        } else if (player.getXRot() < -80 && pXRot < 0) {
-            pXRot = 0;
+        if (viewType == ViewType.THIRD_PERSON) {
+            if (player.getXRot() > 80 && pXRot > 0) {
+                pXRot = 0;
+            } else if (player.getXRot() < -80 && pXRot < 0) {
+                pXRot = 0;
+            }
         }
         AbstractVehicle vehicle = getVehicle();
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
@@ -391,18 +401,22 @@ public class LocalVehiclePlayer {
         }
         player.yRotO = player.getYRot();
         player.xRotO = player.getXRot();
-        float fX = (float) Math.toRadians(pXRot * 0.15F);
-        float fY = (float) Math.toRadians(pYRot * 0.15F);
-        Quaternionf playerRot = new Quaternionf()
-                .rotationYXZ((float) Math.toRadians(-player.getYRot()),
-                        (float) Math.toRadians(player.getXRot()),
-                        (float) Math.toRadians(cameraAimRotZ));
-        playerRot.rotateY(-fY);
-        playerRot.rotateX(fX);
-        Vector3f euler = new Vector3f();
-        playerRot.getEulerAnglesYXZ(euler);
-        player.setYRot((float) Math.toDegrees(-euler.y));
-        player.setXRot(Mth.clamp((float) Math.toDegrees(euler.x), -90.0F, 90.0F));
+        float fX = (float) (pXRot * 0.15F);
+        float fY = (float) (pYRot * 0.15F);
+        if (viewType == ViewType.OPERATOR) {
+            playerLocalXRot = Mth.wrapDegrees(playerLocalXRot + fX);
+            playerLocalYRot = Mth.wrapDegrees(playerLocalYRot + fY);
+            Quaternionf rot = vehicle.rotYXZ();
+            rot.rotateY((float) Math.toRadians(-playerLocalYRot));
+            rot.rotateX((float) Math.toRadians(playerLocalXRot));
+            Vector3f euler = new Vector3f();
+            rot.getEulerAnglesYXZ(euler);
+            player.setXRot((float) Math.toDegrees(euler.x));
+            player.setYRot((float) Math.toDegrees(-euler.y));
+        } else {
+            player.setXRot(player.getXRot() + fX);
+            player.setYRot(player.getYRot() + fY);
+        }
         vehicle.onPassengerTurned(player);
         return true;
     }

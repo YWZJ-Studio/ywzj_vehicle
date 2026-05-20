@@ -27,7 +27,7 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
         maxHeight = this.getOBBs().stream()
                 .mapToDouble(obb -> obb.extents().y * 2)
                 .max()
-                .orElse(0);
+                .orElse(1);
         vehicleToHeight = vehicle.getMainCubeOBB().height;
     }
 
