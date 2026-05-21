@@ -26,6 +26,7 @@ import net.minecraftforge.entity.IEntityAdditionalSpawnData;
 import net.minecraftforge.network.NetworkHooks;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
@@ -88,6 +89,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                         serverLevel.sendParticles(player, option, true, spawnLoc.x, spawnLoc.y, spawnLoc.z, 5, 0, 0, 0, 0.1);
                     }
                 }
+                // 弹孔贴花粒子
+                BulletHoleOption bulletHole = new BulletHoleOption(result.getDirection(), hitPos, 1, 0, 0, getCaliber());
+                serverLevel.sendParticles(bulletHole, result.getLocation().x, result.getLocation().y, result.getLocation().z, 1, 0, 0, 0, 0);
             }
             // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {
@@ -176,6 +180,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
 
     public ResourceLocation getWeaponId() {
         return weaponId;
+    }
+
+    public float getCaliber() {
+        return 5.8f;
     }
 
 }

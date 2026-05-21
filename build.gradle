@@ -122,8 +122,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     // JS支持
-    jarJar(minecraftLibrary("ywzj:rhino-1.8.1-SNAPSHOT:1")) {
-        jarJar.ranged(it, "[1.8.0,2.0.0)")
+    jarJar(minecraftLibrary("ywzj:rhino-1.8.1-SNAPSHOT:1.8.1")) {
+        jarJar.ranged(it, "[1.8.1,)")
     }
     // SBM
     jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.3.2-forge-mc1.20.1"))) {

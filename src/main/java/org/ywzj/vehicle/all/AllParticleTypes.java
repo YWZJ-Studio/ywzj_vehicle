@@ -10,6 +10,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.particle.ExplosionCloudOption;
 
@@ -30,6 +31,10 @@ public class AllParticleTypes {
 
     public static final RegistryObject<SimpleParticleType> SMOKE_CLOUD = PARTICLE_TYPES.register("smoke_cloud",
             () -> new SimpleParticleType(true));
+
+    public static final RegistryObject<ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
+            () -> createOptions(BulletHoleOption.CODEC, BulletHoleOption.DESERIALIZER)
+    );
 
     public static final RegistryObject<ParticleType<ExplosionCloudOption>> EXPLOSION_CLOUD = PARTICLE_TYPES.register("explosion_cloud",
             () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.DESERIALIZER)

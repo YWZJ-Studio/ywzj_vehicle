@@ -54,6 +54,13 @@ public class BulletEntity extends AmmoEntity {
     public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion, ResourceLocation weaponId) {
         this(level, vehicle, shooter, startPos.x, startPos.y, startPos.z, explosion);
         this.weaponId = weaponId;
+        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
+        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
+            this.caliber = data.getCaliber();
+            this.tracerR = data.getTracerR();
+            this.tracerG = data.getTracerG();
+            this.tracerB = data.getTracerB();
+        }
     }
 
     public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, double x, double y, double z, Explosion explosion) {
@@ -171,13 +178,6 @@ public class BulletEntity extends AmmoEntity {
         this.speed = additionalData.readFloat();
         this.friction = additionalData.readFloat();
         this.weaponId = additionalData.readResourceLocation();
-        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
-        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
-            this.caliber = data.getCaliber();
-            this.tracerR = data.getTracerR();
-            this.tracerG = data.getTracerG();
-            this.tracerB = data.getTracerB();
-        }
     }
 
     public Vec3 getStartPos() {

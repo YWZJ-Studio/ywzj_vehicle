@@ -18,6 +18,7 @@ import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.client.gui.*;
+import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.particle.DustSmokeParticle;
 import org.ywzj.vehicle.client.particle.DustStoneParticle;
 import org.ywzj.vehicle.client.particle.ExplosionCloudParticle;
@@ -99,6 +100,7 @@ public class ClientSetupHandler {
         event.registerSpriteSet(AllParticleTypes.TRACK.get(), TrackParticle.Factory::new);
         event.registerSpriteSet(AllParticleTypes.SMOKE_CLOUD.get(), SmokeCloudParticle::provider);
         event.registerSpriteSet(AllParticleTypes.EXPLOSION_CLOUD.get(), ExplosionCloudParticle::provider);
+        event.registerSpecial(AllParticleTypes.BULLET_HOLE.get(), new BulletHoleParticle.Provider());
     }
 
     @SubscribeEvent
