@@ -50,6 +50,7 @@ import org.joml.Math;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
@@ -66,6 +67,7 @@ import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
+import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
@@ -134,6 +136,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav = false;
+    private Vec3 fakeOperatorPosition;
+    private FakePlayer fakeOperator;
     public boolean collision = true;
     public boolean remote = false;
     public Team remoteTeam;
@@ -185,6 +189,13 @@ public abstract class AbstractVehicle extends ContainerCraft
         compound.putString(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID, this.getDisplayId().toString());
         compound.put("PartUnits", serializePartUnitsData());
         compound.put("DecorationUnits", serializeDecorationUnitsData());
+        if (uav) {
+            if (fakeOperatorPosition != null) {
+                compound.putDouble("fakeOperatorPositionX", fakeOperatorPosition.x);
+                compound.putDouble("fakeOperatorPositionY", fakeOperatorPosition.y);
+                compound.putDouble("fakeOperatorPositionZ", fakeOperatorPosition.z);
+            }
+        }
     }
 
     @Override
@@ -220,6 +231,15 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         if (compound.contains("DecorationUnits", Tag.TAG_COMPOUND)) {
             deserializeDecorationUnitsData(compound.getCompound("DecorationUnits"));
+        }
+        if (uav) {
+            if (compound.contains("fakeOperatorPositionX")) {
+                fakeOperatorPosition = new Vec3(
+                        compound.getDouble("fakeOperatorPositionX"),
+                        compound.getDouble("fakeOperatorPositionY"),
+                        compound.getDouble("fakeOperatorPositionZ")
+                );
+            }
         }
     }
 
@@ -350,6 +370,20 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void onRemovedFromWorld() {
         super.onRemovedFromWorld();
         partUnits.forEach((PartUnit::onRemoved));
+        if (!level().isClientSide()) {
+            if (uav) {
+                if (getDriver() instanceof ServerPlayer serverPlayer && fakeOperator != null) {
+                    onLeaveVehicle(serverPlayer);
+                    serverPlayer.unRide();
+                    Vec3 backPosition = fakeOperator.position();
+                    serverPlayer.teleportTo(backPosition.x, backPosition.y, backPosition.z);
+                    serverPlayer.setYRot(fakeOperator.getYRot());
+                    serverPlayer.setYBodyRot(fakeOperator.yBodyRot);
+                    serverPlayer.setXRot(fakeOperator.getXRot());
+                    fakeOperatorPosition = null;
+                }
+            }
+        }
     }
 
     public void initDisplayData() {
@@ -357,17 +391,19 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public void initData() {
-        CommonAssetsManager.vehicleDataManager().getVehicleData(this.getVehicleId()).ifPresent(this::initData);
+        CommonAssetsManager.vehicleDataManager()
+                .getVehicleData(this.getVehicleId())
+                .ifPresentOrElse(this::initData,
+                    () -> {
+                        YwzjVehicle.LOGGER.error("No vehicle data found for {}", vehicleId);
+                        this.discard();
+                    }
+                );
     }
 
     public void initDisplayData(BaseDisplay display) {}
 
     private void initData(BaseVehicleData vehicleData) {
-        if (vehicleData == null) {
-            YwzjVehicle.LOGGER.error("No vehicle data found for {}", vehicleId);
-            this.discard();
-            return;
-        }
         if (getHealth() < 0) {
             setMaxHealth(vehicleData.getMaxHealth());
             setHealth(vehicleData.getMaxHealth());
@@ -388,6 +424,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
         this.seats.addAll(partUnitsAndSeats.seats());
+        this.uav = vehicleData.isUav();
         if (vehicleData.withWarningReceiver()) {
             this.warningReceiver = new WarningReceiver(this);
         }
@@ -473,6 +510,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             if (uav) {
                 EntityUtil.keepChunkLoaded(this, position());
                 EntityUtil.keepChunkLoaded(this, position().add(getLookAngle().normalize().scale(16)));
+                if (fakeOperatorPosition != null) {
+                    EntityUtil.keepChunkLoaded(this, fakeOperatorPosition);
+                }
             }
         }
         afterVehicleRot();
@@ -825,6 +865,16 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public void onEnterVehicle(LivingEntity livingEntity) {
         if (!level().isClientSide()) {
+            if (uav) {
+                if (livingEntity instanceof ServerPlayer serverPlayer && tickCount != 0) {
+                    fakeOperatorPosition = livingEntity.position();
+                    fakeOperator = new FakePlayer(AllEntities.FAKE_PLAYER.get(), level());
+                    fakeOperator.spawn(serverPlayer);
+                    fakeOperator.setPos(fakeOperatorPosition);
+                    level().addFreshEntity(fakeOperator);
+                    livingEntity.teleportTo(this.position().x, this.position().y, this.position().z);
+                }
+            }
             ServerLevel serverLevel = (ServerLevel) level();
             Seat targetSeat = null;
             if (livingEntity instanceof ServerPlayer serverPlayer) {
@@ -983,6 +1033,9 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public InteractionResult interact(Player pPlayer, InteractionHand pHand) {
+        if (uav) {
+            return InteractionResult.PASS;
+        }
         if (!this.level().isClientSide()) {
             if (isDestroyed()) {
                 this.openCustomInventoryScreen(pPlayer);
@@ -1063,6 +1116,19 @@ public abstract class AbstractVehicle extends ContainerCraft
     @NotNull
     @Override
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
+        if (uav) {
+            if (fakeOperator != null) {
+                Vec3 position = fakeOperator.position();
+                fakeOperatorPosition = null;
+                pPassenger.setYRot(fakeOperator.getYRot());
+                pPassenger.setYBodyRot(fakeOperator.yBodyRot);
+                pPassenger.setXRot(fakeOperator.getXRot());
+                return position;
+            } else if (fakeOperatorPosition != null) {
+                // 可能是服务端崩溃或客户端异常退出
+                return fakeOperatorPosition;
+            }
+        }
         return dismountLocations.getOrDefault(pPassenger, super.getDismountLocationForPassenger(pPassenger));
     }
 
@@ -1499,26 +1565,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
 
     }
-
-//    @Deprecated
-//    protected void initOBBs() {
-//        BedrockModel model = CommonAssetsManager.structureModelManager().getStructureModel(this.getStructureModel()).orElse(null);
-//        BedrockBone bone = model.getBoneMap().get("vehicle_body");
-//        // 约定取体积最大的块计算物理
-//        List<BedrockCube> cubes = new ArrayList<>(bone.cubes.stream().toList());
-//        cubes.sort((cube1, cube2) -> (int) -(cube1.depth() * cube1.width() * cube1.height() - cube2.depth() * cube2.width() * cube2.height()));
-//        mainCubeOBB = VehicleBedrockCubeOBB.init(bone, cubes.remove(0));
-//        vehicleOBBs.add(mainCubeOBB);
-//        for (BedrockCube cube : cubes) {
-//            vehicleOBBs.add(VehicleBedrockCubeOBB.init(bone, cube));
-//        }
-//        for (BedrockBone child : bone.getChildren()) {
-//            List<BedrockCube> childCubes = new ArrayList<>(child.cubes.stream().toList());
-//            for (BedrockCube cube : childCubes) {
-//                vehicleOBBs.add(VehicleBedrockCubeOBB.init(child, cube));
-//            }
-//        }
-//    }
 
     @Deprecated
     @Nullable

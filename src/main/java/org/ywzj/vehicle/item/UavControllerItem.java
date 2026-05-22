@@ -18,7 +18,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.Quadcopter;
 
 import java.util.List;
 import java.util.UUID;
@@ -59,10 +58,10 @@ public class UavControllerItem extends VehicleItem {
     public InteractionResult interactEntity(ItemStack stack, Player player, Entity target, InteractionHand pHand) {
         if (!player.level().isClientSide) {
             if (pHand == InteractionHand.MAIN_HAND) {
-                if (target instanceof Quadcopter quadcopter) {
+                if (target instanceof AbstractVehicle vehicle && vehicle.uav && !vehicle.isDestroyed()) {
                     ItemStack uavControllerItemStack = player.getItemInHand(pHand);
                     CompoundTag tag = uavControllerItemStack.getOrCreateTag();
-                    tag.putUUID(UAV_UUID, quadcopter.getUUID());
+                    tag.putUUID(UAV_UUID, vehicle.getUUID());
                     uavControllerItemStack.setTag(tag);
                     player.displayClientMessage(Component.translatable("tips.uav_controller.paired"), true);
                 }

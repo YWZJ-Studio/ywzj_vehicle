@@ -37,6 +37,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected EnergyInfo energyInfo;
     protected PhysicsInfo physicsInfo;
     protected DefenseStats defenseStats;
+    protected boolean uav;
     protected boolean withWarningReceiver;
     protected boolean protectPassenger;
     protected boolean experimental;
@@ -97,6 +98,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.energyInfo = pojo.energyInfo;
         this.physicsInfo = pojo.physicsInfo;
         this.defenseStats = pojo.defenseStats;
+        this.uav = pojo.uav;
         this.withWarningReceiver = pojo.withWarningReceiver;
         this.protectPassenger = pojo.protectPassenger;
         this.experimental = pojo.experimental;
@@ -324,6 +326,10 @@ public class BaseVehicleData<T extends AbstractVehicle> {
 
     public DefenseStats getDefenseStats() {
         return defenseStats;
+    }
+
+    public boolean isUav() {
+        return uav;
     }
 
     public boolean withWarningReceiver() {
