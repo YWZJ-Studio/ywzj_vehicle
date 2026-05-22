@@ -49,6 +49,7 @@ import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
 import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 import org.ywzj.vehicle.vehicle.weapon.seeker.ElectroOptical;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Infrared;
@@ -170,6 +171,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void switchWeapon(boolean secondary, boolean next) {
         if (secondary) {
             int size = secondaryWeapons.size();
+            if (size < 2) {
+                return;
+            }
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
@@ -178,6 +182,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         } else {
             int size = weapons.size();
+            if (size < 2) {
+                return;
+            }
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
@@ -185,6 +192,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentWeapon().get().getDisplayName()), true);
             }
         }
+    }
+
+    public void cycleMultiWeapon(boolean next) {
+        this.getCurrentWeapon().ifPresent(weapon -> {
+            if (weapon instanceof VehicleMultiWeapons multiWeapons) {
+                multiWeapons.cycleSubWeapon(next);
+                if (getOwner() instanceof Player player) {
+                    player.displayClientMessage(Component.translatable("tips.use_weapon", multiWeapons.getDisplayName()), true);
+                }
+            }
+        });
     }
 
     public void initWeapon(int index) {
@@ -201,8 +219,36 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         WeaponUnit parent = this;
         // 武器
         for (var weaponInfo : data.getWeapons()) {
+            // 多弹种则构造VehicleMultiWeapons
+            if (weaponInfo.ids != null && !weaponInfo.ids.isEmpty()) {
+                List<AbstractVehicleWeapon<?>> multiWeapons = new ArrayList<>();
+                for (ResourceLocation id : weaponInfo.ids) {
+                    VehicleWeaponIndex<?, ?> subIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(id).orElse(null);
+                    if (subIndex != null) {
+                        String subSaveId = weaponInfo.saveId + "_" + id.toString().replace(':', '_');
+                        AbstractVehicleWeapon<?> sub = subIndex.create(vehicle, parent, multiWeapons.size(), subSaveId);
+                        sub.defineSyncData(this.getSyncData());
+                        multiWeapons.add(sub);
+                    }
+                }
+                if (!multiWeapons.isEmpty()) {
+                    VehicleMultiWeapons multi = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
+                    multi.defineSyncData(this.getSyncData());
+                    if (weaponInfo.secondary) {
+                        secondaryWeapons.add(multi);
+                    } else {
+                        weapons.add(multi);
+                    }
+                    indexedWeapons.add(multi);
+                    if (weaponInfo.weaponBayUnitId != null
+                            && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
+                        weaponBayUnits.put(multi, weaponBayUnit);
+                    }
+                    index += 1;
+                }
+            }
             // 武器站加入武器列表
-            if (weaponInfo.id == null) {
+            else if (weaponInfo.id == null) {
                 if (weaponInfo.partUnitId != null
                         && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit
                         && agentWeaponUnit != parent) {

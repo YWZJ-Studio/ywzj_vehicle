@@ -79,7 +79,7 @@ public class InputHandler {
                     }
                 } else if (SECONDARY_WEAPON_SWITCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
-                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), true, true));
+                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.SECONDARY, true));
                     }
                 } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
@@ -106,6 +106,10 @@ public class InputHandler {
                 } else if (TOGGLE_WEAPON_BAY.matches(event.getKey(), event.getScanCode())) {
                     if (weaponUnit != null) {
                         weaponUnit.toggleCurrentWeaponBay();
+                    }
+                } else if (MULTI_WEAPON_SWITCH.matches(event.getKey(), event.getScanCode())) {
+                    if (weaponUnit != null) {
+                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.MULTI, true));
                     }
                 }
             }
@@ -245,7 +249,7 @@ public class InputHandler {
             AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
             boolean previous = event.getScrollDelta() == -1;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
-                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), false, previous));
+                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.PRIMARY, previous));
                 // 阻止滚轮事件传递给原版以避免物品栏切换
                 event.setCanceled(true);
             }

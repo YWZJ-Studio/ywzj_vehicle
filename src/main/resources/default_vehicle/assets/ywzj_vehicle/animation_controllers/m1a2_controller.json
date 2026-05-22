@@ -3,7 +3,8 @@
   "script": "ywzj_vehicle:m1a2",
   "parameters": {},
   "event_animations": {
-    "turret_fire": ["turret_shoot"]
+    "turret_fire": ["turret_shoot"],
+    "anti_aircraft_machine_gun_fire": ["anti_aircraft_machine_gun_shoot"]
   },
   "loop_animations": {
     "static": {

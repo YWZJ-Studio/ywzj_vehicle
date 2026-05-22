@@ -44,7 +44,7 @@
       "with_thermal_imager": true,
       "zoom_max": 8,
       "weapons": [
-        "ywzj_vehicle:cannon_125mm",
+        ["ywzj_vehicle:cannon_125mm_apfsds", "ywzj_vehicle:cannon_125mm_heat"],
         {
           "id": "ywzj_vehicle:gun_7.62mm",
           "part_unit_id": "turret_machine_gun",

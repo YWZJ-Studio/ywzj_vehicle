@@ -8,21 +8,27 @@ import java.util.function.Supplier;
 
 public record ClientVehicleSwitchWeapon(
         int vehicleEntityId,
-        boolean secondary,
+        WeaponSwitchType switchType,
         boolean next
 ) {
 
+    public enum WeaponSwitchType {
+        PRIMARY,
+        SECONDARY,
+        MULTI
+    }
+
     public static void encode(ClientVehicleSwitchWeapon msg, net.minecraft.network.FriendlyByteBuf buf) {
         buf.writeInt(msg.vehicleEntityId);
-        buf.writeBoolean(msg.secondary);
+        buf.writeEnum(msg.switchType);
         buf.writeBoolean(msg.next);
     }
 
     public static ClientVehicleSwitchWeapon decode(net.minecraft.network.FriendlyByteBuf buf) {
         int vehicleEntityId = buf.readInt();
-        boolean secondary = buf.readBoolean();
+        WeaponSwitchType switchType = buf.readEnum(WeaponSwitchType.class);
         boolean next = buf.readBoolean();
-        return new ClientVehicleSwitchWeapon(vehicleEntityId, secondary, next);
+        return new ClientVehicleSwitchWeapon(vehicleEntityId, switchType, next);
     }
 
     public static void onReceived(ClientVehicleSwitchWeapon msg, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -37,7 +43,11 @@ public record ClientVehicleSwitchWeapon(
                 if (serverPlayer.level().getEntity(msg.vehicleEntityId) instanceof AbstractVehicle vehicle) {
                     var partUnit = vehicle.getOwnOperatorUnit(serverPlayer);
                     if (partUnit instanceof WeaponUnit weaponUnit) {
-                        weaponUnit.switchWeapon(msg.secondary, msg.next);
+                        switch (msg.switchType) {
+                            case MULTI -> weaponUnit.cycleMultiWeapon(msg.next);
+                            case PRIMARY -> weaponUnit.switchWeapon(false, msg.next);
+                            case SECONDARY -> weaponUnit.switchWeapon(true, msg.next);
+                        }
                     }
                 }
             });

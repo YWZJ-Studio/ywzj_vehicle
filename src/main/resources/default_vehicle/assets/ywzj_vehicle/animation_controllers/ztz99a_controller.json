@@ -3,7 +3,8 @@
   "script": "ywzj_vehicle:ztz99a",
   "parameters": {},
   "event_animations": {
-    "turret_fire": ["turret_shoot"]
+    "turret_fire": ["turret_shoot"],
+    "commander_machine_gun_fire": ["commander_machine_gun_shoot"]
   },
   // 循环动画源
   "loop_animations": {

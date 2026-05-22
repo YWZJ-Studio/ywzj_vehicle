@@ -25,8 +25,6 @@ import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
-import java.util.function.Function;
-
 /**
  * 动能武器打出的子弹实体。
  */
@@ -42,10 +40,7 @@ public class BulletEntity extends AmmoEntity {
     private float caliber = 7.62f;
     private float tracerR = 1f;
     private float tracerG = 1f;
-    private float tracerB = 1f;;
-
-    // 返回一个距离-伤害乘数
-    private Function<Double, Float> distanceDamageFunction = (distance) -> 1.0f;
+    private float tracerB = 1f;
 
     public BulletEntity(EntityType<? extends Projectile> type, Level worldIn) {
         super(type, worldIn, null);
@@ -54,13 +49,6 @@ public class BulletEntity extends AmmoEntity {
     public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion, ResourceLocation weaponId) {
         this(level, vehicle, shooter, startPos.x, startPos.y, startPos.z, explosion);
         this.weaponId = weaponId;
-        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
-        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
-            this.caliber = data.getCaliber();
-            this.tracerR = data.getTracerR();
-            this.tracerG = data.getTracerG();
-            this.tracerB = data.getTracerB();
-        }
     }
 
     public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, double x, double y, double z, Explosion explosion) {
@@ -161,6 +149,7 @@ public class BulletEntity extends AmmoEntity {
         buffer.writeFloat(this.speed);
         buffer.writeFloat(this.friction);
         buffer.writeResourceLocation(this.weaponId);
+        initBullet();
     }
 
     @Override
@@ -178,6 +167,17 @@ public class BulletEntity extends AmmoEntity {
         this.speed = additionalData.readFloat();
         this.friction = additionalData.readFloat();
         this.weaponId = additionalData.readResourceLocation();
+        initBullet();
+    }
+
+    private void initBullet() {
+        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
+        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
+            this.caliber = data.getCaliber();
+            this.tracerR = data.getTracerR();
+            this.tracerG = data.getTracerG();
+            this.tracerB = data.getTracerB();
+        }
     }
 
     public Vec3 getStartPos() {

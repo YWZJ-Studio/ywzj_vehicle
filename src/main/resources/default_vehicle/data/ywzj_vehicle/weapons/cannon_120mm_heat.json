@@ -1,0 +1,25 @@
+{
+  "type": "ywzj_vehicle:cannon",
+  "name": "120mm HEAT",
+  "caliber": 120,
+  "tracer_r": 1,
+  "tracer_g": 0.3,
+  "tracer_b": 0.3,
+  "damage": 500,
+  "velocity": 12,
+  "headshot_multiplier": 1,
+  "recoil": 1,
+  "inaccuracy": 0.05,
+  "shoot_interval": 400,
+  "max_capacity": 1,
+  "reload": {
+    "time": 100,
+    "ammo": "ywzj_vehicle:ammo_artillery"
+  },
+  "explosion": {
+    "explode": true,
+    "damage": 1500,
+    "radius": 4,
+    "destroy_block": true
+  }
+}
