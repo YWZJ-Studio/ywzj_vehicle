@@ -202,7 +202,7 @@ public class LocalVehiclePlayer {
         cameraZO = cameraZ;
         if (partUnit == null) {
             cameraX = player.getX();
-            cameraY = vehicle.getAABB().maxY + 4;
+            cameraY = vehicle.getBoundingBox().maxY + 4;
             cameraZ = player.getZ();
             return;
         }

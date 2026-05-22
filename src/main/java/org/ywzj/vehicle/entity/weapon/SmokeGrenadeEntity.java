@@ -8,10 +8,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllParticleTypes;
-import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 
-public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChangeable, SightObstruction {
+public class SmokeGrenadeEntity extends GrenadeEntity implements SightObstruction {
 
     public SmokeGrenadeEntity(Entity entity, Level level, ResourceLocation weaponId) {
         super(AllEntities.SMOKE_GRENADE.get(), entity, level, weaponId);
@@ -25,7 +24,8 @@ public class SmokeGrenadeEntity extends GrenadeEntity implements BoundingBoxChan
         super(type, level);
     }
 
-    public AABB getAABB() {
+    @Override
+    protected AABB makeBoundingBox() {
         if (entityData.get(EXPLODED)) {
             return AABB.ofSize(position(), 10, 10, 10);
         }

@@ -52,7 +52,6 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
-import org.ywzj.vehicle.api.entity.BoundingBoxChangeable;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
@@ -94,7 +93,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 import java.util.*;
 
 public abstract class AbstractVehicle extends ContainerCraft
-        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData, BoundingBoxChangeable {
+        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -814,8 +813,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         mainCubeOBB.update(this);
     }
 
-    public AABB getAABB() {
-        if (remote) {
+    @Override
+    protected AABB makeBoundingBox() {
+        if (remote || !dataInitialized) {
             return AABB.ofSize(position(), 1, 1, 1);
         }
         List<OBB> vehicleOBBs = getOBBs();
