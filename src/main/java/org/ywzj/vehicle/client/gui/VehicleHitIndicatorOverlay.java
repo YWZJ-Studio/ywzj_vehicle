@@ -12,8 +12,10 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -131,6 +133,16 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         }
         guiGraphics.pose().popPose();
         Lighting.setupFor3DItems();
+        if (entity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
+            AABB aabb = vehicle.getBoundingBox();
+            Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
+                    Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
+                    Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
+            Vec3 screenPos = VectorUtil.worldToScreen(pos);
+            double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
+            float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
+            VehicleOverlay.renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
+        }
     }
 
     private void renderRedLine(GuiGraphics guiGraphics, Vec3 start, Vec3 end) {

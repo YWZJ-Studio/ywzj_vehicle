@@ -332,7 +332,7 @@ public class VehicleOverlay implements IGuiOverlay {
         poseStack.popPose();
     }
 
-    public void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight, AbstractVehicle vehicle, float size) {
+    public static void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight, AbstractVehicle vehicle, float size) {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
