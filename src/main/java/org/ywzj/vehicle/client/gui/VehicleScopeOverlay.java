@@ -88,6 +88,20 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                                     + (int) LocalVehiclePlayer.instance.aimLocationDistance + " m", 0, 40, color);
                     guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
                     guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.withStabilizer() ? Component.translatable("ui.stabilizer_on").getString() : "", 36, 28, color);
+                    // 焦点锁定
+                    if (weaponUnit.withFocusLocker()) {
+                        Vec3 focusLockPos = weaponUnit.getFocusLockPos();
+                        if (focusLockPos != null) {
+                            poseStack.pushPose();
+                            {
+                                poseStack.translate(0, -0.5, 0);
+                                poseStack.rotateAround(Axis.ZP.rotationDegrees(45), 0, 0, 0);
+                                RenderHelper.drawCrossHollow(guiGraphics, 0, 0, 40, 8, Color.GREEN);
+                            }
+                            poseStack.popPose();
+                            guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.focus_lock").getString(), 36, 40, color);
+                        }
+                    }
                 } else {
                     poseStack.pushPose();
                     {

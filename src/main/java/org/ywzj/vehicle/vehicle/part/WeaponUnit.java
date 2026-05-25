@@ -84,6 +84,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public WeaponUnitData.OpticalSightType opticalSightType;
     // 是否有双向稳定器
     private final boolean withStabilizer;
+    // 是否有焦点锁定器
+    private final boolean withFocusLocker;
     // 是否有热成像仪
     private final boolean withThermalImager;
     // 开镜缩放倍率
@@ -97,6 +99,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private final List<WeaponUnit> subWeaponUnits = new ArrayList<>();
     // 火控
     private final WeaponUnitData.FireControlSensorType fireControlSensorType;
+    private Vec3 focusLockPos;
     private Entity lockedEntity;
     private int loseLockTick;
     private boolean parentWeaponUnitAim;
@@ -140,12 +143,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.fireControlSensorType = data.getFireControlSensorType();
         this.opticalSightType = data.getOpticalSightType();
         this.withStabilizer = data.withStabilizer();
+        this.withFocusLocker = data.withFocusLocker();
+        this.withThermalImager = data.withThermalImager();
         this.zoomMin = data.getZoomMin();
         this.zoomMax = data.getZoomMax();
         this.zoom = this.zoomMin;
         this.crosshairStyle = data.getCrosshairStyle();
         this.renderSelectedWeapon = data.isRenderSelectedWeapon();
-        this.withThermalImager = data.withThermalImager();
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
                 this::setCurrentWeaponIndex,
@@ -410,6 +414,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             lockedEntity = null;
             return;
         }
+        if (withFocusLocker && focusLockPos != null) {
+            aim(focusLockPos);
+            return;
+        }
         if (lockedEntity != null) {
             Vec3 center = lockedEntity.getBoundingBox().getCenter();
             // 武器站火控自动瞄准锁定目标
@@ -531,13 +539,26 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
             Entity lockedEntity = ElectroOptical.findTarget(this, lookAtPos);
             setLockedEntity(lockedEntity);
+            if (lockedEntity != null) {
+                setFocusLockPos(null);
+                return;
+            }
         }
         // 雷达锁定
-        if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnits != null) {
+        if (sensorType == WeaponUnitData.FireControlSensorType.RF) {
             RadarUnit mainRadarUnit = getMainRadarUnit();
             Entity lockedEntity = Radar.findTarget(mainRadarUnit, 90, this);
             if (lockedEntity != null) {
                 mainRadarUnit.setLockedEntity(lockedEntity);
+                return;
+            }
+        }
+        // 焦点锁定
+        if (withFocusLocker && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            if (focusLockPos == null) {
+                setFocusLockPos(LocalVehiclePlayer.instance.scopeAimPos());
+            } else {
+                setFocusLockPos(null);
             }
         }
     }
@@ -817,6 +838,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return withThermalImager;
     }
 
+    public boolean withFocusLocker() {
+        return withFocusLocker;
+    }
+
     public float getZoom() {
         return zoom;
     }
@@ -835,6 +860,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             radarDetectedEntities.addAll(radarUnit.getDetectedEntities().values());
         }
         return radarDetectedEntities;
+    }
+
+    public Vec3 getFocusLockPos() {
+        return focusLockPos;
+    }
+
+    public void setFocusLockPos(Vec3 focusLockPos) {
+        this.focusLockPos = focusLockPos;
     }
 
     public Entity getLockedEntity() {
@@ -1050,6 +1083,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         super(id, index, vehicle);
         this.withStabilizer = false;
         this.withThermalImager = false;
+        this.withFocusLocker = false;
         this.zoomMin = 1;
         this.zoomMax = 8;
         this.zoom = this.zoomMin;

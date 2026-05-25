@@ -27,6 +27,7 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.control.InputHandler;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -370,6 +371,17 @@ public class LocalVehiclePlayer {
                     mouseTurnedAfterScope = true;
                 }
                 if (!mouseTurnedAfterScope) {
+                    return true;
+                }
+                // 焦点锁定
+                if (weaponUnit.getFocusLockPos() != null) {
+                    AimContext aimContext = weaponUnit.aimContext();
+                    Vec3 start = weaponUnit.worldCurrentBoltPosition();
+                    Vec3 end = start.add(VectorUtil
+                            .rotToVec((float) (aimContext.direction.x + pXRot * 0.33f), (float) (aimContext.direction.y + pYRot * 0.33f))
+                            .normalize()
+                            .scale(1024));
+                    weaponUnit.setFocusLockPos(VectorUtil.hitPosition(vehicle, start, end));
                     return true;
                 }
                 pXRot *= 0.15f;

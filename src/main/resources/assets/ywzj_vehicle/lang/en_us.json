@@ -85,6 +85,7 @@
   "tips.edit_decoration": "Sneak and right-click to edit",
 
   "ui.stabilizer_on": "STAB ON",
+  "ui.focus_lock": "FOCUS LOCK",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",
   "ui.vehicle_rotary_wing.throttle_level": "THR:  ",
   "ui.vehicle_rotary_wing.collective_pitch": "COL:  %d",

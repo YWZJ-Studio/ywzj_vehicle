@@ -60,9 +60,18 @@ public class RenderHelper {
     public static void drawCross(GuiGraphics guiGraphics, int x, int y, int size, int color) {
         int half = size / 2;
         // 横线
-        guiGraphics.hLine(x - half, x + half, y, color);
+        guiGraphics.hLine(x - half + 1, x + half - 1, y, color);
         // 竖线
         guiGraphics.vLine(x, y - half, y + half, color);
+    }
+
+    public static void drawCrossHollow(GuiGraphics guiGraphics, int x, int y, int size, int gap, int color) {
+        int half = size / 2;
+        int gapHalf = gap / 2;
+        guiGraphics.hLine(x - half + 1, x - gapHalf - 1, y, color);
+        guiGraphics.hLine(x + gapHalf + 1, x + half - 1, y, color);
+        guiGraphics.vLine(x, y - half, y - gapHalf, color);
+        guiGraphics.vLine(x, y + gapHalf, y + half, color);
     }
 
     public static void drawSquare(GuiGraphics guiGraphics, int x, int y, int size, int color) {

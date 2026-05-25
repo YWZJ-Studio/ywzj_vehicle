@@ -17,6 +17,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.PlayMessages;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
@@ -203,7 +204,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         }
         if (tickCount < ignitionDelayTick) {
             // 弹仓弹射
-            velocity = vehicle.getDeltaMovement().add(0, -1, 0);
+            Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
+            velocity = vehicle.getDeltaMovement().add(new Vec3(axes[1].negate()));
         } else {
             // 重力
             velocity = velocity.subtract(0, PhysicsEngine.G, 0);
@@ -300,7 +302,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (tickCount < ignitionDelayTick) {
             return;
         }
-        Vec3 pos = this.position();
+        Vec3 pos = this.position().add(this.getLookAngle().scale(-3));
         level().addParticle(
                 ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
                 pos.x, pos.y, pos.z,

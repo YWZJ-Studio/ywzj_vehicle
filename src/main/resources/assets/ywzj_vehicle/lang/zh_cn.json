@@ -85,6 +85,7 @@
   "tips.edit_decoration": "下蹲并右键以编辑",
 
   "ui.stabilizer_on": "稳定器开",
+  "ui.focus_lock": "焦点锁定",
   "ui.vehicle_rotary_wing.rpm": "转速: %d",
   "ui.vehicle_rotary_wing.throttle_level": "节流阀: ",
   "ui.vehicle_rotary_wing.collective_pitch": "总距: %d",
