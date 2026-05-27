@@ -14,6 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -117,6 +118,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             boolean headshot = entityResult.isHeadshot();
             DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, owner, entityResult.getLocation());
             EntityUtil.hurt(source, entity, headshot ? damage * this.headShot : damage);
+            if (entity instanceof LivingEntity livingEntity) {
+                livingEntity.invulnerableTime = 0;
+            }
             if (explosion != null && explosion.explode) {
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();

@@ -41,7 +41,7 @@ public class Motorcycle extends WheeledVehicle {
             Vec3 trackPos = relativeRotPos(position().add(0, 0, -mainCubeOBB.obb().extents().z), false);
             if (EntityUtil.isOnBlockSurface(this, trackPos)) {
                 this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackPos.x, trackPos.y, trackPos.z,  0.1f, this.getYRot(), 0
+                        trackPos.x, trackPos.y, trackPos.z,  trackSize, this.getYRot(), 0
                 );
             }
         }

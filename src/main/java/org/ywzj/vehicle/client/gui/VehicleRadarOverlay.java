@@ -49,6 +49,9 @@ public class VehicleRadarOverlay implements IGuiOverlay {
                 int radarCount = radarUnits.size();
                 float radius = radarCount == 1 ? 50.0f : 50.0f / radarCount / 0.6f;
                 for (RadarUnit radarUnit : radarUnits) {
+                    if (radarUnit.isUiHide()) {
+                        continue;
+                    }
                     // 雷达
                     if (!radarUnit.isOn()) {
                         continue;

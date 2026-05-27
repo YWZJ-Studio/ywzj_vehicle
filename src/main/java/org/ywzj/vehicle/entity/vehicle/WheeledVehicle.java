@@ -37,6 +37,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     public float maxSpeedBackward = 0.2f;
     public float turnStep = 0.1f;
     public float maxTurn = 2f;
+    public float trackSize = 0.1f;
     public boolean loseTraction;
     public int regainTractionTick;
     public float wheelRotation;
@@ -160,12 +161,12 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
             if (EntityUtil.isOnBlockSurface(this, trackLeftPos)) {
                 this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  0.1f, this.getYRot(), 0
+                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  trackSize, this.getYRot(), 0
                 );
             }
             if (EntityUtil.isOnBlockSurface(this, trackRightPos)) {
                 this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  0.1f, this.getYRot(), 0
+                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  trackSize, this.getYRot(), 0
                 );
             }
         }

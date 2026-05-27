@@ -13,4 +13,7 @@ public class RadarUnitPojo extends RotatableUnitPojo {
     @SerializedName("max_scan_distance")
     public float maxScanDistance = 256;
 
+    @SerializedName("ui_hide")
+    public boolean uiHide = false;
+
 }

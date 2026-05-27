@@ -86,8 +86,8 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                     guiGraphics.drawCenteredString(Minecraft.getInstance().font,
                             (LocalVehiclePlayer.instance.outOfRangeFinding ? ">" : "")
                                     + (int) LocalVehiclePlayer.instance.aimLocationDistance + " m", 0, 40, color);
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 32, 16, color);
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, weaponUnit.withStabilizer() ? Component.translatable("ui.stabilizer_on").getString() : "", 36, 28, color);
+                    guiGraphics.drawString(Minecraft.getInstance().font, "x" + String.format("%.1f", weaponUnit.getZoom()), 25, 16, color);
+                    guiGraphics.drawString(Minecraft.getInstance().font, weaponUnit.withStabilizer() ? Component.translatable("ui.stabilizer_on").getString() : "", 25, 28, color);
                     // 焦点锁定
                     if (weaponUnit.withFocusLocker()) {
                         Vec3 focusLockPos = weaponUnit.getFocusLockPos();
@@ -99,7 +99,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                                 RenderHelper.drawCrossHollow(guiGraphics, 0, 0, 40, 8, Color.GREEN);
                             }
                             poseStack.popPose();
-                            guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.focus_lock").getString(), 36, 40, color);
+                            guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("ui.focus_lock").getString(), 25, 40, color);
                         }
                     }
                 } else {

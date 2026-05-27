@@ -246,6 +246,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         }
     }
 
+    public boolean isUiHide() {
+        return data.isUiHide();
+    }
+
     public boolean isOn() {
         return on;
     }

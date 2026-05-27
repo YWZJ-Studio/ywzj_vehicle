@@ -14,6 +14,7 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
     public float maxSpeedBackward;
     public float turnAcceleration;
     public float maxTurn;
+    public float trackSize;
 
     @Override
     public AbstractVehicle fromCustom(Level level) {
@@ -29,6 +30,7 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
         this.maxSpeedBackward = pojo.attributes.maxSpeedBackward;
         this.turnAcceleration = pojo.attributes.turnAcceleration;
         this.maxTurn = pojo.attributes.maxTurn;
+        this.trackSize = pojo.attributes.trackSize;
     }
 
     public void inject(TrackedVehicle vehicle) {
@@ -39,6 +41,7 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
         vehicle.maxSpeedBackward = this.maxSpeedBackward;
         vehicle.turnAcceleration = this.turnAcceleration;
         vehicle.maxTurn = this.maxTurn;
+        vehicle.trackSize = this.trackSize;
     }
 
 }
