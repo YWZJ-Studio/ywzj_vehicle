@@ -14,6 +14,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.entity.vehicle.*;
+import org.ywzj.vehicle.entity.vehicle.custom.*;
 import org.ywzj.vehicle.entity.weapon.*;
 
 public class AllEntities {

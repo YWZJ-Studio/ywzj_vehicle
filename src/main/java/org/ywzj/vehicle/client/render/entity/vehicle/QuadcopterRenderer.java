@@ -15,9 +15,9 @@ import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
-import org.ywzj.vehicle.entity.vehicle.Quadcopter;
+import org.ywzj.vehicle.entity.vehicle.custom.Quadcopter;
 
-import static org.ywzj.vehicle.entity.vehicle.Quadcopter.CABLE_LENGTH;
+import static org.ywzj.vehicle.entity.vehicle.custom.Quadcopter.CABLE_LENGTH;
 
 public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
 

@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
-import org.ywzj.vehicle.entity.vehicle.Ztl11;
+import org.ywzj.vehicle.entity.vehicle.custom.Ztl11;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 

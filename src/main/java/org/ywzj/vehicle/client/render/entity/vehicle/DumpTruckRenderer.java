@@ -15,7 +15,7 @@ import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
-import org.ywzj.vehicle.entity.vehicle.DumpTruck;
+import org.ywzj.vehicle.entity.vehicle.custom.DumpTruck;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
 

@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.entity.vehicle;
+package org.ywzj.vehicle.entity.vehicle.custom;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -7,6 +7,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
