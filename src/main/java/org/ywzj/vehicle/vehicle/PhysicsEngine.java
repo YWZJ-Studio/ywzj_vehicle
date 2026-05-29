@@ -479,16 +479,11 @@ public class PhysicsEngine {
             return;
         }
         var physicsCube = vehicle.getMainCubeOBB();
-        Vector3f pc = vehicle.relativeRotPos(physicsCube.center(this.vehicle), false).toVector3f();
-        Vector3f p1 = rotateAroundAxis(physicsCube.obb().worldToLocal(pc, axes), localRotAxisStart, localRotAxisEnd, rotV);
-        Vector3f p2 = physicsCube.obb().localToWorld(p1, axes);
-        Vector3f p3 = vehicle.relativeRotPos(new Vec3(p2), true).toVector3f();
-        Vec3 pRot = new Vec3(p3).subtract(physicsCube.offset());
-
-//        DebugUtil.particle(vehicle.level(), new Vec3(p2));
-
-        Quaternionf q = vehicle.rotYXZ();
-        q.mul(stepRot);
+        Vec3 pRot = new Vec3(rotateAroundAxis(vehicle.position().toVector3f(),
+                physicsCube.obb().localToWorld(localRotAxisStart, axes),
+                physicsCube.obb().localToWorld(localRotAxisEnd, axes),
+                rotV));
+        Quaternionf q = new Quaternionf(stepRot).mul(vehicle.rotYXZ());
         Vector3f as = new Vector3f();
         q.getEulerAnglesYXZ(as);
         if (Double.isNaN(as.x) || Double.isNaN(as.y) || Double.isNaN(as.z)) {

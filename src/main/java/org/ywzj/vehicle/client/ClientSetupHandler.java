@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -82,15 +83,15 @@ public class ClientSetupHandler {
 
     @SubscribeEvent
     public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll("vehicle", new VehicleOverlay());
-        event.registerAboveAll("vehicle_rotary_wing", new RotaryWingVehicleOverlay());
-        event.registerAboveAll("vehicle_fixed_wing", new FixedWingVehicleOverlay());
-        event.registerAboveAll("vehicle_crosshair", new VehicleCrossHairOverlay());
-        event.registerAboveAll("vehicle_scope", new VehicleScopeOverlay());
-        event.registerAboveAll("vehicle_weapon", new VehicleWeaponOverlay());
-        event.registerAboveAll("vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
-        event.registerAboveAll("vehicle_radar", new VehicleRadarOverlay());
-        event.registerAboveAll("vehicle_debug", new VehicleDebugOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle", new VehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_rotary_wing", new RotaryWingVehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_fixed_wing", new FixedWingVehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_crosshair", new VehicleCrossHairOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_scope", new VehicleScopeOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_weapon", new VehicleWeaponOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_radar", new VehicleRadarOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_debug", new VehicleDebugOverlay());
     }
 
     @SubscribeEvent

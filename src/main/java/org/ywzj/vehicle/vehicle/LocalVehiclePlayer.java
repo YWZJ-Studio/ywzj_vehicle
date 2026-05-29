@@ -141,8 +141,8 @@ public class LocalVehiclePlayer {
                 endureTick -= 1;
             }
             float endureG = currentG - 1;
-            stamina = Mth.clamp(stamina - endureG * 0.8f, 0, 120);
-            if (stamina == 0 || stamina == 120) {
+            stamina = Mth.clamp(stamina - endureG * 0.8f, 0, 160);
+            if (stamina <= 0 || stamina >= 160) {
                 lostControl = true;
                 unconsciousnessTick = 60;
             }

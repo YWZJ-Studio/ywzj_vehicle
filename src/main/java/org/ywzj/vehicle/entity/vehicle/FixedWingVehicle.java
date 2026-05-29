@@ -465,6 +465,11 @@ public class FixedWingVehicle extends AbstractVehicle
             double d = Math.min(zTurnRate, ke * zTurnRate);
             q.rotateZ((float) Math.toRadians(zRotInput * d));
         }
+        // 俯仰
+        if (xRotInput != 0) {
+            double d = Math.min(xTurnRate, ke * xTurnRate);
+            q.rotateX((float) Math.toRadians(xRotInput * d));
+        }
         // 偏航
         if (yRotInput != 0) {
             double d0 = Math.min(yTurnRate, ke * yTurnRate);
@@ -483,11 +488,6 @@ public class FixedWingVehicle extends AbstractVehicle
             double vd = airSpeed.dot(downDirection);
             double kvd = Math.min(1.5, vd);
             q.rotateY((float) (Math.PI / 72 * kvd));
-        }
-        // 俯仰
-        if (xRotInput != 0) {
-            double d = Math.min(xTurnRate, ke * xTurnRate);
-            q.rotateX((float) Math.toRadians(xRotInput * d));
         }
         Vector3f rot = new Vector3f();
         q.getEulerAnglesYXZ(rot);

@@ -81,7 +81,7 @@ public class OverloadHandler implements ResourceManagerReloadListener {
                         pass.getEffect().safeGetUniform("Progress").set((70 - stamina) / 70);
                         pass.getEffect().safeGetUniform("Type").set(2);
                     } else if (stamina > 110) {
-                        pass.getEffect().safeGetUniform("Progress").set((stamina - 110) / 10);
+                        pass.getEffect().safeGetUniform("Progress").set((stamina - 110) / 50);
                         pass.getEffect().safeGetUniform("Type").set(1);
                     } else {
                         pass.getEffect().safeGetUniform("Progress").set(0f);

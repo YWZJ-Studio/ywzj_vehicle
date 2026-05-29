@@ -742,12 +742,23 @@ public abstract class AbstractVehicle extends ContainerCraft
                 double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
                 double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
                 double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot()) / this.lerpSteps;
-                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot()) / this.lerpSteps;
-                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot()) / this.lerpSteps;
-                this.setXRot(this.getXRot() + dXRot);
-                this.setYRot(this.getYRot() + dYRot);
-                this.setZRot(this.getZRot() + dZRot);
+                float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot());
+                float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot());
+                float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot());
+                if (Math.abs(dYRot) > 90 && Math.abs(dZRot) > 90) {
+                    this.xRot = Mth.wrapDegrees(180 - this.xRot);
+                    this.xRotO = Mth.wrapDegrees(180 - this.xRotO);
+                    this.yRot += Math.signum(dYRot) * 180;
+                    this.yRotO += Math.signum(dYRot) * 180;
+                    this.zRot += Math.signum(dZRot) * 180;
+                    this.zRotO += Math.signum(dZRot) * 180;
+                    dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot());
+                    dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot());
+                    dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot());
+                }
+                this.setXRot(this.getXRot() + dXRot / this.lerpSteps);
+                this.setYRot(this.getYRot() + dYRot / this.lerpSteps);
+                this.setZRot(this.getZRot() + dZRot / this.lerpSteps);
                 this.lerpSteps -= 1;
                 this.setPos(dX, dY, dZ);
             }
