@@ -170,7 +170,7 @@ public class RotaryWingVehicle extends AbstractVehicle
             if (controlUnit.forward || controlUnit.backward) {
                 setPitchInput(controlUnit.forward ? -1 : 1);
             } else {
-                setPitchInput(Mth.clamp((controlUnit.xRot - getXRot()) / 30, -1f, 1f));
+                setPitchInput(Mth.clamp((getXRot() - controlUnit.xRot) / 30, -1f, 1f));
             }
         }
     }

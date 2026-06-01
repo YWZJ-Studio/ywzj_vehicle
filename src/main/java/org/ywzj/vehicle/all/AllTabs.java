@@ -10,7 +10,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
 
@@ -40,14 +39,14 @@ public class AllTabs {
                         .title(title)
                         .icon(iconSupplier)
                         .displayItems((displayParams, output) ->
-                                CommonAssetsManager.vehicleDataManager().getVehicleData().keySet().stream()
-                                        .filter(vehicleId -> vehicleId.getNamespace().equals(namespace))
-                                        .sorted(Comparator.comparingInt(vehicleId ->
+                                CommonAssetsManager.vehicleDataManager().getVehicleData().values().stream()
+                                        .filter(vehicleData -> vehicleData.getVehicleId().getNamespace().equals(namespace))
+                                        .sorted(Comparator.comparingInt(vehicleData ->
                                                 ClientAssetsManager.INSTANCE
-                                                        .getVehicleDisplay(vehicleId)
-                                                        .map(BaseDisplay::getTabIndex)
+                                                        .getVehicleDisplay(vehicleData.getVehicleId())
+                                                        .map(baseDisplay -> baseDisplay.getTabIndex() + (vehicleData.isExperimental() ? 1_000_000 : 0))
                                                         .orElse(0)))
-                                        .forEach(vehicleId -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleId))))
+                                        .forEach(vehicleData -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleData.getVehicleId()))))
                         .build());
     }
 
