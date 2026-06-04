@@ -264,10 +264,10 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void readSpawnData(FriendlyByteBuf buffer) {
         this.vehicleId = buffer.readResourceLocation();
         this.displayId = buffer.readResourceLocation();
-        this.initData();
-        this.initDisplayData();
+        initData();
         deserializePartUnitsData(buffer.readNbt());
         deserializeDecorationUnitsData(buffer.readNbt());
+        initDisplayData();
         int[] passengerIdsBySeat = new int[buffer.readInt()];
         for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
             passengerIdsBySeat[index] = buffer.readInt();

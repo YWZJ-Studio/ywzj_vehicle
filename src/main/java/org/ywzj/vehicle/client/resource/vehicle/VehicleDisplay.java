@@ -195,4 +195,5 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
 
         return new VehicleAnimationInstance<>(typedController, context);
     }
+
 }
