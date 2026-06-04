@@ -50,6 +50,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     private double lerpYRot;
     private double lerpXRot;
     private int lerpSteps;
+    private boolean discard;
     protected boolean keepChunkLoaded = false;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
@@ -63,6 +64,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         if (level().isClientSide()) {
             tickLerp();
         } else {
+            if (discard) {
+                this.discard();
+            }
             if (keepChunkLoaded) {
                 EntityUtil.keepChunkLoaded(this, this.position());
                 EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
@@ -71,6 +75,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     }
 
     protected void tickHit() {
+        if (discard) {
+            return;
+        }
         // 子弹在 tick 起始的位置
         Vec3 startVec = this.position();
         // 子弹在 tick 结束的位置
@@ -93,7 +100,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
             }
-            this.discard();
+            discard = true;
         }
         // 实体近炸
         else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
@@ -104,7 +111,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             if (!nearbyEntities.isEmpty() && explosion != null) {
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
-                this.discard();
+                discard = true;
             }
         }
         // 方块命中
@@ -137,7 +144,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                     VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                     vehicleExplosion.explode();
                 }
-                this.discard();
+                discard = true;
             }
         }
     }
