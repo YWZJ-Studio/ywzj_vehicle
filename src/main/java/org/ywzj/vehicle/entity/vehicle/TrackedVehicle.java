@@ -19,6 +19,7 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.TrackAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.util.EntityUtil;
@@ -27,6 +28,7 @@ import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.List;
+import java.util.Optional;
 
 public class TrackedVehicle extends AbstractVehicle
         implements IAnimationEntity<TrackedVehicle, TrackedVehicleContext> {
@@ -44,6 +46,7 @@ public class TrackedVehicle extends AbstractVehicle
     public double trackLength;
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
+    private VehicleSound trackRunSoundInstance;
     private TrackAnimationInstance trackAnimationInstance;
     private IAnimationInstance<TrackedVehicleContext> animationInstance;
 
@@ -95,6 +98,11 @@ public class TrackedVehicle extends AbstractVehicle
         }
     }
 
+    public SoundEvent getTrackRunSound() {
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        return displayOptional.map(display -> display.getSoundEvents().get("track_run")).orElse(null);
+    }
+
     @Override
     protected void tickSound() {
         super.tickSound();
@@ -120,6 +128,10 @@ public class TrackedVehicle extends AbstractVehicle
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
             }
+            if (trackRunSoundInstance != null) {
+                trackRunSoundInstance.stop();
+                trackRunSoundInstance = null;
+            }
             if (engineIdleSoundInstance == null) {
                 SoundEvent engineIdleSound = getEngineIdleSound();
                 if (engineIdleSound != null) {
@@ -141,6 +153,15 @@ public class TrackedVehicle extends AbstractVehicle
                 }
             } else {
                 engineRunSoundInstance.setPitch(pitch);
+            }
+            if (trackRunSoundInstance == null) {
+                SoundEvent engineRunSound = getTrackRunSound();
+                if (engineRunSound != null) {
+                    trackRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    trackRunSoundInstance.play();
+                }
+            } else {
+                trackRunSoundInstance.setPitch(pitch);
             }
         }
     }

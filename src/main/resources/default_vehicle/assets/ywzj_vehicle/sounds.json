@@ -142,6 +142,10 @@
     ],
     "subtitle": "ywzj_vehicle.sounds.common_reload"
   },
+  "track_run": {
+    "sounds": ["ywzj_vehicle:vehicle/common/track_run"],
+    "subtitle": "ywzj_vehicle.sounds.track_run"
+  },
   "truck_engine_idle": {
     "sounds": ["ywzj_vehicle:vehicle/common/truck_engine_idle"],
     "subtitle": "ywzj_vehicle.sounds.truck_engine_idle"
