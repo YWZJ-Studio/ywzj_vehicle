@@ -1484,6 +1484,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             Vec3 mtv = new Vec3(obb.calculateMTV(entityAABB));
             if (mtv.lengthSqr() > 0) {
+                if (mtv.y < 0 && pEntity.onGround()) {
+                    mtv = new Vec3(mtv.x, 0, mtv.z);
+                }
                 if (Math.abs(mtv.y) > Math.abs(mtv.x) && Math.abs(mtv.y) > Math.abs(mtv.z)) {
                     if (mtv.y > 0) {
                         pEntity.setOnGround(true);
