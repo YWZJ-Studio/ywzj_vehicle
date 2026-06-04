@@ -6,9 +6,9 @@
   "animations": "ywzj_vehicle:entity/m1a2.animation",
   "animation_controller": "ywzj_vehicle:m1a2_controller",
   "sounds": {
-    "engine_start": "ywzj_vehicle:ztz99a_engine_start",
-    "engine_idle": "ywzj_vehicle:ztz99a_engine_idle",
-    "engine_run": "ywzj_vehicle:ztz99a_engine_run",
+    "engine_start": "ywzj_vehicle:m1a2_engine_start",
+    "engine_idle": "ywzj_vehicle:m1a2_engine_idle",
+    "engine_run": "ywzj_vehicle:m1a2_engine_run",
     "track_run": "ywzj_vehicle:track_run"
   },
   "track_config": {
