@@ -101,9 +101,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 vehicleExplosion.explode();
             }
             discard = true;
+            return;
         }
         // 实体近炸
-        else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
+        if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
             AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
                     .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
             List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
@@ -112,40 +113,39 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
                 discard = true;
+                return;
             }
         }
         // 方块命中
-        else {
-            BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-            if (result.getType() != HitResult.Type.MISS) {
-                BlockPos hitPos = result.getBlockPos();
-                BlockState hitBlock = this.level().getBlockState(hitPos);
-                if (this.level() instanceof ServerLevel serverLevel) {
-                    Vec3 normal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
-                    Vec3 loc1 = result.getLocation().add(normal.scale(0.3));
-                    Vec3 loc2 = result.getLocation().add(normal.scale(0.01));
-                    BlockParticleOption option = new BlockParticleOption(ParticleTypes.BLOCK, hitBlock);
-                    for (ServerPlayer player : serverLevel.players()) {
-                        if (player.distanceToSqr(loc1) < 128 * 128) {
-                            // 方块材质破坏粒子
-                            serverLevel.sendParticles(player, option, true,
-                                    loc1.x, loc1.y, loc1.z,
-                                    5, 0, 0, 0, 0.1);
-                            // 弹孔
-                            BulletHoleOption bulletHole = new BulletHoleOption(result.getDirection(), hitPos, 1, 0, 0, getCaliber());
-                            serverLevel.sendParticles(player, bulletHole, true,
-                                    loc2.x, loc2.y, loc2.z,
-                                    1, 0, 0, 0, 0);
-                        }
+        BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        if (result.getType() != HitResult.Type.MISS) {
+            BlockPos hitPos = result.getBlockPos();
+            BlockState hitBlock = this.level().getBlockState(hitPos);
+            if (this.level() instanceof ServerLevel serverLevel) {
+                Vec3 normal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
+                Vec3 loc1 = result.getLocation().add(normal.scale(0.3));
+                Vec3 loc2 = result.getLocation().add(normal.scale(0.01));
+                BlockParticleOption option = new BlockParticleOption(ParticleTypes.BLOCK, hitBlock);
+                for (ServerPlayer player : serverLevel.players()) {
+                    if (player.distanceToSqr(loc1) < 128 * 128) {
+                        // 方块材质破坏粒子
+                        serverLevel.sendParticles(player, option, true,
+                                loc1.x, loc1.y, loc1.z,
+                                5, 0, 0, 0, 0.1);
+                        // 弹孔
+                        BulletHoleOption bulletHole = new BulletHoleOption(result.getDirection(), hitPos, 1, 0, 0, getCaliber());
+                        serverLevel.sendParticles(player, bulletHole, true,
+                                loc2.x, loc2.y, loc2.z,
+                                1, 0, 0, 0, 0);
                     }
                 }
-                // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
-                if (explosion != null && explosion.explode) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                    vehicleExplosion.explode();
-                }
-                discard = true;
             }
+            // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
+            if (explosion != null && explosion.explode) {
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                vehicleExplosion.explode();
+            }
+            discard = true;
         }
     }
 

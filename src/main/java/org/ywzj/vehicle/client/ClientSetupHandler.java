@@ -86,7 +86,7 @@ public class ClientSetupHandler {
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle", new VehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_rotary_wing", new RotaryWingVehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_fixed_wing", new FixedWingVehicleOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_crosshair", new VehicleCrossHairOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_aim_at", new VehicleAimAtOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_scope", new VehicleScopeOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_weapon", new VehicleWeaponOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_hit_indicator", new VehicleHitIndicatorOverlay());

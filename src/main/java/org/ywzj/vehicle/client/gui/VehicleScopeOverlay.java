@@ -18,9 +18,6 @@ import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
-import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
-import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.entity.weapon.AmmoEntity;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -46,12 +43,76 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             return;
         }
         AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-        if (vehicle instanceof WheeledVehicle || vehicle instanceof TrackedVehicle) {
-            renderGroundVehicle(guiGraphics, screenWidth, screenHeight, vehicle);
-        } else if (vehicle instanceof RotaryWingVehicle rotaryWingVehicle) {
-            renderHelicopter(guiGraphics, screenWidth, screenHeight, rotaryWingVehicle);
-        }
         // 准心
+        renderCrosshair(guiGraphics, partialTick, vehicle);
+        // 射界
+        renderWeaponEngagementEnvelope(guiGraphics, partialTick, screenWidth, screenHeight, vehicle);
+        // 目标
+        renderAimLockTarget(guiGraphics, partialTick);
+        // 机身朝向
+        renderVehicleHeading(guiGraphics, partialTick, screenWidth, screenHeight, vehicle);
+    }
+
+    public void renderVehicleHeading(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.translate(screenWidth / 2f + 116f, screenHeight / 2f + 80f, 0f);
+            float scale = (float) (5.0 / Math.max(4.0, vehicle.getStructureLength()));
+            poseStack.scale(scale, scale, scale);
+            float zRot = 180f;
+            float zRotO = 180f;
+            Player player = LocalVehiclePlayer.instance.getPlayer();
+            PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(player);
+            if (playerPartUnit instanceof RotatableUnit<?> rotatableUnit) {
+                zRot -= rotatableUnit.worldRot().y - vehicle.getYRot();
+                zRotO -= rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.yRotO;
+            }
+            poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTick, zRotO, zRot)));
+            Vec3 pos = vehicle.position();
+            Vector3f[] axes = vehicle.axes();
+            Vector3f axisX = axes[0];
+            Vector3f axisZ = axes[2];
+            float vehicleYRotRad = (float) Math.toRadians(vehicle.getYRot());
+            Vector3f rotCache = new Vector3f();
+            for (VehicleCubeOBB vehicleCubeOBB : vehicle.getVehicleCubeOBBs()) {
+                renderCubeOBB(vehicleCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, Color.GREEN);
+            }
+            for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
+                int color = partUnit.getOwner() == player ? Color.BLUE : Color.GREEN;
+                for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
+                    renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
+                }
+                if (partUnit instanceof WeaponUnit weaponUnit) {
+                    for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
+                        for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
+                            renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
+                        }
+                    }
+                }
+            }
+        }
+        poseStack.popPose();
+    }
+
+    private void renderCubeOBB(VehicleCubeOBB cubeOBB, Vec3 pos, Vector3f axisX, Vector3f axisZ, float vehicleYRotRad, Vector3f rotCache, PoseStack poseStack, GuiGraphics guiGraphics, int color) {
+        Vec3 center = new Vec3(cubeOBB.obb().center());
+        double dx = center.x - pos.x;
+        double dy = center.y - pos.y;
+        double dz = center.z - pos.z;
+        float offsetX = (float) ((dx * axisX.x() + dy * axisX.y() + dz * axisX.z()) * 10.0);
+        float offsetZ = (float) ((dx * axisZ.x() + dy * axisZ.y() + dz * axisZ.z()) * 10.0);
+        poseStack.pushPose();
+        poseStack.translate(offsetX, offsetZ, 0f);
+        cubeOBB.obb().rotation().getEulerAnglesYXZ(rotCache);
+        poseStack.mulPose(Axis.ZP.rotation(-vehicleYRotRad - rotCache.y));
+        int hw = (int) (cubeOBB.width * 5.0);
+        int hd = (int) (cubeOBB.depth * 5.0);
+        drawRectByCorner(guiGraphics, -hw, hw, -hd, hd, color, 1);
+        poseStack.popPose();
+    }
+
+    public void renderCrosshair(GuiGraphics guiGraphics, float partialTick, AbstractVehicle vehicle) {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             Vec3 posO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
             Vec3 pos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
@@ -111,82 +172,17 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                     poseStack.popPose();
                 }
                 // 装填进度
-                weaponUnit.getCurrentWeapon().ifPresent(weapon -> VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
-                weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
+                weaponUnit.getCurrentWeapon().ifPresent(weapon -> VehicleAimAtOverlay.renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
+                weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> VehicleAimAtOverlay.renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
                 if (!weaponUnit.independentWeapons.isEmpty()) {
-                    VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
+                    VehicleAimAtOverlay.renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
                 }
             }
             poseStack.popPose();
         }
-        // 目标
-        renderAimLockTarget(guiGraphics, partialTick);
-        // 机身朝向
-        renderVehicleHeading(guiGraphics, screenWidth, screenHeight, vehicle);
     }
 
-    public void renderVehicleHeading(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.translate(screenWidth / 2f + 116f, screenHeight / 2f + 80f, 0f);
-            float scale = (float) (5.0 / Math.max(4.0, vehicle.getStructureLength()));
-            poseStack.scale(scale, scale, scale);
-            float zRot = 180f;
-            Player player = LocalVehiclePlayer.instance.getPlayer();
-            PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(player);
-            if (playerPartUnit instanceof RotatableUnit<?> rotatableUnit) {
-                zRot -= rotatableUnit.worldRot().y - vehicle.getYRot();
-            }
-            poseStack.mulPose(Axis.ZP.rotationDegrees(zRot));
-            Vec3 pos = vehicle.position();
-            Vector3f[] axes = vehicle.axes();
-            Vector3f axisX = axes[0];
-            Vector3f axisZ = axes[2];
-            float vehicleYRotRad = (float) Math.toRadians(vehicle.getYRot());
-            Vector3f rotCache = new Vector3f();
-            for (VehicleCubeOBB vehicleCubeOBB : vehicle.getVehicleCubeOBBs()) {
-                renderCubeOBB(vehicleCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, Color.GREEN);
-            }
-            for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
-                int color = partUnit.getOwner() == player ? Color.BLUE : Color.GREEN;
-                for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
-                    renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
-                }
-                if (partUnit instanceof WeaponUnit weaponUnit) {
-                    for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
-                        for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
-                            renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
-                        }
-                    }
-                }
-            }
-        }
-        poseStack.popPose();
-    }
-
-    private void renderCubeOBB(VehicleCubeOBB cubeOBB, Vec3 pos, Vector3f axisX, Vector3f axisZ, float vehicleYRotRad, Vector3f rotCache, PoseStack poseStack, GuiGraphics guiGraphics, int color) {
-        Vec3 center = new Vec3(cubeOBB.obb().center());
-        double dx = center.x - pos.x;
-        double dy = center.y - pos.y;
-        double dz = center.z - pos.z;
-        float offsetX = (float) ((dx * axisX.x() + dy * axisX.y() + dz * axisX.z()) * 10.0);
-        float offsetZ = (float) ((dx * axisZ.x() + dy * axisZ.y() + dz * axisZ.z()) * 10.0);
-        poseStack.pushPose();
-        poseStack.translate(offsetX, offsetZ, 0f);
-        cubeOBB.obb().rotation().getEulerAnglesYXZ(rotCache);
-        poseStack.mulPose(Axis.ZP.rotation(-vehicleYRotRad - rotCache.y));
-        int hw = (int) (cubeOBB.width * 5.0);
-        int hd = (int) (cubeOBB.depth * 5.0);
-        drawRectByCorner(guiGraphics, -hw, hw, -hd, hd, color, 1);
-        poseStack.popPose();
-    }
-
-    public void renderGroundVehicle(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-
-    }
-
-    public void renderHelicopter(GuiGraphics guiGraphics, int screenWidth, int screenHeight, RotaryWingVehicle vehicle) {
+    public void renderWeaponEngagementEnvelope(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         guiGraphics.pose().pushPose();
@@ -194,18 +190,18 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             guiGraphics.pose().translate(centerX, centerY, 0);
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
                 weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
+                    guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
+                    int baseX = 0;
+                    int baseY = 140;
+                    // 光瞄视野框
+                    drawRectByCorner(guiGraphics,
+                            (int) (baseX + weaponUnit.getYRotMin()),
+                            (int) (baseX + weaponUnit.getYRotMax()),
+                            (int) (baseY + weaponUnit.getXRotMin()),
+                            (int) (baseY + weaponUnit.getXRotMax()),
+                            color, 1f);
                     if (vehicleWeapon instanceof VehicleMissile vehicleMissile) {
                         VehicleMissileWeaponData vehicleMissileWeaponData = vehicleMissile.getData();
-                        guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
-                        int baseX = 0;
-                        int baseY = 140;
-                        // 光瞄视野框
-                        drawRectByCorner(guiGraphics,
-                                (int) (baseX + weaponUnit.getYRotMin()),
-                                (int) (baseX + weaponUnit.getYRotMax()),
-                                (int) (baseY + weaponUnit.getXRotMin()),
-                                (int) (baseY + weaponUnit.getXRotMax()),
-                                color, 1f);
                         // 导弹射界框
                         drawRectByCorner(guiGraphics,
                                 (int) (baseX + vehicleMissileWeaponData.getYRotMin()),
@@ -213,14 +209,14 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                                 (int) (baseY + vehicleMissileWeaponData.getXRotMin()),
                                 (int) (baseY + vehicleMissileWeaponData.getXRotMax()),
                                 color, 1f);
-                        int x = (int) weaponUnit.getYRot();
-                        int y = (int) weaponUnit.getXRot();
-                        // 光瞄指向十字
-                        guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
-                        guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
-                        guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
-                        guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
                     }
+                    int x = (int) Mth.lerp(partialTick, weaponUnit.yRotO, weaponUnit.getYRot());
+                    int y = (int) Mth.lerp(partialTick, weaponUnit.xRotO, weaponUnit.getXRot());
+                    // 光瞄指向十字
+                    guiGraphics.fill(baseX + x, baseY + y - 8, baseX + x + 1, baseY + y - 2, color);
+                    guiGraphics.fill(baseX + x, baseY + y + 3, baseX + x + 1, baseY + y + 9, color);
+                    guiGraphics.fill(baseX + x - 8, baseY + y, baseX + x - 2, baseY + y + 1, color);
+                    guiGraphics.fill(baseX + x + 3, baseY + y, baseX + x + 9, baseY + y + 1, color);
                 });
             }
         }

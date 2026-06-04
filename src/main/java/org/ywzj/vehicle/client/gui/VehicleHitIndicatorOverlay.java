@@ -193,8 +193,8 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         int size = (int) (16 * scale);
         int sizeHalf = size / 2;
 
-        double x = VehicleCrossHairOverlay.getScreenAimX() - sizeHalf;
-        double y = VehicleCrossHairOverlay.getScreenAimY() - sizeHalf;
+        double x = VehicleAimAtOverlay.getScreenAimX() - sizeHalf;
+        double y = VehicleAimAtOverlay.getScreenAimY() - sizeHalf;
 
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();
