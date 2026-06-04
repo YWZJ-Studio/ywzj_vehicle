@@ -190,9 +190,10 @@ public class LocalVehiclePlayer {
                 weaponHitPosO = weaponHitPos;
                 if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP
                         && weaponUnit.getCurrentWeapon().isPresent()
-                        && weaponUnit.getCurrentWeapon().get() instanceof VehicleAerialBomb) {
+                        && weaponUnit.getCurrentWeapon().get() instanceof VehicleAerialBomb bomb) {
                     Vec3 releasePos = weaponUnit.worldPivotPosition().add(0, 0, 0);
-                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement());
+                    float dragCoefficient = bomb.getData().getDragCoefficient();
+                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
                 } else {
                     weaponHitPos = currentWeaponUnit.aimHitPosition();
                 }

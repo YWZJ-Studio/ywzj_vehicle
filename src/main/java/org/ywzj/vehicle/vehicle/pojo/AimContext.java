@@ -5,7 +5,8 @@ import net.minecraft.world.phys.Vec3;
 
 public class AimContext {
 
-    public Vec3 position;
+    public Vec3 from;
     public Vec2 direction;
+    public Vec3 position;
 
 }

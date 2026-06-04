@@ -28,7 +28,7 @@ public class VehicleDecoyFlare extends AbstractVehicleWeapon<BaseVehicleWeaponDa
 
         for (AimContext aimContext : aimContexts) {
             DecoyFlareEntity decoyFlareEntity = new DecoyFlareEntity(AllEntities.DECOY_FLARE.get(), vehicle.level());
-            decoyFlareEntity.shoot(vehicle, getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
+            decoyFlareEntity.shoot(vehicle, getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
             decoyFlareEntity.setDeltaMovement(decoyFlareEntity.getLookAngle().scale(data.getVelocity()).add(getVehicle().getDeltaMovement()));
             vehicle.level().addFreshEntity(decoyFlareEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());

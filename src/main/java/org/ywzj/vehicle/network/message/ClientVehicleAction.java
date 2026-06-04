@@ -69,8 +69,9 @@ public class ClientVehicleAction {
             int ammoCount = buf.readInt();
             for (int index = 0; index < ammoCount; index += 1) {
                 AimContext aimContext = new AimContext();
-                aimContext.position = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
+                aimContext.from = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
                 aimContext.direction = new Vec2(buf.readFloat(), buf.readFloat());
+                aimContext.position = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
                 control.aimContexts.add(aimContext);
             }
             control.weaponIndex = buf.readInt();
@@ -116,11 +117,14 @@ public class ClientVehicleAction {
             buf.writeInt(ammoCount);
             for (int index = 0; index < ammoCount; index += 1) {
                 AimContext aimContext = aimContexts.get(index);
+                buf.writeFloat((float) aimContext.from.x);
+                buf.writeFloat((float) aimContext.from.y);
+                buf.writeFloat((float) aimContext.from.z);
+                buf.writeFloat(aimContext.direction.x);
+                buf.writeFloat(aimContext.direction.y);
                 buf.writeFloat((float) aimContext.position.x);
                 buf.writeFloat((float) aimContext.position.y);
                 buf.writeFloat((float) aimContext.position.z);
-                buf.writeFloat(aimContext.direction.x);
-                buf.writeFloat(aimContext.direction.y);
             }
             buf.writeInt(weaponIndex);
         } else {

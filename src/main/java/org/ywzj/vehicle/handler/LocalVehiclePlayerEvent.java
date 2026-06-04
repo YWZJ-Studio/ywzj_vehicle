@@ -10,6 +10,7 @@ import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.client.gui.VehicleScopeOverlay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.SecondOrderDynamics;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
@@ -17,6 +18,8 @@ import static org.ywzj.vehicle.util.MathUtil.magnificationToFov;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class LocalVehiclePlayerEvent {
+
+    private static final SecondOrderDynamics WORLD_FOV_DYNAMICS = new SecondOrderDynamics(0.8f, 1.0f, 0.5f, 0);
 
     @SubscribeEvent(receiveCanceled = true)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -30,19 +33,27 @@ public class LocalVehiclePlayerEvent {
     @SubscribeEvent
     public static void applyScopeMagnification(ViewportEvent.ComputeFov event) {
         if (!event.usedConfiguredFov()) {
-            return; // 只修改世界渲染的 fov，因此如果是手部渲染 fov 事件，则返回
+            return;
         }
         Entity entity = event.getCamera().getEntity();
         if (entity instanceof LivingEntity livingEntity && entity.equals(LocalVehiclePlayer.instance.getPlayer())) {
             if (entity.getVehicle() instanceof AbstractVehicle vehicle
                     && vehicle.getOwnOperatorUnit(livingEntity) instanceof WeaponUnit weaponUnit) {
+                float fov;
                 if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                    VehicleScopeOverlay.fov = (float) magnificationToFov(1 + (weaponUnit.getZoom() - 1), event.getFOV());
-                    event.setFOV(VehicleScopeOverlay.fov);
+                    float targetFov = (float) magnificationToFov(1 + (weaponUnit.getZoom() - 1), event.getFOV());
+                    fov = WORLD_FOV_DYNAMICS.update(targetFov);
                 } else if (vehicle.isViewZoomed()) {
-                    VehicleScopeOverlay.fov = (float) magnificationToFov(2f, event.getFOV());
-                    event.setFOV(VehicleScopeOverlay.fov);
+                    float targetFov = (float) magnificationToFov(2f, event.getFOV());
+                    fov = WORLD_FOV_DYNAMICS.update(targetFov);
+                } else {
+                    fov = WORLD_FOV_DYNAMICS.update((float) event.getFOV());
                 }
+                VehicleScopeOverlay.fov = fov;
+                event.setFOV(fov);
+            } else {
+                float fov = WORLD_FOV_DYNAMICS.update((float) event.getFOV());
+                event.setFOV(fov);
             }
         }
     }

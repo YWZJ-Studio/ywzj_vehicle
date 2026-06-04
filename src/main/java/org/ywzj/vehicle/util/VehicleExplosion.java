@@ -103,7 +103,7 @@ public class VehicleExplosion {
             if (!level.isClientSide()) {
                 ServerVehicleExplosion serverVehicleExplosion = new ServerVehicleExplosion(source == null ? -1 : source.getId(), x, y, z, radius);
                 ServerLevel serverLevel = (ServerLevel) level;
-                for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceToSqr(x, y, z) < 256 * 256)) {
+                for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceToSqr(x, y, z) < 1024 * 1024)) {
                     Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleExplosion);
                 }
                 if (destroyBlocks) {

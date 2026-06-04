@@ -326,12 +326,16 @@ public class FixedWingVehicle extends AbstractVehicle
         } else {
             throttleLevel = getThrottleLevel();
             if (controlUnit.forward || controlUnit.backward) {
-                if (controlUnit.forward && throttleLevel + 5 > 100) {
-                    throttleLevel = 100 * thrustK;
-                } else if (controlUnit.backward && throttleLevel > 100) {
-                    throttleLevel = 100;
+                if (thrustK > 1) {
+                    if (controlUnit.forward && throttleLevel + 5 > 100) {
+                        throttleLevel = 100 * thrustK;
+                    } else if (controlUnit.backward && throttleLevel > 100) {
+                        throttleLevel = 100;
+                    } else {
+                        throttleLevel = Mth.clamp(throttleLevel + (controlUnit.forward ? 5 : -5), 0, 100);
+                    }
                 } else {
-                    throttleLevel += controlUnit.forward ? 5 : -5;
+                    throttleLevel = Mth.clamp(throttleLevel + (controlUnit.forward ? 5 : -5), 0, 100);
                 }
             }
         }

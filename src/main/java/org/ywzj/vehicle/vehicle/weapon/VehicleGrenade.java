@@ -36,7 +36,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
             if ("smoke".equals(data.getGrenade())) {
                 SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 smokeGrenadeEntity.setBaseData(data);
-                smokeGrenadeEntity.setPos(aimContext.position);
+                smokeGrenadeEntity.setPos(aimContext.from);
                 smokeGrenadeEntity.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 smokeGrenadeEntity.setXRot(aimContext.direction.x);
                 smokeGrenadeEntity.setYRot(aimContext.direction.y);
@@ -46,7 +46,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
             if ("aps".equals(data.getGrenade())) {
                 ActiveProtectionGrenadeEntity activeProtectionGrenade = new ActiveProtectionGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 activeProtectionGrenade.setBaseData(data);
-                activeProtectionGrenade.setPos(aimContext.position);
+                activeProtectionGrenade.setPos(aimContext.from);
                 activeProtectionGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 activeProtectionGrenade.setXRot(aimContext.direction.x);
                 activeProtectionGrenade.setYRot(aimContext.direction.y);
@@ -58,7 +58,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 fragGrenade.setBaseData(data);
                 fragGrenade.setExplosionData(data.getExplosion());
                 fragGrenade.vehicle = vehicle;
-                fragGrenade.setPos(aimContext.position);
+                fragGrenade.setPos(aimContext.from);
                 fragGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 fragGrenade.setXRot(aimContext.direction.x);
                 fragGrenade.setYRot(aimContext.direction.y);

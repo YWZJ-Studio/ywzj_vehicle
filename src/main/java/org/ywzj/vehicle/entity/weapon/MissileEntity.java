@@ -271,7 +271,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                 }
             }
         } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR
-                || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.EO) {
+                || homingMode == VehicleMissileWeaponData.HomingMode.INFRARED
+                || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.EO
+                || homingMode == VehicleMissileWeaponData.HomingMode.ELECTRO_OPTICAL) {
             if (targetEntity == null) {
                 return;
             }

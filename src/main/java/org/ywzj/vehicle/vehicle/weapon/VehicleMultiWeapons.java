@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -19,6 +20,8 @@ import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -104,7 +107,6 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         if (!selected.hasAmmo()) {
             return false;
         }
-
         int partUnitIndex;
         Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
         if (weaponOptional.isPresent() && weaponOptional.get() == this) {
@@ -120,8 +122,20 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         } else {
             return false;
         }
-        aimContexts.forEach(aimContext -> aimContext.position = aimContext.position.add(vehicle.getDeltaMovement()));
-
+        WeaponUnit rootParentWeaponUnit = weaponUnit.getRootParentWeaponUnit();
+        List<Vec3> positions = rootParentWeaponUnit.aimContexts().stream().map(context -> context.from).toList();
+        double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+        double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+        double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+        AimContext currentAimContext = rootParentWeaponUnit.aimContext();
+        Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = start.add(targetVec.scale(LocalVehiclePlayer.renderDistance()));
+        Vec3 aimHitPosition = VectorUtil.hitPosition(LocalVehiclePlayer.instance.getPlayer(), start, end);
+        aimContexts.forEach(aimContext -> {
+            aimContext.from = aimContext.from.add(vehicle.getDeltaMovement());
+            aimContext.position = aimHitPosition;
+        });
         selected.lastShootTime = System.currentTimeMillis();
         sendShoot(vehicle, partUnitIndex, getIndex(), aimContexts);
         return true;

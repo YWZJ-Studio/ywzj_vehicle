@@ -663,7 +663,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Vec3 aimHitPosition() {
-        List<Vec3> positions = aimContexts().stream().map(context -> context.position).toList();
+        List<Vec3> positions = aimContexts().stream().map(context -> context.from).toList();
         double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
         double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
         double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
@@ -688,7 +688,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public AimContext aimContext(Bolt bolt) {
         AimContext aimContext = new AimContext();
         if (xTurnGroup == null) {
-            aimContext.position = this.vehicle.position();
+            aimContext.from = this.vehicle.position();
             aimContext.direction = new Vec2(this.vehicle.getXRot(), this.vehicle.getYRot());
             return aimContext;
         }
@@ -699,7 +699,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
         aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
-        aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength));
+        aimContext.from = boltPosition.add(direction.scale(bolt.barrelLength));
         return aimContext;
     }
 
@@ -1000,6 +1000,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
             if (weaponOptional.isPresent()) {
                 weapon = weaponOptional.get();
+            } else {
+                break;
             }
         }
         return weapon;

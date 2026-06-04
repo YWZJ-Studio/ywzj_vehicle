@@ -42,7 +42,7 @@ public class AllKeys {
     public static final KeyMapping FIRE_CONTROL_LOCK = key("fire_control_lock", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R);
     public static final KeyMapping DECOY_FLARE_LAUNCH = key("decoy_flare_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT);
     public static final KeyMapping SMOKE_GRENADE_LAUNCH = key("smoke_grenade_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H);
-    public static final KeyMapping TOGGLE_SEEKER = key("toggle_seeker", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_T);
+    public static final KeyMapping TOGGLE_SEEKER = key("toggle_seeker", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
     public static final KeyMapping TOGGLE_WEAPON_BAY = key("toggle_weapon_bay", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U);
 
     // 视角与交互类
