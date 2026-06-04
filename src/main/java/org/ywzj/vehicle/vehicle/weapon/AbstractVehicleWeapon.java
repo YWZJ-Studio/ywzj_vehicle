@@ -29,6 +29,7 @@ import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AutoWeaponUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -135,7 +136,6 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         if (!hasAmmo()) {
             return false;
         }
-
         int partUnitIndex;
         Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
         if (weaponOptional.isPresent() && weaponOptional.get() == this) {
@@ -151,8 +151,20 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         } else {
             return false;
         }
-        aimContexts.forEach(aimContext -> aimContext.position = aimContext.position.add(vehicle.getDeltaMovement()));
-
+        WeaponUnit rootParentWeaponUnit = weaponUnit.getRootParentWeaponUnit();
+        List<Vec3> positions = rootParentWeaponUnit.aimContexts().stream().map(context -> context.from).toList();
+        double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+        double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+        double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+        AimContext currentAimContext = rootParentWeaponUnit.aimContext();
+        Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = start.add(targetVec.scale(LocalVehiclePlayer.renderDistance()));
+        Vec3 aimHitPosition = VectorUtil.hitPosition(LocalVehiclePlayer.instance.getPlayer(), start, end);
+        aimContexts.forEach(aimContext -> {
+            aimContext.from = aimContext.from.add(vehicle.getDeltaMovement());
+            aimContext.position = aimHitPosition;
+        });
         lastShootTime = System.currentTimeMillis();
         sendShoot(this.getVehicle(), partUnitIndex, getIndex(), aimContexts);
         return true;
@@ -198,7 +210,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
             return;
         }
         float recoil = data.getRecoil();
-        for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.position).toList()) {
+        for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
             for (int i = 0; i < 3 * recoil; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;

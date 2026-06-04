@@ -4,6 +4,8 @@ import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 public class WeaponInfo {
 
     /**
@@ -14,21 +16,37 @@ public class WeaponInfo {
     public ResourceLocation id;
 
     /**
+     * 多弹种武器id列表，存在时优先于id，构造为VehicleMultiWeapons
+     */
+    @Nullable
+    @SerializedName("ids")
+    public List<ResourceLocation> ids;
+
+    /**
      * 子武器站的载具部件ID
      */
     @Nullable
     @SerializedName("part_unit_id")
     public String partUnitId;
 
-    @SerializedName("save_id")
-    public String saveId;
+    /**
+     * 弹仓的载具部件ID
+     */
+    @Nullable
+    @SerializedName("weapon_bay_unit_id")
+    public String weaponBayUnitId;
 
     @SerializedName("secondary")
     public boolean secondary;
 
-    public WeaponInfo(@Nullable ResourceLocation id, @Nullable String partUnitId, boolean secondary, String saveId) {
+    @SerializedName("save_id")
+    public String saveId;
+
+    public WeaponInfo(@Nullable ResourceLocation id, @Nullable List<ResourceLocation> ids, @Nullable String partUnitId, @Nullable String weaponBayUnitId, boolean secondary, String saveId) {
         this.id = id;
+        this.ids = ids;
         this.partUnitId = partUnitId;
+        this.weaponBayUnitId = weaponBayUnitId;
         this.secondary = secondary;
         this.saveId = saveId;
     }

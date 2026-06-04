@@ -1,13 +1,10 @@
 package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -107,7 +104,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             return;
         }
         BaseDisplay decorationDisplay =  decorationDisplayOptional.get();
-        BedrockModel decorationModel = decorationDisplay.getModel();
+        VehicleBedrockModel decorationModel = decorationDisplay.getModel();
         ResourceLocation decorationTexture = decorationDisplay.getTexture();
         if (decorationModel == null || decorationTexture == null) {
             return;
@@ -148,8 +145,8 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             pPoseStack.rotateAround(Axis.ZP.rotation(rot.z), 0, 0, 0);
             offsetFromVehicle = new Vec3(globalPivot);
             rotation = globalRotation;
-            VertexConsumer decorationBuilder = bufferSource.getBuffer(RenderType.entityCutout(decorationTexture));
-            decorationModel.renderToBuffer(pPoseStack, decorationBuilder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            decorationModel.renderToBuffer(pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
+            decorationModel.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
             if (setting) {
                 RenderHelper.renderArrow3D(pPoseStack, bufferSource, 0.15f, 0.3f, 0, 255, 0, 255);
             }

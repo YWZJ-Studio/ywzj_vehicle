@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.weapon.data.VehicleAerialBombWeaponData;
@@ -22,16 +23,29 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
             return false;
         }
         this.lastShootTime = System.currentTimeMillis();
-
         var vehicle = getVehicle();
         var data = this.getData();
-
+        WeaponUnit weaponUnit = getWeaponUnit().getRootParentWeaponUnit();
         for (AimContext aimContext : aimContexts) {
-            AerialBombEntity aerialBombEntity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level(), data.getWeaponId());
-            aerialBombEntity.explosion = data.getExplosion();
-            aerialBombEntity.fuseDelayTick = data.getFuseDelayTick();
-            aerialBombEntity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.position, aimContext.direction.x, aimContext.direction.y, this.getWeaponUnit().getOwner());
-            vehicle.level().addFreshEntity(aerialBombEntity);
+            AerialBombEntity entity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level(), data.getWeaponId());
+            entity.explosion = data.getExplosion();
+            entity.fuseDelayTick = data.getFuseDelayTick();
+            entity.penetrationDepth = data.getPenetrationDepth();
+            entity.dragCoefficient = data.getDragCoefficient();
+            entity.maxG = data.getMaxG();
+            entity.referenceSpeed = data.getReferenceSpeed();
+            entity.homing = data.isHoming();
+            if (data.isHoming()) {
+                entity.weaponUnit = weaponUnit;
+                Entity lockedEntity = weaponUnit.getLockedEntity();
+                if (lockedEntity != null) {
+                    entity.targetEntity = lockedEntity;
+                } else {
+                    entity.targetPos = aimContext.position;
+                }
+            }
+            entity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y, data.getInaccuracy(), this.getWeaponUnit().getOwner());
+            vehicle.level().addFreshEntity(entity);
         }
         return true;
     }

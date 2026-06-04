@@ -38,6 +38,10 @@ public class AllParticleTypes {
             () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.STREAM_CODEC)
     );
 
+    public static final DeferredHolder<ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
+            () -> createOptions(BulletHoleOption.CODEC, BulletHoleOption.DESERIALIZER)
+    );
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }

@@ -1,18 +1,20 @@
 package org.ywzj.vehicle.vehicle.control;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
+import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
@@ -26,7 +28,7 @@ import org.ywzj.vehicle.vehicle.weapon.VehicleGrenade;
 
 import static org.ywzj.vehicle.all.AllKeys.*;
 
-@EventBusSubscriber(value = Dist.CLIENT)
+@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = YwzjVehicle.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class InputHandler {
 
     public static boolean freeCamera;
@@ -38,19 +40,33 @@ public class InputHandler {
 
     @SubscribeEvent
     public static void onKey(InputEvent.Key event) {
+        handleVehicleAction(event.getKey(), event.getScanCode(), event.getAction());
+    }
+
+    @SubscribeEvent
+    public static void onKey(InputEvent.MouseButton.Pre event) {
+        handleVehicleAction(event.getButton(), 0, event.getAction());
+        handleMagnificationChange();
+    }
+
+    private static boolean matchesKey(KeyMapping mapping, int key, int scanCode) {
+        return mapping.matches(key, scanCode) || mapping.matchesMouse(key);
+    }
+
+    private static void handleVehicleAction(int key, int scanCode, int action) {
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-        if (event.getAction() == GLFW.GLFW_PRESS) {
+        if (action == GLFW.GLFW_PRESS) {
             if (instance.onVehicle()) {
                 AbstractVehicle vehicle = instance.getVehicle();
                 WeaponUnit weaponUnit = instance.getWeaponUnit();
-                if (SWITCH_VIEW.matches(event.getKey(), event.getScanCode())) {
+                if (matchesKey(SWITCH_VIEW, key, scanCode)) {
                     instance.switchViewType(null);
-                } else if (SWITCH_SCOPE.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(SWITCH_SCOPE, key, scanCode)) {
                     if (weaponUnit != null) {
                         if (instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
                             instance.switchViewType(LocalVehiclePlayer.ViewType.SCOPE);
@@ -58,55 +74,63 @@ public class InputHandler {
                             instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
                         }
                     }
-                } else if (OPEN_INVENTORY.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(OPEN_INVENTORY, key, scanCode)) {
                     player.sendOpenInventory();
-                } else if (TOGGLE_ENGINE.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(TOGGLE_ENGINE, key, scanCode)) {
                     sendToggleEngine(vehicle);
-                } else if (TOGGLE_LANDING_GEAR.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(TOGGLE_LANDING_GEAR, key, scanCode)) {
                     sendToggleLandingGear(vehicle);
-                } else if (FIRE_CONTROL_LOCK.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(FIRE_CONTROL_LOCK, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
                     }
-                } else if (TOGGLE_HOVER_MODE.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(TOGGLE_HOVER_MODE, key, scanCode)) {
                     sendToggleHoverMode(vehicle);
-                } else if (TOGGLE_RADAR.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(TOGGLE_RADAR, key, scanCode)) {
                     if (weaponUnit != null) {
                         for (RadarUnit radarUnit : weaponUnit.getRadarUnits()) {
                             radarUnit.toggle(null);
                         }
                     }
-                } else if (SECONDARY_WEAPON_SWITCH.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(SECONDARY_WEAPON_SWITCH, key, scanCode)) {
                     if (weaponUnit != null) {
-                        PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), true, true));
+                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.SECONDARY, true));
                     }
-                } else if (DECOY_FLARE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(DECOY_FLARE_LAUNCH, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.independentWeapons.stream()
                                 .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleDecoyFlare)
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
-                } else if (SMOKE_GRENADE_LAUNCH.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(SMOKE_GRENADE_LAUNCH, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.independentWeapons.stream()
                                 .filter(vehicleWeapon -> vehicleWeapon instanceof VehicleGrenade grenade
-                                        && "smoke".equals(grenade.getData().getGrenade()))
+                                        && ("smoke".equals(grenade.getData().getGrenade()) || "frag".equals(grenade.getData().getGrenade())))
                                 .forEach(AbstractVehicleWeapon::doClientShoot);
                     }
-                } else if (TOGGLE_SEEKER.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(TOGGLE_SEEKER, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.toggleSeeker(null);
                     }
-                } else if (TOGGLE_THERMAL_IMAGING.matches(event.getKey(), event.getScanCode())) {
+                } else if (matchesKey(TOGGLE_THERMAL_IMAGING, key, scanCode)) {
                     if (weaponUnit != null && weaponUnit.withThermalImager()
                             && instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                         instance.thermalImaging = !instance.thermalImaging;
                     }
+                } else if (matchesKey(TOGGLE_WEAPON_BAY, key, scanCode)) {
+                    if (weaponUnit != null) {
+                        weaponUnit.toggleCurrentWeaponBay();
+                    }
+                } else if (matchesKey(MULTI_WEAPON_SWITCH, key, scanCode)) {
+                    if (weaponUnit != null) {
+                        Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.MULTI, true));
+                    }
                 }
             }
-        } else if (event.getAction() == GLFW.GLFW_RELEASE) {
+        } else if (action == GLFW.GLFW_RELEASE) {
             if (instance.onVehicle()) {
-                if (FREE_CAMERA.matches(event.getKey(), event.getScanCode())) {
+                if (matchesKey(FREE_CAMERA, key, scanCode)) {
                     LocalVehiclePlayer localVehiclePlayer = instance;
                     localVehiclePlayer.playerLerpXRot = playerXRotO;
                     localVehiclePlayer.playerLerpYRot = playerYRotO;
@@ -116,33 +140,30 @@ public class InputHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void onKey(InputEvent.MouseButton.Post event) {
+    private static void handleMagnificationChange() {
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
-        if (event.getAction() == GLFW.GLFW_PRESS) {
-            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-            if (LocalVehiclePlayer.instance.onVehicle()) {
-                if (MAGNIFICATION_CHANGE.isDown() && instance.onVehicleTickCount > 5) {
-                    AbstractVehicle vehicle = instance.getVehicle();
-                    if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                        if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-                            weaponUnit.switchZoom();
-                        }
-                    }
-                    if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                        vehicle.toggleViewZoom();
-                    }
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        if (instance.onVehicle() && MAGNIFICATION_CHANGE.isDown() && instance.onVehicleTickCount > 5) {
+            AbstractVehicle vehicle = instance.getVehicle();
+            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+                if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                    weaponUnit.switchZoom();
                 }
+            }
+            if (instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR
+                    || instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                vehicle.toggleViewZoom();
             }
         }
     }
 
     @SubscribeEvent
-    public static void checkKey(ClientTickEvent.Pre event) {
+    public static void checkKey(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START) return;
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
@@ -237,9 +258,9 @@ public class InputHandler {
         }
         if (LocalVehiclePlayer.instance.onVehicle()) {
             AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
-            boolean previous = event.getScrollDeltaY() == -1;
+            boolean previous = event.getScrollDelta() == -1;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
-                PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), false, previous));
+                Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.PRIMARY, previous));
                 // 阻止滚轮事件传递给原版以避免物品栏切换
                 event.setCanceled(true);
             }
@@ -282,42 +303,42 @@ public class InputHandler {
         control.xRotKeep = controlUnit.xRotKeep;
         control.yRot = controlUnit.yRot;
         control.yRotKeep = controlUnit.yRotKeep;
-        PacketDistributor.sendToServer(control);
+        Channel.CHANNEL.sendToServer(control);
     }
 
     private static void sendChangeSeat(AbstractVehicle vehicle, int toSeat) {
         ClientVehicleChangeSeat changeSeat = new ClientVehicleChangeSeat();
         changeSeat.vehicleEntityId = vehicle.getId();
         changeSeat.toSeat = toSeat;
-        PacketDistributor.sendToServer(changeSeat);
+        Channel.CHANNEL.sendToServer(changeSeat);
     }
 
     private static void sendLeaveVehicle(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.leaveVehicle = true;
-        PacketDistributor.sendToServer(action);
+        Channel.CHANNEL.sendToServer(action);
     }
 
     private static void sendToggleEngine(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleEngine = true;
-        PacketDistributor.sendToServer(action);
+        Channel.CHANNEL.sendToServer(action);
     }
 
     private static void sendToggleLandingGear(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleLandingGear = true;
-        PacketDistributor.sendToServer(action);
+        Channel.CHANNEL.sendToServer(action);
     }
 
     private static void sendToggleHoverMode(AbstractVehicle vehicle) {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleHoverMode = true;
-        PacketDistributor.sendToServer(action);
+        Channel.CHANNEL.sendToServer(action);
     }
 
 }

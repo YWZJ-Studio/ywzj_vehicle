@@ -1,10 +1,10 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.gui.VehicleOverlay;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
@@ -49,6 +49,21 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         return super.doClientShoot();
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public void onClientFire() {
+        int ignitionDelayTick = getData().getIgnitionDelayTick();
+        if (ignitionDelayTick > 0) {
+            new Thread(() -> {
+                try {
+                    Thread.sleep(ignitionDelayTick * 50L);
+                } catch (InterruptedException e) {}
+                Minecraft.getInstance().execute(super::onClientFire);
+            }).start();
+        } else {
+            super.onClientFire();
+        }
+    }
+
     @Override
     public boolean shoot(List<AimContext> aimContexts, LivingEntity shooter) {
         if (!check(aimContexts, shooter)) {
@@ -67,20 +82,15 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data, weaponUnit);
             if (data.getGuidance() == VehicleMissileWeaponData.Guidance.PRESET
                     || data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-                List<Vec3> positions = weaponUnit.aimContexts().stream().map(context -> context.position).toList();
-                double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
-                double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
-                double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+                missileEntity.targetPos = aimContext.position;
                 AimContext currentAimContext = weaponUnit.aimContext();
-                Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
-                missileEntity.targetPos = new Vec3(x, y, z).add(targetVec.normalize().scale(512));
-                missileEntity.targetVec = targetVec;
+                missileEntity.targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
                 if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
                     missileEntity.targetEntity = weaponUnit.getLockedEntity();
                 }
             }
             missileEntity.shoot(this.getVehicle(), this.getDisplayName(),
-                    aimContext.position, aimContext.direction.x, aimContext.direction.y,
+                    aimContext.from, aimContext.direction.x, aimContext.direction.y,
                     this.getWeaponUnit().getOwner());
             missileEntity.setDeltaMovement(missileEntity.getDeltaMovement().add(vehicle.getDeltaMovement()));
             vehicle.level().addFreshEntity(missileEntity);

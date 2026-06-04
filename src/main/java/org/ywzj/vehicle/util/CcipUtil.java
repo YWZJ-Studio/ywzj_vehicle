@@ -9,7 +9,7 @@ public class CcipUtil {
 
     private static final int MAX_TICKS = 1200;
 
-    public static Vec3 computeCcipImpact(Level level, Vec3 startPos, Vec3 startVelocity) {
+    public static Vec3 computeCcipImpact(Level level, Vec3 startPos, Vec3 startVelocity, float dragCoefficient) {
         double x = startPos.x;
         double y = startPos.y;
         double z = startPos.z;
@@ -18,6 +18,13 @@ public class CcipUtil {
         double vz = startVelocity.z;
         double g = PhysicsEngine.G;
         for (int tick = 0; tick < MAX_TICKS; tick++) {
+            double speed = Math.sqrt(vx * vx + vy * vy + vz * vz);
+            if (speed > 0) {
+                double dragFactor = dragCoefficient * speed;
+                vx -= dragFactor * vx;
+                vy -= dragFactor * vy;
+                vz -= dragFactor * vz;
+            }
             vy -= g;
             x += vx;
             y += vy;

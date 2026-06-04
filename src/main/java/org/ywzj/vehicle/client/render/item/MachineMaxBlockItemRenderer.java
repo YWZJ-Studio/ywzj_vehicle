@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.render.item;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -35,7 +36,12 @@ public class MachineMaxBlockItemRenderer extends BlockEntityWithoutLevelRenderer
                 poseStack.scale(0.7F, 0.7F, 0.7F);
                 poseStack.mulPose(Axis.XP.rotationDegrees(20));
                 poseStack.mulPose(Axis.YP.rotationDegrees(165));
-                machineMaxBlockModel.renderToBuffer(poseStack, bufferSource.getBuffer(RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE)), pPackedLight, OverlayTexture.NO_OVERLAY);
+                machineMaxBlockModel.renderToBuffer(poseStack, bufferSource,
+                        RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE),
+                        BedrockModelRenderTypes.polyMeshCutout(MACHINE_MAX_BLOCK_TEXTURE),
+                        pPackedLight,
+                        OverlayTexture.pack(0f, false)
+                );
             }
             poseStack.popPose();
         }

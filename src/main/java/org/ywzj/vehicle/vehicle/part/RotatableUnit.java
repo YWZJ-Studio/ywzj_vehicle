@@ -216,39 +216,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         return worldVecToLocalRot(worldAim);
     }
 
-    /**
-     * 计算车身、部件、附着部件都未旋转时某相对于载具枢轴的偏移xyz在经由车身、部件、附着部件旋转后的实际世界坐标
-     */
-    @Override
-    public Vec3 worldPosition(Vec3 offsetFromVehicle) {
-        if (offsetFromVehicle == null) {
-            return vehicle.position();
-        }
-        return worldPositionWithSelfRot(offsetFromVehicle);
-    }
-
-    public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group) {
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
-        offsetFromVehicle = offsetFromVehicle.subtract(vehicle.centerOffset);
-        Vector3f rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset().toVector3f();
-        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts);
-        return vehicle.position().add(vehicle.centerOffset).add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
-    }
-
-    public Vec3 worldPositionWithBaseRot(Vec3 offsetFromVehicle) {
-        if (structureGroup == null || structureGroup.parent == null) {
-            return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
-        }
-        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup.parent);
-    }
-
-    public Vec3 worldPositionWithSelfRot(Vec3 offsetFromVehicle) {
-        if (structureGroup == null) {
-            return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
-        }
-        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup);
-    }
-
     @Override
     public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         CompoundTag tag = super.serializeNBT(provider);

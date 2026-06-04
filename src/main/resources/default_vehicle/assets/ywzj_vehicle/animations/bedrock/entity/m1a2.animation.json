@@ -712,6 +712,21 @@
 				}
 			}
 		},
+		"anti_aircraft_machine_gun_shoot": {
+			"animation_length": 0.0417,
+			"bones": {
+				"mg_up": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.0417": [0.5, 0, 0]
+					},
+					"position": {
+						"0.0": [0, 0, 0],
+						"0.0417": [0, 0, -0.2]
+					}
+				}
+			}
+		},
 		"static": {
 			"loop": true,
 			"bones": {

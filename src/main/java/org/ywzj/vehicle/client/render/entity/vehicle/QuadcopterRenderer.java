@@ -2,12 +2,9 @@ package org.ywzj.vehicle.client.render.entity.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -17,9 +14,10 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.entity.vehicle.Quadcopter;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
+import org.ywzj.vehicle.entity.vehicle.custom.Quadcopter;
 
-import static org.ywzj.vehicle.entity.vehicle.Quadcopter.CABLE_LENGTH;
+import static org.ywzj.vehicle.entity.vehicle.custom.Quadcopter.CABLE_LENGTH;
 
 public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
 
@@ -35,8 +33,7 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
         }
         pPoseStack.pushPose();
         {
-            BedrockModel model = display.getModel();
-            VertexConsumer builder = bufferSource.getBuffer(RenderType.entityCutout(display.getTexture()));
+            VehicleBedrockModel model = display.getModel();
 
             BedrockBone propellerUp1 = model.getBoneMap().get("wing1_up");
             BedrockBone propellerDown1 = model.getBoneMap().get("wing1_down");
@@ -76,7 +73,8 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
             vehicle.lastRenderTime = System.currentTimeMillis();
-            model.renderToBuffer(pPoseStack, builder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            model.renderToBuffer(pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
+            model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));

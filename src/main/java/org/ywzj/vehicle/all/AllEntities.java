@@ -14,6 +14,7 @@ import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.misc.RadarMarkerEntity;
 import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.entity.vehicle.*;
+import org.ywzj.vehicle.entity.vehicle.custom.*;
 import org.ywzj.vehicle.entity.weapon.*;
 
 public class AllEntities {
@@ -83,6 +84,17 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .build("aps_grenade"));
+
+    public static final RegistryObject<EntityType<FragGrenadeEntity>> FRAG_GRENADE = ENTITIES.register("frag_grenade",
+            () -> EntityType.Builder.<FragGrenadeEntity>of(FragGrenadeEntity::new, MobCategory.MISC)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .setTrackingRange(16)
+                    .setUpdateInterval(1)
+                    .setCustomClientFactory(FragGrenadeEntity::new)
+                    .sized(0.3f, 0.3f)
+                    .noSave()
+                    .fireImmune()
+                    .build("frag_grenade"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<DecoyFlareEntity>> DECOY_FLARE = ENTITIES.register("decoy_flare",
             () -> EntityType.Builder.<DecoyFlareEntity>of(DecoyFlareEntity::new, MobCategory.MISC)

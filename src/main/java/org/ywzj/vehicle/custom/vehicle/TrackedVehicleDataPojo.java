@@ -30,6 +30,9 @@ public class TrackedVehicleDataPojo extends BaseVehicleDataPojo {
         @SerializedName("max_turn")
         public float maxTurn;
 
+        @SerializedName("track_size")
+        public float trackSize = 0.3f;
+
     }
 
 }

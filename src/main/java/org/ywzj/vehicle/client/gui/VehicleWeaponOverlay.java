@@ -15,6 +15,7 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
 import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 
 import java.util.ArrayList;
@@ -40,6 +41,10 @@ public class VehicleWeaponOverlay implements LayeredDraw.Layer {
     private static final int COL_RING_FG    = 0xFF30D050;
     private static final int COL_TAB_TEXT   = 0xFF5A9060;
     private static final int COL_TAB_ACTIVE = 0xFFD8F8E0;
+    private static final int COL_DOT_SELECTED   = 0xFFFF8C00;
+    private static final int COL_DOT_UNSELECTED = 0xFF333333;
+    private static final int DOT_R = 3;
+    private static final int DOT_GAP = 3;
 
     private record WeaponEntry(AbstractVehicleWeapon<?> weapon, String abbr) {}
 
@@ -211,7 +216,20 @@ public class VehicleWeaponOverlay implements LayeredDraw.Layer {
             RenderHelper.fill(gg, RenderType.guiOverlay(),
                     contentLeft, barY, contentLeft + filledW, barY + barH, 0, barFgCol);
         }
-
+        // 多弹种指示
+        if (weapon instanceof VehicleMultiWeapons multi) {
+            List<AbstractVehicleWeapon<?>> subs = multi.getSubWeapons();
+            int n = subs.size();
+            int dotD = DOT_R * 2;
+            int dotsX = contentLeft + 58;
+            int dotsY = ammoY + font.lineHeight / 2 - DOT_R;
+            for (int i = 0; i < n; i++) {
+                int dotLeft = dotsX + i * (dotD + DOT_GAP);
+                int col = i == multi.getSelectedIndex() ? COL_DOT_SELECTED : COL_DOT_UNSELECTED;
+                RenderHelper.fill(gg, RenderType.guiOverlay(),
+                        dotLeft, dotsY, dotLeft + dotD, dotsY + dotD, 0, col);
+            }
+        }
         int infoAreaX = cardLeft + VehicleWeaponOverlay.CARD_W - padding * 2 - RING_R * 2 - 2;
         int infoAreaW = RING_R * 2 + padding;
         WeaponUnit weaponUnit = weapon.getWeaponUnit().getRootParentWeaponUnit();

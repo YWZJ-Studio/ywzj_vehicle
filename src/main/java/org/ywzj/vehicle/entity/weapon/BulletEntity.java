@@ -1,7 +1,9 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -11,6 +13,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.network.PlayMessages;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -36,7 +40,7 @@ public class BulletEntity extends AmmoEntity {
     private float caliber = 7.62f;
     private float tracerR = 1f;
     private float tracerG = 1f;
-    private float tracerB = 1f;;
+    private float tracerB = 1f;
 
     public BulletEntity(EntityType<? extends Projectile> type, Level worldIn) {
         super(type, worldIn, null);
@@ -54,6 +58,18 @@ public class BulletEntity extends AmmoEntity {
         this.explosion = explosion;
         this.setPos(x, y, z);
         this.startPos = this.position();
+    }
+
+    public BulletEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
+        super(AllEntities.BULLET.get(), level, null);
+    }
+
+    @Override
+    protected void defineSynchedData() {}
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return NetworkHooks.getEntitySpawningPacket(this);
     }
 
     @Override
@@ -120,7 +136,7 @@ public class BulletEntity extends AmmoEntity {
     }
 
     @Override
-    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
+    public void writeSpawnData(FriendlyByteBuf buffer) {
         buffer.writeFloat(getXRot());
         buffer.writeFloat(getYRot());
         buffer.writeDouble(getDeltaMovement().x);
@@ -133,10 +149,11 @@ public class BulletEntity extends AmmoEntity {
         buffer.writeFloat(this.speed);
         buffer.writeFloat(this.friction);
         buffer.writeResourceLocation(this.weaponId);
+        initBullet();
     }
 
     @Override
-    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
+    public void readSpawnData(FriendlyByteBuf additionalData) {
         setXRot(additionalData.readFloat());
         setYRot(additionalData.readFloat());
         setDeltaMovement(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble());
@@ -150,6 +167,10 @@ public class BulletEntity extends AmmoEntity {
         this.speed = additionalData.readFloat();
         this.friction = additionalData.readFloat();
         this.weaponId = additionalData.readResourceLocation();
+        initBullet();
+    }
+
+    private void initBullet() {
         VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
         if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
             this.caliber = data.getCaliber();

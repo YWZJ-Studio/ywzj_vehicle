@@ -2,13 +2,10 @@ package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -20,10 +17,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -33,12 +30,14 @@ import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerVehicleFire;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
@@ -50,6 +49,7 @@ import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
 import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
 import org.ywzj.vehicle.vehicle.weapon.seeker.ElectroOptical;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Infrared;
@@ -84,6 +84,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public WeaponUnitData.OpticalSightType opticalSightType;
     // 是否有双向稳定器
     private final boolean withStabilizer;
+    // 是否有焦点锁定器
+    private final boolean withFocusLocker;
     // 是否有热成像仪
     private final boolean withThermalImager;
     // 开镜缩放倍率
@@ -97,6 +99,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private final List<WeaponUnit> subWeaponUnits = new ArrayList<>();
     // 火控
     private final WeaponUnitData.FireControlSensorType fireControlSensorType;
+    private Vec3 focusLockPos;
     private Entity lockedEntity;
     private int loseLockTick;
     private boolean parentWeaponUnitAim;
@@ -114,6 +117,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public final List<AbstractVehicleWeapon<?>> secondaryWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> independentWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> indexedWeapons = new ArrayList<>();
+    // 弹仓
+    public final Map<AbstractVehicleWeapon<?>, WeaponBayUnit> weaponBayUnits = new HashMap<>();
     private int currentWeaponIndex = -1;
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private int currentSecondaryWeaponIndex = -1;
@@ -138,12 +143,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.fireControlSensorType = data.getFireControlSensorType();
         this.opticalSightType = data.getOpticalSightType();
         this.withStabilizer = data.withStabilizer();
+        this.withFocusLocker = data.withFocusLocker();
+        this.withThermalImager = data.withThermalImager();
         this.zoomMin = data.getZoomMin();
         this.zoomMax = data.getZoomMax();
         this.zoom = this.zoomMin;
         this.crosshairStyle = data.getCrosshairStyle();
         this.renderSelectedWeapon = data.isRenderSelectedWeapon();
-        this.withThermalImager = data.withThermalImager();
         this.currentWeaponIndexHolder = this.getSyncData().define(
                 SyncDataSerializers.INT,
                 this::setCurrentWeaponIndex,
@@ -169,6 +175,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void switchWeapon(boolean secondary, boolean next) {
         if (secondary) {
             int size = secondaryWeapons.size();
+            if (size < 2) {
+                return;
+            }
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
@@ -177,6 +186,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         } else {
             int size = weapons.size();
+            if (size < 2) {
+                return;
+            }
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
@@ -184,6 +196,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentWeapon().get().getDisplayName()), true);
             }
         }
+    }
+
+    public void cycleMultiWeapon(boolean next) {
+        this.getCurrentWeapon().ifPresent(weapon -> {
+            if (weapon instanceof VehicleMultiWeapons multiWeapons) {
+                multiWeapons.cycleSubWeapon(next);
+                if (getOwner() instanceof Player player) {
+                    player.displayClientMessage(Component.translatable("tips.use_weapon", multiWeapons.getDisplayName()), true);
+                }
+            }
+        });
     }
 
     public void initWeapon(int index) {
@@ -200,8 +223,36 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         WeaponUnit parent = this;
         // 武器
         for (var weaponInfo : data.getWeapons()) {
+            // 多弹种则构造VehicleMultiWeapons
+            if (weaponInfo.ids != null && !weaponInfo.ids.isEmpty()) {
+                List<AbstractVehicleWeapon<?>> multiWeapons = new ArrayList<>();
+                for (ResourceLocation id : weaponInfo.ids) {
+                    VehicleWeaponIndex<?, ?> subIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(id).orElse(null);
+                    if (subIndex != null) {
+                        String subSaveId = weaponInfo.saveId + "_" + id.toString().replace(':', '_');
+                        AbstractVehicleWeapon<?> sub = subIndex.create(vehicle, parent, multiWeapons.size(), subSaveId);
+                        sub.defineSyncData(this.getSyncData());
+                        multiWeapons.add(sub);
+                    }
+                }
+                if (!multiWeapons.isEmpty()) {
+                    VehicleMultiWeapons multi = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
+                    multi.defineSyncData(this.getSyncData());
+                    if (weaponInfo.secondary) {
+                        secondaryWeapons.add(multi);
+                    } else {
+                        weapons.add(multi);
+                    }
+                    indexedWeapons.add(multi);
+                    if (weaponInfo.weaponBayUnitId != null
+                            && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
+                        weaponBayUnits.put(multi, weaponBayUnit);
+                    }
+                    index += 1;
+                }
+            }
             // 武器站加入武器列表
-            if (weaponInfo.id == null) {
+            else if (weaponInfo.id == null) {
                 if (weaponInfo.partUnitId != null
                         && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit
                         && agentWeaponUnit != parent) {
@@ -212,6 +263,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     VehicleWeaponAgent weaponAgent = new VehicleWeaponAgent(vehicle, agentWeaponUnit, index);
                     weapons.add(weaponAgent);
                     indexedWeapons.add(weaponAgent);
+                    if (weaponInfo.weaponBayUnitId != null
+                            && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
+                        weaponBayUnits.put(weaponAgent, weaponBayUnit);
+                    }
                     index += 1;
                 }
             }
@@ -240,6 +295,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     }
                     weapon.defineSyncData(this.getSyncData());
                     indexedWeapons.add(weapon);
+                    if (weaponInfo.weaponBayUnitId != null
+                            && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
+                        weaponBayUnits.put(weapon, weaponBayUnit);
+                    }
                     index += 1;
                 }
             }
@@ -259,7 +318,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         weapons.forEach(weapon -> {
             AbstractVehicleWeapon<?> proxyWeapon = proxyWeapon(weapon);
             ClientAssetsManager.INSTANCE.getWeaponDisplay(proxyWeapon.getData().getWeaponId()).ifPresent(weaponDisplay -> {
-                BedrockModel model = weaponDisplay.getModel();
+                VehicleBedrockModel model = weaponDisplay.getModel();
                 if (model == null) {
                     return;
                 }
@@ -291,8 +350,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     {
                         Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
                         pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
-                        VertexConsumer decorationBuilder = bufferSource.getBuffer(RenderType.entityCutout(texture));
-                        model.renderToBuffer(pPoseStack, decorationBuilder, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                        model.renderToBuffer(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
+                        model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
                     }
                     pPoseStack.popPose();
                 }
@@ -311,7 +370,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 Entity radarLockedEntity = mainRadarUnit.getLockedEntity();
                 if (radarLockedEntity != null) {
                     ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), radarLockedEntity.getId(), WarnType.RADAR_LOCK, mainRadarUnit.getRadarType());
-                    PacketDistributor.sendToPlayersTrackingEntity(radarLockedEntity, packet);
+                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> radarLockedEntity), packet);
                 }
             }
         }
@@ -353,6 +412,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         if (getOwner() != LocalVehiclePlayer.instance.getPlayer()) {
             lockedEntity = null;
+            return;
+        }
+        if (withFocusLocker && focusLockPos != null) {
+            aim(focusLockPos);
             return;
         }
         if (lockedEntity != null) {
@@ -476,13 +539,26 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
             Entity lockedEntity = ElectroOptical.findTarget(this, lookAtPos);
             setLockedEntity(lockedEntity);
+            if (lockedEntity != null) {
+                setFocusLockPos(null);
+                return;
+            }
         }
         // 雷达锁定
-        if (sensorType == WeaponUnitData.FireControlSensorType.RF && radarUnits != null) {
+        if (sensorType == WeaponUnitData.FireControlSensorType.RF) {
             RadarUnit mainRadarUnit = getMainRadarUnit();
             Entity lockedEntity = Radar.findTarget(mainRadarUnit, 90, this);
             if (lockedEntity != null) {
                 mainRadarUnit.setLockedEntity(lockedEntity);
+                return;
+            }
+        }
+        // 焦点锁定
+        if (withFocusLocker && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            if (focusLockPos == null) {
+                setFocusLockPos(LocalVehiclePlayer.instance.scopeAimPos());
+            } else {
+                setFocusLockPos(null);
             }
         }
     }
@@ -509,19 +585,36 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void shoot(int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (weaponIndex < indexedWeapons.size()) {
             AbstractVehicleWeapon<?> weapon = indexedWeapons.get(weaponIndex);
-            VehicleFireEvent.Pre __VehicleFireEvent_Pre = new VehicleFireEvent.Pre(vehicle, weapon, operator);
-            NeoForge.EVENT_BUS.post(__VehicleFireEvent_Pre);
-            if (__VehicleFireEvent_Pre.isCanceled()) {
+            WeaponBayUnit weaponBayUnit = weaponBayUnits.get(weapon);
+            if (weaponBayUnit != null && !weaponBayUnit.isOn()) {
+                weaponBayUnit.setOn(true);
+                return;
+            }
+            if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, weapon, operator))) {
                 return;
             }
             if (weapon.shoot(aimContexts, operator)) {
-                NeoForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
+                MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
                 int entityId = vehicle.getId();
                 int operatorId = operator == null ? -1 : operator.getId();
                 ServerVehicleFire packet = new ServerVehicleFire(entityId, operatorId, index, weapon.getIndex());
-                PacketDistributor.sendToPlayersTrackingEntity(vehicle, packet);
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
             }
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void toggleCurrentWeaponBay() {
+        getCurrentWeapon().ifPresent(weapon -> {
+            WeaponBayUnit weaponBayUnit = weaponBayUnits.get(weapon);
+            if (weaponBayUnit != null) {
+                ClientVehicleAction action = new ClientVehicleAction();
+                action.vehicleEntityId = vehicle.getId();
+                action.partUnitIndex = weaponBayUnit.getIndex();
+                action.togglePartUnitState = true;
+                Channel.CHANNEL.sendToServer(action);
+            }
+        });
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -551,7 +644,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 control.partUnitIndex = index;
                 control.xAimRot = rot.x;
                 control.yAimRot = rot.y;
-                PacketDistributor.sendToServer(control);
+                Channel.CHANNEL.sendToServer(control);
             }
             xAimRot = rot.x;
             yAimRot = rot.y;
@@ -570,7 +663,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public Vec3 aimHitPosition() {
-        List<Vec3> positions = aimContexts().stream().map(context -> context.position).toList();
+        List<Vec3> positions = aimContexts().stream().map(context -> context.from).toList();
         double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
         double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
         double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
@@ -595,7 +688,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public AimContext aimContext(Bolt bolt) {
         AimContext aimContext = new AimContext();
         if (xTurnGroup == null) {
-            aimContext.position = this.vehicle.position();
+            aimContext.from = this.vehicle.position();
             aimContext.direction = new Vec2(this.vehicle.getXRot(), this.vehicle.getYRot());
             return aimContext;
         }
@@ -606,7 +699,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
         aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
-        aimContext.position = boltPosition.add(direction.scale(bolt.barrelLength));
+        aimContext.from = boltPosition.add(direction.scale(bolt.barrelLength));
         return aimContext;
     }
 
@@ -745,6 +838,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return withThermalImager;
     }
 
+    public boolean withFocusLocker() {
+        return withFocusLocker;
+    }
+
     public float getZoom() {
         return zoom;
     }
@@ -763,6 +860,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             radarDetectedEntities.addAll(radarUnit.getDetectedEntities().values());
         }
         return radarDetectedEntities;
+    }
+
+    public Vec3 getFocusLockPos() {
+        return focusLockPos;
+    }
+
+    public void setFocusLockPos(Vec3 focusLockPos) {
+        this.focusLockPos = focusLockPos;
     }
 
     public Entity getLockedEntity() {
@@ -792,7 +897,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             action.vehicleEntityId = vehicle.getId();
             action.lockEntity = true;
             action.lockedEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
-            PacketDistributor.sendToServer(action);
+            Channel.CHANNEL.sendToServer(action);
         }
     }
 
@@ -895,6 +1000,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponAgent.getWeaponUnit().getCurrentWeapon();
             if (weaponOptional.isPresent()) {
                 weapon = weaponOptional.get();
+            } else {
+                break;
             }
         }
         return weapon;
@@ -938,14 +1045,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-        CompoundTag tag = super.serializeNBT(provider);
+    public CompoundTag serializeNBT() {
+        CompoundTag tag = super.serializeNBT();
         tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
         CompoundTag weaponTag = new CompoundTag();
         this.indexedWeapons.forEach(weapon -> {
             String serializeId = weapon.getSerializeId();
             if (serializeId != null) {
-                CompoundTag weaponData = weapon.serializeNBT(provider);
+                CompoundTag weaponData = weapon.serializeNBT();
                 if (weaponData.isEmpty()) {
                     return;
                 }
@@ -957,15 +1064,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-        super.deserializeNBT(provider, nbt);
+    public void deserializeNBT(CompoundTag nbt) {
+        super.deserializeNBT(nbt);
         this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
         CompoundTag weaponTag = nbt.getCompound("WeaponTag");
         this.indexedWeapons.forEach(weapon -> {
             if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
                 String serializeId = weapon.getSerializeId();
                 if (serializeId != null) {
-                    weapon.deserializeNBT(provider, weaponTag.getCompound(serializeId));
+                    weapon.deserializeNBT(weaponTag.getCompound(serializeId));
                 }
             }
         });
@@ -978,6 +1085,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         super(id, index, vehicle);
         this.withStabilizer = false;
         this.withThermalImager = false;
+        this.withFocusLocker = false;
         this.zoomMin = 1;
         this.zoomMax = 8;
         this.zoom = this.zoomMin;

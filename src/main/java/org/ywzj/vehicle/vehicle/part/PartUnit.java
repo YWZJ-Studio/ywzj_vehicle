@@ -17,6 +17,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
@@ -133,13 +135,13 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     /**
-     * 计算车身未旋转时某相对于载具枢轴的偏移xyz在经由车身旋转后的实际世界坐标
+     * 计算车身、部件、附着部件都未旋转时某相对于载具枢轴的偏移xyz在经由车身、部件、附着部件旋转后的实际世界坐标
      */
     public Vec3 worldPosition(Vec3 offsetFromVehicle) {
         if (offsetFromVehicle == null) {
             return vehicle.position();
         }
-        return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
+        return worldPositionWithSelfRot(offsetFromVehicle);
     }
 
     public Vec3 worldOwnerViewPosition() {
@@ -152,14 +154,32 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Vec3 worldSeatPosition() {
         float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
-        Vec3 seatOffset = this.seatOffset;
-        if (seatOffset == null) {
-            seatOffset = new Vec3(0, eyeHeight, 0);
-        }
-        return vehicle.relativeRotPos(vehicle.position().add(seatOffset).subtract(new Vec3(0, eyeHeight, 0)), false);
+        return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
     }
 
     public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {}
+
+    public Vec3 worldPositionWithBaseRot(Vec3 offsetFromVehicle) {
+        if (structureGroup == null || structureGroup.parent == null) {
+            return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
+        }
+        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup.parent);
+    }
+
+    public Vec3 worldPositionWithSelfRot(Vec3 offsetFromVehicle) {
+        if (structureGroup == null) {
+            return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
+        }
+        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup);
+    }
+
+    public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group) {
+        Quaternionf vehicleRotation = vehicle.rotYXZ();
+        offsetFromVehicle = offsetFromVehicle.subtract(vehicle.centerOffset);
+        Vector3f rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset().toVector3f();
+        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts);
+        return vehicle.position().add(vehicle.centerOffset).add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
+    }
 
     public Component getName() {
         return name;

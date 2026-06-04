@@ -17,6 +17,7 @@ import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.client.gui.*;
+import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.particle.DustSmokeParticle;
 import org.ywzj.vehicle.client.particle.DustStoneParticle;
 import org.ywzj.vehicle.client.particle.ExplosionCloudParticle;
@@ -66,6 +67,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.MISSILE.get(), MissileEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.SMOKE_GRENADE.get(), GrenadeEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.APS_GRENADE.get(), GrenadeEntityRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.FRAG_GRENADE.get(), GrenadeEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
@@ -79,16 +81,16 @@ public class ClientSetupHandler {
     }
 
     @SubscribeEvent
-    public static void onRegisterHud(RegisterGuiLayersEvent event) {
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle"), new VehicleOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_rotary_wing"), new RotaryWingVehicleOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_fixed_wing"), new FixedWingVehicleOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_crosshair"), new VehicleCrossHairOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_scope"), new VehicleScopeOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_weapon"), new VehicleWeaponOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_hit_indicator"), new VehicleHitIndicatorOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_radar"), new VehicleRadarOverlay());
-        event.registerAboveAll(YwzjVehicle.modLocation("vehicle_debug"), new VehicleDebugOverlay());
+    public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle", new VehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_rotary_wing", new RotaryWingVehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_fixed_wing", new FixedWingVehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_crosshair", new VehicleCrossHairOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_scope", new VehicleScopeOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_weapon", new VehicleWeaponOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_radar", new VehicleRadarOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_debug", new VehicleDebugOverlay());
     }
 
     @SubscribeEvent
@@ -98,6 +100,7 @@ public class ClientSetupHandler {
         event.registerSpriteSet(AllParticleTypes.TRACK.get(), TrackParticle.Factory::new);
         event.registerSpriteSet(AllParticleTypes.SMOKE_CLOUD.get(), SmokeCloudParticle::provider);
         event.registerSpriteSet(AllParticleTypes.EXPLOSION_CLOUD.get(), ExplosionCloudParticle::provider);
+        event.registerSpecial(AllParticleTypes.BULLET_HOLE.get(), new BulletHoleParticle.Provider());
     }
 
     @SubscribeEvent

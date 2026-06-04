@@ -20,6 +20,7 @@
     "energy_capacity": 0.25,
     "energy_consumption_per_tick": 0.00001
   },
+  "uav": true,
   "structure_model": "ywzj_vehicle:vehicle/quadcopter",
   "parts": [
     {

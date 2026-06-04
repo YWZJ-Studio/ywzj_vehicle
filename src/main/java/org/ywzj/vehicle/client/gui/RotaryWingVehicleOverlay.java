@@ -212,7 +212,7 @@ public class RotaryWingVehicleOverlay implements LayeredDraw.Layer {
                     RenderSystem.disableBlend();
                 }
                 pose.popPose();
-                double xRot = -Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot());
+                double xRot = Mth.wrapDegrees(-Mth.lerp(partialTick, vehicle.xRotO, vehicle.getXRot()));
                 int range = 50;
                 float interval = 5;
                 float gap = range / interval;

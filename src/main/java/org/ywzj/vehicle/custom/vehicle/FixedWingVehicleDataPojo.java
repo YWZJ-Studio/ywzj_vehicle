@@ -2,6 +2,7 @@ package org.ywzj.vehicle.custom.vehicle;
 
 import com.google.gson.annotations.SerializedName;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,9 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
 
         @SerializedName("vortex_offsets")
         public List<Vec3> vortexOffsets = new ArrayList<>();
+
+        @SerializedName("afterburner_offsets")
+        public List<AfterburnerOffset> afterburnerOffsets = new ArrayList<>();
 
     }
 

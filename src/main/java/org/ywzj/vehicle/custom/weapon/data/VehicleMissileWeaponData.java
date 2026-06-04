@@ -29,6 +29,9 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     @SerializedName("motor_burn_time")
     private float motorBurnTime = 300f;
 
+    @SerializedName("ignition_delay_tick")
+    private int ignitionDelayTick = 0;
+
     @SerializedName("drag_coefficient")
     private float dragCoefficient = 0.005f;
 
@@ -77,6 +80,10 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
     public float getMotorBurnTime() {
         return motorBurnTime;
+    }
+
+    public int getIgnitionDelayTick() {
+        return ignitionDelayTick;
     }
 
     public float getDragCoefficient() {

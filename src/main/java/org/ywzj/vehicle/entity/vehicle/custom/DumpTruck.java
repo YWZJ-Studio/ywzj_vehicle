@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.entity.vehicle;
+package org.ywzj.vehicle.entity.vehicle.custom;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -7,9 +7,11 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
+import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
@@ -41,7 +43,7 @@ public class DumpTruck extends WheeledVehicle {
                     control.partUnitIndex = bed.getIndex();
                     control.xAimRot = bed.getXAimRot();
                     control.yAimRot = 0;
-                    PacketDistributor.sendToServer(control);
+                    Channel.CHANNEL.sendToServer(control);
                 }
             }
         }

@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
 
@@ -30,6 +31,9 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
 
     @SerializedName("tail_particles")
     private ParticleOptions tailParticles = ParticleTypes.SMOKE;
+
+    @SerializedName("explosion")
+    private Explosion explosion = new Explosion();
 
     public String getGrenade() {
         return grenade;
@@ -62,6 +66,10 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
     @Nullable
     public ParticleOptions getTailParticles() {
         return tailParticles;
+    }
+
+    public Explosion getExplosion() {
+        return explosion;
     }
 
 }

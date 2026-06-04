@@ -12,6 +12,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -28,15 +29,17 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.level.ExplosionEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
 import org.ywzj.vehicle.particle.ExplosionCloudOption;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -92,7 +95,7 @@ public class VehicleExplosion {
     public void explode(List<Entity> excludedEntities) {
         Explosion vanillaExplosion = new Explosion(level, source, x, y, z, radius, false, Explosion.BlockInteraction.KEEP);
         ExplosionEvent.Start startEvent = new ExplosionEvent.Start(level, vanillaExplosion);
-        if (NeoForge.EVENT_BUS.post(startEvent).isCanceled()) {
+        if (MinecraftForge.EVENT_BUS.post(startEvent)) {
             return;
         }
         try {
@@ -100,8 +103,8 @@ public class VehicleExplosion {
             if (!level.isClientSide()) {
                 ServerVehicleExplosion serverVehicleExplosion = new ServerVehicleExplosion(source == null ? -1 : source.getId(), x, y, z, radius);
                 ServerLevel serverLevel = (ServerLevel) level;
-                for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceToSqr(x, y, z) < 256 * 256)) {
-                    PacketDistributor.sendToPlayer(player, serverVehicleExplosion);
+                for (ServerPlayer player : serverLevel.getPlayers(player -> player.distanceToSqr(x, y, z) < 1024 * 1024)) {
+                    Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleExplosion);
                 }
                 if (destroyBlocks) {
                     if (shouldBatchBlockDestruction()) {
@@ -228,7 +231,14 @@ public class VehicleExplosion {
             }
             double attenuation = 1.0 - 0.5 * (distance / radius);
             double damage = this.damage * attenuation;
-            EntityUtil.hurt(damageSource, entity, (float) damage);
+            if (entity instanceof LivingEntity livingEntity) {
+                LivingHurtEvent hurtEvent = new LivingHurtEvent(livingEntity, damageSource, (float) damage);
+                if (!MinecraftForge.EVENT_BUS.post(hurtEvent)) {
+                    EntityUtil.hurt(damageSource, entity, hurtEvent.getAmount());
+                }
+            } else {
+                EntityUtil.hurt(damageSource, entity, (float) damage);
+            }
         }
     }
 

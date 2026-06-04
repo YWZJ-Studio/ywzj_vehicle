@@ -30,9 +30,11 @@ import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -67,6 +69,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
+    public List<AfterburnerOffset> afterburnerOffsets;
     public float throttleLevelO;
     public float throttleLevel;
     public float pitchInput;
@@ -190,6 +193,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public void tick() {
         super.tick();
         tickInput();
+        tickAfterburner();
     }
 
     @Override
@@ -215,6 +219,14 @@ public class FixedWingVehicle extends AbstractVehicle
             pitchInput = getPitchInput();
             yawInput = getYawInput();
             rollInput = getRollInput();
+        }
+    }
+
+    private void tickAfterburner() {
+        for (PartUnit<?> partUnit : partUnits) {
+            if (partUnit instanceof AfterburnerUnit afterburner) {
+                afterburner.setOn(hasPower() && getThrottleLevel() > 100);
+            }
         }
     }
 
@@ -309,12 +321,16 @@ public class FixedWingVehicle extends AbstractVehicle
         } else {
             throttleLevel = getThrottleLevel();
             if (controlUnit.forward || controlUnit.backward) {
-                if (controlUnit.forward && throttleLevel + 5 > 100) {
-                    throttleLevel = 100 * thrustK;
-                } else if (controlUnit.backward && throttleLevel > 100) {
-                    throttleLevel = 100;
+                if (thrustK > 1) {
+                    if (controlUnit.forward && throttleLevel + 5 > 100) {
+                        throttleLevel = 100 * thrustK;
+                    } else if (controlUnit.backward && throttleLevel > 100) {
+                        throttleLevel = 100;
+                    } else {
+                        throttleLevel = Mth.clamp(throttleLevel + (controlUnit.forward ? 5 : -5), 0, 100);
+                    }
                 } else {
-                    throttleLevel += controlUnit.forward ? 5 : -5;
+                    throttleLevel = Mth.clamp(throttleLevel + (controlUnit.forward ? 5 : -5), 0, 100);
                 }
             }
         }
@@ -448,6 +464,11 @@ public class FixedWingVehicle extends AbstractVehicle
             double d = Math.min(zTurnRate, ke * zTurnRate);
             q.rotateZ((float) Math.toRadians(zRotInput * d));
         }
+        // 俯仰
+        if (xRotInput != 0) {
+            double d = Math.min(xTurnRate, ke * xTurnRate);
+            q.rotateX((float) Math.toRadians(xRotInput * d));
+        }
         // 偏航
         if (yRotInput != 0) {
             double d0 = Math.min(yTurnRate, ke * yTurnRate);
@@ -466,11 +487,6 @@ public class FixedWingVehicle extends AbstractVehicle
             double vd = airSpeed.dot(downDirection);
             double kvd = Math.min(1.5, vd);
             q.rotateY((float) (Math.PI / 72 * kvd));
-        }
-        // 俯仰
-        if (xRotInput != 0) {
-            double d = Math.min(xTurnRate, ke * xTurnRate);
-            q.rotateX((float) Math.toRadians(xRotInput * d));
         }
         Vector3f rot = new Vector3f();
         q.getEulerAnglesYXZ(rot);

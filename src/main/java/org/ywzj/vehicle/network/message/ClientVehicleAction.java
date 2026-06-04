@@ -1,34 +1,31 @@
 package org.ywzj.vehicle.network.message;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.ywzj.vehicle.YwzjVehicle;
+import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
-public class ClientVehicleAction implements CustomPacketPayload {
+public class ClientVehicleAction {
 
-    public static final StreamCodec<FriendlyByteBuf, ClientVehicleAction> STREAM_CODEC = StreamCodec.of((buf, msg) -> msg.encode(buf), ClientVehicleAction::decode);
-    public static final CustomPacketPayload.Type<ClientVehicleAction> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YwzjVehicle.MOD_ID, "vehicle_action"));
     public int vehicleEntityId;
     public boolean leaveVehicle;
     public boolean toggleEngine;
     public boolean toggleLandingGear;
     public boolean toggleHoverMode;
+    public boolean togglePartUnitState;
+    public int partUnitIndex;
     public boolean lockEntity;
     public int lockedEntityId;
-    public int partUnitIndex;
     public boolean shoot;
     public int weaponIndex;
     public List<AimContext> aimContexts = new ArrayList<>();
@@ -56,6 +53,11 @@ public class ClientVehicleAction implements CustomPacketPayload {
         if (control.toggleHoverMode) {
             return control;
         }
+        control.togglePartUnitState = buf.readBoolean();
+        if (control.togglePartUnitState) {
+            control.partUnitIndex = buf.readInt();
+            return control;
+        }
         control.lockEntity = buf.readBoolean();
         if (control.lockEntity) {
             control.lockedEntityId = buf.readInt();
@@ -67,8 +69,9 @@ public class ClientVehicleAction implements CustomPacketPayload {
             int ammoCount = buf.readInt();
             for (int index = 0; index < ammoCount; index += 1) {
                 AimContext aimContext = new AimContext();
-                aimContext.position = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
+                aimContext.from = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
                 aimContext.direction = new Vec2(buf.readFloat(), buf.readFloat());
+                aimContext.position = new Vec3(buf.readFloat(), buf.readFloat(), buf.readFloat());
                 control.aimContexts.add(aimContext);
             }
             control.weaponIndex = buf.readInt();
@@ -97,6 +100,11 @@ public class ClientVehicleAction implements CustomPacketPayload {
         if (toggleHoverMode) {
             return;
         }
+        buf.writeBoolean(togglePartUnitState);
+        if (togglePartUnitState) {
+            buf.writeInt(partUnitIndex);
+            return;
+        }
         buf.writeBoolean(lockEntity);
         if (lockEntity) {
             buf.writeInt(lockedEntityId);
@@ -109,11 +117,14 @@ public class ClientVehicleAction implements CustomPacketPayload {
             buf.writeInt(ammoCount);
             for (int index = 0; index < ammoCount; index += 1) {
                 AimContext aimContext = aimContexts.get(index);
+                buf.writeFloat((float) aimContext.from.x);
+                buf.writeFloat((float) aimContext.from.y);
+                buf.writeFloat((float) aimContext.from.z);
+                buf.writeFloat(aimContext.direction.x);
+                buf.writeFloat(aimContext.direction.y);
                 buf.writeFloat((float) aimContext.position.x);
                 buf.writeFloat((float) aimContext.position.y);
                 buf.writeFloat((float) aimContext.position.z);
-                buf.writeFloat(aimContext.direction.x);
-                buf.writeFloat(aimContext.direction.y);
             }
             buf.writeInt(weaponIndex);
         } else {
@@ -122,23 +133,30 @@ public class ClientVehicleAction implements CustomPacketPayload {
         }
     }
 
-    public static void handle(ClientVehicleAction message, IPayloadContext ctx) {
-        Player player = ctx.player();
-        Level level = player.level();
-        Entity entity = level.getEntity(message.vehicleEntityId);
-        if (!(entity instanceof AbstractVehicle vehicle)) {
-            return;
-        }
-        if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
-            vehicle.onClientVehicleAction(message, player);
-        } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
-            vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);
-        }
-    }
-
-    @Override
-    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static void onClientMessageReceived(ClientVehicleAction message, Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context context = ctxSupplier.get();
+        context.setPacketHandled(true);
+        ctxSupplier.get().enqueueWork(() -> {
+            ServerPlayer player = context.getSender();
+            if (player == null) {
+                return;
+            }
+            Level level = player.level();
+            Entity entity = level.getEntity(message.vehicleEntityId);
+            if (!(entity instanceof AbstractVehicle vehicle)) {
+                return;
+            }
+            if (message.togglePartUnitState) {
+                if (message.partUnitIndex < vehicle.getPartUnits().size()
+                        && vehicle.getPartUnits().get(message.partUnitIndex) instanceof SwitchableUnit<?> switchableUnit) {
+                    switchableUnit.setOn(!switchableUnit.isOn());
+                }
+            } else if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
+                vehicle.onClientVehicleAction(message, player);
+            } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
+                vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);
+            }
+        });
     }
 
 }

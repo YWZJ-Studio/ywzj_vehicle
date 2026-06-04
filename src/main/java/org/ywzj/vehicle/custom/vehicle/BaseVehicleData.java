@@ -37,8 +37,10 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected EnergyInfo energyInfo;
     protected PhysicsInfo physicsInfo;
     protected DefenseStats defenseStats;
+    protected boolean uav;
     protected boolean withWarningReceiver;
     protected boolean protectPassenger;
+    protected boolean experimental;
     protected Vec3 centerOffset;
     protected ResourceLocation structureModel;
     protected double structureLength;
@@ -96,8 +98,10 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         this.energyInfo = pojo.energyInfo;
         this.physicsInfo = pojo.physicsInfo;
         this.defenseStats = pojo.defenseStats;
+        this.uav = pojo.uav;
         this.withWarningReceiver = pojo.withWarningReceiver;
         this.protectPassenger = pojo.protectPassenger;
+        this.experimental = pojo.experimental;
 
         this.centerOffset = pojo.centerOffset;
         this.structureModel = pojo.structureModel;
@@ -324,12 +328,20 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         return defenseStats;
     }
 
+    public boolean isUav() {
+        return uav;
+    }
+
     public boolean withWarningReceiver() {
         return withWarningReceiver;
     }
 
     public boolean isProtectPassenger() {
         return protectPassenger;
+    }
+
+    public boolean isExperimental() {
+        return experimental;
     }
 
     public Vec3 getCenterOffset() {

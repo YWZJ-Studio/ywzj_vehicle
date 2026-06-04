@@ -33,14 +33,16 @@ public class AllKeys {
     public static final KeyMapping TOGGLE_THERMAL_IMAGING = key("toggle_thermal_imaging", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_4);
 
     // 武器控制类
-    public static final KeyMapping FIRE_CONTROL_LOCK = key("fire_control_lock", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R);
     public static final KeyMapping MAIN_WEAPON_SHOOT = key("main_weapon_shoot", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     public static final KeyMapping SECONDARY_WEAPON_SHOOT = key("secondary_weapon_shoot", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_1);
     public static final KeyMapping SECONDARY_WEAPON_SWITCH = key("secondary_weapon_switch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_2);
+    public static final KeyMapping MULTI_WEAPON_SWITCH = key("multi_weapon_switch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F);
     public static final KeyMapping MAGNIFICATION_CHANGE = key("magnification_change", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+    public static final KeyMapping FIRE_CONTROL_LOCK = key("fire_control_lock", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R);
     public static final KeyMapping DECOY_FLARE_LAUNCH = key("decoy_flare_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT);
     public static final KeyMapping SMOKE_GRENADE_LAUNCH = key("smoke_grenade_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H);
-    public static final KeyMapping TOGGLE_SEEKER = key("toggle_seeker", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_T);
+    public static final KeyMapping TOGGLE_SEEKER = key("toggle_seeker", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+    public static final KeyMapping TOGGLE_WEAPON_BAY = key("toggle_weapon_bay", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U);
 
     // 视角与交互类
     public static final KeyMapping SWITCH_VIEW = key("switch_view", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V);
@@ -55,7 +57,8 @@ public class AllKeys {
     private static final KeyMapping[] ALL_KEYS = {
             FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT,
             TOGGLE_ENGINE, TOGGLE_LANDING_GEAR, TOGGLE_HOVER_MODE, TOGGLE_RADAR, TOGGLE_THERMAL_IMAGING,
-            FIRE_CONTROL_LOCK, MAIN_WEAPON_SHOOT, SECONDARY_WEAPON_SHOOT, SECONDARY_WEAPON_SWITCH, MAGNIFICATION_CHANGE, DECOY_FLARE_LAUNCH, SMOKE_GRENADE_LAUNCH, TOGGLE_SEEKER,
+            MAIN_WEAPON_SHOOT, SECONDARY_WEAPON_SHOOT, SECONDARY_WEAPON_SWITCH, MULTI_WEAPON_SWITCH,
+            MAGNIFICATION_CHANGE, FIRE_CONTROL_LOCK, DECOY_FLARE_LAUNCH, SMOKE_GRENADE_LAUNCH, TOGGLE_SEEKER, TOGGLE_WEAPON_BAY,
             SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
             CHANGE_SEAT
     };

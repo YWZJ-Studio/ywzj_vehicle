@@ -28,11 +28,17 @@ public class BaseVehicleDataPojo {
     @SerializedName("defense_stats")
     public DefenseStats defenseStats = new DefenseStats();
 
+    @SerializedName("uav")
+    public boolean uav = false;
+
     @SerializedName("with_warning_receiver")
     public boolean withWarningReceiver = false;
 
     @SerializedName("protect_passenger")
     public boolean protectPassenger = true;
+
+    @SerializedName("experimental")
+    public boolean experimental = false;
 
     @SerializedName("center_offset")
     public Vec3 centerOffset = Vec3.ZERO;

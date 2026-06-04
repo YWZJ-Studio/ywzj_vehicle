@@ -45,9 +45,9 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
             poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTicks, bullet.xRotO, bullet.getXRot())));
             poseStack.translate(0, 0, trailLength / 2.0);
             poseStack.scale(width, width, (float) trailLength);
-            // 距离两格外才渲染，只在前 5 tick 判定
+            // 距离两格外才渲染
             double bulletDistance = bulletPosition.distanceTo(bullet.getStartPos());
-            if (bullet.tickCount >= 5 || bulletDistance > 2) {
+            if (bulletDistance > 2) {
                 RenderType type = RenderType.energySwirl(DEFAULT_BULLET_TEXTURE, 15, 15);
                 VertexConsumer builder = bufferSource.getBuffer(type);
                 model.renderToBuffer(poseStack, builder, packedLight, OverlayTexture.NO_OVERLAY, bullet.getTracerR(), bullet.getTracerG(), bullet.getTracerB(), 1);

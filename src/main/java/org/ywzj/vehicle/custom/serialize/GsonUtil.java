@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.custom.part.PartUnitEntry;
 import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
+import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 
 public class GsonUtil {
@@ -21,6 +22,7 @@ public class GsonUtil {
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
             .registerTypeAdapter(Vec3.class, new Vec3Serializer())
+            .registerTypeAdapter(AfterburnerOffset.class, new AfterburnerOffsetSerializer())
             .registerTypeAdapter(Ingredient.class, new IngredientSerializer())
             .registerTypeAdapter(WeaponInfo.class, new WeaponInfoSerializer())
             .registerTypeAdapter(PartUnitEntry.class, new PartUnitEntrySerializer())
