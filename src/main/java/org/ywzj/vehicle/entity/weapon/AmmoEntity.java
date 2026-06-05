@@ -49,6 +49,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
     private double lerpYRot;
     private double lerpXRot;
     private int lerpSteps;
+    private boolean discard;
     protected boolean keepChunkLoaded = false;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
@@ -64,6 +65,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         if (level().isClientSide()) {
             tickLerp();
         } else {
+            if (discard) {
+                this.discard();
+            }
             if (keepChunkLoaded) {
                 EntityUtil.keepChunkLoaded(this, this.position());
                 EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
@@ -72,8 +76,48 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
     }
 
     protected void tickHit() {
+        if (discard) {
+            return;
+        }
+        // 子弹在 tick 起始的位置
         Vec3 startVec = this.position();
+        // 子弹在 tick 结束的位置
         Vec3 endVec = startVec.add(this.getDeltaMovement());
+        BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
+        // 实体命中
+        if (entityResult != null
+                && entityResult.getEntity() != vehicle
+                && !vehicle.getPassengers().contains(entityResult.getEntity())) {
+            Entity entity = entityResult.getEntity();
+            Entity owner = this.getOwner();
+            // 伤害实体
+            boolean headshot = entityResult.isHeadshot();
+            DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, owner, entityResult.getLocation());
+            EntityUtil.hurt(source, entity, headshot ? damage * this.headShot : damage);
+            if (entity instanceof LivingEntity livingEntity) {
+                livingEntity.invulnerableTime = 0;
+            }
+            if (explosion != null && explosion.explode) {
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                vehicleExplosion.explode();
+            }
+            discard = true;
+            return;
+        }
+        // 实体近炸
+        if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
+            AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
+                    .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
+            List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
+                    entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
+            if (!nearbyEntities.isEmpty() && explosion != null) {
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                vehicleExplosion.explode();
+                discard = true;
+                return;
+            }
+        }
+        // 方块命中
         BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
         if (result.getType() != HitResult.Type.MISS) {
             BlockPos hitPos = result.getBlockPos();
@@ -85,9 +129,11 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
                 BlockParticleOption option = new BlockParticleOption(ParticleTypes.BLOCK, hitBlock);
                 for (ServerPlayer player : serverLevel.players()) {
                     if (player.distanceToSqr(loc1) < 128 * 128) {
+                        // 方块材质破坏粒子
                         serverLevel.sendParticles(player, option, true,
                                 loc1.x, loc1.y, loc1.z,
                                 5, 0, 0, 0, 0.1);
+                        // 弹孔
                         BulletHoleOption bulletHole = new BulletHoleOption(result.getDirection(), hitPos, 1, 0, 0, getCaliber());
                         serverLevel.sendParticles(player, bulletHole, true,
                                 loc2.x, loc2.y, loc2.z,
@@ -95,45 +141,12 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
                     }
                 }
             }
+            // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
             }
-            this.discard();
-            return;
-        }
-        BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
-        if (entityResult != null
-                && entityResult.getEntity() != vehicle
-                && !vehicle.getPassengers().contains(entityResult.getEntity())) {
-            Entity entity = entityResult.getEntity();
-            Entity owner = this.getOwner();
-            boolean headshot = entityResult.isHeadshot();
-            DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, owner, entityResult.getLocation());
-            EntityUtil.hurt(source, entity, headshot ? damage * this.headShot : damage);
-            if (entity instanceof LivingEntity livingEntity) {
-                livingEntity.invulnerableTime = 0;
-            }
-            if (explosion != null && explosion.explode) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
-                vehicleExplosion.explode();
-            }
-            this.discard();
-        }
-        else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
-            AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
-                    .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
-            List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
-                    entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
-            if (!nearbyEntities.isEmpty() && explosion != null) {
-                Vec3 explosionPosition = position();
-                if (SableCompat.isLoaded()) {
-                    explosionPosition = SableCompat.transformInverse(level(), nearbyEntities.getFirst().position(), explosionPosition);
-                }
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, explosionPosition, explosion.radius, explosion.damage, explosion.destroyBlock);
-                vehicleExplosion.explode();
-                this.discard();
-            }
+            discard = true;
         }
     }
 

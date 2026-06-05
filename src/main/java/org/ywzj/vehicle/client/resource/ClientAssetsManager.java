@@ -19,7 +19,6 @@ import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
-import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -73,7 +72,6 @@ public enum ClientAssetsManager {
             @Override
             @ParametersAreNonnullByDefault
             protected void apply(Void pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
-                initStatic();
                 models.clearData();
                 animations.clearData();
             }
@@ -113,11 +111,6 @@ public enum ClientAssetsManager {
                 exception.printStackTrace();
             }
         });
-        initStatic();
-    }
-
-    public static void initStatic() {
-        AfterburnerUnit.init();
     }
 
     @UnmodifiableView

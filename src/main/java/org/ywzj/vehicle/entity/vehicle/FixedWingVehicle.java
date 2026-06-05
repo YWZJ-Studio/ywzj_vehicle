@@ -34,7 +34,6 @@ import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
-import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -69,7 +68,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
-    public List<AfterburnerOffset> afterburnerOffsets;
+    public List<AfterburnerUnit> afterburnerUnits;
     public float throttleLevelO;
     public float throttleLevel;
     public float pitchInput;

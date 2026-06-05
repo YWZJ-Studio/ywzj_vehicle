@@ -29,10 +29,6 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
 
     @Override
     public void render(BulletEntity bullet, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        renderTracerAmmo(bullet,partialTicks, poseStack, bufferSource, packedLight);
-    }
-
-    public void renderTracerAmmo(BulletEntity bullet, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         var model = BedrockModelLoader.getModel(DEFAULT_BULLET_MODEL);
         poseStack.pushPose();
         {
@@ -45,9 +41,8 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
             poseStack.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTicks, bullet.xRotO, bullet.getXRot())));
             poseStack.translate(0, 0, trailLength / 2.0);
             poseStack.scale(width, width, (float) trailLength);
-            // 距离两格外才渲染
             double bulletDistance = bulletPosition.distanceTo(bullet.getStartPos());
-            if (bulletDistance > 2) {
+            if (bulletDistance > 1) {
                 RenderType type = RenderType.energySwirl(DEFAULT_BULLET_TEXTURE, 15, 15);
                 VertexConsumer builder = bufferSource.getBuffer(type);
                 model.renderToBuffer(poseStack, builder, packedLight, OverlayTexture.NO_OVERLAY, bullet.getTracerR(), bullet.getTracerG(), bullet.getTracerB(), 1);

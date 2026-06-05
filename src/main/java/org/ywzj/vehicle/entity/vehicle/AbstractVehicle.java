@@ -256,10 +256,10 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void readSpawnData(RegistryFriendlyByteBuf buffer) {
         this.vehicleId = buffer.readResourceLocation();
         this.displayId = buffer.readResourceLocation();
-        this.initData();
-        this.initDisplayData();
+        initData();
         deserializePartUnitsData(buffer.readNbt());
         deserializeDecorationUnitsData(buffer.readNbt());
+        initDisplayData();
         int[] passengerIdsBySeat = new int[buffer.readInt()];
         for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
             passengerIdsBySeat[index] = buffer.readInt();
@@ -1473,6 +1473,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             Vec3 mtv = new Vec3(obb.calculateMTV(entityAABB));
             if (mtv.lengthSqr() > 0) {
+                if (mtv.y < 0 && pEntity.onGround()) {
+                    mtv = new Vec3(mtv.x, 0, mtv.z);
+                }
                 if (Math.abs(mtv.y) > Math.abs(mtv.x) && Math.abs(mtv.y) > Math.abs(mtv.z)) {
                     if (mtv.y > 0) {
                         pEntity.setOnGround(true);

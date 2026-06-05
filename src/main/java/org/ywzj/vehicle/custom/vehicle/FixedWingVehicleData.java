@@ -12,6 +12,7 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,18 +50,23 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
 
     @Override
     public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
-        PartUnitsAndSeats result = super.createPartUnits(vehicle);
-        if (afterburnerOffsets == null || afterburnerOffsets.isEmpty()) {
-            return result;
+        if (vehicle instanceof FixedWingVehicle fixedWingVehicle) {
+            PartUnitsAndSeats result = super.createPartUnits(vehicle);
+            if (afterburnerOffsets == null || afterburnerOffsets.isEmpty()) {
+                return result;
+            }
+            fixedWingVehicle.afterburnerUnits = new ArrayList<>();
+            Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>(result.partUnitMap());
+            int index = partUnitMap.size();
+            for (AfterburnerOffset offset : afterburnerOffsets) {
+                AfterburnerUnit unit = new AfterburnerUnit(index, vehicle, offset.offset(), offset.scale());
+                partUnitMap.put(unit.getId(), unit);
+                fixedWingVehicle.afterburnerUnits.add(unit);
+                index++;
+            }
+            return new PartUnitsAndSeats(partUnitMap, result.seats());
         }
-        Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>(result.partUnitMap());
-        int index = partUnitMap.size();
-        for (AfterburnerOffset offset : afterburnerOffsets) {
-            AfterburnerUnit unit = new AfterburnerUnit(index, vehicle, offset.offset(), offset.scale());
-            partUnitMap.put(unit.getId(), unit);
-            index++;
-        }
-        return new PartUnitsAndSeats(partUnitMap, result.seats());
+        return null;
     }
 
     public void build(FixedWingVehicleDataPojo pojo) {
@@ -119,7 +125,6 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         vehicle.yTurnRate = this.yTurnRate;
         vehicle.zTurnRate = this.zTurnRate;
         vehicle.vortexOffsets = this.vortexOffsets;
-        vehicle.afterburnerOffsets = this.afterburnerOffsets;
         vehicle.landingGearPartId = this.landingGearPartId;
     }
 
