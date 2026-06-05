@@ -190,7 +190,7 @@ public class VectorUtil {
 
     public record HitOBB(OBB obb, Vec3 hitPos, double distance) {}
 
-    private static HitOBB obbHit(List<OBB> obbs, Vec3 start, Vec3 end) {
+    public static HitOBB obbHit(List<OBB> obbs, Vec3 start, Vec3 end) {
         double minDistance = Double.MAX_VALUE;
         Vec3 minDistanceHitPos = null;
         OBB minDistanceOBB = null;
