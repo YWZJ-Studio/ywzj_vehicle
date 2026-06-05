@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -8,10 +9,10 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
+import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -98,7 +99,9 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
     @OnlyIn(Dist.CLIENT)
     public boolean doClientShoot() {
         AbstractVehicleWeapon<?> selected = getSelectedWeapon();
-        if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player))) {
+        VehicleFireEvent.Pre __fireEvent = new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player);
+        NeoForge.EVENT_BUS.post(__fireEvent);
+        if (__fireEvent.isCanceled()) {
             return false;
         }
         if (selected.isCoolingDown()) {
@@ -241,21 +244,23 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
             if (matchingItems.length > 0) {
                 AtomicReference<ItemStack> returnStack = new AtomicReference<>(matchingItems[0].copy());
                 returnStack.get().setCount(oldAmmo);
-                vehicle.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(cap -> {
-                    for (int i = 0; i < cap.getSlots(); i++) {
-                        ItemStack stack = cap.getStackInSlot(i);
-                        if (stack.getItem() == AllItems.AMMO_CREATIVE.get()) {
-                            returnStack.set(ItemStack.EMPTY);
-                            return;
-                        }
+                var itemHandler = vehicle.getItemHandler();
+                boolean foundCreative = false;
+                for (int i = 0; i < itemHandler.getSlots(); i++) {
+                    if (itemHandler.getStackInSlot(i).getItem() == AllItems.AMMO_CREATIVE.get()) {
+                        returnStack.set(ItemStack.EMPTY);
+                        foundCreative = true;
+                        break;
                     }
-                    for (int i = 0; i < cap.getSlots(); i++) {
-                        returnStack.set(cap.insertItem(i, returnStack.get(), false));
+                }
+                if (!foundCreative) {
+                    for (int i = 0; i < itemHandler.getSlots(); i++) {
+                        returnStack.set(itemHandler.insertItem(i, returnStack.get(), false));
                         if (returnStack.get().isEmpty()) {
                             break;
                         }
                     }
-                });
+                }
                 if (!returnStack.get().isEmpty()) {
                     vehicle.spawnAtLocation(returnStack.get());
                 }
@@ -270,14 +275,14 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
     }
 
     @Override
-    public CompoundTag serializeNBT() {
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
         tag.putInt("SelectedIndex", selectedIndex);
         for (int i = 0; i < subWeapons.size(); i++) {
             AbstractVehicleWeapon<?> sub = subWeapons.get(i);
             String subId = sub.getSerializeId();
             if (subId != null) {
-                CompoundTag subData = sub.serializeNBT();
+                CompoundTag subData = sub.serializeNBT(provider);
                 if (!subData.isEmpty()) {
                     tag.put(subId, subData);
                 }
@@ -287,12 +292,12 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
+    public void deserializeNBT(@NotNull HolderLookup.Provider provider, @NotNull CompoundTag nbt) {
         this.selectedIndex = nbt.getInt("SelectedIndex");
         for (AbstractVehicleWeapon<?> sub : subWeapons) {
             String subId = sub.getSerializeId();
             if (subId != null && nbt.contains(subId, Tag.TAG_COMPOUND)) {
-                sub.deserializeNBT(nbt.getCompound(subId));
+                sub.deserializeNBT(provider, nbt.getCompound(subId));
             }
         }
     }

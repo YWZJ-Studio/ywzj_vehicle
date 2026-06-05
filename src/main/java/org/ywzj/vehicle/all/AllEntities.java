@@ -85,12 +85,11 @@ public class AllEntities {
                     .fireImmune()
                     .build("aps_grenade"));
 
-    public static final RegistryObject<EntityType<FragGrenadeEntity>> FRAG_GRENADE = ENTITIES.register("frag_grenade",
+    public static final DeferredHolder<EntityType<?>, EntityType<FragGrenadeEntity>> FRAG_GRENADE = ENTITIES.register("frag_grenade",
             () -> EntityType.Builder.<FragGrenadeEntity>of(FragGrenadeEntity::new, MobCategory.MISC)
                     .setShouldReceiveVelocityUpdates(true)
                     .setTrackingRange(16)
                     .setUpdateInterval(1)
-                    .setCustomClientFactory(FragGrenadeEntity::new)
                     .sized(0.3f, 0.3f)
                     .noSave()
                     .fireImmune()

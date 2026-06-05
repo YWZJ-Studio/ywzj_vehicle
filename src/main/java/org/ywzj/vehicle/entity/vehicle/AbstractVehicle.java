@@ -6,10 +6,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -36,13 +34,12 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.scores.Team;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.world.scores.PlayerTeam;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -58,7 +55,6 @@ import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
-import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -68,7 +64,6 @@ import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.item.VehicleItem;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -93,7 +88,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 import java.util.*;
 
 public abstract class AbstractVehicle extends ContainerCraft
-        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData {
+        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityWithComplexSpawn {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -139,7 +134,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private FakePlayer fakeOperator;
     public boolean collision = true;
     public boolean remote = false;
-    public Team remoteTeam;
+    public PlayerTeam remoteTeam;
     public boolean protectPassenger;
     protected boolean dataInitialized;
     private long destroyedTime;
@@ -159,28 +154,28 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.curbWeight = 1;
         this.viewInfo = new ViewInfo();
         this.energyInfo = new EnergyInfo();
-        this.setMaxUpStep(1.0f);
         this.physicsEngine = new PhysicsEngine(this);
         this.dismountLocations = new HashMap<>();
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(X_ROT, 0f);
-        this.entityData.define(Y_ROT, 0f);
-        this.entityData.define(Z_ROT, 0f);
-        this.entityData.define(ENERGY, 0f);
-        this.entityData.define(POWER, 0f);
-        this.entityData.define(ENGINE_SPEED, 0f);
-        this.entityData.define(ENGINE_ON, false);
-        this.entityData.define(DESTROYED, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(X_ROT, 0f);
+        builder.define(Y_ROT, 0f);
+        builder.define(Z_ROT, 0f);
+        builder.define(ENERGY, 0f);
+        builder.define(POWER, 0f);
+        builder.define(ENGINE_SPEED, 0f);
+        builder.define(ENGINE_ON, false);
+        builder.define(DESTROYED, false);
     }
 
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Engine", isEngineOn());
+        compound.putFloat("Energy", getEnergy());
         compound.putFloat("Power", getPower());
         compound.putBoolean("Destroyed", isDestroyed());
         compound.putLong("DestroyedTime", destroyedTime);
@@ -202,6 +197,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         super.readAdditionalSaveData(compound);
         if (compound.contains("Engine")) {
             toggleEngine(compound.getBoolean("Engine"));
+        }
+        if (compound.contains("Energy")) {
+            setEnergy(compound.getFloat("Energy"));
         }
         if (compound.contains("Power")) {
             setPower(compound.getFloat("Power"));
@@ -242,14 +240,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
-    @NotNull
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
-
-    @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         buffer.writeResourceLocation(this.getVehicleId());
         buffer.writeResourceLocation(this.getDisplayId());
         buffer.writeNbt(serializePartUnitsData());
@@ -261,7 +253,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf buffer) {
+    public void readSpawnData(RegistryFriendlyByteBuf buffer) {
         this.vehicleId = buffer.readResourceLocation();
         this.displayId = buffer.readResourceLocation();
         this.initData();
@@ -280,7 +272,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         Entity driver = getDriver();
         if (driver != null) {
             data.putInt("driverId", driver.getId());
-            Team team = driver.getTeam();
+            PlayerTeam team = driver.getTeam();
             if (team != null) {
                 data.putString("teamName", team.getName());
             }
@@ -307,7 +299,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private CompoundTag serializePartUnitsData() {
         CompoundTag partUnitsTag = new CompoundTag();
         partUnits.forEach((partUnit -> {
-            CompoundTag partTag = partUnit.serializeNBT();
+            CompoundTag partTag = partUnit.serializeNBT(registryAccess());
             if (partTag.isEmpty()) {
                 return;
             }
@@ -321,7 +313,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             partUnits.forEach(partUnit -> {
                 if (partUnitsTag.contains(partUnit.getId(), Tag.TAG_COMPOUND)) {
                     CompoundTag partTag = partUnitsTag.getCompound(partUnit.getId());
-                    partUnit.deserializeNBT(partTag);
+                    partUnit.deserializeNBT(registryAccess(), partTag);
                 }
             });
         }
@@ -330,7 +322,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private CompoundTag serializeDecorationUnitsData() {
         CompoundTag decorationUnitsTag = new CompoundTag();
         decorationUnits.values().forEach((decorationUnit -> {
-            CompoundTag partTag = decorationUnit.serializeNBT();
+            CompoundTag partTag = decorationUnit.serializeNBT(registryAccess());
             if (partTag.isEmpty()) {
                 return;
             }
@@ -349,15 +341,15 @@ public abstract class AbstractVehicle extends ContainerCraft
                 partUnitPojo.id = id;
                 DecorationUnit decorationUnit = new DecorationUnit(id.hashCode(), this, new PartUnitData(partUnitPojo));
                 CompoundTag partTag = decorationUnitsTag.getCompound(id);
-                decorationUnit.deserializeNBT(partTag);
+                decorationUnit.deserializeNBT(registryAccess(), partTag);
                 decorationUnits.put(id, decorationUnit);
             }
         }
     }
 
     @Override
-    public void onAddedToWorld() {
-        super.onAddedToWorld();
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
         if (!level().isClientSide()) {
             if (!dataInitialized) {
                 initData();
@@ -366,8 +358,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
-    public void onRemovedFromWorld() {
-        super.onRemovedFromWorld();
+    public void onRemovedFromLevel() {
+        super.onRemovedFromLevel();
         partUnits.forEach((PartUnit::onRemoved));
         if (!level().isClientSide()) {
             if (uav) {
@@ -464,7 +456,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void setDisplayId(ResourceLocation displayId) {
         this.displayId = displayId;
         if (!level().isClientSide()) {
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleChangeDisplay(this.getId(), displayId));
+            PacketDistributor.sendToPlayersTrackingEntity(this, new ServerVehicleChangeDisplay(this.getId(), displayId));
         }
     }
 
@@ -503,7 +495,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             tickPower();
             tickEngineSpeed();
             tickPhysics(tickMove());
-            if (MinecraftForge.EVENT_BUS.post(new VehicleMoveEvent(this))) {
+            VehicleMoveEvent __event = new VehicleMoveEvent(this);
+            NeoForge.EVENT_BUS.post(__event);
+            if (__event.isCanceled()) {
                 this.setDeltaMovement(Vec3.ZERO);
             }
             if (uav) {
@@ -518,13 +512,9 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     protected void tickEnergy() {
-        getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
-            float fuel = cap.getFuel();
-            fuel = Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100);
-            physicsEngine.mass = curbWeight + fuel;
-            entityData.set(ENERGY, fuel);
-            setEnergy(fuel);
-        });
+        float energy = getEnergy();
+        energy = Math.max(0, energy - energyInfo.energyConsumptionPerTick * getPower() / 100);
+        setEnergy(energy);
     }
 
     protected void tickPower() {
@@ -573,7 +563,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 touchPoints.add(point);
             }
         }
-        MinecraftForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
+        NeoForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
 
         // 调试
 //        touchPoints.forEach(p -> DebugUtil.particle(level(), new Vec3(p.worldPos(axes)), p.cubeFace()));
@@ -629,7 +619,9 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public boolean hurt(@NotNull DamageSource damageSource, float amount) {
-        if (MinecraftForge.EVENT_BUS.post(new VehicleAttackEvent(this, damageSource, amount))) {
+        VehicleAttackEvent __VehicleAttackEvent = new VehicleAttackEvent(this, damageSource, amount);
+        NeoForge.EVENT_BUS.post(__VehicleAttackEvent);
+        if (__VehicleAttackEvent.isCanceled()) {
             return false;
         }
         if (this.isInvulnerableTo(damageSource)) {
@@ -921,7 +913,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             targetSeat.partUnit.setOwner(livingEntity);
             targetSeat.passengerId = livingEntity.getId();
             for (ServerPlayer serverPlayer : serverLevel.players()) {
-                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerVehicleSeatsChange(this));
+                PacketDistributor.sendToPlayer(serverPlayer, new ServerVehicleSeatsChange(this));
             }
         }
         livingEntity.setSprinting(false);
@@ -939,7 +931,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             seat.partUnit.setOwner(null);
             seat.passengerId = -1;
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+            PacketDistributor.sendToPlayersTrackingEntity(this, new ServerVehicleSeatsChange(this));
         } else {
             if (warningReceiver != null) {
                 warningReceiver.clear();
@@ -966,7 +958,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             toSeat.partUnit.setOwner(pPassenger);
             toSeat.passengerId = pPassenger.getId();
             toSeat.partUnit.applySeatRot(pPassenger);
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
+            PacketDistributor.sendToPlayersTrackingEntity(this, new ServerVehicleSeatsChange(this));
             return true;
         }
         return false;
@@ -1180,7 +1172,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public void playVehicleSound(SoundEvent soundEvent, boolean on) {
-        Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), on));
+        PacketDistributor.sendToPlayersTrackingEntity(this, new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), on));
     }
 
     public List<PartUnit<?>> getPartUnits() {
@@ -1343,11 +1335,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public void setEnergy(float amount) {
-        getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
-            cap.setFuel(amount);
-            entityData.set(ENERGY, amount);
-            physicsEngine.mass = curbWeight + amount;
-        });
+        entityData.set(ENERGY, amount);
+        physicsEngine.mass = curbWeight + amount;
     }
 
     public float addEnergy(float amount) {
@@ -1407,7 +1396,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
-    public Team getTeam() {
+    public PlayerTeam getTeam() {
         if (!remote) {
             Entity driver = getDriver();
             if (driver == null) {
@@ -1527,11 +1516,16 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements, boolean pTeleport) {
-        super.lerpTo(pX, pY, pZ, pYaw, pPitch, pPosRotationIncrements, pTeleport);
+    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements) {
+        super.lerpTo(pX, pY, pZ, pYaw, pPitch, pPosRotationIncrements);
         this.lerpXRot = entityData.get(X_ROT);
         this.lerpYRot = entityData.get(Y_ROT);
         this.lerpZRot = entityData.get(Z_ROT);
+    }
+
+    @Override
+    public float maxUpStep() {
+        return 1.0F;
     }
 
     public void aiStep() {

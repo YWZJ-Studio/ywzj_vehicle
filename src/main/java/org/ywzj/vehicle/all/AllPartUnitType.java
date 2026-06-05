@@ -29,7 +29,7 @@ public class AllPartUnitType {
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<RadarUnit, RadarUnitData>> RADAR = register(PartUnitTypes.RADAR);
 
-    public static final DeferredHolder<PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
 
     private static <T extends PartUnit<D>, D extends PartUnitData> DeferredHolder<PartUnitType<?, ?>, PartUnitType<T, D>> register(
             PartUnitType<T, D> type

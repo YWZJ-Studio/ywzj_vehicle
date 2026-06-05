@@ -114,10 +114,10 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                     poseStack.popPose();
                 }
                 // 装填进度
-                weaponUnit.getCurrentWeapon().ifPresent(weapon -> VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
-                weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
+                weaponUnit.getCurrentWeapon().ifPresent(weapon -> VehicleAimAtOverlay.renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
+                weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> VehicleAimAtOverlay.renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
                 if (!weaponUnit.independentWeapons.isEmpty()) {
-                    VehicleCrossHairOverlay.renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
+                    VehicleAimAtOverlay.renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
                 }
             }
             poseStack.popPose();

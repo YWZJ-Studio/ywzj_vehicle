@@ -1,7 +1,5 @@
 package org.ywzj.vehicle.particle;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
@@ -9,10 +7,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.network.codec.StreamCodec;
 import org.ywzj.vehicle.all.AllParticleTypes;
-
-import java.util.Locale;
 
 public class BulletHoleOption implements ParticleOptions {
 
@@ -26,31 +22,10 @@ public class BulletHoleOption implements ParticleOptions {
                     Codec.FLOAT.fieldOf("caliber").forGetter(o -> o.caliber)
             ).apply(builder, BulletHoleOption::new));
 
-    @SuppressWarnings("deprecation")
-    public static final Deserializer<BulletHoleOption> DESERIALIZER = new Deserializer<>() {
-        @Override
-        public BulletHoleOption fromCommand(ParticleType<BulletHoleOption> type, StringReader reader) throws CommandSyntaxException {
-            reader.expect(' ');
-            int dir = reader.readInt();
-            reader.expect(' ');
-            long pos = reader.readLong();
-            reader.expect(' ');
-            float r = reader.readFloat();
-            reader.expect(' ');
-            float g = reader.readFloat();
-            reader.expect(' ');
-            float b = reader.readFloat();
-            reader.expect(' ');
-            float caliber = reader.readFloat();
-            return new BulletHoleOption(dir, pos, r, g, b, caliber);
-        }
-
-        @Override
-        public BulletHoleOption fromNetwork(ParticleType<BulletHoleOption> type, FriendlyByteBuf buffer) {
-            return new BulletHoleOption(buffer.readVarInt(), buffer.readLong(),
-                    buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
-        }
-    };
+    public static final StreamCodec<FriendlyByteBuf, BulletHoleOption> STREAM_CODEC = StreamCodec.of(
+            (buf, option) -> option.writeToNetwork(buf),
+            BulletHoleOption::fromNetwork
+    );
 
     private final Direction direction;
     private final BlockPos pos;
@@ -89,7 +64,6 @@ public class BulletHoleOption implements ParticleOptions {
         return AllParticleTypes.BULLET_HOLE.get();
     }
 
-    @Override
     public void writeToNetwork(FriendlyByteBuf buffer) {
         buffer.writeEnum(this.direction);
         buffer.writeBlockPos(this.pos);
@@ -99,11 +73,9 @@ public class BulletHoleOption implements ParticleOptions {
         buffer.writeFloat(this.caliber);
     }
 
-    @Override
-    public String writeToString() {
-        return String.format(Locale.ROOT, "%s %d %d %f %f %f %f",
-                ForgeRegistries.PARTICLE_TYPES.getKey(this.getType()),
-                this.direction.ordinal(), this.pos.asLong(), this.r, this.g, this.b, this.caliber);
+    public static BulletHoleOption fromNetwork(FriendlyByteBuf buffer) {
+        return new BulletHoleOption(buffer.readEnum(Direction.class), buffer.readBlockPos(),
+                buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
     }
 
 }

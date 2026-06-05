@@ -27,9 +27,9 @@ public class Quadcopter extends RotaryWingVehicle {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(CABLE_LENGTH, 0f);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CABLE_LENGTH, 0f);
     }
 
     @Override

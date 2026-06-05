@@ -2,7 +2,7 @@ package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -13,12 +13,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.PlayMessages;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
@@ -27,7 +25,6 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
@@ -84,10 +81,6 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level) {
         super(entityType, level, null);
-    }
-
-    public MissileEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.MISSILE.get(), level, null);
     }
 
     public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, LivingEntity shooter) {
@@ -295,7 +288,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         // 通知导弹锁定给目标载具乘客
         if (tickCount % 2 == 0 && targetEntity != null && radar) {
             ServerVehicleWarn packet = new ServerVehicleWarn(this.getId(), targetEntity.getId(), WarnType.MISSILE_LAUNCH, "MSL");
-            Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> targetEntity), packet);
+            PacketDistributor.sendToPlayersTrackingEntity(targetEntity, packet);
         }
     }
 
@@ -338,13 +331,13 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         super.readSpawnData(additionalData);
         ownerId = additionalData.readInt();
     }

@@ -1,12 +1,11 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VehicleExplosion;
@@ -19,10 +18,6 @@ public class FragGrenadeEntity extends GrenadeEntity {
 
     public FragGrenadeEntity(Entity shooter, Level level, ResourceLocation weaponId) {
         super(AllEntities.FRAG_GRENADE.get(), shooter, level, weaponId);
-    }
-
-    public FragGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.FRAG_GRENADE.get(), level);
     }
 
     public FragGrenadeEntity(EntityType<FragGrenadeEntity> type, Level level) {
@@ -53,7 +48,7 @@ public class FragGrenadeEntity extends GrenadeEntity {
     }
 
     @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
         buffer.writeFloat(explosion != null ? explosion.damage : 0);
         buffer.writeFloat(explosion != null ? explosion.radius : 0);
@@ -61,7 +56,7 @@ public class FragGrenadeEntity extends GrenadeEntity {
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         super.readSpawnData(additionalData);
         explosion = new Explosion();
         explosion.damage = additionalData.readFloat();

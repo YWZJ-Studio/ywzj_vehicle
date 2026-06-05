@@ -11,6 +11,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.all.AllBlocks;
@@ -81,16 +82,16 @@ public class ClientSetupHandler {
     }
 
     @SubscribeEvent
-    public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle", new VehicleOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_rotary_wing", new RotaryWingVehicleOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_fixed_wing", new FixedWingVehicleOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_crosshair", new VehicleCrossHairOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_scope", new VehicleScopeOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_weapon", new VehicleWeaponOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_radar", new VehicleRadarOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_debug", new VehicleDebugOverlay());
+    public static void onRegisterHud(RegisterGuiLayersEvent event) {
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle"), new VehicleOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_rotary_wing"), new RotaryWingVehicleOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_fixed_wing"), new FixedWingVehicleOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_aim_at"), new VehicleAimAtOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_scope"), new VehicleScopeOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_weapon"), new VehicleWeaponOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_hit_indicator"), new VehicleHitIndicatorOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_radar"), new VehicleRadarOverlay());
+        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_debug"), new VehicleDebugOverlay());
     }
 
     @SubscribeEvent

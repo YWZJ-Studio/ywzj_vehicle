@@ -2,6 +2,7 @@ package org.ywzj.vehicle.item;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -11,12 +12,13 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.List;
@@ -38,7 +40,7 @@ public class UavControllerItem extends VehicleItem {
         ItemStack uavControllerItemStack = player.getItemInHand(pHand);
         if (!level.isClientSide && pHand == InteractionHand.MAIN_HAND) {
             ServerLevel serverLevel = (ServerLevel) level;
-            CompoundTag tag = uavControllerItemStack.getOrCreateTag();
+            CompoundTag tag = uavControllerItemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
             if (tag.contains(UAV_UUID)) {
                 UUID uavUUID = tag.getUUID(UAV_UUID);
                 Entity entity = serverLevel.getEntity(uavUUID);
@@ -60,9 +62,9 @@ public class UavControllerItem extends VehicleItem {
             if (pHand == InteractionHand.MAIN_HAND) {
                 if (target instanceof AbstractVehicle vehicle && vehicle.uav && !vehicle.isDestroyed()) {
                     ItemStack uavControllerItemStack = player.getItemInHand(pHand);
-                    CompoundTag tag = uavControllerItemStack.getOrCreateTag();
+                    CompoundTag tag = uavControllerItemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                     tag.putUUID(UAV_UUID, vehicle.getUUID());
-                    uavControllerItemStack.setTag(tag);
+                    uavControllerItemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
                     player.displayClientMessage(Component.translatable("tips.uav_controller.paired"), true);
                 }
             }
@@ -73,7 +75,7 @@ public class UavControllerItem extends VehicleItem {
     @Override
     public void inventoryTick(ItemStack pStack, Level pLevel, Entity pEntity, int pSlotId, boolean pIsSelected) {
         if (!pLevel.isClientSide && pLevel.getGameTime() % 10 == 0) {
-            CompoundTag tag = pStack.getOrCreateTag();
+            CompoundTag tag = pStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
             if (tag.contains(UAV_UUID)) {
                 UUID uavUUID = tag.getUUID(UAV_UUID);
                 ServerLevel serverLevel = (ServerLevel) pLevel;
@@ -81,22 +83,23 @@ public class UavControllerItem extends VehicleItem {
                     tag.putDouble(UAV_X, vehicle.getX());
                     tag.putDouble(UAV_Y, vehicle.getY());
                     tag.putDouble(UAV_Z, vehicle.getZ());
+                    pStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
                 }
             }
         }
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
-        CompoundTag tag = pStack.getOrCreateTag();
+    public void appendHoverText(ItemStack pStack, Item.TooltipContext pContext, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
+        CompoundTag tag = pStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         if (tag.contains(UAV_UUID)) {
-            pTooltipComponents.add(Component.translatable("tips.uav_controller", pStack.getOrCreateTag().getUUID(UAV_UUID)).withStyle(ChatFormatting.GRAY));
+            pTooltipComponents.add(Component.translatable("tips.uav_controller", tag.getUUID(UAV_UUID)).withStyle(ChatFormatting.GRAY));
             if (tag.contains(UAV_X)) {
                 String posStr = String.format("%.1f, %.1f, %.1f", tag.getDouble(UAV_X), tag.getDouble(UAV_Y), tag.getDouble(UAV_Z));
                 pTooltipComponents.add(Component.translatable("tips.uav_controller.uav_at", posStr).withStyle(ChatFormatting.AQUA));
             }
         }
-        super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
+        super.appendHoverText(pStack, pContext, pTooltipComponents, pIsAdvanced);
     }
 
 }

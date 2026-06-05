@@ -3,10 +3,9 @@ package org.ywzj.vehicle.entity.weapon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,9 +22,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.IEntityAdditionalSpawnData;
-import net.minecraftforge.network.NetworkHooks;
+import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.ywzj.vehicle.all.AllDamageTypes;
+import org.ywzj.vehicle.compat.sable.SableCompat;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.util.BulletHitResult;
@@ -35,7 +34,7 @@ import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 import java.util.List;
 
-public abstract class AmmoEntity extends Projectile implements IEntityAdditionalSpawnData {
+public abstract class AmmoEntity extends Projectile implements IEntityWithComplexSpawn {
 
     public AbstractVehicle vehicle;
     private ResourceLocation weaponId;
@@ -57,6 +56,8 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         this.weaponId = weaponId;
     }
 
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+
     @Override
     public void tick() {
         super.tick();
@@ -71,11 +72,8 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     }
 
     protected void tickHit() {
-        // 子弹在 tick 起始的位置
         Vec3 startVec = this.position();
-        // 子弹在 tick 结束的位置
         Vec3 endVec = startVec.add(this.getDeltaMovement());
-        // 子弹的碰撞检测
         BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
         if (result.getType() != HitResult.Type.MISS) {
             BlockPos hitPos = result.getBlockPos();
@@ -87,11 +85,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 BlockParticleOption option = new BlockParticleOption(ParticleTypes.BLOCK, hitBlock);
                 for (ServerPlayer player : serverLevel.players()) {
                     if (player.distanceToSqr(loc1) < 128 * 128) {
-                        // 方块材质破坏粒子
                         serverLevel.sendParticles(player, option, true,
                                 loc1.x, loc1.y, loc1.z,
                                 5, 0, 0, 0, 0.1);
-                        // 弹孔
                         BulletHoleOption bulletHole = new BulletHoleOption(result.getDirection(), hitPos, 1, 0, 0, getCaliber());
                         serverLevel.sendParticles(player, bulletHole, true,
                                 loc2.x, loc2.y, loc2.z,
@@ -99,7 +95,6 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                     }
                 }
             }
-            // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {
                 VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
@@ -108,13 +103,11 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             return;
         }
         BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
-        // 将单个命中是实体创建为单个内容的 list
         if (entityResult != null
                 && entityResult.getEntity() != vehicle
                 && !vehicle.getPassengers().contains(entityResult.getEntity())) {
             Entity entity = entityResult.getEntity();
             Entity owner = this.getOwner();
-            // 伤害实体
             boolean headshot = entityResult.isHeadshot();
             DamageSource source = AllDamageTypes.Sources.bullet(level().registryAccess(), this, owner, entityResult.getLocation());
             EntityUtil.hurt(source, entity, headshot ? damage * this.headShot : damage);
@@ -127,14 +120,17 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             }
             this.discard();
         }
-        // 近炸
         else if (explosion != null && explosion.proximityFuze && tickCount > 5 && entityResult == null) {
             AABB detectionBox = this.getBoundingBox().inflate(explosion.proximityRadius)
                     .move(getLookAngle().normalize().scale(-explosion.proximityRadius));
             List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
                     entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
             if (!nearbyEntities.isEmpty() && explosion != null) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                Vec3 explosionPosition = position();
+                if (SableCompat.isLoaded()) {
+                    explosionPosition = SableCompat.transformInverse(level(), nearbyEntities.getFirst().position(), explosionPosition);
+                }
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, explosionPosition, explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
                 this.discard();
             }
@@ -142,29 +138,21 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     }
 
     @Override
-    protected void defineSynchedData() {}
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
-
-    @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
-        buffer.writeComponent(name);
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
+        buffer.writeUtf(name.getString());
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
         buffer.writeResourceLocation(weaponId);
     }
 
     @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
-        name = additionalData.readComponent();
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
+        name = Component.translatable(additionalData.readUtf());
         additionalData.readInt();
         weaponId = additionalData.readResourceLocation();
     }
 
     @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYRot, float pXRot, int pLerpSteps, boolean pTeleport) {
+    public void lerpTo(double pX, double pY, double pZ, float pYRot, float pXRot, int pLerpSteps) {
         this.lerpX = pX;
         this.lerpY = pY;
         this.lerpZ = pZ;

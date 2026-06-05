@@ -30,7 +30,7 @@ import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.*;
 
 @EventBusSubscriber(value = Dist.CLIENT)
-public class VehicleCrossHairOverlay implements LayeredDraw.Layer {
+public class VehicleAimAtOverlay implements LayeredDraw.Layer {
 
     private static double screenAimXO = 0;
     private static double screenAimYO = 0;

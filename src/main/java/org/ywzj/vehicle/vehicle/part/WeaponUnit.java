@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -17,10 +18,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -37,7 +38,6 @@ import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerVehicleFire;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
@@ -370,7 +370,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 Entity radarLockedEntity = mainRadarUnit.getLockedEntity();
                 if (radarLockedEntity != null) {
                     ServerVehicleWarn packet = new ServerVehicleWarn(vehicle.getId(), radarLockedEntity.getId(), WarnType.RADAR_LOCK, mainRadarUnit.getRadarType());
-                    Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> radarLockedEntity), packet);
+                    PacketDistributor.sendToPlayersTrackingEntity(radarLockedEntity, packet);
                 }
             }
         }
@@ -590,15 +590,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 weaponBayUnit.setOn(true);
                 return;
             }
-            if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, weapon, operator))) {
+            VehicleFireEvent.Pre __fireEvent = new VehicleFireEvent.Pre(vehicle, weapon, operator);
+            NeoForge.EVENT_BUS.post(__fireEvent);
+            if (__fireEvent.isCanceled()) {
                 return;
             }
             if (weapon.shoot(aimContexts, operator)) {
-                MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
+                NeoForge.EVENT_BUS.post(new VehicleFireEvent.Post(vehicle, weapon, operator));
                 int entityId = vehicle.getId();
                 int operatorId = operator == null ? -1 : operator.getId();
                 ServerVehicleFire packet = new ServerVehicleFire(entityId, operatorId, index, weapon.getIndex());
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), packet);
+                PacketDistributor.sendToPlayersTrackingEntity(vehicle, packet);
             }
         }
     }
@@ -612,7 +614,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 action.vehicleEntityId = vehicle.getId();
                 action.partUnitIndex = weaponBayUnit.getIndex();
                 action.togglePartUnitState = true;
-                Channel.CHANNEL.sendToServer(action);
+                PacketDistributor.sendToServer(action);
             }
         });
     }
@@ -644,7 +646,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 control.partUnitIndex = index;
                 control.xAimRot = rot.x;
                 control.yAimRot = rot.y;
-                Channel.CHANNEL.sendToServer(control);
+                PacketDistributor.sendToServer(control);
             }
             xAimRot = rot.x;
             yAimRot = rot.y;
@@ -897,7 +899,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             action.vehicleEntityId = vehicle.getId();
             action.lockEntity = true;
             action.lockedEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
-            Channel.CHANNEL.sendToServer(action);
+            PacketDistributor.sendToServer(action);
         }
     }
 
@@ -1045,14 +1047,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag tag = super.serializeNBT();
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        CompoundTag tag = super.serializeNBT(provider);
         tag.putInt("CurrentWeaponIndex", currentWeaponIndex);
         CompoundTag weaponTag = new CompoundTag();
         this.indexedWeapons.forEach(weapon -> {
             String serializeId = weapon.getSerializeId();
             if (serializeId != null) {
-                CompoundTag weaponData = weapon.serializeNBT();
+                CompoundTag weaponData = weapon.serializeNBT(provider);
                 if (weaponData.isEmpty()) {
                     return;
                 }
@@ -1064,15 +1066,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        super.deserializeNBT(provider, nbt);
         this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
         CompoundTag weaponTag = nbt.getCompound("WeaponTag");
         this.indexedWeapons.forEach(weapon -> {
             if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {
                 String serializeId = weapon.getSerializeId();
                 if (serializeId != null) {
-                    weapon.deserializeNBT(weaponTag.getCompound(serializeId));
+                    weapon.deserializeNBT(provider, weaponTag.getCompound(serializeId));
                 }
             }
         });

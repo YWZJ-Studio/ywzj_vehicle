@@ -17,8 +17,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.particle.BulletHoleOption;
@@ -129,10 +129,14 @@ public class BulletHoleParticle extends TextureSheetParticle {
         float fade = 1.0f - (float) this.age / this.lifetime;
         float alphaFade = this.alpha * fade;
 
-        buffer.vertex(points[0].x(), points[0].y(), points[0].z()).uv(u1, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[1].x(), points[1].y(), points[1].z()).uv(u1, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[2].x(), points[2].y(), points[2].z()).uv(u0, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[3].x(), points[3].y(), points[3].z()).uv(u0, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
+        int r = (int) (red * 255);
+        int g = (int) (green * 255);
+        int b = (int) (blue * 255);
+        int a = (int) (alphaFade * 255);
+        buffer.addVertex(points[0].x(), points[0].y(), points[0].z()).setUv(u1, v1).setColor(r, g, b, a).setLight(lightColor);
+        buffer.addVertex(points[1].x(), points[1].y(), points[1].z()).setUv(u1, v0).setColor(r, g, b, a).setLight(lightColor);
+        buffer.addVertex(points[2].x(), points[2].y(), points[2].z()).setUv(u0, v0).setColor(r, g, b, a).setLight(lightColor);
+        buffer.addVertex(points[3].x(), points[3].y(), points[3].z()).setUv(u0, v1).setColor(r, g, b, a).setLight(lightColor);
     }
 
     @Override

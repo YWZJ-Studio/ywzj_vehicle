@@ -137,6 +137,7 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
         Lighting.setupFor3DItems();
         if (entity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
             AABB aabb = vehicle.getBoundingBox();
+            float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
             Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                     Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
                     Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
@@ -193,8 +194,8 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
         int size = (int) (16 * scale);
         int sizeHalf = size / 2;
 
-        double x = VehicleCrossHairOverlay.getScreenAimX() - sizeHalf;
-        double y = VehicleCrossHairOverlay.getScreenAimY() - sizeHalf;
+        double x = VehicleAimAtOverlay.getScreenAimX() - sizeHalf;
+        double y = VehicleAimAtOverlay.getScreenAimY() - sizeHalf;
 
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();

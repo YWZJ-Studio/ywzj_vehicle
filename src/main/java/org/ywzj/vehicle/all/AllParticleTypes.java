@@ -12,6 +12,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.particle.ExplosionCloudOption;
 
@@ -38,8 +39,8 @@ public class AllParticleTypes {
             () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.STREAM_CODEC)
     );
 
-    public static final DeferredHolder<ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
-            () -> createOptions(BulletHoleOption.CODEC, BulletHoleOption.DESERIALIZER)
+    public static final DeferredHolder<ParticleType<?>, ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
+            () -> createOptions(BulletHoleOption.CODEC, BulletHoleOption.STREAM_CODEC)
     );
 
     public static void register(IEventBus eventBus) {
