@@ -111,7 +111,7 @@ public class EntityUtil {
     }
 
     @Nullable
-    protected static BulletHitResult getHitResult(Projectile bulletEntity, Entity entity, Vec3 startVec, Vec3 endVec) {
+    public static BulletHitResult getHitResult(Projectile bulletEntity, Entity entity, Vec3 startVec, Vec3 endVec) {
         if (entity instanceof AbstractVehicle) {
             Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, startVec, endVec);
             if (closestHitPos != null) {
