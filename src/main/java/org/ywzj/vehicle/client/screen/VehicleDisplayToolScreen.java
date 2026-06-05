@@ -20,6 +20,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,10 +39,17 @@ public class VehicleDisplayToolScreen extends Screen {
     private final AbstractVehicle vehicle;
     private List<ResourceLocation> variableDisplayIds = new ArrayList<>();
     private List<ResourceLocation> filteredVariableDisplayIds = new ArrayList<>();
+    private float viewShiftX;
+    private float viewShiftY;
+    private float viewScale = 1;
+    private float viewRotX;
+    private float viewRotY;
 
     public VehicleDisplayToolScreen(AbstractVehicle vehicle) {
         super(Component.literal("Vehicle Display Tool"));
         this.vehicle = vehicle;
+        this.viewRotX = 180 - vehicle.getXRot();
+        this.viewRotY = 180 + LocalVehiclePlayer.instance.getPlayer().getYRot();
         ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).ifPresent(display -> {
             List<BaseDisplay> vehicleDisplays = ClientAssetsManager.INSTANCE.getVariableDisplay(display.getModelPath());
             this.variableDisplayIds = vehicleDisplays.stream()
@@ -127,15 +135,14 @@ public class VehicleDisplayToolScreen extends Screen {
 
     private void drawVehiclePreview(GuiGraphics guiGraphics) {
         double length = vehicle.getStructureLength();
-        float scale = (float) (1 / Math.max(length, 3) * 196);
-        // 模型预览
+        float scale = (float) (1 / Math.max(length, 3) * 196) * this.viewScale;
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
-            poseStack.translate((double) width / 2 + 60, (double) height / 2, 512);
-            poseStack.mulPose(Axis.XP.rotationDegrees(165));
-            poseStack.mulPose(Axis.YP.rotationDegrees(45));
+            poseStack.translate((double) width / 2 + 60 + viewShiftX, (double) height / 2 + viewShiftY, 512);
             poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
+            poseStack.mulPose(Axis.XP.rotationDegrees(viewRotX));
+            poseStack.mulPose(Axis.YP.rotationDegrees(viewRotY));
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             dispatcher.setRenderShadow(false);
             Lighting.setupForEntityInInventory();
@@ -192,11 +199,37 @@ public class VehicleDisplayToolScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (mouseX > leftPos + LIST_WIDTH) {
+            if (delta > 0) {
+                this.viewScale *= 1.1f;
+            } else if (delta < 0) {
+                this.viewScale *= 0.9f;
+            }
+            this.viewScale = Math.max(0.1f, Math.min(this.viewScale, 10.0f));
+            return true;
+        }
         if (filteredVariableDisplayIds.size() > VISIBLE_ITEMS) {
             scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(delta), 0, filteredVariableDisplayIds.size() - VISIBLE_ITEMS);
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        boolean isHandled = super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        if (!isHandled) {
+            if (button == 0) {
+                this.viewRotY += (float) dragX;
+                this.viewRotX += (float) dragY;
+                return true;
+            } else if (button == 1) {
+                this.viewShiftX += (float) dragX;
+                this.viewShiftY += (float) dragY;
+                return true;
+            }
+        }
+        return isHandled;
     }
 
     private void onDisplaySelected(ResourceLocation displayId) {

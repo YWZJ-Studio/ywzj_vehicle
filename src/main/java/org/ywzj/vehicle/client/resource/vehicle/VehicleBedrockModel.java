@@ -48,6 +48,11 @@ public class VehicleBedrockModel extends BedrockModel {
                 }
             }
         }
+        this.boneMap.forEach((name, bone) -> {
+            if (name.startsWith("illum_")) {
+                bone.illuminated = true;
+            }
+        });
     }
 
     public void setSpecialBoneVisible(boolean visible) {
