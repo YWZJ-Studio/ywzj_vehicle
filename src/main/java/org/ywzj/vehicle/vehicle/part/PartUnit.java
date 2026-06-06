@@ -300,6 +300,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         }
     }
 
+    public T getData() {
+        return data;
+    }
+
     @Override
     public CompoundTag serializeNBT() {
         return new CompoundTag();

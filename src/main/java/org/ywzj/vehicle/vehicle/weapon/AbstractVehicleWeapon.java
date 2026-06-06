@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
@@ -26,9 +25,11 @@ import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
+import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.particle.ExplosionCloudOption;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AutoWeaponUnit;
@@ -208,22 +209,27 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
             return;
         }
         float recoil = data.getRecoil();
+        float caliber = 20;
+        if (data instanceof VehicleCannonWeaponData vehicleCannonWeaponData) {
+            caliber = vehicleCannonWeaponData.getCaliber();
+        }
+        float scale = caliber / 20;
         for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
             for (int i = 0; i < 3 * recoil; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, true,
+                level.addParticle(new ExplosionCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 6, 0.18f * scale, 0.005f), true,
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
-                        0.01, 0.01, 0.01);
+                        0.015, 0.015, 0.015);
             }
             for (int i = 0; i < 3 * recoil + 1; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(ParticleTypes.SMOKE, true,
+                level.addParticle(new ExplosionCloudOption(0.7f, 0.7f, 0.7f, 12, 0.3f * scale, 0.005f), true,
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
-                        0.01, 0.01, 0.01);
+                        0.015, 0.015, 0.015);
             }
         }
     }

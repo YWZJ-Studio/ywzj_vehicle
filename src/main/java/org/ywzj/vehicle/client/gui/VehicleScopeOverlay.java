@@ -214,8 +214,8 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                         drawRectByCorner(guiGraphics,
                                 (int) (baseX + vehicleMissileWeaponData.getYRotMin()),
                                 (int) (baseX + vehicleMissileWeaponData.getYRotMax()),
-                                (int) (baseY + vehicleMissileWeaponData.getXRotMin()),
-                                (int) (baseY + vehicleMissileWeaponData.getXRotMax()),
+                                (int) (baseY + Math.max(vehicleMissileWeaponData.getXRotMin(), weaponUnit.getXRotMin())),
+                                (int) (baseY + Math.min(vehicleMissileWeaponData.getXRotMax(), weaponUnit.getXRotMax())),
                                 color, 1f);
                     }
                     int x = (int) Mth.lerp(partialTick, weaponUnit.yRotO, weaponUnit.getYRot());
