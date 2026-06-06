@@ -1,5 +1,10 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.maydaymemory.mae.control.runner.AnimationContext;
+import com.maydaymemory.mae.control.runner.AnimationRunner;
+import com.maydaymemory.mae.control.runner.PlayingState;
+import com.maydaymemory.mae.control.runner.StopState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -25,6 +30,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.compat.sable.SableCompat;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.util.BulletHitResult;
@@ -33,6 +40,7 @@ import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class AmmoEntity extends Projectile implements IEntityWithComplexSpawn {
 
@@ -51,13 +59,16 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
     private int lerpSteps;
     private boolean discard;
     protected boolean keepChunkLoaded = false;
+    private boolean triggered;
+    private AnimationRunner animationRunner;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
         super(pEntityType, pLevel);
         this.weaponId = weaponId;
     }
 
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+    @Override
+    protected void defineSynchedData() {}
 
     @Override
     public void tick() {
@@ -65,6 +76,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         if (level().isClientSide()) {
             tickLerp();
         } else {
+            triggered = true;
             if (discard) {
                 this.discard();
             }
@@ -155,6 +167,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         buffer.writeUtf(name.getString());
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
         buffer.writeResourceLocation(weaponId);
+        buffer.writeBoolean(triggered);
     }
 
     @Override
@@ -162,6 +175,20 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         name = Component.translatable(additionalData.readUtf());
         additionalData.readInt();
         weaponId = additionalData.readResourceLocation();
+        var displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
+        if (displayOptional.isPresent()) {
+            BaseDisplay display = displayOptional.get();
+            Map<String, BedrockAnimation> animations = display.getAnimations();
+            if (!animations.isEmpty()) {
+                BedrockAnimation animation = animations.values().iterator().next();
+                AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
+                animationRunner = new AnimationRunner(animation, animContext);
+                animationRunner.setState(new PlayingState(System::nanoTime, StopState::new));
+                if (triggered) {
+                    animContext.setProgress(animation.getSpecifiedEndTimeS());
+                }
+            }
+        }
     }
 
     @Override
@@ -194,6 +221,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
 
     public float getCaliber() {
         return 5.8f;
+    }
+
+    public AnimationRunner getAnimationRunner() {
+        return animationRunner;
     }
 
 }

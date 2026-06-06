@@ -70,6 +70,9 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
             if (playerPartUnit instanceof RotatableUnit<?> rotatableUnit) {
                 zRot -= rotatableUnit.worldRot().y - vehicle.getYRot();
                 zRotO -= rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.yRotO;
+                if (Math.abs(zRot - zRotO) > 90) {
+                    zRotO += zRotO < 0 ? 360f : -360f;
+                }
             }
             poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTick, zRotO, zRot)));
             Vec3 pos = vehicle.position();
@@ -188,14 +191,19 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
     public void renderWeaponEngagementEnvelope(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
-        guiGraphics.pose().pushPose();
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
         {
-            guiGraphics.pose().translate(centerX, centerY, 0);
+            poseStack.translate(centerX, centerY, 0);
             if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
                 weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                    guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
+                    poseStack.scale(0.5f, 0.5f, 0.5f);
                     int baseX = 0;
                     int baseY = 140;
+                    float yRotRange = weaponUnit.getYRotMax() - weaponUnit.getYRotMin();
+                    if (yRotRange <= 0 || yRotRange >= 360 || weaponUnit.yRotSpeed == 0) {
+                        return;
+                    }
                     // 光瞄视野框
                     drawRectByCorner(guiGraphics,
                             (int) (baseX + weaponUnit.getYRotMin()),
@@ -209,8 +217,8 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                         drawRectByCorner(guiGraphics,
                                 (int) (baseX + vehicleMissileWeaponData.getYRotMin()),
                                 (int) (baseX + vehicleMissileWeaponData.getYRotMax()),
-                                (int) (baseY + vehicleMissileWeaponData.getXRotMin()),
-                                (int) (baseY + vehicleMissileWeaponData.getXRotMax()),
+                                (int) (baseY + Math.max(vehicleMissileWeaponData.getXRotMin(), weaponUnit.getXRotMin())),
+                                (int) (baseY + Math.min(vehicleMissileWeaponData.getXRotMax(), weaponUnit.getXRotMax())),
                                 color, 1f);
                     }
                     int x = (int) Mth.lerp(partialTick, weaponUnit.yRotO, weaponUnit.getYRot());
@@ -223,7 +231,7 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                 });
             }
         }
-        guiGraphics.pose().popPose();
+        poseStack.popPose();
     }
 
     public static void renderAimLockTarget(GuiGraphics guiGraphics, float partialTick) {
