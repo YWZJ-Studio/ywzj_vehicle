@@ -40,6 +40,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
+    public List<Vec3> aerobaticSmokeOffsets;
     public List<AfterburnerOffset> afterburnerOffsets;
     public String landingGearPartId;
 
@@ -100,6 +101,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         this.zTurnRate = pojo.attributes.zTurnRate;
         this.vortexOffsets = pojo.attributes.vortexOffsets;
         this.afterburnerOffsets = pojo.attributes.afterburnerOffsets;
+        this.aerobaticSmokeOffsets = pojo.attributes.aerobaticSmokeOffsets.isEmpty() ? pojo.attributes.vortexOffsets : pojo.attributes.aerobaticSmokeOffsets;
         this.landingGearPartId = pojo.landingGearPartId;
     }
 
@@ -125,6 +127,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         vehicle.yTurnRate = this.yTurnRate;
         vehicle.zTurnRate = this.zTurnRate;
         vehicle.vortexOffsets = this.vortexOffsets;
+        vehicle.aerobaticSmokeOffsets = this.aerobaticSmokeOffsets;
         vehicle.landingGearPartId = this.landingGearPartId;
     }
 

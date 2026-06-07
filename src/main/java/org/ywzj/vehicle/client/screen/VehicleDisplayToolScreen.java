@@ -14,10 +14,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.minecraftforge.client.gui.widget.ForgeSlider;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -36,6 +39,9 @@ public class VehicleDisplayToolScreen extends Screen {
     private int leftPos;
     private int topPos;
     private EditBox searchBox;
+    private ForgeSlider smokeRSlider;
+    private ForgeSlider smokeGSlider;
+    private ForgeSlider smokeBSlider;
     private final AbstractVehicle vehicle;
     private List<ResourceLocation> variableDisplayIds = new ArrayList<>();
     private List<ResourceLocation> filteredVariableDisplayIds = new ArrayList<>();
@@ -70,6 +76,28 @@ public class VehicleDisplayToolScreen extends Screen {
         this.searchBox.active = true;
         this.searchBox.setTextColor(0xFFFFFF);
         this.addRenderableWidget(searchBox);
+        if (vehicle instanceof FixedWingVehicle) {
+            AllConfigs.CommonConfig common = AllConfigs.common;
+            int sliderX = leftPos + LIST_WIDTH + 10;
+            int sliderY = 20;
+            int sliderWidth = 105;
+            int sliderHeight = 10;
+            this.smokeRSlider = new ForgeSlider(sliderX, sliderY, sliderWidth, sliderHeight,
+                    Component.literal("R "), Component.empty(),
+                    0, 255, common.aerobaticSmokeR.get(), 1, 0, true);
+            this.smokeRSlider.setFGColor(0xFF6666);
+            this.addRenderableWidget(smokeRSlider);
+            this.smokeGSlider = new ForgeSlider(sliderX, sliderY + 12, sliderWidth, sliderHeight,
+                    Component.literal("G "), Component.empty(),
+                    0, 255, common.aerobaticSmokeG.get(), 1, 0, true);
+            this.smokeGSlider.setFGColor(0x66FF66);
+            this.addRenderableWidget(smokeGSlider);
+            this.smokeBSlider = new ForgeSlider(sliderX, sliderY + 24, sliderWidth, sliderHeight,
+                    Component.literal("B "), Component.empty(),
+                    0, 255, common.aerobaticSmokeB.get(), 1, 0, true);
+            this.smokeBSlider.setFGColor(0x6666FF);
+            this.addRenderableWidget(smokeBSlider);
+        }
     }
 
     @Override
@@ -77,6 +105,21 @@ public class VehicleDisplayToolScreen extends Screen {
         this.renderBackground(guiGraphics);
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawVehiclePreview(guiGraphics);
+        if (vehicle instanceof FixedWingVehicle) {
+            guiGraphics.drawString(font, Component.translatable("ui.aerobatic_smoke"), leftPos + LIST_WIDTH + 10, 8, 0xFFAAAAAA);
+            AllConfigs.CommonConfig common = AllConfigs.common;
+            common.aerobaticSmokeR.set((int) smokeRSlider.getValue());
+            common.aerobaticSmokeG.set((int) smokeGSlider.getValue());
+            common.aerobaticSmokeB.set((int) smokeBSlider.getValue());
+            int dotX = leftPos + LIST_WIDTH + 120;
+            int dotY = 24;
+            int dotSize = 24;
+            int color = 0xFF000000
+                    | (common.aerobaticSmokeR.get() << 16)
+                    | (common.aerobaticSmokeG.get() << 8)
+                    | common.aerobaticSmokeB.get();
+            guiGraphics.fill(dotX, dotY, dotX + dotSize, dotY + dotSize, color);
+        }
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 

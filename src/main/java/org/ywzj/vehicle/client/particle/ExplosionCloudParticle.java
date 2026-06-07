@@ -31,6 +31,8 @@ public class ExplosionCloudParticle extends TextureSheetParticle {
 
     private final float startR, startG, startB;
     private final float endR,   endG,   endB;
+    private final float startAlpha, endAlpha;
+    private final float startSize, endSize;
 
     protected ExplosionCloudParticle(ClientLevel level, double x, double y, double z,
                                      double vx, double vy, double vz,
@@ -51,6 +53,10 @@ public class ExplosionCloudParticle extends TextureSheetParticle {
         this.endR   = option.getEndRed();
         this.endG   = option.getEndGreen();
         this.endB   = option.getEndBlue();
+        this.startAlpha = option.alpha();
+        this.endAlpha = option.endAlpha();
+        this.startSize = option.size();
+        this.endSize = option.endSize();
 
         this.rCol = this.startR;
         this.gCol = this.startG;
@@ -58,21 +64,24 @@ public class ExplosionCloudParticle extends TextureSheetParticle {
         this.setSpriteFromAge(spriteSet);
     }
 
+    private static float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
+    }
+
     @Override
     public void tick() {
         super.tick();
         if (!this.removed) {
             this.setSpriteFromAge(this.spriteSet);
-            // 随时间减速
             this.xd *= 0.88;
             this.zd *= 0.88;
-            // 随时间透明化
-            float progress = (float) Math.pow((double) this.age / this.lifetime, 0.8f);
-            this.alpha = 1.0f - progress;
-            // 起始色 → 结束色 线性插值（橙→黑）
-            this.rCol = this.startR + (this.endR - this.startR) * progress;
-            this.gCol = this.startG + (this.endG - this.startG) * progress;
-            this.bCol = this.startB + (this.endB - this.startB) * progress;
+            float t = (float) this.age / this.lifetime;
+            float progress = (float) (Math.log1p(t * 2.0) / Math.log1p(2.0));
+            this.alpha = lerp(this.startAlpha, this.endAlpha, progress);
+            this.rCol = lerp(this.startR, this.endR, progress);
+            this.gCol = lerp(this.startG, this.endG, progress);
+            this.bCol = lerp(this.startB, this.endB, progress);
+            this.quadSize = lerp(this.startSize, this.endSize, progress);
         }
     }
 

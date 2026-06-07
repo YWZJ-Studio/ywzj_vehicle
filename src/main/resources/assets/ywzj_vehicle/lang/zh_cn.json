@@ -49,6 +49,7 @@
   "key.ywzj_vehicle.smoke_grenade_launch.desc": "发射烟雾弹",
   "key.ywzj_vehicle.toggle_seeker.desc": "导引头开关",
   "key.ywzj_vehicle.toggle_weapon_bay.desc": "弹仓开关",
+  "key.ywzj_vehicle.toggle_aerobatic_smoke.desc": "特技飞行烟雾开关",
   "key.ywzj_vehicle.switch_view.desc": "切换视角",
   "key.ywzj_vehicle.switch_scope.desc": "切换开镜",
   "key.ywzj_vehicle.open_inventory.desc": "打开载具容器",
@@ -101,6 +102,7 @@
   "ui.being_locked": "敌跟踪",
   "ui.overload": "过载 %d",
   "ui.lost_control": "失控",
+  "ui.aerobatic_smoke": "特技飞行烟雾",
 
   "screen.no_description": "暂无介绍",
 

@@ -49,6 +49,7 @@
   "key.ywzj_vehicle.smoke_grenade_launch.desc": "Launch Smoke",
   "key.ywzj_vehicle.toggle_seeker.desc": "Toggle Seeker",
   "key.ywzj_vehicle.toggle_weapon_bay.desc": "Toggle Weapon Bay",
+  "key.ywzj_vehicle.toggle_aerobatic_smoke.desc": "Toggle Aerobatic Smoke",
   "key.ywzj_vehicle.switch_view.desc": "Switch View",
   "key.ywzj_vehicle.switch_scope.desc": "Toggle Scope",
   "key.ywzj_vehicle.open_inventory.desc": "Open Vehicle Inventory",
@@ -101,6 +102,7 @@
   "ui.being_locked": "BEING LOCKED",
   "ui.overload": "OVERLOAD %d",
   "ui.lost_control": "LOST CONTROL",
+  "ui.aerobatic_smoke": "Aerobatic Smoke",
 
   "screen.no_description": "No description",
 

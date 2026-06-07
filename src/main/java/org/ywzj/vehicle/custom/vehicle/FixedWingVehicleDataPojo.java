@@ -80,6 +80,9 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
         @SerializedName("afterburner_offsets")
         public List<AfterburnerOffset> afterburnerOffsets = new ArrayList<>();
 
+        @SerializedName("aerobatic_smoke_offsets")
+        public List<Vec3> aerobaticSmokeOffsets = new ArrayList<>();
+
     }
 
 }

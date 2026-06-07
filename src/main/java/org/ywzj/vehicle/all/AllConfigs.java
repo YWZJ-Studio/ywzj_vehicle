@@ -75,6 +75,9 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> hitIndicator;
         public final ForgeConfigSpec.ConfigValue<Boolean> checkTeamOnEnterVehicle;
         public final ForgeConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
+        public final ForgeConfigSpec.ConfigValue<Integer> aerobaticSmokeR;
+        public final ForgeConfigSpec.ConfigValue<Integer> aerobaticSmokeG;
+        public final ForgeConfigSpec.ConfigValue<Integer> aerobaticSmokeB;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
             allowMeleeDamageVehicle = builder.comment("近战是否能伤害载具")
@@ -97,6 +100,12 @@ public class AllConfigs {
                     .define("checkTeamOnEnterVehicle", true);
             figureBoxOnlyCaptureVehicle = builder.comment("手办盒是否只能收纳载具")
                     .define("figureBoxOnlyCaptureVehicle", false);
+            aerobaticSmokeR = builder.comment("特技飞行烟雾颜色 - 红")
+                    .defineInRange("aerobaticSmokeR", 255, 0, 255);
+            aerobaticSmokeG = builder.comment("特技飞行烟雾颜色 - 绿")
+                    .defineInRange("aerobaticSmokeG", 0, 0, 255);
+            aerobaticSmokeB = builder.comment("特技飞行烟雾颜色 - 蓝")
+                    .defineInRange("aerobaticSmokeB", 0, 0, 255);
         }
 
     }
