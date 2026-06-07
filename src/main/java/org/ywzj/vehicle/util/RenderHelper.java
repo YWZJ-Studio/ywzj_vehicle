@@ -144,31 +144,33 @@ public class RenderHelper {
         guiGraphics.vLine(right, top, bottom, color);
     }
 
-    public static void drawReticle(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {
+    public static void drawCrossDiagonal(GuiGraphics guiGraphics, int x, int y, int size, int thickness, int color) {
+        int gap = 3;
+        int len = size / 2;
         PoseStack poseStack = guiGraphics.pose();
+        // 中心点
         poseStack.pushPose();
         {
-            poseStack.scale(0.5f, 0.5f, 0.5f);
-            if (thickness < 1) thickness = 1;
-            int top = y;
-            int bottom = y + size;
-            // 竖线
-            int vHalf = thickness / 2;
-            int vLeft = x - vHalf;
-            int vRight = vLeft + thickness;
-            guiGraphics.fill(vLeft, top, vRight, bottom, color);
-            // 横线
-            int halfLen = Math.max(1, (int)(size * 0.45));
-            int segments = 4;
-            int gap = size / segments; // 每段间距
-            int hHalf = thickness / 2;
-            for (int i = 0; i <= segments; i++) {
-                int yPos = top + gap * i;
-                int left = x - halfLen;
-                int right = x + halfLen;
-                guiGraphics.fill(left + 1, yPos - hHalf, right, yPos + (thickness - hHalf), color);
-                halfLen -= 1;
-            }
+            poseStack.translate(x, y, 0);
+            guiGraphics.fill(x - 1, y - 1, x + 1, y + 1, color);
+        }
+        poseStack.popPose();
+        // \ 方向 (45°)
+        poseStack.pushPose();
+        {
+            poseStack.translate(x, y - 0.5, 0);
+            poseStack.rotateAround(Axis.ZP.rotationDegrees(45), 0, 0.5f, 0);
+            guiGraphics.fill(gap, -thickness / 2, gap + len, thickness - thickness / 2, color);
+            guiGraphics.fill(-gap - len, -thickness / 2, -gap, thickness - thickness / 2, color);
+        }
+        poseStack.popPose();
+        // / 方向 (-45°)
+        poseStack.pushPose();
+        {
+            poseStack.translate(x, y - 0.5, 0);
+            poseStack.rotateAround(Axis.ZP.rotationDegrees(-45), 0, 0.5f, 0);
+            guiGraphics.fill(gap, -thickness / 2, gap + len, thickness - thickness / 2, color);
+            guiGraphics.fill(-gap - len, -thickness / 2, -gap, thickness - thickness / 2, color);
         }
         poseStack.popPose();
     }

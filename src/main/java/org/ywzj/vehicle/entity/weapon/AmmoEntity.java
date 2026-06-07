@@ -179,8 +179,12 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
         name = additionalData.readComponent();
-        additionalData.readInt();
+        Entity entity = this.level().getEntity(additionalData.readInt());
+        if (entity != null) {
+            this.setOwner(entity);
+        }
         weaponId = additionalData.readResourceLocation();
+        triggered = additionalData.readBoolean();
         var displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
         if (displayOptional.isPresent()) {
             BaseDisplay display = displayOptional.get();

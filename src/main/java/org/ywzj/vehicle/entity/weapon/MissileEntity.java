@@ -24,7 +24,9 @@ import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
+import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
@@ -62,23 +64,12 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public int ownerId;
     private WeaponUnit weaponUnit;
     private VehicleSound sound;
+    private Vec3 particlePosO;
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData data, WeaponUnit weaponUnit) {
         super(entityType, level, data.getWeaponId());
-        this.seekerFov = data.getSeekerFov();
-        this.mass = data.getMass();
-        this.thrust = data.getThrust();
-        this.motorBurnTime = data.getMotorBurnTime();
-        this.ignitionDelayTick = data.getIgnitionDelayTick();
-        this.dragCoefficient = data.getDragCoefficient();
-        this.maxG = data.getMaxG();
-        this.referenceSpeed = data.getReferenceSpeed();
-        this.guidance = data.getGuidance();
-        this.homingMode = data.getHomingMode();
+        initMissile(data);
         this.weaponUnit = weaponUnit;
-        this.damage = data.getDamage();
-        this.explosion = data.getExplosion();
-        this.life = data.getLife();
         this.keepChunkLoaded = true;
     }
 
@@ -96,6 +87,38 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.setPos(spawnPos);
         this.setRot(ammoYRot, ammoXRot);
         this.setOwner(shooter);
+    }
+
+    @Override
+    public void writeSpawnData(FriendlyByteBuf buffer) {
+        super.writeSpawnData(buffer);
+        buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
+    }
+
+    @Override
+    public void readSpawnData(FriendlyByteBuf additionalData) {
+        super.readSpawnData(additionalData);
+        ownerId = additionalData.readInt();
+        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(getWeaponId()).orElse(null);
+        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleMissileWeaponData data) {
+            initMissile(data);
+        }
+    }
+
+    private void initMissile(VehicleMissileWeaponData data) {
+        this.seekerFov = data.getSeekerFov();
+        this.mass = data.getMass();
+        this.thrust = data.getThrust();
+        this.motorBurnTime = data.getMotorBurnTime();
+        this.ignitionDelayTick = data.getIgnitionDelayTick();
+        this.dragCoefficient = data.getDragCoefficient();
+        this.maxG = data.getMaxG();
+        this.referenceSpeed = data.getReferenceSpeed();
+        this.guidance = data.getGuidance();
+        this.homingMode = data.getHomingMode();
+        this.damage = data.getDamage();
+        this.explosion = data.getExplosion();
+        this.life = data.getLife();
     }
 
     @Override
@@ -304,12 +327,23 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (tickCount < ignitionDelayTick) {
             return;
         }
-        Vec3 pos = this.position().add(this.getLookAngle().scale(-3));
-        level().addParticle(
-                ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
-                pos.x, pos.y, pos.z,
-                0.0D, 0.0D, 0.0D
-        );
+        if (tickCount <= motorBurnTime) {
+            Vec3 pos = this.position().add(this.getLookAngle().scale(-3));
+            Vec3 posO = particlePosO == null ? pos : particlePosO;
+            Vec3 step = pos.subtract(posO);
+            double dist = step.length();
+            int segments = (int) (dist / 0.5);
+            Vec3 dir = step.normalize();
+            for (int i = 0; i <= segments; i++) {
+                Vec3 particlePos = posO.add(dir.scale(i * 0.5));
+                level().addParticle(
+                        ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
+                        particlePos.x, particlePos.y, particlePos.z,
+                        0.0D, 0.0D, 0.0D
+                );
+            }
+            particlePosO = pos;
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -335,18 +369,6 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (data.contains("ownerId")) {
             ownerId = data.getInt("ownerId");
         }
-    }
-
-    @Override
-    public void writeSpawnData(FriendlyByteBuf buffer) {
-        super.writeSpawnData(buffer);
-        buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
-    }
-
-    @Override
-    public void readSpawnData(FriendlyByteBuf additionalData) {
-        super.readSpawnData(additionalData);
-        ownerId = additionalData.readInt();
     }
 
     private List<Entity> scanTargets() {

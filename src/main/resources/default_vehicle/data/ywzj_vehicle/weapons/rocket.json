@@ -3,7 +3,8 @@
   "name": "rocket",
   "damage": 100,
   "headshot_multiplier": 1.5,
-  "shoot_interval": 400,
+  "inaccuracy": 0.05,
+  "shoot_interval": 200,
   "max_capacity": 32,
   "reload": {
     "time": 100,
@@ -12,7 +13,7 @@
   "explosion": {
     "explode": true,
     "damage": 100,
-    "radius": 6,
+    "radius": 3,
     "destroy_block": true
   }
 }

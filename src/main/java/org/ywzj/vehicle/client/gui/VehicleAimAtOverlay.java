@@ -122,15 +122,16 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                             }
                             weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                                 if (vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
-                                    drawCross(guiGraphics, 0, 0, 20, Color.GREEN);
+                                    WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
+                                    if (crosshairStyle != null) {
+                                        drawCrosshair(guiGraphics, Color.GREEN, poseStack, crosshairStyle);
+                                    } else {
+                                        drawCross(guiGraphics, 0, 0, 16, Color.GREEN);
+                                    }
                                 } else {
                                     WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
                                     if (crosshairStyle != null) {
-                                        switch (crosshairStyle) {
-                                            case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
-                                            case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
-                                            case RETICLE -> drawReticle(guiGraphics, 0 ,0, 15, 1, color);
-                                        }
+                                        drawCrosshair(guiGraphics, color, poseStack, crosshairStyle);
                                     }
                                 }
                             });
@@ -190,6 +191,14 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
     private static @NotNull Vec3 getHitScreenPos(Vec3 start, float xRot, float yRot, Player player) {
         Vec3 end = start.add(VectorUtil.rotToVec(xRot, yRot).normalize().scale(128));
         return VectorUtil.worldToScreen(VectorUtil.hitPosition(player, start, end));
+    }
+
+    private void drawCrosshair(GuiGraphics guiGraphics, int color, PoseStack poseStack, WeaponUnitData.CrosshairStyle crosshairStyle) {
+        switch (crosshairStyle) {
+            case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
+            case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
+            case CROSS -> drawCrossDiagonal(guiGraphics, 0, 0, 8, 1, color);
+        }
     }
 
     public static double getScreenAimX() {
