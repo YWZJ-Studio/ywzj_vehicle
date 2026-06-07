@@ -212,7 +212,7 @@ public class VehicleDisplayToolScreen extends Screen {
             scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(deltaY), 0, filteredVariableDisplayIds.size() - VISIBLE_ITEMS);
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, deltaY);
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override

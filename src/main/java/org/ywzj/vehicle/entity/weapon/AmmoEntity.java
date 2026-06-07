@@ -68,7 +68,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
     }
 
     @Override
-    protected void defineSynchedData() {}
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
 
     @Override
     public void tick() {
