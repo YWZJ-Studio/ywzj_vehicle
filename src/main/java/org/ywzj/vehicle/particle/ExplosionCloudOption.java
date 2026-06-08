@@ -8,35 +8,98 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import org.ywzj.vehicle.all.AllParticleTypes;
 
-public record ExplosionCloudOption(int color, int endColor, int life, float size, float gravity) implements ParticleOptions {
+public record ExplosionCloudOption(int color, int endColor, float alpha, float endAlpha, int life, float size, float endSize, float gravity) implements ParticleOptions {
 
     public static final Codec<ExplosionCloudOption> CODEC = RecordCodecBuilder.create(builder ->
             builder.group(
                     Codec.INT.fieldOf("color").forGetter(ExplosionCloudOption::color),
                     Codec.INT.fieldOf("endColor").forGetter(ExplosionCloudOption::endColor),
+                    Codec.FLOAT.fieldOf("alpha").forGetter(ExplosionCloudOption::alpha),
+                    Codec.FLOAT.fieldOf("endAlpha").forGetter(ExplosionCloudOption::endAlpha),
                     Codec.INT.fieldOf("life").forGetter(ExplosionCloudOption::life),
                     Codec.FLOAT.fieldOf("size").forGetter(ExplosionCloudOption::size),
+                    Codec.FLOAT.fieldOf("endSize").forGetter(ExplosionCloudOption::endSize),
                     Codec.FLOAT.fieldOf("gravity").forGetter(ExplosionCloudOption::gravity)
             ).apply(builder, ExplosionCloudOption::new));
 
     public static final StreamCodec<FriendlyByteBuf, ExplosionCloudOption> STREAM_CODEC = StreamCodec.of(
             (buf, option) -> option.writeToNetwork(buf),
-            buf -> new ExplosionCloudOption(buf.readInt(), buf.readInt(), buf.readInt(), buf.readFloat(), buf.readFloat())
+            buf -> new ExplosionCloudOption(buf.readInt(), buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readFloat())
     );
 
-    /** 单色构造器（endColor 默认纯黑，即渐变到黑色） */
+    /** 单色构造器（endColor 默认纯黑，endSize 默认同 size，alpha 默认1，endAlpha 默认0） */
     public ExplosionCloudOption(float r, float g, float b, int life, float size, float gravity) {
         this(Math.round(r * 255) << 16 | Math.round(g * 255) << 8 | Math.round(b * 255),
-             0x000000, life, size, gravity);
+             0x000000, 1f, 0f, life, size, size, gravity);
     }
 
-    /** 双色构造器，支持自定义起始/结束颜色 */
+    /** 单色构造器，指定初始alpha */
+    public ExplosionCloudOption(float r, float g, float b, float alpha, int life, float size, float gravity) {
+        this(Math.round(r * 255) << 16 | Math.round(g * 255) << 8 | Math.round(b * 255),
+             0x000000, alpha, 0f, life, size, size, gravity);
+    }
+
+    /** 单色构造器，指定初始alpha与最终大小 */
+    public ExplosionCloudOption(float r, float g, float b, float alpha, int life, float size, float endSize, float gravity) {
+        this(Math.round(r * 255) << 16 | Math.round(g * 255) << 8 | Math.round(b * 255),
+             0x000000, alpha, 0f, life, size, endSize, gravity);
+    }
+
+    /** 单色构造器，指定初始alpha与最终alpha */
+    public ExplosionCloudOption(float r, float g, float b, float alpha, float endAlpha, int life, float size, float gravity) {
+        this(Math.round(r * 255) << 16 | Math.round(g * 255) << 8 | Math.round(b * 255),
+             0x000000, alpha, endAlpha, life, size, size, gravity);
+    }
+
+    /** 单色构造器，指定初始alpha、最终alpha与最终大小 */
+    public ExplosionCloudOption(float r, float g, float b, float alpha, float endAlpha, int life, float size, float endSize, float gravity) {
+        this(Math.round(r * 255) << 16 | Math.round(g * 255) << 8 | Math.round(b * 255),
+             0x000000, alpha, endAlpha, life, size, endSize, gravity);
+    }
+
+    /** 双色构造器，支持自定义起始/结束颜色（endSize 默认同 size，alpha 默认1，endAlpha 默认0） */
     public ExplosionCloudOption(float r, float g, float b,
                                 float er, float eg, float eb,
                                 int life, float size, float gravity) {
         this(Math.round(r  * 255) << 16 | Math.round(g  * 255) << 8 | Math.round(b  * 255),
              Math.round(er * 255) << 16 | Math.round(eg * 255) << 8 | Math.round(eb * 255),
-             life, size, gravity);
+             1f, 0f, life, size, size, gravity);
+    }
+
+    /** 双色构造器，指定初始alpha */
+    public ExplosionCloudOption(float r, float g, float b,
+                                float er, float eg, float eb,
+                                float alpha, int life, float size, float gravity) {
+        this(Math.round(r  * 255) << 16 | Math.round(g  * 255) << 8 | Math.round(b  * 255),
+             Math.round(er * 255) << 16 | Math.round(eg * 255) << 8 | Math.round(eb * 255),
+             alpha, 0f, life, size, size, gravity);
+    }
+
+    /** 双色构造器，指定初始alpha与最终大小 */
+    public ExplosionCloudOption(float r, float g, float b,
+                                float er, float eg, float eb,
+                                float alpha, int life, float size, float endSize, float gravity) {
+        this(Math.round(r  * 255) << 16 | Math.round(g  * 255) << 8 | Math.round(b  * 255),
+             Math.round(er * 255) << 16 | Math.round(eg * 255) << 8 | Math.round(eb * 255),
+             alpha, 0f, life, size, endSize, gravity);
+    }
+
+    /** 双色构造器，指定初始alpha与最终alpha */
+    public ExplosionCloudOption(float r, float g, float b,
+                                float er, float eg, float eb,
+                                float alpha, float endAlpha, int life, float size, float gravity) {
+        this(Math.round(r  * 255) << 16 | Math.round(g  * 255) << 8 | Math.round(b  * 255),
+             Math.round(er * 255) << 16 | Math.round(eg * 255) << 8 | Math.round(eb * 255),
+             alpha, endAlpha, life, size, size, gravity);
+    }
+
+    /** 双色构造器，指定初始alpha、最终alpha与最终大小 */
+    public ExplosionCloudOption(float r, float g, float b,
+                                float er, float eg, float eb,
+                                float alpha, float endAlpha, int life, float size, float endSize, float gravity) {
+        this(Math.round(r  * 255) << 16 | Math.round(g  * 255) << 8 | Math.round(b  * 255),
+             Math.round(er * 255) << 16 | Math.round(eg * 255) << 8 | Math.round(eb * 255),
+             alpha, endAlpha, life, size, endSize, gravity);
     }
 
     // ── 起始色分量 ────────────────────────────────────────────
@@ -57,8 +120,11 @@ public record ExplosionCloudOption(int color, int endColor, int life, float size
     public void writeToNetwork(FriendlyByteBuf buffer) {
         buffer.writeInt(this.color);
         buffer.writeInt(this.endColor);
+        buffer.writeFloat(this.alpha);
+        buffer.writeFloat(this.endAlpha);
         buffer.writeInt(this.life);
         buffer.writeFloat(this.size);
+        buffer.writeFloat(this.endSize);
         buffer.writeFloat(this.gravity);
     }
 

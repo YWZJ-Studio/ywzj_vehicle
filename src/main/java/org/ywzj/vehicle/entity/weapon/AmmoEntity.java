@@ -175,6 +175,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         name = Component.translatable(additionalData.readUtf());
         additionalData.readInt();
         weaponId = additionalData.readResourceLocation();
+        triggered = additionalData.readBoolean();
         var displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
         if (displayOptional.isPresent()) {
             BaseDisplay display = displayOptional.get();

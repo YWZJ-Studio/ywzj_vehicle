@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
 import net.minecraft.world.entity.LivingEntity;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
@@ -26,10 +27,9 @@ public class VehicleCannon extends AbstractVehicleWeapon<VehicleCannonWeaponData
         var data = this.getData();
 
         for (AimContext aimContext : aimContexts) {
-            BulletEntity bulletEntity = new BulletEntity(vehicle.level(), vehicle, shooter, aimContext.from, getData().getExplosion(), data.getWeaponId());
-            bulletEntity.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, data.getVelocity(), data.getInaccuracy());
-            bulletEntity.setDamage(data.getDamage());
-            bulletEntity.headShot = data.getHeadshotMultiplier();
+            BulletEntity bulletEntity = new BulletEntity(AllEntities.BULLET.get(), vehicle.level(), data);
+            bulletEntity.shoot(vehicle, this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y,
+                   data.getVelocity(), data.getInaccuracy(), this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(bulletEntity);
             vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }

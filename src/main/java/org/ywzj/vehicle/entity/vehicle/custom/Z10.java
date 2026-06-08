@@ -121,7 +121,7 @@ public class Z10 extends RotaryWingVehicle {
                 new Vec3(0, 0.6d, 1.2d),
                 new Vec3(0, 2d, 0d),
                 null);
-        rocket.crosshairStyle = WeaponUnitData.CrosshairStyle.RETICLE;
+        rocket.crosshairStyle = WeaponUnitData.CrosshairStyle.CROSS;
         rocket.setFiringMode(WeaponUnitData.FiringMode.RIPPLE);
         rocket.getBolts().clear();
         rocket.getBolts().add(new Bolt(new Vec3(1.5d, 0, 1d), 0.1f, 0, 0));

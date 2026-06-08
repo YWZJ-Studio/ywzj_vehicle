@@ -41,6 +41,8 @@ public class AllSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_TURN_SERVO_V = registerSoundEvent("turret_turn_servo_v", YwzjVehicle.modLocation("turret_turn_servo_v"));
     public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_TURN_SERVO_H = registerSoundEvent("turret_turn_servo_h", YwzjVehicle.modLocation("turret_turn_servo_h"));
     public static final DeferredHolder<SoundEvent, SoundEvent> TIRE_SQUEAL = registerSoundEvent("tire_squeal", YwzjVehicle.modLocation("tire_squeal"));
+    public static final DeferredHolder<SoundEvent, SoundEvent> AEROBATICS_SMOKE_START = registerSoundEvent("aerobatics_smoke_start", YwzjVehicle.modLocation("aerobatics_smoke_start"));
+    public static final DeferredHolder<SoundEvent, SoundEvent> AEROBATICS_SMOKE_LOOP = registerSoundEvent("aerobatics_smoke_loop", YwzjVehicle.modLocation("aerobatics_smoke_loop"));
 
     public static final DeferredHolder<SoundEvent, SoundEvent> LAV150_ENGINE_START = registerSoundEvent("lav150_engine_start", YwzjVehicle.modLocation("lav150_engine_start"));
     public static final DeferredHolder<SoundEvent, SoundEvent> LAV150_ENGINE_IDLE = registerSoundEvent("lav150_engine_idle", YwzjVehicle.modLocation("lav150_engine_idle"));

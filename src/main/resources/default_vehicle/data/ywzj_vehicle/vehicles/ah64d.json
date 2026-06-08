@@ -109,7 +109,8 @@
       "type": "ywzj_vehicle:weapon",
       "structure_bone": "rocket",
       "is_seat": false,
-      "crosshair_style": "reticle",
+      "fire_control_sensor_type": "ccip",
+      "crosshair_style": "cross",
       "rot_info": {
         "x_rot_speed": 0,
         "y_rot_speed": 0

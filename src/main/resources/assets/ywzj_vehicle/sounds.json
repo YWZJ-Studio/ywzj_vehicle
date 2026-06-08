@@ -65,5 +65,17 @@
   "tire_squeal": {
     "sounds": ["ywzj_vehicle:misc/tire_squeal"],
     "subtitle": "ywzj_vehicle.sounds.tire_squeal"
+  },
+  "aerobatics_smoke_start": {
+    "sounds": [
+      "ywzj_vehicle:misc/aerobatics_smoke_start_01",
+      "ywzj_vehicle:misc/aerobatics_smoke_start_02",
+      "ywzj_vehicle:misc/aerobatics_smoke_start_03"
+    ],
+    "subtitle": "ywzj_vehicle.sounds.aerobatics_smoke_start"
+  },
+  "aerobatics_smoke_loop": {
+    "sounds": ["ywzj_vehicle:misc/aerobatics_smoke_loop"],
+    "subtitle": "ywzj_vehicle.sounds.aerobatics_smoke_loop"
   }
 }

@@ -43,6 +43,7 @@ public class AllKeys {
     public static final KeyMapping SMOKE_GRENADE_LAUNCH = key("smoke_grenade_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H);
     public static final KeyMapping TOGGLE_SEEKER = key("toggle_seeker", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
     public static final KeyMapping TOGGLE_WEAPON_BAY = key("toggle_weapon_bay", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U);
+    public static final KeyMapping TOGGLE_AEROBATIC_SMOKE = key("toggle_aerobatic_smoke", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_L);
 
     // 视角与交互类
     public static final KeyMapping SWITCH_VIEW = key("switch_view", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V);
@@ -60,7 +61,7 @@ public class AllKeys {
             MAIN_WEAPON_SHOOT, SECONDARY_WEAPON_SHOOT, SECONDARY_WEAPON_SWITCH, MULTI_WEAPON_SWITCH,
             MAGNIFICATION_CHANGE, FIRE_CONTROL_LOCK, DECOY_FLARE_LAUNCH, SMOKE_GRENADE_LAUNCH, TOGGLE_SEEKER, TOGGLE_WEAPON_BAY,
             SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
-            CHANGE_SEAT
+            CHANGE_SEAT, TOGGLE_AEROBATIC_SMOKE
     };
 
     private static KeyMapping key(String name, InputConstants.Type type, int key) {

@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -29,6 +30,7 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.weapon.VehicleAerialBomb;
+import org.ywzj.vehicle.vehicle.weapon.VehicleRocket;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -188,12 +190,20 @@ public class LocalVehiclePlayer {
                     currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
                 }
                 weaponHitPosO = weaponHitPos;
-                if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP
-                        && weaponUnit.getCurrentWeapon().isPresent()
-                        && weaponUnit.getCurrentWeapon().get() instanceof VehicleAerialBomb bomb) {
-                    Vec3 releasePos = weaponUnit.worldPivotPosition().add(0, 0, 0);
-                    float dragCoefficient = bomb.getData().getDragCoefficient();
-                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
+                if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP && weaponUnit.getCurrentWeapon().isPresent()) {
+                    if (weaponUnit.getCurrentWeapon().get() instanceof VehicleAerialBomb bomb) {
+                        Vec3 releasePos = weaponUnit.worldPivotPosition().add(0, 0, 0);
+                        float dragCoefficient = bomb.getData().getDragCoefficient();
+                        weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
+                    } else if (weaponUnit.getCurrentWeapon().get() instanceof VehicleRocket rocket) {
+                        Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
+                        var data = rocket.getData();
+                        Vec2 rot = currentWeaponUnit.worldRot();
+                        Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
+                        Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                        weaponHitPos = CcipUtil.computeCcipImpactRocket(vehicle.level(), releasePos, startVelocity,
+                                data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
+                    }
                 } else {
                     weaponHitPos = currentWeaponUnit.aimHitPosition();
                 }
@@ -360,6 +370,12 @@ public class LocalVehiclePlayer {
             if (player.getXRot() > 80 && pXRot > 0) {
                 pXRot = 0;
             } else if (player.getXRot() < -80 && pXRot < 0) {
+                pXRot = 0;
+            }
+        } else if (viewType == ViewType.OPERATOR) {
+            if (playerLocalXRot >= 60 && pXRot > 0) {
+                pXRot = 0;
+            } else if (playerLocalXRot <= -60 && pXRot < 0) {
                 pXRot = 0;
             }
         }

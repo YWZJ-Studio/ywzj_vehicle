@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllDamageTypes;
+import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -28,6 +29,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.particle.ExplosionCloudOption;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
@@ -47,6 +49,10 @@ public class FixedWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> YAW_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Boolean> AEROBATIC_SMOKE_ON = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Integer> AEROBATIC_SMOKE_R = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> AEROBATIC_SMOKE_G = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> AEROBATIC_SMOKE_B = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.INT);
     public VehicleCubeOBB aerodynamicCubeOBB;
     public float thrust = 0.02f;
     public float thrustK = 1.5f;
@@ -68,6 +74,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public float yTurnRate = 3;
     public float zTurnRate = 8;
     public List<Vec3> vortexOffsets;
+    public List<Vec3> aerobaticSmokeOffsets;
     public List<AfterburnerUnit> afterburnerUnits;
     public float throttleLevelO;
     public float throttleLevel;
@@ -84,6 +91,7 @@ public class FixedWingVehicle extends AbstractVehicle
     private VehicleSound engineRunSoundInstance;
     private VehicleSound engineThrustSoundInstance;
     private VehicleSound passbySoundInstance;
+    private VehicleSound aerobaticSmokeSoundInstance;
     private IAnimationInstance<FixedWingVehicleContext> animationInstance;
 
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
@@ -111,6 +119,10 @@ public class FixedWingVehicle extends AbstractVehicle
         builder.define(PITCH_INPUT, 0f);
         builder.define(YAW_INPUT, 0f);
         builder.define(ROLL_INPUT, 0f);
+        builder.define(AEROBATIC_SMOKE_ON, false);
+        builder.define(AEROBATIC_SMOKE_R, 179);
+        builder.define(AEROBATIC_SMOKE_G, 179);
+        builder.define(AEROBATIC_SMOKE_B, 179);
     }
 
     @Override
@@ -166,6 +178,15 @@ public class FixedWingVehicle extends AbstractVehicle
                 player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
             } else if (hasPower()) {
                 landingGear.setOn(!isLandingGearUp());
+            }
+        }
+        if (message.toggleAerobaticSmoke) {
+            setAerobaticSmokeOn(!isAerobaticSmokeOn());
+            setAerobaticSmokeR(message.aerobaticSmokeR);
+            setAerobaticSmokeG(message.aerobaticSmokeG);
+            setAerobaticSmokeB(message.aerobaticSmokeB);
+            if (isAerobaticSmokeOn()) {
+                playVehicleSound(AllSounds.AEROBATICS_SMOKE_START.get(), true);
             }
         }
         super.onClientVehicleAction(message, player);
@@ -303,6 +324,13 @@ public class FixedWingVehicle extends AbstractVehicle
                     passbySoundInstance = null;
                 }
             }
+        }
+        if (isAerobaticSmokeOn() && aerobaticSmokeSoundInstance == null) {
+            aerobaticSmokeSoundInstance = new VehicleSound(AllSounds.AEROBATICS_SMOKE_LOOP.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
+            aerobaticSmokeSoundInstance.play();
+        } else if (!isAerobaticSmokeOn() && aerobaticSmokeSoundInstance != null) {
+            aerobaticSmokeSoundInstance.stop();
+            aerobaticSmokeSoundInstance = null;
         }
     }
 
@@ -534,6 +562,30 @@ public class FixedWingVehicle extends AbstractVehicle
                 engineParticleTick += 1;
             }
         }
+        // 特技拉烟
+        if (level().isClientSide() && isAerobaticSmokeOn() && aerobaticSmokeOffsets != null) {
+            Vec3 vehiclePos = position();
+            Vec3 vehiclePosO = new Vec3(xo, yo, zo);
+            Vec3 step = vehiclePos.subtract(vehiclePosO);
+            double dist = step.length();
+            int segments = Math.max((int) (dist / 0.5f), 1);
+            Vec3 dir = step.normalize();
+            float r = getAerobaticSmokeR() / 255f;
+            float g = getAerobaticSmokeG() / 255f;
+            float b = getAerobaticSmokeB() / 255f;
+            Level level = level();
+            for (Vec3 offset : aerobaticSmokeOffsets) {
+                for (int i = 0; i <= segments; i++) {
+                    Vec3 interpolatedPos = vehiclePos.add(offset);
+                    Vec3 worldPos = relativeRotPos(interpolatedPos, false).subtract(dir.scale(i * 0.5f));
+                    level.addParticle(new ExplosionCloudOption(r, g, b, r, g, b,
+                                    0.7f, 0f, 1200,
+                                    0.7f, 5f, 0.005f), true,
+                            worldPos.x, worldPos.y, worldPos.z,
+                            0, 0, 0);
+                }
+            }
+        }
     }
 
     public float getThrottleLevel() {
@@ -575,6 +627,38 @@ public class FixedWingVehicle extends AbstractVehicle
     public boolean isLandingGearUp() {
         var landingGearUnit = this.getLandingGearUnit();
         return landingGearUnit != null && landingGearUnit.isOn();
+    }
+
+    public boolean isAerobaticSmokeOn() {
+        return this.entityData.get(AEROBATIC_SMOKE_ON);
+    }
+
+    public void setAerobaticSmokeOn(boolean value) {
+        this.entityData.set(AEROBATIC_SMOKE_ON, value);
+    }
+
+    public int getAerobaticSmokeR() {
+        return this.entityData.get(AEROBATIC_SMOKE_R);
+    }
+
+    public void setAerobaticSmokeR(int value) {
+        this.entityData.set(AEROBATIC_SMOKE_R, value);
+    }
+
+    public int getAerobaticSmokeG() {
+        return this.entityData.get(AEROBATIC_SMOKE_G);
+    }
+
+    public void setAerobaticSmokeG(int value) {
+        this.entityData.set(AEROBATIC_SMOKE_G, value);
+    }
+
+    public int getAerobaticSmokeB() {
+        return this.entityData.get(AEROBATIC_SMOKE_B);
+    }
+
+    public void setAerobaticSmokeB(int value) {
+        this.entityData.set(AEROBATIC_SMOKE_B, value);
     }
 
 }

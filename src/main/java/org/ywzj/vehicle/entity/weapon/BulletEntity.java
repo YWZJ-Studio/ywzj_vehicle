@@ -2,58 +2,93 @@ package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2d;
-import org.joml.Vector3d;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.vehicle.pojo.Explosion;
+import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.PhysicsEngine;
 
 /**
  * 动能武器打出的子弹实体。
  */
 public class BulletEntity extends AmmoEntity {
 
-    private ResourceLocation weaponId;
-    private int life = 200;
-    private float speed = 1;
-    private float gravity = 0;
     private float friction = 0.01F;
-    // 曳光
     private Vec3 startPos;
     private float caliber = 7.62f;
     private float tracerR = 1f;
     private float tracerG = 1f;
     private float tracerB = 1f;
 
+    public BulletEntity(EntityType<? extends Projectile> entityType, Level level, VehicleCannonWeaponData data) {
+        super(entityType, level, data.getWeaponId());
+        initBullet(data);
+    }
+
     public BulletEntity(EntityType<? extends Projectile> type, Level worldIn) {
         super(type, worldIn, null);
     }
 
-    public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, Vec3 startPos, Explosion explosion, ResourceLocation weaponId) {
-        this(level, vehicle, shooter, startPos.x, startPos.y, startPos.z, explosion);
-        this.weaponId = weaponId;
+    public void shoot(AbstractVehicle vehicle, Component name, Vec3 spawnPos, float ammoXRot, float ammoYRot, float velocity, float inaccuracy, LivingEntity shooter) {
+        this.vehicle = vehicle;
+        this.name = name;
+        this.startPos = spawnPos;
+        Vec3 direction = VectorUtil.rotToVec(ammoXRot, ammoYRot);
+        direction = direction.add(this.random.triangle(0.0D, 0.0172275D * inaccuracy),
+                this.random.triangle(0.0D, 0.0172275D * inaccuracy),
+                this.random.triangle(0.0D, 0.0172275D * inaccuracy))
+                .scale(velocity);
+        this.setDeltaMovement(direction);
+        this.setPos(spawnPos);
+        this.setRot(ammoYRot, ammoXRot);
+        this.yRotO = this.getYRot();
+        this.xRotO = this.getXRot();
+        this.setOwner(shooter);
     }
 
-    public BulletEntity(Level level, AbstractVehicle vehicle, LivingEntity shooter, double x, double y, double z, Explosion explosion) {
-        this(AllEntities.BULLET.get(), level);
-        this.vehicle = vehicle;
-        this.setOwner(shooter);
-        this.explosion = explosion;
-        this.setPos(x, y, z);
+    @Override
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
+        super.writeSpawnData(buffer);
+        buffer.writeFloat(getXRot());
+        buffer.writeFloat(getYRot());
+        buffer.writeDouble(getDeltaMovement().x);
+        buffer.writeDouble(getDeltaMovement().y);
+        buffer.writeDouble(getDeltaMovement().z);
+    }
+
+    @Override
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
+        super.readSpawnData(additionalData);
+        setXRot(additionalData.readFloat());
+        setYRot(additionalData.readFloat());
+        setDeltaMovement(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble());
         this.startPos = this.position();
+        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(getWeaponId()).orElse(null);
+        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
+            initBullet(data);
+        }
+    }
+
+    private void initBullet(VehicleCannonWeaponData data) {
+        this.damage = data.getDamage();
+        this.headShot = data.getHeadshotMultiplier();
+        this.explosion = data.getExplosion();
+        this.life = data.getLife();
+        this.friction = data.getFriction();
+        this.caliber = data.getCaliber();
+        this.tracerR = data.getTracerR();
+        this.tracerG = data.getTracerG();
+        this.tracerB = data.getTracerB();
     }
 
     @Override
@@ -61,15 +96,23 @@ public class BulletEntity extends AmmoEntity {
         super.tick();
         if (!this.level().isClientSide()) {
             tickHit();
+            life -= 1;
+            if (life < 0) {
+                this.discard();
+            }
         }
+        tickMove();
+    }
+
+    public void tickMove() {
         // 子弹模型的旋转与抛物线
         Vec3 movement = this.getDeltaMovement();
         double x = movement.x;
         double y = movement.y;
         double z = movement.z;
-        double distance = movement.horizontalDistance();
-        this.setYRot((float) Math.toDegrees(Mth.atan2(x, z)));
-        this.setXRot((float) Math.toDegrees(Mth.atan2(y, distance)));
+        Vec2 rot = VectorUtil.vecToRot(movement);
+        this.setYRot(rot.y);
+        this.setXRot(rot.x);
         // 子弹初始的朝向设置
         if (this.xRotO == 0.0F && this.yRotO == 0.0F) {
             this.yRotO = this.getYRot();
@@ -84,7 +127,7 @@ public class BulletEntity extends AmmoEntity {
         double nextPosZ = this.getZ() + z;
         this.setPos(nextPosX, nextPosY, nextPosZ);
         float friction = this.friction;
-        float gravity = this.gravity;
+        float gravity = PhysicsEngine.G;
         // 子弹入水后的调整
         if (this.isInWater()) {
             for (int i = 0; i < 4; i++) {
@@ -97,79 +140,10 @@ public class BulletEntity extends AmmoEntity {
         // 重力与阻力更新速度状态
         this.setDeltaMovement(this.getDeltaMovement().scale(1 - friction));
         this.setDeltaMovement(this.getDeltaMovement().add(0, -gravity, 0));
-        // 子弹生命结束
-        if (this.tickCount >= this.life - 1) {
-            this.discard();
-        }
-    }
-
-    public void shoot(double pitch, double yaw, float pVelocity, Vector2d vector2d) {
-        Vector3d left = new Vector3d(vector2d.x, vector2d.y, 8);
-
-        left.rotateX(pitch * Mth.DEG_TO_RAD);
-        left.rotateY(-yaw * Mth.DEG_TO_RAD);
-
-        Vec3 vec3 = new Vec3(left.x, left.y, left.z).normalize().scale(pVelocity);
-
-        this.setDeltaMovement(vec3.x, vec3.y, vec3.z);
-        double d0 = vec3.horizontalDistance();
-        this.setYRot((float)(Mth.atan2(vec3.x, vec3.z) * (double)(180F / (float)Math.PI)));
-        this.setXRot((float)(Mth.atan2(vec3.y, d0) * (double)(180F / (float)Math.PI)));
-        this.yRotO = this.getYRot();
-        this.xRotO = this.getXRot();
-    }
-
-    @Override
-    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
-        buffer.writeFloat(getXRot());
-        buffer.writeFloat(getYRot());
-        buffer.writeDouble(getDeltaMovement().x);
-        buffer.writeDouble(getDeltaMovement().y);
-        buffer.writeDouble(getDeltaMovement().z);
-        Entity entity = getOwner();
-        buffer.writeInt(entity != null ? entity.getId() : 0);
-        buffer.writeFloat(this.gravity);
-        buffer.writeInt(this.life);
-        buffer.writeFloat(this.speed);
-        buffer.writeFloat(this.friction);
-        buffer.writeResourceLocation(this.weaponId);
-        initBullet();
-    }
-
-    @Override
-    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
-        setXRot(additionalData.readFloat());
-        setYRot(additionalData.readFloat());
-        setDeltaMovement(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble());
-        Entity entity = this.level().getEntity(additionalData.readInt());
-        if (entity != null) {
-            this.setOwner(entity);
-        }
-        this.startPos = this.position();
-        this.gravity = additionalData.readFloat();
-        this.life = additionalData.readInt();
-        this.speed = additionalData.readFloat();
-        this.friction = additionalData.readFloat();
-        this.weaponId = additionalData.readResourceLocation();
-        initBullet();
-    }
-
-    private void initBullet() {
-        VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(this.weaponId).orElse(null);
-        if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleCannonWeaponData data) {
-            this.caliber = data.getCaliber();
-            this.tracerR = data.getTracerR();
-            this.tracerG = data.getTracerG();
-            this.tracerB = data.getTracerB();
-        }
     }
 
     public Vec3 getStartPos() {
         return startPos;
-    }
-
-    public RandomSource getRandom() {
-        return this.random;
     }
 
     public void setDamage(float damage) {

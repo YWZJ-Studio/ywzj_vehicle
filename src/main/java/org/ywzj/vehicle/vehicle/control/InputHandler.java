@@ -11,6 +11,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
+import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -120,6 +122,10 @@ public class InputHandler {
                 } else if (matchesKey(TOGGLE_WEAPON_BAY, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.toggleCurrentWeaponBay();
+                    }
+                } else if (matchesKey(TOGGLE_AEROBATIC_SMOKE, key, scanCode)) {
+                    if (vehicle instanceof FixedWingVehicle) {
+                        sendToggleAerobaticSmoke(vehicle);
                     }
                 } else if (matchesKey(MULTI_WEAPON_SWITCH, key, scanCode)) {
                     if (weaponUnit != null) {
@@ -336,6 +342,17 @@ public class InputHandler {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleHoverMode = true;
+        PacketDistributor.sendToServer(action);
+    }
+
+    private static void sendToggleAerobaticSmoke(AbstractVehicle vehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = vehicle.getId();
+        action.toggleAerobaticSmoke = true;
+        AllConfigs.CommonConfig common = AllConfigs.common;
+        action.aerobaticSmokeR = common.aerobaticSmokeR.get();
+        action.aerobaticSmokeG = common.aerobaticSmokeG.get();
+        action.aerobaticSmokeB = common.aerobaticSmokeB.get();
         PacketDistributor.sendToServer(action);
     }
 

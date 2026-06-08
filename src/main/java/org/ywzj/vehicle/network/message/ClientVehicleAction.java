@@ -27,6 +27,10 @@ public class ClientVehicleAction implements CustomPacketPayload {
     public boolean toggleEngine;
     public boolean toggleLandingGear;
     public boolean toggleHoverMode;
+    public boolean toggleAerobaticSmoke;
+    public int aerobaticSmokeR;
+    public int aerobaticSmokeG;
+    public int aerobaticSmokeB;
     public boolean togglePartUnitState;
     public int partUnitIndex;
     public boolean lockEntity;
@@ -56,6 +60,13 @@ public class ClientVehicleAction implements CustomPacketPayload {
         }
         control.toggleHoverMode = buf.readBoolean();
         if (control.toggleHoverMode) {
+            return control;
+        }
+        control.toggleAerobaticSmoke = buf.readBoolean();
+        if (control.toggleAerobaticSmoke) {
+            control.aerobaticSmokeR = buf.readInt();
+            control.aerobaticSmokeG = buf.readInt();
+            control.aerobaticSmokeB = buf.readInt();
             return control;
         }
         control.togglePartUnitState = buf.readBoolean();
@@ -105,6 +116,13 @@ public class ClientVehicleAction implements CustomPacketPayload {
         if (toggleHoverMode) {
             return;
         }
+        buf.writeBoolean(toggleAerobaticSmoke);
+        if (toggleAerobaticSmoke) {
+            buf.writeInt(aerobaticSmokeR);
+            buf.writeInt(aerobaticSmokeG);
+            buf.writeInt(aerobaticSmokeB);
+            return;
+        }
         buf.writeBoolean(togglePartUnitState);
         if (togglePartUnitState) {
             buf.writeInt(partUnitIndex);
@@ -150,7 +168,7 @@ public class ClientVehicleAction implements CustomPacketPayload {
                     && vehicle.getPartUnits().get(message.partUnitIndex) instanceof SwitchableUnit<?> switchableUnit) {
                 switchableUnit.setOn(!switchableUnit.isOn());
             }
-        } else if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.lockEntity) {
+        } else if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.toggleAerobaticSmoke || message.lockEntity) {
             vehicle.onClientVehicleAction(message, player);
         } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
             vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);

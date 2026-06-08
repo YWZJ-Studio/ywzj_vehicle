@@ -245,8 +245,8 @@ public class WeaponUnitData extends RotatableUnitData {
         CIRCLE,
         @SerializedName("square")
         SQUARE,
-        @SerializedName("reticle")
-        RETICLE
+        @SerializedName("cross")
+        CROSS
     }
 
 }
