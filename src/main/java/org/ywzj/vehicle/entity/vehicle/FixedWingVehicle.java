@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllDamageTypes;
+import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -91,6 +92,7 @@ public class FixedWingVehicle extends AbstractVehicle
     private VehicleSound engineRunSoundInstance;
     private VehicleSound engineThrustSoundInstance;
     private VehicleSound passbySoundInstance;
+    private VehicleSound aerobaticSmokeSoundInstance;
     private IAnimationInstance<FixedWingVehicleContext> animationInstance;
 
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
@@ -184,6 +186,9 @@ public class FixedWingVehicle extends AbstractVehicle
             setAerobaticSmokeR(message.aerobaticSmokeR);
             setAerobaticSmokeG(message.aerobaticSmokeG);
             setAerobaticSmokeB(message.aerobaticSmokeB);
+            if (isAerobaticSmokeOn()) {
+                playVehicleSound(AllSounds.AEROBATICS_SMOKE_START.get(), true);
+            }
         }
         super.onClientVehicleAction(message, player);
     }
@@ -324,6 +329,13 @@ public class FixedWingVehicle extends AbstractVehicle
                     passbySoundInstance = null;
                 }
             }
+        }
+        if (isAerobaticSmokeOn() && aerobaticSmokeSoundInstance == null) {
+            aerobaticSmokeSoundInstance = new VehicleSound(AllSounds.AEROBATICS_SMOKE_LOOP.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
+            aerobaticSmokeSoundInstance.play();
+        } else if (!isAerobaticSmokeOn() && aerobaticSmokeSoundInstance != null) {
+            aerobaticSmokeSoundInstance.stop();
+            aerobaticSmokeSoundInstance = null;
         }
     }
 
