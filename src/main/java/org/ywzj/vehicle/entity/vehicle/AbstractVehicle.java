@@ -55,6 +55,7 @@ import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
+import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -106,6 +107,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected final List<PartUnit<?>> partUnits;
     protected Map<String, PartUnit<?>> partUnitMap;
     protected final Map<String, DecorationUnit> decorationUnits;
+    protected final HashSet<BulletHoleParticle> bulletHoleParticles;
     protected ViewInfo viewInfo;
     protected boolean viewZoomed;
     public EnergyInfo energyInfo;
@@ -150,6 +152,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.partUnits = new ArrayList<>();
         this.partUnitMap = Map.of();
         this.decorationUnits = new HashMap<>();
+        this.bulletHoleParticles = new HashSet<>();
         this.vehicleCubeOBBs = new ArrayList<>();
         this.curbWeight = 1;
         this.viewInfo = new ViewInfo();
@@ -1211,6 +1214,10 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public Map<String, DecorationUnit> getDecorationUnits() {
         return decorationUnits;
+    }
+
+    public HashSet<BulletHoleParticle> getBulletHoleParticles() {
+        return bulletHoleParticles;
     }
 
     public List<VehicleCubeOBB> getVehicleCubeOBBs() {

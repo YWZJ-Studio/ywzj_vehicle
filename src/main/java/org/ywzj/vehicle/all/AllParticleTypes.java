@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.particle.DustSmokeOption;
-import org.ywzj.vehicle.particle.ExplosionCloudOption;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 
 public class AllParticleTypes {
 
@@ -32,15 +32,16 @@ public class AllParticleTypes {
             () -> new SimpleParticleType(false)
     );
 
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SMOKE_CLOUD = PARTICLE_TYPES.register("smoke_cloud",
-            () -> new SimpleParticleType(true));
-
-    public static final DeferredHolder<ParticleType<?>, ParticleType<ExplosionCloudOption>> EXPLOSION_CLOUD = PARTICLE_TYPES.register("explosion_cloud",
-            () -> createOptions(ExplosionCloudOption.CODEC, ExplosionCloudOption.STREAM_CODEC)
+    public static final RegistryObject<ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
+            () -> createOptions(BulletHoleOption.CODEC, BulletHoleOption.DESERIALIZER)
     );
 
-    public static final DeferredHolder<ParticleType<?>, ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
-            () -> createOptions(BulletHoleOption.CODEC, BulletHoleOption.STREAM_CODEC)
+    public static final RegistryObject<ParticleType<SmokeCloudOption>> CHANGING_CLOUD = PARTICLE_TYPES.register("changing_cloud",
+            () -> createOptions(SmokeCloudOption.CODEC, SmokeCloudOption.DESERIALIZER)
+    );
+
+    public static final RegistryObject<ParticleType<SmokeCloudOption>> FIXED_CLOUD = PARTICLE_TYPES.register("fixed_cloud",
+            () -> createOptions(SmokeCloudOption.CODEC, SmokeCloudOption.DESERIALIZER)
     );
 
     public static void register(IEventBus eventBus) {

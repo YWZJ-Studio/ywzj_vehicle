@@ -2,38 +2,37 @@ package org.ywzj.vehicle.client.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
-import org.ywzj.vehicle.particle.ExplosionCloudOption;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 
-public class ExplosionCloudParticle extends TextureSheetParticle {
+public class SmokeCloudParticle extends TextureSheetParticle {
 
-    public static ExplosionCloudParticleProvider provider(SpriteSet spriteSet) {
-        return new ExplosionCloudParticleProvider(spriteSet);
+    public static SmokeCloudParticleProvider provider(SpriteSet spriteSet) {
+        return new SmokeCloudParticleProvider(spriteSet);
     }
 
-    public static class ExplosionCloudParticleProvider implements ParticleProvider<ExplosionCloudOption> {
+    public static class SmokeCloudParticleProvider implements ParticleProvider<SmokeCloudOption> {
         private final SpriteSet spriteSet;
 
-        public ExplosionCloudParticleProvider(SpriteSet spriteSet) {
+        public SmokeCloudParticleProvider(SpriteSet spriteSet) {
             this.spriteSet = spriteSet;
         }
 
         @Override
-        public Particle createParticle(ExplosionCloudOption option, ClientLevel level, double x, double y, double z,
+        public Particle createParticle(SmokeCloudOption option, ClientLevel level, double x, double y, double z,
                                        double xSpeed, double ySpeed, double zSpeed) {
-            return new ExplosionCloudParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, option, this.spriteSet);
+            return new SmokeCloudParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, option, this.spriteSet);
         }
     }
 
     private final SpriteSet spriteSet;
-
     private final float startR, startG, startB;
     private final float endR,   endG,   endB;
     private final float startAlpha, endAlpha;
     private final float startSize, endSize;
 
-    protected ExplosionCloudParticle(ClientLevel level, double x, double y, double z,
-                                     double vx, double vy, double vz,
-                                     ExplosionCloudOption option, SpriteSet spriteSet) {
+    protected SmokeCloudParticle(ClientLevel level, double x, double y, double z,
+                                 double vx, double vy, double vz,
+                                 SmokeCloudOption option, SpriteSet spriteSet) {
         super(level, x, y, z);
         this.spriteSet = spriteSet;
         this.quadSize = option.size();
@@ -58,7 +57,11 @@ public class ExplosionCloudParticle extends TextureSheetParticle {
         this.rCol = this.startR;
         this.gCol = this.startG;
         this.bCol = this.startB;
-        this.setSpriteFromAge(spriteSet);
+        if (option.changing()) {
+            this.setSpriteFromAge(spriteSet);
+        } else {
+            this.pickSprite(spriteSet);
+        }
     }
 
     private static float lerp(float a, float b, float t) {
@@ -72,13 +75,13 @@ public class ExplosionCloudParticle extends TextureSheetParticle {
             this.setSpriteFromAge(this.spriteSet);
             this.xd *= 0.88;
             this.zd *= 0.88;
-            float t = (float) this.age / this.lifetime;
-            float progress = (float) (Math.log1p(t * 2.0) / Math.log1p(2.0));
+            float progress = (float) this.age / this.lifetime;
             this.alpha = lerp(this.startAlpha, this.endAlpha, progress);
             this.rCol = lerp(this.startR, this.endR, progress);
             this.gCol = lerp(this.startG, this.endG, progress);
             this.bCol = lerp(this.startB, this.endB, progress);
-            this.quadSize = lerp(this.startSize, this.endSize, progress);
+            float sizeProgress = (float) (1.0F - Math.pow((1.0F - progress), 8));
+            this.quadSize = lerp(this.startSize, this.endSize, sizeProgress);
         }
     }
 

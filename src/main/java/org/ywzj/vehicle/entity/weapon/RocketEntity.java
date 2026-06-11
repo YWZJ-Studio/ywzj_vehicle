@@ -17,7 +17,7 @@ import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleRocketWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.particle.ExplosionCloudOption;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 
 public class RocketEntity extends AmmoEntity {
@@ -125,7 +125,7 @@ public class RocketEntity extends AmmoEntity {
                 double dx = (level.random.nextDouble() - 0.5) * 0.2;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2;
                 double dz = (level.random.nextDouble() - 0.5) * 0.2;
-                level.addParticle(new ExplosionCloudOption(0.7f, 0.7f, 0.7f,
+                level.addParticle(new SmokeCloudOption(0.7f, 0.7f, 0.7f,
                                 0.66f, 0.66f, 0.66f,
                                 40, 0.2f, 0.005f), true,
                         particlePos.x + dx, particlePos.y + dy, particlePos.z + dz,
@@ -141,6 +141,11 @@ public class RocketEntity extends AmmoEntity {
             sound = new VehicleSound(AllSounds.ROCKET_FLYING.get(), 1f, 1f, 1f, false, 50, true, true, this.getId());
             sound.play();
         }
+    }
+
+    @Override
+    public float getCaliber() {
+        return 40f;
     }
 
 }

@@ -30,7 +30,7 @@ import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.particle.ExplosionCloudOption;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AutoWeaponUnit;
@@ -222,7 +222,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(new ExplosionCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 6, 0.18f * scale, 0.005f), true,
+                level.addParticle(new SmokeCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 6, 0.18f * scale, 0.005f), true,
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
                         0.015, 0.015, 0.015);
             }
@@ -230,7 +230,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(new ExplosionCloudOption(0.7f, 0.7f, 0.7f, 12, 0.3f * scale, 0.005f), true,
+                level.addParticle(new SmokeCloudOption(0.7f, 0.7f, 0.7f, 12, 0.3f * scale, 0.005f), true,
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
                         0.015, 0.015, 0.015);
             }

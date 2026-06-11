@@ -21,7 +21,7 @@ import org.ywzj.vehicle.client.gui.*;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.particle.DustSmokeParticle;
 import org.ywzj.vehicle.client.particle.DustStoneParticle;
-import org.ywzj.vehicle.client.particle.ExplosionCloudParticle;
+import org.ywzj.vehicle.client.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.FakePlayerRenderer;
@@ -37,7 +37,6 @@ import org.ywzj.vehicle.client.render.entity.weapon.DecoyFlareEntityRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.weapon.AmmoEntity;
 import org.ywzj.vehicle.entity.weapon.GrenadeEntity;
-import org.ywzj.vehicle.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.particle.TrackParticle;
 
 @EventBusSubscriber(value = Dist.CLIENT)
@@ -109,8 +108,8 @@ public class ClientSetupHandler {
         event.registerSpriteSet(AllParticleTypes.DUST_SMOKE.get(), DustSmokeParticle::provider);
         event.registerSpriteSet(AllParticleTypes.DUST_STONE.get(), DustStoneParticle::provider);
         event.registerSpriteSet(AllParticleTypes.TRACK.get(), TrackParticle.Factory::new);
-        event.registerSpriteSet(AllParticleTypes.SMOKE_CLOUD.get(), SmokeCloudParticle::provider);
-        event.registerSpriteSet(AllParticleTypes.EXPLOSION_CLOUD.get(), ExplosionCloudParticle::provider);
+        event.registerSpriteSet(AllParticleTypes.CHANGING_CLOUD.get(), SmokeCloudParticle::provider);
+        event.registerSpriteSet(AllParticleTypes.FIXED_CLOUD.get(), SmokeCloudParticle::provider);
         event.registerSpecial(AllParticleTypes.BULLET_HOLE.get(), new BulletHoleParticle.Provider());
     }
 

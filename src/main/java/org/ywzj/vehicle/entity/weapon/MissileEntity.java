@@ -364,6 +364,11 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         }
     }
 
+    @Override
+    public float getCaliber() {
+        return 40f;
+    }
+
     private List<Entity> scanTargets() {
         return Radar.scanTargets(this, this.position(), activeRadarActivationRange,
                 entityPos -> Math.toDegrees(VectorUtil.angleBetween(this.getLookAngle(), entityPos.subtract(this.position()))) <= seekerFov);

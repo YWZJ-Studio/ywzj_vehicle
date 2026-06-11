@@ -6,8 +6,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.ywzj.vehicle.all.AllEntities;
-import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.api.entity.SightObstruction;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 
 public class SmokeGrenadeEntity extends GrenadeEntity implements SightObstruction {
 
@@ -40,7 +40,11 @@ public class SmokeGrenadeEntity extends GrenadeEntity implements SightObstructio
                     double offsetX = this.random.triangle(0, 10);
                     double offsetY = this.random.triangle(0, 8);
                     double offsetZ = this.random.triangle(0, 10);
-                    this.level().addParticle(AllParticleTypes.SMOKE_CLOUD.get(), true, x + offsetX, y + offsetY, z + offsetZ, 0.0D, 0.0D, 0.0D);
+                    this.level().addParticle(new SmokeCloudOption(true, 1, 1, 1, 1, 1, 1,
+                                    1f, 1f, 20,
+                                    1f, 1.5f, 0f), true,
+                            x + offsetX, y + offsetY, z + offsetZ,
+                            0, 0, 0);
                 }
             }
         }

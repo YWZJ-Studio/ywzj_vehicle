@@ -8,6 +8,8 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllParticleTypes;
 
 public class BulletHoleOption implements ParticleOptions {
@@ -33,6 +35,10 @@ public class BulletHoleOption implements ParticleOptions {
     private final float g;
     private final float b;
     private final float caliber;
+    private int entityId = -1;
+    private String boneName = "";
+    private Vec3 boneOffset = Vec3.ZERO;
+    private Quaternionf selfRotation = new Quaternionf();
 
     public BulletHoleOption(int dir, long pos, float r, float g, float b, float caliber) {
         this.direction = Direction.values()[dir];
@@ -52,12 +58,25 @@ public class BulletHoleOption implements ParticleOptions {
         this.caliber = caliber;
     }
 
+    /** 设置骨骼绑定信息（仅客户端调用） */
+    public BulletHoleOption withBone(int entityId, String boneName, Vec3 boneOffset, Quaternionf boneRotation) {
+        this.entityId = entityId;
+        this.boneName = boneName;
+        this.boneOffset = boneOffset;
+        this.selfRotation = boneRotation;
+        return this;
+    }
+
     public Direction getDirection() { return direction; }
     public BlockPos getPos() { return pos; }
     public float getR() { return r; }
     public float getG() { return g; }
     public float getB() { return b; }
     public float getCaliber() { return caliber; }
+    public int getEntityId() { return entityId; }
+    public String getBoneName() { return boneName; }
+    public Vec3 getBoneOffset() { return boneOffset; }
+    public Quaternionf getSelfRotation() { return selfRotation; }
 
     @Override
     public ParticleType<?> getType() {

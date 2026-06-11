@@ -103,7 +103,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         if (decorationDisplayOptional.isEmpty()) {
             return;
         }
-        BaseDisplay decorationDisplay =  decorationDisplayOptional.get();
+        BaseDisplay decorationDisplay = decorationDisplayOptional.get();
         VehicleBedrockModel decorationModel = decorationDisplay.getModel();
         ResourceLocation decorationTexture = decorationDisplay.getTexture();
         if (decorationModel == null || decorationTexture == null) {
