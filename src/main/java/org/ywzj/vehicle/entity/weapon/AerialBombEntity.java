@@ -184,6 +184,11 @@ public class AerialBombEntity extends AmmoEntity {
         }
     }
 
+    @Override
+    public float getCaliber() {
+        return 125f;
+    }
+
     private void intercept(Entity target, Vec3 pos) {
         Vec3 bombPos = this.position();
         Vec3 bombVel = this.getDeltaMovement();

@@ -41,7 +41,7 @@ import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
-import org.ywzj.vehicle.particle.ExplosionCloudOption;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.*;
@@ -284,7 +284,7 @@ public class VehicleExplosion {
         addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 40, 16, 0.05, 16, 0);
         for (int i = 0; i < 40; i++) {
             Vec3 v = randomHemisphereDir(level).scale(0.2);
-            level.addParticle(new ExplosionCloudOption(1f, 0.35f + level.random.nextFloat() * 0.15f, 0f, 6, 2.0f, -0.01f),
+            level.addParticle(new SmokeCloudOption(1f, 0.35f + level.random.nextFloat() * 0.15f, 0f, 6, 2.0f, -0.01f),
                     true, x, y + 0.5, z, v.x, v.y, v.z);
         }
         if (level.getBlockState(BlockPos.containing(x, y, z)).is(net.minecraft.world.level.block.Blocks.WATER)) {
@@ -302,7 +302,7 @@ public class VehicleExplosion {
         for (int i = 0; i < 200; i++) {
             Vec3 v = randomHemisphereDir(level).scale(1.0 + level.random.nextDouble() * 0.5);
             float heat = level.random.nextFloat();
-            level.addParticle(new ExplosionCloudOption(1f, 0.25f + heat * 0.25f, 0f, 100, 4.5f + heat * 2, -0.003f),
+            level.addParticle(new SmokeCloudOption(1f, 0.25f + heat * 0.25f, 0f, 100, 4.5f + heat * 2, -0.003f),
                     true, x, y + 1, z, v.x * 2, v.y, v.z * 2);
         }
         spawnExplosionRing(level, x, y, z, 4, 200, 4.0, 0.5, 0.4, 1.0f, 16, 3.0f);
@@ -352,7 +352,7 @@ public class VehicleExplosion {
             float size = Math.max(1.5f, baseSize - h * 0.35f);
             for (int i = 0; i < segments; i++) {
                 double angle = 2 * Math.PI * i / segments;
-                level.addParticle(new ExplosionCloudOption(brightness, brightness, brightness, 0.12f, 0.12f, 0.12f, life, size, 0f),
+                level.addParticle(new SmokeCloudOption(brightness, brightness, brightness, 0.12f, 0.12f, 0.12f, life, size, 0f),
                         true, x, y + yOff, z, Math.cos(angle) * waveSpeed, 0.02, Math.sin(angle) * waveSpeed);
             }
         }
@@ -370,7 +370,7 @@ public class VehicleExplosion {
             double vz = Math.sin(angle) * (0.03 + level.random.nextDouble() * 0.08) + (level.random.nextDouble() - 0.5) * 0.02;
             double vy = 0.18 + (1.0 - (py - y) / stemHeight) * 0.45 + level.random.nextDouble() * 0.08;
             float heat = level.random.nextFloat();
-            level.addParticle(new ExplosionCloudOption(
+            level.addParticle(new SmokeCloudOption(
                             0.45f + heat * 0.35f,
                             0.24f + heat * 0.12f,
                             0.12f,
@@ -402,7 +402,7 @@ public class VehicleExplosion {
             float startG = 0.24f + heat * 0.18f;
             float startB = 0.12f + heat * 0.04f;
             float end = 0.06f + heat * 0.08f;
-            level.addParticle(new ExplosionCloudOption(startR, startG, startB, end, end, end, 110 + level.random.nextInt(50), 7.0f + heat * 4.5f, -0.002f),
+            level.addParticle(new SmokeCloudOption(startR, startG, startB, end, end, end, 110 + level.random.nextInt(50), 7.0f + heat * 4.5f, -0.002f),
                     true, px, py, pz, vx, vy, vz);
         }
     }
@@ -419,7 +419,7 @@ public class VehicleExplosion {
             double vz = Math.sin(angle) * (0.03 + level.random.nextDouble() * 0.06);
             double vy = -0.02 - level.random.nextDouble() * 0.05;
             float shade = 0.14f + level.random.nextFloat() * 0.16f;
-            level.addParticle(new ExplosionCloudOption(shade, shade, shade, 0.02f, 0.02f, 0.02f, 90 + level.random.nextInt(40), 4.5f + level.random.nextFloat() * 2.5f, 0.002f),
+            level.addParticle(new SmokeCloudOption(shade, shade, shade, 0.02f, 0.02f, 0.02f, 90 + level.random.nextInt(40), 4.5f + level.random.nextFloat() * 2.5f, 0.002f),
                     true, px, py, pz, vx, vy, vz);
         }
     }

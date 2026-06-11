@@ -222,8 +222,8 @@ public class AllEvents {
         @SubscribeEvent
         public static void onHitVehicle(HitVehicleEvent event) {
             ServerPlayer serverPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(event.shooterUuid);
-            if (serverPlayer != null) {
-                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ServerHitVehicleEvent(event));
+            if (serverPlayer != null && serverPlayer.level().getEntity(event.entityId) instanceof AbstractVehicle vehicle) {
+                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), new ServerHitVehicleEvent(event));
             }
         }
 

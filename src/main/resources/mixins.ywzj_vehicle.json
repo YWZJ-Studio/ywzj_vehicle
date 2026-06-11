@@ -27,7 +27,6 @@
     "common.PlayerMixin",
     "common.ProjectileUtilMixin",
     "create.ContraptionColliderMixin",
-    "tacz.EntityKineticBulletMixin",
     "tacz.EntityUtilMixin"
   ]
 }

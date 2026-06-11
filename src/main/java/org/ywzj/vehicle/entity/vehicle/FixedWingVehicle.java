@@ -30,7 +30,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.particle.ExplosionCloudOption;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
@@ -572,8 +572,7 @@ public class FixedWingVehicle extends AbstractVehicle
             Vec3 vehiclePos = position();
             Vec3 vehiclePosO = new Vec3(xo, yo, zo);
             Vec3 step = vehiclePos.subtract(vehiclePosO);
-            double dist = step.length();
-            int segments = Math.max((int) (dist / 0.5f), 1);
+            int segments = (int) (step.length());
             Vec3 dir = step.normalize();
             float r = getAerobaticSmokeR() / 255f;
             float g = getAerobaticSmokeG() / 255f;
@@ -581,13 +580,16 @@ public class FixedWingVehicle extends AbstractVehicle
             Level level = level();
             for (Vec3 offset : aerobaticSmokeOffsets) {
                 for (int i = 0; i <= segments; i++) {
+                    double x = this.random.triangle(0, 0.1f);
+                    double y = this.random.triangle(0, 0.1f);
+                    double z = this.random.triangle(0, 0.1f);
                     Vec3 interpolatedPos = vehiclePos.add(offset);
-                    Vec3 worldPos = relativeRotPos(interpolatedPos, false).subtract(dir.scale(i * 0.5f));
-                    level.addParticle(new ExplosionCloudOption(r, g, b, r, g, b,
-                                    0.7f, 0f, 1200,
-                                    0.7f, 5f, 0.005f), true,
+                    Vec3 worldPos = relativeRotPos(interpolatedPos, false).subtract(dir.scale(i)).subtract(getDeltaMovement());
+                    level.addParticle(new SmokeCloudOption(false, r, g, b, r, g, b,
+                                    0.5f, 0.1f, 1200,
+                                    0.7f, 5f, 0.01f), true,
                             worldPos.x, worldPos.y, worldPos.z,
-                            0, 0, 0);
+                            x, y, z);
                 }
             }
         }

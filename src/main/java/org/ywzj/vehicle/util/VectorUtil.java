@@ -1,5 +1,7 @@
 package org.ywzj.vehicle.util;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -13,6 +15,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
+import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
@@ -22,10 +25,10 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 
 import java.lang.Math;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
+
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
@@ -151,7 +154,7 @@ public class VectorUtil {
 
     public static Vec3 closestHitObbPosition(Entity entity, Vec3 start, Vec3 end) {
         if (entity instanceof OBBEntity obbEntity) {
-            HitOBB hitOBB = obbHit(obbEntity.getOBBs(), start, end);
+            HitOBB hitOBB = hitOBB(obbEntity.getOBBs(), start, end);
             if (hitOBB != null) {
                 return hitOBB.hitPos;
             }
@@ -166,7 +169,7 @@ public class VectorUtil {
             List<PartUnit<?>> partUnits = new ArrayList<>(vehicle.getPartUnits());
             if (vehicle.level().isClientSide()) {
                 for (DecorationUnit decorationUnit : vehicle.getDecorationUnits().values()) {
-                    HitOBB hitOBB = obbHit(decorationUnit.getOBBs(), start, end);
+                    HitOBB hitOBB = hitOBB(decorationUnit.getOBBs(), start, end);
                     if (hitOBB != null && hitOBB.distance < minDistance) {
                         minDistance = hitOBB.distance;
                         closestPartUnit = decorationUnit;
@@ -177,7 +180,7 @@ public class VectorUtil {
                 }
             }
             for (PartUnit<?> partUnit : partUnits) {
-                HitOBB hitOBB = obbHit(partUnit.getOBBs(), start, end);
+                HitOBB hitOBB = hitOBB(partUnit.getOBBs(), start, end);
                 if (hitOBB != null && hitOBB.distance < minDistance) {
                     minDistance = hitOBB.distance;
                     closestPartUnit = partUnit;
@@ -189,8 +192,7 @@ public class VectorUtil {
     }
 
     public record HitOBB(OBB obb, Vec3 hitPos, double distance) {}
-
-    public static HitOBB obbHit(List<OBB> obbs, Vec3 start, Vec3 end) {
+    public static HitOBB hitOBB(List<OBB> obbs, Vec3 start, Vec3 end) {
         double minDistance = Double.MAX_VALUE;
         Vec3 minDistanceHitPos = null;
         OBB minDistanceOBB = null;
@@ -209,6 +211,92 @@ public class VectorUtil {
             }
         }
         return minDistanceOBB == null ? null : new HitOBB(minDistanceOBB, minDistanceHitPos, minDistance);
+    }
+
+    public record HitBone(String boneName, Vec3 offset, Quaternionf rotation, Vec3 position) {}
+    public static HitBone hitBone(AbstractVehicle vehicle, BedrockModel model, Vec3 start, Vec3 end) {
+        if (vehicle instanceof IAnimationEntity<?,?> animationEntity) {
+            var instance = animationEntity.getAnimationInstance();
+            if (instance != null) {
+                instance.getContext().setPartialTick(1);
+                model.applyPose(BLENDER.blend(model.getBindPose(), instance.getCurrentPose()));
+            }
+        }
+        String hitBoneName = null;
+        Quaternionf hitRotation = new Quaternionf();
+        Vec3 hitOffset = Vec3.ZERO;
+        Vec3 hitPosition = Vec3.ZERO;
+        double minDistance = Double.MAX_VALUE;
+        HashSet<BedrockBone> namedBones = new HashSet<>(model.getBoneMap().values());
+        for (Map.Entry<String, BedrockBone> boneEntry : model.getBoneMap().entrySet()) {
+            BedrockBone bone = boneEntry.getValue();
+            List<OBB.CubeOBB> cubeOBBs = OBB.getOBBsFromBone(bone, vehicle, namedBones);
+            for (OBB.CubeOBB cubeOBB : cubeOBBs) {
+                OBB obb = cubeOBB.obb();
+                Vector3f[] axes = obb.getAxes();
+                Optional<Vector3f> hitPosOptional = obb.clip(start.toVector3f(), end.toVector3f());
+                if (hitPosOptional.isEmpty()) {
+                    continue;
+                }
+                Vector3f hitPos = hitPosOptional.get();
+                if (Double.isNaN(hitPos.x) || Double.isNaN(hitPos.y) || Double.isNaN(hitPos.z)) {
+                    continue;
+                }
+                double distance = hitPos.distance(start.toVector3f());
+                if (distance > minDistance) {
+                    continue;
+                }
+                minDistance = distance;
+                Matrix4f globalTransform = bone.getGlobalTransform();
+                Vector3f offset = vehicle.relativeRotDirection(new Vec3(hitPos).subtract(vehicle.position()), true)
+                        .toVector3f()
+                        .sub(globalTransform.transformPosition(new Vector3f()));
+                globalTransform.getUnnormalizedRotation(new Quaternionf())
+                        .conjugate()
+                        .transform(offset);
+                Vector3f center = obb.center();
+                Vector3f localHit = new Vector3f(hitPos).sub(center);
+                float xDist = localHit.dot(axes[0]);
+                float yDist = localHit.dot(axes[1]);
+                float zDist = localHit.dot(axes[2]);
+                Vector3f extents = obb.extents();
+                float fx = Math.abs(xDist / extents.x);
+                float fy = Math.abs(yDist / extents.y);
+                float fz = Math.abs(zDist / extents.z);
+                float max = Math.max(fx, Math.max(fy, fz));
+                Quaternionf boneRotation = new Quaternionf();
+                globalTransform.getUnnormalizedRotation(boneRotation);
+                boneRotation.premul(vehicle.rotYXZ());
+                Quaternionf cubeRot = obb.rotation().premul(boneRotation.conjugate());
+                cubeRot.rotateY((float) Math.PI);
+                if (max == fx) {
+                    if (xDist > 0) {
+                        cubeRot.rotateY((float) (-Math.PI / 2));
+                    } else {
+                        cubeRot.rotateY((float) (Math.PI / 2));
+                    }
+                } else if (max == fy) {
+                    if (yDist > 0) {
+                        cubeRot.rotateX((float) (-Math.PI / 2));
+                    } else {
+                        cubeRot.rotateX((float) (Math.PI / 2));
+                    }
+                } else {
+                    if (zDist > 0) {
+                        cubeRot.rotateY((float) Math.PI);
+                    }
+                }
+                hitRotation = cubeRot;
+                hitOffset = new Vec3(offset);
+                hitBoneName = boneEntry.getKey();
+                hitPosition = new Vec3(hitPos);
+            }
+        }
+        model.applyPose(model.getBindPose());
+        if (hitBoneName != null) {
+            return new HitBone(hitBoneName, hitOffset, hitRotation, hitPosition);
+        }
+        return null;
     }
 
     public static Vec3 relativeRotPos(Entity entity, Vec3 worldPos, boolean reverse) {

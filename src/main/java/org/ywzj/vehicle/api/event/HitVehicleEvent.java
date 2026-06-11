@@ -10,16 +10,18 @@ public class HitVehicleEvent extends Event {
 
     public final UUID shooterUuid;
     public final int entityId;
-    public final Vec3 hitRelativePosition;
-    public final Vec3 hitRelativeVector;
+    public final Vec3 hitPosition;
+    public final Vec3 hitVector;
+    public float caliber;
     public final float damage;
     public final Component message;
 
-    public HitVehicleEvent(UUID shooterUuid, int entityId, Vec3 hitRelativePosition, Vec3 hitRelativeVector, float damage, Component message) {
+    public HitVehicleEvent(UUID shooterUuid, int entityId, Vec3 hitPosition, Vec3 hitVector, float caliber, float damage, Component message) {
         this.shooterUuid = shooterUuid;
         this.entityId = entityId;
-        this.hitRelativePosition = hitRelativePosition;
-        this.hitRelativeVector = hitRelativeVector;
+        this.hitPosition = hitPosition;
+        this.hitVector = hitVector;
+        this.caliber = caliber;
         this.damage = damage;
         this.message = message;
     }

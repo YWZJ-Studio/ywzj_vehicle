@@ -19,7 +19,8 @@
     "y_turn_rate": 3.0,
     "z_turn_rate": 8.0,
     "vortex_offsets": [[5.267, 1.714, -4.559], [-5.267, 1.714, -4.559]],
-    "afterburner_offsets": [[0, 2.05, -7, 1]]
+    "afterburner_offsets": [[0, 2.05, -7, 1]],
+    "aerobatic_smoke_offsets": [[0, 2.673, -9.339]]
   },
   "landing_gear_part_id": "landing_gear",
   "max_health": 500,

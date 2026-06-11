@@ -16,4 +16,5 @@ public interface IAnimationInstance<T extends BaseAnimationContext> {
 
     @NotNull
     Pose getCurrentPose();
+
 }

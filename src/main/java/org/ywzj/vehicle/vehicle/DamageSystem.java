@@ -14,6 +14,7 @@ import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.weapon.AmmoEntity;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 
@@ -32,8 +33,12 @@ public class DamageSystem {
         double scale = 1;
         boolean explosion = damageSource.getMsgId().equals("ywzj_vehicle.explosion");
         Vec3 hitPos = null;
+        float caliber = 5.8f;
         if (damageSource.getDirectEntity() instanceof Projectile || (explosion && damageSource.getDirectEntity() != null)) {
             hitPos = damageSource.getDirectEntity().position();
+            if (damageSource.getDirectEntity() instanceof AmmoEntity ammoEntity) {
+                caliber = ammoEntity.getCaliber();
+            }
         }
         if (amount < vehicle.defenseStats.damageThreshold) {
             scale = 0.1;
@@ -74,8 +79,9 @@ public class DamageSystem {
                     }
                     HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(projectile.getOwner().getUUID(),
                             vehicle.getId(),
-                            vehicle.relativeRotPos(hitPos, true).subtract(vehicle.position().add(vehicle.centerOffset)),
-                            vehicle.relativeRotDirection(projectile.getDeltaMovement(), true),
+                            hitPos,
+                            projectile.getDeltaMovement(),
+                            caliber,
                             amount,
                             message);
                     MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
@@ -88,8 +94,9 @@ public class DamageSystem {
                 }
                 HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(serverPlayer.getUUID(),
                         vehicle.getId(),
-                        vehicle.relativeRotPos(hitPos, true).subtract(vehicle.position().add(vehicle.centerOffset)),
-                        vehicle.relativeRotDirection(direction, true),
+                        hitPos,
+                        direction,
+                        caliber,
                         amount,
                         message);
                 MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
