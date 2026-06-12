@@ -32,10 +32,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
-import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
-import org.ywzj.vehicle.vehicle.part.PartUnit;
-import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.*;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -84,8 +81,8 @@ public class FixedWingVehicle extends AbstractVehicle
     public float yawInputO;
     public float rollInput;
     public float rollInputO;
-    public String landingGearPartId;
     public LandingGearUnit landingGear;
+    public ThrustUnit thrustUnit;
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
@@ -157,21 +154,6 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public void initData() {
-        super.initData();
-        PartUnit<?> landingGearUnit = partUnitMap.get(this.landingGearPartId);
-        if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
-            landingGear = switchableUnit;
-            landingGear.setOn(isLandingGearUp());
-        }
-    }
-
-    @Nullable
-    public LandingGearUnit getLandingGearUnit() {
-        return landingGear;
-    }
-
-    @Override
     public void onClientVehicleAction(ClientVehicleAction message, Player player) {
         if (message.toggleLandingGear) {
             if (landingGear == null) {
@@ -212,8 +194,11 @@ public class FixedWingVehicle extends AbstractVehicle
     @Override
     public void tick() {
         super.tick();
-        tickInput();
-        tickAfterburner();
+        if (level().isClientSide()) {
+            tickInput();
+        } else {
+            tickAfterburner();
+        }
     }
 
     @Override
@@ -362,6 +347,19 @@ public class FixedWingVehicle extends AbstractVehicle
             }
         }
         setThrottleLevel(Math.max(0f, throttleLevel));
+        // 矢量控制
+        if (thrustUnit != null) {
+            if ((controlUnit.functionalUp || controlUnit.functionalDown)) {
+                if (controlUnit.functionalUp) {
+                    thrustUnit.setXAimRot(Math.max(thrustUnit.getXAimRot() - 5, thrustUnit.getXRotMin()));
+                } else {
+                    thrustUnit.setXAimRot(Math.min(thrustUnit.getXAimRot() + 5, thrustUnit.getXRotMax()));
+                }
+                if (controlUnit.getOperator() instanceof Player player) {
+                    player.displayClientMessage(Component.translatable("tips.thrust_vector", thrustUnit.getXAimRot()), true);
+                }
+            }
+        }
         // 三个杆量
         tickInput();
         float xRotInput = pitchInput;
@@ -436,10 +434,15 @@ public class FixedWingVehicle extends AbstractVehicle
                 airSpeed = airSpeed.normalize().scale(Math.max(0, al - 0.0001));
             }
         }
-        float thrust = this.thrust * throttleLevel / 100 * getPower() / 100;
+        float power = throttleLevel / 100 * getPower() / 100;
+        float thrust = this.thrust * power;
         // 推力加速度
         double a = thrust / mass;
-        airSpeed = airSpeed.add(forwardDirection.scale(a));
+        Vec3 thrustDirection = forwardDirection;
+        if (thrustUnit != null) {
+            thrustDirection = thrustUnit.worldVec();
+        }
+        airSpeed = airSpeed.add(thrustDirection.scale(a));
         // 迎角
         double angelX = VectorUtil.angleBetween(airSpeed, upDirection) - Math.PI / 2;
         // 空气阻力
@@ -502,7 +505,11 @@ public class FixedWingVehicle extends AbstractVehicle
             double d1 = yRotInput * d0;
             double d2 = Math.toDegrees(VectorUtil.angleBetween(airSpeed, leftDirection) - Math.PI / 2);
             double d3 = Math.min(1, 2 / Math.abs(d2));
-            q.rotateY((float) Math.toRadians(d1 * d3));
+            double r1 = d1 * d3;
+            if (thrustUnit != null) {
+                r1 += yRotInput * yTurnRate / 2f * power * Math.abs(thrustUnit.worldRot().x - getXRot()) / 90;
+            }
+            q.rotateY((float) Math.toRadians(r1));
         } else {
             // 无输入时尾舵使得自动回正
             double d = VectorUtil.angleBetween(airSpeed, leftDirection) - Math.PI / 2;
@@ -627,8 +634,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     public boolean isLandingGearUp() {
-        var landingGearUnit = this.getLandingGearUnit();
-        return landingGearUnit != null && landingGearUnit.isOn();
+        return landingGear != null && landingGear.isOn();
     }
 
     public boolean isAerobaticSmokeOn() {

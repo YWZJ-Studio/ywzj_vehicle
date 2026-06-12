@@ -632,19 +632,19 @@ public abstract class AbstractVehicle extends ContainerCraft
         } else {
             if (!level().isClientSide()) {
                 this.level().broadcastDamageEvent(this, damageSource);
-            }
-            DamageSystem.hurt(damageSource, amount, this);
-            if (this.getHealth() <= 0) {
-                if (isDestroyed()) {
-                    this.discard();
-                } else {
-                    this.getPassengers().forEach(Entity::stopRiding);
-                    entityData.set(DESTROYED, true);
-                    this.setHealth(this.getMaxHealth());
-                    destroyedTime = System.currentTimeMillis();
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this, this.position(),
-                            (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
-                    vehicleExplosion.explode(Collections.singletonList(this));
+                DamageSystem.hurt(damageSource, amount, this);
+                if (this.getHealth() <= 0) {
+                    if (isDestroyed()) {
+                        this.discard();
+                    } else {
+                        this.getPassengers().forEach(Entity::stopRiding);
+                        entityData.set(DESTROYED, true);
+                        this.setHealth(this.getMaxHealth());
+                        destroyedTime = System.currentTimeMillis();
+                        VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this, this.position(),
+                                (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
+                        vehicleExplosion.explode(Collections.singletonList(this));
+                    }
                 }
             }
             this.markHurt();
@@ -1175,7 +1175,16 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public void playVehicleSound(SoundEvent soundEvent, boolean on) {
-        PacketDistributor.sendToPlayersTrackingEntity(this, new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), on));
+        playVehicleSound(soundEvent, Vec3.ZERO, 1f, 1f, 1f, 0, false, false, on);
+    }
+
+    public void playVehicleSound(SoundEvent soundEvent, Vec3 offset,
+                                 float volume, float distance, float pitch,
+                                 int fadeTicks, boolean fadeIn, boolean fadeOut, boolean on) {
+        PacketDistributor.sendToPlayersTrackingEntity(this,
+                new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), offset,
+                        volume, distance, pitch,
+                        fadeTicks, fadeIn, fadeOut, on));
     }
 
     public List<PartUnit<?>> getPartUnits() {

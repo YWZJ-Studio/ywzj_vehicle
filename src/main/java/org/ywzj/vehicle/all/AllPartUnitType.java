@@ -11,17 +11,19 @@ import org.ywzj.vehicle.vehicle.part.*;
 
 public class AllPartUnitType {
 
-    public static final DeferredRegister<PartUnitType<?, ?>> PART_UNIT_TYPE = DeferredRegister.create(ModRegistries.PART_UNIT_TYPE_KEY, YwzjVehicle.MOD_ID);
+    public static final DeferredRegister<PartUnitType<?, ?>> PART_UNIT_TYPE = DeferredRegister.create(ModRegistries.PART_UNIT_TYPE, YwzjVehicle.MOD_ID);
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<PartUnit<PartUnitData>, PartUnitData>> GENERIC = register(PartUnitTypes.GENERIC);
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<SwitchableUnit<PartUnitData>, PartUnitData>> SWITCHABLE = register(PartUnitTypes.SWITCHABLE);
 
-    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<LandingGearUnit, PartUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
-
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<RotatableUnit<RotatableUnitData>, RotatableUnitData>> ROTATABLE = register(PartUnitTypes.ROTATABLE);
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<DoorUnit, DoorUnitData>> DOOR = register(PartUnitTypes.DOOR);
+
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<LandingGearUnit, PartUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
+
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<WeaponUnit, WeaponUnitData>> WEAPON = register(PartUnitTypes.WEAPON);
 
@@ -29,7 +31,7 @@ public class AllPartUnitType {
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<RadarUnit, RadarUnitData>> RADAR = register(PartUnitTypes.RADAR);
 
-    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<ThrustUnit, RotatableUnitData>> THRUST = register(PartUnitTypes.THRUST);
 
     private static <T extends PartUnit<D>, D extends PartUnitData> DeferredHolder<PartUnitType<?, ?>, PartUnitType<T, D>> register(
             PartUnitType<T, D> type

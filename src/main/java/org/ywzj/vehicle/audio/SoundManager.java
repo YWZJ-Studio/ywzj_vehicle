@@ -27,20 +27,20 @@ public class SoundManager {
 
     @OnlyIn(Dist.CLIENT)
     private static void play(ServerSoundEvent message) {
-        stop(message);
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         if (localPlayer == null) {
             return;
         }
         SoundEvent event = AllSounds.SOUNDS.get(message.soundName).get();
         VehicleSound instance = new VehicleSound(event,
+                message.offset,
                 message.volume,
-                1f,
-                1f,
+                message.distance,
+                message.pitch,
                 false,
-                50,
-                false,
-                false,
+                message.fadeTicks,
+                message.fadeIn,
+                message.fadeOut,
                 message.entityId);
         Minecraft.getInstance().execute(() -> Minecraft.getInstance().getSoundManager().play(instance));
         SOUND_INSTANCE.computeIfAbsent(message.entityId, k -> new HashMap<>()).put(message.soundName, instance);

@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -66,6 +67,16 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
                 }
             }
             mainCubeOBB.rebuild();
+        }
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        super.deserializeNBT(nbt);
+        if (this.on) {
+            VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
+            mainCubeOBB.height -= maxHeight;
+            mainCubeOBB.y += maxHeight;
         }
     }
 

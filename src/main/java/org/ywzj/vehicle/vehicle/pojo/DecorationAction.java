@@ -1,4 +1,4 @@
-package org.ywzj.vehicle.vehicle.part;
+package org.ywzj.vehicle.vehicle.pojo;
 
 import net.minecraft.world.phys.Vec3;
 

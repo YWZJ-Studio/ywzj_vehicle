@@ -80,6 +80,7 @@
   "tips.bay_close": "弹仓: 关闭",
   "tips.hover_mode_on": "悬停模式: 开",
   "tips.hover_mode_off": "悬停模式: 关",
+  "tips.thrust_vector": "推力矢量: %s°",
   "tips.use_weapon": "选择武器: %s",
   "tips.experimental": "开发中",
   "tips.sneak_use_modding_tool": "下蹲并使用改装工具",

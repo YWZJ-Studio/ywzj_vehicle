@@ -122,15 +122,26 @@ public class TrackedVehicle extends AbstractVehicle
                 engineRunSoundInstance = null;
             }
         }
+        double speed = getDeltaMovement().length();
+        if (speed > 0) {
+            if (trackRunSoundInstance == null) {
+                SoundEvent trackRunSound = getTrackRunSound();
+                if (trackRunSound != null) {
+                    trackRunSoundInstance = new VehicleSound(trackRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    trackRunSoundInstance.play();
+                }
+            } else {
+                trackRunSoundInstance.setPitch((float) (maxSpeedForward - speed) / maxSpeedForward * 0.3f + 0.8f);
+            }
+        } else if (trackRunSoundInstance != null) {
+            trackRunSoundInstance.stop();
+            trackRunSoundInstance = null;
+        }
         float engineSpeed = getEngineSpeed();
-        if (engineSpeed == 60) {
+        if (engineSpeed <= 60) {
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
-            }
-            if (trackRunSoundInstance != null) {
-                trackRunSoundInstance.stop();
-                trackRunSoundInstance = null;
             }
             if (engineIdleSoundInstance == null) {
                 SoundEvent engineIdleSound = getEngineIdleSound();
@@ -139,12 +150,11 @@ public class TrackedVehicle extends AbstractVehicle
                     engineIdleSoundInstance.play();
                 }
             }
-        } else if (engineSpeed > 60) {
+        } else {
             if (engineIdleSoundInstance != null) {
                 engineIdleSoundInstance.stop();
                 engineIdleSoundInstance = null;
             }
-            float pitch = (engineSpeed - 60) / 40 * 0.3f + 0.8f;
             if (engineRunSoundInstance == null) {
                 SoundEvent engineRunSound = getEngineRunSound();
                 if (engineRunSound != null) {
@@ -152,16 +162,7 @@ public class TrackedVehicle extends AbstractVehicle
                     engineRunSoundInstance.play();
                 }
             } else {
-                engineRunSoundInstance.setPitch(pitch);
-            }
-            if (trackRunSoundInstance == null) {
-                SoundEvent engineRunSound = getTrackRunSound();
-                if (engineRunSound != null) {
-                    trackRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                    trackRunSoundInstance.play();
-                }
-            } else {
-                trackRunSoundInstance.setPitch(pitch);
+                engineRunSoundInstance.setPitch((engineSpeed - 60) / 40 * 0.3f + 0.8f);
             }
         }
     }

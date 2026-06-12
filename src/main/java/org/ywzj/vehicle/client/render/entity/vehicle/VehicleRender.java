@@ -14,7 +14,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
-import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -64,8 +63,8 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
-            // 更新弹孔
-            vehicle.getBulletHoleParticles().forEach(BulletHoleParticle::update);
+            // 渲染弹孔
+            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
             // 复原模型
             model.applyPose(model.getBindPose());
             vehicle.lastRenderTime = System.currentTimeMillis();
