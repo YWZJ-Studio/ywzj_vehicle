@@ -37,7 +37,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 smokeGrenadeEntity.setBaseData(data);
                 smokeGrenadeEntity.setPos(aimContext.from);
-                smokeGrenadeEntity.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
+                smokeGrenadeEntity.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 smokeGrenadeEntity.setXRot(aimContext.direction.x);
                 smokeGrenadeEntity.setYRot(aimContext.direction.y);
                 vehicle.level().addFreshEntity(smokeGrenadeEntity);
@@ -47,7 +47,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 ActiveProtectionGrenadeEntity activeProtectionGrenade = new ActiveProtectionGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
                 activeProtectionGrenade.setBaseData(data);
                 activeProtectionGrenade.setPos(aimContext.from);
-                activeProtectionGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
+                activeProtectionGrenade.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 activeProtectionGrenade.setXRot(aimContext.direction.x);
                 activeProtectionGrenade.setYRot(aimContext.direction.y);
                 vehicle.level().addFreshEntity(activeProtectionGrenade);
@@ -59,7 +59,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                 fragGrenade.setExplosionData(data.getExplosion());
                 fragGrenade.vehicle = vehicle;
                 fragGrenade.setPos(aimContext.from);
-                fragGrenade.shootFromRotation(this.getVehicle(), aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
+                fragGrenade.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
                 fragGrenade.setXRot(aimContext.direction.x);
                 fragGrenade.setYRot(aimContext.direction.y);
                 vehicle.level().addFreshEntity(fragGrenade);
