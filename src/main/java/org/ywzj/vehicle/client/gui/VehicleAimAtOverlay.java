@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -123,10 +124,14 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                             weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
                                 if (vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
                                     WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
-                                    if (crosshairStyle != null) {
+                                    if (crosshairStyle != null && crosshairStyle != WeaponUnitData.CrosshairStyle.NONE) {
                                         drawCrosshair(guiGraphics, Color.GREEN, poseStack, crosshairStyle);
                                     } else {
-                                        drawCross(guiGraphics, 0, 0, 16, Color.GREEN);
+                                        {
+                                            poseStack.translate(0, -0.5, 0);
+                                            poseStack.rotateAround(Axis.ZP.rotationDegrees(45), 0, 0, 0);
+                                            drawCross(guiGraphics, 0, 0, 16, Color.GREEN);
+                                        }
                                     }
                                 } else {
                                     WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
