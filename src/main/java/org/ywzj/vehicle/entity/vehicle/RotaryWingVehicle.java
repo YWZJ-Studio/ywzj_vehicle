@@ -31,7 +31,10 @@ import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.vehicle.part.*;
+import org.ywzj.vehicle.vehicle.part.DoorUnit;
+import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
+import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.HashMap;
@@ -128,16 +131,6 @@ public class RotaryWingVehicle extends AbstractVehicle
     public void readSpawnData(FriendlyByteBuf buffer) {
         super.readSpawnData(buffer);
         if (landingGear != null) {
-            landingGear.setOn(isLandingGearUp());
-        }
-    }
-
-    @Override
-    public void initData() {
-        super.initData();
-        PartUnit<?> landingGearUnit = partUnitMap.get(this.landingGearPartId);
-        if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
-            landingGear = switchableUnit;
             landingGear.setOn(isLandingGearUp());
         }
     }

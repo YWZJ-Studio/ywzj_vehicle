@@ -15,6 +15,9 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
     @SerializedName("landing_gear_part_id")
     public String landingGearPartId;
 
+    @SerializedName("thrust_part_id")
+    public String thrustPartId;
+
     public static class FixedWingAttributes {
 
         @SerializedName("thrust")

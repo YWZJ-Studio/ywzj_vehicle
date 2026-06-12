@@ -4,6 +4,8 @@ import net.minecraft.world.level.Level;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
+import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
 
@@ -23,6 +25,19 @@ public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
     @Override
     public AbstractVehicle fromCustom(Level level) {
        return new RotaryWingVehicle(AllEntities.ROTARY_WING_VEHICLE.get(), level);
+    }
+
+    @Override
+    public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
+        if (vehicle instanceof RotaryWingVehicle rotaryWingVehicle) {
+            PartUnitsAndSeats result = super.createPartUnits(vehicle);
+            PartUnit<?> landingGearUnit = result.partUnitMap().get(this.landingGearPartId);
+            if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
+                rotaryWingVehicle.landingGear = switchableUnit;
+            }
+            return result;
+        }
+        return null;
     }
 
     public void build(RotaryWingVehicleDataPojo pojo) {

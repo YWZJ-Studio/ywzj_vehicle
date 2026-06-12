@@ -14,8 +14,8 @@ import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.item.DecorationItem;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.vehicle.part.DecorationAction;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
+import org.ywzj.vehicle.vehicle.pojo.DecorationAction;
 
 import java.util.function.Supplier;
 

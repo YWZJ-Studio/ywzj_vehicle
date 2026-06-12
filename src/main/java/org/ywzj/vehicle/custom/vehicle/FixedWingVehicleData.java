@@ -8,7 +8,9 @@ import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
+import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.ThrustUnit;
 import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -43,6 +45,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public List<Vec3> aerobaticSmokeOffsets;
     public List<AfterburnerOffset> afterburnerOffsets;
     public String landingGearPartId;
+    public String thrustPartId;
 
     @Override
     public AbstractVehicle fromCustom(Level level) {
@@ -53,6 +56,14 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
         if (vehicle instanceof FixedWingVehicle fixedWingVehicle) {
             PartUnitsAndSeats result = super.createPartUnits(vehicle);
+            PartUnit<?> landingGearUnit = result.partUnitMap().get(this.landingGearPartId);
+            if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
+                fixedWingVehicle.landingGear = switchableUnit;
+            }
+            PartUnit<?> thrustPartUnit = result.partUnitMap().get(this.thrustPartId);
+            if (thrustPartUnit instanceof ThrustUnit thrustUnit) {
+                fixedWingVehicle.thrustUnit = thrustUnit;
+            }
             if (afterburnerOffsets == null || afterburnerOffsets.isEmpty()) {
                 return result;
             }
@@ -103,6 +114,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         this.afterburnerOffsets = pojo.attributes.afterburnerOffsets;
         this.aerobaticSmokeOffsets = pojo.attributes.aerobaticSmokeOffsets.isEmpty() ? pojo.attributes.vortexOffsets : pojo.attributes.aerobaticSmokeOffsets;
         this.landingGearPartId = pojo.landingGearPartId;
+        this.thrustPartId = pojo.thrustPartId;
     }
 
     public void inject(FixedWingVehicle vehicle) {
@@ -128,7 +140,6 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         vehicle.zTurnRate = this.zTurnRate;
         vehicle.vortexOffsets = this.vortexOffsets;
         vehicle.aerobaticSmokeOffsets = this.aerobaticSmokeOffsets;
-        vehicle.landingGearPartId = this.landingGearPartId;
     }
 
 }

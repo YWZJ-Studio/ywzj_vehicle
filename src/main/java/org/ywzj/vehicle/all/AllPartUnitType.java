@@ -17,11 +17,13 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<SwitchableUnit<PartUnitData>, PartUnitData>> SWITCHABLE = register(PartUnitTypes.SWITCHABLE);
 
-    public static final RegistryObject<PartUnitType<LandingGearUnit, PartUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
-
     public static final RegistryObject<PartUnitType<RotatableUnit<RotatableUnitData>, RotatableUnitData>> ROTATABLE = register(PartUnitTypes.ROTATABLE);
 
     public static final RegistryObject<PartUnitType<DoorUnit, DoorUnitData>> DOOR = register(PartUnitTypes.DOOR);
+
+    public static final RegistryObject<PartUnitType<LandingGearUnit, PartUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
+
+    public static final RegistryObject<PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
 
     public static final RegistryObject<PartUnitType<WeaponUnit, WeaponUnitData>> WEAPON = register(PartUnitTypes.WEAPON);
 
@@ -29,7 +31,7 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<RadarUnit, RadarUnitData>> RADAR = register(PartUnitTypes.RADAR);
 
-    public static final RegistryObject<PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
+    public static final RegistryObject<PartUnitType<ThrustUnit, RotatableUnitData>> THRUST = register(PartUnitTypes.THRUST);
 
     private static <T extends PartUnit<D>, D extends PartUnitData> RegistryObject<PartUnitType<T, D>> register(
             PartUnitType<T, D> type

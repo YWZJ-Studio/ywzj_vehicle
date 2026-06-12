@@ -80,6 +80,7 @@
   "tips.bay_close": "Bay Close",
   "tips.hover_mode_on": "Hover Mode On",
   "tips.hover_mode_off": "Hover Mode Off",
+  "tips.thrust_vector": "Thrust Vector: %s°",
   "tips.use_weapon": "Use Weapon: %s",
   "tips.experimental": "Beta",
   "tips.sneak_use_modding_tool": "Sneak and use Modding Tool",
