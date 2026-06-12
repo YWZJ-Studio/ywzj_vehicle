@@ -107,7 +107,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private boolean seekerOn;
     private int lockCoolingTick;
     // 第三人称准心样式
-    public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
+    public WeaponUnitData.CrosshairStyle crosshairStyle;
     // 是否仅渲染选中武器的部件模型
     public boolean renderSelectedWeapon;
     // OBB结构
