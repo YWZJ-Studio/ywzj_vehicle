@@ -170,15 +170,10 @@ public class BulletHoleParticle extends TextureSheetParticle {
         buffer.addVertex(points[1].x(), points[1].y(), points[1].z()).setUv(u1, v0).setColor(r, g, b, a).setLight(lightColor);
         buffer.addVertex(points[2].x(), points[2].y(), points[2].z()).setUv(u0, v0).setColor(r, g, b, a).setLight(lightColor);
         buffer.addVertex(points[3].x(), points[3].y(), points[3].z()).setUv(u0, v1).setColor(r, g, b, a).setLight(lightColor);
-
-        buffer.vertex(points[0].x(), points[0].y(), points[0].z()).uv(u1, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[1].x(), points[1].y(), points[1].z()).uv(u1, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[2].x(), points[2].y(), points[2].z()).uv(u0, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[3].x(), points[3].y(), points[3].z()).uv(u0, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[3].x(), points[3].y(), points[3].z()).uv(u0, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[2].x(), points[2].y(), points[2].z()).uv(u0, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[1].x(), points[1].y(), points[1].z()).uv(u1, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[0].x(), points[0].y(), points[0].z()).uv(u1, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
+        buffer.addVertex(points[3].x(), points[3].y(), points[3].z()).setUv(u0, v1).setColor(r, g, b, a).setLight(lightColor);
+        buffer.addVertex(points[2].x(), points[2].y(), points[2].z()).setUv(u0, v0).setColor(r, g, b, a).setLight(lightColor);
+        buffer.addVertex(points[1].x(), points[1].y(), points[1].z()).setUv(u1, v0).setColor(r, g, b, a).setLight(lightColor);
+        buffer.addVertex(points[0].x(), points[0].y(), points[0].z()).setUv(u1, v1).setColor(r, g, b, a).setLight(lightColor);
     }
 
     public void update() {

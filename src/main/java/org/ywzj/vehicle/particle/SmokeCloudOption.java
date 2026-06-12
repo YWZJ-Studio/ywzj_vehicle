@@ -1,16 +1,12 @@
 package org.ywzj.vehicle.particle;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.network.codec.StreamCodec;
 import org.ywzj.vehicle.all.AllParticleTypes;
-
-import java.util.Locale;
 
 public record SmokeCloudOption(boolean changing, int color, int endColor, float alpha, float endAlpha, int life, float size, float endSize, float gravity) implements ParticleOptions {
 
@@ -27,36 +23,10 @@ public record SmokeCloudOption(boolean changing, int color, int endColor, float 
                     Codec.FLOAT.fieldOf("gravity").forGetter(SmokeCloudOption::gravity)
             ).apply(builder, SmokeCloudOption::new));
 
-    @SuppressWarnings("deprecation")
-    public static final Deserializer<SmokeCloudOption> DESERIALIZER = new Deserializer<>() {
-        @Override
-        public SmokeCloudOption fromCommand(ParticleType<SmokeCloudOption> particleType, StringReader reader) throws CommandSyntaxException {
-            reader.expect(' ');
-            boolean changing = reader.readInt() != 0;
-            reader.expect(' ');
-            int color = reader.readInt();
-            reader.expect(' ');
-            int endColor = reader.readInt();
-            reader.expect(' ');
-            float alpha = reader.readFloat();
-            reader.expect(' ');
-            float endAlpha = reader.readFloat();
-            reader.expect(' ');
-            int life = reader.readInt();
-            reader.expect(' ');
-            float size = reader.readFloat();
-            reader.expect(' ');
-            float endSize = reader.readFloat();
-            reader.expect(' ');
-            float gravity = reader.readFloat();
-            return new SmokeCloudOption(changing, color, endColor, alpha, endAlpha, life, size, endSize, gravity);
-        }
-
-        @Override
-        public SmokeCloudOption fromNetwork(ParticleType<SmokeCloudOption> particleType, FriendlyByteBuf buffer) {
-            return new SmokeCloudOption(buffer.readBoolean(), buffer.readInt(), buffer.readInt(), buffer.readFloat(), buffer.readFloat(), buffer.readInt(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
-        }
-    };
+    public static final StreamCodec<FriendlyByteBuf, SmokeCloudOption> STREAM_CODEC = StreamCodec.of(
+            (buf, option) -> option.writeToNetwork(buf),
+            SmokeCloudOption::fromNetwork
+    );
 
     /** 单色构造器（endColor 默认纯黑，endSize 默认同 size，alpha 默认1，endAlpha 默认0） */
     public SmokeCloudOption(float r, float g, float b, int life, float size, float gravity) {
@@ -148,7 +118,6 @@ public record SmokeCloudOption(boolean changing, int color, int endColor, float 
         return this.changing ? AllParticleTypes.CHANGING_CLOUD.get() : AllParticleTypes.FIXED_CLOUD.get();
     }
 
-    @Override
     public void writeToNetwork(FriendlyByteBuf buffer) {
         buffer.writeBoolean(this.changing);
         buffer.writeInt(this.color);
@@ -161,10 +130,8 @@ public record SmokeCloudOption(boolean changing, int color, int endColor, float 
         buffer.writeFloat(this.gravity);
     }
 
-    @Override
-    public String writeToString() {
-        return String.format(Locale.ROOT, "%s %d %d %d %.2f %.2f %d %.2f %.2f %.2f",
-                ForgeRegistries.PARTICLE_TYPES.getKey(this.getType()), this.changing ? 1 : 0, this.color, this.endColor, this.alpha, this.endAlpha, this.life, this.size, this.endSize, this.gravity);
+    public static SmokeCloudOption fromNetwork(FriendlyByteBuf buffer) {
+        return new SmokeCloudOption(buffer.readBoolean(), buffer.readInt(), buffer.readInt(), buffer.readFloat(), buffer.readFloat(), buffer.readInt(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
     }
 
 }

@@ -13,9 +13,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.ywzj.vehicle.YwzjVehicle;
-import net.minecraftforge.network.NetworkEvent;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
@@ -29,7 +28,6 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 public class ServerHitVehicleEvent implements CustomPacketPayload {
 
@@ -63,7 +61,7 @@ public class ServerHitVehicleEvent implements CustomPacketPayload {
         serverHitVehicleEvent.hitVector = new Vec3(buf.readVector3f());
         serverHitVehicleEvent.caliber = buf.readFloat();
         serverHitVehicleEvent.damage = buf.readFloat();
-        serverHitVehicleEvent.message = buf.readComponent();
+        serverHitVehicleEvent.message = Component.translatable(buf.readUtf());
         return serverHitVehicleEvent;
     }
 
@@ -77,11 +75,11 @@ public class ServerHitVehicleEvent implements CustomPacketPayload {
         buf.writeUtf(message.getString());
     }
 
-    public static void handle(ServerHitVehicleEvent message, IPayloadContext ctx) {
+    public static void handle(ServerHitVehicleEvent message, IPayloadContext ctxSupplier) {
         if (!AllConfigs.common.hitIndicator.get()) {
             return;
         }
-        ctxSupplier.get().enqueueWork(() -> {
+        ctxSupplier.enqueueWork(() -> {
             if (message.shooterUuid.equals(LocalVehiclePlayer.instance.getPlayer().getUUID())) {
                 VehicleHitIndicatorOverlay.lastHitTime = System.currentTimeMillis();
                 if (!VehicleHitIndicatorOverlay.events.isEmpty() && VehicleHitIndicatorOverlay.events.get(0).entityId != message.entityId) {

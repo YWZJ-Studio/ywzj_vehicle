@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -15,14 +16,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.minecraftforge.client.gui.widget.ForgeSlider;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -40,9 +39,9 @@ public class VehicleDisplayToolScreen extends Screen {
     private int leftPos;
     private int topPos;
     private EditBox searchBox;
-    private ForgeSlider smokeRSlider;
-    private ForgeSlider smokeGSlider;
-    private ForgeSlider smokeBSlider;
+    private SmokeSlider smokeRSlider;
+    private SmokeSlider smokeGSlider;
+    private SmokeSlider smokeBSlider;
     private final AbstractVehicle vehicle;
     private List<ResourceLocation> variableDisplayIds = new ArrayList<>();
     private List<ResourceLocation> filteredVariableDisplayIds = new ArrayList<>();
@@ -83,20 +82,11 @@ public class VehicleDisplayToolScreen extends Screen {
             int sliderY = 20;
             int sliderWidth = 105;
             int sliderHeight = 10;
-            this.smokeRSlider = new ForgeSlider(sliderX, sliderY, sliderWidth, sliderHeight,
-                    Component.literal("R "), Component.empty(),
-                    0, 255, common.aerobaticSmokeR.get(), 1, 0, true);
-            this.smokeRSlider.setFGColor(0xFF6666);
+            this.smokeRSlider = new SmokeSlider(sliderX, sliderY, sliderWidth, sliderHeight, "R ", common.aerobaticSmokeR.get());
             this.addRenderableWidget(smokeRSlider);
-            this.smokeGSlider = new ForgeSlider(sliderX, sliderY + 12, sliderWidth, sliderHeight,
-                    Component.literal("G "), Component.empty(),
-                    0, 255, common.aerobaticSmokeG.get(), 1, 0, true);
-            this.smokeGSlider.setFGColor(0x66FF66);
+            this.smokeGSlider = new SmokeSlider(sliderX, sliderY + 12, sliderWidth, sliderHeight, "G ", common.aerobaticSmokeG.get());
             this.addRenderableWidget(smokeGSlider);
-            this.smokeBSlider = new ForgeSlider(sliderX, sliderY + 24, sliderWidth, sliderHeight,
-                    Component.literal("B "), Component.empty(),
-                    0, 255, common.aerobaticSmokeB.get(), 1, 0, true);
-            this.smokeBSlider.setFGColor(0x6666FF);
+            this.smokeBSlider = new SmokeSlider(sliderX, sliderY + 24, sliderWidth, sliderHeight, "B ", common.aerobaticSmokeB.get());
             this.addRenderableWidget(smokeBSlider);
         }
     }
@@ -104,14 +94,15 @@ public class VehicleDisplayToolScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawVehiclePreview(guiGraphics);
         if (vehicle instanceof FixedWingVehicle) {
             guiGraphics.drawString(font, Component.translatable("ui.aerobatic_smoke"), leftPos + LIST_WIDTH + 10, 8, 0xFFAAAAAA);
             AllConfigs.CommonConfig common = AllConfigs.common;
-            common.aerobaticSmokeR.set((int) smokeRSlider.getValue());
-            common.aerobaticSmokeG.set((int) smokeGSlider.getValue());
-            common.aerobaticSmokeB.set((int) smokeBSlider.getValue());
+            common.aerobaticSmokeR.set(smokeRSlider.getIntValue());
+            common.aerobaticSmokeG.set(smokeGSlider.getIntValue());
+            common.aerobaticSmokeB.set(smokeBSlider.getIntValue());
             int dotX = leftPos + LIST_WIDTH + 120;
             int dotY = 24;
             int dotSize = 24;
@@ -121,7 +112,6 @@ public class VehicleDisplayToolScreen extends Screen {
                     | common.aerobaticSmokeB.get();
             guiGraphics.fill(dotX, dotY, dotX + dotSize, dotY + dotSize, color);
         }
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void updateFilteredList(String filter) {
@@ -286,5 +276,30 @@ public class VehicleDisplayToolScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() { return false; }
+
+    private static class SmokeSlider extends AbstractSliderButton {
+
+        private final String prefix;
+
+        public SmokeSlider(int x, int y, int width, int height, String prefix, int initialValue) {
+            super(x, y, width, height, Component.empty(), initialValue / 255.0);
+            this.prefix = prefix;
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            int val = (int) (this.value * 255);
+            setMessage(Component.literal(prefix + val));
+        }
+
+        @Override
+        protected void applyValue() {}
+
+        public int getIntValue() {
+            return (int) (this.value * 255);
+        }
+
+    }
 
 }
