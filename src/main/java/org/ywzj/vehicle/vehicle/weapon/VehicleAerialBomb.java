@@ -44,7 +44,7 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
                     entity.targetPos = aimContext.position;
                 }
             }
-            entity.shoot(this.getVehicle(), this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y, data.getInaccuracy(), this.getWeaponUnit().getOwner());
+            entity.shoot(vehicle, this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y, data.getInaccuracy(), this.getWeaponUnit().getOwner());
             vehicle.level().addFreshEntity(entity);
         }
         return true;

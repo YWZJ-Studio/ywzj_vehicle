@@ -48,7 +48,7 @@ public abstract class CameraMixin {
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraZO, localVehiclePlayer.cameraZ));
             if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE
                     || localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.OPERATOR
-                    || LocalVehiclePlayer.instance.playerLerpSteps > 0) {
+                    || localVehiclePlayer.playerLerpSteps > 0) {
                 FirstPersonHandler.zRot = Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ);
                 setRotation(Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY),
                         Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotXO, localVehiclePlayer.cameraAimRotX));

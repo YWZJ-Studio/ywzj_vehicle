@@ -48,7 +48,7 @@ public class BulletEntity extends AmmoEntity {
                 this.random.triangle(0.0D, 0.0172275D * inaccuracy),
                 this.random.triangle(0.0D, 0.0172275D * inaccuracy))
                 .scale(velocity);
-        this.setDeltaMovement(direction);
+        this.setDeltaMovement(direction.add(vehicle.getDeltaMovement()));
         this.setPos(spawnPos);
         this.setRot(ammoYRot, ammoXRot);
         this.yRotO = this.getYRot();
