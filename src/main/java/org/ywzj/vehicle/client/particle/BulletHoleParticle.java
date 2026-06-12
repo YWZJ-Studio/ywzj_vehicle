@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.particle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -11,11 +12,13 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -45,7 +48,6 @@ public class BulletHoleParticle extends TextureSheetParticle {
     private int entityId;
     private Vec3 offsetFromBone;
     private Quaternionf selfRotation;
-    private Quaternionf worldRotation;
 
     public BulletHoleParticle(ClientLevel level, double x, double y, double z,
                                Direction direction, BlockPos pos, float r, float g, float b, float caliber) {
@@ -57,7 +59,7 @@ public class BulletHoleParticle extends TextureSheetParticle {
                               Direction direction, BlockPos pos, float r, float g, float b, float caliber,
                               int entityId, String boneName, Quaternionf selfRotation, Vec3 offsetFromBone) {
         super(level, x, y, z);
-        this.setSprite(getBlockSprite(level, pos));
+        this.setSprite(getBlockSprite(pos));
         this.direction = direction;
         this.pos = pos;
         this.lifetime = 600 + level.random.nextInt(100);
@@ -97,7 +99,6 @@ public class BulletHoleParticle extends TextureSheetParticle {
         this.entityId = entityId;
         this.offsetFromBone = offsetFromBone;
         this.selfRotation = selfRotation;
-        this.worldRotation = new Quaternionf(direction.getRotation());
     }
 
     @Override
@@ -122,80 +123,118 @@ public class BulletHoleParticle extends TextureSheetParticle {
 
     @Override
     public void render(VertexConsumer buffer, Camera renderInfo, float partialTicks) {
-        Vec3 view = renderInfo.getPosition();
-        float px = (float) (Mth.lerp(partialTicks, this.xo, this.x) - view.x());
-        float py = (float) (Mth.lerp(partialTicks, this.yo, this.y) - view.y());
-        float pz = (float) (Mth.lerp(partialTicks, this.zo, this.z) - view.z());
-        Quaternionf quaternion = entityId >= 0 ? this.worldRotation : this.direction.getRotation();
-        if (quaternion == null) {
-            this.remove();
+        if (vehicle != null) {
             return;
         }
-        Vector3f[] points = new Vector3f[]{
+        Vec3 view = renderInfo.getPosition();
+        float px = (float) (this.x - view.x());
+        float py = (float) (this.y - view.y());
+        float pz = (float) (this.z - view.z());
+        Vector3f[] points = newQuadPoints();
+        float scale = this.getQuadSize(partialTicks);
+        for (Vector3f point : points) {
+            point.rotate(this.direction.getRotation());
+            point.mul(scale);
+            point.add(px, py, pz);
+        }
+        emitDoubleSidedQuad(buffer, points, renderData());
+    }
+
+    public void renderOnVehicle(float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource) {
+        if (vehicle == null) {
+            return;
+        }
+        Quaternionf globalRotation = new Quaternionf(bone.rotation);
+        globalRotation.premul(selfRotation);
+        globalRotation.rotateX((float) (Math.PI / 2));
+        Vector3f offset = bone.rotation.transform(offsetFromBone.toVector3f());
+        Vector3f globalPivot = new Vector3f(bone.x / 16.0F + offset.x, bone.y / 16.0F + offset.y, bone.z / 16.0F + offset.z);
+        BedrockBone parent = bone.parent;
+        while (parent != null) {
+            parent.rotation.transform(globalPivot);
+            globalPivot.add(parent.x / 16, parent.y / 16, parent.z / 16);
+            globalRotation.premul(parent.rotation);
+            parent = parent.parent;
+        }
+        Vector3f[] points = newQuadPoints();
+        float scale = this.getQuadSize(partialTicks);
+        for (Vector3f point : points) {
+            point.rotate(globalRotation);
+            point.mul(scale);
+            point.add(globalPivot);
+        }
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
+        emitDoubleSidedQuad(buffer, poseStack.last(), points, renderData());
+    }
+
+    private static Vector3f[] newQuadPoints() {
+        return new Vector3f[]{
                 new Vector3f(-1.0F, 0.01F, -1.0F),
                 new Vector3f(-1.0F, 0.01F, 1.0F),
                 new Vector3f(1.0F, 0.01F, 1.0F),
                 new Vector3f(1.0F, 0.01F, -1.0F)
         };
-        float scale = this.getQuadSize(partialTicks);
+    }
 
-        for (int i = 0; i < 4; ++i) {
-            Vector3f v = points[i];
-            v.rotate(quaternion);
-            v.mul(scale);
-            v.add(px, py, pz);
-        }
-
-        float u0 = this.getU0();
-        float u1 = this.getU1();
-        float v0 = this.getV0();
-        float v1 = this.getV1();
-
+    private record RenderData(float u0, float u1, float v0, float v1, float red, float green, float blue, float alpha, int lightColor) {}
+    private RenderData renderData() {
         int light = Math.max(15 - this.age / 2, 0);
         int lightColor = LightTexture.pack(light, light);
-
         float colorPercent = light / 15.0f;
-        float red = this.rCol * colorPercent;
-        float green = this.gCol * colorPercent;
-        float blue = this.bCol * colorPercent;
-
         float fade = 1.0f - (float) this.age / this.lifetime;
-        float alphaFade = this.alpha * fade;
-
-        buffer.vertex(points[0].x(), points[0].y(), points[0].z()).uv(u1, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[1].x(), points[1].y(), points[1].z()).uv(u1, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[2].x(), points[2].y(), points[2].z()).uv(u0, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[3].x(), points[3].y(), points[3].z()).uv(u0, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[3].x(), points[3].y(), points[3].z()).uv(u0, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[2].x(), points[2].y(), points[2].z()).uv(u0, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[1].x(), points[1].y(), points[1].z()).uv(u1, v0).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
-        buffer.vertex(points[0].x(), points[0].y(), points[0].z()).uv(u1, v1).color(red, green, blue, alphaFade).uv2(lightColor).endVertex();
+        return new RenderData(
+                this.getU0(), this.getU1(), this.getV0(), this.getV1(),
+                this.rCol * colorPercent,
+                this.gCol * colorPercent,
+                this.bCol * colorPercent,
+                this.alpha * fade,
+                lightColor
+        );
     }
 
-    public void update() {
-        if (vehicle != null) {
-            Quaternionf globalRotation = new Quaternionf(bone.rotation);
-            globalRotation.premul(selfRotation);
-            globalRotation.rotateX((float) (Math.PI / 2));
-            Vector3f offset = bone.rotation.transform(offsetFromBone.toVector3f());
-            Vector3f globalPivot = new Vector3f(bone.x / 16.0F + offset.x, bone.y / 16.0F + offset.y, bone.z / 16.0F + offset.z);
-            BedrockBone parent = bone.parent;
-            while (parent != null) {
-                parent.rotation.transform(globalPivot);
-                globalPivot.add(parent.x / 16, parent.y / 16, parent.z / 16);
-                globalRotation.premul(parent.rotation);
-                parent = parent.parent;
-            }
-            worldRotation = vehicle.rotYXZ().mul(globalRotation);
-            Vec3 offsetFromVehicle = new Vec3(globalPivot);
-            Vec3 worldPosition = vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
-            this.xo = this.x = worldPosition.x;
-            this.yo = this.y = worldPosition.y;
-            this.zo = this.z = worldPosition.z;
-        }
+    private static void emitDoubleSidedQuad(VertexConsumer buffer, Vector3f[] points, RenderData data) {
+        vertex(buffer, points[0], data.u1(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[1], data.u1(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[2], data.u0(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[3], data.u0(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[3], data.u0(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[2], data.u0(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[1], data.u1(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, points[0], data.u1(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
     }
 
-    private static TextureAtlasSprite getBlockSprite(ClientLevel world, BlockPos pos) {
+    private static void emitDoubleSidedQuad(VertexConsumer buffer, PoseStack.Pose pose, Vector3f[] points, RenderData data) {
+        vertex(buffer, pose, points[0], data.u1(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[1], data.u1(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[2], data.u0(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[3], data.u0(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[3], data.u0(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[2], data.u0(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[1], data.u1(), data.v0(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+        vertex(buffer, pose, points[0], data.u1(), data.v1(), data.red(), data.green(), data.blue(), data.alpha(), data.lightColor());
+    }
+
+    private static void vertex(VertexConsumer buffer, Vector3f point,
+                               float u, float v, float red, float green, float blue, float alpha, int lightColor) {
+        buffer.vertex(point.x(), point.y(), point.z())
+                .uv(u, v)
+                .color(red, green, blue, alpha)
+                .uv2(lightColor)
+                .endVertex();
+    }
+
+    private static void vertex(VertexConsumer buffer, PoseStack.Pose pose, Vector3f point,
+                               float u, float v, float red, float green, float blue, float alpha, int lightColor) {
+        buffer.vertex(pose.pose(), point.x(), point.y(), point.z())
+                .color(red, green, blue, alpha)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(lightColor)
+                .normal(pose.normal(), 0.0F, 1.0F, 0.0F)
+                .endVertex();
+    }
+
+    private static TextureAtlasSprite getBlockSprite(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null) {
             BlockState state = minecraft.level.getBlockState(pos);

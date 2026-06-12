@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 @OnlyIn(Dist.CLIENT)
 public class VehicleSound extends SimpleSoundInstance implements TickableSoundInstance {
@@ -100,7 +101,11 @@ public class VehicleSound extends SimpleSoundInstance implements TickableSoundIn
         }
         Vec3 simulatedPos;
         Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        simulatedPos = calRelativePos(entity.position().add(offset), cameraPos, entity.equals(cameraEntity.getVehicle()));
+        Vec3 soundPos = entity.position().add(offset);
+        if (entity instanceof AbstractVehicle vehicle) {
+            soundPos = vehicle.relativeRotPos(soundPos, false);
+        }
+        simulatedPos = calRelativePos(soundPos, cameraPos, entity.equals(cameraEntity.getVehicle()));
         this.x = simulatedPos.x;
         this.y = simulatedPos.y;
         this.z = simulatedPos.z;

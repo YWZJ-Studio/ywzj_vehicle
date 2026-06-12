@@ -34,15 +34,22 @@ public class DamageSystem {
         boolean explosion = damageSource.getMsgId().equals("ywzj_vehicle.explosion");
         Vec3 hitPos = null;
         float caliber = 5.8f;
-        if (damageSource.getDirectEntity() instanceof Projectile || (explosion && damageSource.getDirectEntity() != null)) {
-            hitPos = damageSource.getDirectEntity().position();
+        if (damageSource.getDirectEntity() instanceof Projectile projectile) {
+            Vec3 closestHitPos = VectorUtil.closestHitObbPosition(vehicle, projectile.position(), projectile.position().add(projectile.getDeltaMovement()));
+            if (closestHitPos != null) {
+                hitPos = closestHitPos;
+            }
             if (damageSource.getDirectEntity() instanceof AmmoEntity ammoEntity) {
                 caliber = ammoEntity.getCaliber();
             }
         }
-        if (amount < vehicle.defenseStats.damageThreshold) {
-            scale = 0.1;
-            amount = 1f;
+        if (explosion && damageSource.getDirectEntity() != null) {
+            hitPos = damageSource.getDirectEntity().position();
+        }
+        if (amount < 0.1) {
+            amount = 0;
+        } else if (amount < vehicle.defenseStats.damageThreshold) {
+            amount = 0.1f;
         } else {
             if (hitPos == null) {
                 scale = 0.2;
@@ -59,35 +66,31 @@ public class DamageSystem {
         }
         amount *= (float) scale;
         if (hitPos != null) {
+            Vec3 soundOffset = vehicle.relativeRotPos(hitPos, true).subtract(vehicle.position());
             MutableComponent message;
             float damageScale = amount / vehicle.getMaxHealth();
             if (damageScale >= 0.5) {
-                vehicle.playSound(AllSounds.VEHICLE_HIT_BIG.get(), 2, 1);
+                vehicle.playVehicleSound(AllSounds.VEHICLE_HIT_BIG.get(), soundOffset, 1f, 4f, 1f, 0, false, false, true);
                 message = Component.translatable("message.vehicle.damage_system.critical");
             } else if (damageScale >= 0.25) {
-                vehicle.playSound(AllSounds.VEHICLE_HIT_MED.get(), 2, 1);
+                vehicle.playVehicleSound(AllSounds.VEHICLE_HIT_MED.get(), soundOffset, 1f, 4f, 1f, 0, false, false, true);
                 message = Component.translatable("message.vehicle.damage_system.hurt");
-            } else {
-                vehicle.playSound(AllSounds.VEHICLE_HIT_SMALL.get(), 2, 1);
+            } else if (damageScale > 0) {
+                vehicle.playVehicleSound(AllSounds.VEHICLE_HIT_SMALL.get(), soundOffset, 1f, 4f, 1f, 0, false, false, true);
                 message = Component.translatable("message.vehicle.damage_system.hit");
+            } else {
+                return;
             }
-            if (damageSource.getDirectEntity() instanceof Projectile projectile) {
-                if (projectile.getOwner() != null) {
-                    Vec3 closestHitPos = VectorUtil.closestHitObbPosition(vehicle, projectile.position(), projectile.position().add(projectile.getDeltaMovement()));
-                    if (closestHitPos != null) {
-                        hitPos = closestHitPos;
-                    }
-                    HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(projectile.getOwner().getUUID(),
-                            vehicle.getId(),
-                            hitPos,
-                            projectile.getDeltaMovement(),
-                            caliber,
-                            amount,
-                            message);
-                    MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
-                }
-            }
-            if (damageSource.getDirectEntity() instanceof AbstractVehicle && damageSource.getEntity() instanceof ServerPlayer serverPlayer) {
+            if (damageSource.getDirectEntity() instanceof Projectile projectile && projectile.getOwner() != null) {
+                HitVehicleEvent hitVehicleEvent = new HitVehicleEvent(projectile.getOwner().getUUID(),
+                        vehicle.getId(),
+                        hitPos,
+                        projectile.getDeltaMovement(),
+                        caliber,
+                        amount,
+                        message);
+                MinecraftForge.EVENT_BUS.post(hitVehicleEvent);
+            } else if (damageSource.getDirectEntity() instanceof AbstractVehicle && damageSource.getEntity() instanceof ServerPlayer serverPlayer) {
                 Vec3 direction = vehicle.getBoundingBox().getCenter().subtract(hitPos).normalize();
                 if (explosion) {
                     message = message.append(" ").append(Component.translatable("message.vehicle.damage_system.explosion").withStyle(ChatFormatting.YELLOW));
