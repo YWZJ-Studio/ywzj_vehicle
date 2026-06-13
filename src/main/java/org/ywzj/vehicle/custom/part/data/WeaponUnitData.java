@@ -20,6 +20,8 @@ public class WeaponUnitData extends RotatableUnitData {
     private List<Bolt> bolts;
     private int ammoCapacity;
     private FiringMode firingMode;
+    private int coldLaunchTimeTick;
+    private Vec3 coldLaunchDirection;
     private boolean parentWeaponUnitAim;
     private Vec3 opticalSightOffset;
     private Vec3 operatorViewOffset;
@@ -45,6 +47,8 @@ public class WeaponUnitData extends RotatableUnitData {
         this.bolts = pojo.bolts;
         this.ammoCapacity = pojo.ammoCapacity;
         this.firingMode = pojo.firingMode;
+        this.coldLaunchTimeTick = pojo.coldLaunchTimeTick;
+        this.coldLaunchDirection = pojo.coldLaunchDirection;
         this.parentWeaponUnitAim = pojo.parentWeaponUnitAim;
         this.opticalSightOffset = pojo.opticalSightOffset;
         this.operatorViewOffset = pojo.operatorViewOffset;
@@ -71,6 +75,14 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public FiringMode getFiringMode() {
         return firingMode;
+    }
+
+    public int getColdLaunchTimeTick() {
+        return coldLaunchTimeTick;
+    }
+
+    public Vec3 getColdLaunchDirection() {
+        return coldLaunchDirection;
     }
 
     public boolean isParentWeaponUnitAim() {

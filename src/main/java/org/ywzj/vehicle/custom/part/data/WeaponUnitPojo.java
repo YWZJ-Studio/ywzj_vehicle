@@ -18,6 +18,12 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("firing_mode")
     public WeaponUnitData.FiringMode firingMode = WeaponUnitData.FiringMode.RIPPLE;
 
+    @SerializedName("cold_launch_time_tick")
+    public int coldLaunchTimeTick = 0;
+
+    @SerializedName("cold_launch_direction")
+    public Vec3 coldLaunchDirection = new Vec3(0, -1, 0);
+
     @SerializedName("parent_weapon_unit_aim")
     public boolean parentWeaponUnitAim = false;
 
