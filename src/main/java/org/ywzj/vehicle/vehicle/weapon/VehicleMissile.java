@@ -51,11 +51,11 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
 
     @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
-        int ignitionDelayTick = getData().getIgnitionDelayTick();
-        if (ignitionDelayTick > 0) {
+        int coldLaunchTimeTick = getWeaponUnit().getRootParentWeaponUnit().getColdLaunchTimeTick();
+        if (coldLaunchTimeTick > 0) {
             new Thread(() -> {
                 try {
-                    Thread.sleep(ignitionDelayTick * 50L);
+                    Thread.sleep(coldLaunchTimeTick * 50L);
                 } catch (InterruptedException e) {}
                 Minecraft.getInstance().execute(super::onClientFire);
             }).start();
@@ -77,24 +77,26 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
         var vehicle = getVehicle();
         var data = this.getData();
 
-        WeaponUnit weaponUnit = getWeaponUnit().getRootParentWeaponUnit();
+        WeaponUnit weaponUnit = getWeaponUnit();
+        WeaponUnit rootWeaponUnit = weaponUnit.getRootParentWeaponUnit();
         for (AimContext aimContext : aimContexts) {
-            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data, weaponUnit);
+            MissileEntity missileEntity = new MissileEntity(AllEntities.MISSILE.get(), vehicle.level(), data, rootWeaponUnit);
+            missileEntity.initColdLaunch(weaponUnit);
             if (data.getGuidance() == VehicleMissileWeaponData.Guidance.PRESET
                     || data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
                 missileEntity.targetPos = aimContext.position;
-                AimContext currentAimContext = weaponUnit.aimContext();
+                AimContext currentAimContext = rootWeaponUnit.aimContext();
                 missileEntity.targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
                 if (data.getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-                    missileEntity.targetEntity = weaponUnit.getLockedEntity();
+                    missileEntity.targetEntity = rootWeaponUnit.getLockedEntity();
                 }
             }
             missileEntity.shoot(vehicle, this.getDisplayName(),
                     aimContext.from, aimContext.direction.x, aimContext.direction.y,
-                    this.getWeaponUnit().getOwner());
+                    this.weaponUnit.getOwner());
             missileEntity.setDeltaMovement(missileEntity.getDeltaMovement().add(vehicle.getDeltaMovement()));
             vehicle.level().addFreshEntity(missileEntity);
-            vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
+            vehicle.physicsEngine.recoil(weaponUnit, data.getRecoil());
         }
         return true;
     }

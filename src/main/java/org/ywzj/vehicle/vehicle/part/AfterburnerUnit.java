@@ -36,7 +36,7 @@ public class AfterburnerUnit extends SwitchableUnit<PartUnitData> {
     private AnimationRunner currentRunner;
     private float xRot;
     private float yRot;
-    private enum State { IDLE, STARTING, SUSTAINING, CLOSING }
+    private enum State { IDLE, STARTING, STARTING_REVERSING, SUSTAINING, CLOSING, CLOSING_REVERSING }
 
     public AfterburnerUnit(int index, AbstractVehicle vehicle, Vec3 afterburnerOffset, float scale) {
         super(index, vehicle, createData(index));
@@ -69,16 +69,22 @@ public class AfterburnerUnit extends SwitchableUnit<PartUnitData> {
             boolean on = isOn();
             if (on != wasOn) {
                 if (on) {
-                    transitionToStarting();
+                    transitionOn();
                 } else {
-                    transitionToClosing();
+                    transitionOff();
                 }
                 wasOn = on;
             }
-            if (state == State.STARTING && currentRunner.getAnimationContext().isEnd()) {
-                transitionToSustaining();
-            } else if (state == State.CLOSING && currentRunner.getAnimationContext().isEnd()) {
-                transitionToIdle();
+            if (currentRunner != null && currentRunner.getAnimationContext().isEnd()) {
+                if (state == State.STARTING) {
+                    transitionToSustaining();
+                } else if (state == State.STARTING_REVERSING) {
+                    transitionToIdle();
+                } else if (state == State.CLOSING) {
+                    transitionToIdle();
+                } else if (state == State.CLOSING_REVERSING) {
+                    transitionToSustaining();
+                }
             }
         }
     }
@@ -115,6 +121,39 @@ public class AfterburnerUnit extends SwitchableUnit<PartUnitData> {
                     OverlayTexture.pack(0f, false));
         }
         pPoseStack.popPose();
+    }
+
+    private void transitionOn() {
+        if (state == State.CLOSING) {
+            playCurrentRunner(-1.0f);
+            state = State.CLOSING_REVERSING;
+        } else if (state == State.STARTING_REVERSING) {
+            playCurrentRunner(1.0f);
+            state = State.STARTING;
+        } else {
+            transitionToStarting();
+        }
+    }
+
+    private void transitionOff() {
+        if (state == State.STARTING) {
+            playCurrentRunner(-1.0f);
+            state = State.STARTING_REVERSING;
+        } else if (state == State.CLOSING_REVERSING) {
+            playCurrentRunner(1.0f);
+            state = State.CLOSING;
+        } else {
+            transitionToClosing();
+        }
+    }
+
+    private void playCurrentRunner(float speed) {
+        if (currentRunner == null) {
+            return;
+        }
+        PlayingState playingState = new PlayingState(System::nanoTime, StopState::new);
+        playingState.setSpeed(speed);
+        currentRunner.setState(playingState);
     }
 
     private void transitionToStarting() {

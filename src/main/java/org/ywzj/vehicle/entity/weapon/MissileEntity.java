@@ -45,7 +45,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public float mass;
     public float thrust;
     public float motorBurnTime;
-    public int ignitionDelayTick;
+    public int coldLaunchTimeTick;
+    public Vec3 coldLaunchDirection = new Vec3(0, -1, 0);
     public float dragCoefficient;
     public float maxG;
     public float referenceSpeed;
@@ -86,12 +87,14 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         super.writeSpawnData(buffer);
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
+        buffer.writeInt(coldLaunchTimeTick);
     }
 
     @Override
     public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         super.readSpawnData(additionalData);
         ownerId = additionalData.readInt();
+        coldLaunchTimeTick = additionalData.readInt();
         VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(getWeaponId()).orElse(null);
         if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleMissileWeaponData data) {
             initMissile(data);
@@ -103,7 +106,6 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.mass = data.getMass();
         this.thrust = data.getThrust();
         this.motorBurnTime = data.getMotorBurnTime();
-        this.ignitionDelayTick = data.getIgnitionDelayTick();
         this.dragCoefficient = data.getDragCoefficient();
         this.maxG = data.getMaxG();
         this.referenceSpeed = data.getReferenceSpeed();
@@ -112,6 +114,14 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.damage = data.getDamage();
         this.explosion = data.getExplosion();
         this.life = data.getLife();
+    }
+
+    public void initColdLaunch(WeaponUnit weaponUnit) {
+        if (weaponUnit == null) {
+            return;
+        }
+        this.coldLaunchTimeTick = weaponUnit.getColdLaunchTimeTick();
+        this.coldLaunchDirection = weaponUnit.getColdLaunchDirection();
     }
 
     @Override
@@ -142,7 +152,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private void tickGuidance() {
-        if (tickCount < ignitionDelayTick) {
+        if (tickCount < coldLaunchTimeTick) {
             return;
         }
         if (guidance == VehicleMissileWeaponData.Guidance.HOMING) {
@@ -203,9 +213,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             targetPos = VectorUtil.hitPosition(this, targetPos, targetPos.add(targetVec.scale(256)));
         }
         Vec3 velocity = this.getDeltaMovement();
-        if (tickCount >= ignitionDelayTick) {
+        if (tickCount >= coldLaunchTimeTick) {
             Vec3 lookDir = this.getLookAngle();
-            int motorTick = tickCount - ignitionDelayTick;
+            int motorTick = tickCount - coldLaunchTimeTick;
             // 推力
             if (motorTick <= motorBurnTime) {
                 double acceleration = (this.thrust / this.mass);
@@ -218,10 +228,16 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                 velocity = velocity.add(drag);
             }
         }
-        if (tickCount < ignitionDelayTick) {
+        if (tickCount < coldLaunchTimeTick) {
             // 弹仓弹射
             Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
-            velocity = vehicle.getDeltaMovement().add(new Vec3(axes[1].negate()));
+            Vec3 launchDirection = new Vec3(axes[0]).scale(coldLaunchDirection.x)
+                    .add(new Vec3(axes[1]).scale(coldLaunchDirection.y))
+                    .add(new Vec3(axes[2]).scale(coldLaunchDirection.z));
+            if (launchDirection.lengthSqr() > 0) {
+                launchDirection = launchDirection.normalize();
+            }
+            velocity = vehicle.getDeltaMovement().add(launchDirection);
         } else {
             // 重力
             velocity = velocity.subtract(0, PhysicsEngine.G, 0);
@@ -233,8 +249,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         double dz = this.getZ() + velocity.z;
         this.setPos(dx, dy, dz);
         // 自动归正
-        if (tickCount >= ignitionDelayTick) {
-            int motorTick = tickCount - ignitionDelayTick;
+        if (tickCount >= coldLaunchTimeTick) {
+            int motorTick = tickCount - coldLaunchTimeTick;
             if (motorTick > motorBurnTime && targetEntity == null && targetPos == null) {
                 if (velocity.lengthSqr() > 0.01) {
                     Vec3 normVel = velocity.normalize();
@@ -317,7 +333,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
     @OnlyIn(Dist.CLIENT)
     public void tickParticle() {
-        if (tickCount < ignitionDelayTick) {
+        if (tickCount < coldLaunchTimeTick) {
             return;
         }
         if (tickCount <= motorBurnTime) {
@@ -341,7 +357,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
     @OnlyIn(Dist.CLIENT)
     public void tickSound() {
-        if (tickCount < ignitionDelayTick) {
+        if (tickCount < coldLaunchTimeTick) {
             return;
         }
         if (sound == null) {
@@ -451,7 +467,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         double maxOmega = maxAccelLimit / missileSpeed;
         double maxAnglePerTick = Math.toDegrees(maxOmega);
         // 点火后的逐步解锁机动
-        int motorTick = tickCount - ignitionDelayTick;
+        int motorTick = tickCount - coldLaunchTimeTick;
         if (motorTick < 5) {
             maxAnglePerTick *= Math.pow((double) motorTick / 5.0, 2);
         }
