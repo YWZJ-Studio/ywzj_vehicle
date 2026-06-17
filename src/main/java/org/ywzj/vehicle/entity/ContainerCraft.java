@@ -302,4 +302,9 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         return false;
     }
 
+    @Override
+    public boolean isPushedByFluid() {
+        return false;
+    }
+
 }

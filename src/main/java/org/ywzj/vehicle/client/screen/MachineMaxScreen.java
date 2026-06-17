@@ -52,9 +52,10 @@ public class MachineMaxScreen extends Screen {
     public int tickCount;
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private Button printingButton;
-    private EditBox searchBox;
     private final List<Map.Entry<ResourceLocation, BaseVehicleData>> vehicleList =
-            new ArrayList<>(CommonAssetsManager.vehicleDataManager().getVehicleData().entrySet());
+            new ArrayList<>(CommonAssetsManager.vehicleDataManager().getVehicleData().entrySet().stream()
+                    .filter(vehicleData -> !vehicleData.getValue().isExperimental())
+                    .toList());
     private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
     private final MachineMaxBlockEntity machineMaxBlockEntity;
     private AbstractVehicle vehicle;
@@ -72,18 +73,18 @@ public class MachineMaxScreen extends Screen {
         this.topPos = (this.height - imageHeight) / 2;
         int x = leftPos + 12;
         int y = topPos + 11;
-        this.searchBox = new EditBox(this.font, x, y, ITEM_WIDTH - 2, ITEM_HEIGHT - 3, Component.literal("Search"));
-        this.searchBox.setResponder(this::updateFilteredList);
-        this.searchBox.setBordered(true);
-        this.searchBox.active = true;
-        this.searchBox.setTextColor(Color.WHITE);
+        EditBox searchBox = new EditBox(this.font, x, y, ITEM_WIDTH - 2, ITEM_HEIGHT - 3, Component.literal("Search"));
+        searchBox.setResponder(this::updateFilteredList);
+        searchBox.setBordered(true);
+        searchBox.active = true;
+        searchBox.setTextColor(Color.WHITE);
         this.addRenderableWidget(searchBox);
         this.printingButton = Button.builder(Component.translatable("button.machine_max.printing"), button -> onCraft())
                 .pos(width - 60, topPos + 145)
                 .size(50, 20)
                 .build();
         this.addRenderableWidget(printingButton);
-        this.searchBox.setValue(filter);
+        searchBox.setValue(filter);
         updateFilteredList(filter);
         if (selectedIndex >= 0 && selectedIndex < filteredVehicleList.size()) {
             onVehicleSelected(filteredVehicleList.get(selectedIndex).getValue());
