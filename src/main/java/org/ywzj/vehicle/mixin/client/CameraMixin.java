@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -22,9 +21,6 @@ public abstract class CameraMixin {
 
     @Shadow
     protected abstract void setPosition(double pX, double pY, double pZ);
-
-    @Shadow
-    protected abstract void setRotation(float pYRot, float pXRot);
 
     @Shadow
     private Entity entity;
@@ -46,13 +42,6 @@ public abstract class CameraMixin {
             this.setPosition(Mth.lerp(pPartialTick, localVehiclePlayer.cameraXO, localVehiclePlayer.cameraX),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraYO, localVehiclePlayer.cameraY),
                     Mth.lerp(pPartialTick, localVehiclePlayer.cameraZO, localVehiclePlayer.cameraZ));
-            if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE
-                    || localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.OPERATOR
-                    || localVehiclePlayer.playerLerpSteps > 0) {
-                FirstPersonHandler.zRot = Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ);
-                setRotation(Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY),
-                        Mth.lerp(pPartialTick, localVehiclePlayer.cameraAimRotXO, localVehiclePlayer.cameraAimRotX));
-            }
         }
     }
 

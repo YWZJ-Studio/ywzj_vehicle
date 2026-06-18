@@ -216,22 +216,28 @@ public class BulletHoleParticle extends TextureSheetParticle {
 
     private static void vertex(VertexConsumer buffer, Vector3f point,
                                float u, float v, float red, float green, float blue, float alpha, int lightColor) {
-        buffer.vertex(point.x(), point.y(), point.z())
-                .uv(u, v)
-                .color(red, green, blue, alpha)
-                .uv2(lightColor)
-                .endVertex();
+        int r = (int) (red * 255);
+        int g = (int) (green * 255);
+        int b = (int) (blue * 255);
+        int a = (int) (alpha * 255);
+        buffer.addVertex(point.x(), point.y(), point.z())
+                .setUv(u, v)
+                .setColor(r, g, b, a)
+                .setLight(lightColor);
     }
 
     private static void vertex(VertexConsumer buffer, PoseStack.Pose pose, Vector3f point,
                                float u, float v, float red, float green, float blue, float alpha, int lightColor) {
-        buffer.vertex(pose.pose(), point.x(), point.y(), point.z())
-                .color(red, green, blue, alpha)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(lightColor)
-                .normal(pose.normal(), 0.0F, 1.0F, 0.0F)
-                .endVertex();
+        int r = (int) (red * 255);
+        int g = (int) (green * 255);
+        int b = (int) (blue * 255);
+        int a = (int) (alpha * 255);
+        buffer.addVertex(pose.pose(), point.x(), point.y(), point.z())
+                .setUv(u, v)
+                .setColor(r, g, b, a)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(lightColor)
+                .setNormal(pose, 0.0F, 1.0F, 0.0F);
     }
 
     private static TextureAtlasSprite getBlockSprite(BlockPos pos) {

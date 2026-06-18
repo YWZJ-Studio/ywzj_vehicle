@@ -11,7 +11,7 @@ import org.ywzj.vehicle.vehicle.part.*;
 
 public class AllPartUnitType {
 
-    public static final DeferredRegister<PartUnitType<?, ?>> PART_UNIT_TYPE = DeferredRegister.create(ModRegistries.PART_UNIT_TYPE, YwzjVehicle.MOD_ID);
+    public static final DeferredRegister<PartUnitType<?, ?>> PART_UNIT_TYPE = DeferredRegister.create(ModRegistries.PART_UNIT_TYPE_KEY, YwzjVehicle.MOD_ID);
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<PartUnit<PartUnitData>, PartUnitData>> GENERIC = register(PartUnitTypes.GENERIC);
 
