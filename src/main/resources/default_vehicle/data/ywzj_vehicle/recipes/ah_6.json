@@ -1,44 +1,44 @@
 {
-  "type": "ywzj_vehicle:vehicle_printing",
-  "materials": [
-    {
-      "tag": "forge:ingots/iron",
-      "count": 96
+    "type": "ywzj_vehicle:vehicle_printing",
+    "materials": [
+        {
+            "tag": "forge:ingots/iron",
+            "count": 96
+        },
+        {
+            "tag": "forge:ingots/copper",
+            "count": 32
+        },
+        {
+            "item": "minecraft:redstone",
+            "count": 16
+        },
+        {
+            "item": "minecraft:glass_pane",
+            "count": 8
+        },
+        {
+            "item": "minecraft:dispenser",
+            "count": 4
+        },
+        {
+            "item": "minecraft:diamond",
+            "count": 4
+        },
+        {
+            "item": "minecraft:gold_ingot",
+            "count": 8
+        },
+        {
+            "item": "minecraft:lapis_lazuli",
+            "count": 8
+        }
+    ],
+    "result": {
+        "item": "ywzj_vehicle:vehicle_spawn_item",
+        "nbt": {
+            "YwzjVehicleId": "ywzj_vehicle:ah_6"
+        }
     },
-    {
-      "tag": "forge:ingots/copper",
-      "count": 32
-    },
-    {
-      "item": "minecraft:redstone",
-      "count": 16
-    },
-    {
-      "item": "minecraft:glass_pane",
-      "count": 8
-    },
-    {
-      "item": "minecraft:dispenser",
-      "count": 4
-    },
-    {
-      "item": "minecraft:diamond",
-      "count": 4
-    },
-    {
-      "item": "minecraft:gold_ingot",
-      "count": 8
-    },
-    {
-      "item": "minecraft:lapis_lazuli",
-      "count": 8
-    }
-  ],
-  "result": {
-    "item": "ywzj_vehicle:vehicle_spawn_item",
-    "nbt": {
-      "YwzjVehicleId": "ywzj_vehicle:ah_6"
-    }
-  },
-  "printingTime": 1200
+    "printingTime": 1200
 }

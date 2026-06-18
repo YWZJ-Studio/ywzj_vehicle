@@ -1,8 +1,8 @@
 {
-  "type": "ywzj_vehicle:weapon",
-  "sounds": {
-    "fire": "ywzj_vehicle:cannon_125mm_shot",
-    "shell": "ywzj_vehicle:cannon_shell_drop",
-    "reload": "ywzj_vehicle:artillery_reload"
-  }
+    "type": "ywzj_vehicle:weapon",
+    "sounds": {
+        "fire": "ywzj_vehicle:cannon_125mm_shot",
+        "shell": "ywzj_vehicle:cannon_shell_drop",
+        "reload": "ywzj_vehicle:artillery_reload"
+    }
 }

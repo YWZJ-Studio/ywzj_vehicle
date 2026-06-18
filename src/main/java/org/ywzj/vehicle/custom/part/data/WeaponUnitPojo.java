@@ -21,8 +21,8 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     @SerializedName("cold_launch_time_tick")
     public int coldLaunchTimeTick = 0;
 
-    @SerializedName("cold_launch_direction")
-    public Vec3 coldLaunchDirection = new Vec3(0, -1, 0);
+    @SerializedName("cold_launch_velocity")
+    public Vec3 coldLaunchVelocity = new Vec3(0, -1, 0);
 
     @SerializedName("parent_weapon_unit_aim")
     public boolean parentWeaponUnitAim = false;

@@ -1,25 +1,25 @@
 {
-  "name": "j10c_controller",
-  "script": "ywzj_vehicle:j10c",
-  "parameters": {},
-  "switchable_animations": {
-    "landing_gear": {
-      "part_id": "landing_gear",
-      "animation": "landing_gear"
+    "name": "j10c_controller",
+    "script": "ywzj_vehicle:j10c",
+    "parameters": {},
+    "switchable_animations": {
+        "landing_gear": {
+            "part_id": "landing_gear",
+            "animation": "landing_gear"
+        }
+    },
+    "state_machines": {},
+    "graph": {
+        "type": "merge",
+        "inputs": [
+            {
+                "type": "switchable_animation",
+                "ref": "landing_gear"
+            },
+            {
+                "type": "script",
+                "function": "updateBones"
+            }
+        ]
     }
-  },
-  "state_machines": {},
-  "graph": {
-    "type": "merge",
-    "inputs": [
-      {
-        "type": "switchable_animation",
-        "ref": "landing_gear"
-      },
-      {
-        "type": "script",
-        "function": "updateBones"
-      }
-    ]
-  }
 }

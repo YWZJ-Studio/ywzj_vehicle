@@ -1,19 +1,19 @@
 {
-  "type": "ywzj_vehicle:aerial_bomb",
-  "name": "Nuclear Gravity Bomb",
-  "damage": 10,
-  "velocity": 0,
-  "recoil": 0,
-  "shoot_interval": 100,
-  "max_capacity": 8,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_aerial_bomb"
-  },
-  "explosion": {
-    "explode": true,
-    "damage": 4399,
-    "radius": 128,
-    "destroy_block": true
-  }
+    "type": "ywzj_vehicle:aerial_bomb",
+    "name": "Nuclear Gravity Bomb",
+    "damage": 10,
+    "velocity": 0,
+    "recoil": 0,
+    "shoot_interval": 100,
+    "max_capacity": 8,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_aerial_bomb"
+    },
+    "explosion": {
+        "explode": true,
+        "damage": 4399,
+        "radius": 128,
+        "destroy_block": true
+    }
 }

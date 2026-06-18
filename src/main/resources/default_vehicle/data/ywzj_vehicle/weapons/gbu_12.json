@@ -1,0 +1,21 @@
+{
+    "type": "ywzj_vehicle:aerial_bomb",
+    "name": "GBU-12",
+    "damage": 10,
+    "velocity": 0,
+    "recoil": 0,
+    "shoot_interval": 400,
+    "max_capacity": 2,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_aerial_bomb"
+    },
+    "penetration_depth": 2,
+    "homing": true,
+    "explosion": {
+        "explode": true,
+        "damage": 256,
+        "radius": 16,
+        "destroy_block": true
+    }
+}

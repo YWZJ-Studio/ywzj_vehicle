@@ -1,101 +1,101 @@
 {
-  "type": "ywzj_vehicle:wheeled_vehicle",
-  "attributes": {
-    "brake_force": 0.025,
-    "forward_force": 0.02,
-    "backward_force": 0.02,
-    "max_speed_forward": 0.8,
-    "max_speed_backward": 0.2,
-    "turn_step": 0.4,
-    "max_turn": 2
-  },
-  "max_health": 2000,
-  "view_info": {
-    "third_person_center_offset": [0, 4, 0],
-    "third_person_distance": 8,
-    "third_person_center_offset_zoomed": [0, 5, 0],
-    "third_person_distance_zoomed": 0,
-    "sound_distance": 3
-  },
-  "energy_info": {
-    "energy_capacity": 1,
-    "energy_consumption_per_tick": 0.00001,
-    "engine_particle_offsets": [[-1.563, 1.875, 1.375]]
-  },
-  "structure_model": "ywzj_vehicle:vehicle/cssa5",
-  "parts": [
-    {
-      "id": "turret",
-      "name": "turret",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "turret",
-      "seat_offset": [-0.5, 2.5, 0],
-      "crosshair_style": "circle",
-      "rot_info": {
-        "x_rot_speed": 3,
-        "y_rot_speed": 3,
-        "x_rot_max": 4,
-        "x_rot_min": -85
-      },
-      "optical_sight_offset": [0.719, 0.883, 0.14],
-      "operator_view_offset": [0, 1.5, 0],
-      "optical_sight_type": "crt",
-      "with_stabilizer": true,
-      "with_thermal_imager": true,
-      "zoom_max": 12,
-      "sub_part_unit_ids": ["radar"],
-      "weapons": [
-        "ywzj_vehicle:pgz_625",
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "attributes": {
+        "brake_force": 0.025,
+        "forward_force": 0.02,
+        "backward_force": 0.02,
+        "max_speed_forward": 0.8,
+        "max_speed_backward": 0.2,
+        "turn_step": 0.4,
+        "max_turn": 2
+    },
+    "max_health": 2000,
+    "view_info": {
+        "third_person_center_offset": [0, 4, 0],
+        "third_person_distance": 8,
+        "third_person_center_offset_zoomed": [0, 5, 0],
+        "third_person_distance_zoomed": 0,
+        "sound_distance": 3
+    },
+    "energy_info": {
+        "energy_capacity": 1,
+        "energy_consumption_per_tick": 0.00001,
+        "engine_particle_offsets": [[-1.563, 1.875, 1.375]]
+    },
+    "structure_model": "ywzj_vehicle:vehicle/cssa5",
+    "parts": [
         {
-          "id": "ywzj_vehicle:fb_10",
-          "part_unit_id": "turret_missile"
+            "id": "turret",
+            "name": "turret",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "turret",
+            "seat_offset": [-0.5, 2.5, 0],
+            "crosshair_style": "circle",
+            "rot_info": {
+                "x_rot_speed": 3,
+                "y_rot_speed": 3,
+                "x_rot_max": 4,
+                "x_rot_min": -85
+            },
+            "optical_sight_offset": [0.719, 0.883, 0.14],
+            "operator_view_offset": [0, 1.5, 0],
+            "optical_sight_type": "crt",
+            "with_stabilizer": true,
+            "with_thermal_imager": true,
+            "zoom_max": 12,
+            "sub_part_unit_ids": ["radar"],
+            "weapons": [
+                "ywzj_vehicle:pgz_625",
+                {
+                    "id": "ywzj_vehicle:fb_10",
+                    "part_unit_id": "turret_missile"
+                },
+                {
+                    "id": "ywzj_vehicle:launcher_smoke_grenade",
+                    "part_unit_id": "turret_smoke_grenade"
+                }
+            ]
         },
         {
-          "id": "ywzj_vehicle:launcher_smoke_grenade",
-          "part_unit_id": "turret_smoke_grenade"
+            "id": "turret_missile",
+            "name": "turret_missile",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "turret_missile",
+            "fire_control_sensor_type": "rf",
+            "crosshair_style": "none",
+            "is_seat": false,
+            "parent_weapon_unit_aim": true,
+            "rot_info": {
+                "x_rot_speed": 1.5,
+                "y_rot_speed": 0,
+                "x_rot_max": 5,
+                "x_rot_min": -60
+            }
+        },
+        {
+            "id": "turret_smoke_grenade",
+            "name": "turret_smoke_grenade",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "turret_smoke_grenade",
+            "is_seat": false,
+            "rot_info": {
+                "x_rot_speed": 0,
+                "y_rot_speed": 0
+            }
+        },
+        {
+            "id": "radar",
+            "name": "radar",
+            "type": "ywzj_vehicle:radar",
+            "structure_bone": "radar",
+            "is_seat": false,
+            "rot_info": {
+                "x_rot_speed": 0,
+                "y_rot_speed": 15,
+                "x_rot": -45
+            },
+            "scan_sector_angle": 80,
+            "max_scan_distance": 4096
         }
-      ]
-    },
-    {
-      "id": "turret_missile",
-      "name": "turret_missile",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "turret_missile",
-      "fire_control_sensor_type": "rf",
-      "crosshair_style": "none",
-      "is_seat": false,
-      "parent_weapon_unit_aim": true,
-      "rot_info": {
-        "x_rot_speed": 1.5,
-        "y_rot_speed": 0,
-        "x_rot_max": 5,
-        "x_rot_min": -60
-      }
-    },
-    {
-      "id": "turret_smoke_grenade",
-      "name": "turret_smoke_grenade",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "turret_smoke_grenade",
-      "is_seat": false,
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 0
-      }
-    },
-    {
-      "id": "radar",
-      "name": "radar",
-      "type": "ywzj_vehicle:radar",
-      "structure_bone": "radar",
-      "is_seat": false,
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 15,
-        "x_rot": -45
-      },
-      "scan_sector_angle": 80,
-      "max_scan_distance": 4096
-    }
-  ]
+    ]
 }

@@ -49,7 +49,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public float thrust;
     public float motorBurnTime;
     public int coldLaunchTimeTick;
-    public Vec3 coldLaunchDirection = new Vec3(0, -1, 0);
+    public Vec3 coldLaunchVelocity = new Vec3(0, -1, 0);
     public float dragCoefficient;
     public float maxG;
     public float referenceSpeed;
@@ -128,7 +128,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             return;
         }
         this.coldLaunchTimeTick = weaponUnit.getColdLaunchTimeTick();
-        this.coldLaunchDirection = weaponUnit.getColdLaunchDirection();
+        this.coldLaunchVelocity = weaponUnit.getColdLaunchVelocity();
     }
 
     @Override
@@ -238,13 +238,10 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (tickCount < coldLaunchTimeTick) {
             // 弹仓弹射
             Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
-            Vec3 launchDirection = new Vec3(axes[0]).scale(coldLaunchDirection.x)
-                    .add(new Vec3(axes[1]).scale(coldLaunchDirection.y))
-                    .add(new Vec3(axes[2]).scale(coldLaunchDirection.z));
-            if (launchDirection.lengthSqr() > 0) {
-                launchDirection = launchDirection.normalize();
-            }
-            velocity = vehicle.getDeltaMovement().add(launchDirection);
+            Vec3 launchVelocity = new Vec3(axes[0]).scale(coldLaunchVelocity.x)
+                    .add(new Vec3(axes[1]).scale(coldLaunchVelocity.y))
+                    .add(new Vec3(axes[2]).scale(coldLaunchVelocity.z));
+            velocity = vehicle.getDeltaMovement().add(launchVelocity);
         } else {
             // 重力
             velocity = velocity.subtract(0, PhysicsEngine.G, 0);

@@ -61,7 +61,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             vehicle.wheelRotation %= 360;
 
             // 轮子转向幅度
-            float vt = vehicle.getEntityData().get(DumpTruck.TURN_ANGLE);
+            float vt = Mth.lerp(pPartialTick, vehicle.turnAngleO, vehicle.turnAngle);
             float turnRotation = vt * 16;
 
             // 车斗

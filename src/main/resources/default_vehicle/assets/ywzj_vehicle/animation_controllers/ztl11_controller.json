@@ -1,11 +1,11 @@
 {
-  "name": "ztl11_controller",
-  "script": "ywzj_vehicle:ztl11",
-  "parameters": {},
-  "event_animations": {
-    "turret_fire": ["turret_shoot"]
-  },
-  "graph": {
-    "type": "event_animation"
-  }
+    "name": "ztl11_controller",
+    "script": "ywzj_vehicle:ztl11",
+    "parameters": {},
+    "event_animations": {
+        "turret_fire": ["turret_shoot"]
+    },
+    "graph": {
+        "type": "event_animation"
+    }
 }

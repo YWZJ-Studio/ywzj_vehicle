@@ -1,9 +1,9 @@
 {
-  "model": "ywzj_vehicle:entity/quadcopter",
-  "texture": "ywzj_vehicle:textures/entity/quadcopter.png",
-  "slot_texture": "ywzj_vehicle:textures/slot/quadcopter.png",
-  "sounds": {
-    "engine_run": "ywzj_vehicle:quadcopter_engine_run"
-  },
-  "tab_index": 302
+    "model": "ywzj_vehicle:entity/quadcopter",
+    "texture": "ywzj_vehicle:textures/entity/quadcopter.png",
+    "slot_texture": "ywzj_vehicle:textures/slot/quadcopter.png",
+    "sounds": {
+        "engine_run": "ywzj_vehicle:quadcopter_engine_run"
+    },
+    "tab_index": 500
 }

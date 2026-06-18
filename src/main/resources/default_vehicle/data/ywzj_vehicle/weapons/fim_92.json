@@ -1,34 +1,34 @@
 {
-  "type": "ywzj_vehicle:missile",
-  "name": "FIM-92",
-  "damage": 99,
-  "headshot_multiplier": 1.5,
-  "recoil": 0.6,
-  "shoot_interval": 1000,
-  "max_capacity": 8,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_missile"
-  },
-  "x_rot_max": 90,
-  "x_rot_min": -90,
-  "y_rot_max": 180,
-  "y_rot_min": -180,
-  "explosion": {
-    "explode": true,
-    "damage": 500,
-    "radius": 8,
-    "proximity_fuze": true,
-    "proximity_radius": 2,
-    "destroy_block": true
-  },
-  "seeker_fov": 30,
-  "mass": 0.05,
-  "thrust": 0.02,
-  "motor_burn_time": 600,
-  "drag_coefficient": 0.005,
-  "max_g": 18,
-  "reference_speed": 6,
-  "guidance": "HOMING",
-  "homing_mode": "INFRARED"
+    "type": "ywzj_vehicle:missile",
+    "name": "FIM-92",
+    "damage": 99,
+    "headshot_multiplier": 1.5,
+    "recoil": 0.6,
+    "shoot_interval": 1000,
+    "max_capacity": 8,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_missile"
+    },
+    "x_rot_max": 90,
+    "x_rot_min": -90,
+    "y_rot_max": 180,
+    "y_rot_min": -180,
+    "explosion": {
+        "explode": true,
+        "damage": 500,
+        "radius": 8,
+        "proximity_fuze": true,
+        "proximity_radius": 2,
+        "destroy_block": true
+    },
+    "seeker_fov": 30,
+    "mass": 0.05,
+    "thrust": 0.02,
+    "motor_burn_time": 600,
+    "drag_coefficient": 0.005,
+    "max_g": 18,
+    "reference_speed": 6,
+    "guidance": "HOMING",
+    "homing_mode": "INFRARED"
 }

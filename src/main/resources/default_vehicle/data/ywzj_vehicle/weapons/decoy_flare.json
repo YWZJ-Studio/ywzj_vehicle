@@ -1,14 +1,14 @@
 {
-  "type": "ywzj_vehicle:decoy_flare",
-  "name": "decoy_flare",
-  "damage": 10,
-  "velocity": 0.5,
-  "headshot_multiplier": 1.5,
-  "shoot_interval": 200,
-  "max_capacity": 32,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_decoy_flare"
-  },
-  "independent": true
+    "type": "ywzj_vehicle:decoy_flare",
+    "name": "Decoy Flare",
+    "damage": 10,
+    "velocity": 0.5,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 200,
+    "max_capacity": 32,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_decoy_flare"
+    },
+    "independent": true
 }

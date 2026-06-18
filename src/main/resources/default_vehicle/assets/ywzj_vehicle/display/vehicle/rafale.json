@@ -1,0 +1,34 @@
+{
+    "type": "ywzj_vehicle:fixed_wing_vehicle",
+    "model": "ywzj_vehicle:entity/rafale",
+    "texture": "ywzj_vehicle:textures/entity/rafale.png",
+    "slot_texture": "ywzj_vehicle:textures/slot/rafale.png",
+    "animations": "ywzj_vehicle:entity/rafale.animation",
+    "animation_controller": "ywzj_vehicle:rafale_controller",
+    "special_bone_effects": [
+        {
+            "bone": "cap",
+            "texture": "ywzj_vehicle:textures/entity/rafale.png",
+            "type": "cockpit"
+        },
+        {
+            "bone": "tail4",
+            "texture": "ywzj_vehicle:textures/entity/rafale.png",
+            "type": "cockpit"
+        },
+        {
+            "bone": "hud",
+            "texture": "ywzj_vehicle:textures/entity/rafale.png",
+            "type": "transparent"
+        }
+    ],
+    "sounds": {
+        "engine_start": "ywzj_vehicle:jet_engine_start",
+        "engine_stop": "ywzj_vehicle:jet_engine_stop",
+        "engine_run": "ywzj_vehicle:jet_engine_run",
+        "engine_thrust": "ywzj_vehicle:jet_engine_thrust",
+        "passby": "ywzj_vehicle:jet_passby"
+    },
+    "description": "",
+    "tab_index": 401
+}

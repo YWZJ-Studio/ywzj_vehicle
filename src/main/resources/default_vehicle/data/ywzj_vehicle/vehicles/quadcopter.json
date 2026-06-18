@@ -1,47 +1,47 @@
 {
-  "type": "ywzj_vehicle:rotary_wing_vehicle",
-  "attributes": {
-    "main_rotor_force": 0.06,
-    "x_rot_speed_acceleration": 4.0,
-    "x_rot_speed_max": 8.0,
-    "y_rot_speed_acceleration": 4.0,
-    "y_rot_speed_max": 8.0,
-    "z_rot_speed_acceleration": 4.0,
-    "z_rot_speed_max": 8.0,
-    "max_air_speed": 2.0
-  },
-  "max_health": 50,
-  "view_info": {
-    "third_person_center_offset": [0, 3, 0],
-    "third_person_distance": 7,
-    "sound_distance": 8
-  },
-  "energy_info": {
-    "energy_capacity": 0.25,
-    "energy_consumption_per_tick": 0.00001
-  },
-  "uav": true,
-  "structure_model": "ywzj_vehicle:vehicle/quadcopter",
-  "parts": [
-    {
-      "id": "sighting_system",
-      "name": "sighting_system",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "sighting_system",
-      "seat_offset": [0, 2, 0.2],
-      "operator_on_weapon_unit": false,
-      "rot_info": {
-        "x_rot_speed": 9,
-        "y_rot_speed": 9,
-        "x_rot_max": 90,
-        "x_rot_min": -13,
-        "y_rot_max": 45,
-        "y_rot_min": -45
-      },
-      "optical_sight_offset": [0, 0, 0.2],
-      "optical_sight_type": "crt",
-      "zoom_max": 8,
-      "weapons": []
-    }
-  ]
+    "type": "ywzj_vehicle:rotary_wing_vehicle",
+    "attributes": {
+        "main_rotor_force": 0.06,
+        "x_rot_speed_acceleration": 4.0,
+        "x_rot_speed_max": 8.0,
+        "y_rot_speed_acceleration": 4.0,
+        "y_rot_speed_max": 8.0,
+        "z_rot_speed_acceleration": 4.0,
+        "z_rot_speed_max": 8.0,
+        "max_air_speed": 2.0
+    },
+    "max_health": 50,
+    "view_info": {
+        "third_person_center_offset": [0, 3, 0],
+        "third_person_distance": 7,
+        "sound_distance": 8
+    },
+    "energy_info": {
+        "energy_capacity": 0.25,
+        "energy_consumption_per_tick": 0.00001
+    },
+    "uav": true,
+    "structure_model": "ywzj_vehicle:vehicle/quadcopter",
+    "parts": [
+        {
+            "id": "sighting_system",
+            "name": "sighting_system",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "sighting_system",
+            "seat_offset": [0, 2, 0.2],
+            "operator_on_weapon_unit": false,
+            "rot_info": {
+                "x_rot_speed": 9,
+                "y_rot_speed": 9,
+                "x_rot_max": 90,
+                "x_rot_min": -13,
+                "y_rot_max": 45,
+                "y_rot_min": -45
+            },
+            "optical_sight_offset": [0, 0, 0.2],
+            "optical_sight_type": "crt",
+            "zoom_max": 8,
+            "weapons": []
+        }
+    ]
 }

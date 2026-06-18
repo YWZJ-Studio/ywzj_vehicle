@@ -1,21 +1,21 @@
 {
-  "type": "ywzj_vehicle:cannon",
-  "name": "auto_cannon",
-  "caliber": 20,
-  "damage": 20,
-  "velocity": 16,
-  "recoil": 0.3,
-  "headshot_multiplier": 1.5,
-  "shoot_interval": 100,
-  "max_capacity": 120,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_auto_cannon"
-  },
-  "explosion": {
-    "explode": true,
-    "damage": 10,
-    "radius": 0.5,
-    "destroy_block": true
-  }
+    "type": "ywzj_vehicle:cannon",
+    "name": "Auto Cannon",
+    "caliber": 20,
+    "damage": 20,
+    "velocity": 16,
+    "recoil": 0.3,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 100,
+    "max_capacity": 120,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_auto_cannon"
+    },
+    "explosion": {
+        "explode": true,
+        "damage": 10,
+        "radius": 0.5,
+        "destroy_block": true
+    }
 }

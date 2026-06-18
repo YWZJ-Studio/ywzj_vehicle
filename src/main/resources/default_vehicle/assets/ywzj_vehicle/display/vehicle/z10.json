@@ -1,13 +1,13 @@
 {
-  "type": "ywzj_vehicle:rotary_wing_vehicle",
-  "model": "ywzj_vehicle:entity/z10",
-  "texture": "ywzj_vehicle:textures/entity/z10.png",
-  "slot_texture": "ywzj_vehicle:textures/slot/z10.png",
-  "animation_controller": "ywzj_vehicle:z10_controller",
-  "sounds": {
-    "engine_start": "ywzj_vehicle:z10_engine_start",
-    "engine_stop": "ywzj_vehicle:z10_engine_stop",
-    "engine_run": "ywzj_vehicle:z10_engine_run"
-  },
-  "tab_index": 300
+    "type": "ywzj_vehicle:rotary_wing_vehicle",
+    "model": "ywzj_vehicle:entity/z10",
+    "texture": "ywzj_vehicle:textures/entity/z10.png",
+    "slot_texture": "ywzj_vehicle:textures/slot/z10.png",
+    "animation_controller": "ywzj_vehicle:z10_controller",
+    "sounds": {
+        "engine_start": "ywzj_vehicle:z10_engine_start",
+        "engine_stop": "ywzj_vehicle:z10_engine_stop",
+        "engine_run": "ywzj_vehicle:z10_engine_run"
+    },
+    "tab_index": 300
 }

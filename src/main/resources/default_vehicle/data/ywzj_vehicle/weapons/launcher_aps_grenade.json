@@ -1,15 +1,15 @@
 {
-  "type": "ywzj_vehicle:grenade",
-  "grenade": "aps",
-  "name": "aps",
-  "damage": 10,
-  "velocity": 15,
-  "headshot_multiplier": 1.5,
-  "shoot_interval": 400,
-  "max_capacity": 8,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_grenade"
-  },
-  "independent": true
+    "type": "ywzj_vehicle:grenade",
+    "grenade": "APS",
+    "name": "aps",
+    "damage": 10,
+    "velocity": 15,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 400,
+    "max_capacity": 8,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_grenade"
+    },
+    "independent": true
 }

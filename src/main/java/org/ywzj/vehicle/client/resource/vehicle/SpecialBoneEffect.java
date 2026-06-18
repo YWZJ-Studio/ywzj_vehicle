@@ -25,7 +25,7 @@ public class SpecialBoneEffect {
      * 特效类型（如 muzzle_flash）
      */
     @SerializedName("type")
-    public String type;
+    public SpecialBoneEffectType type;
 
     /**
      * 验证配置是否有效
@@ -34,6 +34,16 @@ public class SpecialBoneEffect {
     public boolean isValid() {
         return bone != null && !bone.isEmpty()
             && texture != null
-            && type != null && !type.isEmpty();
+            && type != null;
     }
+
+    public enum SpecialBoneEffectType {
+        @SerializedName("muzzle_flash")
+        MUZZLE_FLASH,
+        @SerializedName("transparent")
+        TRANSPARENT,
+        @SerializedName("cockpit")
+        COCKPIT
+    }
+
 }

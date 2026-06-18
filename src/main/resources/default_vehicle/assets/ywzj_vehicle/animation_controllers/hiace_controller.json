@@ -1,71 +1,71 @@
 {
-  "name": "hiace_controller",
-  "script": "ywzj_vehicle:hiace",
-  "parameters": {},
-  "switchable_animations": {
-    "front_door_left": {
-      "part_id": "front_door_left",
-      "animation": "front_door_left"
+    "name": "hiace_controller",
+    "script": "ywzj_vehicle:hiace",
+    "parameters": {},
+    "switchable_animations": {
+        "front_door_left": {
+            "part_id": "front_door_left",
+            "animation": "front_door_left"
+        },
+        "front_door_right": {
+            "part_id": "front_door_right",
+            "animation": "front_door_right"
+        },
+        "side_door_left": {
+            "part_id": "side_door_left",
+            "animation": "side_door_left"
+        },
+        "side_door_right": {
+            "part_id": "side_door_right",
+            "animation": "side_door_right"
+        }
     },
-    "front_door_right": {
-      "part_id": "front_door_right",
-      "animation": "front_door_right"
-    },
-    "side_door_left": {
-      "part_id": "side_door_left",
-      "animation": "side_door_left"
-    },
-    "side_door_right": {
-      "part_id": "side_door_right",
-      "animation": "side_door_right"
-    }
-  },
-  "graph": {
-    // 合并节点
-    "type": "merge",
-    "inputs": [
-      {
-        // 骨骼绑定 pose - 轮胎旋转和转向
-        "type": "bone_binding",
-        "special_bindings": [
-          {
-            "bones": ["wheel1", "wheel2", "wheel3", "wheel4"],
-            "source": "wheel_rotation",
-            "axis": "x",
-            "param": 0.35
-          },
-          {
-            "bones": ["wheel1", "wheel2"],
-            "source": "steering_angle",
-            "axis": "y",
-            "multiplier": 1.0,
-            "min": -30.0,
-            "max": 30.0
-          },
-          {
-            "bones": ["control"],
-            "source": "steering_angle",
-            "axis": "y",
-            "multiplier": 12
-          }
+    "graph": {
+        // 合并节点
+        "type": "merge",
+        "inputs": [
+            {
+                // 骨骼绑定 pose - 轮胎旋转和转向
+                "type": "bone_binding",
+                "special_bindings": [
+                    {
+                        "bones": ["wheel1", "wheel2", "wheel3", "wheel4"],
+                        "source": "wheel_rotation",
+                        "axis": "x",
+                        "param": 0.35
+                    },
+                    {
+                        "bones": ["wheel1", "wheel2"],
+                        "source": "steering_angle",
+                        "axis": "y",
+                        "multiplier": 1.0,
+                        "min": -30.0,
+                        "max": 30.0
+                    },
+                    {
+                        "bones": ["control"],
+                        "source": "steering_angle",
+                        "axis": "y",
+                        "multiplier": 12
+                    }
+                ]
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "front_door_left"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "front_door_right"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "side_door_left"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "side_door_right"
+            }
         ]
-      },
-      {
-        "type": "switchable_animation",
-        "ref": "front_door_left"
-      },
-      {
-        "type": "switchable_animation",
-        "ref": "front_door_right"
-      },
-      {
-        "type": "switchable_animation",
-        "ref": "side_door_left"
-      },
-      {
-        "type": "switchable_animation",
-        "ref": "side_door_right"
-      }
-    ]
-  }
+    }
 }

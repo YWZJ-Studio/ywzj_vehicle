@@ -1,77 +1,77 @@
 {
-  "type": "ywzj_vehicle:wheeled_vehicle",
-  "attributes": {
-    "brake_force": 0.025,
-    "forward_force": 0.01,
-    "backward_force": 0.01,
-    "max_speed_forward": 0.4,
-    "max_speed_backward": 0.2,
-    "turn_step": 0.1,
-    "max_turn": 2
-  },
-  "max_health": 500,
-  "view_info": {
-    "third_person_center_offset": [0, 4, 0],
-    "third_person_distance": 7,
-    "sound_distance": 3,
-    "passenger_view_rot": {
-      "rot_by_vehicle_in_third_person": false,
-      "rot_by_vehicle_in_operator": true
-    }
-  },
-  "energy_info": {
-    "energy_capacity": 1,
-    "energy_consumption_per_tick": 0.00001,
-    "engine_particle_offsets": [[1.6, 3, 2]]
-  },
-  "structure_model": "ywzj_vehicle:vehicle/dump_truck",
-  "parts": [
-    {
-      "id": "driver_seat",
-      "name": "driver_seat",
-      "type": "ywzj_vehicle:generic",
-      "is_seat": true,
-      "seat_offset": [0.7, 2.7, 3],
-      "owner_view_offset": [0.7, 2.5, 3.3],
-      "sub_part_unit_ids": [
-        "dump_truck_bed"
-      ]
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "attributes": {
+        "brake_force": 0.025,
+        "forward_force": 0.02,
+        "backward_force": 0.01,
+        "max_speed_forward": 0.8,
+        "max_speed_backward": 0.2,
+        "turn_step": 0.1,
+        "max_turn": 2
     },
-    {
-      "id": "dump_truck_bed",
-      "name": "dump_truck_bed",
-      "type": "ywzj_vehicle:rotatable",
-      "structure_bone": "dump_truck_bed",
-      "is_seat": false,
-      "rot_info": {
-        "x_rot_speed": 0.75,
-        "y_rot_speed": 0,
-        "x_rot_max": 0,
-        "x_rot_min": -45
-      }
+    "max_health": 500,
+    "view_info": {
+        "third_person_center_offset": [0, 4, 0],
+        "third_person_distance": 7,
+        "sound_distance": 3,
+        "passenger_view_rot": {
+            "rot_by_vehicle_in_third_person": false,
+            "rot_by_vehicle_in_operator": true
+        }
     },
-    {
-      "id": "passenger_seat",
-      "name": "passenger_seat",
-      "type": "ywzj_vehicle:generic",
-      "is_seat": true,
-      "seat_offset": [-0.7, 2.7, 3],
-      "owner_view_offset": [-0.7, 2.5, 3.3],
-      "sub_part_unit_ids": []
+    "energy_info": {
+        "energy_capacity": 1,
+        "energy_consumption_per_tick": 0.00001,
+        "engine_particle_offsets": [[1.6, 3, 2]]
     },
-    {
-      "id": "door_left",
-      "name": "door_left",
-      "type": "ywzj_vehicle:door",
-      "structure_bone": "door_left",
-      "is_seat": false
-    },
-    {
-      "id": "door_right",
-      "name": "door_right",
-      "type": "ywzj_vehicle:door",
-      "structure_bone": "door_right",
-      "is_seat": false
-    }
-  ]
+    "structure_model": "ywzj_vehicle:vehicle/dump_truck",
+    "parts": [
+        {
+            "id": "driver_seat",
+            "name": "driver_seat",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [0.7, 2.7, 3],
+            "owner_view_offset": [0.7, 2.5, 3.3],
+            "sub_part_unit_ids": [
+                "dump_truck_bed"
+            ]
+        },
+        {
+            "id": "dump_truck_bed",
+            "name": "dump_truck_bed",
+            "type": "ywzj_vehicle:rotatable",
+            "structure_bone": "dump_truck_bed",
+            "is_seat": false,
+            "rot_info": {
+                "x_rot_speed": 0.75,
+                "y_rot_speed": 0,
+                "x_rot_max": 0,
+                "x_rot_min": -45
+            }
+        },
+        {
+            "id": "passenger_seat",
+            "name": "passenger_seat",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-0.7, 2.7, 3],
+            "owner_view_offset": [-0.7, 2.5, 3.3],
+            "sub_part_unit_ids": []
+        },
+        {
+            "id": "door_left",
+            "name": "door_left",
+            "type": "ywzj_vehicle:door",
+            "structure_bone": "door_left",
+            "is_seat": false
+        },
+        {
+            "id": "door_right",
+            "name": "door_right",
+            "type": "ywzj_vehicle:door",
+            "structure_bone": "door_right",
+            "is_seat": false
+        }
+    ]
 }

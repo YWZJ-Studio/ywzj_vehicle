@@ -1,21 +1,21 @@
 {
-  "type": "ywzj_vehicle:cannon",
-  "name": "105mm Cannon",
-  "caliber": 105,
-  "damage": 1000,
-  "headshot_multiplier": 1,
-  "recoil": 1,
-  "inaccuracy": 0.05,
-  "shoot_interval": 400,
-  "max_capacity": 1,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_artillery"
-  },
-  "explosion": {
-    "explode": true,
-    "damage": 100,
-    "radius": 4,
-    "destroy_block": true
-  }
+    "type": "ywzj_vehicle:cannon",
+    "name": "105mm Cannon",
+    "caliber": 105,
+    "damage": 1000,
+    "headshot_multiplier": 1,
+    "recoil": 1,
+    "inaccuracy": 0.05,
+    "shoot_interval": 400,
+    "max_capacity": 1,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_artillery"
+    },
+    "explosion": {
+        "explode": true,
+        "damage": 100,
+        "radius": 4,
+        "destroy_block": true
+    }
 }

@@ -1,17 +1,17 @@
 {
-  "type": "ywzj_vehicle:cannon",
-  "name": "14.5mm Gun",
-  "caliber": 14.5,
-  "tracer_r": 0.9,
-  "tracer_g": 0.4,
-  "tracer_b": 0.1,
-  "damage": 20,
-  "velocity": 15,
-  "headshot_multiplier": 1.5,
-  "shoot_interval": 100,
-  "max_capacity": 120,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_machine_gun"
-  }
+    "type": "ywzj_vehicle:cannon",
+    "name": "14.5mm Gun",
+    "caliber": 14.5,
+    "tracer_r": 0.9,
+    "tracer_g": 0.4,
+    "tracer_b": 0.1,
+    "damage": 20,
+    "velocity": 15,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 100,
+    "max_capacity": 120,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_machine_gun"
+    }
 }
