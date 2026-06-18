@@ -1,19 +1,19 @@
 {
-  "type": "ywzj_vehicle:cannon",
-  "name": "120mm APFSDS",
-  "caliber": 120,
-  "tracer_r": 1,
-  "tracer_g": 1,
-  "tracer_b": 1,
-  "damage": 2000,
-  "velocity": 15,
-  "headshot_multiplier": 1,
-  "recoil": 1,
-  "inaccuracy": 0.05,
-  "shoot_interval": 400,
-  "max_capacity": 1,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_artillery"
-  }
+    "type": "ywzj_vehicle:cannon",
+    "name": "120mm APFSDS",
+    "caliber": 120,
+    "tracer_r": 1,
+    "tracer_g": 1,
+    "tracer_b": 1,
+    "damage": 2000,
+    "velocity": 15,
+    "headshot_multiplier": 1,
+    "recoil": 1,
+    "inaccuracy": 0.05,
+    "shoot_interval": 400,
+    "max_capacity": 1,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_artillery"
+    }
 }

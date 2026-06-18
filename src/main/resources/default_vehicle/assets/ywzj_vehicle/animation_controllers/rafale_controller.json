@@ -1,0 +1,33 @@
+{
+    "name": "rafale_controller",
+    "script": "ywzj_vehicle:rafale",
+    "parameters": {},
+    "switchable_animations": {
+        "door": {
+            "part_id": "door",
+            "animation": "door"
+        },
+        "landing_gear": {
+            "part_id": "landing_gear",
+            "animation": "landing_gear"
+        }
+    },
+    "state_machines": {},
+    "graph": {
+        "type": "merge",
+        "inputs": [
+            {
+                "type": "switchable_animation",
+                "ref": "door"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "landing_gear"
+            },
+            {
+                "type": "script",
+                "function": "updateBones"
+            }
+        ]
+    }
+}

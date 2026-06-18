@@ -15,6 +15,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.render.ModRenderTypes;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -88,15 +89,35 @@ public class VehicleBedrockModel extends BedrockModel {
     @OnlyIn(Dist.CLIENT)
     @ParametersAreNonnullByDefault
     public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
+        renderSpecialBones(poseStack, source, packedLight, packedOverlay, false);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @ParametersAreNonnullByDefault
+    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
         if (specialBoneEntries.isEmpty()) {
             return;
         }
         setSpecialBoneVisible(true);
-        // todo 细化ModRenderTypes区分
         for (var entry : specialBoneEntries) {
             VertexConsumer buffer;
             if (entry.bone.hasCubesInTree()) {
-                buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
+                switch (entry.effect.type) {
+                    case MUZZLE_FLASH ->
+                            buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
+                    case TRANSPARENT ->
+                            buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
+                    case COCKPIT -> {
+                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                            continue;
+                        } else {
+                            buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
+                        }
+                    }
+                    default -> {
+                        continue;
+                    }
+                }
                 poseStack.pushPose();
                 {
                     poseStack.last().pose().mul(getGlobalTransform(entry.bone));
@@ -104,7 +125,22 @@ public class VehicleBedrockModel extends BedrockModel {
                 }
                 poseStack.popPose();
             } else if (entry.bone.hasMeshesInTree()) {
-                buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
+                switch (entry.effect.type) {
+                    case MUZZLE_FLASH ->
+                            buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
+                    case TRANSPARENT ->
+                            buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
+                    case COCKPIT -> {
+                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+                            continue;
+                        } else {
+                            buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
+                        }
+                    }
+                    default -> {
+                        continue;
+                    }
+                }
                 poseStack.pushPose();
                 {
                     poseStack.last().pose().mul(getGlobalTransform(entry.bone));

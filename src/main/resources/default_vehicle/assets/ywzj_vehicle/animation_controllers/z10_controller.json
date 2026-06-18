@@ -1,9 +1,9 @@
 {
-  "name": "z10_controller",
-  "script": "ywzj_vehicle:z10",
-  "parameters": {},
-  "graph": {
-    "type": "script",
-    "function": "updateBones"
-  }
+    "name": "z10_controller",
+    "script": "ywzj_vehicle:z10",
+    "parameters": {},
+    "graph": {
+        "type": "script",
+        "function": "updateBones"
+    }
 }

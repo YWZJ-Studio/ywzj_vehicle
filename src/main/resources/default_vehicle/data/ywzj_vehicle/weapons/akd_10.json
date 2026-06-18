@@ -1,28 +1,28 @@
 {
-  "type": "ywzj_vehicle:missile",
-  "name": "AKD-10",
-  "damage": 1000,
-  "headshot_multiplier": 1.5,
-  "shoot_interval": 1000,
-  "max_capacity": 8,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_missile"
-  },
-  "x_rot_max": 30,
-  "x_rot_min": -10,
-  "y_rot_max": 15,
-  "y_rot_min": -15,
-  "explosion": {
-    "explode": true,
-    "damage": 100,
-    "radius": 5,
-    "destroy_block": true
-  },
-  "mass": 0.05,
-  "thrust": 0.03,
-  "motor_burn_time": 600,
-  "drag_coefficient": 0.005,
-  "max_g": 18,
-  "reference_speed": 3
+    "type": "ywzj_vehicle:missile",
+    "name": "AKD-10",
+    "damage": 1000,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 1000,
+    "max_capacity": 8,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_missile"
+    },
+    "x_rot_max": 30,
+    "x_rot_min": -10,
+    "y_rot_max": 15,
+    "y_rot_min": -15,
+    "explosion": {
+        "explode": true,
+        "damage": 100,
+        "radius": 5,
+        "destroy_block": true
+    },
+    "mass": 0.05,
+    "thrust": 0.03,
+    "motor_burn_time": 600,
+    "drag_coefficient": 0.005,
+    "max_g": 18,
+    "reference_speed": 3
 }

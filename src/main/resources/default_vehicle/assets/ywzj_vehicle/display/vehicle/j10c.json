@@ -1,24 +1,17 @@
 {
-  "type": "ywzj_vehicle:fixed_wing_vehicle",
-  "model": "ywzj_vehicle:entity/j10c",
-  "texture": "ywzj_vehicle:textures/entity/j10c.png",
-  "slot_texture": "ywzj_vehicle:textures/slot/j10c.png",
-  "animations": "ywzj_vehicle:entity/j10c.animation",
-  "animation_controller": "ywzj_vehicle:j10c_controller",
-  "sounds": {
-    "engine_start": "ywzj_vehicle:jet_engine_start",
-    "engine_stop": "ywzj_vehicle:jet_engine_stop",
-    "engine_run": "ywzj_vehicle:jet_engine_run",
-    "engine_thrust": "ywzj_vehicle:jet_engine_thrust",
-    "passby": "ywzj_vehicle:jet_passby"
-  },
-  "special_bone_effects": [
-    {
-      "bone": "bone29",
-      "texture": "ywzj_vehicle:textures/entity/j10c.png",
-      "type": "muzzle_flash"
-    }
-  ],
-  "description": "歼-10C（J-10C），是中国自主研发的第三代改进型超音速多用途战斗机，由中航工业成都飞机工业公司生产，配装先进航电系统及多型先进机载武器，具备中近距制空和对地面、海面目标精确打击能力，可进一步完善空军攻防作战体系。",
-  "tab_index": 400
+    "type": "ywzj_vehicle:fixed_wing_vehicle",
+    "model": "ywzj_vehicle:entity/j10c",
+    "texture": "ywzj_vehicle:textures/entity/j10c.png",
+    "slot_texture": "ywzj_vehicle:textures/slot/j10c.png",
+    "animations": "ywzj_vehicle:entity/j10c.animation",
+    "animation_controller": "ywzj_vehicle:j10c_controller",
+    "sounds": {
+        "engine_start": "ywzj_vehicle:jet_engine_start",
+        "engine_stop": "ywzj_vehicle:jet_engine_stop",
+        "engine_run": "ywzj_vehicle:jet_engine_run",
+        "engine_thrust": "ywzj_vehicle:jet_engine_thrust",
+        "passby": "ywzj_vehicle:jet_passby"
+    },
+    "description": "歼-10C（J-10C），是中国自主研发的第三代改进型超音速多用途战斗机，由中航工业成都飞机工业公司生产，配装先进航电系统及多型先进机载武器，具备中近距制空和对地面、海面目标精确打击能力，可进一步完善空军攻防作战体系。",
+    "tab_index": 400
 }

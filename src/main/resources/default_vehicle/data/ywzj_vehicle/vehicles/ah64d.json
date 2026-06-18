@@ -1,133 +1,133 @@
 {
-  "type": "ywzj_vehicle:rotary_wing_vehicle",
-  "attributes": {
-    "main_rotor_force": 0.0392,
-    "ceiling": 256,
-    "x_rot_speed_acceleration": 1.0,
-    "x_rot_speed_max": 4.0,
-    "y_rot_speed_acceleration": 1.0,
-    "y_rot_speed_max": 4.0,
-    "z_rot_speed_acceleration": 1.0,
-    "z_rot_speed_max": 4.0,
-    "max_air_speed": 1.5
-  },
-  "max_health": 1000,
-  "view_info": {
-    "third_person_center_offset": [0, 6, 0],
-    "third_person_distance": 14,
-    "third_person_center_offset_zoomed": [0, 7, 0],
-    "third_person_distance_zoomed": 0,
-    "sound_distance": 8
-  },
-  "energy_info": {
-    "energy_capacity": 0.25,
-    "energy_consumption_per_tick": 0.00001,
-    "engine_particle_offsets": [[-0.9, 2.5, -1], [0.9, 2.5, -1]]
-  },
-  "defense_stats": {
-    "damage_threshold": 10,
-    "impact_multiplier": 2
-  },
-  "with_warning_receiver": true,
-  "structure_model": "ywzj_vehicle:vehicle/ah64d",
-  "parts": [
-    {
-      "id": "sighting_system",
-      "name": "sighting_system",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "sighting_system",
-      "seat_offset": [0, 2.5, 5.13],
-      "operator_on_weapon_unit": false,
-      "rot_info": {
-        "x_rot_speed": 3,
-        "y_rot_speed": 3,
-        "x_rot_max": 45,
-        "x_rot_min": -13,
-        "y_rot_max": 90,
-        "y_rot_min": -90
-      },
-      "optical_sight_offset": [0, 0.6, 1.2],
-      "operator_view_offset": [0, 1.2, -3],
-      "optical_sight_type": "crt",
-      "with_stabilizer": true,
-      "with_focus_locker": true,
-      "with_thermal_imager": true,
-      "zoom_max": 12,
-      "weapons": [
+    "type": "ywzj_vehicle:rotary_wing_vehicle",
+    "attributes": {
+        "main_rotor_force": 0.0392,
+        "ceiling": 256,
+        "x_rot_speed_acceleration": 1.0,
+        "x_rot_speed_max": 4.0,
+        "y_rot_speed_acceleration": 1.0,
+        "y_rot_speed_max": 4.0,
+        "z_rot_speed_acceleration": 1.0,
+        "z_rot_speed_max": 4.0,
+        "max_air_speed": 1.5
+    },
+    "max_health": 1000,
+    "view_info": {
+        "third_person_center_offset": [0, 6, 0],
+        "third_person_distance": 14,
+        "third_person_center_offset_zoomed": [0, 7, 0],
+        "third_person_distance_zoomed": 0,
+        "sound_distance": 8
+    },
+    "energy_info": {
+        "energy_capacity": 0.25,
+        "energy_consumption_per_tick": 0.00001,
+        "engine_particle_offsets": [[-0.9, 2.5, -1], [0.9, 2.5, -1]]
+    },
+    "defense_stats": {
+        "damage_threshold": 10,
+        "impact_multiplier": 2
+    },
+    "with_warning_receiver": true,
+    "structure_model": "ywzj_vehicle:vehicle/ah64d",
+    "parts": [
         {
-          "id": "ywzj_vehicle:auto_cannon",
-          "part_unit_id": "auto_cannon"
+            "id": "sighting_system",
+            "name": "sighting_system",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "sighting_system",
+            "seat_offset": [0, 2.5, 5.13],
+            "operator_on_weapon_unit": false,
+            "rot_info": {
+                "x_rot_speed": 3,
+                "y_rot_speed": 3,
+                "x_rot_max": 45,
+                "x_rot_min": -13,
+                "y_rot_max": 90,
+                "y_rot_min": -90
+            },
+            "optical_sight_offset": [0, 0.6, 1.2],
+            "operator_view_offset": [0, 1.2, -3],
+            "optical_sight_type": "crt",
+            "with_stabilizer": true,
+            "with_focus_locker": true,
+            "with_thermal_imager": true,
+            "zoom_max": 12,
+            "weapons": [
+                {
+                    "id": "ywzj_vehicle:auto_cannon",
+                    "part_unit_id": "auto_cannon"
+                },
+                {
+                    "id": "ywzj_vehicle:agm_114",
+                    "part_unit_id": "missile"
+                },
+                {
+                    "id": "ywzj_vehicle:rocket",
+                    "part_unit_id": "rocket"
+                },
+                {
+                    "id": "ywzj_vehicle:decoy_flare",
+                    "part_unit_id": "decoy_flare"
+                }
+            ]
         },
         {
-          "id": "ywzj_vehicle:agm_114",
-          "part_unit_id": "missile"
+            "id": "auto_cannon",
+            "name": "auto_cannon",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "auto_cannon",
+            "fire_control_sensor_type": "eo",
+            "is_seat": false,
+            "crosshair_style": "square",
+            "rot_info": {
+                "x_rot_speed": 3,
+                "y_rot_speed": 3,
+                "x_rot_max": 45,
+                "x_rot_min": -13,
+                "y_rot_max": 90,
+                "y_rot_min": -90
+            }
         },
         {
-          "id": "ywzj_vehicle:rocket",
-          "part_unit_id": "rocket"
+            "id": "missile",
+            "name": "missile",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "missile",
+            "fire_control_sensor_type": "eo",
+            "is_seat": false,
+            "parent_weapon_unit_aim": true,
+            "crosshair_style": "circle",
+            "rot_info": {
+                "x_rot_speed": 0,
+                "y_rot_speed": 0
+            }
         },
         {
-          "id": "ywzj_vehicle:decoy_flare",
-          "part_unit_id": "decoy_flare"
+            "id": "rocket",
+            "name": "rocket",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "rocket",
+            "is_seat": false,
+            "fire_control_sensor_type": "ccip",
+            "crosshair_style": "cross",
+            "rot_info": {
+                "x_rot_speed": 0,
+                "y_rot_speed": 0
+            }
+        },
+        {
+            "id": "decoy_flare",
+            "name": "decoy_flare",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "decoy_flare",
+            "is_seat": false,
+            "crosshair_style": "none",
+            "firing_mode": "salvo",
+            "rot_info": {
+                "x_rot_speed": 0,
+                "y_rot_speed": 0
+            }
         }
-      ]
-    },
-    {
-      "id": "auto_cannon",
-      "name": "auto_cannon",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "auto_cannon",
-      "fire_control_sensor_type": "eo",
-      "is_seat": false,
-      "crosshair_style": "square",
-      "rot_info": {
-        "x_rot_speed": 3,
-        "y_rot_speed": 3,
-        "x_rot_max": 45,
-        "x_rot_min": -13,
-        "y_rot_max": 90,
-        "y_rot_min": -90
-      }
-    },
-    {
-      "id": "missile",
-      "name": "missile",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "missile",
-      "fire_control_sensor_type": "eo",
-      "is_seat": false,
-      "parent_weapon_unit_aim": true,
-      "crosshair_style": "circle",
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 0
-      }
-    },
-    {
-      "id": "rocket",
-      "name": "rocket",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "rocket",
-      "is_seat": false,
-      "fire_control_sensor_type": "ccip",
-      "crosshair_style": "cross",
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 0
-      }
-    },
-    {
-      "id": "decoy_flare",
-      "name": "decoy_flare",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "decoy_flare",
-      "is_seat": false,
-      "crosshair_style": "none",
-      "firing_mode": "salvo",
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 0
-      }
-    }
-  ]
+    ]
 }

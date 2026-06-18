@@ -40,6 +40,8 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     public float trackSize = 0.1f;
     public boolean loseTraction;
     public int regainTractionTick;
+    public float turnAngle;
+    public float turnAngleO;
     public float wheelRotation;
     public double trackLength;
     public long lastRenderTime;
@@ -64,18 +66,6 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         }
     }
 
-    public float getForwardSpeed() {
-        return this.entityData.get(FORWARD_SPEED);
-    }
-
-    public float getTurnAngle() {
-        return this.entityData.get(TURN_ANGLE);
-    }
-
-    public float getSpeed() {
-        return (float) getDeltaMovement().length();
-    }
-
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
@@ -87,6 +77,21 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(weaponIndex, aimContexts, operator);
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (level().isClientSide()) {
+            tickInput();
+        }
+    }
+
+    private void tickInput() {
+        turnAngleO = turnAngle;
+        if (level().isClientSide()) {
+            turnAngle = getTurnAngle();
         }
     }
 
@@ -215,7 +220,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         }
 
         // 转向控制
-        float turnAngle = entityData.get(TURN_ANGLE);
+        float turnAngle = getTurnAngle();
         if (controlUnit.left || controlUnit.right) {
             turnAngle += controlUnit.right ? turnStep : -turnStep;
             turnAngle = Mth.clamp(turnAngle, -maxTurn, maxTurn);
@@ -228,7 +233,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
                 turnAngle = Math.max(turnAngle, 0);
             }
         }
-        entityData.set(TURN_ANGLE, turnAngle);
+        setTurnAngle(turnAngle);
         if (angle > 90) {
             turnAngle *= -1;
         }
@@ -322,6 +327,23 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
                 setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
             }
         }
+    }
+
+    public float getForwardSpeed() {
+        return this.entityData.get(FORWARD_SPEED);
+    }
+
+    public float getTurnAngle() {
+        return this.entityData.get(TURN_ANGLE);
+    }
+
+    public void setTurnAngle(float value) {
+        turnAngle = value;
+        this.entityData.set(TURN_ANGLE, value);
+    }
+
+    public float getSpeed() {
+        return (float) getDeltaMovement().length();
     }
 
 }

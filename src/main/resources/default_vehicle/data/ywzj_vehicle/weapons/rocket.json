@@ -1,19 +1,19 @@
 {
-  "type": "ywzj_vehicle:rocket",
-  "name": "rocket",
-  "damage": 100,
-  "headshot_multiplier": 1.5,
-  "inaccuracy": 0.05,
-  "shoot_interval": 200,
-  "max_capacity": 32,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_rocket"
-  },
-  "explosion": {
-    "explode": true,
+    "type": "ywzj_vehicle:rocket",
+    "name": "rocket",
     "damage": 100,
-    "radius": 3,
-    "destroy_block": true
-  }
+    "headshot_multiplier": 1.5,
+    "inaccuracy": 0.05,
+    "shoot_interval": 200,
+    "max_capacity": 32,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_rocket"
+    },
+    "explosion": {
+        "explode": true,
+        "damage": 100,
+        "radius": 3,
+        "destroy_block": true
+    }
 }

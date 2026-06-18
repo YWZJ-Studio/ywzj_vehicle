@@ -1,28 +1,28 @@
 {
-  "name": "dump_truck_controller",
-  "script": "ywzj_vehicle:dump_truck",
-  "parameters": {},
-  "switchable_animations": {
-    "door_left": {
-      "part_id": "door_left",
-      "animation": "door_left"
+    "name": "dump_truck_controller",
+    "script": "ywzj_vehicle:dump_truck",
+    "parameters": {},
+    "switchable_animations": {
+        "door_left": {
+            "part_id": "door_left",
+            "animation": "door_left"
+        },
+        "door_right": {
+            "part_id": "door_right",
+            "animation": "door_right"
+        }
     },
-    "door_right": {
-      "part_id": "door_right",
-      "animation": "door_right"
+    "graph": {
+        "type": "merge",
+        "inputs": [
+            {
+                "type": "switchable_animation",
+                "ref": "door_left"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "door_right"
+            }
+        ]
     }
-  },
-  "graph": {
-    "type": "merge",
-    "inputs": [
-      {
-        "type": "switchable_animation",
-        "ref": "door_left"
-      },
-      {
-        "type": "switchable_animation",
-        "ref": "door_right"
-      }
-    ]
-  }
 }

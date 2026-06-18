@@ -29,7 +29,7 @@ public class PhysicsEngine {
     public float radarCrossSection;
     public float mass = 1;
     public Vec3 center;
-    public float bounce = 0.02f;
+    public float bounce = 0.05f;
     public float angularDampingGround = 0.88f;
     public float angularDampingAir = 0.96f;
     public float torqueScale = 4.0f;

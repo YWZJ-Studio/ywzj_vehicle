@@ -1,84 +1,84 @@
 {
-  "type": "ywzj_vehicle:wheeled_vehicle",
-  "attributes": {
-    "brake_force": 0.025,
-    "forward_force": 0.02,
-    "backward_force": 0.02,
-    "max_speed_forward": 0.8,
-    "max_speed_backward": 0.2,
-    "turn_step": 0.4,
-    "max_turn": 2
-  },
-  "max_health": 2000,
-  "view_info": {
-    "third_person_center_offset": [0, 4, 0],
-    "third_person_distance": 7,
-    "sound_distance": 3
-  },
-  "energy_info": {
-    "energy_capacity": 1,
-    "energy_consumption_per_tick": 0.00001,
-    "engine_particle_offsets": [[-1.672, 1.778, -1.245]]
-  },
-  "structure_model": "ywzj_vehicle:vehicle/lav_ad",
-  "parts": [
-    {
-      "id": "turret",
-      "name": "turret",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "turret",
-      "seat_offset": [-0.5, 2.5, -1],
-      "crosshair_style": "circle",
-      "rot_info": {
-        "x_rot_speed": 3,
-        "y_rot_speed": 3,
-        "x_rot_max": 4,
-        "x_rot_min": -85
-      },
-      "optical_sight_offset": [-0.565, 0.678, 0.705],
-      "operator_view_offset": [0, 1.5, 0],
-      "optical_sight_type": "crt",
-      "with_stabilizer": true,
-      "with_thermal_imager": true,
-      "zoom_max": 12,
-      "weapons": [
-        "ywzj_vehicle:gau_12u",
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "attributes": {
+        "brake_force": 0.025,
+        "forward_force": 0.02,
+        "backward_force": 0.02,
+        "max_speed_forward": 0.8,
+        "max_speed_backward": 0.2,
+        "turn_step": 0.4,
+        "max_turn": 2
+    },
+    "max_health": 2000,
+    "view_info": {
+        "third_person_center_offset": [0, 4, 0],
+        "third_person_distance": 7,
+        "sound_distance": 3
+    },
+    "energy_info": {
+        "energy_capacity": 1,
+        "energy_consumption_per_tick": 0.00001,
+        "engine_particle_offsets": [[-1.672, 1.778, -1.245]]
+    },
+    "structure_model": "ywzj_vehicle:vehicle/lav_ad",
+    "parts": [
         {
-          "id": "ywzj_vehicle:fim_92",
-          "part_unit_id": "turret_missile"
+            "id": "turret",
+            "name": "turret",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "turret",
+            "seat_offset": [-0.5, 2.5, -1],
+            "crosshair_style": "circle",
+            "rot_info": {
+                "x_rot_speed": 3,
+                "y_rot_speed": 3,
+                "x_rot_max": 4,
+                "x_rot_min": -85
+            },
+            "optical_sight_offset": [-0.565, 0.678, 0.705],
+            "operator_view_offset": [0, 1.5, 0],
+            "optical_sight_type": "crt",
+            "with_stabilizer": true,
+            "with_thermal_imager": true,
+            "zoom_max": 12,
+            "weapons": [
+                "ywzj_vehicle:gau_12u",
+                {
+                    "id": "ywzj_vehicle:fim_92",
+                    "part_unit_id": "turret_missile"
+                },
+                {
+                    "id": "ywzj_vehicle:launcher_smoke_grenade",
+                    "part_unit_id": "turret_smoke_grenade"
+                }
+            ]
         },
         {
-          "id": "ywzj_vehicle:launcher_smoke_grenade",
-          "part_unit_id": "turret_smoke_grenade"
+            "id": "turret_missile",
+            "name": "turret_missile",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "turret_missile",
+            "fire_control_sensor_type": "ir",
+            "crosshair_style": "none",
+            "is_seat": false,
+            "parent_weapon_unit_aim": true,
+            "rot_info": {
+                "x_rot_speed": 1.5,
+                "y_rot_speed": 0,
+                "x_rot_max": 5,
+                "x_rot_min": -60
+            }
+        },
+        {
+            "id": "turret_smoke_grenade",
+            "name": "turret_smoke_grenade",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "turret_smoke_grenade",
+            "is_seat": false,
+            "rot_info": {
+                "x_rot_speed": 0,
+                "y_rot_speed": 0
+            }
         }
-      ]
-    },
-    {
-      "id": "turret_missile",
-      "name": "turret_missile",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "turret_missile",
-      "fire_control_sensor_type": "ir",
-      "crosshair_style": "none",
-      "is_seat": false,
-      "parent_weapon_unit_aim": true,
-      "rot_info": {
-        "x_rot_speed": 1.5,
-        "y_rot_speed": 0,
-        "x_rot_max": 5,
-        "x_rot_min": -60
-      }
-    },
-    {
-      "id": "turret_smoke_grenade",
-      "name": "turret_smoke_grenade",
-      "type": "ywzj_vehicle:weapon",
-      "structure_bone": "turret_smoke_grenade",
-      "is_seat": false,
-      "rot_info": {
-        "x_rot_speed": 0,
-        "y_rot_speed": 0
-      }
-    }
-  ]
+    ]
 }

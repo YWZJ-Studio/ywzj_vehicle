@@ -1,17 +1,17 @@
 {
-  "type": "ywzj_vehicle:cannon",
-  "name": "12.7mm Gun",
-  "caliber": 12.7,
-  "tracer_r": 0.9,
-  "tracer_g": 0.4,
-  "tracer_b": 0.1,
-  "damage": 15,
-  "velocity": 16,
-  "headshot_multiplier": 1.5,
-  "shoot_interval": 60,
-  "max_capacity": 120,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_machine_gun"
-  }
+    "type": "ywzj_vehicle:cannon",
+    "name": "12.7mm Gun",
+    "caliber": 12.7,
+    "tracer_r": 0.9,
+    "tracer_g": 0.4,
+    "tracer_b": 0.1,
+    "damage": 15,
+    "velocity": 16,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 60,
+    "max_capacity": 120,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_machine_gun"
+    }
 }

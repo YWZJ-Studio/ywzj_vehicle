@@ -1,20 +1,20 @@
 {
-  "type": "ywzj_vehicle:aerial_bomb",
-  "name": "aerial_bomb",
-  "damage": 10,
-  "velocity": 0,
-  "recoil": 0,
-  "headshot_multiplier": 200,
-  "shoot_interval": 100,
-  "max_capacity": 8,
-  "reload": {
-    "time": 100,
-    "ammo": "ywzj_vehicle:ammo_aerial_bomb"
-  },
-  "explosion": {
-    "explode": true,
+    "type": "ywzj_vehicle:aerial_bomb",
+    "name": "aerial_bomb",
     "damage": 10,
-    "radius": 2,
-    "destroy_block": true
-  }
+    "velocity": 0,
+    "recoil": 0,
+    "headshot_multiplier": 200,
+    "shoot_interval": 100,
+    "max_capacity": 8,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_aerial_bomb"
+    },
+    "explosion": {
+        "explode": true,
+        "damage": 10,
+        "radius": 2,
+        "destroy_block": true
+    }
 }

@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
+import net.minecraft.util.Mth;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
 public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
@@ -16,7 +17,7 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
     }
 
     public float getTurnAngle() {
-        return entity.getTurnAngle();
+        return Mth.lerp(partialTick, entity.turnAngleO, entity.turnAngle);
     }
 
     @Override

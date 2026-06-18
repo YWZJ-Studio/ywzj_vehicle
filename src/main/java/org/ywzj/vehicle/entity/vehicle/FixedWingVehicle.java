@@ -322,7 +322,12 @@ public class FixedWingVehicle extends AbstractVehicle
     @Override
     protected Vec3 tickMove() {
         // 三个正交轴
-        Vector3f[] axes = aerodynamicCubeOBB.obb().getAxes();
+        Vector3f[] axes;
+        if (level().getBlockState(blockPosition().below()).isSolid()) {
+            axes = getMainCubeOBB().obb().getAxes();
+        } else {
+            axes = aerodynamicCubeOBB.obb().getAxes();
+        }
         Vec3 forwardDirection = new Vec3(axes[2]);
         Vec3 upDirection = new Vec3(axes[1]);
         Vec3 leftDirection = new Vec3(axes[0]);
@@ -589,7 +594,7 @@ public class FixedWingVehicle extends AbstractVehicle
                     Vec3 worldPos = relativeRotPos(interpolatedPos, false).subtract(dir.scale(i)).subtract(getDeltaMovement());
                     level.addParticle(new SmokeCloudOption(false, r, g, b, r, g, b,
                                     0.5f, 0.1f, 1200,
-                                    0.7f, 5f, 0.01f), true,
+                                    0.3f, 5f, 0.01f), true,
                             worldPos.x, worldPos.y, worldPos.z,
                             x, y, z);
                 }

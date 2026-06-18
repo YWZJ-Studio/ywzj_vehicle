@@ -1489,19 +1489,21 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             Vec3 mtv = new Vec3(obb.calculateMTV(entityAABB));
             if (mtv.lengthSqr() > 0) {
+                boolean drag = false;
                 if (mtv.y < 0 && pEntity.onGround()) {
-                    mtv = new Vec3(mtv.x, 0, mtv.z);
-                }
-                if (Math.abs(mtv.y) > Math.abs(mtv.x) && Math.abs(mtv.y) > Math.abs(mtv.z)) {
+                    Vec3 direction = pEntity.position().subtract(this.position()).normalize();
+                    mtv = new Vec3(direction.x, 0, direction.z);
+                } else {
+                    pEntity.setOnGround(true);
+                    pEntity.fallDistance = 0;
+                    pEntity.setDeltaMovement(movement.x, Math.max(0, movement.y), movement.z);
                     if (mtv.y > 0) {
-                        pEntity.setOnGround(true);
-                        pEntity.fallDistance = 0;
+                        drag = true;
                     }
-                    pEntity.setDeltaMovement(movement.x, this.getDeltaMovement().y, movement.z);
                 }
-                mtv = new Vec3(Math.abs(mtv.x) < 0.001 ? this.getDeltaMovement().x : mtv.x,
-                        Math.abs(mtv.y) < 0.001 ? this.getDeltaMovement().y : mtv.y,
-                        Math.abs(mtv.z) < 0.001 ? this.getDeltaMovement().z : mtv.z);
+                if (drag) {
+                    mtv = new Vec3(mtv.x, 0, mtv.z).add(this.getDeltaMovement());
+                }
                 Vec3 toPos = new Vec3(pEntity.getX() + mtv.x,
                         pEntity.getY() + mtv.y,
                         pEntity.getZ() + mtv.z);

@@ -76,7 +76,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private WeaponUnitData.FiringMode firingMode;
     // 冷发射
     private final int coldLaunchTimeTick;
-    private final Vec3 coldLaunchDirection;
+    private final Vec3 coldLaunchVelocity;
     // 武器站光瞄偏移，为开镜视角下玩家的摄像机相对于武器站枢轴的偏移
     private final Vec3 opticalSightOffset;
     // 武器站操作员镜头偏移，为操作员视角下玩家的摄像机相对于武器站枢轴的偏移
@@ -140,7 +140,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.ammoCapacity = data.getAmmoCapacity();
         this.firingMode = data.getFiringMode();
         this.coldLaunchTimeTick = data.getColdLaunchTimeTick();
-        this.coldLaunchDirection = data.getColdLaunchDirection();
+        this.coldLaunchVelocity = data.getColdLaunchVelocity();
         this.parentWeaponUnitAim = data.isParentWeaponUnitAim();
         this.opticalSightOffset = data.getOpticalSightOffset();
         this.operatorViewOffset = data.getOperatorViewOffset();
@@ -574,15 +574,21 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @OnlyIn(Dist.CLIENT)
     public void toggleSeeker(Boolean on) {
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
-        if (weaponOptional.isPresent() && weaponOptional.get().withSeeker()) {
-            if (on == null) {
-                seekerOn = !seekerOn;
-            } else {
-                seekerOn = on;
-            }
-            lockCoolingTick = 0;
-            if (lockedEntity != null) {
-                setLockedEntity(null);
+        if (weaponOptional.isPresent()) {
+            AbstractVehicleWeapon<?> weapon = weaponOptional.get();
+            if (weapon.withSeeker()) {
+                if (weapon.getRemainAmmo() == 0) {
+                    on = false;
+                }
+                if (on == null) {
+                    seekerOn = !seekerOn;
+                } else {
+                    seekerOn = on;
+                }
+                lockCoolingTick = 0;
+                if (lockedEntity != null) {
+                    setLockedEntity(null);
+                }
             }
         }
     }
@@ -829,8 +835,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return coldLaunchTimeTick;
     }
 
-    public Vec3 getColdLaunchDirection() {
-        return coldLaunchDirection;
+    public Vec3 getColdLaunchVelocity() {
+        return coldLaunchVelocity;
     }
 
     public void setFiringMode(WeaponUnitData.FiringMode firingMode) {
@@ -1117,7 +1123,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
         this.fireControlSensorType = WeaponUnitData.FireControlSensorType.NONE;
         this.coldLaunchTimeTick = 0;
-        this.coldLaunchDirection = new Vec3(0, -1, 0);
+        this.coldLaunchVelocity = new Vec3(0, -1, 0);
 
         currentWeaponIndex = 0;
     }

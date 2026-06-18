@@ -1,0 +1,22 @@
+{
+    "type": "ywzj_vehicle:cannon",
+    "name": "GIAT 30M 791",
+    "caliber": 30,
+    "damage": 40,
+    "velocity": 32,
+    "recoil": 0.2,
+    "inaccuracy": 0.12,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 24,
+    "max_capacity": 125,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_auto_cannon"
+    },
+    "explosion": {
+        "explode": true,
+        "damage": 10,
+        "radius": 0.5,
+        "destroy_block": true
+    }
+}
