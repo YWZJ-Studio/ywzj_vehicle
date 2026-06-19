@@ -3,6 +3,7 @@
     "name": "105mm Cannon",
     "caliber": 105,
     "damage": 1000,
+    "velocity": 20,
     "headshot_multiplier": 1,
     "recoil": 1,
     "inaccuracy": 0.05,

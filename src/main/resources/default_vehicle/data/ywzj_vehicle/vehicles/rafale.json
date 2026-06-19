@@ -145,12 +145,8 @@
             "is_seat": false,
             "parent_weapon_unit_aim": true,
             "rot_info": {
-                "x_rot_speed": 5,
-                "y_rot_speed": 5,
-                "x_rot_min": 0,
-                "x_rot_max": 80,
-                "y_rot_min": -60,
-                "y_rot_max": 60
+                "x_rot_speed": 0,
+                "y_rot_speed": 0
             }
         },
         {

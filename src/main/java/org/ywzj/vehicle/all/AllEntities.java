@@ -27,8 +27,8 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .sized(0.0625F, 0.0625F)
-                    .clientTrackingRange(16)
-                    .updateInterval(5)
+                    .clientTrackingRange(32)
+                    .updateInterval(1)
                     .setShouldReceiveVelocityUpdates(false)
                     .build("bullet"));
 
@@ -38,7 +38,7 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .sized(1F, 1F)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .updateInterval(1)
                     .setShouldReceiveVelocityUpdates(false)
                     .build("rocket"));
@@ -49,7 +49,7 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .sized(1F, 1F)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .updateInterval(1)
                     .setShouldReceiveVelocityUpdates(false)
                     .build("aerial_bomb"));
@@ -60,7 +60,7 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .sized(1F, 1F)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .updateInterval(1)
                     .setShouldReceiveVelocityUpdates(false)
                     .build("missile"));
@@ -100,19 +100,19 @@ public class AllEntities {
                     .noSave()
                     .fireImmune()
                     .sized(16, 16)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .updateInterval(1)
                     .setShouldReceiveVelocityUpdates(false)
                     .build("decoy_flare"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
             () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("fake_player"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<Rope>> ROPE = ENTITIES.register("rope",
             () -> EntityType.Builder.of(Rope::new, MobCategory.MISC).sized(1f, 1f)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("rope"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<NoneVehicle>> NONE_VEHICLE = ENTITIES.register("none_vehicle",
@@ -120,7 +120,7 @@ public class AllEntities {
                     .noSummon()
                     .sized(1f, 1f)
                     .updateInterval(1)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("none_vehicle"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<WheeledVehicle>> WHEELED_VEHICLE = ENTITIES.register("wheeled_vehicle",
@@ -128,7 +128,7 @@ public class AllEntities {
                     .noSummon()
                     .sized(1f, 1f)
                     .updateInterval(1)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("wheeled_vehicle"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<TrackedVehicle>> TRACKED_VEHICLE = ENTITIES.register("tracked_vehicle",
@@ -136,7 +136,7 @@ public class AllEntities {
                     .noSummon()
                     .sized(1f, 1f)
                     .updateInterval(1)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("tracked_vehicle"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<RotaryWingVehicle>> ROTARY_WING_VEHICLE = ENTITIES.register("rotary_wing_vehicle",
@@ -144,7 +144,7 @@ public class AllEntities {
                     .noSummon()
                     .sized(1f, 1f)
                     .updateInterval(1)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("rotary_wing_vehicle"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<FixedWingVehicle>> FIXED_WING_VEHICLE = ENTITIES.register("fixed_wing_vehicle",
@@ -152,7 +152,7 @@ public class AllEntities {
                     .noSummon()
                     .sized(1f, 1f)
                     .updateInterval(1)
-                    .clientTrackingRange(16)
+                    .clientTrackingRange(32)
                     .build("fixed_wing_vehicle"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<DumpTruck>> DUMP_TRUCK = registerVehicle("dump_truck", DumpTruck::new);
@@ -199,7 +199,7 @@ public class AllEntities {
                 .of(factory, MobCategory.MISC)
                 .sized(1f, 1f)
                 .updateInterval(1)
-                .clientTrackingRange(16)
+                .clientTrackingRange(32)
                 .build(name));
     }
 

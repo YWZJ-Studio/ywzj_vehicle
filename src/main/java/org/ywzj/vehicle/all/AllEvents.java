@@ -13,6 +13,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -44,6 +46,7 @@ import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.item.FuelTankItem;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
+import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerBroadcastEntities;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
@@ -226,8 +229,16 @@ public class AllEvents {
         @SubscribeEvent
         public static void onHitVehicle(HitVehicleEvent event) {
             ServerPlayer serverPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(event.shooterUuid);
-            if (serverPlayer != null && serverPlayer.level().getEntity(event.entityId) instanceof AbstractVehicle vehicle) {
-                PacketDistributor.sendToPlayersTrackingEntity(vehicle, new ServerHitVehicleEvent(event));
+            if (serverPlayer == null) {
+                return;
+            }
+            Level level = serverPlayer.level();
+            if (level.getEntity(event.entityId) instanceof AbstractVehicle vehicle) {
+                List<Entity> players = level.getEntities(vehicle,
+                        AABB.ofSize(vehicle.position(), 256, 256, 256),
+                        entity -> entity instanceof ServerPlayer && entity != serverPlayer);
+                players.add(serverPlayer);
+                players.forEach(player -> PacketDistributor.sendToPlayer((ServerPlayer) player, new ServerHitVehicleEvent(event)));
             }
         }
 

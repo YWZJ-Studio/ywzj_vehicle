@@ -1,7 +1,7 @@
 {
     "type": "ywzj_vehicle:grenade",
-    "grenade": "Smoke",
-    "name": "smoke_grenade_launcher",
+    "grenade": "smoke",
+    "name": "Smoke",
     "damage": 10,
     "headshot_multiplier": 1.5,
     "shoot_interval": 400,

@@ -118,6 +118,8 @@ public class BaseVehicleData<T extends AbstractVehicle> {
         // 构建物理结构
         buildMainCube(model);
         // 计算载具参考长度
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
         double minZ = Double.POSITIVE_INFINITY;
         double maxZ = Double.NEGATIVE_INFINITY;
         List<VehicleCubeOBB> vehicleOBBs = new ArrayList<>(vehicleBodyOBBs);
@@ -125,6 +127,14 @@ public class BaseVehicleData<T extends AbstractVehicle> {
             vehicleOBBs.addAll(partUnitEntry.data().getRawPartCubeOBBs());
         }
         for (VehicleCubeOBB vehicleOBB : vehicleOBBs) {
+            double x1 = vehicleOBB.offset().x + vehicleOBB.getWidth() / 2;
+            double x2 = vehicleOBB.offset().x - vehicleOBB.getWidth() / 2;
+            if (maxX < x1) {
+                maxX = x1;
+            }
+            if (minX > x2) {
+                minX = x2;
+            }
             double z1 = vehicleOBB.offset().z + vehicleOBB.getDepth() / 2;
             double z2 = vehicleOBB.offset().z - vehicleOBB.getDepth() / 2;
             if (maxZ < z1) {
@@ -134,7 +144,7 @@ public class BaseVehicleData<T extends AbstractVehicle> {
                 minZ = z2;
             }
         }
-        this.structureLength = maxZ - minZ;
+        this.structureLength = Math.max(maxX - minX, maxZ - minZ);
     }
 
     public void inject(T vehicle) {}

@@ -30,6 +30,10 @@ public class VehicleCubeOBB {
     public double spaceX;
     public double spaceY;
     public double spaceZ;
+    public Vec3 position;
+    public Vec3 positionO;
+    public Quaternionf rotation;
+    public Quaternionf rotationO;
 
     public VehicleCubeOBB(OBB obb) {
         this.obb = obb;
@@ -91,20 +95,23 @@ public class VehicleCubeOBB {
     }
 
     public void update(AbstractVehicle vehicle) {
+        positionO = position;
+        rotationO = rotation;
         VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
-        Quaternionf rotation = globalTransform.rotation();
+        Quaternionf globalRotation = globalTransform.rotation();
         Vector3f centerOffset = new Vector3f((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
-        rotation.transform(centerOffset);
+        globalRotation.transform(centerOffset);
         Quaternionf vehicleRotation = vehicle.rotYXZ();
         Vector3f center = vehicleRotation.transform(globalTransform.offset()
                 .add(centerOffset.x, centerOffset.y, centerOffset.z)
                 .subtract(vehicle.centerOffset.x, vehicle.centerOffset.y, vehicle.centerOffset.z)
                 .toVector3f());
-        obb.setCenter(vehicle.position()
+        position = vehicle.position()
                 .add(vehicle.centerOffset)
-                .add(center.x, center.y, center.z)
-                .toVector3f());
-        obb.setRotation(vehicleRotation.mul(rotation));
+                .add(center.x, center.y, center.z);
+        obb.setCenter(position.toVector3f());
+        rotation = vehicleRotation.mul(globalRotation);
+        obb.setRotation(rotation);
     }
 
     public static VehicleCubeOBB defaultCube() {

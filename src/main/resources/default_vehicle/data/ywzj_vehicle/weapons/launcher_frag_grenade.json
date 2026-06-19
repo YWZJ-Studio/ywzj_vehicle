@@ -1,7 +1,7 @@
 {
     "type": "ywzj_vehicle:grenade",
-    "grenade": "Frag",
-    "name": "frag_grenade_launcher",
+    "grenade": "frag",
+    "name": "Frag",
     "damage": 10,
     "velocity": 15,
     "shoot_interval": 400,

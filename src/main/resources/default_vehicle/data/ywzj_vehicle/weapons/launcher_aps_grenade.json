@@ -1,7 +1,7 @@
 {
     "type": "ywzj_vehicle:grenade",
-    "grenade": "APS",
-    "name": "aps",
+    "grenade": "aps",
+    "name": "APS",
     "damage": 10,
     "velocity": 15,
     "headshot_multiplier": 1.5,

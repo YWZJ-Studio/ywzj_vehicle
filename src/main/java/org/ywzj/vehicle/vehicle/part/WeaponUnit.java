@@ -565,6 +565,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             } else {
                 setFocusLockPos(null);
             }
+        } else if (focusLockPos != null) {
+            setFocusLockPos(null);
         }
     }
 
@@ -642,6 +644,48 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (weaponOptional.get() instanceof VehicleMissile vehicleMissile
                     && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
                 weaponUnit.toggleSeeker(false);
+            }
+        }
+    }
+
+    /**
+     * 武器站双向稳定系统
+     */
+    @Override
+    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
+        if (Math.abs(xAimRot - xRot) > 5 || Math.abs(yAimRot - yRot) > 5) {
+            return;
+        }
+        if (Math.abs(dVehicleXRot) > 0.01 || Math.abs(dVehicleYRot) > 0.01 || Math.abs(dVehicleZRot) > 0.01) {
+            if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
+                Quaternionf rotationO = new Quaternionf();
+                rotationO.rotateY(org.joml.Math.toRadians(-(vehicle.getYRot() - dVehicleYRot)))
+                        .rotateX(org.joml.Math.toRadians(vehicle.getXRot() - dVehicleXRot))
+                        .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
+                if (structureGroup != null) {
+                    rotationO.mul(structureGroup.baseRotation);
+                    if (structureGroup.parent != null) {
+                        rotationO.mul(structureGroup.parent.globalTransform().rotation());
+                    }
+                }
+                Vector3f localVec = VectorUtil.rotToVec(xRot, yRot).toVector3f();
+                Quaternionf relativeRot = baseRot().invert().mul(rotationO);
+                Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
+                Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
+                setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
+                if (org.joml.Math.abs(xRot - xRotO) > 180) {
+                    xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
+                }
+                if (vehicle.level().isClientSide()) {
+                    setXAimRot(targetRot.x);
+                    setYAimRot(targetRot.y);
+                    ignoreRemoteRotTick = 1;
+                }
+                setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
+                if (org.joml.Math.abs(yRot - yRotO) > 180) {
+                    yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
+                }
+                updateRot();
             }
         }
     }
@@ -773,46 +817,20 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
     }
 
-    /**
-     * 武器站双向稳定系统
-     */
     @Override
-    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
-        if (Math.abs(xAimRot - xRot) > 5 || Math.abs(yAimRot - yRot) > 5) {
-            return;
+    public Quaternionf baseRot() {
+        Quaternionf rotation = vehicle.rotYXZ();
+        VehicleCubeGroup group = structureGroup;
+        if (group == null) {
+            group = xTurnGroup;
         }
-        if (Math.abs(dVehicleXRot) > 0.01 || Math.abs(dVehicleYRot) > 0.01 || Math.abs(dVehicleZRot) > 0.01) {
-            if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
-                Quaternionf rotationO = new Quaternionf();
-                rotationO.rotateY(org.joml.Math.toRadians(-(vehicle.getYRot() - dVehicleYRot)))
-                        .rotateX(org.joml.Math.toRadians(vehicle.getXRot() - dVehicleXRot))
-                        .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
-                if (structureGroup != null) {
-                    rotationO.mul(structureGroup.baseRotation);
-                    if (structureGroup.parent != null) {
-                        rotationO.mul(structureGroup.parent.globalTransform().rotation());
-                    }
-                }
-                Vector3f localVec = VectorUtil.rotToVec(xRot, yRot).toVector3f();
-                Quaternionf relativeRot = baseRot().invert().mul(rotationO);
-                Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
-                Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
-                setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
-                if (org.joml.Math.abs(xRot - xRotO) > 180) {
-                    xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
-                }
-                if (vehicle.level().isClientSide()) {
-                    setXAimRot(targetRot.x);
-                    setYAimRot(targetRot.y);
-                    ignoreRemoteRotTick = 1;
-                }
-                setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
-                if (org.joml.Math.abs(yRot - yRotO) > 180) {
-                    yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
-                }
-                updateRot();
+        if (group != null) {
+            rotation.mul(group.baseRotation);
+            if (group.parent != null) {
+                rotation.mul(group.parent.globalTransform().rotation());
             }
         }
+        return rotation;
     }
 
     public int getAmmoCapacity() {

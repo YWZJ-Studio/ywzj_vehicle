@@ -60,39 +60,42 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
-            poseStack.translate(screenWidth / 2f + 116f, screenHeight / 2f + 80f, 0f);
+            poseStack.translate(screenWidth / 2f - 80f, screenHeight / 2f + 80f, 0f);
             float scale = (float) (5.0 / Math.max(4.0, vehicle.getStructureLength()));
             poseStack.scale(scale, scale, scale);
-            float zRot = 180f;
-            float zRotO = 180f;
+            float zRot = 0;
             Player player = LocalVehiclePlayer.instance.getPlayer();
             PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(player);
             if (playerPartUnit instanceof RotatableUnit<?> rotatableUnit) {
-                zRot -= rotatableUnit.worldRot().y - vehicle.getYRot();
-                zRotO -= rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.yRotO;
-                if (Math.abs(zRot - zRotO) > 90) {
-                    zRotO += zRotO < 0 ? 360f : -360f;
-                }
+                zRot = lerpZRotDiff(rotatableUnit, vehicle, partialTick);
             }
-            poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTick, zRotO, zRot)));
-            Vec3 pos = vehicle.position();
+            poseStack.mulPose(Axis.ZP.rotationDegrees(180 - zRot));
+            Vec3 vehiclePos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
+                    Mth.lerp(partialTick, vehicle.yo, vehicle.getY()),
+                    Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
             Vector3f[] axes = vehicle.axes();
             Vector3f axisX = axes[0];
             Vector3f axisZ = axes[2];
-            float vehicleYRotRad = (float) Math.toRadians(vehicle.getYRot());
-            Vector3f rotCache = new Vector3f();
             for (VehicleCubeOBB vehicleCubeOBB : vehicle.getVehicleCubeOBBs()) {
-                renderCubeOBB(vehicleCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, Color.GREEN);
+                renderCubeOBB(vehicleCubeOBB, vehiclePos, axisX, axisZ, 0, poseStack, guiGraphics, partialTick, Color.GREEN);
             }
             for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
+                if (partUnit instanceof WeaponUnit weaponUnit && !weaponUnit.isSeat()) {
+                    continue;
+                }
                 int color = partUnit.getOwner() == player ? Color.BLUE : Color.GREEN;
+                float rot = 0;
+                if (partUnit instanceof RotatableUnit<?> rotatableUnit) {
+                    rot = lerpZRotDiff(rotatableUnit, vehicle, partialTick);
+                }
                 for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
-                    renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
+                    renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, color);
                 }
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
+                        rot = lerpZRotDiff(subWeaponUnit, vehicle, partialTick);
                         for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
-                            renderCubeOBB(partCubeOBB, pos, axisX, axisZ, vehicleYRotRad, rotCache, poseStack, guiGraphics, color);
+                            renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, color);
                         }
                     }
                 }
@@ -101,20 +104,21 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
         poseStack.popPose();
     }
 
-    private void renderCubeOBB(VehicleCubeOBB cubeOBB, Vec3 pos, Vector3f axisX, Vector3f axisZ, float vehicleYRotRad, Vector3f rotCache, PoseStack poseStack, GuiGraphics guiGraphics, int color) {
-        Vec3 center = new Vec3(cubeOBB.obb().center());
-        double dx = center.x - pos.x;
-        double dy = center.y - pos.y;
-        double dz = center.z - pos.z;
-        float offsetX = (float) ((dx * axisX.x() + dy * axisX.y() + dz * axisX.z()) * 10.0);
-        float offsetZ = (float) ((dx * axisZ.x() + dy * axisZ.y() + dz * axisZ.z()) * 10.0);
+    private void renderCubeOBB(VehicleCubeOBB cubeOBB, Vec3 vehiclePos, Vector3f axisX, Vector3f axisZ, float rot, PoseStack poseStack, GuiGraphics guiGraphics, float partialTick, int color) {
+        Vec3 cubePos = new Vec3(Mth.lerp(partialTick, cubeOBB.positionO.x, cubeOBB.position.x),
+                Mth.lerp(partialTick, cubeOBB.positionO.y, cubeOBB.position.y),
+                Mth.lerp(partialTick, cubeOBB.positionO.z, cubeOBB.position.z));
+        Vec3 offset = cubePos.subtract(vehiclePos);
+        float offsetX = (float) ((offset.x * axisX.x() + offset.y * axisX.y() + offset.z * axisX.z()) * 10.0);
+        float offsetZ = (float) ((offset.x * axisZ.x() + offset.y * axisZ.y() + offset.z * axisZ.z()) * 10.0);
         poseStack.pushPose();
-        poseStack.translate(offsetX, offsetZ, 0f);
-        cubeOBB.obb().rotation().getEulerAnglesYXZ(rotCache);
-        poseStack.mulPose(Axis.ZP.rotation(-vehicleYRotRad - rotCache.y));
-        int hw = (int) (cubeOBB.width * 5.0);
-        int hd = (int) (cubeOBB.depth * 5.0);
-        drawRectByCorner(guiGraphics, -hw, hw, -hd, hd, color, 1);
+        {
+            poseStack.translate(offsetX, offsetZ, 0f);
+            poseStack.mulPose(Axis.ZP.rotationDegrees((float) (rot - Math.toDegrees(cubeOBB.group.baseRotation.getEulerAnglesYXZ(new Vector3f()).y))));
+            int hw = (int) (cubeOBB.width * 5.0);
+            int hd = (int) (cubeOBB.depth * 5.0);
+            drawRectByCorner(guiGraphics, -hw, hw, -hd, hd, color, 1);
+        }
         poseStack.popPose();
     }
 
@@ -372,6 +376,15 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
             }
             guiGraphics.hLine(-6, 6, -11, teamColor);
         }
+    }
+
+    private float lerpZRotDiff(RotatableUnit<?> rotatableUnit, AbstractVehicle vehicle, float partialTick) {
+        float zRot = Mth.wrapDegrees(rotatableUnit.worldRot().y - vehicle.getYRot());
+        float zRotO = Mth.wrapDegrees(rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.yRotO);
+        if (Math.abs(zRot - zRotO) > 180) {
+            zRotO += (zRotO - zRot) < 0 ? 360f : -360f;
+        }
+        return Mth.lerp(partialTick, zRotO, zRot);
     }
 
 }
