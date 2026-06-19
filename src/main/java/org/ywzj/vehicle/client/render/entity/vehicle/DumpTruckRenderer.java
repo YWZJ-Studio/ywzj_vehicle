@@ -115,6 +115,8 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
+            // 渲染弹孔
+            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
 
             model.applyPose(model.getBindPose());
             Quaternionf reset = new Quaternionf(0, 0, 0, 1);

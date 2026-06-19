@@ -139,7 +139,7 @@ public class PhysicsEngine {
                     BlockPos testBlockPos = BlockPos.containing(testPos);
                     BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                     if (blockState.isSolid()) {
-                        if (!isHalfBlock(touchPoint) || testPos.y < testBlockPos.getY() + 0.55) {
+                        if (!isHalfBlock(touchPoint.cubePointContext.blockState()) || testPos.y < testBlockPos.getY() + 0.55) {
                             velocity = new Vec3(velocity.x, Math.min(0.1, velocity.y + 0.01f), velocity.z);
                         }
                     }
@@ -239,9 +239,10 @@ public class PhysicsEngine {
             List<Vector3f> localForcePoints = touchPoints.stream()
                     .filter(touchPoint -> faces.contains(touchPoint.cubeFace()))
                     .filter(touchPoint -> {
-                        if (isHalfBlock(touchPoint)) {
+                        BlockState blockState = touchPoint.cubePointContext.blockState();
+                        if (isHalfBlock(blockState)) {
                             Vector3f worldPos = touchPoint.cachedWorldPos();
-                            return worldPos.y <= BlockPos.containing(new Vec3(worldPos)).getY() + 0.65f;
+                            return worldPos.y <= touchPoint.cubePointContext.blockPos().y + 0.6f;
                         }
                         return true;
                     })
@@ -373,7 +374,9 @@ public class PhysicsEngine {
             localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
             checkDirection(forcePointLocal);
             rotV = 0.05f * recoil;
+            Vec3 lastPosition = vehicle.position();
             rot(axes);
+            vehicle.setPos(lastPosition);
             // 后坐力产生推移
             force = force.normalize();
             double motion = force.dot(new Vector3f(0, 0, 1)) * 0.03 * recoil;
@@ -406,7 +409,7 @@ public class PhysicsEngine {
         if (yRange >= mainCubeOBB.spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
             climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
             VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-            double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint) ? 0.55f : 1f);
+            double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
             Vec3 offset = mainCubeOBB.offset().subtract(0, mainCubeOBB.height / 2, 0);
             Vec3 bottomPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
             double toLift = Mth.clamp(liftHeight - bottomPos.y, 0, vehicle.maxUpStep());
@@ -521,12 +524,12 @@ public class PhysicsEngine {
         return new Vector2f(projected.dot(planeU), projected.dot(planeV));
     }
 
-    private boolean isHalfBlock(VehicleCubeOBB.CubePoint cubePoint) {
-        if (cubePoint.cubePointContext.blockState() == null) {
+    public static boolean isHalfBlock(BlockState blockState) {
+        if (blockState == null) {
             return false;
         }
-        return cubePoint.cubePointContext.blockState().hasProperty(BlockStateProperties.HALF)
-                || cubePoint.cubePointContext.blockState().getBlock() instanceof SlabBlock;
+        return blockState.hasProperty(BlockStateProperties.HALF)
+                || blockState.getBlock() instanceof SlabBlock;
     }
 
     /**

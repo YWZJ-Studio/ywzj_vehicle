@@ -79,6 +79,8 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
+            // 渲染弹孔
+            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
 
             Quaternionf reset = new Quaternionf(0, 0, 0, 1);
             propellerUp1.rotation.set(reset);

@@ -58,11 +58,18 @@ public class RenderHelper {
     }
 
     public static void drawCross(GuiGraphics guiGraphics, int x, int y, int size, int color) {
-        int half = size / 2;
-        // 横线
-        guiGraphics.hLine(x - half + 1, x + half - 1, y, color);
-        // 竖线
-        guiGraphics.vLine(x, y - half, y + half, color);
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        {
+            poseStack.translate(0, -0.5, 0);
+            poseStack.rotateAround(Axis.ZP.rotationDegrees(45), 0, 0, 0);
+            int half = size / 2;
+            // 横线
+            guiGraphics.hLine(x - half + 1, x + half - 1, y, color);
+            // 竖线
+            guiGraphics.vLine(x, y - half, y + half, color);
+        }
+        poseStack.popPose();
     }
 
     public static void drawCrossHollow(GuiGraphics guiGraphics, int x, int y, int size, int gap, int color) {

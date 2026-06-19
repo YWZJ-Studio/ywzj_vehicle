@@ -156,7 +156,7 @@
             "fire_control_sensor_type": "ccip",
             "is_seat": false,
             "parent_weapon_unit_aim": true,
-            "crosshair_style": "none",
+            "crosshair_style": "big_cross",
             "weapons": [
                 "ywzj_vehicle:nuclear_gravity_bomb"
             ]

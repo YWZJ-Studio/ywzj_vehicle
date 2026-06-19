@@ -58,7 +58,7 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
     public float zoomMax = 8;
 
     @SerializedName("crosshair_style")
-    public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.NONE;
+    public WeaponUnitData.CrosshairStyle crosshairStyle = WeaponUnitData.CrosshairStyle.CIRCLE;
 
     @SerializedName("render_selected_weapon")
     public boolean renderSelectedWeapon = false;

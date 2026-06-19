@@ -566,7 +566,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             BlockPos blockPos = BlockPos.containing(worldPos);
 
             // 调试
-//            DebugUtil.particle(level(), new Vec3(worldPos), point.cubeFace());
+//            DebugUtil.particle(level(), worldPos, point.cubeFace());
 //            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()));
 
             BlockState blockState = level().getBlockState(blockPos);

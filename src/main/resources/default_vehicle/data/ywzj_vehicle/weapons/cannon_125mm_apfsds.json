@@ -6,7 +6,7 @@
     "tracer_g": 1,
     "tracer_b": 1,
     "damage": 2000,
-    "velocity": 15,
+    "velocity": 20,
     "headshot_multiplier": 1,
     "recoil": 1,
     "inaccuracy": 0.05,

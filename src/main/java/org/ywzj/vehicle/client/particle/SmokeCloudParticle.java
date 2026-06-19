@@ -32,6 +32,7 @@ public class SmokeCloudParticle extends TextureSheetParticle {
     private final float endR,   endG,   endB;
     private final float startAlpha, endAlpha;
     private final float startSize, endSize;
+    private final boolean changing;
 
     protected SmokeCloudParticle(ClientLevel level, double x, double y, double z,
                                  double vx, double vy, double vz,
@@ -60,7 +61,8 @@ public class SmokeCloudParticle extends TextureSheetParticle {
         this.rCol = this.startR;
         this.gCol = this.startG;
         this.bCol = this.startB;
-        if (option.changing()) {
+        this.changing = option.changing();
+        if (this.changing) {
             this.setSpriteFromAge(spriteSet);
         } else {
             this.pickSprite(spriteSet);
@@ -75,7 +77,9 @@ public class SmokeCloudParticle extends TextureSheetParticle {
     public void tick() {
         super.tick();
         if (!this.removed) {
-            this.setSpriteFromAge(this.spriteSet);
+            if (changing) {
+                this.setSpriteFromAge(this.spriteSet);
+            }
             this.xd *= 0.88;
             this.zd *= 0.88;
             float progress = (float) this.age / this.lifetime;

@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -104,12 +103,15 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                                     }
                                     // 导引头大圈
                                     Vec2 rot = weaponUnit.worldRot();
+                                    Vec2 rotO = weaponUnit.worldRot(weaponUnit.xRotO, weaponUnit.yRotO);
+                                    float rotX = Mth.lerp(partialTick, rotO.x, rot.x);
+                                    float rotY = Mth.lerp(partialTick, rotO.y, rot.y);
                                     Vec3 screenPosUp = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                            .add(VectorUtil.rotToVec(rot.x - weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
+                                            .add(VectorUtil.rotToVec(rotX - weaponUnit.getSeekerFov(), rotY).normalize().scale(256)));
                                     Vec3 screenPosDown = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                            .add(VectorUtil.rotToVec(rot.x + weaponUnit.getSeekerFov(), rot.y).normalize().scale(256)));
+                                            .add(VectorUtil.rotToVec(rotX + weaponUnit.getSeekerFov(), rotY).normalize().scale(256)));
                                     Vec3 screenPosCenter = VectorUtil.worldToScreen(weaponUnit.worldPivotPosition()
-                                            .add(VectorUtil.rotToVec(rot.x, rot.y).normalize().scale(256)));
+                                            .add(VectorUtil.rotToVec(rotX, rotY).normalize().scale(256)));
                                     double px = screenPosDown.x - screenPosUp.x;
                                     double py = screenPosDown.y - screenPosUp.y;
                                     float r = (float) Math.sqrt(px * px + py * py) / 2;
@@ -122,22 +124,9 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                                 }
                             }
                             weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                                if (vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
-                                    WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
-                                    if (crosshairStyle != null && crosshairStyle != WeaponUnitData.CrosshairStyle.NONE) {
-                                        drawCrosshair(guiGraphics, Color.GREEN, poseStack, crosshairStyle);
-                                    } else {
-                                        {
-                                            poseStack.translate(0, -0.5, 0);
-                                            poseStack.rotateAround(Axis.ZP.rotationDegrees(45), 0, 0, 0);
-                                            drawCross(guiGraphics, 0, 0, 16, Color.GREEN);
-                                        }
-                                    }
-                                } else {
-                                    WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
-                                    if (crosshairStyle != null) {
-                                        drawCrosshair(guiGraphics, color, poseStack, crosshairStyle);
-                                    }
+                                WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
+                                if (crosshairStyle != null) {
+                                    drawCrosshair(guiGraphics, vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP ? Color.GREEN : color, poseStack, crosshairStyle);
                                 }
                             });
                         }
@@ -203,6 +192,7 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
             case CIRCLE -> GuiHelper.drawCircle(poseStack, 0, 0, 3, color, 0.05f, 0, 0);
             case SQUARE -> drawSquare(guiGraphics, 0 ,0, 5, color);
             case CROSS -> drawCrossDiagonal(guiGraphics, 0, 0, 8, 1, color);
+            case BIG_CROSS -> drawCross(guiGraphics, 0, 0, 16, color);
         }
     }
 
