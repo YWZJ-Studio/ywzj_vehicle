@@ -63,15 +63,15 @@ public class VehicleExplosion {
     private final DamageSource damageSource;
     private final ExplosionDamageCalculator damageCalculator;
 
-    public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage) {
-        this(level, source, vehicle, position, radius, damage, AllConfigs.common.canDestroyBlock.get(), AllConfigs.common.explosionDropBlock.get());
+    public VehicleExplosion(Level level, Entity source, Entity entity, Vec3 position, float radius, float damage) {
+        this(level, source, entity, position, radius, damage, AllConfigs.common.canDestroyBlock.get(), AllConfigs.common.explosionDropBlock.get());
     }
 
-    public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage, boolean destroyBlocks) {
-        this(level, source, vehicle, position, radius, damage, destroyBlocks && AllConfigs.common.canDestroyBlock.get(), AllConfigs.common.explosionDropBlock.get());
+    public VehicleExplosion(Level level, Entity source, Entity entity, Vec3 position, float radius, float damage, boolean destroyBlocks) {
+        this(level, source, entity, position, radius, damage, destroyBlocks && AllConfigs.common.canDestroyBlock.get(), AllConfigs.common.explosionDropBlock.get());
     }
 
-    public VehicleExplosion(Level level, Entity source, AbstractVehicle vehicle, Vec3 position, float radius, float damage, boolean destroyBlocks, boolean dropBlocks) {
+    public VehicleExplosion(Level level, Entity source, Entity entity, Vec3 position, float radius, float damage, boolean destroyBlocks, boolean dropBlocks) {
         this.level = level;
         this.source = source;
         this.x = position.x;
@@ -81,7 +81,7 @@ public class VehicleExplosion {
         this.damage = damage;
         this.destroyBlocks = destroyBlocks && AllConfigs.common.canDestroyBlock.get();
         this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlock.get();
-        this.damageSource = AllDamageTypes.Sources.explosion(level.registryAccess(), vehicle, source, position);
+        this.damageSource = AllDamageTypes.Sources.explosion(level.registryAccess(), entity, source, position);
         this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
     }
 

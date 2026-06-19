@@ -143,7 +143,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             life -= 1;
             if (life < 0 && !isRemoved()) {
                 if (explosion != null) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, this.position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, this.position(), explosion.radius, explosion.damage, explosion.destroyBlock);
                     vehicleExplosion.explode();
                 }
                 this.discard();

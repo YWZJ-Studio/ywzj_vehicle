@@ -40,7 +40,7 @@ public class FragGrenadeEntity extends GrenadeEntity {
     @Override
     public void onDeath(HitResult hitResult) {
         if (!this.isRemoved() && explosion != null && explosion.radius > 0) {
-            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this, this.vehicle, this.position(),
+            VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, this.position(),
                     explosion.radius, explosion.damage, explosion.destroyBlock);
             vehicleExplosion.explode();
         }

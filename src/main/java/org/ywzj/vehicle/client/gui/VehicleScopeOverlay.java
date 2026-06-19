@@ -124,8 +124,8 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
 
     public void renderCrosshair(GuiGraphics guiGraphics, float partialTick, AbstractVehicle vehicle) {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
-            Vec3 posO = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPosO);
-            Vec3 pos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.weaponHitPos);
+            Vec3 posO = VectorUtil.worldToScreen(weaponUnit.weaponHitPosO);
+            Vec3 pos = VectorUtil.worldToScreen(weaponUnit.weaponHitPos);
             PoseStack poseStack = guiGraphics.pose();
             poseStack.pushPose();
             {

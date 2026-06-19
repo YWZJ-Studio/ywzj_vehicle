@@ -25,7 +25,18 @@ import java.util.Optional;
 public class Infrared {
 
     public static Entity checkTarget(WeaponUnit weaponUnit, Entity target) {
+        Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
         Vec3 checkStart = weaponUnit.worldPivotPosition();
+        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
+            weaponUnit = missile.getWeaponUnit();
+            // 目标是否仍在锁定框内
+            checkStart = missile.getWeaponUnit().worldPivotPosition();
+            Vec3 vLock = target.getBoundingBox().getCenter().subtract(checkStart);
+            Vec3 vAim = weaponUnit.worldVec();
+            if (Math.toDegrees(VectorUtil.angleBetween(vLock, vAim)) > missile.getData().getSeekerFov()) {
+                return null;
+            }
+        }
         Vec3 checkEnd = target.position();
         Level level = target.level();
         AbstractVehicle vehicle = weaponUnit.getVehicle();
@@ -50,15 +61,6 @@ public class Infrared {
                 return entity;
             }
         }
-        // 红外锁定，目标是否仍在锁定框内
-        Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
-        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
-            Vec3 vLock = target.getBoundingBox().getCenter().subtract(checkStart);
-            Vec3 vAim = weaponUnit.worldVec();
-            if (Math.toDegrees(VectorUtil.angleBetween(vLock, vAim)) > missile.getData().getSeekerFov()) {
-                return null;
-            }
-        }
         return target;
     }
 
@@ -66,6 +68,8 @@ public class Infrared {
         Minecraft minecraft = Minecraft.getInstance();
         Camera camera = minecraft.gameRenderer.getMainCamera();
         Entity bestEntity = null;
+        AbstractVehicle vehicle = weaponUnit.getVehicle();
+        Level level = vehicle.level();
         double minDegree = Double.MAX_VALUE;
         Vec3 worldPivotPosition = weaponUnit.worldPivotPosition();
         for (Entity entity : minecraft.level.entitiesForRendering()) {
@@ -77,8 +81,26 @@ public class Infrared {
                     || entity instanceof PartEntity<?>
                     || entity.isSpectator()
                     || entity.getBoundingBox().getSize() < 1
-                    || entity.position().distanceTo(worldPivotPosition) > 256) {
+                    || entity.position().distanceTo(worldPivotPosition) > 512) {
                 continue;
+            }
+            Vec3 checkStart = weaponUnit.worldPivotPosition();
+            Vec3 checkEnd = entity.getEyePosition();
+            BlockHitResult result = level.clip(new ClipContext(checkStart, checkEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));
+            // 是否被不透光方块遮挡
+            if (result.getType() != HitResult.Type.MISS) {
+                BlockPos pos = result.getBlockPos();
+                BlockState state = level.getBlockState(pos);
+                if (!state.getCollisionShape(level, pos).isEmpty() && state.canOcclude()) {
+                    continue;
+                }
+            }
+            EntityHitResult entityHit = VectorUtil.hitEntity(vehicle, checkStart, checkEnd);
+            if (entityHit != null) {
+                // 是否被视觉遮挡
+                if (entityHit.getEntity() instanceof SightObstruction) {
+                    continue;
+                }
             }
             Vec3 vLock = entity.getBoundingBox().getCenter().subtract(worldPivotPosition);
             Vec3 vAim = weaponUnit.worldVec();
