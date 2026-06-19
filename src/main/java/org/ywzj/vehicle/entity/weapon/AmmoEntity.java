@@ -111,7 +111,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
                 livingEntity.invulnerableTime = 0;
             }
             if (explosion != null && explosion.explode) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this.vehicle, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), owner, this, entityResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
             }
             discard = true;
@@ -124,7 +124,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             List<Entity> nearbyEntities = this.level().getEntities(this, detectionBox,
                     entity -> entity != vehicle && !vehicle.getPassengers().contains(entity));
             if (!nearbyEntities.isEmpty() && explosion != null) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
                 discard = true;
                 return;
@@ -156,7 +156,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             }
             // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
             }
             discard = true;

@@ -121,7 +121,7 @@ public class AerialBombEntity extends AmmoEntity {
                 fuseDelayTick -= 1;
             } else {
                 if (explosion != null && explosion.explode) {
-                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this.vehicle, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                    VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, position(), explosion.radius, explosion.damage, explosion.destroyBlock);
                     vehicleExplosion.explode();
                 }
                 this.kill();

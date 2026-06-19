@@ -41,16 +41,14 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerVehicleFire;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
+import org.ywzj.vehicle.util.CcipUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
-import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
-import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
-import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
-import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
+import org.ywzj.vehicle.vehicle.weapon.*;
 import org.ywzj.vehicle.vehicle.weapon.seeker.ElectroOptical;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Infrared;
 import org.ywzj.vehicle.vehicle.weapon.seeker.Radar;
@@ -126,6 +124,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private int currentSecondaryWeaponIndex = -1;
     public SyncDataHolder<Integer> currentSecondaryIndexHolder;
+    public Vec3 weaponHitPos;
+    public Vec3 weaponHitPosO;
     private VehicleSound irTrackAlarmSound;
     private int ignoreRemoteRotTick;
 
@@ -368,6 +368,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void tick() {
         if (vehicle.level().isClientSide()) {
             tickFireControl();
+            tickHit();
         } else {
             // 通知雷达锁定给目标载具乘客
             if (vehicle.tickCount % 2 == 0 && getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && !radarUnits.isEmpty()) {
@@ -436,7 +437,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                         .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
                 default -> {}
             }
-            // 干扰物影响
             if (checkEntity != lockedEntity) {
                 setLockedEntity(checkEntity);
             }
@@ -474,7 +474,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     Entity entity = null;
                     // 红外
                     if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                        entity = Infrared.findTarget(this, missile.getData().getSeekerFov());
+                        entity = Infrared.findTarget(missile.getWeaponUnit(), missile.getData().getSeekerFov());
                     }
                     // 雷达
                     else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
@@ -500,6 +500,38 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     }
                 }
             }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void tickHit() {
+        weaponHitPosO = weaponHitPos;
+        Optional<AbstractVehicleWeapon<?>> vehicleWeaponOptional = getCurrentWeapon();
+        if (vehicleWeaponOptional.isPresent()) {
+            AbstractVehicleWeapon<?> vehicleWeapon = vehicleWeaponOptional.get();
+            WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
+            if (currentWeaponUnit.isParentWeaponUnitAim()) {
+                currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
+            }
+            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
+                if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
+                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
+                    float dragCoefficient = bomb.getData().getDragCoefficient();
+                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
+                } else if (vehicleWeapon instanceof VehicleRocket rocket) {
+                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
+                    var data = rocket.getData();
+                    Vec2 rot = currentWeaponUnit.worldRot();
+                    Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
+                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                    weaponHitPos = CcipUtil.computeCcipImpactRocket(vehicle.level(), releasePos, startVelocity,
+                            data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
+                }
+            } else {
+                weaponHitPos = currentWeaponUnit.aimHitPosition();
+            }
+        } else {
+            weaponHitPos = aimHitPosition();
         }
     }
 
@@ -552,7 +584,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         // 雷达锁定
         if (sensorType == WeaponUnitData.FireControlSensorType.RF) {
             RadarUnit mainRadarUnit = getMainRadarUnit();
-            Entity lockedEntity = Radar.findTarget(mainRadarUnit, 90, this);
+            Entity lockedEntity = Radar.findTarget(mainRadarUnit, mainRadarUnit.getScanSectorAngle(), this);
             if (lockedEntity != null) {
                 mainRadarUnit.setLockedEntity(lockedEntity);
                 return;
