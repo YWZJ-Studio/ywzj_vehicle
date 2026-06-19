@@ -12,6 +12,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -222,8 +224,17 @@ public class AllEvents {
         @SubscribeEvent
         public static void onHitVehicle(HitVehicleEvent event) {
             ServerPlayer serverPlayer = ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayer(event.shooterUuid);
-            if (serverPlayer != null && serverPlayer.level().getEntity(event.entityId) instanceof AbstractVehicle vehicle) {
-                Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> vehicle), new ServerHitVehicleEvent(event));
+            if (serverPlayer == null) {
+                return;
+            }
+            Level level = serverPlayer.level();
+            if (level.getEntity(event.entityId) instanceof AbstractVehicle vehicle) {
+                List<Entity> players = level.getEntities(vehicle,
+                        AABB.ofSize(vehicle.position(), 256, 256, 256),
+                        entity -> entity instanceof ServerPlayer && entity != serverPlayer);
+                players.add(serverPlayer);
+                players.forEach(player ->
+                        Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new ServerHitVehicleEvent(event)));
             }
         }
 
