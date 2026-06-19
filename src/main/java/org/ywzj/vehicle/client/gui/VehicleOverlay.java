@@ -24,6 +24,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
+import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -210,9 +211,10 @@ public class VehicleOverlay implements IGuiOverlay {
                 .rotToVec(xRot, yRot)
                 .normalize()
                 .scale(LocalVehiclePlayer.renderDistance()));
+        Entity entity = null;
         Pair<Entity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);
         if (hitResult != null) {
-            Entity entity = hitResult.getLeft();
+            entity = hitResult.getLeft();
             if (entity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
                 double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
                 if (distance > showVehicleInfoDistance) {
@@ -221,13 +223,15 @@ public class VehicleOverlay implements IGuiOverlay {
                 PoseStack poseStack = guiGraphics.pose();
                 poseStack.pushPose();
                 {
-                    float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
                     AABB aabb = vehicle.getBoundingBox();
                     Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                             Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
                             Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
                     Vec3 screenPos = VectorUtil.worldToScreen(pos);
-                    renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
+                    if (screenPos.z >= 0) {
+                        float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
+                        renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
+                    }
                 }
                 poseStack.popPose();
                 Vec3 eyePosition = player.getEyePosition();
@@ -236,6 +240,25 @@ public class VehicleOverlay implements IGuiOverlay {
                     renderWeaponList(guiGraphics, weaponUnit);
                 } else if (partUnit instanceof DecorationUnit decorationUnit) {
                     renderDecorationTips(guiGraphics, decorationUnit);
+                }
+            }
+        }
+        if (!VehicleHitIndicatorOverlay.events.isEmpty()) {
+            ServerHitVehicleEvent event = VehicleHitIndicatorOverlay.events.get(0);
+            Entity hitEntity = player.level().getEntity(event.entityId);
+            if (hitEntity == null || hitEntity == entity) {
+                return;
+            }
+            if (hitEntity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
+                AABB aabb = vehicle.getBoundingBox();
+                Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
+                        Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
+                        Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
+                Vec3 screenPos = VectorUtil.worldToScreen(pos);
+                if (screenPos.z >= 0) {
+                    double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
+                    float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * org.joml.Math.max((512 - distance) / 512, 0.1), 0.66, 1);
+                    VehicleOverlay.renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
                 }
             }
         }
