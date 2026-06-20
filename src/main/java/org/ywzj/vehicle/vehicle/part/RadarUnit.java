@@ -197,6 +197,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                     }
                 }
             }
+        } else {
+            if (lockedEntity != null && !lockedEntity.isAlive()) {
+                setLockedEntity(null);
+            }
         }
     }
 

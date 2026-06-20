@@ -80,9 +80,6 @@ public class ServerBroadcastEntities {
         }
         Level level = Minecraft.getInstance().level;
         for (BroadcastEntity broadcastEntity : message.entities) {
-            if (level.getEntity(broadcastEntity.entityId) != null) {
-                continue;
-            }
             ConcurrentHashMap<Integer, LocalVehiclePlayer.ServerEntity> serverEntities = LocalVehiclePlayer.instance.serverEntities;
             LocalVehiclePlayer.ServerEntity serverEntity = serverEntities.get(broadcastEntity.entityId);
             if (serverEntity == null) {

@@ -97,13 +97,6 @@ public class Radar {
             if (!check.apply(entity.getBoundingBox().getCenter())) {
                 continue;
             }
-            // 速度门
-            if (entity.getDeltaMovement().length() < 0.1f) {
-                continue;
-            }
-            if (entity.getDeltaMovement().subtract(radarOwner.getDeltaMovement()).length() < 0.1f) {
-                continue;
-            }
             // 背景无回波
             Vec3 entityPos = entity.position();
             Vec3 checkPos = entityPos.add(entityPos.subtract(worldRadarPosition).normalize().scale(128));

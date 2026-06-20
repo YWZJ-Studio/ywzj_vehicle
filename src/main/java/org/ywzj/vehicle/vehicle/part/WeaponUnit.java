@@ -440,19 +440,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (checkEntity != lockedEntity) {
                 setLockedEntity(checkEntity);
             }
-            // 雷达发生远程与本地实体切换
-            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && radarUnits != null && lockedEntity != null) {
-                RadarUnit.DetectedObject detectedObject = null;
-                for (RadarUnit radarUnit : radarUnits) {
-                    detectedObject = radarUnit.getDetectedEntities().get(lockedEntity.getId());
-                    if (detectedObject != null) {
-                        break;
-                    }
-                }
-                if (detectedObject != null && detectedObject.entity != lockedEntity) {
-                    setLockedEntity(detectedObject.entity);
-                }
-            }
             // 锁定实体是否已消失
             if (lockedEntity != null) {
                 if (!lockedEntity.isAlive()) {
