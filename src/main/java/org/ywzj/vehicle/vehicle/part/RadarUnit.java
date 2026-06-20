@@ -70,12 +70,14 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         super.tick();
         tickTargets();
         tickLock();
-        if (vehicle.level().isClientSide()) {
-            if (vehicle.hasPower() && on) {
-                tickScan();
+        if (vehicle.hasPower() && on) {
+            if (vehicle.level().isClientSide()) {
+                tickDetect();
             } else {
-                detectedObjects.clear();
+                tickScan();
             }
+        } else {
+            detectedObjects.clear();
         }
     }
 
@@ -111,8 +113,11 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         float range = Math.min(360, yRotMax - yRotMin);
         long life = Math.max((long) (range / yRotSpeed / 20 * 1000L) * 2, 100);
         detectedObjects.values().removeIf(detectedObject -> detectedObject.detectedTime + life < timeNow);
+    }
+
+    public void tickScan() {
         // 服务端通知雷达搜索给目标载具乘客
-        if (!vehicle.level().isClientSide() && vehicle.tickCount % 20 == 0) {
+        if (vehicle.tickCount % 20 == 0) {
             radarExecutor.execute(() -> {
                 List<Entity> scannedEntities = Radar.scanTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
                     Vec2 aimRot = aimRot(entityPos);
@@ -136,14 +141,13 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         }
     }
 
-    public void tickScan() {
+    public void tickDetect() {
         if (parentPartUnit == null) {
             return;
         }
         if (LocalVehiclePlayer.instance.getPlayer() != parentPartUnit.getOwner()) {
             return;
         }
-        // 雷达截获目标
         List<Entity> entities = Radar.detectTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
             Vec2 aimRot = aimRot(entityPos);
             return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax)
@@ -151,7 +155,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                     && !(Math.abs(aimRot.x - xRot) > scanSectorAngle / 2);
         });
         entities.forEach(this::detect);
-        // 客户端通知雷达截获给服务端
+        // 客户端通知雷达截获目标给服务端
         for (DetectedObject detectedObject : detectedObjects.values()) {
             ClientRadarAction clientRadarAction = new ClientRadarAction();
             clientRadarAction.action = ClientRadarAction.Action.DETECT;
