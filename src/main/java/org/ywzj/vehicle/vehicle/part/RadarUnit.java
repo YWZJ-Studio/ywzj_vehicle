@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
@@ -34,6 +38,15 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     private boolean yRotAdd = true;
     private boolean xRotAdd = true;
     private boolean on;
+    private final ThreadPoolExecutor radarExecutor = new ThreadPoolExecutor(
+            4,
+            4,
+            60,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(100),
+            Executors.defaultThreadFactory(),
+            new ThreadPoolExecutor.AbortPolicy()
+    );
 
     public RadarUnit(int index, AbstractVehicle vehicle, RadarUnitData data) {
         super(index, vehicle, data);
@@ -56,12 +69,14 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         super.tick();
         tickTargets();
         tickLock();
-        if (vehicle.level().isClientSide()) {
-            if (vehicle.hasPower() && on) {
-                tickScan();
+        if (vehicle.hasPower() && on) {
+            if (vehicle.level().isClientSide()) {
+                tickDetect();
             } else {
-                detectedObjects.clear();
+                tickScan();
             }
+        } else {
+            detectedObjects.clear();
         }
     }
 
@@ -97,59 +112,52 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         float range = Math.min(360, yRotMax - yRotMin);
         long life = Math.max((long) (range / yRotSpeed / 20 * 1000L) * 2, 100);
         detectedObjects.values().removeIf(detectedObject -> detectedObject.detectedTime + life < timeNow);
+    }
+
+    public void tickScan() {
         // 服务端通知雷达搜索给目标载具乘客
-        if (!vehicle.level().isClientSide() && vehicle.tickCount % 20 == 0) {
-            detectedObjects.values().forEach(detectedObject -> {
-                if (detectedObject.entity instanceof AbstractVehicle toVehicle) {
-                    ServerVehicleWarn serverVehicleWarn = new ServerVehicleWarn();
-                    serverVehicleWarn.fromEntityId = this.vehicle.getId();
-                    serverVehicleWarn.toEntityId = toVehicle.getId();
-                    serverVehicleWarn.warnType = WarnType.RADAR_SEARCH;
-                    serverVehicleWarn.info = getRadarType();
-                    for (Entity entity : toVehicle.getPassengers()) {
-                        if (entity instanceof ServerPlayer player) {
-                            PacketDistributor.sendToPlayer(player, serverVehicleWarn);
+        if (vehicle.tickCount % 20 == 0) {
+            radarExecutor.execute(() -> {
+                List<Entity> scannedEntities = Radar.scanTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
+                    Vec2 aimRot = aimRot(entityPos);
+                    return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax);
+                });
+                scannedEntities.forEach(scannedEntity -> {
+                    if (scannedEntity instanceof AbstractVehicle toVehicle) {
+                        ServerVehicleWarn serverVehicleWarn = new ServerVehicleWarn();
+                        serverVehicleWarn.fromEntityId = this.vehicle.getId();
+                        serverVehicleWarn.toEntityId = toVehicle.getId();
+                        serverVehicleWarn.warnType = WarnType.RADAR_SEARCH;
+                        serverVehicleWarn.info = getRadarType();
+                        for (Entity entity : toVehicle.getPassengers()) {
+                            if (entity instanceof ServerPlayer player) {
+                                PacketDistributor.sendToPlayer(player, serverVehicleWarn);
+                            }
                         }
                     }
-                }
+                });
             });
         }
     }
 
-    public void tickScan() {
+    public void tickDetect() {
         if (parentPartUnit == null) {
             return;
         }
         if (LocalVehiclePlayer.instance.getPlayer() != parentPartUnit.getOwner()) {
             return;
         }
-
-        //todo: 测试
-//        if (LocalVehiclePlayer.instance.getWeaponUnit().getMainRadarUnit() == this) {
-//            Vec2 scanRot = worldRot();
-//            Vec3 radarPos = worldRadarPosition();
-//            float x1 = scanRot.x + scanSectorAngle / 2;
-//            float x2 = scanRot.x - scanSectorAngle / 2;
-//            Vec3 v1 = VectorUtil.rotToVec(x1, scanRot.y);
-//            Vec3 v2 = VectorUtil.rotToVec(x2, scanRot.y);
-//            for (int i = 0; i < 32; i++) {
-//                DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(i)), this);
-//                DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(i)), this);
-//            }
-//        }
-
-        // 雷达扫描目标
-        List<Entity> entities = Radar.scanTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
+        List<Entity> entities = Radar.detectTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
             Vec2 aimRot = aimRot(entityPos);
             return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax)
                     && !(Math.abs(aimRot.y - yRot) > yRotSpeed / 2)
                     && !(Math.abs(aimRot.x - xRot) > scanSectorAngle / 2);
         });
         entities.forEach(this::detect);
-        // 客户端通知雷达搜索给服务端
+        // 客户端通知雷达截获目标给服务端
         for (DetectedObject detectedObject : detectedObjects.values()) {
             ClientRadarAction clientRadarAction = new ClientRadarAction();
-            clientRadarAction.action = ClientRadarAction.Action.SEARCH;
+            clientRadarAction.action = ClientRadarAction.Action.DETECT;
             clientRadarAction.toEntityId = detectedObject.entity.getId();
             PacketDistributor.sendToServer(clientRadarAction);
         }
@@ -191,6 +199,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
                         setLockedEntity(detectedObject.entity);
                     }
                 }
+            }
+        } else {
+            if (lockedEntity != null && !lockedEntity.isAlive()) {
+                setLockedEntity(null);
             }
         }
     }

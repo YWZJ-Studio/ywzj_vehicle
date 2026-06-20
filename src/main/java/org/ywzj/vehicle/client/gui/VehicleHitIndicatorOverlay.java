@@ -86,9 +86,9 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
         Vec3 viewVec = topEvent.hitPosition.subtract(entity.position());
         float scale;
         if (entity instanceof AbstractVehicle vehicle) {
-            scale = Math.min(10, 8 / (vehicle.getMainCubeOBB().obb().extents().z * 2) * 10);
+            scale = (float) Math.min(10, 8 / vehicle.getStructureLength() * 10);
         } else {
-            scale = Math.min(10, (float) (48 / entity.getBoundingBox().getSize()));
+            scale = (float) Math.min(10, 48 / entity.getBoundingBox().getSize());
         }
         float pitch = (float) Math.toDegrees(Math.atan2(-viewVec.y, Math.sqrt(viewVec.x * viewVec.x + viewVec.z * viewVec.z)));
         float yaw = (float) Math.toDegrees(Math.atan2(viewVec.x, viewVec.z));
@@ -111,7 +111,7 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
             entityRenderDispatcher.setRenderShadow(false);
             Entity finalEntity = entity;
             RenderSystem.runAsFancy(() -> {
-                entityRenderDispatcher.render(finalEntity, 0, 0,0, finalEntity.getYRot(), 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
+                entityRenderDispatcher.render(finalEntity, 0, 0,0, 0, 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880);
                 for (ServerHitVehicleEvent hitVehicleEvent : events) {
                     Vec3 start = hitVehicleEvent.hitPosition.subtract(finalEntity.position());
                     Vec3 end = start.subtract(hitVehicleEvent.hitVector.normalize().scale(3));

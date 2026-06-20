@@ -273,7 +273,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         } else if (homingMode == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
             // 主动雷达制导
             if (activeRadarOn) {
-                List<Entity> detectedEntities = scanTargets();
+                List<Entity> detectedEntities = detectTargets();
                 Entity activeRadarTarget = null;
                 // 主动雷达是否能截获当前目标
                 if (targetEntity != null) {
@@ -382,8 +382,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         return 40f;
     }
 
-    private List<Entity> scanTargets() {
-        return Radar.scanTargets(this, this.position(), activeRadarActivationRange,
+    private List<Entity> detectTargets() {
+        return Radar.detectTargets(this, this.position(), activeRadarActivationRange,
                 entityPos -> Math.toDegrees(VectorUtil.angleBetween(this.getLookAngle(), entityPos.subtract(this.position()))) <= seekerFov);
     }
 

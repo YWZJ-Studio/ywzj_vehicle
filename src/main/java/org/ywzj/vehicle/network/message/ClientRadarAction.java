@@ -37,6 +37,9 @@ public class ClientRadarAction implements CustomPacketPayload {
 
     public static void handle(ClientRadarAction message, IPayloadContext ctx) {
         ServerPlayer player = (ServerPlayer) ctx.player();
+        if (player == null) {
+            return;
+        }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
             if (partUnit instanceof WeaponUnit weaponUnit) {
@@ -48,7 +51,7 @@ public class ClientRadarAction implements CustomPacketPayload {
                 Entity toEntity = level.getEntity(message.toEntityId);
                 if (message.action == Action.LOCK) {
                     mainRadarUnit.setLockedEntity(toEntity);
-                } else if (message.action == Action.SEARCH) {
+                } else if (message.action == Action.DETECT) {
                     if (toEntity != null) {
                         mainRadarUnit.detect(toEntity);
                     }
@@ -58,7 +61,7 @@ public class ClientRadarAction implements CustomPacketPayload {
     }
 
     public enum Action {
-        SEARCH, LOCK
+        DETECT, LOCK
     }
 
     @Override
