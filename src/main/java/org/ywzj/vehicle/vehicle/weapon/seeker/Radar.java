@@ -47,6 +47,30 @@ public class Radar {
 
     public static List<Entity> scanTargets(Entity radarOwner, Vec3 worldRadarPosition, double maxScanDistance, Function<Vec3, Boolean> check) {
         Level level = radarOwner.level();
+        List<Entity> scannedEntities = new ArrayList<>();
+        double maxScanDistanceSqr = maxScanDistance * maxScanDistance;
+        AABB scanBox = new AABB(worldRadarPosition.subtract(maxScanDistance, maxScanDistance, maxScanDistance),
+                worldRadarPosition.add(maxScanDistance, maxScanDistance, maxScanDistance));
+        for (Entity entity : level.isClientSide() ? getClientLevelEntities(radarOwner, scanBox) : level.getEntities(radarOwner, scanBox)) {
+            // 基础校验
+            if (entity.getVehicle() != null
+                    || !entity.isAlive()
+                    || entity instanceof PartEntity<?>
+                    || entity.getBoundingBox().getSize() < 1
+                    || entity.distanceToSqr(radarOwner) > maxScanDistanceSqr) {
+                continue;
+            }
+            // 在当前扫描范围
+            if (!check.apply(entity.getBoundingBox().getCenter())) {
+                continue;
+            }
+            scannedEntities.add(entity);
+        }
+        return scannedEntities;
+    }
+
+    public static List<Entity> detectTargets(Entity radarOwner, Vec3 worldRadarPosition, double maxScanDistance, Function<Vec3, Boolean> check) {
+        Level level = radarOwner.level();
         List<Entity> detectedEntities = new ArrayList<>();
         List<TargetObstruction> targetObstructions = new ArrayList<>();
         double maxScanDistanceSqr = maxScanDistance * maxScanDistance;
@@ -61,6 +85,7 @@ public class Radar {
                     rcs = vehicle.physicsEngine.radarCrossSection;
                 }
             }
+            // 基础校验
             if (entity.getVehicle() != null
                     || !entity.isAlive()
                     || entity instanceof PartEntity<?>

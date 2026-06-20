@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class RadarUnit extends RotatableUnit<RadarUnitData> {
 
@@ -35,6 +39,15 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
     private boolean yRotAdd = true;
     private boolean xRotAdd = true;
     private boolean on;
+    private final ThreadPoolExecutor radarExecutor = new ThreadPoolExecutor(
+            4,
+            4,
+            60,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(100),
+            Executors.defaultThreadFactory(),
+            new ThreadPoolExecutor.AbortPolicy()
+    );
 
     public RadarUnit(int index, AbstractVehicle vehicle, RadarUnitData data) {
         super(index, vehicle, data);
@@ -100,19 +113,25 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         detectedObjects.values().removeIf(detectedObject -> detectedObject.detectedTime + life < timeNow);
         // 服务端通知雷达搜索给目标载具乘客
         if (!vehicle.level().isClientSide() && vehicle.tickCount % 20 == 0) {
-            detectedObjects.values().forEach(detectedObject -> {
-                if (detectedObject.entity instanceof AbstractVehicle toVehicle) {
-                    ServerVehicleWarn serverVehicleWarn = new ServerVehicleWarn();
-                    serverVehicleWarn.fromEntityId = this.vehicle.getId();
-                    serverVehicleWarn.toEntityId = toVehicle.getId();
-                    serverVehicleWarn.warnType = WarnType.RADAR_SEARCH;
-                    serverVehicleWarn.info = getRadarType();
-                    for (Entity entity : toVehicle.getPassengers()) {
-                        if (entity instanceof ServerPlayer player) {
-                            Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleWarn);
+            radarExecutor.execute(() -> {
+                List<Entity> scannedEntities = Radar.scanTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
+                    Vec2 aimRot = aimRot(entityPos);
+                    return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax);
+                });
+                scannedEntities.forEach(scannedEntity -> {
+                    if (scannedEntity instanceof AbstractVehicle toVehicle) {
+                        ServerVehicleWarn serverVehicleWarn = new ServerVehicleWarn();
+                        serverVehicleWarn.fromEntityId = this.vehicle.getId();
+                        serverVehicleWarn.toEntityId = toVehicle.getId();
+                        serverVehicleWarn.warnType = WarnType.RADAR_SEARCH;
+                        serverVehicleWarn.info = getRadarType();
+                        for (Entity entity : toVehicle.getPassengers()) {
+                            if (entity instanceof ServerPlayer player) {
+                                Channel.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), serverVehicleWarn);
+                            }
                         }
                     }
-                }
+                });
             });
         }
     }
@@ -124,33 +143,18 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         if (LocalVehiclePlayer.instance.getPlayer() != parentPartUnit.getOwner()) {
             return;
         }
-
-        //todo: 测试
-//        if (LocalVehiclePlayer.instance.getWeaponUnit().getMainRadarUnit() == this) {
-//            Vec2 scanRot = worldRot();
-//            Vec3 radarPos = worldRadarPosition();
-//            float x1 = scanRot.x + scanSectorAngle / 2;
-//            float x2 = scanRot.x - scanSectorAngle / 2;
-//            Vec3 v1 = VectorUtil.rotToVec(x1, scanRot.y);
-//            Vec3 v2 = VectorUtil.rotToVec(x2, scanRot.y);
-//            for (int i = 0; i < 32; i++) {
-//                DebugUtil.particle(vehicle.level(), radarPos.add(v1.scale(i)), this);
-//                DebugUtil.particle(vehicle.level(), radarPos.add(v2.scale(i)), this);
-//            }
-//        }
-
-        // 雷达扫描目标
-        List<Entity> entities = Radar.scanTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
+        // 雷达截获目标
+        List<Entity> entities = Radar.detectTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
             Vec2 aimRot = aimRot(entityPos);
             return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax)
                     && !(Math.abs(aimRot.y - yRot) > yRotSpeed / 2)
                     && !(Math.abs(aimRot.x - xRot) > scanSectorAngle / 2);
         });
         entities.forEach(this::detect);
-        // 客户端通知雷达搜索给服务端
+        // 客户端通知雷达截获给服务端
         for (DetectedObject detectedObject : detectedObjects.values()) {
             ClientRadarAction clientRadarAction = new ClientRadarAction();
-            clientRadarAction.action = ClientRadarAction.Action.SEARCH;
+            clientRadarAction.action = ClientRadarAction.Action.DETECT;
             clientRadarAction.toEntityId = detectedObject.entity.getId();
             Channel.CHANNEL.sendToServer(clientRadarAction);
         }

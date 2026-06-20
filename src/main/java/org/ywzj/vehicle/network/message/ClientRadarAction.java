@@ -50,7 +50,7 @@ public class ClientRadarAction {
                     Entity toEntity = level.getEntity(message.toEntityId);
                     if (message.action == Action.LOCK) {
                         mainRadarUnit.setLockedEntity(toEntity);
-                    } else if (message.action == Action.SEARCH) {
+                    } else if (message.action == Action.DETECT) {
                         if (toEntity != null) {
                             mainRadarUnit.detect(toEntity);
                         }
@@ -61,7 +61,7 @@ public class ClientRadarAction {
     }
 
     public enum Action {
-        SEARCH, LOCK
+        DETECT, LOCK
     }
 
 }
