@@ -6,19 +6,19 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.UnmodifiableView;
-import org.ywzj.vehicle.custom.part.data.PartUnitData;
+import org.ywzj.vehicle.custom.part.data.LandingGearUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.Map;
 
-public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
+public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
 
     private double maxHeight;
     private double vehicleToHeight;
     private boolean changing;
 
-    public LandingGearUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
+    public LandingGearUnit(int index, AbstractVehicle vehicle, LandingGearUnitData data) {
         super(index, vehicle, data);
     }
 
@@ -40,7 +40,6 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
     @Override
     public void setOn(boolean on) {
         if (update(on)) {
-            // on -> true，起落架 -> 收起
             if (vehicle.getDriver() instanceof ServerPlayer player) {
                 player.displayClientMessage(Component.translatable(on ? "tips.gear_up" : "tips.gear_down"), true);
             }
@@ -103,6 +102,10 @@ public class LandingGearUnit extends SwitchableUnit<PartUnitData> {
 
     public double getMaxHeight() {
         return maxHeight;
+    }
+
+    public float getDragK() {
+        return data.getDragK();
     }
 
 }

@@ -6,6 +6,10 @@
         "landing_gear": {
             "part_id": "landing_gear",
             "animation": "landing_gear"
+        },
+        "airbrake": {
+            "part_id": "airbrake",
+            "animation": "airbrake"
         }
     },
     "state_machines": {},
@@ -15,6 +19,10 @@
             {
                 "type": "switchable_animation",
                 "ref": "landing_gear"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "airbrake"
             },
             {
                 "type": "script",

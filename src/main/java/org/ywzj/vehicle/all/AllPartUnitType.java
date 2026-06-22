@@ -21,7 +21,9 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<DoorUnit, DoorUnitData>> DOOR = register(PartUnitTypes.DOOR);
 
-    public static final RegistryObject<PartUnitType<LandingGearUnit, PartUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
+    public static final RegistryObject<PartUnitType<LandingGearUnit, LandingGearUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
+
+    public static final RegistryObject<PartUnitType<AirbrakeUnit, AirbrakeUnitData>> AIRBRAKE = register(PartUnitTypes.AIRBRAKE);
 
     public static final RegistryObject<PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
 

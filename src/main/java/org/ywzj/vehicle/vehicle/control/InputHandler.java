@@ -81,6 +81,8 @@ public class InputHandler {
                     sendToggleEngine(vehicle);
                 } else if (matchesKey(TOGGLE_LANDING_GEAR, key, scanCode)) {
                     sendToggleLandingGear(vehicle);
+                } else if (matchesKey(TOGGLE_AIRBRAKE, key, scanCode)) {
+                    sendToggleAirbrake(vehicle);
                 } else if (matchesKey(FIRE_CONTROL_LOCK, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
@@ -336,6 +338,13 @@ public class InputHandler {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleLandingGear = true;
+        Channel.CHANNEL.sendToServer(action);
+    }
+
+    private static void sendToggleAirbrake(AbstractVehicle vehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = vehicle.getId();
+        action.toggleAirbrake = true;
         Channel.CHANNEL.sendToServer(action);
     }
 

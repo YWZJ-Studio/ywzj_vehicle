@@ -15,6 +15,9 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
     @SerializedName("landing_gear_part_id")
     public String landingGearPartId;
 
+    @SerializedName("airbrake_part_id")
+    public String airbrakePartId;
+
     @SerializedName("thrust_part_id")
     public String thrustPartId;
 
@@ -61,9 +64,6 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
 
         @SerializedName("z_rot_input_drag_k")
         public float zRotInputDragK = 1f / 8;
-
-        @SerializedName("landing_gear_drag_k")
-        public float landingGearDragK = 1f / 2;
 
         @SerializedName("turn_rate_by_speed")
         public float turnRateBySpeed = 1f / 2.5f;

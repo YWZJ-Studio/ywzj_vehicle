@@ -28,7 +28,7 @@ public class ThermalHandler implements ResourceManagerReloadListener {
     private static int lastWidth = 0;
     private static int lastHeight = 0;
     private static boolean seeThroughWalls = false;
-    private static final double THERMAL_RANGE = 256.0;
+    private static final double THERMAL_RANGE = 512;
     private static final double THERMAL_RANGE_SQ = THERMAL_RANGE * THERMAL_RANGE;
 
     public static void setActive(boolean active) {

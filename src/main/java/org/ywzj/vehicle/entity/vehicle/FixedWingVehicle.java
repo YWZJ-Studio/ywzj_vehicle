@@ -66,7 +66,6 @@ public class FixedWingVehicle extends AbstractVehicle
     public float xRotInputDragK = 1f;
     public float yRotInputDragK = 1f / 4;
     public float zRotInputDragK = 1f / 8;
-    public float landingGearDragK = 1f / 2;
     public float turnRateBySpeed = 1f / 2.5f;
     public float xTurnRate = 2;
     public float yTurnRate = 3;
@@ -83,6 +82,7 @@ public class FixedWingVehicle extends AbstractVehicle
     public float rollInput;
     public float rollInputO;
     public LandingGearUnit landingGear;
+    public AirbrakeUnit airbrakeUnit;
     public ThrustUnit thrustUnit;
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
@@ -161,6 +161,13 @@ public class FixedWingVehicle extends AbstractVehicle
                 player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
             } else if (hasPower()) {
                 landingGear.setOn(!isLandingGearUp());
+            }
+        }
+        if (message.toggleAirbrake) {
+            if (airbrakeUnit == null) {
+                player.displayClientMessage(Component.translatable("tips.no_airbrake"), true);
+            } else if (hasPower()) {
+                airbrakeUnit.setOn(!airbrakeUnit.isOn());
             }
         }
         if (message.toggleAerobaticSmoke) {
@@ -490,7 +497,8 @@ public class FixedWingVehicle extends AbstractVehicle
         double controlDrag = (Math.abs(xRotInput) * xRotInputDragK
                 + Math.abs(yRotInput) * yRotInputDragK
                 + Math.abs(zRotInput) * zRotInputDragK
-                + (landingGear != null ? landingGear.level() : 0) * landingGearDragK
+                + (landingGear != null ? landingGear.level() * landingGear.getDragK() : 0)
+                + (airbrakeUnit != null ? airbrakeUnit.level() * airbrakeUnit.getDragK() : 0)
         ) * airDragKMin;
         double fc = al * al * controlDrag;
         aRaw -= fc / mass;
@@ -645,6 +653,10 @@ public class FixedWingVehicle extends AbstractVehicle
 
     public boolean isLandingGearUp() {
         return landingGear != null && landingGear.isOn();
+    }
+
+    public boolean isAirbrakeOn() {
+        return airbrakeUnit != null && airbrakeUnit.isOn();
     }
 
     public boolean isAerobaticSmokeOn() {

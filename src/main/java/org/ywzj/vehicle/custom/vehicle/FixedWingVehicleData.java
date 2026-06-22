@@ -7,10 +7,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
-import org.ywzj.vehicle.vehicle.part.AfterburnerUnit;
-import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
-import org.ywzj.vehicle.vehicle.part.PartUnit;
-import org.ywzj.vehicle.vehicle.part.ThrustUnit;
+import org.ywzj.vehicle.vehicle.part.*;
 import org.ywzj.vehicle.vehicle.pojo.AfterburnerOffset;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -36,7 +33,6 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public float xRotInputDragK = 1f;
     public float yRotInputDragK = 1f / 4;
     public float zRotInputDragK = 1f / 8;
-    public float landingGearDragK = 1f / 2;
     public float turnRateBySpeed = 1f / 2.5f;
     public float xTurnRate = 2;
     public float yTurnRate = 3;
@@ -45,6 +41,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
     public List<Vec3> aerobaticSmokeOffsets;
     public List<AfterburnerOffset> afterburnerOffsets;
     public String landingGearPartId;
+    public String airbrakePartId;
     public String thrustPartId;
 
     @Override
@@ -59,6 +56,10 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
             PartUnit<?> landingGearUnit = result.partUnitMap().get(this.landingGearPartId);
             if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
                 fixedWingVehicle.landingGear = switchableUnit;
+            }
+            PartUnit<?> airbrakePartUnit = result.partUnitMap().get(this.airbrakePartId);
+            if (airbrakePartUnit instanceof AirbrakeUnit airbrakeUnit) {
+                fixedWingVehicle.airbrakeUnit = airbrakeUnit;
             }
             PartUnit<?> thrustPartUnit = result.partUnitMap().get(this.thrustPartId);
             if (thrustPartUnit instanceof ThrustUnit thrustUnit) {
@@ -105,7 +106,6 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         this.xRotInputDragK = pojo.attributes.xRotInputDragK;
         this.yRotInputDragK = pojo.attributes.yRotInputDragK;
         this.zRotInputDragK = pojo.attributes.zRotInputDragK;
-        this.landingGearDragK = pojo.attributes.landingGearDragK;
         this.turnRateBySpeed = pojo.attributes.turnRateBySpeed;
         this.xTurnRate = pojo.attributes.xTurnRate;
         this.yTurnRate = pojo.attributes.yTurnRate;
@@ -114,6 +114,7 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         this.afterburnerOffsets = pojo.attributes.afterburnerOffsets;
         this.aerobaticSmokeOffsets = pojo.attributes.aerobaticSmokeOffsets.isEmpty() ? pojo.attributes.vortexOffsets : pojo.attributes.aerobaticSmokeOffsets;
         this.landingGearPartId = pojo.landingGearPartId;
+        this.airbrakePartId = pojo.airbrakePartId;
         this.thrustPartId = pojo.thrustPartId;
     }
 
@@ -133,7 +134,6 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
         vehicle.xRotInputDragK = this.xRotInputDragK;
         vehicle.yRotInputDragK = this.yRotInputDragK;
         vehicle.zRotInputDragK = this.zRotInputDragK;
-        vehicle.landingGearDragK = this.landingGearDragK;
         vehicle.turnRateBySpeed = this.turnRateBySpeed;
         vehicle.xTurnRate = this.xTurnRate;
         vehicle.yTurnRate = this.yTurnRate;
