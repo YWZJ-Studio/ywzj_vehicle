@@ -96,107 +96,6 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     }
 
     @Override
-    protected void tickSound() {
-        super.tickSound();
-        if (getPower() == 5 && isEngineOn()) {
-            SoundEvent engineStartSound = getEngineStartSound();
-            if (engineStartSound != null) {
-                new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();
-            }
-        }
-        if (!hasPower()) {
-            if (engineIdleSoundInstance != null) {
-                engineIdleSoundInstance.stop();
-                engineIdleSoundInstance = null;
-            }
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-        }
-        float engineSpeed = getEngineSpeed();
-        if (engineSpeed == 60) {
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-            if (engineIdleSoundInstance == null) {
-                SoundEvent engineIdleSound = getEngineIdleSound();
-                if (engineIdleSound != null) {
-                    engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                    engineIdleSoundInstance.play();
-                }
-            }
-        } else if (engineSpeed > 60) {
-            if (engineIdleSoundInstance != null) {
-                engineIdleSoundInstance.stop();
-                engineIdleSoundInstance = null;
-            }
-            float pitch = (engineSpeed - 60) / 40 * 0.3f + 0.8f;
-            if (engineRunSoundInstance == null) {
-                SoundEvent engineRunSound = getEngineRunSound();
-                if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                    engineRunSoundInstance.play();
-                }
-            } else {
-                engineRunSoundInstance.setPitch(pitch);
-            }
-        }
-        Vec3 velocity = new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z);
-        if (velocity.length() > 0.1 && Math.sin(VectorUtil.angleBetween(velocity, getLookAngle())) > Math.sin(Math.PI / 10)) {
-            if (tireSquealSoundInstance == null) {
-                tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1f, 1f, 1f, true, 50, true, true, this.getId());
-                tireSquealSoundInstance.play();
-            }
-        } else if (tireSquealSoundInstance != null) {
-            tireSquealSoundInstance.stop();
-            tireSquealSoundInstance = null;
-        }
-    }
-
-    @Override
-    protected void tickParticle() {
-        super.tickParticle();
-        // 履带印
-        trackLength += getDeltaMovement().length();
-        if (trackLength >= 0.5) {
-            trackLength = 0;
-            Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            if (EntityUtil.isOnBlockSurface(this, trackLeftPos)) {
-                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  trackSize, this.getYRot(), 0
-                );
-            }
-            if (EntityUtil.isOnBlockSurface(this, trackRightPos)) {
-                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  trackSize, this.getYRot(), 0
-                );
-            }
-        }
-        // 引擎烟
-        if (hasPower()) {
-            double velocity = Math.abs(entityData.get(FORWARD_SPEED));
-            if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
-                energyInfo.engineParticleOffsets.forEach(offset -> {
-                    Vec3 engineSmokePos = this.position().add(offset);
-                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
-                    engineSmokePos = relativeRotPos(engineSmokePos, false);
-                    for (int count = 0; count < velocity / 16 + 1; count++) {
-                        level().addParticle(ParticleTypes.LARGE_SMOKE, true,
-                                engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                                engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
-                    }
-                });
-                engineParticleTick = 0;
-            } else {
-                engineParticleTick += 1;
-            }
-        }
-    }
-
-    @Override
     protected Vec3 tickMove() {
         if (getDriver() == null) {
             controlUnit.reset();
@@ -325,6 +224,107 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         } else {
             if (engineSpeed > 60) {
                 setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+            }
+        }
+    }
+
+    @Override
+    protected void tickSound() {
+        super.tickSound();
+        if (getPower() == 5 && isEngineOn()) {
+            SoundEvent engineStartSound = getEngineStartSound();
+            if (engineStartSound != null) {
+                new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId()).play();
+            }
+        }
+        if (!hasPower()) {
+            if (engineIdleSoundInstance != null) {
+                engineIdleSoundInstance.stop();
+                engineIdleSoundInstance = null;
+            }
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+        }
+        float engineSpeed = getEngineSpeed();
+        if (engineSpeed == 60) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineIdleSoundInstance == null) {
+                SoundEvent engineIdleSound = getEngineIdleSound();
+                if (engineIdleSound != null) {
+                    engineIdleSoundInstance = new VehicleSound(engineIdleSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineIdleSoundInstance.play();
+                }
+            }
+        } else if (engineSpeed > 60) {
+            if (engineIdleSoundInstance != null) {
+                engineIdleSoundInstance.stop();
+                engineIdleSoundInstance = null;
+            }
+            float pitch = (engineSpeed - 60) / 40 * 0.3f + 0.8f;
+            if (engineRunSoundInstance == null) {
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
+            } else {
+                engineRunSoundInstance.setPitch(pitch);
+            }
+        }
+        Vec3 velocity = new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z);
+        if (velocity.length() > 0.1 && Math.sin(VectorUtil.angleBetween(velocity, getLookAngle())) > Math.sin(Math.PI / 10)) {
+            if (tireSquealSoundInstance == null) {
+                tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1f, 1f, 1f, true, 50, true, true, this.getId());
+                tireSquealSoundInstance.play();
+            }
+        } else if (tireSquealSoundInstance != null) {
+            tireSquealSoundInstance.stop();
+            tireSquealSoundInstance = null;
+        }
+    }
+
+    @Override
+    protected void tickParticle() {
+        super.tickParticle();
+        // 履带印
+        trackLength += getDeltaMovement().length();
+        if (trackLength >= 0.5) {
+            trackLength = 0;
+            Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+            Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+            if (EntityUtil.isOnBlockSurface(this, trackLeftPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  trackSize, this.getYRot(), 0
+                );
+            }
+            if (EntityUtil.isOnBlockSurface(this, trackRightPos)) {
+                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
+                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  trackSize, this.getYRot(), 0
+                );
+            }
+        }
+        // 引擎烟
+        if (hasPower()) {
+            double velocity = Math.abs(entityData.get(FORWARD_SPEED));
+            if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
+                energyInfo.engineParticleOffsets.forEach(offset -> {
+                    Vec3 engineSmokePos = this.position().add(offset);
+                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
+                    engineSmokePos = relativeRotPos(engineSmokePos, false);
+                    for (int count = 0; count < velocity / 16 + 1; count++) {
+                        level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                                engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
+                                engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                    }
+                });
+                engineParticleTick = 0;
+            } else {
+                engineParticleTick += 1;
             }
         }
     }

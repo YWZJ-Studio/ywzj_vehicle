@@ -181,55 +181,6 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    protected void tickSound() {
-        super.tickSound();
-        float engineSpeed = getPower();
-        if (engineSpeed == 0) {
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.stop();
-                engineStartSoundInstance = null;
-            }
-            return;
-        }
-        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
-            SoundEvent engineStopSound = getEngineStopSound();
-            if (engineStopSound != null) {
-                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
-                engineStopSoundInstance.play();
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.setVolume(engineSpeed / 100);
-            }
-        }
-        if (engineSpeed > 0) {
-            if (engineSpeed > 50 && engineStopSoundInstance != null) {
-                engineStopSoundInstance = null;
-            }
-            if (engineSpeed < 20 && engineStartSoundInstance == null) {
-                SoundEvent engineStartSound = getEngineStartSound();
-                if (engineStartSound != null) {
-                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
-                    engineStartSoundInstance.play();
-                }
-            }
-            if (engineSpeed > 50 && engineRunSoundInstance == null) {
-                SoundEvent engineRunSound = getEngineRunSound();
-                if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
-                    engineRunSoundInstance.play();
-                }
-            }
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
-            }
-        }
-    }
-
-    @Override
     protected Vec3 tickMove() {
         // 总距控制
         float collectivePitch = getCollectivePitch();
@@ -376,6 +327,55 @@ public class RotaryWingVehicle extends AbstractVehicle
         }
 
         return force;
+    }
+
+    @Override
+    protected void tickSound() {
+        super.tickSound();
+        float engineSpeed = getPower();
+        if (engineSpeed == 0) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.stop();
+                engineStartSoundInstance = null;
+            }
+            return;
+        }
+        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
+            SoundEvent engineStopSound = getEngineStopSound();
+            if (engineStopSound != null) {
+                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
+                engineStopSoundInstance.play();
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.setVolume(engineSpeed / 100);
+            }
+        }
+        if (engineSpeed > 0) {
+            if (engineSpeed > 50 && engineStopSoundInstance != null) {
+                engineStopSoundInstance = null;
+            }
+            if (engineSpeed < 20 && engineStartSoundInstance == null) {
+                SoundEvent engineStartSound = getEngineStartSound();
+                if (engineStartSound != null) {
+                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
+                    engineStartSoundInstance.play();
+                }
+            }
+            if (engineSpeed > 50 && engineRunSoundInstance == null) {
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
+            }
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
+            }
+        }
     }
 
     @Override

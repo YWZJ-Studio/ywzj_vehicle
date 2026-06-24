@@ -42,6 +42,7 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_V = registerSoundEvent("turret_turn_servo_v", YwzjVehicle.modLocation("turret_turn_servo_v"));
     public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_H = registerSoundEvent("turret_turn_servo_h", YwzjVehicle.modLocation("turret_turn_servo_h"));
     public static final RegistryObject<SoundEvent> TIRE_SQUEAL = registerSoundEvent("tire_squeal", YwzjVehicle.modLocation("tire_squeal"));
+    public static final RegistryObject<SoundEvent> LANDING = registerSoundEvent("landing", YwzjVehicle.modLocation("landing"));
     public static final RegistryObject<SoundEvent> AEROBATICS_SMOKE_START = registerSoundEvent("aerobatics_smoke_start", YwzjVehicle.modLocation("aerobatics_smoke_start"));
     public static final RegistryObject<SoundEvent> AEROBATICS_SMOKE_LOOP = registerSoundEvent("aerobatics_smoke_loop", YwzjVehicle.modLocation("aerobatics_smoke_loop"));
 

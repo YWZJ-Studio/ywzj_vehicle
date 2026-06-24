@@ -66,6 +66,10 @@
     "sounds": ["ywzj_vehicle:misc/tire_squeal"],
     "subtitle": "ywzj_vehicle.sounds.tire_squeal"
   },
+  "landing": {
+    "sounds": ["ywzj_vehicle:misc/landing"],
+    "subtitle": "ywzj_vehicle.sounds.landing"
+  },
   "aerobatics_smoke_start": {
     "sounds": [
       "ywzj_vehicle:misc/aerobatics_smoke_start_01",

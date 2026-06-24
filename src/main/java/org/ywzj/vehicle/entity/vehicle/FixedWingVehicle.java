@@ -88,8 +88,9 @@ public class FixedWingVehicle extends AbstractVehicle
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
     private VehicleSound engineThrustSoundInstance;
-    private VehicleSound passbySoundInstance;
+    private VehicleSound landingSoundInstance;
     private VehicleSound aerobaticSmokeSoundInstance;
+    private VehicleSound passbySoundInstance;
     private IAnimationInstance<FixedWingVehicleContext> animationInstance;
 
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
@@ -244,90 +245,6 @@ public class FixedWingVehicle extends AbstractVehicle
             if (partUnit instanceof AfterburnerUnit afterburner) {
                 afterburner.setOn(hasPower() && getThrottleLevel() > 100);
             }
-        }
-    }
-
-    @Override
-    protected void tickSound() {
-        super.tickSound();
-        float engineSpeed = getPower();
-        if (engineSpeed == 0) {
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.stop();
-                engineStartSoundInstance = null;
-            }
-            if (engineThrustSoundInstance != null) {
-                engineThrustSoundInstance.stop();
-                engineThrustSoundInstance = null;
-            }
-            return;
-        }
-        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
-            SoundEvent engineStopSound = getEngineStopSound();
-            if (engineStopSound != null) {
-                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
-                engineStopSoundInstance.play();
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.setVolume(engineSpeed / 100);
-            }
-        }
-        if (engineSpeed > 0) {
-            if (engineSpeed > 50 && engineStopSoundInstance != null) {
-                engineStopSoundInstance = null;
-            }
-            if (engineSpeed < 20 && engineStartSoundInstance == null) {
-                SoundEvent engineStartSound = getEngineStartSound();
-                if (engineStartSound != null) {
-                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
-                    engineStartSoundInstance.play();
-                }
-            }
-            if (engineSpeed > 50 && engineRunSoundInstance == null) {
-                SoundEvent engineRunSound = getEngineRunSound();
-                if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
-                    engineRunSoundInstance.play();
-                }
-            }
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
-            }
-            if (getThrottleLevel() > 100 && engineThrustSoundInstance == null) {
-                SoundEvent engineThrustSound = getEngineThrustSound();
-                if (engineThrustSound != null) {
-                    engineThrustSoundInstance = new VehicleSound(engineThrustSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                    engineThrustSoundInstance.play();
-                }
-            } else if (getThrottleLevel() <= 100 && engineThrustSoundInstance != null) {
-                engineThrustSoundInstance.stop();
-                engineThrustSoundInstance = null;
-            }
-        }
-        if (getDeltaMovement().length() > 1) {
-            Player player = LocalVehiclePlayer.instance.getPlayer();
-            if (player.getVehicle() != this) {
-                if (passbySoundInstance == null && player.distanceTo(this) < 32) {
-                    SoundEvent passbySound = getEnginePassbySound();
-                    if (passbySound != null) {
-                        passbySoundInstance = new VehicleSound(passbySound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
-                        passbySoundInstance.play();
-                    }
-                } else if (passbySoundInstance != null && player.distanceTo(this) > 64) {
-                    passbySoundInstance = null;
-                }
-            }
-        }
-        if (isAerobaticSmokeOn() && aerobaticSmokeSoundInstance == null) {
-            aerobaticSmokeSoundInstance = new VehicleSound(AllSounds.AEROBATICS_SMOKE_LOOP.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
-            aerobaticSmokeSoundInstance.play();
-        } else if (!isAerobaticSmokeOn() && aerobaticSmokeSoundInstance != null) {
-            aerobaticSmokeSoundInstance.stop();
-            aerobaticSmokeSoundInstance = null;
         }
     }
 
@@ -550,6 +467,106 @@ public class FixedWingVehicle extends AbstractVehicle
         setYawInput(yRotInput);
         setRollInput(zRotInput);
         return force;
+    }
+
+    @Override
+    protected void tickSound() {
+        super.tickSound();
+        boolean onGround = level().getBlockState(blockPosition().below()).isSolid();
+        double speed = getDeltaMovement().length();
+        if (onGround) {
+            if (speed > 0.05) {
+                if (landingSoundInstance == null) {
+                    landingSoundInstance = new VehicleSound(AllSounds.LANDING.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
+                    landingSoundInstance.play();
+                }
+            } else if (landingSoundInstance != null) {
+                landingSoundInstance.stop();
+                landingSoundInstance = null;
+            }
+        } else if (landingSoundInstance != null) {
+            landingSoundInstance.stop();
+            landingSoundInstance = null;
+        }
+        float engineSpeed = getPower();
+        if (engineSpeed == 0) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.stop();
+                engineStartSoundInstance = null;
+            }
+            if (engineThrustSoundInstance != null) {
+                engineThrustSoundInstance.stop();
+                engineThrustSoundInstance = null;
+            }
+            return;
+        }
+        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
+            SoundEvent engineStopSound = getEngineStopSound();
+            if (engineStopSound != null) {
+                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
+                engineStopSoundInstance.play();
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.setVolume(engineSpeed / 100);
+            }
+        }
+        if (engineSpeed > 0) {
+            if (engineSpeed > 50 && engineStopSoundInstance != null) {
+                engineStopSoundInstance = null;
+            }
+            if (engineSpeed < 20 && engineStartSoundInstance == null) {
+                SoundEvent engineStartSound = getEngineStartSound();
+                if (engineStartSound != null) {
+                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
+                    engineStartSoundInstance.play();
+                }
+            }
+            if (engineSpeed > 50 && engineRunSoundInstance == null) {
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
+            }
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
+            }
+            if (getThrottleLevel() > 100 && engineThrustSoundInstance == null) {
+                SoundEvent engineThrustSound = getEngineThrustSound();
+                if (engineThrustSound != null) {
+                    engineThrustSoundInstance = new VehicleSound(engineThrustSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineThrustSoundInstance.play();
+                }
+            } else if (getThrottleLevel() <= 100 && engineThrustSoundInstance != null) {
+                engineThrustSoundInstance.stop();
+                engineThrustSoundInstance = null;
+            }
+        }
+        if (speed > 1 && !onGround) {
+            Player player = LocalVehiclePlayer.instance.getPlayer();
+            if (player.getVehicle() != this) {
+                if (passbySoundInstance == null && player.distanceTo(this) < 32) {
+                    SoundEvent passbySound = getEnginePassbySound();
+                    if (passbySound != null) {
+                        passbySoundInstance = new VehicleSound(passbySound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
+                        passbySoundInstance.play();
+                    }
+                } else if (passbySoundInstance != null && player.distanceTo(this) > 64) {
+                    passbySoundInstance = null;
+                }
+            }
+        }
+        if (isAerobaticSmokeOn() && aerobaticSmokeSoundInstance == null) {
+            aerobaticSmokeSoundInstance = new VehicleSound(AllSounds.AEROBATICS_SMOKE_LOOP.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
+            aerobaticSmokeSoundInstance.play();
+        } else if (!isAerobaticSmokeOn() && aerobaticSmokeSoundInstance != null) {
+            aerobaticSmokeSoundInstance.stop();
+            aerobaticSmokeSoundInstance = null;
+        }
     }
 
     @Override

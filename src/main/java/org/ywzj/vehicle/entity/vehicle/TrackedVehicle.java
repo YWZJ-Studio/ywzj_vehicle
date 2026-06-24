@@ -104,6 +104,102 @@ public class TrackedVehicle extends AbstractVehicle
     }
 
     @Override
+    protected Vec3 tickMove() {
+        if (getDriver() == null) {
+            controlUnit.reset();
+        }
+
+        float vt = entityData.get(TURN_SPEED);
+        int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
+        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
+        vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
+        if (!hasPower()) {
+            entityData.set(FORWARD_SPEED, vf);
+            entityData.set(TURN_SPEED, 0f);
+            return new Vec3(0, 0, 0);
+        }
+
+        // 前后控制
+        if (controlUnit.forward || controlUnit.backward) {
+            if (controlUnit.forward) {
+                if (vf < 0) {
+                    vf += brakeAcceleration;
+                } else {
+                    vf += forwardAcceleration;
+                }
+            } else {
+                if (vf > 0) {
+                    vf -= brakeAcceleration;
+                } else {
+                    vf -= backwardAcceleration;
+                }
+            }
+        }
+        if (controlUnit.left || controlUnit.right) {
+            if (vf < 0 && !controlUnit.backward) {
+                vf += brakeAcceleration;
+            }
+        }
+        vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
+        entityData.set(FORWARD_SPEED, vf);
+
+        // 转向控制
+        if (controlUnit.left || controlUnit.right) {
+            vt += controlUnit.right ? turnAcceleration : -turnAcceleration;
+            vt = Mth.clamp(vt, -maxTurn, maxTurn);
+        } else {
+            if (vt < 0) {
+                vt += turnAcceleration;
+                vt = Math.min(vt, 0);
+            } else if (vt > 0) {
+                vt -= turnAcceleration;
+                vt = Math.max(vt, 0);
+            }
+        }
+        entityData.set(TURN_SPEED, vt);
+
+        // 转向幅度应用于车身朝向
+        if (controlUnit.backward) {
+            vt *= -1;
+        }
+        this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
+        if (Math.abs(vt) > 0) {
+            vf *= 0.98f;
+        }
+
+        // 前进速度应用于车身朝向
+        Vec3 direction = getLookAngle();
+        Vec3 motion = direction.normalize().scale(vf);
+        motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
+        this.setDeltaMovement(motion);
+        return new Vec3(0, 0, 0);
+    }
+
+    @Override
+    protected void tickEngineSpeed() {
+        super.tickEngineSpeed();
+        float engineSpeed = getEngineSpeed();
+        if (controlUnit.forward || controlUnit.backward || controlUnit.left || controlUnit.right) {
+            if (hasPower()) {
+                Vec3 velocity = getDeltaMovement();
+                Vec3 vehicleDirection = getLookAngle();
+                float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+                if ((angle < 90 && controlUnit.forward) || (angle > 90 && controlUnit.backward)) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 1, 0, 100));
+                } else if (controlUnit.left || controlUnit.right) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 2, 0, 100));
+                } else {
+                    setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+                }
+            }
+        } else {
+            if (engineSpeed > 60) {
+                setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+            }
+        }
+    }
+
+    @Override
     protected void tickSound() {
         super.tickSound();
         if (getPower() == 5 && isEngineOn()) {
@@ -204,102 +300,6 @@ public class TrackedVehicle extends AbstractVehicle
                 engineParticleTick = 0;
             } else {
                 engineParticleTick += 1;
-            }
-        }
-    }
-
-    @Override
-    protected Vec3 tickMove() {
-        if (getDriver() == null) {
-            controlUnit.reset();
-        }
-
-        float vt = entityData.get(TURN_SPEED);
-        int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
-        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
-        vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
-        if (!hasPower()) {
-            entityData.set(FORWARD_SPEED, vf);
-            entityData.set(TURN_SPEED, 0f);
-            return new Vec3(0, 0, 0);
-        }
-
-        // 前后控制
-        if (controlUnit.forward || controlUnit.backward) {
-            if (controlUnit.forward) {
-                if (vf < 0) {
-                    vf += brakeAcceleration;
-                } else {
-                    vf += forwardAcceleration;
-                }
-            } else {
-                if (vf > 0) {
-                    vf -= brakeAcceleration;
-                } else {
-                    vf -= backwardAcceleration;
-                }
-            }
-        }
-        if (controlUnit.left || controlUnit.right) {
-            if (vf < 0 && !controlUnit.backward) {
-                vf += brakeAcceleration;
-            }
-        }
-        vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
-        entityData.set(FORWARD_SPEED, vf);
-
-        // 转向控制
-        if (controlUnit.left || controlUnit.right) {
-            vt += controlUnit.right ? turnAcceleration : -turnAcceleration;
-            vt = Mth.clamp(vt, -maxTurn, maxTurn);
-        } else {
-            if (vt < 0) {
-                vt += turnAcceleration;
-                vt = Math.min(vt, 0);
-            } else if (vt > 0) {
-                vt -= turnAcceleration;
-                vt = Math.max(vt, 0);
-            }
-        }
-        entityData.set(TURN_SPEED, vt);
-
-        // 转向幅度应用于车身朝向
-        if (controlUnit.backward) {
-            vt *= -1;
-        }
-        this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
-        if (Math.abs(vt) > 0) {
-            vf *= 0.98f;
-        }
-
-        // 前进速度应用于车身朝向
-        Vec3 direction = getLookAngle();
-        Vec3 motion = direction.normalize().scale(vf);
-        motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
-        this.setDeltaMovement(motion);
-        return new Vec3(0, 0, 0);
-    }
-
-    @Override
-    protected void tickEngineSpeed() {
-        super.tickEngineSpeed();
-        float engineSpeed = getEngineSpeed();
-        if (controlUnit.forward || controlUnit.backward || controlUnit.left || controlUnit.right) {
-            if (hasPower()) {
-                Vec3 velocity = getDeltaMovement();
-                Vec3 vehicleDirection = getLookAngle();
-                float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
-                if ((angle < 90 && controlUnit.forward) || (angle > 90 && controlUnit.backward)) {
-                    setEngineSpeed(Mth.clamp(engineSpeed + 1, 0, 100));
-                } else if (controlUnit.left || controlUnit.right) {
-                    setEngineSpeed(Mth.clamp(engineSpeed + 2, 0, 100));
-                } else {
-                    setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
-                }
-            }
-        } else {
-            if (engineSpeed > 60) {
-                setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
             }
         }
     }
