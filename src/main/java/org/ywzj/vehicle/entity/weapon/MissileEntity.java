@@ -48,6 +48,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public float mass;
     public float thrust;
     public float motorBurnTime;
+    public Vec3 engineNozzleOffset;
     public int coldLaunchTimeTick;
     public Vec3 coldLaunchVelocity = new Vec3(0, -1, 0);
     public float dragCoefficient;
@@ -113,6 +114,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.mass = data.getMass();
         this.thrust = data.getThrust();
         this.motorBurnTime = data.getMotorBurnTime();
+        this.engineNozzleOffset = data.getEngineNozzleOffset();
         this.dragCoefficient = data.getDragCoefficient();
         this.maxG = data.getMaxG();
         this.referenceSpeed = data.getReferenceSpeed();
@@ -341,7 +343,10 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             return;
         }
         if (tickCount <= motorBurnTime) {
-            Vec3 pos = this.position().add(this.getLookAngle().scale(-3));
+            Vec3 rotatedOffset = engineNozzleOffset
+                    .xRot(-this.getXRot() * Mth.DEG_TO_RAD)
+                    .yRot(-this.getYRot() * Mth.DEG_TO_RAD);
+            Vec3 pos = this.position().add(rotatedOffset);
             Vec3 posO = particlePosO == null ? pos : particlePosO;
             Vec3 step = pos.subtract(posO);
             double dist = step.length();

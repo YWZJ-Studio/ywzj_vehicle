@@ -29,6 +29,7 @@
         "impact_multiplier": 2
     },
     "with_warning_receiver": true,
+    "center_offset": [0, 1.844, 0],
     "structure_model": "ywzj_vehicle:vehicle/ah64d",
     "parts": [
         {

@@ -13,7 +13,6 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.joml.Matrix3f;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -128,18 +127,8 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         axisRollMat = axisRollMat.transpose();
         Vec3 vo = rotaryWingVehicle.deltaMovementO;
         Vec3 v = rotaryWingVehicle.getDeltaMovement();
-        Vec3 worldDirection = new Vec3(Mth.lerp(partialTick, vo.x, v.x), Mth.lerp(partialTick, vo.y, v.y), Mth.lerp(partialTick, vo.z, v.z));
-        Vector3f relativePos = new Vector3f(
-                (float) (worldDirection.x() - rotaryWingVehicle.centerOffset.x),
-                (float) (worldDirection.y() - rotaryWingVehicle.centerOffset.y),
-                (float) (worldDirection.z() - rotaryWingVehicle.centerOffset.z)
-        );
-        axisRollMat.transform(relativePos);
-        v = new Vec3(
-                relativePos.x + rotaryWingVehicle.centerOffset.x,
-                relativePos.y + rotaryWingVehicle.centerOffset.y,
-                relativePos.z + rotaryWingVehicle.centerOffset.z
-        );
+        v = new Vec3(Mth.lerp(partialTick, vo.x, v.x), Mth.lerp(partialTick, vo.y, v.y), Mth.lerp(partialTick, vo.z, v.z));
+        v = new Vec3(axisRollMat.transform(v.toVector3f()));
         float arrowLength = (float) (15.0f * v.length() / rotaryWingVehicle.maxAirSpeed);
         float arrowSize = 4.0f;
         PoseStack pose = guiGraphics.pose();

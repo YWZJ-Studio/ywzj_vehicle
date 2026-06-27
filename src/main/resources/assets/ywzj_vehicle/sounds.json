@@ -54,14 +54,6 @@
     "sounds": ["ywzj_vehicle:misc/missile_launch_warn"],
     "subtitle": "ywzj_vehicle.sounds.missile_launch_warn"
   },
-  "turret_turn_servo_h": {
-    "sounds": ["ywzj_vehicle:misc/turret_turn_servo_h"],
-    "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_h"
-  },
-  "turret_turn_servo_v": {
-    "sounds": ["ywzj_vehicle:misc/turret_turn_servo_v"],
-    "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_v"
-  },
   "tire_squeal": {
     "sounds": ["ywzj_vehicle:misc/tire_squeal"],
     "subtitle": "ywzj_vehicle.sounds.tire_squeal"
@@ -81,5 +73,17 @@
   "aerobatics_smoke_loop": {
     "sounds": ["ywzj_vehicle:misc/aerobatics_smoke_loop"],
     "subtitle": "ywzj_vehicle.sounds.aerobatics_smoke_loop"
+  },
+  "turret_turn_servo_h": {
+    "sounds": ["ywzj_vehicle:misc/turret_turn_servo_h"],
+    "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_h"
+  },
+  "turret_turn_servo_v": {
+    "sounds": ["ywzj_vehicle:misc/turret_turn_servo_v"],
+    "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_v"
+  },
+  "select_weapon": {
+    "sounds": ["ywzj_vehicle:misc/select_weapon"],
+    "subtitle": "ywzj_vehicle.sounds.select_weapon"
   }
 }

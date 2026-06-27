@@ -484,9 +484,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (!this.isRemoved()) {
             aiStep();
         }
-        tickParts();
-        tickDecorations();
-        updateOBBs();
         if (level().isClientSide()) {
             tickSound();
             tickParticle();
@@ -517,7 +514,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                 }
             }
         }
+        tickParts();
+        tickDecorations();
         afterVehicleRot();
+        updateOBBs();
     }
 
     protected void tickEnergy() {
@@ -1322,7 +1322,8 @@ public abstract class AbstractVehicle extends ContainerCraft
      * 某世界坐标随载具三轴旋转后或前的新坐标
      */
     public Vec3 relativeRotPos(Vec3 worldPos, boolean reverse) {
-        return relativeRotDirection(worldPos.subtract(position()), reverse).add(position());
+        Vec3 center = position().add(centerOffset);
+        return relativeRotDirection(worldPos.subtract(center), reverse).add(center);
     }
 
     /**
@@ -1335,17 +1336,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (reverse) {
             axisRollMat = axisRollMat.transpose();
         }
-        Vector3f relativePos = new Vector3f(
-                (float) (worldDirection.x() - centerOffset.x),
-                (float) (worldDirection.y() - centerOffset.y),
-                (float) (worldDirection.z() - centerOffset.z)
-        );
-        axisRollMat.transform(relativePos);
-        return new Vec3(
-                relativePos.x + centerOffset.x,
-                relativePos.y + centerOffset.y,
-                relativePos.z + centerOffset.z
-        );
+        return new Vec3(axisRollMat.transform(worldDirection.toVector3f()));
     }
 
     public abstract void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator);

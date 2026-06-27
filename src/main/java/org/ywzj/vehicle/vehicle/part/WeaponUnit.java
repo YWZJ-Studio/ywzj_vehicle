@@ -186,6 +186,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+            vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
             if (getOwner() instanceof Player player) {
                 player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentSecondaryWeapon().get().getDisplayName()), true);
             }
@@ -197,6 +198,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+            vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
             if (getOwner() instanceof Player player) {
                 player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentWeapon().get().getDisplayName()), true);
             }
@@ -207,6 +209,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.getCurrentWeapon().ifPresent(weapon -> {
             if (weapon instanceof VehicleMultiWeapons multiWeapons) {
                 multiWeapons.cycleSubWeapon(next);
+                vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
                 if (getOwner() instanceof Player player) {
                     player.displayClientMessage(Component.translatable("tips.use_weapon", multiWeapons.getDisplayName()), true);
                 }
@@ -506,33 +509,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @OnlyIn(Dist.CLIENT)
     private void tickHit() {
         weaponHitPosO = weaponHitPos;
-        Optional<AbstractVehicleWeapon<?>> vehicleWeaponOptional = getCurrentWeapon();
-        if (vehicleWeaponOptional.isPresent()) {
-            AbstractVehicleWeapon<?> vehicleWeapon = vehicleWeaponOptional.get();
-            WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
-            if (currentWeaponUnit.isParentWeaponUnitAim()) {
-                currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
-            }
-            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
-                if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
-                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
-                    float dragCoefficient = bomb.getData().getDragCoefficient();
-                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
-                } else if (vehicleWeapon instanceof VehicleRocket rocket) {
-                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
-                    var data = rocket.getData();
-                    Vec2 rot = currentWeaponUnit.worldRot();
-                    Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
-                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
-                    weaponHitPos = CcipUtil.computeCcipImpactRocket(vehicle.level(), releasePos, startVelocity,
-                            data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
-                }
-            } else {
-                weaponHitPos = currentWeaponUnit.aimHitPosition();
-            }
-        } else {
-            weaponHitPos = aimHitPosition();
-        }
+        weaponHitPos = currentWeaponHitPosition();
     }
 
     @Override
@@ -716,6 +693,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
                 }
                 updateRot();
+                weaponHitPos = currentWeaponHitPosition();
             }
         }
     }
@@ -747,6 +725,37 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().offset()), false);
         Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
         return worldVecToLocalRot(worldAim);
+    }
+
+    private Vec3 currentWeaponHitPosition() {
+        Optional<AbstractVehicleWeapon<?>> vehicleWeaponOptional = getCurrentWeapon();
+        if (vehicleWeaponOptional.isPresent()) {
+            AbstractVehicleWeapon<?> vehicleWeapon = vehicleWeaponOptional.get();
+            WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
+            if (currentWeaponUnit.isParentWeaponUnitAim()) {
+                currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
+            }
+            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
+                if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
+                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
+                    float dragCoefficient = bomb.getData().getDragCoefficient();
+                    return CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
+                } else if (vehicleWeapon instanceof VehicleRocket rocket) {
+                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
+                    var data = rocket.getData();
+                    Vec2 rot = currentWeaponUnit.worldRot();
+                    Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
+                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                    return CcipUtil.computeCcipImpactRocket(vehicle.level(), releasePos, startVelocity,
+                            data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
+                }
+            } else {
+                return currentWeaponUnit.aimHitPosition();
+            }
+        } else {
+            return aimHitPosition();
+        }
+        return null;
     }
 
     public Vec3 aimHitPosition() {

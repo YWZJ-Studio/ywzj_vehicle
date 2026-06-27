@@ -19,7 +19,7 @@ import static org.ywzj.vehicle.util.MathUtil.magnificationToFov;
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class LocalVehiclePlayerEvent {
 
-    private static final SecondOrderDynamics WORLD_FOV_DYNAMICS = new SecondOrderDynamics(0.8f, 1.0f, 0.5f, 0);
+    private static final SecondOrderDynamics WORLD_FOV_DYNAMICS = new SecondOrderDynamics(1.2f, 1.2f, 0.5f, 0);
 
     @SubscribeEvent(receiveCanceled = true)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
