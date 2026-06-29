@@ -271,7 +271,7 @@ public class VehicleExplosion {
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.0f, 1.0f);
         level.addParticle(ParticleTypes.FLASH, true, x, y, z, 0, 0, 0);
         addParticles(level, ParticleTypes.EXPLOSION, x, y, z, 2, 0, 0.02, 0, 0);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 2, 0.1, 0.1, 0.1, 0.02);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 2, 0.1, 0.1, 0.1, 0.02);
         addParticles(level, ParticleTypes.LARGE_SMOKE, x, y, z, 1, 0.2, 0.2, 0.2, 0.02);
     }
 
@@ -280,7 +280,7 @@ public class VehicleExplosion {
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0f, 0.7f);
         addParticles(level, ParticleTypes.FLASH, x, y + 0.5, z, 8, 2, 2, 2, 0);
         addParticles(level, ParticleTypes.LARGE_SMOKE, x, y + 1, z, 10, 16, 1, 16, 0.01);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 40, 16, 0.05, 16, 0);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 40, 16, 0.05, 16, 0);
         for (int i = 0; i < 40; i++) {
             Vec3 v = randomHemisphereDir(level).scale(0.2);
             level.addParticle(new SmokeCloudOption(1f, 0.35f + level.random.nextFloat() * 0.15f, 0f, 6, 2.0f, -0.01f),
@@ -297,7 +297,7 @@ public class VehicleExplosion {
     private static void largeExplosionEffect(Level level, Player player, double x, double y, double z, double radius) {
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8.0f, 0.5f);
         addParticles(level, ParticleTypes.FLASH, x, y + 3, z, 60, radius / 2, 5, radius / 2, 0);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 120, radius, 0.05, radius, 0);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 120, radius, 0.05, radius, 0);
         for (int i = 0; i < 200; i++) {
             Vec3 v = randomHemisphereDir(level).scale(1.0 + level.random.nextDouble() * 0.5);
             float heat = level.random.nextFloat();
@@ -324,7 +324,7 @@ public class VehicleExplosion {
 
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 14.0f, 0.35f);
         addParticles(level, ParticleTypes.FLASH, x, y + 4, z, flashCount, cappedRadius * 0.45, 8, cappedRadius * 0.45, 0);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.5, z, 180, cappedRadius * 1.2, 0.2, cappedRadius * 1.2, 0.01);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.5, z, 180, cappedRadius * 1.2, 0.2, cappedRadius * 1.2, 0.01);
         addParticles(level, ParticleTypes.LARGE_SMOKE, x, y + 1.0, z, 90, cappedRadius * 0.9, 1.2, cappedRadius * 0.9, 0.02);
 
         spawnExplosionRing(level, x, y, z, 5, 260, 8, 0.8, 0.55, 0.95f, 100, 4.5f);
@@ -441,6 +441,23 @@ public class VehicleExplosion {
             double oy = (level.random.nextDouble() - 0.5) * 2 * ySpread;
             double oz = (level.random.nextDouble() - 0.5) * 2 * zSpread;
             level.addParticle(particle, true, x + ox, y + oy, z + oz, ox * speed, oy * speed + 0.02, oz * speed);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void addParticlesOnSolid(Level level, net.minecraft.core.particles.ParticleOptions particle,
+                                            double x, double y, double z,
+                                            int count, double xSpread, double ySpread, double zSpread, double speed) {
+        for (int i = 0; i < count; i++) {
+            double ox = (level.random.nextDouble() - 0.5) * 2 * xSpread;
+            double oy = (level.random.nextDouble() - 0.5) * 2 * ySpread;
+            double oz = (level.random.nextDouble() - 0.5) * 2 * zSpread;
+            double px = x + ox;
+            double py = y + oy;
+            double pz = z + oz;
+            if (level.getBlockState(BlockPos.containing(px, py, pz).below()).isSolid()) {
+                level.addParticle(particle, true, px, py, pz, ox * speed, oy * speed + 0.02, oz * speed);
+            }
         }
     }
 

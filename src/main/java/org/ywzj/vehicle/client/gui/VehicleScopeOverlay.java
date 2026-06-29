@@ -12,6 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
@@ -70,9 +71,14 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             Vec3 vehiclePos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                     Mth.lerp(partialTick, vehicle.yo, vehicle.getY()),
                     Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
-            Vector3f[] axes = vehicle.axes();
-            Vector3f axisX = axes[0];
-            Vector3f axisZ = axes[2];
+            Vector3f axisX = new Vector3f(1, 0, 0);
+            Vector3f axisZ = new Vector3f(0, 0, 1);
+            Quaternionf rotation = new Quaternionf()
+                    .rotateY((float) Math.toRadians(-vehicle.getViewYRot(partialTick)))
+                    .rotateX((float) Math.toRadians(vehicle.getViewXRot(partialTick)))
+                    .rotateZ((float) Math.toRadians(vehicle.getViewZRot(partialTick)));
+            rotation.transform(axisX);
+            rotation.transform(axisZ);
             for (VehicleCubeOBB vehicleCubeOBB : vehicle.getVehicleCubeOBBs()) {
                 renderCubeOBB(vehicleCubeOBB, vehiclePos, axisX, axisZ, 0, poseStack, guiGraphics, partialTick, Color.GREEN);
             }
@@ -377,7 +383,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
 
     private float lerpZRotDiff(RotatableUnit<?> rotatableUnit, AbstractVehicle vehicle, float partialTick) {
         float zRot = Mth.wrapDegrees(rotatableUnit.worldRot().y - vehicle.getYRot());
-        float zRotO = Mth.wrapDegrees(rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.yRotO);
+        float zRotO = Mth.wrapDegrees(rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.getYRot());
         if (Math.abs(zRot - zRotO) > 180) {
             zRotO += (zRotO - zRot) < 0 ? 360f : -360f;
         }

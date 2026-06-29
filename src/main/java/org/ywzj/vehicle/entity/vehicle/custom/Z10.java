@@ -29,7 +29,6 @@ public class Z10 extends RotaryWingVehicle {
      * 仅做示例: 如何硬编码构造载具部件
      */
     @Deprecated
-    @Override
     public void initPartUnits() {
         // 观瞄
         WeaponUnit sightingSystem = new WeaponUnit("sighting_system",

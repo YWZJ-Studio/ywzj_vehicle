@@ -688,8 +688,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         return AllSounds.VEHICLE_HURT.get();
     }
 
-    public void initPartUnits() {}
-
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         if (isDestroyed() && tickCount % 20 == 0) {
