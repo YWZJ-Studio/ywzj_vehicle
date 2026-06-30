@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -595,9 +594,13 @@ public class FixedWingVehicle extends AbstractVehicle
                     Vec3 engineSmokePos = this.position().add(offset);
                     engineSmokePos = relativeRotPos(engineSmokePos, false);
                     Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.3);
-                    level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                    level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
+                                    0.0f, 0.0f, 0.0f, 0.7f,
+                                    20, 0.3f, 0.4f, 0.005f), true,
                             engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                            engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                            engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
+                            engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
+                            engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
                 });
                 engineParticleTick = 0;
             } else {

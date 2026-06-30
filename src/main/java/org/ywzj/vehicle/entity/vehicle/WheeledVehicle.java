@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,6 +18,7 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -317,9 +317,13 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
                     Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
                     engineSmokePos = relativeRotPos(engineSmokePos, false);
                     for (int count = 0; count < velocity / 16 + 1; count++) {
-                        level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                        level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
+                                        0.0f, 0.0f, 0.0f, 0.7f,
+                                        10, 0.2f, 0.3f, 0.005f), true,
                                 engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                                engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                                engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
+                                engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
+                                engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
                     }
                 });
                 engineParticleTick = 0;
