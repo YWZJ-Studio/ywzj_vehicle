@@ -1,5 +1,6 @@
 {
     "model": "ywzj_vehicle:decoration/wine_fox_doll",
     "texture": "ywzj_vehicle:textures/decoration/wine_fox_doll.png",
+    "animations": "ywzj_vehicle:decoration/wine_fox_doll.animation",
     "description": "酒狐FUMO"
 }
