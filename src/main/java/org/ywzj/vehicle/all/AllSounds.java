@@ -8,11 +8,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 
-import java.util.HashMap;
-
 public class AllSounds {
 
-    public static final HashMap<String, RegistryObject<SoundEvent>> SOUNDS = new HashMap<>();
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<SoundEvent> VEHICLE_HURT = registerSoundEvent("vehicle_hurt", YwzjVehicle.modLocation("vehicle_hurt"));
@@ -52,9 +49,7 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> LAV150_ENGINE_RUN = registerSoundEvent("lav150_engine_run", YwzjVehicle.modLocation("lav150_engine_run"));
 
     private static RegistryObject<SoundEvent> registerSoundEvent(String name, ResourceLocation soundResourceLocation) {
-        RegistryObject<SoundEvent> soundEventRegistryObject = SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(soundResourceLocation));
-        SOUNDS.put(name, soundEventRegistryObject);
-        return soundEventRegistryObject;
+        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(soundResourceLocation));
     }
 
     public static void register(IEventBus eventBus) {

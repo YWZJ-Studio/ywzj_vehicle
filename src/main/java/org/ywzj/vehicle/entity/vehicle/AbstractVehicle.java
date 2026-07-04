@@ -1188,7 +1188,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                                  float volume, float distance, float pitch,
                                  int fadeTicks, boolean fadeIn, boolean fadeOut, boolean on) {
         Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this),
-                new ServerSoundEvent(this.getId(), soundEvent.getLocation().getPath(), offset,
+                new ServerSoundEvent(this.getId(), soundEvent.getLocation().toString(), offset,
                         volume, distance, pitch,
                         fadeTicks, fadeIn, fadeOut, on));
     }

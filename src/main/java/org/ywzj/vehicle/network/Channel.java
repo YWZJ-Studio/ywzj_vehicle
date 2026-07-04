@@ -124,6 +124,11 @@ public class Channel {
                 ClientRadarAction::onClientMessageReceived,
                 Optional.of(PLAY_TO_SERVER));
 
+        CHANNEL.registerMessage(PacketId.C_VEHICLE_SELECT_PART_WEAPON.value(), ClientVehicleSelectPartWeapon.class,
+                ClientVehicleSelectPartWeapon::encode, ClientVehicleSelectPartWeapon::decode,
+                ClientVehicleSelectPartWeapon::onClientMessageReceived,
+                Optional.of(PLAY_TO_SERVER));
+
         CHANNEL.registerMessage(PacketId.S_SLICED_PACKET.value(), ServerSlicedPacket.class,
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
@@ -154,6 +159,7 @@ enum PacketId {
     S_DECORATION_ACTION(117),
     S_BROADCAST_ENTITIES(118),
     C_RADAR_ACTION(119),
+    C_VEHICLE_SELECT_PART_WEAPON(120),
     S_SLICED_PACKET(200);
 
     private final int id;

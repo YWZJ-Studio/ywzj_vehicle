@@ -3,11 +3,11 @@ package org.ywzj.vehicle.audio;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
-import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 
 import java.util.HashMap;
@@ -33,7 +33,11 @@ public class SoundManager {
         if (localPlayer == null) {
             return;
         }
-        SoundEvent event = AllSounds.SOUNDS.get(message.soundName).get();
+        ResourceLocation soundLocation = ResourceLocation.tryParse(message.soundName);
+        if (soundLocation == null) {
+            return;
+        }
+        SoundEvent event = SoundEvent.createVariableRangeEvent(soundLocation);
         VehicleSound instance = new VehicleSound(event,
                 message.offset,
                 message.volume,

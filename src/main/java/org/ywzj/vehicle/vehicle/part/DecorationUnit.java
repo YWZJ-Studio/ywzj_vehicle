@@ -27,7 +27,6 @@ import org.ywzj.vehicle.client.screen.DecorationSettingsScreen;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.vehicle.pojo.DecorationAction;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
@@ -48,7 +47,6 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
     public Vec3 offsetFromBone;
     public Vec3 offsetFromVehicle;
     public Quaternionf rotation;
-    public boolean setting;
     private AnimationRunner animationRunner;
 
     public DecorationUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
@@ -177,9 +175,6 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             }
             decorationModel.renderToBuffer(pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
             decorationModel.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-            if (setting) {
-                RenderHelper.renderArrow3D(pPoseStack, bufferSource, 0.15f, 0.3f, 0, 255, 0, 255);
-            }
         }
         pPoseStack.popPose();
     }

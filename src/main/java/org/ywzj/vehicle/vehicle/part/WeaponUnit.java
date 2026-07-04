@@ -5,12 +5,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -178,30 +177,34 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public void switchWeapon(boolean secondary, boolean next) {
+        int size = secondary ? secondaryWeapons.size() : weapons.size();
+        if (size < 2) {
+            return;
+        }
+        int index = ((secondary ? currentSecondaryWeaponIndex : currentWeaponIndex) + (next ? 1 : size - 1)) % size;
+        selectWeaponIndex(secondary, index);
+    }
+
+    public void selectWeaponIndex(boolean secondary, int index) {
         if (secondary) {
-            int size = secondaryWeapons.size();
-            if (size < 2) {
-                return;
-            }
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
-            this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
+            setCurrentSecondaryWeaponIndex(index);
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
-            vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
-            if (getOwner() instanceof Player player) {
-                player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentSecondaryWeapon().get().getDisplayName()), true);
+        } else {
+            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
+            setCurrentWeaponIndex(index);
+            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+        }
+        if (weapons.get(currentWeaponIndex) instanceof VehicleWeaponAgent) {
+            SoundEvent reloadSound = getCurrentWeapon().get().getReloadSound();
+            if (reloadSound != null) {
+                vehicle.playVehicleSound(reloadSound, getPivotOffset(), 1f, 2f, 1f, 0, false, false, true);
             }
         } else {
-            int size = weapons.size();
-            if (size < 2) {
-                return;
-            }
-            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
-            this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
-            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
             vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
-            if (getOwner() instanceof Player player) {
-                player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentWeapon().get().getDisplayName()), true);
-            }
+        }
+        if (getOwner() instanceof Player player) {
+            getCurrentWeapon().ifPresent(weapon -> player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true));
         }
     }
 
@@ -519,7 +522,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 switchWeapon(false, true);
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
                 player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true);
-                vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
             }
             return false;
         }
@@ -1035,7 +1037,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public boolean isInteractive() {
-        return parentWeaponUnit != null;
+        return parentWeaponUnit != null && !(parentWeaponUnit.weapons.get(parentWeaponUnit.currentWeaponIndex) instanceof VehicleWeaponAgent);
     }
 
     public boolean isParentWeaponUnitAim() {

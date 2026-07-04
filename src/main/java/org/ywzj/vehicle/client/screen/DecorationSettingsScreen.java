@@ -20,6 +20,7 @@ import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
+import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 
 import java.util.function.Consumer;
@@ -36,7 +37,6 @@ public class DecorationSettingsScreen extends Screen {
     public DecorationSettingsScreen(DecorationUnit decorationUnit) {
         super(Component.literal("Decoration Settings"));
         this.decorationUnit = decorationUnit;
-        decorationUnit.setting = true;
         Vector3f rot = new Vector3f();
         decorationUnit.rotation.getEulerAnglesYXZ(rot);
         this.viewRotX = (float) (180 - Math.toDegrees(rot.x));
@@ -168,17 +168,41 @@ public class DecorationSettingsScreen extends Screen {
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             dispatcher.setRenderShadow(false);
             Lighting.setupForEntityInInventory();
-            RenderSystem.runAsFancy(() ->
-                    dispatcher.render(
-                            vehicle,
-                            0, 0, 0,
-                            0,
-                            1.0F,
-                            poseStack,
-                            guiGraphics.bufferSource(),
-                            15728880
-                    )
-            );
+            RenderSystem.runAsFancy(() -> {
+                dispatcher.render(
+                        vehicle,
+                        0, 0, 0,
+                        0,
+                        1.0F,
+                        poseStack,
+                        guiGraphics.bufferSource(),
+                        15728880
+                );
+                drawDecorationArrow(poseStack, guiGraphics);
+            });
+        }
+        poseStack.popPose();
+    }
+
+    private void drawDecorationArrow(PoseStack poseStack, GuiGraphics guiGraphics) {
+        if (decorationUnit.offsetFromVehicle == null || decorationUnit.rotation == null) {
+            return;
+        }
+        Vector3f rot = new Vector3f();
+        decorationUnit.rotation.getEulerAnglesYXZ(rot);
+        poseStack.pushPose();
+        {
+            AbstractVehicle vehicle = decorationUnit.getVehicle();
+            Vec3 root = vehicle.centerOffset;
+            poseStack.rotateAround(Axis.YP.rotationDegrees(-vehicle.getViewYRot(1.0F)), (float) root.x, (float) root.y, (float) root.z);
+            poseStack.rotateAround(Axis.XP.rotationDegrees(vehicle.getViewXRot(1.0F)), (float) root.x, (float) root.y, (float) root.z);
+            poseStack.rotateAround(Axis.ZP.rotationDegrees(vehicle.getViewZRot(1.0F)), (float) root.x, (float) root.y, (float) root.z);
+            poseStack.translate(decorationUnit.offsetFromVehicle.x, decorationUnit.offsetFromVehicle.y, decorationUnit.offsetFromVehicle.z);
+            poseStack.scale(decorationUnit.scale, decorationUnit.scale, decorationUnit.scale);
+            poseStack.rotateAround(Axis.YP.rotation(rot.y), 0, 0, 0);
+            poseStack.rotateAround(Axis.XP.rotation(rot.x), 0, 0, 0);
+            poseStack.rotateAround(Axis.ZP.rotation(rot.z), 0, 0, 0);
+            RenderHelper.renderArrow3D(poseStack, guiGraphics.bufferSource(), 0.15f, 0.3f, 0, 255, 0, 255);
         }
         poseStack.popPose();
     }
@@ -214,12 +238,6 @@ public class DecorationSettingsScreen extends Screen {
             return true;
         }
         return isHandled;
-    }
-
-    @Override
-    public void onClose() {
-        super.onClose();
-        decorationUnit.setting = false;
     }
 
     @Override

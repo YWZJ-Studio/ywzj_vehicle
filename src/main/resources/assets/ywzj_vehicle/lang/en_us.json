@@ -110,7 +110,9 @@
   "ui.aerobatic_smoke": "Aerobatic Smoke",
 
   "screen.no_description": "No description",
+  "screen.vehicle_weapon_select.weapon_selections": "Weapon Selections",
 
+  "button.vehicle.weapon_selections": "Weapon Selections",
   "button.machine_max.printing": "Print",
   "check_box.figure_box.open": "Open Cover",
   "edit_box.scale": "Scale",

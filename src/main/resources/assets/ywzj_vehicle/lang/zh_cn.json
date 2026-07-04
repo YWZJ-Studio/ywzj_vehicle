@@ -110,7 +110,9 @@
   "ui.aerobatic_smoke": "特技飞行烟雾",
 
   "screen.no_description": "暂无介绍",
+  "screen.vehicle_weapon_select.weapon_selections": "武器选项",
 
+  "button.vehicle.weapon_selections": "武器切换",
   "button.machine_max.printing": "打印",
   "check_box.figure_box.open": "打开玻璃罩",
   "edit_box.scale": "缩放比例",
