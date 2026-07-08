@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
@@ -20,6 +21,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -233,17 +235,21 @@ public class InputHandler {
                 if (freeCamera || LocalVehiclePlayer.instance.playerLerpSteps > 0) {
                     controlUnit.xRot = controlXRotO;
                     controlUnit.yRot = controlYRotO;
-                } else if ((vehicle instanceof RotaryWingVehicle || vehicle instanceof FixedWingVehicle)
-                        && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof RotaryWingVehicle) {
                     controlUnit.xRot = 0;
                     controlUnit.yRotKeep = true;
+                } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof FixedWingVehicle) {
+                    controlUnit.xRot = controlXRotO;
+                    controlUnit.yRot = controlYRotO;
                 } else {
-                    if (vehicle instanceof RotaryWingVehicle) {
-                        controlUnit.xRot = player.getXRot();
-                    } else if (vehicle instanceof FixedWingVehicle) {
-                        controlUnit.xRot = player.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE;
+                    Vec2 controlRot;
+                    if (vehicle instanceof FixedWingVehicle) {
+                        controlRot = VectorUtil.vecToRot(LocalVehiclePlayer.instance.cameraDirection(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE));
+                    } else {
+                        controlRot = VectorUtil.vecToRot(LocalVehiclePlayer.instance.cameraDirection(0));
                     }
-                    controlUnit.yRot = player.getYRot();
+                    controlUnit.xRot = controlRot.x;
+                    controlUnit.yRot = controlRot.y;
                     controlXRotO = controlUnit.xRot;
                     controlYRotO = controlUnit.yRot;
                     playerXRotO = player.getXRot();

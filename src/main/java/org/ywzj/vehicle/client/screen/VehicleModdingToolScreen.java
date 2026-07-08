@@ -79,7 +79,7 @@ public class VehicleModdingToolScreen extends Screen {
         this.searchBox.setTextColor(0xFFFFFF);
         this.addRenderableWidget(searchBox);
         if (vehicle.getPartUnits().stream()
-                .anyMatch(partUnit -> partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive() && !weaponUnit.weapons.isEmpty())) {
+                .anyMatch(partUnit -> partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive() && weaponUnit.weapons.size() > 1)) {
             this.addRenderableWidget(Button.builder(Component.translatable("button.vehicle.weapon_selections"), button ->
                             Minecraft.getInstance().setScreen(new VehicleWeaponSelectScreen(vehicle, this)))
                     .bounds(leftPos + LIST_WIDTH + (vehicle instanceof FixedWingVehicle ? 155 : 10), topPos + 5 - 10, 100, ITEM_HEIGHT)

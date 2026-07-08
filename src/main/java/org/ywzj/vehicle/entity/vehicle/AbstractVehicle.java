@@ -1298,9 +1298,9 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public Quaternionf rotYXZ() {
         Quaternionf q = new Quaternionf();
-        q.rotateY(Math.toRadians(-this.getYRot()))
-                .rotateX(Math.toRadians(this.getXRot()))
-                .rotateZ(Math.toRadians(this.getZRot()));
+        q.rotateY(Math.toRadians(-yRot))
+                .rotateX(Math.toRadians(xRot))
+                .rotateZ(Math.toRadians(zRot));
         return q;
     }
 

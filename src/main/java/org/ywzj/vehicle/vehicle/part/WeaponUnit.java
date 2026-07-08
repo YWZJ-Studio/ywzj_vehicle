@@ -176,16 +176,16 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.xTurnGroup = vehicleCubeGroupCopy.get(data.getRawXTurnGroup());
     }
 
-    public void switchWeapon(boolean secondary, boolean next) {
+    public void switchWeapon(boolean secondary, boolean next, boolean modding) {
         int size = secondary ? secondaryWeapons.size() : weapons.size();
         if (size < 2) {
             return;
         }
         int index = ((secondary ? currentSecondaryWeaponIndex : currentWeaponIndex) + (next ? 1 : size - 1)) % size;
-        selectWeaponIndex(secondary, index);
+        selectWeaponIndex(secondary, index, modding);
     }
 
-    public void selectWeaponIndex(boolean secondary, int index) {
+    public void selectWeaponIndex(boolean secondary, int index, boolean modding) {
         if (secondary) {
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
             setCurrentSecondaryWeaponIndex(index);
@@ -195,7 +195,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             setCurrentWeaponIndex(index);
             this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
         }
-        if (weapons.get(currentWeaponIndex) instanceof VehicleWeaponAgent) {
+        if (modding) {
             SoundEvent reloadSound = getCurrentWeapon().get().getReloadSound();
             if (reloadSound != null) {
                 vehicle.playVehicleSound(reloadSound, getPivotOffset(), 1f, 2f, 1f, 0, false, false, true);
@@ -519,7 +519,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public boolean onInteract(Player player, InteractionHand hand) {
         if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND && isInteractive() && player.isShiftKeyDown()) {
             if (player.getItemInHand(hand).getItem() == AllItems.MODDING_TOOL.get()) {
-                switchWeapon(false, true);
+                switchWeapon(false, true, true);
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
                 player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true);
             }
@@ -643,16 +643,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
-        WeaponUnit weaponUnit = this;
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
-        if (weaponOptional.isEmpty() && parentWeaponUnit != null) {
-            weaponUnit = parentWeaponUnit;
-            weaponOptional = weaponUnit.getCurrentWeapon();
-        }
         if (weaponOptional.isPresent()) {
             if (weaponOptional.get() instanceof VehicleMissile vehicleMissile
                     && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-                weaponUnit.toggleSeeker(false);
+                getRootParentWeaponUnit().toggleSeeker(false);
             }
         }
     }
@@ -1037,7 +1032,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public boolean isInteractive() {
-        return parentWeaponUnit != null && !(parentWeaponUnit.weapons.get(parentWeaponUnit.currentWeaponIndex) instanceof VehicleWeaponAgent);
+        return parentWeaponUnit != null;
     }
 
     public boolean isParentWeaponUnitAim() {

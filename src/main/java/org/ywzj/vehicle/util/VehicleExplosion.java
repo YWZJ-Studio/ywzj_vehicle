@@ -41,7 +41,6 @@ import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
-import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.*;
 
@@ -243,8 +242,15 @@ public class VehicleExplosion {
 
     @OnlyIn(Dist.CLIENT)
     public static void effect(ServerVehicleExplosion serverVehicleExplosion) {
-        Level level = Minecraft.getInstance().level;
-        Player player = LocalVehiclePlayer.instance.getPlayer();
+        if (serverVehicleExplosion == null) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        Level level = minecraft.level;
+        if (level == null) {
+            return;
+        }
+        Player player = minecraft.player;
         double x = serverVehicleExplosion.x();
         double y = serverVehicleExplosion.y();
         double z = serverVehicleExplosion.z();
@@ -260,10 +266,7 @@ public class VehicleExplosion {
             nuclearExplosionEffect(level, player, x, y, z, radius);
         }
 
-        FirstPersonHandler.shakePos = new Vec3(x, y, z);
-        FirstPersonHandler.shakeRadius = 16 * radius;
-        FirstPersonHandler.shakeTime = Math.min(FirstPersonHandler.shakeTime + 8 + radius * 0.1, 10);
-        FirstPersonHandler.shakeAmplitude = 0.1 + 0.1 * radius;
+        FirstPersonHandler.addExplosionShake(new Vec3(x, y, z), radius);
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -13,7 +12,6 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
@@ -156,14 +154,9 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
+            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
                 // 瞄准位置
-                Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-                float upward = LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE ? 0 : LocalVehiclePlayer.CAMERA_UPWARD_ANGLE;
-                Vec3 aimScreenPos = getHitScreenPos(camera.getPosition(),
-                        LocalVehiclePlayer.instance.cameraAimRotX - upward,
-                        LocalVehiclePlayer.instance.cameraAimRotY,
-                        player);
+                Vec3 aimScreenPos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.freeAimPos());
                 if (aimScreenPos.z >= 0) {
                     screenAimXO = screenAimX;
                     screenAimYO = screenAimY;
@@ -175,11 +168,6 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                 }
             }
         }
-    }
-
-    private static @NotNull Vec3 getHitScreenPos(Vec3 start, float xRot, float yRot, Player player) {
-        Vec3 end = start.add(VectorUtil.rotToVec(xRot, yRot).normalize().scale(128));
-        return VectorUtil.worldToScreen(VectorUtil.hitPosition(player, start, end));
     }
 
     private void drawCrosshair(GuiGraphics guiGraphics, int color, PoseStack poseStack, WeaponUnitData.CrosshairStyle crosshairStyle) {

@@ -83,7 +83,7 @@ public class VehicleWeaponSelectScreen extends Screen {
     private void refreshWeaponSelections() {
         weaponSelections.clear();
         for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
-            if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive() && !weaponUnit.weapons.isEmpty()) {
+            if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive() && weaponUnit.weapons.size() > 1) {
                 weaponSelections.add(new WeaponSelectionEntry(partUnit.getIndex(), weaponUnit));
             }
         }

@@ -316,7 +316,7 @@ public class FixedWingVehicle extends AbstractVehicle
             controlUnit.xRot = 0;
             controlUnit.yRot = getYRot();
         }
-        Vec3 aimVec = VectorUtil.rotToVec(controlUnit.xRot, controlUnit.yRotKeep ? getYRot() : controlUnit.yRot);
+        Vec3 aimVec = VectorUtil.rotToVec(controlUnit.xRotKeep ? getXRot() : controlUnit.xRot, controlUnit.yRotKeep ? getYRot() : controlUnit.yRot);
         if (!(controlUnit.up || controlUnit.down)) {
             double xDiff = aimVec.dot(upDirection);
             xRotInput = (float) (Math.signum(-xDiff) * Math.min(1, Math.abs(xDiff) * xRotInputStep * 40));

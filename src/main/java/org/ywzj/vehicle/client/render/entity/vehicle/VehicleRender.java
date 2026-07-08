@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -12,6 +11,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Math;
+import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
@@ -44,9 +45,11 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             // 载具自身旋转
             Vec3 root = vehicle.centerOffset;
-            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-vehicle.getViewYRot(pPartialTick)), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.XP.rotationDegrees(vehicle.getViewXRot(pPartialTick)), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(vehicle.getViewZRot(pPartialTick)), (float) root.x, (float) root.y, (float) root.z);
+            Quaternionf rot = new Quaternionf()
+                    .rotateY(Math.toRadians(-vehicle.yRotO))
+                    .rotateX(Math.toRadians(vehicle.xRotO))
+                    .rotateZ(Math.toRadians(vehicle.zRotO)).slerp(vehicle.rotYXZ(), pPartialTick);
+            pPoseStack.rotateAround(rot, (float) root.x, (float) root.y, (float) root.z);
             // 载具动画
             if (vehicle instanceof IAnimationEntity<?,?> animationEntity) {
                 var instance = animationEntity.getAnimationInstance();

@@ -44,7 +44,7 @@ public record ClientVehicleSelectPartWeapon(int vehicleEntityId, int partUnitInd
                             && weaponUnit.isInteractive()
                             && message.weaponIndex >= 0
                             && message.weaponIndex < weaponUnit.weapons.size()) {
-                        weaponUnit.selectWeaponIndex(false, message.weaponIndex);
+                        weaponUnit.selectWeaponIndex(false, message.weaponIndex, true);
                     }
                 });
             });
