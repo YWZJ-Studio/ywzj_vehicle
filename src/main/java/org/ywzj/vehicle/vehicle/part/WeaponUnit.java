@@ -684,13 +684,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 if (org.joml.Math.abs(yRot - yRotO) > 180) {
                     yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
                 }
+                updateRot();
                 if (vehicle.level().isClientSide()) {
                     setXAimRot(targetRot.x);
                     setYAimRot(targetRot.y);
                     ignoreRemoteRotTick = 1;
+                    weaponHitPos = currentWeaponHitPosition();
                 }
-                updateRot();
-                weaponHitPos = currentWeaponHitPosition();
             }
         }
     }

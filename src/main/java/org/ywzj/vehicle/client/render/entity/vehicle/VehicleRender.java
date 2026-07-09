@@ -48,7 +48,8 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             Quaternionf rot = new Quaternionf()
                     .rotateY(Math.toRadians(-vehicle.yRotO))
                     .rotateX(Math.toRadians(vehicle.xRotO))
-                    .rotateZ(Math.toRadians(vehicle.zRotO)).slerp(vehicle.rotYXZ(), pPartialTick);
+                    .rotateZ(Math.toRadians(vehicle.zRotO))
+                    .slerp(vehicle.rotYXZ(), pPartialTick);
             pPoseStack.rotateAround(rot, (float) root.x, (float) root.y, (float) root.z);
             // 载具动画
             if (vehicle instanceof IAnimationEntity<?,?> animationEntity) {

@@ -5,18 +5,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.custom.part.data.LandingGearUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
 
     private double maxHeight;
-    private double vehicleToHeight;
     private boolean changing;
+    private final List<VehicleCubeOBB.CubePoint> cubePoints = new ArrayList<>();
 
     public LandingGearUnit(int index, AbstractVehicle vehicle, LandingGearUnitData data) {
         super(index, vehicle, data);
@@ -29,7 +33,19 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
                 .mapToDouble(obb -> obb.extents().y * 2)
                 .max()
                 .orElse(1);
-        vehicleToHeight = vehicle.getMainCubeOBB().height;
+        VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
+        mainCubeOBB.height -= maxHeight;
+        mainCubeOBB.y += maxHeight;
+        mainCubeOBB.rebuild();
+        partCubeOBBs.forEach(partCubeOBB -> {
+            Vec3 offset = partCubeOBB.offset().subtract(mainCubeOBB.offset());
+            Vector3f obbLocalPos = new Vector3f((float) offset.x, gearDownPointY(), (float) offset.z);
+            VehicleCubeOBB.CubePoint cubePoint = new VehicleCubeOBB.CubePoint(mainCubeOBB, obbLocalPos, VehicleCubeOBB.CubeFace.BOTTOM);
+            cubePoints.add(cubePoint);
+        });
+        mainCubeOBB.cubePoints().addAll(cubePoints);
+        mainCubeOBB.cubePointsByFace.get(VehicleCubeOBB.CubeFace.BOTTOM).addAll(cubePoints);
+        mainCubeOBB.initBottomPoint();
     }
 
     @Override
@@ -49,34 +65,31 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
     @Override
     public void tick() {
         super.tick();
-        if (changing) {
-            VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
-            double heightStep = maxHeight / 40;
-            if (this.on) {
-                mainCubeOBB.height -= heightStep;
-                mainCubeOBB.y += heightStep;
-                if (mainCubeOBB.height <= vehicleToHeight) {
-                    changing = false;
-                }
-            } else {
-                mainCubeOBB.height += heightStep;
-                mainCubeOBB.y -= heightStep;
-                if (mainCubeOBB.height >= vehicleToHeight) {
-                    changing = false;
-                }
-            }
-            mainCubeOBB.rebuild();
+        if (!changing) {
+            return;
         }
+        float targetY = gearPointY();
+        float step = (float) (maxHeight / 40);
+        boolean reached = true;
+        for (VehicleCubeOBB.CubePoint cubePoint : cubePoints) {
+            Vector3f obbLocalPos = cubePoint.obbLocalPos();
+            if (obbLocalPos.y < targetY) {
+                obbLocalPos.y = Math.min(targetY, obbLocalPos.y + step);
+            } else if (obbLocalPos.y > targetY) {
+                obbLocalPos.y = Math.max(targetY, obbLocalPos.y - step);
+            }
+            if (Math.abs(obbLocalPos.y - targetY) > 1.0E-4f) {
+                reached = false;
+            }
+        }
+        changing = !reached;
     }
 
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         super.deserializeNBT(nbt);
-        if (this.on) {
-            VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
-            mainCubeOBB.height -= maxHeight;
-            mainCubeOBB.y += maxHeight;
-        }
+        setGearPointY(gearPointY());
+        changing = false;
     }
 
     public boolean update(boolean newState) {
@@ -84,7 +97,6 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
             return false;
         }
         if (newState != this.on) {
-            vehicleToHeight = vehicle.getMainCubeOBB().height + (newState ? -1 : 1) * maxHeight;
             changing = true;
         }
         this.on = newState;
@@ -92,12 +104,27 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
     }
 
     public double level() {
-        double progress = Math.abs((vehicleToHeight - vehicle.getMainCubeOBB().height)) / maxHeight;
-        if (on) {
-            return progress;
-        } else {
-            return 1 - progress;
+        if (cubePoints.isEmpty() || maxHeight == 0) {
+            return on ? 0 : 1;
         }
+        double upY = gearUpPointY();
+        return Math.min(1, Math.max(0, (upY - cubePoints.get(0).obbLocalPos().y) / maxHeight));
+    }
+
+    private float gearPointY() {
+        return on ? gearUpPointY() : gearDownPointY();
+    }
+
+    private float gearUpPointY() {
+        return -vehicle.getMainCubeOBB().obb().extents().y;
+    }
+
+    private float gearDownPointY() {
+        return gearUpPointY() - (float) maxHeight - 0.1f;
+    }
+
+    private void setGearPointY(float y) {
+        cubePoints.forEach(cubePoint -> cubePoint.obbLocalPos().y = y);
     }
 
     public double getMaxHeight() {

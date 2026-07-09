@@ -396,25 +396,25 @@ public class PhysicsEngine {
         if (vehicle.getXRot() < -15) {
             return;
         }
-        VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
+        VehicleCubeOBB physicsCube = physicsCube();
         // 自动爬高
         DoubleSummaryStatistics stats = climbPoints.stream()
                 .mapToDouble(p -> p.obbLocalPos().y)
                 .summaryStatistics();
         double yRange = stats.getMax() - stats.getMin();
-        double liftLimit = mainCubeOBB.spaceY * 2;
-        if (yRange >= liftLimit) {
+        double liftLimit = physicsCube.spaceY * 2;
+        if ((yRange >= liftLimit || yRange < physicsCube.spaceY)
+                && !(vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
             return;
         }
-        if (yRange >= mainCubeOBB.spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
-            climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
-            VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-            double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
-            Vec3 offset = mainCubeOBB.offset().subtract(0, mainCubeOBB.height / 2, 0);
-            Vec3 bottomPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
-            double toLift = Mth.clamp(liftHeight - bottomPos.y, 0, vehicle.maxUpStep());
-            vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
-        }
+        climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
+        VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
+        Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
+                        .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.1f, 0))
+                        .add(vehicle.position()), true);
+        double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
+        double toLift = Mth.clamp(liftHeight - bottomPosition.y, 0, vehicle.maxUpStep());
+        vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
     }
 
     private void checkDirection(Vector3f localRotToPoint) {

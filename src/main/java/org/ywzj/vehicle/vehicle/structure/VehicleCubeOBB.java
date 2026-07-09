@@ -8,6 +8,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class VehicleCubeOBB {
     public VehicleCubeGroup group;
     private final List<CubePoint> cubePoints;
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
+    public CubePoint bottomPoint;
     private Vec3 offset = Vec3.ZERO;
     public double x;
     public double y;
@@ -166,11 +168,18 @@ public class VehicleCubeOBB {
                 cubePoint = new CubePoint(this, new Vector3f(x, obb.extents().y + offset, z), CubeFace.TOP);
                 cubePointsByFace.get(CubeFace.TOP).add(cubePoint);
                 cubePoints.add(cubePoint);
-                cubePoint = new CubePoint(this, new Vector3f(x, -obb.extents().y - offset, z), CubeFace.BOTTOM);
+                cubePoint = new CubePoint(this, new Vector3f(x, -obb.extents().y - slack, z), CubeFace.BOTTOM);
                 cubePointsByFace.get(CubeFace.BOTTOM).add(cubePoint);
                 cubePoints.add(cubePoint);
             }
         }
+        initBottomPoint();
+    }
+
+    public void initBottomPoint() {
+        List<CubePoint> bottomPoints = cubePointsByFace.get(CubeFace.BOTTOM);
+        bottomPoints.sort(Comparator.comparingDouble(p -> p.obbLocalPos().y));
+        bottomPoint = bottomPoints.get(0);
     }
 
     public Vec3 offset() {
