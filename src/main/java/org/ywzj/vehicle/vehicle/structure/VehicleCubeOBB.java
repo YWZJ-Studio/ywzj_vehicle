@@ -127,7 +127,7 @@ public class VehicleCubeOBB {
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
         spaceX = (x2 - x1) / Math.ceil(x2 - x1);
-        float y1 = -obb.extents().y - gap;
+        float y1 = -obb.extents().y - offset;
         float y2 = obb.extents().y + gap;
         spaceY = (y2 - y1) / Math.ceil(y2 - y1);
         float z1 = -obb.extents().z - gap;
@@ -168,7 +168,7 @@ public class VehicleCubeOBB {
                 cubePoint = new CubePoint(this, new Vector3f(x, obb.extents().y + offset, z), CubeFace.TOP);
                 cubePointsByFace.get(CubeFace.TOP).add(cubePoint);
                 cubePoints.add(cubePoint);
-                cubePoint = new CubePoint(this, new Vector3f(x, -obb.extents().y - slack, z), CubeFace.BOTTOM);
+                cubePoint = new CubePoint(this, new Vector3f(x, -obb.extents().y - offset, z), CubeFace.BOTTOM);
                 cubePointsByFace.get(CubeFace.BOTTOM).add(cubePoint);
                 cubePoints.add(cubePoint);
             }

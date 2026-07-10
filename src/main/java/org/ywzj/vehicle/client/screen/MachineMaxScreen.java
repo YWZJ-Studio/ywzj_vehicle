@@ -269,7 +269,7 @@ public class MachineMaxScreen extends Screen {
                 poseStack.translate(x + 116, topPos + 20, 0);
                 poseStack.scale(0.95f, 0.95f, 0.95f);
                 if (!StringUtils.isEmpty(vehicleDisplay.getDescription())) {
-                    var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
+                    var lines = font.split(Component.translatable(vehicleDisplay.getDescription()), maxWidth);
                     for (int i = 0; i < lines.size(); i++) {
                         guiGraphics.drawString(font, lines.get(i), 0, i * 9, Color.WHITE);
                     }

@@ -222,7 +222,7 @@ public class VehicleModdingToolScreen extends Screen {
                     int maxWidth = width - x;
                     poseStack.translate(x, (double) height / 2 + 32, 0);
                     poseStack.scale(0.95f, 0.95f, 0.95f);
-                    var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
+                    var lines = font.split(Component.translatable(vehicleDisplay.getDescription()), maxWidth);
                     for (int i = 0; i < lines.size(); i++) {
                         guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
                     }

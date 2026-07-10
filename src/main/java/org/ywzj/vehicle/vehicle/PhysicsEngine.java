@@ -410,7 +410,7 @@ public class PhysicsEngine {
         climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
         VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
         Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
-                        .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.1f, 0))
+                        .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
                         .add(vehicle.position()), true);
         double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
         double toLift = Mth.clamp(liftHeight - bottomPosition.y, 0, vehicle.maxUpStep());

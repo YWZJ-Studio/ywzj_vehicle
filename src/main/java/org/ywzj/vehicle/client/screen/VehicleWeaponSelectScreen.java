@@ -191,7 +191,7 @@ public class VehicleWeaponSelectScreen extends Screen {
         Component description = ClientAssetsManager.INSTANCE.getWeaponDisplay(weapon.getData().getWeaponId())
                 .map(BaseDisplay::getDescription)
                 .filter(text -> !text.isBlank())
-                .map(Component::literal)
+                .map(Component::translatable)
                 .orElse(Component.translatable("screen.no_description"));
         int textX = x + DESCRIPTION_PADDING;
         int textY = y + DESCRIPTION_PADDING;
