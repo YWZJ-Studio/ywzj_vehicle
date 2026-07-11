@@ -178,6 +178,7 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         freeCamera = FREE_CAMERA.isDown();
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (LEAVE_VEHICLE.isDown()) {
@@ -196,7 +197,7 @@ public class InputHandler {
                 }
                 if (System.currentTimeMillis() - waitSwitchSeatTime > 500) {
                     int seatsCount = vehicle.seats.size();
-                    AbstractVehicle.Seat playerSeat = LocalVehiclePlayer.instance.seat;
+                    AbstractVehicle.Seat playerSeat = instance.seat;
                     if (playerSeat != null) {
                         for (int seatIndex = (playerSeat.seatIndex + 1) % seatsCount; seatIndex < seatsCount; seatIndex++) {
                             if (vehicle.seats.get(seatIndex).partUnit.getOwner() == null) {
@@ -212,7 +213,7 @@ public class InputHandler {
                 waitSwitchSeatTime = System.currentTimeMillis();
             }
             if (player.equals(vehicle.controlUnit.getOperator())) {
-                if (LocalVehiclePlayer.instance.lostControl) {
+                if (instance.lostControl) {
                     ControlUnit controlUnit = new ControlUnit(vehicle);
                     controlUnit.xRot = 0;
                     controlUnit.yRot = playerYRotO;
@@ -232,21 +233,21 @@ public class InputHandler {
                 controlUnit.functionalDown = FUNCTIONAL_DOWN.isDown();
                 controlUnit.functionalLeft = FUNCTIONAL_LEFT.isDown();
                 controlUnit.functionalRight = FUNCTIONAL_RIGHT.isDown();
-                if (freeCamera || LocalVehiclePlayer.instance.playerLerpSteps > 0) {
+                if (freeCamera || instance.playerLerpSteps > 0) {
                     controlUnit.xRot = controlXRotO;
                     controlUnit.yRot = controlYRotO;
-                } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof RotaryWingVehicle) {
+                } else if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof RotaryWingVehicle) {
                     controlUnit.xRot = 0;
                     controlUnit.yRotKeep = true;
-                } else if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof FixedWingVehicle) {
+                } else if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof FixedWingVehicle) {
                     controlUnit.xRot = controlXRotO;
                     controlUnit.yRot = controlYRotO;
                 } else {
                     Vec2 controlRot;
                     if (vehicle instanceof FixedWingVehicle) {
-                        controlRot = VectorUtil.vecToRot(LocalVehiclePlayer.instance.cameraDirection(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE));
+                        controlRot = VectorUtil.vecToRot(instance.cameraDirection(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE));
                     } else {
-                        controlRot = VectorUtil.vecToRot(LocalVehiclePlayer.instance.cameraDirection(0));
+                        controlRot = VectorUtil.vecToRot(instance.cameraDirection(0));
                     }
                     controlUnit.xRot = controlRot.x;
                     controlUnit.yRot = controlRot.y;

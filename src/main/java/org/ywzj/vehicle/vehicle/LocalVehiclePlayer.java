@@ -287,7 +287,7 @@ public class LocalVehiclePlayer {
                         toViewType = ViewType.THIRD_PERSON;
                     }
                 }
-                if (toViewType == ViewType.THIRD_PERSON && weaponUnit.getYRotSpeed() > 0) {
+                if (toViewType == ViewType.THIRD_PERSON || toViewType == ViewType.OPERATOR) {
                     thirdPersonCameraAimAt(weaponUnit.aimHitPosition(), vehicle);
                 } else if (toViewType == ViewType.SCOPE) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
