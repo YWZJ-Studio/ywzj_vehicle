@@ -18,9 +18,10 @@ import java.util.Map;
 
 public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
 
-    private double maxHeight;
     private boolean changing;
-    private final List<VehicleCubeOBB.CubePoint> cubePoints = new ArrayList<>();
+    private final List<GearCube> gearCubes = new ArrayList<>();
+
+    private record GearCube(VehicleCubeOBB gearCubeOBB, VehicleCubeOBB.CubePoint gearCubePoint) {}
 
     public LandingGearUnit(int index, AbstractVehicle vehicle, LandingGearUnitData data) {
         super(index, vehicle, data);
@@ -29,7 +30,7 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
     @Override
     public void combineAndInit(@UnmodifiableView Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
         super.combineAndInit(partUnitsView, vehicle);
-        maxHeight = this.getOBBs().stream()
+        double maxHeight = this.getOBBs().stream()
                 .mapToDouble(obb -> obb.extents().y * 2)
                 .max()
                 .orElse(1);
@@ -39,10 +40,11 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
         mainCubeOBB.rebuild();
         partCubeOBBs.forEach(partCubeOBB -> {
             Vec3 offset = partCubeOBB.offset().subtract(mainCubeOBB.offset());
-            Vector3f obbLocalPos = new Vector3f((float) offset.x, gearDownPointY(), (float) offset.z);
+            Vector3f obbLocalPos = new Vector3f((float) offset.x, gearDownPointY(partCubeOBB), (float) offset.z);
             VehicleCubeOBB.CubePoint cubePoint = new VehicleCubeOBB.CubePoint(mainCubeOBB, obbLocalPos, VehicleCubeOBB.CubeFace.BOTTOM);
-            cubePoints.add(cubePoint);
+            gearCubes.add(new GearCube(partCubeOBB, cubePoint));
         });
+        List<VehicleCubeOBB.CubePoint> cubePoints = gearCubes.stream().map(gearCube -> gearCube.gearCubePoint).toList();
         mainCubeOBB.cubePoints().addAll(cubePoints);
         mainCubeOBB.cubePointsByFace.get(VehicleCubeOBB.CubeFace.BOTTOM).addAll(cubePoints);
         mainCubeOBB.initBottomPoint();
@@ -68,11 +70,11 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
         if (!changing) {
             return;
         }
-        float targetY = gearPointY();
-        float step = (float) (maxHeight / 40);
         boolean reached = true;
-        for (VehicleCubeOBB.CubePoint cubePoint : cubePoints) {
-            Vector3f obbLocalPos = cubePoint.obbLocalPos();
+        for (GearCube gearCube : gearCubes) {
+            float targetY = gearPointY(gearCube.gearCubeOBB);
+            float step = gearCube.gearCubeOBB.obb().extents().y / 20;
+            Vector3f obbLocalPos = gearCube.gearCubePoint.obbLocalPos();
             if (obbLocalPos.y < targetY) {
                 obbLocalPos.y = Math.min(targetY, obbLocalPos.y + step);
             } else if (obbLocalPos.y > targetY) {
@@ -88,7 +90,9 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         super.deserializeNBT(nbt);
-        setGearPointY(gearPointY());
+        for (GearCube gearCube : gearCubes) {
+            gearCube.gearCubePoint.obbLocalPos().y = gearPointY(gearCube.gearCubeOBB);
+        }
         changing = false;
     }
 
@@ -104,31 +108,24 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
     }
 
     public double level() {
-        if (cubePoints.isEmpty() || maxHeight == 0) {
+        if (gearCubes.isEmpty()) {
             return on ? 0 : 1;
         }
-        double upY = gearUpPointY();
-        return Math.min(1, Math.max(0, (upY - cubePoints.get(0).obbLocalPos().y) / maxHeight));
+        GearCube gearCube = gearCubes.get(0);
+        double upY = gearUpPointY(gearCube.gearCubeOBB);
+        return Math.min(1, Math.max(0, (upY - gearCube.gearCubePoint.obbLocalPos().y) / gearCube.gearCubeOBB.obb().extents().y * 2));
     }
 
-    private float gearPointY() {
-        return on ? gearUpPointY() : gearDownPointY();
+    private float gearPointY(VehicleCubeOBB cubeOBB) {
+        return on ? gearUpPointY(cubeOBB) : gearDownPointY(cubeOBB);
     }
 
-    private float gearUpPointY() {
-        return -vehicle.getMainCubeOBB().obb().extents().y;
+    private float gearUpPointY(VehicleCubeOBB cubeOBB) {
+        return (float) (cubeOBB.offset().y - vehicle.getMainCubeOBB().offset().y + cubeOBB.obb().extents().y);
     }
 
-    private float gearDownPointY() {
-        return gearUpPointY() - (float) maxHeight - 0.1f;
-    }
-
-    private void setGearPointY(float y) {
-        cubePoints.forEach(cubePoint -> cubePoint.obbLocalPos().y = y);
-    }
-
-    public double getMaxHeight() {
-        return maxHeight;
+    private float gearDownPointY(VehicleCubeOBB cubeOBB) {
+        return gearUpPointY(cubeOBB) - cubeOBB.obb().extents().y * 2 - 0.1f;
     }
 
     public float getDragK() {

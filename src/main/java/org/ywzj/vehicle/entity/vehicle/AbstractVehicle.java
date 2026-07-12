@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -45,8 +44,10 @@ import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.*;
 import org.joml.Math;
+import org.joml.Matrix3f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
@@ -729,7 +730,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected void tickPosAndRot() {
         if (!level().isClientSide()) {
             if (this.xRotO == this.xRot && this.yRotO == this.yRot && !finalRotUpdate) {
-                triggerRotUpdate();
+                triggerPosRotUpdate();
                 finalRotUpdate = true;
             } else {
                 finalRotUpdate = false;
@@ -1412,6 +1413,11 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
+    public Vec3 getLightProbePosition(float pPartialTicks) {
+        return new Vec3(mainCubeOBB.obb().center());
+    }
+
+    @Override
     public Team getTeam() {
         if (!remote) {
             Entity driver = getDriver();
@@ -1422,17 +1428,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         } else {
             return remoteTeam;
         }
-    }
-
-    public Matrix4f getWheelsTransform(float ticks) {
-        Matrix4f transform = new Matrix4f();
-        transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo, getY()), (float) Mth.lerp(ticks, zo, getZ()));
-        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(ticks, yRotO, getYRot())));
-        return transform;
-    }
-
-    public Vector4f transformPosition(Matrix4f transform, float x, float y, float z) {
-        return transform.transform(new Vector4f(x, y, z, 1));
     }
 
     @Override
@@ -1532,8 +1527,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
-    public void triggerRotUpdate() {
-        ClientboundMoveEntityPacket.Rot packet = new ClientboundMoveEntityPacket.Rot(this.getId(), (byte) 0, (byte) 0, this.onGround());
+    public void triggerPosRotUpdate() {
+        ClientboundMoveEntityPacket.PosRot packet = new ClientboundMoveEntityPacket.PosRot(this.getId(), (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, this.onGround());
         ((ServerLevel) this.level()).getChunkSource().broadcast(this, packet);
     }
 

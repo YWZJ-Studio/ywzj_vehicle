@@ -251,7 +251,8 @@ public class FixedWingVehicle extends AbstractVehicle
     protected Vec3 tickMove() {
         // 三个正交轴
         Vector3f[] axes;
-        if (level().getBlockState(blockPosition().below()).isSolid()) {
+        boolean onGround = level().getBlockState(blockPosition().below()).isSolid();
+        if (onGround) {
             axes = getMainCubeOBB().obb().getAxes();
         } else {
             axes = aerodynamicCubeOBB.obb().getAxes();
@@ -371,7 +372,7 @@ public class FixedWingVehicle extends AbstractVehicle
         float thrust = this.thrust * power;
         // 推力加速度
         double a = thrust / mass;
-        Vec3 thrustDirection = forwardDirection;
+        Vec3 thrustDirection = onGround ? new Vec3(forwardDirection.x, 0, forwardDirection.z).normalize() : forwardDirection;
         if (thrustUnit != null) {
             thrustDirection = thrustUnit.worldVec();
         }

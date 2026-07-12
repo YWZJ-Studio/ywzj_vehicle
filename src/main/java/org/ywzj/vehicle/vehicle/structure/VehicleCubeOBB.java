@@ -93,6 +93,8 @@ public class VehicleCubeOBB {
                 .globalTransform(new Vec3(x + width / 2, y + height / 2, z + depth / 2), false)
                 .offset();
         obb.setExtents(new Vector3f((float) (width / 2), (float) (height / 2), (float) (depth / 2)));
+        cubePoints.clear();
+        cubePointsByFace.clear();
         initCubePoints();
     }
 

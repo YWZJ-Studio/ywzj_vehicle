@@ -122,6 +122,9 @@ public class PhysicsEngine {
                     }
                 }
             } else if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP || touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM) {
+                if (velocity.y > -0.1 && touchPoint.obbLocalPos().y < -physicsCube.obb().extents().y - 0.01) {
+                    continue;
+                }
                 Vec3 axesY = new Vec3(axes[1]).normalize();
                 double d = velocity.dot(axesY);
                 if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP) {
@@ -281,7 +284,7 @@ public class PhysicsEngine {
                         shouldRotUpdate = true;
                     }
                     if (shouldRotUpdate && rotTick > 0) {
-                        vehicle.triggerRotUpdate();
+                        vehicle.triggerPosRotUpdate();
                         rotTick -= 1;
                     }
                     if (AllConfigs.common.selfRighting.get()) {
