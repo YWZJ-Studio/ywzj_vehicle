@@ -158,20 +158,22 @@ public class TrackedVehicle extends AbstractVehicle
         }
         entityData.set(TURN_SPEED, vt);
 
-        // 转向幅度应用于车身朝向
-        if (controlUnit.backward) {
-            vt *= -1;
-        }
-        this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
-        if (Math.abs(vt) > 0) {
-            vf *= 0.98f;
-        }
+        if (onGround()) {
+            // 转向幅度应用于车身朝向
+            if (controlUnit.backward) {
+                vt *= -1;
+            }
+            this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
+            if (Math.abs(vt) > 0) {
+                vf *= 0.98f;
+            }
 
-        // 前进速度应用于车身朝向
-        Vec3 direction = getLookAngle();
-        Vec3 motion = direction.normalize().scale(vf);
-        motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
-        this.setDeltaMovement(motion);
+            // 前进速度应用于车身朝向
+            Vec3 direction = getLookAngle();
+            Vec3 motion = direction.normalize().scale(vf);
+            motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
+            this.setDeltaMovement(motion);
+        }
         return new Vec3(0, 0, 0);
     }
 
