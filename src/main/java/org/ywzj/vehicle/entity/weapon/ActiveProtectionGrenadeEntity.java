@@ -2,7 +2,6 @@ package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -16,22 +15,24 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 
 import java.util.Comparator;
 import java.util.List;
 
 public class ActiveProtectionGrenadeEntity extends GrenadeEntity {
 
-    public ActiveProtectionGrenadeEntity(Entity entity, Level level, ResourceLocation weaponId) {
-        super(AllEntities.APS_GRENADE.get(), entity, level, weaponId);
-    }
-
-    public ActiveProtectionGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.APS_GRENADE.get(), level);
+    public ActiveProtectionGrenadeEntity(EntityType<ActiveProtectionGrenadeEntity> type, Level level, VehicleGrenadeWeaponData data) {
+        super(type, level, data.getWeaponId());
+        initGrenade(data);
     }
 
     public ActiveProtectionGrenadeEntity(EntityType<ActiveProtectionGrenadeEntity> type, Level level) {
         super(type, level);
+    }
+
+    public ActiveProtectionGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
+        super(AllEntities.APS_GRENADE.get(), level);
     }
 
     @Override

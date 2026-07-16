@@ -63,6 +63,7 @@
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "gun",
             "is_seat": false,
+            "fire_control_sensor_type": "ccip",
             "crosshair_style": "square",
             "rot_info": {
                 "x_rot_speed": 0,

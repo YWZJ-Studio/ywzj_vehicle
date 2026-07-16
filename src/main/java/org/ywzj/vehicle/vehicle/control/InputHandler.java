@@ -140,10 +140,9 @@ public class InputHandler {
         } else if (action == GLFW.GLFW_RELEASE) {
             if (instance.onVehicle()) {
                 if (matchesKey(FREE_CAMERA, key, scanCode)) {
-                    LocalVehiclePlayer localVehiclePlayer = instance;
-                    localVehiclePlayer.playerLerpXRot = playerXRotO;
-                    localVehiclePlayer.playerLerpYRot = playerYRotO;
-                    localVehiclePlayer.playerLerpSteps = 8;
+                    instance.playerLerpXRot = playerXRotO;
+                    instance.playerLerpYRot = playerYRotO;
+                    instance.playerLerpSteps = 8;
                 }
             }
         }
@@ -244,7 +243,7 @@ public class InputHandler {
                     controlUnit.yRot = controlYRotO;
                 } else {
                     Vec2 controlRot;
-                    if (vehicle instanceof FixedWingVehicle) {
+                    if (vehicle instanceof RotaryWingVehicle || vehicle instanceof FixedWingVehicle) {
                         controlRot = VectorUtil.vecToRot(instance.cameraDirection(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE));
                     } else {
                         controlRot = VectorUtil.vecToRot(instance.cameraDirection(0));

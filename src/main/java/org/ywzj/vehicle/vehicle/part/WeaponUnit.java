@@ -644,10 +644,16 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
+        WeaponUnit rootParentWeaponUnit = getRootParentWeaponUnit();
+        if (weaponOptional.isEmpty()) {
+            if (rootParentWeaponUnit != null) {
+                weaponOptional = rootParentWeaponUnit.getCurrentWeapon();
+            }
+        }
         if (weaponOptional.isPresent()) {
             if (weaponOptional.get() instanceof VehicleMissile vehicleMissile
                     && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-                getRootParentWeaponUnit().toggleSeeker(false);
+                rootParentWeaponUnit.toggleSeeker(false);
             }
         }
     }
@@ -734,6 +740,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
             Vec3 aimHitPosition = null;
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
+                if (vehicleWeapon instanceof VehicleMultiWeapons vehicleMultiWeapons) {
+                    vehicleWeapon = vehicleMultiWeapons.getSelectedWeapon();
+                }
                 if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
                     Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
                     float dragCoefficient = bomb.getData().getDragCoefficient();
