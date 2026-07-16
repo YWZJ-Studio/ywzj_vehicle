@@ -7,6 +7,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
+import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleWeaponAgent;
@@ -90,6 +91,15 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
             }
             return 0f;
         }).orElse(0f);
+    }
+
+    public boolean isPartOn(String id) {
+        return getEntity().getPartUnit(id).map(part -> {
+            if (part instanceof SwitchableUnit<?> switchableUnit) {
+                return switchableUnit.isOn();
+            }
+            return false;
+        }).orElse(false);
     }
 
     public int getWeaponRemainAmmo(String id, int weaponIndex) {

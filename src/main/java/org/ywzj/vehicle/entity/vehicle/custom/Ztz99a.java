@@ -29,7 +29,6 @@ public class Ztz99a extends TrackedVehicle {
      * 仅做示例: 如何硬编码构造载具部件
      */
     @Deprecated
-    @Override
     public void initPartUnits() {
         // 炮塔位
         WeaponUnit turret = new WeaponUnit("turret",

@@ -215,7 +215,7 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        return this.hasContainer() && !this.isRemoved() && this.position().closerThan(pPlayer.position(), 8.0D);
+        return this.hasContainer() && !this.isRemoved() && pPlayer.getVehicle() == this;
     }
 
     @Override

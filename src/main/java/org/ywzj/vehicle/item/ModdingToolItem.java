@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import org.ywzj.vehicle.client.screen.VehicleDisplayToolScreen;
+import org.ywzj.vehicle.client.screen.VehicleModdingToolScreen;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 public class ModdingToolItem extends VehicleItem {
@@ -31,7 +31,7 @@ public class ModdingToolItem extends VehicleItem {
 
     @OnlyIn(Dist.CLIENT)
     public void openScreen(AbstractVehicle vehicle) {
-        Minecraft.getInstance().setScreen(new VehicleDisplayToolScreen(vehicle));
+        Minecraft.getInstance().setScreen(new VehicleModdingToolScreen(vehicle));
     }
 
 }

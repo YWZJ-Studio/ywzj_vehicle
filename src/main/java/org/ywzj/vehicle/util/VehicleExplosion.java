@@ -5,11 +5,13 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -20,7 +22,9 @@ import net.minecraft.world.level.EntityBasedExplosionDamageCalculator;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
@@ -39,18 +43,17 @@ import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
-import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
 import java.util.*;
 
 public class VehicleExplosion {
 
     private static final float BATCHED_DESTRUCTION_RADIUS_THRESHOLD = 32.0F;
-    private static final int MAX_RAYS_PER_TICK = 1024;
-    private static final int RAYS_PER_EXPLOSION_SLICE = 256;
-    private static final int MAX_BLOCKS_PER_TICK = 1024;
-    private static final int BLOCKS_PER_EXPLOSION_SLICE = 256;
-    private static final Map<ServerLevel, Deque<QueuedExplosion>> PENDING_DESTRUCTIONS = new HashMap<>();
+    private static final int MAX_RAYS_PER_TICK = 2048;
+    private static final int RAYS_PER_EXPLOSION_SLICE = 5120;
+    private static final int MAX_BLOCKS_PER_TICK = 2048;
+    private static final int BLOCKS_PER_EXPLOSION_SLICE = 5120;
+    private static final Map<ServerLevel, Deque<LargeExplosion>> PENDING_LARGE = new HashMap<>();
     private final Level level;
     private final Entity source;
     private final double x;
@@ -105,8 +108,8 @@ public class VehicleExplosion {
                     PacketDistributor.sendToPlayer(player, serverVehicleExplosion);
                 }
                 if (destroyBlocks) {
-                    if (shouldBatchBlockDestruction()) {
-                        enqueueExplosionWork(serverLevel, vanillaExplosion);
+                    if (radius > BATCHED_DESTRUCTION_RADIUS_THRESHOLD) {
+                        enqueueLargeExplosion(serverLevel, vanillaExplosion);
                     } else {
                         ObjectArrayList<BlockPos> affectedBlocks = collectAffectedBlocks(vanillaExplosion);
                         if (!affectedBlocks.isEmpty()) {
@@ -120,22 +123,12 @@ public class VehicleExplosion {
         }
     }
 
-    private boolean shouldBatchBlockDestruction() {
-        return destroyBlocks && radius > BATCHED_DESTRUCTION_RADIUS_THRESHOLD && level instanceof ServerLevel;
-    }
-
     private ObjectArrayList<BlockPos> collectAffectedBlocks(Explosion vanillaExplosion) {
-        ExplosionCollectionTask collectionTask = new ExplosionCollectionTask(level, vanillaExplosion, damageCalculator, x, y, z, radius);
-        while (!collectionTask.isFinished()) {
-            collectionTask.processRays(RAYS_PER_EXPLOSION_SLICE);
+        GridCollectionTask task = new GridCollectionTask(level, vanillaExplosion, damageCalculator, x, y, z, radius);
+        while (!task.isFinished()) {
+            task.processRays(256);
         }
-        return collectionTask.finish(level.random);
-    }
-
-    private void enqueueExplosionWork(ServerLevel serverLevel, Explosion vanillaExplosion) {
-        PENDING_DESTRUCTIONS.computeIfAbsent(serverLevel, ignored -> new ArrayDeque<>())
-                .addLast(QueuedExplosion.collecting(serverLevel, vanillaExplosion, source, radius, dropBlocks,
-                        new ExplosionCollectionTask(level, vanillaExplosion, damageCalculator, x, y, z, radius)));
+        return task.finish(level.random);
     }
 
     private void destroyBlocksImmediately(Explosion vanillaExplosion, ObjectArrayList<BlockPos> affectedBlocks) {
@@ -146,33 +139,35 @@ public class VehicleExplosion {
         flushDrops(level, dropsBuffer);
     }
 
+    private void enqueueLargeExplosion(ServerLevel serverLevel, Explosion vanillaExplosion) {
+        PENDING_LARGE.computeIfAbsent(serverLevel, ignored -> new ArrayDeque<>())
+                .addLast(new LargeExplosion(serverLevel, vanillaExplosion, source, radius, dropBlocks,
+                        x, y, z, damageCalculator));
+    }
+
     public static void tick(ServerLevel level) {
-        Deque<QueuedExplosion> queue = PENDING_DESTRUCTIONS.get(level);
+        Deque<LargeExplosion> queue = PENDING_LARGE.get(level);
         if (queue == null || queue.isEmpty()) {
             return;
         }
         int remainingRayBudget = MAX_RAYS_PER_TICK;
         int remainingBlockBudget = MAX_BLOCKS_PER_TICK;
         while (!queue.isEmpty()) {
-            QueuedExplosion queuedExplosion = queue.pollFirst();
-            if (queuedExplosion.isCollecting()) {
-                int processedRays = queuedExplosion.processCollection(Math.min(RAYS_PER_EXPLOSION_SLICE, remainingRayBudget));
-                remainingRayBudget -= processedRays;
-            } else {
-                int processedBlocks = queuedExplosion.processDestruction(Math.min(BLOCKS_PER_EXPLOSION_SLICE, remainingBlockBudget));
-                remainingBlockBudget -= processedBlocks;
+            LargeExplosion le = queue.pollFirst();
+            int rayLimit = Math.min(RAYS_PER_EXPLOSION_SLICE, remainingRayBudget);
+            int blockLimit = Math.min(BLOCKS_PER_EXPLOSION_SLICE, remainingBlockBudget);
+            int processedRays = le.processRaysAndExecute(rayLimit, blockLimit);
+            remainingRayBudget -= processedRays;
+            remainingBlockBudget -= le.getLastBlocksProcessed();
+            if (!le.isFinished()) {
+                queue.addLast(le);
             }
-            if (queuedExplosion.isFinished()) {
-                queuedExplosion.flushDrops();
-            } else {
-                queue.addLast(queuedExplosion);
-            }
-            if ((remainingRayBudget <= 0 && remainingBlockBudget <= 0) || queuedExplosion.madeNoProgressThisTick()) {
+            if ((remainingRayBudget <= 0 && remainingBlockBudget <= 0) || le.madeNoProgressThisTick()) {
                 break;
             }
         }
         if (queue.isEmpty()) {
-            PENDING_DESTRUCTIONS.remove(level);
+            PENDING_LARGE.remove(level);
         }
     }
 
@@ -201,6 +196,96 @@ public class VehicleExplosion {
         } finally {
             level.getProfiler().pop();
         }
+    }
+
+    private static void transformBlockState(Level level, BlockPos pos, BlockState state) {
+        Block block = state.getBlock();
+        if (isFlammable(state)) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+            BlockPos firePos = findAirNeighbor(level, pos);
+            if (firePos == null && level.getBlockState(pos.above()).isAir()) {
+                firePos = pos.above();
+            }
+            if (firePos == null) {
+                firePos = pos;
+            }
+            if (BaseFireBlock.canBePlacedAt(level, firePos, Direction.UP)) {
+                level.setBlock(firePos, BaseFireBlock.getState(level, firePos), 3);
+            }
+            return;
+        }
+        if (block == Blocks.GRASS_BLOCK || block == Blocks.TALL_GRASS
+                || block == Blocks.FERN || block == Blocks.LARGE_FERN) {
+            level.setBlock(pos, Blocks.DEAD_BUSH.defaultBlockState(), 3);
+        } else if (block == Blocks.SAND || block == Blocks.RED_SAND) {
+            if (hasStoneNeighbor(level, pos)) {
+                level.setBlock(pos, Blocks.GLASS.defaultBlockState(), 3);
+            }
+        } else if (isDirtLike(block)) {
+            level.setBlock(pos, Blocks.COARSE_DIRT.defaultBlockState(), 3);
+        } else if (isStoneLike(block)) {
+            level.setBlock(pos, Blocks.DEEPSLATE.defaultBlockState(), 3);
+        }
+    }
+
+    private static BlockPos findAirNeighbor(Level level, BlockPos pos) {
+        for (Direction dir : Direction.values()) {
+            BlockPos neighbor = pos.relative(dir);
+            if (level.getBlockState(neighbor).isAir()) {
+                return neighbor;
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasStoneNeighbor(Level level, BlockPos pos) {
+        for (Direction dir : Direction.values()) {
+            if (isStoneLike(level.getBlockState(pos.relative(dir)).getBlock())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isDirtLike(Block block) {
+        return block == Blocks.DIRT
+                || block == Blocks.GRASS_BLOCK
+                || block == Blocks.PODZOL
+                || block == Blocks.MYCELIUM
+                || block == Blocks.DIRT_PATH
+                || block == Blocks.ROOTED_DIRT
+                || block == Blocks.COARSE_DIRT
+                || block == Blocks.MUD;
+    }
+
+    private static boolean isStoneLike(Block block) {
+        return block == Blocks.STONE
+                || block == Blocks.COBBLESTONE
+                || block == Blocks.STONE_BRICKS
+                || block == Blocks.MOSSY_COBBLESTONE
+                || block == Blocks.MOSSY_STONE_BRICKS
+                || block == Blocks.CRACKED_STONE_BRICKS
+                || block == Blocks.CHISELED_STONE_BRICKS
+                || block == Blocks.STONECUTTER
+                || block == Blocks.SMOOTH_STONE
+                || block == Blocks.DEEPSLATE
+                || block == Blocks.COBBLED_DEEPSLATE;
+    }
+
+    private static boolean isExposedToAir(Level level, BlockPos pos) {
+        for (Direction dir : Direction.values()) {
+            if (level.getBlockState(pos.relative(dir)).isAir()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isFlammable(BlockState state) {
+        return state.is(BlockTags.LOGS)
+                || state.is(BlockTags.LEAVES)
+                || state.is(BlockTags.WOOL)
+                || state.is(BlockTags.PLANKS);
     }
 
     private static void flushDrops(Level level, ObjectArrayList<Pair<ItemStack, BlockPos>> dropsBuffer) {
@@ -235,8 +320,15 @@ public class VehicleExplosion {
 
     @OnlyIn(Dist.CLIENT)
     public static void effect(ServerVehicleExplosion serverVehicleExplosion) {
-        Level level = Minecraft.getInstance().level;
-        Player player = LocalVehiclePlayer.instance.getPlayer();
+        if (serverVehicleExplosion == null) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        Level level = minecraft.level;
+        if (level == null) {
+            return;
+        }
+        Player player = minecraft.player;
         double x = serverVehicleExplosion.x();
         double y = serverVehicleExplosion.y();
         double z = serverVehicleExplosion.z();
@@ -252,10 +344,7 @@ public class VehicleExplosion {
             nuclearExplosionEffect(level, player, x, y, z, radius);
         }
 
-        FirstPersonHandler.shakePos = new Vec3(x, y, z);
-        FirstPersonHandler.shakeRadius = 16 * radius;
-        FirstPersonHandler.shakeTime = Math.min(FirstPersonHandler.shakeTime + 8 + radius * 0.1, 10);
-        FirstPersonHandler.shakeAmplitude = 0.1 + 0.1 * radius;
+        FirstPersonHandler.addExplosionShake(new Vec3(x, y, z), radius);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -263,7 +352,7 @@ public class VehicleExplosion {
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.0f, 1.0f);
         level.addParticle(ParticleTypes.FLASH, true, x, y, z, 0, 0, 0);
         addParticles(level, ParticleTypes.EXPLOSION, x, y, z, 2, 0, 0.02, 0, 0);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 2, 0.1, 0.1, 0.1, 0.02);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y, z, 2, 0.1, 0.1, 0.1, 0.02);
         addParticles(level, ParticleTypes.LARGE_SMOKE, x, y, z, 1, 0.2, 0.2, 0.2, 0.02);
     }
 
@@ -272,13 +361,13 @@ public class VehicleExplosion {
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0f, 0.7f);
         addParticles(level, ParticleTypes.FLASH, x, y + 0.5, z, 8, 2, 2, 2, 0);
         addParticles(level, ParticleTypes.LARGE_SMOKE, x, y + 1, z, 10, 16, 1, 16, 0.01);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 40, 16, 0.05, 16, 0);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 40, 16, 0.05, 16, 0);
         for (int i = 0; i < 40; i++) {
             Vec3 v = randomHemisphereDir(level).scale(0.2);
             level.addParticle(new SmokeCloudOption(1f, 0.35f + level.random.nextFloat() * 0.15f, 0f, 6, 2.0f, -0.01f),
                     true, x, y + 0.5, z, v.x, v.y, v.z);
         }
-        if (level.getBlockState(BlockPos.containing(x, y, z)).is(net.minecraft.world.level.block.Blocks.WATER)) {
+        if (level.getBlockState(BlockPos.containing(x, y, z)).is(Blocks.WATER)) {
             addParticles(level, ParticleTypes.CLOUD, x, y + 3, z, 20, 1, 3, 1, 0.01);
             addParticles(level, ParticleTypes.FALLING_WATER, x, y + 3, z, 50, 1.5, 4, 1.5, 1);
             addParticles(level, ParticleTypes.BUBBLE_COLUMN_UP, x, y, z, 60, 3, 0.5, 3, 0.1);
@@ -289,15 +378,15 @@ public class VehicleExplosion {
     private static void largeExplosionEffect(Level level, Player player, double x, double y, double z, double radius) {
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 8.0f, 0.5f);
         addParticles(level, ParticleTypes.FLASH, x, y + 3, z, 60, radius / 2, 5, radius / 2, 0);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 120, radius, 0.05, radius, 0);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.25, z, 120, radius, 0.05, radius, 0);
         for (int i = 0; i < 200; i++) {
             Vec3 v = randomHemisphereDir(level).scale(1.0 + level.random.nextDouble() * 0.5);
             float heat = level.random.nextFloat();
             level.addParticle(new SmokeCloudOption(1f, 0.25f + heat * 0.25f, 0f, 100, 4.5f + heat * 2, -0.003f),
                     true, x, y + 1, z, v.x * 2, v.y, v.z * 2);
         }
-        spawnExplosionRing(level, x, y, z, 4, 200, 4.0, 0.5, 0.4, 1.0f, 16, 3.0f);
-        if (level.getBlockState(BlockPos.containing(x, y, z)).is(net.minecraft.world.level.block.Blocks.WATER)) {
+        spawnExplosionRing(level, x, y, z, 4, 200, 4.0, 0.5, 0.4, 1.0f, 0.12f, 16, 3.0f, 0.02f, 0f);
+        if (level.getBlockState(BlockPos.containing(x, y, z)).is(Blocks.WATER)) {
             addParticles(level, ParticleTypes.CLOUD, x, y + 3, z, 200, 4, 8, 4, 0.01);
             addParticles(level, ParticleTypes.FALLING_WATER, x, y + 3, z, 500, 5, 10, 5, 1);
             addParticles(level, ParticleTypes.BUBBLE_COLUMN_UP, x, y, z, 350, 8, 1, 8, 0.1);
@@ -316,15 +405,15 @@ public class VehicleExplosion {
 
         level.playSound(player, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 14.0f, 0.35f);
         addParticles(level, ParticleTypes.FLASH, x, y + 4, z, flashCount, cappedRadius * 0.45, 8, cappedRadius * 0.45, 0);
-        addParticles(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.5, z, 180, cappedRadius * 1.2, 0.2, cappedRadius * 1.2, 0.01);
+        addParticlesOnSolid(level, ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.5, z, 180, cappedRadius * 1.2, 0.2, cappedRadius * 1.2, 0.01);
         addParticles(level, ParticleTypes.LARGE_SMOKE, x, y + 1.0, z, 90, cappedRadius * 0.9, 1.2, cappedRadius * 0.9, 0.02);
 
-        spawnExplosionRing(level, x, y, z, 5, 260, 8, 0.8, 0.55, 0.95f, 100, 4.5f);
-        spawnMushroomStem(level, x, y - 16, z, stemHeight, capRadius * 0.22, stemCount);
+        spawnExplosionRing(level, x, y, z, 1, 260, cappedRadius * 0.12, -0.3, 0, 0.08f, 0.02f, 400, 2.0f, 0, -0.004f);
+        spawnMushroomStem(level, x, y - stemHeight * 0.7, z, stemHeight * 1.4f, capRadius * 0.22, stemCount);
         spawnMushroomCap(level, x, y + stemHeight, z, capRadius, capCount);
         spawnMushroomFallout(level, x, y + stemHeight * 0.82, z, capRadius, falloutCount);
 
-        if (level.getBlockState(BlockPos.containing(x, y, z)).is(net.minecraft.world.level.block.Blocks.WATER)) {
+        if (level.getBlockState(BlockPos.containing(x, y, z)).is(Blocks.WATER)) {
             addParticles(level, ParticleTypes.CLOUD, x, y + 8, z, 260, 8, 12, 8, 0.02);
             addParticles(level, ParticleTypes.FALLING_WATER, x, y + 5, z, 700, 8, 16, 8, 1);
             addParticles(level, ParticleTypes.BUBBLE_COLUMN_UP, x, y, z, 500, 10, 2, 10, 0.15);
@@ -334,17 +423,18 @@ public class VehicleExplosion {
     @OnlyIn(Dist.CLIENT)
     private static void spawnExplosionRing(Level level, double x, double y, double z, int layers, int segments,
                                            double baseSpeed, double baseYOffset, double yStep,
-                                           float baseBrightness, int baseLife, float baseSize) {
+                                           float baseBrightness, float endBrightness, int baseLife, float baseSize,
+                                           float vyBase, float gravity) {
         for (int h = 0; h < layers; h++) {
-            double waveSpeed = Math.max(1.2, baseSpeed - h * 0.35);
+            double waveSpeed = Math.max(0.1, baseSpeed - h * 0.35);
             double yOff = baseYOffset + h * yStep;
-            float brightness = Math.max(0.35f, baseBrightness - h * 0.08f);
+            float brightness = Math.max(endBrightness, baseBrightness - h * 0.08f);
             int life = Math.max(8, baseLife - h * 2);
-            float size = Math.max(1.5f, baseSize - h * 0.35f);
+            float size = Math.max(1.0f, baseSize - h * 0.35f);
             for (int i = 0; i < segments; i++) {
                 double angle = 2 * Math.PI * i / segments;
-                level.addParticle(new SmokeCloudOption(brightness, brightness, brightness, 0.12f, 0.12f, 0.12f, life, size, 0f),
-                        true, x, y + yOff, z, Math.cos(angle) * waveSpeed, 0.02, Math.sin(angle) * waveSpeed);
+                level.addParticle(new SmokeCloudOption(brightness, brightness, brightness, endBrightness, endBrightness, endBrightness, life, size, gravity),
+                        true, x, y + yOff, z, Math.cos(angle) * waveSpeed, vyBase, Math.sin(angle) * waveSpeed);
             }
         }
     }
@@ -368,7 +458,7 @@ public class VehicleExplosion {
                             0.08f + heat * 0.12f,
                             0.08f + heat * 0.10f,
                             0.08f + heat * 0.10f,
-                            70 + level.random.nextInt(40),
+                            350 + level.random.nextInt(200),
                             5.0f + heat * 2.8f,
                             -0.004f),
                     true, px, py, pz, vx, vy, vz);
@@ -393,7 +483,7 @@ public class VehicleExplosion {
             float startG = 0.24f + heat * 0.18f;
             float startB = 0.12f + heat * 0.04f;
             float end = 0.06f + heat * 0.08f;
-            level.addParticle(new SmokeCloudOption(startR, startG, startB, end, end, end, 110 + level.random.nextInt(50), 7.0f + heat * 4.5f, -0.002f),
+            level.addParticle(new SmokeCloudOption(startR, startG, startB, end, end, end, 550 + level.random.nextInt(250), 7.0f + heat * 4.5f, -0.002f),
                     true, px, py, pz, vx, vy, vz);
         }
     }
@@ -410,7 +500,7 @@ public class VehicleExplosion {
             double vz = Math.sin(angle) * (0.03 + level.random.nextDouble() * 0.06);
             double vy = -0.02 - level.random.nextDouble() * 0.05;
             float shade = 0.14f + level.random.nextFloat() * 0.16f;
-            level.addParticle(new SmokeCloudOption(shade, shade, shade, 0.02f, 0.02f, 0.02f, 90 + level.random.nextInt(40), 4.5f + level.random.nextFloat() * 2.5f, 0.002f),
+            level.addParticle(new SmokeCloudOption(shade, shade, shade, 0.02f, 0.02f, 0.02f, 450 + level.random.nextInt(200), 4.5f + level.random.nextFloat() * 2.5f, 0.002f),
                     true, px, py, pz, vx, vy, vz);
         }
     }
@@ -436,6 +526,23 @@ public class VehicleExplosion {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
+    private static void addParticlesOnSolid(Level level, net.minecraft.core.particles.ParticleOptions particle,
+                                            double x, double y, double z,
+                                            int count, double xSpread, double ySpread, double zSpread, double speed) {
+        for (int i = 0; i < count; i++) {
+            double ox = (level.random.nextDouble() - 0.5) * 2 * xSpread;
+            double oy = (level.random.nextDouble() - 0.5) * 2 * ySpread;
+            double oz = (level.random.nextDouble() - 0.5) * 2 * zSpread;
+            double px = x + ox;
+            double py = y + oy;
+            double pz = z + oz;
+            if (level.getBlockState(BlockPos.containing(px, py, pz).below()).isSolid()) {
+                level.addParticle(particle, true, px, py, pz, ox * speed, oy * speed + 0.02, oz * speed);
+            }
+        }
+    }
+
     private static void addBlockDrops(ObjectArrayList<Pair<ItemStack, BlockPos>> pDropPositionArray, ItemStack pStack, BlockPos pPos) {
         int i = pDropPositionArray.size();
         for (int j = 0; j < i; ++j) {
@@ -452,7 +559,7 @@ public class VehicleExplosion {
         pDropPositionArray.add(Pair.of(pStack, pPos));
     }
 
-    private static class ExplosionCollectionTask {
+    private static class GridCollectionTask {
 
         private final Level level;
         private final Explosion vanillaExplosion;
@@ -467,8 +574,8 @@ public class VehicleExplosion {
         private final Set<BlockPos> affectedBlocks = new HashSet<>();
         private int currentStep;
 
-        private ExplosionCollectionTask(Level level, Explosion vanillaExplosion, ExplosionDamageCalculator damageCalculator,
-                                        double x, double y, double z, float radius) {
+        private GridCollectionTask(Level level, Explosion vanillaExplosion, ExplosionDamageCalculator damageCalculator,
+                                   double x, double y, double z, float radius) {
             this.level = level;
             this.vanillaExplosion = vanillaExplosion;
             this.damageCalculator = damageCalculator;
@@ -545,66 +652,204 @@ public class VehicleExplosion {
             Util.shuffle(affected, random);
             return affected;
         }
+
     }
 
-    private static class QueuedExplosion {
+    private static class SphericalCollectionTask {
 
-        private final ServerLevel level;
+        private final Level level;
         private final Explosion vanillaExplosion;
-        private final ObjectArrayList<Pair<ItemStack, BlockPos>> dropsBuffer = new ObjectArrayList<>();
-        private final boolean dropBlocks;
+        private final ExplosionDamageCalculator damageCalculator;
+        private final double x, y, z;
         private final float radius;
-        private final Entity source;
-        private ExplosionCollectionTask collectionTask;
-        private ObjectArrayList<BlockPos> remainingBlocks;
-        private int lastProgress;
+        private final float destroyRadius;
+        private final float outerRadius;
+        private final int totalRays;
+        private final Set<BlockPos> dedup = new HashSet<>();
+        private final ObjectArrayList<BlockPos> pendingBlocks = new ObjectArrayList<>();
+        private int currentRay;
+        private int flushCursor;
 
-        private QueuedExplosion(ServerLevel level, Explosion vanillaExplosion, Entity source, float radius, boolean dropBlocks,
-                                ExplosionCollectionTask collectionTask, ObjectArrayList<BlockPos> remainingBlocks) {
+        private SphericalCollectionTask(Level level, Explosion vanillaExplosion, ExplosionDamageCalculator damageCalculator,
+                                        double x, double y, double z, float radius) {
             this.level = level;
             this.vanillaExplosion = vanillaExplosion;
-            this.dropBlocks = dropBlocks;
+            this.damageCalculator = damageCalculator;
+            this.x = x;
+            this.y = y;
+            this.z = z;
             this.radius = radius;
-            this.source = source;
-            this.collectionTask = collectionTask;
-            this.remainingBlocks = remainingBlocks;
+            this.destroyRadius = radius * 0.6F;
+            this.outerRadius = radius * 1.2F;
+            this.totalRays = Math.max(1024, (int) (4.0 * Math.PI * outerRadius * outerRadius * 0.55));
         }
 
-        private static QueuedExplosion collecting(ServerLevel level, Explosion vanillaExplosion, Entity source, float radius,
-                                                  boolean dropBlocks, ExplosionCollectionTask collectionTask) {
-            return new QueuedExplosion(level, vanillaExplosion, source, radius, dropBlocks, collectionTask, null);
-        }
-
-        private boolean isCollecting() {
-            return collectionTask != null;
-        }
-
-        private int processCollection(int limit) {
-            if (collectionTask == null || limit <= 0) {
-                lastProgress = 0;
-                return 0;
-            }
-            int processed = collectionTask.processRays(limit);
-            if (collectionTask.isFinished()) {
-                remainingBlocks = collectionTask.finish(level.random);
-                collectionTask = null;
-            }
-            lastProgress = processed;
-            return processed;
-        }
-
-        private int processDestruction(int limit) {
-            if (remainingBlocks == null || limit <= 0) {
-                lastProgress = 0;
+        private int processRays(int rayLimit) {
+            if (currentRay >= totalRays) {
                 return 0;
             }
             int processed = 0;
-            while (processed < limit && !remainingBlocks.isEmpty()) {
-                BlockPos pos = remainingBlocks.remove(remainingBlocks.size() - 1);
-                processed += destroyOneBlock(level, source, radius, dropBlocks, vanillaExplosion, pos, dropsBuffer);
+            double gr = (1.0 + Math.sqrt(5.0)) / 2.0;
+            while (processed < rayLimit && currentRay < totalRays) {
+                double theta = 2.0 * Math.PI * currentRay / gr;
+                double phi = Math.acos(1.0 - 2.0 * (currentRay + 0.5) / totalRays);
+                double dirX = Math.sin(phi) * Math.cos(theta);
+                double dirY = Math.cos(phi);
+                double dirZ = Math.sin(phi) * Math.sin(theta);
+                processRay(dirX, dirY, dirZ);
+                currentRay++;
+                processed++;
             }
-            lastProgress = processed;
             return processed;
+        }
+
+        private void processRay(double dirX, double dirY, double dirZ) {
+            float energy = this.radius * (3.5F + this.level.random.nextFloat() * 1.5F);
+            double rayX = this.x, rayY = this.y, rayZ = this.z;
+            while (energy > 0) {
+                BlockPos currentPos = BlockPos.containing(rayX, rayY, rayZ);
+                if (!this.level.isInWorldBounds(currentPos)) break;
+                double dist = Math.sqrt((rayX - x) * (rayX - x) + (rayY - y) * (rayY - y) + (rayZ - z) * (rayZ - z));
+                if (dist > radius) break;
+                if (dist > destroyRadius) {
+                    double rem = (radius - dist) / (radius - destroyRadius);
+                    if (rem <= 0) break;
+                    energy *= (float) (rem * rem * rem * rem);
+                }
+                BlockState state = this.level.getBlockState(currentPos);
+                if (!state.isAir() && isFlammable(state) && isExposedToAir(this.level, currentPos)) {
+                    addPending(currentPos);
+                }
+                FluidState fluid = this.level.getFluidState(currentPos);
+                Optional<Float> resistance = this.damageCalculator.getBlockExplosionResistance(vanillaExplosion, this.level, currentPos, state, fluid);
+                if (resistance.isPresent()) {
+                    energy -= (resistance.get() + 0.3F) * 0.2F;
+                }
+                if (energy > 0 && this.damageCalculator.shouldBlockExplode(vanillaExplosion, this.level, currentPos, state, energy)) {
+                    if (!state.isAir() && this.level.getFluidState(currentPos).isEmpty()) {
+                        addPending(currentPos);
+                    }
+                }
+                if (!fluid.isEmpty() && dist <= destroyRadius) {
+                    addPending(currentPos);
+                }
+                rayX += dirX * 0.3F; rayY += dirY * 0.3F; rayZ += dirZ * 0.3F;
+                energy -= 0.15F;
+            }
+            while (true) {
+                double dist = Math.sqrt((rayX - x) * (rayX - x) + (rayY - y) * (rayY - y) + (rayZ - z) * (rayZ - z));
+                if (dist > outerRadius) break;
+                BlockPos currentPos = BlockPos.containing(rayX, rayY, rayZ);
+                if (!this.level.isInWorldBounds(currentPos)) break;
+                BlockState state = this.level.getBlockState(currentPos);
+                if (state.isAir() || !this.level.getFluidState(currentPos).isEmpty()) {
+                    rayX += dirX * 0.3F; rayY += dirY * 0.3F; rayZ += dirZ * 0.3F;
+                    continue;
+                }
+                if (isExposedToAir(this.level, currentPos)
+                        && state.getDestroySpeed(this.level, currentPos) >= 0) {
+                    addPending(currentPos);
+                }
+                rayX += dirX * 0.3F; rayY += dirY * 0.3F; rayZ += dirZ * 0.3F;
+            }
+        }
+
+        private void addPending(BlockPos pos) {
+            BlockPos imm = pos.immutable();
+            if (dedup.add(imm)) {
+                pendingBlocks.add(imm);
+            }
+        }
+
+        private int flushBlocks(int blockLimit, Explosion vanillaExplosion, Entity source, float radius, boolean dropBlocks,
+                                ObjectArrayList<Pair<ItemStack, BlockPos>> dropsBuffer) {
+            int processed = 0;
+            int size = pendingBlocks.size();
+            while (processed < blockLimit && flushCursor < size) {
+                BlockPos pos = pendingBlocks.get(flushCursor);
+                double dx = pos.getX() + 0.5 - x;
+                double dy = pos.getY() + 0.5 - y;
+                double dz = pos.getZ() + 0.5 - z;
+                double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                BlockState state = level.getBlockState(pos);
+                if (state.getDestroySpeed(level, pos) < 0) {
+                    flushCursor++;
+                    continue;
+                }
+                if (dist <= destroyRadius) {
+                    if (!level.getFluidState(pos).isEmpty()) {
+                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                    } else {
+                        destroyOneBlock(level, source, radius, dropBlocks, vanillaExplosion, pos, dropsBuffer);
+                    }
+                } else {
+                    if (!state.isAir() && level.getFluidState(pos).isEmpty()) {
+                        level.levelEvent(2001, pos, Block.getId(state));
+                        transformBlockState(level, pos, state);
+                    }
+                }
+                flushCursor++;
+                processed++;
+            }
+            if (flushCursor >= size && pendingBlocks.size() > size) {
+                ObjectArrayList<BlockPos> keep = new ObjectArrayList<>(pendingBlocks.subList(size, pendingBlocks.size()));
+                pendingBlocks.clear();
+                pendingBlocks.addAll(keep);
+                flushCursor = 0;
+            } else if (flushCursor >= size) {
+                pendingBlocks.clear();
+                flushCursor = 0;
+            }
+            return processed;
+        }
+
+        private boolean isFinished() {
+            return currentRay >= totalRays && pendingBlocks.isEmpty();
+        }
+
+    }
+
+    private static class LargeExplosion {
+
+        private final ServerLevel level;
+        private final Explosion vanillaExplosion;
+        private final Entity source;
+        private final float radius;
+        private final boolean dropBlocks;
+        private final ObjectArrayList<Pair<ItemStack, BlockPos>> dropsBuffer = new ObjectArrayList<>();
+        private SphericalCollectionTask collectionTask;
+        private int lastProgress;
+        private int lastBlocksProcessed;
+
+        private LargeExplosion(ServerLevel level, Explosion vanillaExplosion, Entity source, float radius, boolean dropBlocks,
+                               double x, double y, double z, ExplosionDamageCalculator damageCalculator) {
+            this.level = level;
+            this.vanillaExplosion = vanillaExplosion;
+            this.source = source;
+            this.radius = radius;
+            this.dropBlocks = dropBlocks;
+            this.collectionTask = new SphericalCollectionTask(level, vanillaExplosion, damageCalculator, x, y, z, radius);
+        }
+
+        private int processRaysAndExecute(int rayLimit, int blockLimit) {
+            if (collectionTask == null || (rayLimit <= 0 && blockLimit <= 0)) {
+                lastProgress = 0;
+                lastBlocksProcessed = 0;
+                return 0;
+            }
+            int raysProcessed = collectionTask.processRays(rayLimit);
+            int blocksProcessed = collectionTask.flushBlocks(blockLimit, vanillaExplosion, source, radius, dropBlocks, dropsBuffer);
+            lastBlocksProcessed = blocksProcessed;
+            lastProgress = raysProcessed + blocksProcessed;
+            if (collectionTask.isFinished()) {
+                flushDrops(level, dropsBuffer);
+                collectionTask = null;
+            }
+            return raysProcessed;
+        }
+
+        private int getLastBlocksProcessed() {
+            return lastBlocksProcessed;
         }
 
         private boolean madeNoProgressThisTick() {
@@ -612,11 +857,7 @@ public class VehicleExplosion {
         }
 
         private boolean isFinished() {
-            return collectionTask == null && (remainingBlocks == null || remainingBlocks.isEmpty());
-        }
-
-        private void flushDrops() {
-            VehicleExplosion.flushDrops(level, dropsBuffer);
+            return collectionTask == null;
         }
 
     }

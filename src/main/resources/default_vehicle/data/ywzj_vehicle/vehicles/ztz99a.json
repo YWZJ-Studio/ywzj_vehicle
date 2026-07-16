@@ -30,7 +30,7 @@
             "name": "turret",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "turret",
-            "seat_offset": [-0.5, 1.5, 0.375],
+            "seat_offset": [-0.5, 1.7, 0.375],
             "rot_info": {
                 "x_rot_speed": 1.5,
                 "y_rot_speed": 1.5,
@@ -85,7 +85,7 @@
             "name": "commander_machine_gun",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "commander_machine_gun",
-            "seat_offset": [0.5, 1.5, 0.275],
+            "seat_offset": [0.5, 1.7, 0.275],
             "operator_on_weapon_unit": false,
             "rot_info": {
                 "x_rot_speed": 4.5,
@@ -105,7 +105,7 @@
             "id": "seat",
             "name": "seat",
             "type": "ywzj_vehicle:generic",
-            "seat_offset": [0, 1.5, 1.7]
+            "seat_offset": [0, 1.7, 1]
         }
     ]
 }

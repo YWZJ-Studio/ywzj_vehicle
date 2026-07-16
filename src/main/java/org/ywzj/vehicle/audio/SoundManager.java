@@ -3,26 +3,28 @@ package org.ywzj.vehicle.audio;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import org.ywzj.vehicle.all.AllSounds;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.NetworkEvent;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 public class SoundManager {
 
     private final static ConcurrentHashMap<Integer, HashMap<String, VehicleSound>> SOUND_INSTANCE = new ConcurrentHashMap<>();
 
-    public static void onServerMessageReceived(ServerSoundEvent message, IPayloadContext ctx) {
+    public static void onServerMessageReceived(ServerSoundEvent message, Supplier<NetworkEvent.Context> ctxSupplier) {
         if (message.on) {
             play(message);
         } else {
             stop(message);
         }
+        ctxSupplier.get().setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -31,7 +33,11 @@ public class SoundManager {
         if (localPlayer == null) {
             return;
         }
-        SoundEvent event = AllSounds.SOUNDS.get(message.soundName).get();
+        ResourceLocation soundLocation = ResourceLocation.tryParse(message.soundName);
+        if (soundLocation == null) {
+            return;
+        }
+        SoundEvent event = SoundEvent.createVariableRangeEvent(soundLocation);
         VehicleSound instance = new VehicleSound(event,
                 message.offset,
                 message.volume,

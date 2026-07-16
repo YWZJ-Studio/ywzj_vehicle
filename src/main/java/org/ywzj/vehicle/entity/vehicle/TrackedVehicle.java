@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -22,6 +21,7 @@ import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -101,6 +101,104 @@ public class TrackedVehicle extends AbstractVehicle
     public SoundEvent getTrackRunSound() {
         Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("track_run")).orElse(null);
+    }
+
+    @Override
+    protected Vec3 tickMove() {
+        if (getDriver() == null) {
+            controlUnit.reset();
+        }
+
+        float vt = entityData.get(TURN_SPEED);
+        int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
+        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
+        vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
+        if (!hasPower()) {
+            entityData.set(FORWARD_SPEED, vf);
+            entityData.set(TURN_SPEED, 0f);
+            return new Vec3(0, 0, 0);
+        }
+
+        // 前后控制
+        if (controlUnit.forward || controlUnit.backward) {
+            if (controlUnit.forward) {
+                if (vf < 0) {
+                    vf += brakeAcceleration;
+                } else {
+                    vf += forwardAcceleration;
+                }
+            } else {
+                if (vf > 0) {
+                    vf -= brakeAcceleration;
+                } else {
+                    vf -= backwardAcceleration;
+                }
+            }
+        }
+        if (controlUnit.left || controlUnit.right) {
+            if (vf < 0 && !controlUnit.backward) {
+                vf += brakeAcceleration;
+            }
+        }
+        vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
+        entityData.set(FORWARD_SPEED, vf);
+
+        // 转向控制
+        if (controlUnit.left || controlUnit.right) {
+            vt += controlUnit.right ? turnAcceleration : -turnAcceleration;
+            vt = Mth.clamp(vt, -maxTurn, maxTurn);
+        } else {
+            if (vt < 0) {
+                vt += turnAcceleration;
+                vt = Math.min(vt, 0);
+            } else if (vt > 0) {
+                vt -= turnAcceleration;
+                vt = Math.max(vt, 0);
+            }
+        }
+        entityData.set(TURN_SPEED, vt);
+
+        if (onGround()) {
+            // 转向幅度应用于车身朝向
+            if (controlUnit.backward) {
+                vt *= -1;
+            }
+            this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
+            if (Math.abs(vt) > 0) {
+                vf *= 0.98f;
+            }
+
+            // 前进速度应用于车身朝向
+            Vec3 direction = getLookAngle();
+            Vec3 motion = direction.normalize().scale(vf);
+            motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
+            this.setDeltaMovement(motion);
+        }
+        return new Vec3(0, 0, 0);
+    }
+
+    @Override
+    protected void tickEngineSpeed() {
+        super.tickEngineSpeed();
+        float engineSpeed = getEngineSpeed();
+        if (controlUnit.forward || controlUnit.backward || controlUnit.left || controlUnit.right) {
+            if (hasPower()) {
+                Vec3 velocity = getDeltaMovement();
+                Vec3 vehicleDirection = getLookAngle();
+                float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
+                if ((angle < 90 && controlUnit.forward) || (angle > 90 && controlUnit.backward)) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 1, 0, 100));
+                } else if (controlUnit.left || controlUnit.right) {
+                    setEngineSpeed(Mth.clamp(engineSpeed + 2, 0, 100));
+                } else {
+                    setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+                }
+            }
+        } else {
+            if (engineSpeed > 60) {
+                setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
+            }
+        }
     }
 
     @Override
@@ -193,113 +291,21 @@ public class TrackedVehicle extends AbstractVehicle
             if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
                 energyInfo.engineParticleOffsets.forEach(offset -> {
                     Vec3 engineSmokePos = this.position().add(offset);
-                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
+                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.2);
                     engineSmokePos = relativeRotPos(engineSmokePos, false);
                     for (int count = 0; count < velocity / 16 + 1; count++) {
-                        level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                        level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
+                                        0.0f, 0.0f, 0.0f, 0.7f,
+                                        20, 0.3f, 0.4f, 0.005f), true,
                                 engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                                engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                                engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
+                                engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
+                                engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
                     }
                 });
                 engineParticleTick = 0;
             } else {
                 engineParticleTick += 1;
-            }
-        }
-    }
-
-    @Override
-    protected Vec3 tickMove() {
-        if (getDriver() == null) {
-            controlUnit.reset();
-        }
-
-        float vt = entityData.get(TURN_SPEED);
-        int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
-        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
-        vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
-        if (!hasPower()) {
-            entityData.set(FORWARD_SPEED, vf);
-            entityData.set(TURN_SPEED, 0f);
-            return new Vec3(0, 0, 0);
-        }
-
-        // 前后控制
-        if (controlUnit.forward || controlUnit.backward) {
-            if (controlUnit.forward) {
-                if (vf < 0) {
-                    vf += brakeAcceleration;
-                } else {
-                    vf += forwardAcceleration;
-                }
-            } else {
-                if (vf > 0) {
-                    vf -= brakeAcceleration;
-                } else {
-                    vf -= backwardAcceleration;
-                }
-            }
-        }
-        if (controlUnit.left || controlUnit.right) {
-            if (vf < 0 && !controlUnit.backward) {
-                vf += brakeAcceleration;
-            }
-        }
-        vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
-        entityData.set(FORWARD_SPEED, vf);
-
-        // 转向控制
-        if (controlUnit.left || controlUnit.right) {
-            vt += controlUnit.right ? turnAcceleration : -turnAcceleration;
-            vt = Mth.clamp(vt, -maxTurn, maxTurn);
-        } else {
-            if (vt < 0) {
-                vt += turnAcceleration;
-                vt = Math.min(vt, 0);
-            } else if (vt > 0) {
-                vt -= turnAcceleration;
-                vt = Math.max(vt, 0);
-            }
-        }
-        entityData.set(TURN_SPEED, vt);
-
-        // 转向幅度应用于车身朝向
-        if (controlUnit.backward) {
-            vt *= -1;
-        }
-        this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
-        if (Math.abs(vt) > 0) {
-            vf *= 0.98f;
-        }
-
-        // 前进速度应用于车身朝向
-        Vec3 direction = getLookAngle();
-        Vec3 motion = direction.normalize().scale(vf);
-        motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
-        this.setDeltaMovement(motion);
-        return new Vec3(0, 0, 0);
-    }
-
-    @Override
-    protected void tickEngineSpeed() {
-        super.tickEngineSpeed();
-        float engineSpeed = getEngineSpeed();
-        if (controlUnit.forward || controlUnit.backward || controlUnit.left || controlUnit.right) {
-            if (hasPower()) {
-                Vec3 velocity = getDeltaMovement();
-                Vec3 vehicleDirection = getLookAngle();
-                float angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));
-                if ((angle < 90 && controlUnit.forward) || (angle > 90 && controlUnit.backward)) {
-                    setEngineSpeed(Mth.clamp(engineSpeed + 1, 0, 100));
-                } else if (controlUnit.left || controlUnit.right) {
-                    setEngineSpeed(Mth.clamp(engineSpeed + 2, 0, 100));
-                } else {
-                    setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
-                }
-            }
-        } else {
-            if (engineSpeed > 60) {
-                setEngineSpeed(Mth.clamp(engineSpeed - 2, 0, 100));
             }
         }
     }

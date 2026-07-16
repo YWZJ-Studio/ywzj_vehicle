@@ -2,7 +2,6 @@ package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -29,6 +28,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
@@ -181,55 +181,6 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    protected void tickSound() {
-        super.tickSound();
-        float engineSpeed = getPower();
-        if (engineSpeed == 0) {
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.stop();
-                engineStartSoundInstance = null;
-            }
-            return;
-        }
-        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
-            SoundEvent engineStopSound = getEngineStopSound();
-            if (engineStopSound != null) {
-                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
-                engineStopSoundInstance.play();
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.setVolume(engineSpeed / 100);
-            }
-        }
-        if (engineSpeed > 0) {
-            if (engineSpeed > 50 && engineStopSoundInstance != null) {
-                engineStopSoundInstance = null;
-            }
-            if (engineSpeed < 20 && engineStartSoundInstance == null) {
-                SoundEvent engineStartSound = getEngineStartSound();
-                if (engineStartSound != null) {
-                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
-                    engineStartSoundInstance.play();
-                }
-            }
-            if (engineSpeed > 50 && engineRunSoundInstance == null) {
-                SoundEvent engineRunSound = getEngineRunSound();
-                if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
-                    engineRunSoundInstance.play();
-                }
-            }
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
-            }
-        }
-    }
-
-    @Override
     protected Vec3 tickMove() {
         // 总距控制
         float collectivePitch = getCollectivePitch();
@@ -379,6 +330,55 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
+    protected void tickSound() {
+        super.tickSound();
+        float engineSpeed = getPower();
+        if (engineSpeed == 0) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.stop();
+                engineStartSoundInstance = null;
+            }
+            return;
+        }
+        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
+            SoundEvent engineStopSound = getEngineStopSound();
+            if (engineStopSound != null) {
+                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
+                engineStopSoundInstance.play();
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.setVolume(engineSpeed / 100);
+            }
+        }
+        if (engineSpeed > 0) {
+            if (engineSpeed > 50 && engineStopSoundInstance != null) {
+                engineStopSoundInstance = null;
+            }
+            if (engineSpeed < 20 && engineStartSoundInstance == null) {
+                SoundEvent engineStartSound = getEngineStartSound();
+                if (engineStartSound != null) {
+                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
+                    engineStartSoundInstance.play();
+                }
+            }
+            if (engineSpeed > 50 && engineRunSoundInstance == null) {
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
+            }
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
+            }
+        }
+    }
+
+    @Override
     protected void tickParticle() {
         super.tickParticle();
         // 飞行扬尘效果
@@ -419,9 +419,13 @@ public class RotaryWingVehicle extends AbstractVehicle
                     Vec3 engineSmokePos = this.position().add(offset);
                     engineSmokePos = relativeRotPos(engineSmokePos, false);
                     Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.3);
-                    level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                    level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
+                                    0.0f, 0.0f, 0.0f, 0.7f,
+                                    20, 0.3f, 0.4f, 0.005f), true,
                             engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                            engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                            engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
+                            engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
+                            engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
                 });
                 engineParticleTick = 0;
             } else {

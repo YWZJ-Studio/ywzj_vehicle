@@ -29,6 +29,7 @@
         "impact_multiplier": 3
     },
     "with_warning_receiver": true,
+    "center_offset": [0, 1.65, 0],
     "structure_model": "ywzj_vehicle:vehicle/ah_6",
     "parts": [
         {
@@ -62,6 +63,7 @@
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "gun",
             "is_seat": false,
+            "fire_control_sensor_type": "ccip",
             "crosshair_style": "square",
             "rot_info": {
                 "x_rot_speed": 0,

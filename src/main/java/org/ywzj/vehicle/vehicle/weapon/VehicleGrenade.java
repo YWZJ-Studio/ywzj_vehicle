@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.vehicle.weapon;
 
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.ActiveProtectionGrenadeEntity;
@@ -31,40 +31,25 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
         var vehicle = getVehicle();
         var data = this.getData();
 
-        Entity shooterEntity = shooter == null ? vehicle : shooter;
         for (AimContext aimContext : aimContexts) {
+            LivingEntity owner = this.getWeaponUnit().getOwner();
             if ("smoke".equals(data.getGrenade())) {
-                SmokeGrenadeEntity smokeGrenadeEntity = new SmokeGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
-                smokeGrenadeEntity.setBaseData(data);
-                smokeGrenadeEntity.setPos(aimContext.from);
-                smokeGrenadeEntity.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
-                smokeGrenadeEntity.setXRot(aimContext.direction.x);
-                smokeGrenadeEntity.setYRot(aimContext.direction.y);
-                vehicle.level().addFreshEntity(smokeGrenadeEntity);
-                vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
+                SmokeGrenadeEntity entity = new SmokeGrenadeEntity(AllEntities.SMOKE_GRENADE.get(), vehicle.level(), data);
+                entity.shoot(vehicle, this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y,
+                        data.getVelocity(), data.getInaccuracy(), owner);
+                vehicle.level().addFreshEntity(entity);
+            } else if ("frag".equals(data.getGrenade())) {
+                FragGrenadeEntity entity = new FragGrenadeEntity(AllEntities.FRAG_GRENADE.get(), vehicle.level(), data);
+                entity.shoot(vehicle, this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y,
+                        data.getVelocity(), data.getInaccuracy(), owner);
+                vehicle.level().addFreshEntity(entity);
+            } else if ("aps".equals(data.getGrenade())) {
+                ActiveProtectionGrenadeEntity entity = new ActiveProtectionGrenadeEntity(AllEntities.APS_GRENADE.get(), vehicle.level(), data);
+                entity.shoot(vehicle, this.getDisplayName(), aimContext.from, aimContext.direction.x, aimContext.direction.y,
+                        data.getVelocity(), data.getInaccuracy(), owner);
+                vehicle.level().addFreshEntity(entity);
             }
-            if ("aps".equals(data.getGrenade())) {
-                ActiveProtectionGrenadeEntity activeProtectionGrenade = new ActiveProtectionGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
-                activeProtectionGrenade.setBaseData(data);
-                activeProtectionGrenade.setPos(aimContext.from);
-                activeProtectionGrenade.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
-                activeProtectionGrenade.setXRot(aimContext.direction.x);
-                activeProtectionGrenade.setYRot(aimContext.direction.y);
-                vehicle.level().addFreshEntity(activeProtectionGrenade);
-                vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
-            }
-            if ("frag".equals(data.getGrenade())) {
-                FragGrenadeEntity fragGrenade = new FragGrenadeEntity(shooterEntity, shooterEntity.level(), data.getWeaponId());
-                fragGrenade.setBaseData(data);
-                fragGrenade.setExplosionData(data.getExplosion());
-                fragGrenade.vehicle = vehicle;
-                fragGrenade.setPos(aimContext.from);
-                fragGrenade.shootFromRotation(vehicle, aimContext.direction.x, aimContext.direction.y, 0, 1f, data.getInaccuracy());
-                fragGrenade.setXRot(aimContext.direction.x);
-                fragGrenade.setYRot(aimContext.direction.y);
-                vehicle.level().addFreshEntity(fragGrenade);
-                vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
-            }
+            vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
         }
         return true;
     }

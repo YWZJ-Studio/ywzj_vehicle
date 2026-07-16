@@ -1,11 +1,14 @@
 package org.ywzj.vehicle.entity.vehicle.custom;
 
+import com.mojang.math.Axis;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
@@ -88,6 +91,17 @@ public class Motorcycle extends WheeledVehicle {
                 dy,
                 this.getDeltaMovement().z * dx + this.random.nextDouble() * 0.1
         );
+    }
+
+    public Matrix4f getWheelsTransform(float ticks) {
+        Matrix4f transform = new Matrix4f();
+        transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo, getY()), (float) Mth.lerp(ticks, zo, getZ()));
+        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(ticks, yRotO, getYRot())));
+        return transform;
+    }
+
+    public Vector4f transformPosition(Matrix4f transform, float x, float y, float z) {
+        return transform.transform(new Vector4f(x, y, z, 1));
     }
 
     @Override

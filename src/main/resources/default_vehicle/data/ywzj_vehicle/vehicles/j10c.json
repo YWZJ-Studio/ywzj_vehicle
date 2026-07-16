@@ -13,7 +13,6 @@
         "x_rot_input_drag_k": 1.2,
         "y_rot_input_drag_k": 0.25,
         "z_rot_input_drag_k": 0.125,
-        "landing_gear_drag_k": 0.5,
         "turn_rate_by_speed": 0.4,
         "x_turn_rate": 2.5,
         "y_turn_rate": 3.0,
@@ -23,6 +22,7 @@
         "aerobatic_smoke_offsets": [[0, 2.673, -9.339]]
     },
     "landing_gear_part_id": "landing_gear",
+    "airbrake_part_id": "airbrake",
     "max_health": 500,
     "view_info": {
         "third_person_center_offset": [0, 6, 0],
@@ -210,7 +210,16 @@
             "name": "landing_gear",
             "type": "ywzj_vehicle:landing_gear",
             "structure_bone": "landing_gear",
-            "is_seat": false
+            "is_seat": false,
+            "drag_k": 0.5
+        },
+        {
+            "id": "airbrake",
+            "name": "airbrake",
+            "type": "ywzj_vehicle:airbrake",
+            "structure_bone": "airbrake",
+            "is_seat": false,
+            "drag_k": 2
         }
     ]
 }

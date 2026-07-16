@@ -3,7 +3,7 @@
     "grenade": "frag",
     "name": "Frag",
     "damage": 10,
-    "velocity": 15,
+    "velocity": 1,
     "shoot_interval": 400,
     "max_capacity": 8,
     "reload": {
@@ -11,7 +11,6 @@
         "ammo": "ywzj_vehicle:ammo_grenade"
     },
     "independent": true,
-    "life_time": 200,
     "gravity": 0.07,
     "should_bounce": false,
     "broke_on_ground": true,

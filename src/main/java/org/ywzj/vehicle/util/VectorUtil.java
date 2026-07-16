@@ -50,18 +50,14 @@ public class VectorUtil {
         var worldPosRel = new Vector4f(camera.getPosition().reverse().add(pos).toVector3f(), 1f);
         worldPosRel.mul(modelViewMatrix);
         worldPosRel.mul(projectionMatrix);
-
         var depth = worldPosRel.w;
-
         if (depth != 0) {
             worldPosRel.div(depth);
         }
-
         return new Vec3(
                 window.getGuiScaledWidth() * (0.5f + worldPosRel.x * 0.5f),
                 window.getGuiScaledHeight() * (0.5f - worldPosRel.y * 0.5f),
-                depth
-        );
+                depth);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

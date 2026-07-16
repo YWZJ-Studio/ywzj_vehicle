@@ -8,6 +8,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class VehicleCubeOBB {
     public VehicleCubeGroup group;
     private final List<CubePoint> cubePoints;
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
+    public CubePoint bottomPoint;
     private Vec3 offset = Vec3.ZERO;
     public double x;
     public double y;
@@ -91,6 +93,8 @@ public class VehicleCubeOBB {
                 .globalTransform(new Vec3(x + width / 2, y + height / 2, z + depth / 2), false)
                 .offset();
         obb.setExtents(new Vector3f((float) (width / 2), (float) (height / 2), (float) (depth / 2)));
+        cubePoints.clear();
+        cubePointsByFace.clear();
         initCubePoints();
     }
 
@@ -125,7 +129,7 @@ public class VehicleCubeOBB {
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
         spaceX = (x2 - x1) / Math.ceil(x2 - x1);
-        float y1 = -obb.extents().y - gap;
+        float y1 = -obb.extents().y - offset;
         float y2 = obb.extents().y + gap;
         spaceY = (y2 - y1) / Math.ceil(y2 - y1);
         float z1 = -obb.extents().z - gap;
@@ -171,6 +175,13 @@ public class VehicleCubeOBB {
                 cubePoints.add(cubePoint);
             }
         }
+        initBottomPoint();
+    }
+
+    public void initBottomPoint() {
+        List<CubePoint> bottomPoints = cubePointsByFace.get(CubeFace.BOTTOM);
+        bottomPoints.sort(Comparator.comparingDouble(p -> p.obbLocalPos().y));
+        bottomPoint = bottomPoints.get(0);
     }
 
     public Vec3 offset() {

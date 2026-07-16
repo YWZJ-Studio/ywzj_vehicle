@@ -21,7 +21,9 @@ public class AllPartUnitType {
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<DoorUnit, DoorUnitData>> DOOR = register(PartUnitTypes.DOOR);
 
-    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<LandingGearUnit, PartUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<LandingGearUnit, LandingGearUnitData>> LANDING_GEAR = register(PartUnitTypes.LANDING_GEAR);
+
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<AirbrakeUnit, AirbrakeUnitData>> AIRBRAKE = register(PartUnitTypes.AIRBRAKE);
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<WeaponBayUnit, PartUnitData>> WEAPON_BAY = register(PartUnitTypes.WEAPON_BAY);
 

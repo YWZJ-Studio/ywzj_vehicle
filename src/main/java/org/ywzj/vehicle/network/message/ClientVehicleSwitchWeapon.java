@@ -48,8 +48,8 @@ public record ClientVehicleSwitchWeapon(
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 switch (msg.switchType) {
                     case MULTI -> weaponUnit.cycleMultiWeapon(msg.next);
-                    case PRIMARY -> weaponUnit.switchWeapon(false, msg.next);
-                    case SECONDARY -> weaponUnit.switchWeapon(true, msg.next);
+                    case PRIMARY -> weaponUnit.switchWeapon(false, msg.next, false);
+                    case SECONDARY -> weaponUnit.switchWeapon(true, msg.next, false);
                 }
             }
         }

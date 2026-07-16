@@ -7,6 +7,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -24,12 +25,13 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class VehicleDisplayToolScreen extends Screen {
+public class VehicleModdingToolScreen extends Screen {
 
     private static final int ITEM_HEIGHT = 20;
     private static final int LIST_WIDTH = 150;
@@ -51,7 +53,7 @@ public class VehicleDisplayToolScreen extends Screen {
     private float viewRotX;
     private float viewRotY;
 
-    public VehicleDisplayToolScreen(AbstractVehicle vehicle) {
+    public VehicleModdingToolScreen(AbstractVehicle vehicle) {
         super(Component.literal("Vehicle Display Tool"));
         this.vehicle = vehicle;
         this.viewRotX = 180 - vehicle.getXRot();
@@ -76,10 +78,17 @@ public class VehicleDisplayToolScreen extends Screen {
         this.searchBox.active = true;
         this.searchBox.setTextColor(0xFFFFFF);
         this.addRenderableWidget(searchBox);
+        if (vehicle.getPartUnits().stream()
+                .anyMatch(partUnit -> partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive() && weaponUnit.weapons.size() > 1)) {
+            this.addRenderableWidget(Button.builder(Component.translatable("button.vehicle.weapon_selections"), button ->
+                            Minecraft.getInstance().setScreen(new VehicleWeaponSelectScreen(vehicle, this)))
+                    .bounds(leftPos + LIST_WIDTH + (vehicle instanceof FixedWingVehicle ? 155 : 10), topPos + 5 - 10, 100, ITEM_HEIGHT)
+                    .build());
+        }
         if (vehicle instanceof FixedWingVehicle) {
             AllConfigs.CommonConfig common = AllConfigs.common;
             int sliderX = leftPos + LIST_WIDTH + 10;
-            int sliderY = 20;
+            int sliderY = topPos - 10;
             int sliderWidth = 105;
             int sliderHeight = 10;
             this.smokeRSlider = new SmokeSlider(sliderX, sliderY, sliderWidth, sliderHeight, "R ", common.aerobaticSmokeR.get());
@@ -98,13 +107,13 @@ public class VehicleDisplayToolScreen extends Screen {
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawVehiclePreview(guiGraphics);
         if (vehicle instanceof FixedWingVehicle) {
-            guiGraphics.drawString(font, Component.translatable("ui.aerobatic_smoke"), leftPos + LIST_WIDTH + 10, 8, 0xFFAAAAAA);
+            guiGraphics.drawString(font, Component.translatable("ui.aerobatic_smoke"), leftPos + LIST_WIDTH + 10, topPos - 12 - 10, 0xFFAAAAAA);
             AllConfigs.CommonConfig common = AllConfigs.common;
             common.aerobaticSmokeR.set(smokeRSlider.getIntValue());
             common.aerobaticSmokeG.set(smokeGSlider.getIntValue());
             common.aerobaticSmokeB.set(smokeBSlider.getIntValue());
             int dotX = leftPos + LIST_WIDTH + 120;
-            int dotY = 24;
+            int dotY = topPos + 4 - 10;
             int dotSize = 24;
             int color = 0xFF000000
                     | (common.aerobaticSmokeR.get() << 16)
@@ -204,7 +213,7 @@ public class VehicleDisplayToolScreen extends Screen {
                     int maxWidth = width - x;
                     poseStack.translate(x, (double) height / 2 + 32, 0);
                     poseStack.scale(0.95f, 0.95f, 0.95f);
-                    var lines = font.split(Component.literal(vehicleDisplay.getDescription()), maxWidth);
+                    var lines = font.split(Component.translatable(vehicleDisplay.getDescription()), maxWidth);
                     for (int i = 0; i < lines.size(); i++) {
                         guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
                     }

@@ -287,7 +287,7 @@ public class LocalVehiclePlayer {
                         toViewType = ViewType.THIRD_PERSON;
                     }
                 }
-                if (toViewType == ViewType.THIRD_PERSON && weaponUnit.getYRotSpeed() > 0) {
+                if (toViewType == ViewType.THIRD_PERSON || toViewType == ViewType.OPERATOR) {
                     thirdPersonCameraAimAt(weaponUnit.aimHitPosition(), vehicle);
                 } else if (toViewType == ViewType.SCOPE) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
@@ -335,9 +335,8 @@ public class LocalVehiclePlayer {
             playerLerpSteps = 0;
         }
         if (viewType == ViewType.THIRD_PERSON) {
-            if (player.getXRot() > 80 && pXRot > 0) {
-                pXRot = 0;
-            } else if (player.getXRot() < -80 && pXRot < 0) {
+            if ((player.getXRot() > 85 && pXRot > 0) || (player.getXRot() < -85 && pXRot < 0)) {
+                pYRot += Math.abs(pXRot) * (pYRot > 0 ? 1 : -1);
                 pXRot = 0;
             }
         } else if (viewType == ViewType.OPERATOR) {
@@ -402,8 +401,8 @@ public class LocalVehiclePlayer {
         float fY = (float) (pYRot * 0.15F);
         Quaternionf rot;
         if (viewType == ViewType.OPERATOR) {
-            playerLocalXRot = Mth.wrapDegrees(playerLocalXRot + fX);
             playerLocalYRot = Mth.wrapDegrees(playerLocalYRot + fY);
+            playerLocalXRot = Mth.wrapDegrees(playerLocalXRot + fX);
             rot = vehicle.rotYXZ();
             rot.rotateY((float) Math.toRadians(-playerLocalYRot));
             rot.rotateX((float) Math.toRadians(playerLocalXRot));
@@ -487,26 +486,32 @@ public class LocalVehiclePlayer {
         }
     }
 
-    public Vec3 cameraAimHit(float xRot, float yRot) {
-        Vec3 start = new Vec3(cameraX, cameraY, cameraZ);
-        Quaternionf rotation = new Quaternionf();
-        rotation.rotateYXZ((float) -Math.toRadians(cameraAimRotY + yRot),
-                (float) Math.toRadians(cameraAimRotX + xRot),
-                (float) Math.toRadians(cameraAimRotZ));
+    public Vec3 cameraDirection(float upward) {
+        Quaternionf cameraRot = new Quaternionf()
+                .rotateY((float) Math.toRadians(-cameraAimRotY))
+                .rotateX((float) Math.toRadians(cameraAimRotX))
+                .rotateZ((float) Math.toRadians(cameraAimRotZ))
+                .rotateX((float) Math.toRadians(-upward));
         Vector3f direction = new Vector3f(0, 0, 1);
-        rotation.transform(direction);
-        Vec3 end = start.add(new Vec3(direction).scale(renderDistance()));
+        cameraRot.transform(direction);
+        return new Vec3(direction);
+    }
+
+    public Vec3 cameraAimHit(float xRot) {
+        Vec3 start = new Vec3(cameraX, cameraY, cameraZ);
+        Vec3 direction = cameraDirection(xRot);
+        Vec3 end = start.add(direction.scale(renderDistance()));
         return VectorUtil.hitPosition(getPlayer(), start, end);
     }
 
     private void fixLerp() {
-        if (Math.abs(cameraAimRotX - cameraAimRotXO) > 90) {
+        if (Math.abs(cameraAimRotX - cameraAimRotXO) > 180) {
             cameraAimRotXO += cameraAimRotXO < 0 ? 360f : -360f;
         }
-        if (Math.abs(cameraAimRotY - cameraAimRotYO) > 90) {
+        if (Math.abs(cameraAimRotY - cameraAimRotYO) > 180) {
             cameraAimRotYO += cameraAimRotYO < 0 ? 360f : -360f;
         }
-        if (Math.abs(cameraAimRotZ - cameraAimRotZO) > 90) {
+        if (Math.abs(cameraAimRotZ - cameraAimRotZO) > 180) {
             cameraAimRotZO += cameraAimRotZO < 0 ? 360f : -360f;
         }
     }
@@ -562,14 +567,14 @@ public class LocalVehiclePlayer {
      * 抬头视线落点
      */
     public Vec3 freeAimPos() {
-        return cameraAimHit(-CAMERA_UPWARD_ANGLE, 0);
+        return cameraAimHit(CAMERA_UPWARD_ANGLE);
     }
 
     /**
      * 视线落点
      */
     public Vec3 scopeAimPos() {
-        return cameraAimHit(0, 0);
+        return cameraAimHit(0);
     }
 
     public void rangeFinding(Vec3 worldPos) {

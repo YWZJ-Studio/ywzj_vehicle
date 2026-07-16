@@ -11,7 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -177,29 +177,35 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.xTurnGroup = vehicleCubeGroupCopy.get(data.getRawXTurnGroup());
     }
 
-    public void switchWeapon(boolean secondary, boolean next) {
+    public void switchWeapon(boolean secondary, boolean next, boolean modding) {
+        int size = secondary ? secondaryWeapons.size() : weapons.size();
+        if (size < 2) {
+            return;
+        }
+        int index = ((secondary ? currentSecondaryWeaponIndex : currentWeaponIndex) + (next ? 1 : size - 1)) % size;
+        selectWeaponIndex(secondary, index, modding);
+    }
+
+    public void selectWeaponIndex(boolean secondary, int index, boolean modding) {
         if (secondary) {
-            int size = secondaryWeapons.size();
-            if (size < 2) {
-                return;
-            }
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
-            this.currentSecondaryWeaponIndex = (this.currentSecondaryWeaponIndex + (next ? 1 : size - 1)) % size;
+            setCurrentSecondaryWeaponIndex(index);
             this.getCurrentSecondaryWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
-            if (getOwner() instanceof Player player) {
-                player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentSecondaryWeapon().get().getDisplayName()), true);
+        } else {
+            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
+            setCurrentWeaponIndex(index);
+            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
+        }
+        if (modding) {
+            SoundEvent reloadSound = getCurrentWeapon().get().getReloadSound();
+            if (reloadSound != null) {
+                vehicle.playVehicleSound(reloadSound, getPivotOffset(), 1f, 2f, 1f, 0, false, false, true);
             }
         } else {
-            int size = weapons.size();
-            if (size < 2) {
-                return;
-            }
-            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchFrom);
-            this.currentWeaponIndex = (this.currentWeaponIndex + (next ? 1 : size - 1)) % size;
-            this.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::onSwitchTo);
-            if (getOwner() instanceof Player player) {
-                player.displayClientMessage(Component.translatable("tips.use_weapon", getCurrentWeapon().get().getDisplayName()), true);
-            }
+            vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
+        }
+        if (getOwner() instanceof Player player) {
+            getCurrentWeapon().ifPresent(weapon -> player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true));
         }
     }
 
@@ -207,6 +213,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         this.getCurrentWeapon().ifPresent(weapon -> {
             if (weapon instanceof VehicleMultiWeapons multiWeapons) {
                 multiWeapons.cycleSubWeapon(next);
+                vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
                 if (getOwner() instanceof Player player) {
                     player.displayClientMessage(Component.translatable("tips.use_weapon", multiWeapons.getDisplayName()), true);
                 }
@@ -506,43 +513,16 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @OnlyIn(Dist.CLIENT)
     private void tickHit() {
         weaponHitPosO = weaponHitPos;
-        Optional<AbstractVehicleWeapon<?>> vehicleWeaponOptional = getCurrentWeapon();
-        if (vehicleWeaponOptional.isPresent()) {
-            AbstractVehicleWeapon<?> vehicleWeapon = vehicleWeaponOptional.get();
-            WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
-            if (currentWeaponUnit.isParentWeaponUnitAim()) {
-                currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
-            }
-            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
-                if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
-                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
-                    float dragCoefficient = bomb.getData().getDragCoefficient();
-                    weaponHitPos = CcipUtil.computeCcipImpact(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
-                } else if (vehicleWeapon instanceof VehicleRocket rocket) {
-                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
-                    var data = rocket.getData();
-                    Vec2 rot = currentWeaponUnit.worldRot();
-                    Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
-                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
-                    weaponHitPos = CcipUtil.computeCcipImpactRocket(vehicle.level(), releasePos, startVelocity,
-                            data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
-                }
-            } else {
-                weaponHitPos = currentWeaponUnit.aimHitPosition();
-            }
-        } else {
-            weaponHitPos = aimHitPosition();
-        }
+        weaponHitPos = currentWeaponHitPosition();
     }
 
     @Override
     public boolean onInteract(Player player, InteractionHand hand) {
         if (!vehicle.level().isClientSide() && hand == InteractionHand.MAIN_HAND && isInteractive() && player.isShiftKeyDown()) {
             if (player.getItemInHand(hand).getItem() == AllItems.MODDING_TOOL.get()) {
-                switchWeapon(false, true);
+                switchWeapon(false, true, true);
                 AbstractVehicleWeapon<?> weapon = getCurrentWeapon().get();
                 player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true);
-                vehicle.level().playSound(vehicle, BlockPos.containing(worldPivotPosition()), weapon.getReloadSound(), SoundSource.PLAYERS, 2f, 2f);
             }
             return false;
         }
@@ -666,16 +646,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
-        WeaponUnit weaponUnit = this;
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
-        if (weaponOptional.isEmpty() && parentWeaponUnit != null) {
-            weaponUnit = parentWeaponUnit;
-            weaponOptional = weaponUnit.getCurrentWeapon();
+        WeaponUnit rootParentWeaponUnit = getRootParentWeaponUnit();
+        if (weaponOptional.isEmpty()) {
+            if (rootParentWeaponUnit != null) {
+                weaponOptional = rootParentWeaponUnit.getCurrentWeapon();
+            }
         }
         if (weaponOptional.isPresent()) {
             if (weaponOptional.get() instanceof VehicleMissile vehicleMissile
                     && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.HOMING) {
-                weaponUnit.toggleSeeker(false);
+                rootParentWeaponUnit.toggleSeeker(false);
             }
         }
     }
@@ -708,16 +689,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 if (org.joml.Math.abs(xRot - xRotO) > 180) {
                     xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
                 }
-                if (vehicle.level().isClientSide()) {
-                    setXAimRot(targetRot.x);
-                    setYAimRot(targetRot.y);
-                    ignoreRemoteRotTick = 1;
-                }
                 setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
                 if (org.joml.Math.abs(yRot - yRotO) > 180) {
                     yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
                 }
                 updateRot();
+                if (vehicle.level().isClientSide()) {
+                    setXAimRot(targetRot.x);
+                    setYAimRot(targetRot.y);
+                    ignoreRemoteRotTick = 1;
+                    weaponHitPos = currentWeaponHitPosition();
+                }
             }
         }
     }
@@ -749,6 +731,49 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Vec3 fromWorldPosition = vehicle.relativeRotPos(vehicle.position().add(xTurnGroup.globalTransform().offset()), false);
         Vec3 worldAim = new Vec3(worldPosition.x - fromWorldPosition.x, worldPosition.y - fromWorldPosition.y, worldPosition.z - fromWorldPosition.z);
         return worldVecToLocalRot(worldAim);
+    }
+
+    private Vec3 currentWeaponHitPosition() {
+        Optional<AbstractVehicleWeapon<?>> vehicleWeaponOptional = getCurrentWeapon();
+        if (vehicleWeaponOptional.isPresent()) {
+            AbstractVehicleWeapon<?> vehicleWeapon = vehicleWeaponOptional.get();
+            WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
+            if (currentWeaponUnit.isParentWeaponUnitAim()) {
+                currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
+            }
+            Vec3 aimHitPosition = null;
+            if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
+                if (vehicleWeapon instanceof VehicleMultiWeapons vehicleMultiWeapons) {
+                    vehicleWeapon = vehicleMultiWeapons.getSelectedWeapon();
+                }
+                if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
+                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
+                    float dragCoefficient = bomb.getData().getDragCoefficient();
+                    aimHitPosition = CcipUtil.computeCcip(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
+                } else if (vehicleWeapon instanceof VehicleRocket rocket) {
+                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
+                    var data = rocket.getData();
+                    Vec2 rot = currentWeaponUnit.worldRot();
+                    Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
+                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                    aimHitPosition = CcipUtil.computeCcipRocket(vehicle.level(), releasePos, startVelocity,
+                            data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
+                } else if (vehicleWeapon instanceof VehicleCannon cannon) {
+                    AimContext aimContext = currentWeaponUnit.aimContext();
+                    var data = cannon.getData();
+                    Vec3 aimDir = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize();
+                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                    aimHitPosition = CcipUtil.computeCcipCannon(vehicle.level(), vehicle, aimContext.from, startVelocity,
+                            data.getFriction(), data.getLife());
+                }
+            }
+            if (aimHitPosition == null) {
+                aimHitPosition = currentWeaponUnit.aimHitPosition();
+            }
+            return aimHitPosition;
+        } else {
+            return aimHitPosition();
+        }
     }
 
     public Vec3 aimHitPosition() {

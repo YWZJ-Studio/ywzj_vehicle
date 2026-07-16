@@ -122,6 +122,9 @@ public class PhysicsEngine {
                     }
                 }
             } else if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP || touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM) {
+                if (velocity.y > -0.1 && touchPoint.obbLocalPos().y < -physicsCube.obb().extents().y - 0.01) {
+                    continue;
+                }
                 Vec3 axesY = new Vec3(axes[1]).normalize();
                 double d = velocity.dot(axesY);
                 if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP) {
@@ -268,21 +271,23 @@ public class PhysicsEngine {
                     velocity.y = Math.max(0, velocity.y);
                     rotV = 0;
                     climb(touchPoints);
-                    // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                    double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
-                    double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
-                    boolean shouldRotUpdate = false;
-                    if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
-                        vehicle.setZRot(0);
-                        shouldRotUpdate = true;
-                    }
-                    if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
-                        vehicle.setXRot(0);
-                        shouldRotUpdate = true;
-                    }
-                    if (shouldRotUpdate && rotTick > 0) {
-                        vehicle.triggerRotUpdate();
-                        rotTick -= 1;
+                    if (!localForcePoints.stream().allMatch(localForcePoint -> localForcePoint.y < -physicsCube.obb().extents().y - 0.01)) {
+                        // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
+                        double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
+                        double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
+                        boolean shouldRotUpdate = false;
+                        if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
+                            vehicle.setZRot(0);
+                            shouldRotUpdate = true;
+                        }
+                        if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
+                            vehicle.setXRot(0);
+                            shouldRotUpdate = true;
+                        }
+                        if (shouldRotUpdate && rotTick > 0) {
+                            vehicle.triggerPosRotUpdate();
+                            rotTick -= 1;
+                        }
                     }
                     if (AllConfigs.common.selfRighting.get()) {
                         if (Mth.abs(vehicle.getXRot()) >= 75 || Mth.abs(vehicle.getZRot()) >= 75) {
@@ -396,25 +401,25 @@ public class PhysicsEngine {
         if (vehicle.getXRot() < -15) {
             return;
         }
-        VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
+        VehicleCubeOBB physicsCube = physicsCube();
         // 自动爬高
         DoubleSummaryStatistics stats = climbPoints.stream()
                 .mapToDouble(p -> p.obbLocalPos().y)
                 .summaryStatistics();
         double yRange = stats.getMax() - stats.getMin();
-        double liftLimit = mainCubeOBB.spaceY * 2;
-        if (yRange >= liftLimit) {
+        double liftLimit = physicsCube.spaceY * 2;
+        if ((yRange >= liftLimit || yRange < physicsCube.spaceY)
+                && !(vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
             return;
         }
-        if (yRange >= mainCubeOBB.spaceY || (vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
-            climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
-            VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-            double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
-            Vec3 offset = mainCubeOBB.offset().subtract(0, mainCubeOBB.height / 2, 0);
-            Vec3 bottomPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
-            double toLift = Mth.clamp(liftHeight - bottomPos.y, 0, vehicle.maxUpStep());
-            vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
-        }
+        climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
+        VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
+        Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
+                        .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
+                        .add(vehicle.position()), true);
+        double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
+        double toLift = Mth.clamp(liftHeight - bottomPosition.y, 0, vehicle.maxUpStep());
+        vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
     }
 
     private void checkDirection(Vector3f localRotToPoint) {

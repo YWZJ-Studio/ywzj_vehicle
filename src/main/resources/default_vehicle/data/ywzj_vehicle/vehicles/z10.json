@@ -29,6 +29,7 @@
         "impact_multiplier": 2
     },
     "with_warning_receiver": true,
+    "center_offset": [0, 1.766, 0],
     "structure_model": "ywzj_vehicle:vehicle/z10",
     "parts": [
         {

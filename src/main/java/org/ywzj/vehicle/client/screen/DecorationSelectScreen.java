@@ -181,7 +181,7 @@ public class DecorationSelectScreen extends Screen {
             int maxWidth = (int) ((x2 - x1 + 2 * padding) / 1.03f);
             poseStack.translate((float) width / 2, (float) height / 2, 0);
             if (display.getDescription() != null) {
-                var lines = font.split(Component.literal(display.getDescription()), maxWidth);
+                var lines = font.split(Component.translatable(display.getDescription()), maxWidth);
                 for (int i = 0; i < lines.size(); i++) {
                     guiGraphics.drawString(font, lines.get(i), 0, i * 9, Color.WHITE);
                 }

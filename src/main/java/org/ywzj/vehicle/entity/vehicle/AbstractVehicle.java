@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -42,8 +41,10 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.*;
 import org.joml.Math;
+import org.joml.Matrix3f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
@@ -476,9 +477,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (!this.isRemoved()) {
             aiStep();
         }
-        tickParts();
-        tickDecorations();
-        updateOBBs();
         if (level().isClientSide()) {
             tickSound();
             tickParticle();
@@ -511,7 +509,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                 }
             }
         }
+        tickParts();
+        tickDecorations();
         afterVehicleRot();
+        updateOBBs();
     }
 
     protected void tickEnergy() {
@@ -680,8 +681,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         return AllSounds.VEHICLE_HURT.get();
     }
 
-    public void initPartUnits() {}
-
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         if (isDestroyed() && tickCount % 20 == 0) {
@@ -723,7 +722,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected void tickPosAndRot() {
         if (!level().isClientSide()) {
             if (this.xRotO == this.xRot && this.yRotO == this.yRot && !finalRotUpdate) {
-                triggerRotUpdate();
+                triggerPosRotUpdate();
                 finalRotUpdate = true;
             } else {
                 finalRotUpdate = false;
@@ -1292,9 +1291,9 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public Quaternionf rotYXZ() {
         Quaternionf q = new Quaternionf();
-        q.rotateY(Math.toRadians(-this.getYRot()))
-                .rotateX(Math.toRadians(this.getXRot()))
-                .rotateZ(Math.toRadians(this.getZRot()));
+        q.rotateY(Math.toRadians(-yRot))
+                .rotateX(Math.toRadians(xRot))
+                .rotateZ(Math.toRadians(zRot));
         return q;
     }
 
@@ -1314,7 +1313,8 @@ public abstract class AbstractVehicle extends ContainerCraft
      * 某世界坐标随载具三轴旋转后或前的新坐标
      */
     public Vec3 relativeRotPos(Vec3 worldPos, boolean reverse) {
-        return relativeRotDirection(worldPos.subtract(position()), reverse).add(position());
+        Vec3 center = position().add(centerOffset);
+        return relativeRotDirection(worldPos.subtract(center), reverse).add(center);
     }
 
     /**
@@ -1327,17 +1327,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (reverse) {
             axisRollMat = axisRollMat.transpose();
         }
-        Vector3f relativePos = new Vector3f(
-                (float) (worldDirection.x() - centerOffset.x),
-                (float) (worldDirection.y() - centerOffset.y),
-                (float) (worldDirection.z() - centerOffset.z)
-        );
-        axisRollMat.transform(relativePos);
-        return new Vec3(
-                relativePos.x + centerOffset.x,
-                relativePos.y + centerOffset.y,
-                relativePos.z + centerOffset.z
-        );
+        return new Vec3(axisRollMat.transform(worldDirection.toVector3f()));
     }
 
     public abstract void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator);
@@ -1412,6 +1402,11 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
+    public Vec3 getLightProbePosition(float pPartialTicks) {
+        return new Vec3(mainCubeOBB.obb().center());
+    }
+
+    @Override
     public PlayerTeam getTeam() {
         if (!remote) {
             Entity driver = getDriver();
@@ -1422,17 +1417,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         } else {
             return remoteTeam;
         }
-    }
-
-    public Matrix4f getWheelsTransform(float ticks) {
-        Matrix4f transform = new Matrix4f();
-        transform.translate((float) Mth.lerp(ticks, xo, getX()), (float) Mth.lerp(ticks, yo, getY()), (float) Mth.lerp(ticks, zo, getZ()));
-        transform.rotate(Axis.YP.rotationDegrees(-Mth.lerp(ticks, yRotO, getYRot())));
-        return transform;
-    }
-
-    public Vector4f transformPosition(Matrix4f transform, float x, float y, float z) {
-        return transform.transform(new Vector4f(x, y, z, 1));
     }
 
     @Override
@@ -1490,8 +1474,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             Vec3 mtv = new Vec3(obb.calculateMTV(entityAABB));
             if (mtv.lengthSqr() > 0) {
                 boolean drag = false;
-                if (mtv.y < 0 && pEntity.onGround()) {
+                if (mtv.y < 0) {
                     Vec3 direction = pEntity.position().subtract(this.position()).normalize();
+                    direction = direction.scale(0.2f);
                     mtv = new Vec3(direction.x, 0, direction.z);
                 } else {
                     pEntity.setOnGround(true);
@@ -1531,8 +1516,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
-    public void triggerRotUpdate() {
-        ClientboundMoveEntityPacket.Rot packet = new ClientboundMoveEntityPacket.Rot(this.getId(), (byte) 0, (byte) 0, this.onGround());
+    public void triggerPosRotUpdate() {
+        ClientboundMoveEntityPacket.PosRot packet = new ClientboundMoveEntityPacket.PosRot(this.getId(), (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, this.onGround());
         ((ServerLevel) this.level()).getChunkSource().broadcast(this, packet);
     }
 

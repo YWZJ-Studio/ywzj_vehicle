@@ -1,6 +1,10 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
+import com.maydaymemory.mae.control.runner.AnimationContext;
+import com.maydaymemory.mae.control.runner.AnimationRunner;
+import com.maydaymemory.mae.control.runner.LoopingState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -24,13 +28,15 @@ import org.ywzj.vehicle.client.screen.DecorationSettingsScreen;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.vehicle.pojo.DecorationAction;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
+
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
 public class DecorationUnit extends PartUnit<PartUnitData> {
 
@@ -42,7 +48,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
     public Vec3 offsetFromBone;
     public Vec3 offsetFromVehicle;
     public Quaternionf rotation;
-    public boolean setting;
+    private AnimationRunner animationRunner;
 
     public DecorationUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
         super(index, vehicle, data);
@@ -50,6 +56,22 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         OBB obb = new OBB(vehicle.position().toVector3f(), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf());
         this.partCubeOBBs = new ArrayList<>();
         this.partCubeOBBs.add(new VehicleCubeOBB(obb));
+    }
+
+    private void initAnimation() {
+        if (vehicle.level().isClientSide()) {
+            var displayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(displayId);
+            if (displayOptional.isPresent()) {
+                BaseDisplay display = displayOptional.get();
+                Map<String, BedrockAnimation> animations = display.getAnimations();
+                if (!animations.isEmpty()) {
+                    BedrockAnimation animation = animations.values().iterator().next();
+                    AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
+                    animationRunner = new AnimationRunner(animation, animContext);
+                    animationRunner.setState(new LoopingState(System::nanoTime));
+                }
+            }
+        }
     }
 
     public void update(DecorationAction message) {
@@ -60,6 +82,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         selfYRot = message.selfYRot;
         selfZRot = message.selfZRot;
         offsetFromBone = message.offsetFromBone;
+        initAnimation();
     }
 
     @Override
@@ -95,6 +118,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         selfXRot = nbt.getFloat("selfXRot");
         selfYRot = nbt.getFloat("selfYRot");
         selfZRot = nbt.getFloat("selfZRot");
+        initAnimation();
     }
 
     @Override
@@ -146,11 +170,12 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             pPoseStack.rotateAround(Axis.ZP.rotation(rot.z), 0, 0, 0);
             offsetFromVehicle = new Vec3(globalPivot);
             rotation = globalRotation;
+            if (animationRunner != null) {
+                animationRunner.tick();
+                decorationModel.applyPose(BLENDER.blend(decorationModel.getBindPose(), animationRunner.evaluate()));
+            }
             decorationModel.renderToBuffer(pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
             decorationModel.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-            if (setting) {
-                RenderHelper.renderArrow3D(pPoseStack, bufferSource, 0.15f, 0.3f, 0, 255, 0, 255);
-            }
         }
         pPoseStack.popPose();
     }

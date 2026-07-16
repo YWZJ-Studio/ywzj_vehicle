@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.Vec2;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -19,6 +20,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
 import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
 import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -80,6 +82,8 @@ public class InputHandler {
                     sendToggleEngine(vehicle);
                 } else if (matchesKey(TOGGLE_LANDING_GEAR, key, scanCode)) {
                     sendToggleLandingGear(vehicle);
+                } else if (matchesKey(TOGGLE_AIRBRAKE, key, scanCode)) {
+                    sendToggleAirbrake(vehicle);
                 } else if (matchesKey(FIRE_CONTROL_LOCK, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
@@ -135,10 +139,9 @@ public class InputHandler {
         } else if (action == GLFW.GLFW_RELEASE) {
             if (instance.onVehicle()) {
                 if (matchesKey(FREE_CAMERA, key, scanCode)) {
-                    LocalVehiclePlayer localVehiclePlayer = instance;
-                    localVehiclePlayer.playerLerpXRot = playerXRotO;
-                    localVehiclePlayer.playerLerpYRot = playerYRotO;
-                    localVehiclePlayer.playerLerpSteps = 8;
+                    instance.playerLerpXRot = playerXRotO;
+                    instance.playerLerpYRot = playerYRotO;
+                    instance.playerLerpSteps = 8;
                 }
             }
         }
@@ -172,6 +175,7 @@ public class InputHandler {
         if (player == null || player.isSpectator() || mc.gameMode == null || mc.screen != null) {
             return;
         }
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         freeCamera = FREE_CAMERA.isDown();
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (LEAVE_VEHICLE.isDown()) {
@@ -190,7 +194,7 @@ public class InputHandler {
                 }
                 if (System.currentTimeMillis() - waitSwitchSeatTime > 500) {
                     int seatsCount = vehicle.seats.size();
-                    AbstractVehicle.Seat playerSeat = LocalVehiclePlayer.instance.seat;
+                    AbstractVehicle.Seat playerSeat = instance.seat;
                     if (playerSeat != null) {
                         for (int seatIndex = (playerSeat.seatIndex + 1) % seatsCount; seatIndex < seatsCount; seatIndex++) {
                             if (vehicle.seats.get(seatIndex).partUnit.getOwner() == null) {
@@ -206,7 +210,7 @@ public class InputHandler {
                 waitSwitchSeatTime = System.currentTimeMillis();
             }
             if (player.equals(vehicle.controlUnit.getOperator())) {
-                if (LocalVehiclePlayer.instance.lostControl) {
+                if (instance.lostControl) {
                     ControlUnit controlUnit = new ControlUnit(vehicle);
                     controlUnit.xRot = 0;
                     controlUnit.yRot = playerYRotO;
@@ -226,20 +230,24 @@ public class InputHandler {
                 controlUnit.functionalDown = FUNCTIONAL_DOWN.isDown();
                 controlUnit.functionalLeft = FUNCTIONAL_LEFT.isDown();
                 controlUnit.functionalRight = FUNCTIONAL_RIGHT.isDown();
-                if (freeCamera || LocalVehiclePlayer.instance.playerLerpSteps > 0) {
+                if (freeCamera || instance.playerLerpSteps > 0) {
                     controlUnit.xRot = controlXRotO;
                     controlUnit.yRot = controlYRotO;
-                } else if ((vehicle instanceof RotaryWingVehicle || vehicle instanceof FixedWingVehicle)
-                        && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+                } else if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof RotaryWingVehicle) {
                     controlUnit.xRot = 0;
                     controlUnit.yRotKeep = true;
+                } else if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE && vehicle instanceof FixedWingVehicle) {
+                    controlUnit.xRot = controlXRotO;
+                    controlUnit.yRot = controlYRotO;
                 } else {
-                    if (vehicle instanceof RotaryWingVehicle) {
-                        controlUnit.xRot = player.getXRot();
-                    } else if (vehicle instanceof FixedWingVehicle) {
-                        controlUnit.xRot = player.getXRot() - LocalVehiclePlayer.CAMERA_UPWARD_ANGLE;
+                    Vec2 controlRot;
+                    if (vehicle instanceof RotaryWingVehicle || vehicle instanceof FixedWingVehicle) {
+                        controlRot = VectorUtil.vecToRot(instance.cameraDirection(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE));
+                    } else {
+                        controlRot = VectorUtil.vecToRot(instance.cameraDirection(0));
                     }
-                    controlUnit.yRot = player.getYRot();
+                    controlUnit.xRot = controlRot.x;
+                    controlUnit.yRot = controlRot.y;
                     controlXRotO = controlUnit.xRot;
                     controlYRotO = controlUnit.yRot;
                     playerXRotO = player.getXRot();
@@ -334,6 +342,13 @@ public class InputHandler {
         ClientVehicleAction action = new ClientVehicleAction();
         action.vehicleEntityId = vehicle.getId();
         action.toggleLandingGear = true;
+        PacketDistributor.sendToServer(action);
+    }
+
+    private static void sendToggleAirbrake(AbstractVehicle vehicle) {
+        ClientVehicleAction action = new ClientVehicleAction();
+        action.vehicleEntityId = vehicle.getId();
+        action.toggleAirbrake = true;
         PacketDistributor.sendToServer(action);
     }
 

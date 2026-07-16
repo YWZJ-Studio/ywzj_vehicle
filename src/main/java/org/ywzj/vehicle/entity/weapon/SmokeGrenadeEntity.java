@@ -1,22 +1,27 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.entity.SightObstruction;
+import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 
 public class SmokeGrenadeEntity extends GrenadeEntity implements SightObstruction {
 
-    public SmokeGrenadeEntity(Entity entity, Level level, ResourceLocation weaponId) {
-        super(AllEntities.SMOKE_GRENADE.get(), entity, level, weaponId);
+    public SmokeGrenadeEntity(EntityType<SmokeGrenadeEntity> type, Level level, VehicleGrenadeWeaponData data) {
+        super(type, level, data.getWeaponId());
+        initGrenade(data);
     }
 
-    public SmokeGrenadeEntity(EntityType<? extends SmokeGrenadeEntity> entityType, Level level) {
-        super(entityType, level);
+    public SmokeGrenadeEntity(EntityType<SmokeGrenadeEntity> type, Level level) {
+        super(type, level);
+    }
+
+    public SmokeGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
+        super(AllEntities.SMOKE_GRENADE.get(), level);
     }
 
     @Override

@@ -11,9 +11,6 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
     @SerializedName("grenade")
     private String grenade = "smoke";
 
-    @SerializedName("life_time")
-    private int lifeTime = 600;
-
     @SerializedName("gravity")
     private float gravity = 0.07f;
 
@@ -37,10 +34,6 @@ public class VehicleGrenadeWeaponData extends BaseVehicleWeaponData {
 
     public String getGrenade() {
         return grenade;
-    }
-
-    public int getLifeTime() {
-        return lifeTime;
     }
 
     public float getGravity() {

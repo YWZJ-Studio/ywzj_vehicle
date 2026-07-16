@@ -26,6 +26,7 @@ public class ClientVehicleAction implements CustomPacketPayload {
     public boolean leaveVehicle;
     public boolean toggleEngine;
     public boolean toggleLandingGear;
+    public boolean toggleAirbrake;
     public boolean toggleHoverMode;
     public boolean toggleAerobaticSmoke;
     public int aerobaticSmokeR;
@@ -56,6 +57,10 @@ public class ClientVehicleAction implements CustomPacketPayload {
         }
         control.toggleLandingGear = buf.readBoolean();
         if (control.toggleLandingGear) {
+            return control;
+        }
+        control.toggleAirbrake = buf.readBoolean();
+        if (control.toggleAirbrake) {
             return control;
         }
         control.toggleHoverMode = buf.readBoolean();
@@ -110,6 +115,10 @@ public class ClientVehicleAction implements CustomPacketPayload {
         }
         buf.writeBoolean(toggleLandingGear);
         if (toggleLandingGear) {
+            return;
+        }
+        buf.writeBoolean(toggleAirbrake);
+        if (toggleAirbrake) {
             return;
         }
         buf.writeBoolean(toggleHoverMode);
@@ -168,7 +177,7 @@ public class ClientVehicleAction implements CustomPacketPayload {
                     && vehicle.getPartUnits().get(message.partUnitIndex) instanceof SwitchableUnit<?> switchableUnit) {
                 switchableUnit.setOn(!switchableUnit.isOn());
             }
-        } else if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleHoverMode || message.toggleAerobaticSmoke || message.lockEntity) {
+        } else if (message.leaveVehicle || message.toggleEngine || message.toggleLandingGear || message.toggleAirbrake || message.toggleHoverMode || message.toggleAerobaticSmoke || message.lockEntity) {
             vehicle.onClientVehicleAction(message, player);
         } else if (message.partUnitIndex < vehicle.getPartUnits().size()) {
             vehicle.getPartUnits().get(message.partUnitIndex).onClientMessageReceived(message, player);

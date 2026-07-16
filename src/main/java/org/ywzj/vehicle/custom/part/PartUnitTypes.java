@@ -34,15 +34,6 @@ public class PartUnitTypes {
                     })
                     .build();
 
-    public static final PartUnitType<ThrustUnit, RotatableUnitData> THRUST =
-            PartUnitType.Builder.<ThrustUnit, RotatableUnitData>of(YwzjVehicle.modLocation("thrust"))
-                    .setFactory(ThrustUnit::new)
-                    .setDataSerializer((json) -> {
-                        var pojo = GsonUtil.GSON.fromJson(json, RotatableUnitPojo.class);
-                        return new RotatableUnitData(pojo);
-                    })
-                    .build();
-
     public static final PartUnitType<DoorUnit, DoorUnitData> DOOR =
             PartUnitType.Builder.<DoorUnit, DoorUnitData>of(YwzjVehicle.modLocation("door"))
                     .setFactory(DoorUnit::new)
@@ -52,9 +43,27 @@ public class PartUnitTypes {
                     })
                     .build();
 
-    public static final PartUnitType<LandingGearUnit, PartUnitData> LANDING_GEAR =
-            PartUnitType.Builder.<LandingGearUnit, PartUnitData>of(YwzjVehicle.modLocation("landing_gear"))
+    public static final PartUnitType<LandingGearUnit, LandingGearUnitData> LANDING_GEAR =
+            PartUnitType.Builder.<LandingGearUnit, LandingGearUnitData>of(YwzjVehicle.modLocation("landing_gear"))
                     .setFactory(LandingGearUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, LandingGearUnitPojo.class);
+                        return new LandingGearUnitData(pojo);
+                    })
+                    .build();
+
+    public static final PartUnitType<AirbrakeUnit, AirbrakeUnitData> AIRBRAKE =
+            PartUnitType.Builder.<AirbrakeUnit, AirbrakeUnitData>of(YwzjVehicle.modLocation("airbrake"))
+                    .setFactory(AirbrakeUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, AirbrakeUnitPojo.class);
+                        return new AirbrakeUnitData(pojo);
+                    })
+                    .build();
+
+    public static final PartUnitType<WeaponBayUnit, PartUnitData> WEAPON_BAY =
+            PartUnitType.Builder.<WeaponBayUnit, PartUnitData>of(YwzjVehicle.modLocation("weapon_bay"))
+                    .setFactory(WeaponBayUnit::new)
                     .setDataSerializer((json) -> {
                         var pojo = GsonUtil.GSON.fromJson(json, PartUnitPojo.class);
                         return new PartUnitData(pojo);
@@ -88,12 +97,12 @@ public class PartUnitTypes {
                     })
                     .build();
 
-    public static final PartUnitType<WeaponBayUnit, PartUnitData> WEAPON_BAY =
-            PartUnitType.Builder.<WeaponBayUnit, PartUnitData>of(YwzjVehicle.modLocation("weapon_bay"))
-                    .setFactory(WeaponBayUnit::new)
+    public static final PartUnitType<ThrustUnit, RotatableUnitData> THRUST =
+            PartUnitType.Builder.<ThrustUnit, RotatableUnitData>of(YwzjVehicle.modLocation("thrust"))
+                    .setFactory(ThrustUnit::new)
                     .setDataSerializer((json) -> {
-                        var pojo = GsonUtil.GSON.fromJson(json, PartUnitPojo.class);
-                        return new PartUnitData(pojo);
+                        var pojo = GsonUtil.GSON.fromJson(json, RotatableUnitPojo.class);
+                        return new RotatableUnitData(pojo);
                     })
                     .build();
 

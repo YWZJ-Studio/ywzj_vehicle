@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -65,7 +64,6 @@ public class FixedWingVehicle extends AbstractVehicle
     public float xRotInputDragK = 1f;
     public float yRotInputDragK = 1f / 4;
     public float zRotInputDragK = 1f / 8;
-    public float landingGearDragK = 1f / 2;
     public float turnRateBySpeed = 1f / 2.5f;
     public float xTurnRate = 2;
     public float yTurnRate = 3;
@@ -82,13 +80,15 @@ public class FixedWingVehicle extends AbstractVehicle
     public float rollInput;
     public float rollInputO;
     public LandingGearUnit landingGear;
+    public AirbrakeUnit airbrakeUnit;
     public ThrustUnit thrustUnit;
     private VehicleSound engineStartSoundInstance;
     private VehicleSound engineStopSoundInstance;
     private VehicleSound engineRunSoundInstance;
     private VehicleSound engineThrustSoundInstance;
-    private VehicleSound passbySoundInstance;
+    private VehicleSound landingSoundInstance;
     private VehicleSound aerobaticSmokeSoundInstance;
+    private VehicleSound passbySoundInstance;
     private IAnimationInstance<FixedWingVehicleContext> animationInstance;
 
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
@@ -160,6 +160,13 @@ public class FixedWingVehicle extends AbstractVehicle
                 player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
             } else if (hasPower()) {
                 landingGear.setOn(!isLandingGearUp());
+            }
+        }
+        if (message.toggleAirbrake) {
+            if (airbrakeUnit == null) {
+                player.displayClientMessage(Component.translatable("tips.no_airbrake"), true);
+            } else if (hasPower()) {
+                airbrakeUnit.setOn(!airbrakeUnit.isOn());
             }
         }
         if (message.toggleAerobaticSmoke) {
@@ -236,94 +243,11 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
-    protected void tickSound() {
-        super.tickSound();
-        float engineSpeed = getPower();
-        if (engineSpeed == 0) {
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.stop();
-                engineRunSoundInstance = null;
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.stop();
-                engineStartSoundInstance = null;
-            }
-            if (engineThrustSoundInstance != null) {
-                engineThrustSoundInstance.stop();
-                engineThrustSoundInstance = null;
-            }
-            return;
-        }
-        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
-            SoundEvent engineStopSound = getEngineStopSound();
-            if (engineStopSound != null) {
-                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
-                engineStopSoundInstance.play();
-            }
-            if (engineStartSoundInstance != null) {
-                engineStartSoundInstance.setVolume(engineSpeed / 100);
-            }
-        }
-        if (engineSpeed > 0) {
-            if (engineSpeed > 50 && engineStopSoundInstance != null) {
-                engineStopSoundInstance = null;
-            }
-            if (engineSpeed < 20 && engineStartSoundInstance == null) {
-                SoundEvent engineStartSound = getEngineStartSound();
-                if (engineStartSound != null) {
-                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
-                    engineStartSoundInstance.play();
-                }
-            }
-            if (engineSpeed > 50 && engineRunSoundInstance == null) {
-                SoundEvent engineRunSound = getEngineRunSound();
-                if (engineRunSound != null) {
-                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
-                    engineRunSoundInstance.play();
-                }
-            }
-            if (engineRunSoundInstance != null) {
-                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
-            }
-            if (getThrottleLevel() > 100 && engineThrustSoundInstance == null) {
-                SoundEvent engineThrustSound = getEngineThrustSound();
-                if (engineThrustSound != null) {
-                    engineThrustSoundInstance = new VehicleSound(engineThrustSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                    engineThrustSoundInstance.play();
-                }
-            } else if (getThrottleLevel() <= 100 && engineThrustSoundInstance != null) {
-                engineThrustSoundInstance.stop();
-                engineThrustSoundInstance = null;
-            }
-        }
-        if (getDeltaMovement().length() > 1) {
-            Player player = LocalVehiclePlayer.instance.getPlayer();
-            if (player.getVehicle() != this) {
-                if (passbySoundInstance == null && player.distanceTo(this) < 32) {
-                    SoundEvent passbySound = getEnginePassbySound();
-                    if (passbySound != null) {
-                        passbySoundInstance = new VehicleSound(passbySound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
-                        passbySoundInstance.play();
-                    }
-                } else if (passbySoundInstance != null && player.distanceTo(this) > 64) {
-                    passbySoundInstance = null;
-                }
-            }
-        }
-        if (isAerobaticSmokeOn() && aerobaticSmokeSoundInstance == null) {
-            aerobaticSmokeSoundInstance = new VehicleSound(AllSounds.AEROBATICS_SMOKE_LOOP.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
-            aerobaticSmokeSoundInstance.play();
-        } else if (!isAerobaticSmokeOn() && aerobaticSmokeSoundInstance != null) {
-            aerobaticSmokeSoundInstance.stop();
-            aerobaticSmokeSoundInstance = null;
-        }
-    }
-
-    @Override
     protected Vec3 tickMove() {
         // 三个正交轴
         Vector3f[] axes;
-        if (level().getBlockState(blockPosition().below()).isSolid()) {
+        boolean onGround = level().getBlockState(blockPosition().below()).isSolid();
+        if (onGround) {
             axes = getMainCubeOBB().obb().getAxes();
         } else {
             axes = aerodynamicCubeOBB.obb().getAxes();
@@ -388,7 +312,7 @@ public class FixedWingVehicle extends AbstractVehicle
             controlUnit.xRot = 0;
             controlUnit.yRot = getYRot();
         }
-        Vec3 aimVec = VectorUtil.rotToVec(controlUnit.xRot, controlUnit.yRotKeep ? getYRot() : controlUnit.yRot);
+        Vec3 aimVec = VectorUtil.rotToVec(controlUnit.xRotKeep ? getXRot() : controlUnit.xRot, controlUnit.yRotKeep ? getYRot() : controlUnit.yRot);
         if (!(controlUnit.up || controlUnit.down)) {
             double xDiff = aimVec.dot(upDirection);
             xRotInput = (float) (Math.signum(-xDiff) * Math.min(1, Math.abs(xDiff) * xRotInputStep * 40));
@@ -443,7 +367,7 @@ public class FixedWingVehicle extends AbstractVehicle
         float thrust = this.thrust * power;
         // 推力加速度
         double a = thrust / mass;
-        Vec3 thrustDirection = forwardDirection;
+        Vec3 thrustDirection = onGround ? new Vec3(forwardDirection.x, 0, forwardDirection.z).normalize() : forwardDirection;
         if (thrustUnit != null) {
             thrustDirection = thrustUnit.worldVec();
         }
@@ -485,7 +409,8 @@ public class FixedWingVehicle extends AbstractVehicle
         double controlDrag = (Math.abs(xRotInput) * xRotInputDragK
                 + Math.abs(yRotInput) * yRotInputDragK
                 + Math.abs(zRotInput) * zRotInputDragK
-                + (landingGear != null ? landingGear.level() : 0) * landingGearDragK
+                + (landingGear != null ? landingGear.level() * landingGear.getDragK() : 0)
+                + (airbrakeUnit != null ? airbrakeUnit.level() * airbrakeUnit.getDragK() : 0)
         ) * airDragKMin;
         double fc = al * al * controlDrag;
         aRaw -= fc / mass;
@@ -540,6 +465,106 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
+    protected void tickSound() {
+        super.tickSound();
+        boolean onGround = level().getBlockState(blockPosition().below()).isSolid();
+        double speed = getDeltaMovement().length();
+        if (onGround) {
+            if (speed > 0.05) {
+                if (landingSoundInstance == null) {
+                    landingSoundInstance = new VehicleSound(AllSounds.LANDING.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
+                    landingSoundInstance.play();
+                }
+            } else if (landingSoundInstance != null) {
+                landingSoundInstance.stop();
+                landingSoundInstance = null;
+            }
+        } else if (landingSoundInstance != null) {
+            landingSoundInstance.stop();
+            landingSoundInstance = null;
+        }
+        float engineSpeed = getPower();
+        if (engineSpeed == 0) {
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.stop();
+                engineRunSoundInstance = null;
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.stop();
+                engineStartSoundInstance = null;
+            }
+            if (engineThrustSoundInstance != null) {
+                engineThrustSoundInstance.stop();
+                engineThrustSoundInstance = null;
+            }
+            return;
+        }
+        if (engineSpeed < 50 && engineRunSoundInstance != null && engineStopSoundInstance == null) {
+            SoundEvent engineStopSound = getEngineStopSound();
+            if (engineStopSound != null) {
+                engineStopSoundInstance = new VehicleSound(engineStopSound, 1f, viewInfo.soundDistance, 1f, false, 50, true, true, this.getId());
+                engineStopSoundInstance.play();
+            }
+            if (engineStartSoundInstance != null) {
+                engineStartSoundInstance.setVolume(engineSpeed / 100);
+            }
+        }
+        if (engineSpeed > 0) {
+            if (engineSpeed > 50 && engineStopSoundInstance != null) {
+                engineStopSoundInstance = null;
+            }
+            if (engineSpeed < 20 && engineStartSoundInstance == null) {
+                SoundEvent engineStartSound = getEngineStartSound();
+                if (engineStartSound != null) {
+                    engineStartSoundInstance = new VehicleSound(engineStartSound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
+                    engineStartSoundInstance.play();
+                }
+            }
+            if (engineSpeed > 50 && engineRunSoundInstance == null) {
+                SoundEvent engineRunSound = getEngineRunSound();
+                if (engineRunSound != null) {
+                    engineRunSoundInstance = new VehicleSound(engineRunSound, 1f, viewInfo.soundDistance, 0.8f, true, 50, true, true, this.getId());
+                    engineRunSoundInstance.play();
+                }
+            }
+            if (engineRunSoundInstance != null) {
+                engineRunSoundInstance.setPitch(Math.max(0.8f, 0.8f + 0.2f * engineSpeed / 100));
+            }
+            if (getThrottleLevel() > 100 && engineThrustSoundInstance == null) {
+                SoundEvent engineThrustSound = getEngineThrustSound();
+                if (engineThrustSound != null) {
+                    engineThrustSoundInstance = new VehicleSound(engineThrustSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    engineThrustSoundInstance.play();
+                }
+            } else if (getThrottleLevel() <= 100 && engineThrustSoundInstance != null) {
+                engineThrustSoundInstance.stop();
+                engineThrustSoundInstance = null;
+            }
+        }
+        if (speed > 1 && !onGround) {
+            Player player = LocalVehiclePlayer.instance.getPlayer();
+            if (player.getVehicle() != this) {
+                if (passbySoundInstance == null && player.distanceTo(this) < 32) {
+                    SoundEvent passbySound = getEnginePassbySound();
+                    if (passbySound != null) {
+                        passbySoundInstance = new VehicleSound(passbySound, 1f, viewInfo.soundDistance, 1f, false, 0, false, false, this.getId());
+                        passbySoundInstance.play();
+                    }
+                } else if (passbySoundInstance != null && player.distanceTo(this) > 64) {
+                    passbySoundInstance = null;
+                }
+            }
+        }
+        if (isAerobaticSmokeOn() && aerobaticSmokeSoundInstance == null) {
+            aerobaticSmokeSoundInstance = new VehicleSound(AllSounds.AEROBATICS_SMOKE_LOOP.get(), 1f, viewInfo.soundDistance, 1f, true, 50, false, true, this.getId());
+            aerobaticSmokeSoundInstance.play();
+        } else if (!isAerobaticSmokeOn() && aerobaticSmokeSoundInstance != null) {
+            aerobaticSmokeSoundInstance.stop();
+            aerobaticSmokeSoundInstance = null;
+        }
+    }
+
+    @Override
     protected void tickParticle() {
         super.tickParticle();
         Vec3 airSpeed = getDeltaMovement();
@@ -565,9 +590,13 @@ public class FixedWingVehicle extends AbstractVehicle
                     Vec3 engineSmokePos = this.position().add(offset);
                     engineSmokePos = relativeRotPos(engineSmokePos, false);
                     Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.3);
-                    level().addParticle(ParticleTypes.LARGE_SMOKE, true,
+                    level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
+                                    0.0f, 0.0f, 0.0f, 0.7f,
+                                    20, 0.3f, 0.4f, 0.005f), true,
                             engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                            engineSmokeVelocity.x, engineSmokeVelocity.y, engineSmokeVelocity.z);
+                            engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
+                            engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
+                            engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
                 });
                 engineParticleTick = 0;
             } else {
@@ -640,6 +669,10 @@ public class FixedWingVehicle extends AbstractVehicle
 
     public boolean isLandingGearUp() {
         return landingGear != null && landingGear.isOn();
+    }
+
+    public boolean isAirbrakeOn() {
+        return airbrakeUnit != null && airbrakeUnit.isOn();
     }
 
     public boolean isAerobaticSmokeOn() {
