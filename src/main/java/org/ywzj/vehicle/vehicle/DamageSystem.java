@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
@@ -21,12 +22,18 @@ import org.ywzj.vehicle.vehicle.structure.OBB;
 public class DamageSystem {
 
     public static void hurt(DamageSource damageSource, float amount, AbstractVehicle vehicle) {
-        Team driverTeam = vehicle.getDriver() == null ? null : vehicle.getDriver().getTeam();
-        if (driverTeam != null) {
-            Team attackerTeam = damageSource.getEntity() == null ? null : damageSource.getEntity().getTeam();
-            if (attackerTeam != null) {
-                if (!driverTeam.isAllowFriendlyFire() && driverTeam.equals(attackerTeam)) {
-                    return;
+        Entity driver = vehicle.getDriver();
+        if (driver != null) {
+            Team driverTeam = driver.getTeam();
+            if (driverTeam != null) {
+                Entity attacker = damageSource.getEntity();
+                if (attacker != null && attacker != driver) {
+                    Team attackerTeam = attacker.getTeam();
+                    if (attackerTeam != null) {
+                        if (!driverTeam.isAllowFriendlyFire() && driverTeam.equals(attackerTeam)) {
+                            return;
+                        }
+                    }
                 }
             }
         }

@@ -79,16 +79,20 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
             BlockState state = AllBlocks.FIGURE_BOX_BLOCK.get().defaultBlockState();
             poseStack.pushPose();
             {
-                poseStack.translate(0.5, 0.5, 0.5);
-                poseStack.mulPose(Axis.XP.rotationDegrees(20));
-                poseStack.mulPose(Axis.YP.rotationDegrees(-15));
-                poseStack.scale(0.8f, 0.8f, 0.8f);
-                poseStack.translate(-0.5, -0.5, -0.5);
-                boolean isGui = true;
-                if (transformType != ItemDisplayContext.GUI) {
+                if (transformType == ItemDisplayContext.FIXED) {
+                    poseStack.translate(0.5, 0.5, 0.5);
+                    poseStack.scale(0.8f, 0.8f, 0.8f);
+                    poseStack.translate(-0.5, -0.5, -0.5);
+                } else if (transformType == ItemDisplayContext.GUI) {
+                    poseStack.translate(0.5, 0.5, 0.5);
+                    poseStack.mulPose(Axis.XP.rotationDegrees(20));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(-15));
+                    poseStack.scale(0.8f, 0.8f, 0.8f);
+                    poseStack.translate(-0.5, -0.5, -0.5);
+                } else {
+                    poseStack.translate(0.5, 0.5, 0.5);
                     poseStack.scale(0.5f, 0.5f, 0.5f);
-                    poseStack.translate(0.3f, 1.2f, 0.5f);
-                    isGui = false;
+                    poseStack.translate(-0.5, 0, -0.5);
                 }
                 blockDispatcher.renderSingleBlock(state, poseStack, pBuffer, pPackedLight, pPackedOverlay, ModelData.EMPTY, null);
                 CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
@@ -99,7 +103,7 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                             poseStack.popPose();
                             return;
                         }
-                        if (entity instanceof AbstractVehicle vehicle && isGui) {
+                        if (entity instanceof AbstractVehicle vehicle && transformType == ItemDisplayContext.GUI) {
                             ResourceLocation vehicleId = vehicle.getVehicleId();
                             BaseDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
                             if (display != null) {

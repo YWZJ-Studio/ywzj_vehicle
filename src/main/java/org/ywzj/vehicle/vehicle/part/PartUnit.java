@@ -175,9 +175,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group) {
         Quaternionf vehicleRotation = vehicle.rotYXZ();
-        offsetFromVehicle = offsetFromVehicle.subtract(vehicle.centerOffset);
-        Vector3f rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset().toVector3f();
-        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts);
+        Vec3 rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset();
+        rotatedOffsetFromAllParts = rotatedOffsetFromAllParts.subtract(vehicle.centerOffset);
+        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts.toVector3f());
         return vehicle.position().add(vehicle.centerOffset).add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
     }
 
