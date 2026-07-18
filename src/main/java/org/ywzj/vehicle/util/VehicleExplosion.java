@@ -40,7 +40,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.client.handler.FirstPersonHandler;
-import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 

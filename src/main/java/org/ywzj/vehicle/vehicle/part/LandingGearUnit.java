@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -88,8 +89,8 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        super.deserializeNBT(nbt);
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        super.deserializeNBT(provider, nbt);
         for (GearCube gearCube : gearCubes) {
             gearCube.gearCubePoint.obbLocalPos().y = gearPointY(gearCube.gearCubeOBB);
         }

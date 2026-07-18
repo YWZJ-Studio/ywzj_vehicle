@@ -13,7 +13,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 
 import java.util.Comparator;
@@ -28,10 +27,6 @@ public class ActiveProtectionGrenadeEntity extends GrenadeEntity {
 
     public ActiveProtectionGrenadeEntity(EntityType<ActiveProtectionGrenadeEntity> type, Level level) {
         super(type, level);
-    }
-
-    public ActiveProtectionGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.APS_GRENADE.get(), level);
     }
 
     @Override

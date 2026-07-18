@@ -46,7 +46,6 @@ import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.item.FuelTankItem;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.mixin.common.ExplosionAccessor;
-import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ServerBroadcastEntities;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.resource.VehiclePackLoader;

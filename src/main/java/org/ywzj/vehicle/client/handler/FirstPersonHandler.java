@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class FirstPersonHandler {
 
     private static final int MAX_SHAKE_IMPULSES = 8;
@@ -30,7 +30,6 @@ public class FirstPersonHandler {
     private static double currentYawShake;
     private static double currentPitchShake;
     private static double currentRollShake;
-    public static float zRot;
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRenderOverlay(RenderHandEvent event) {
@@ -96,7 +95,7 @@ public class FirstPersonHandler {
             return;
         }
         boolean onVehicle = LocalVehiclePlayer.instance != null && LocalVehiclePlayer.instance.onVehicle();
-        double deltaFrameTime = minecraft.getDeltaFrameTime();
+        double deltaFrameTime = minecraft.getTimer().getGameTimeDeltaTicks();
         double dt = Mth.clamp(deltaFrameTime / 20.0, 0.0, 0.01);
         double yawOffset = 0.0;
         double pitchOffset = 0.0;

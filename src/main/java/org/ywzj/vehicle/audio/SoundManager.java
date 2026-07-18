@@ -5,26 +5,24 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.ywzj.vehicle.network.message.ServerSoundEvent;
 
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 public class SoundManager {
 
     private final static ConcurrentHashMap<Integer, HashMap<String, VehicleSound>> SOUND_INSTANCE = new ConcurrentHashMap<>();
 
-    public static void onServerMessageReceived(ServerSoundEvent message, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void onServerMessageReceived(ServerSoundEvent message, IPayloadContext ctx) {
         if (message.on) {
             play(message);
         } else {
             stop(message);
         }
-        ctxSupplier.get().setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)

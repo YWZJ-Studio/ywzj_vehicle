@@ -1,12 +1,8 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.custom.weapon.data.VehicleGrenadeWeaponData;
 import org.ywzj.vehicle.util.VehicleExplosion;
 
@@ -19,10 +15,6 @@ public class FragGrenadeEntity extends GrenadeEntity {
 
     public FragGrenadeEntity(EntityType<FragGrenadeEntity> type, Level level) {
         super(type, level);
-    }
-
-    public FragGrenadeEntity(PlayMessages.SpawnEntity spawnEntity, Level level) {
-        super(AllEntities.FRAG_GRENADE.get(), level);
     }
 
     @Override

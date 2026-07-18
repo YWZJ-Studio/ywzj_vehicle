@@ -32,6 +32,7 @@ public class Channel {
         registrar.playToClient(ServerDecorationAction.TYPE, ServerDecorationAction.STREAM_CODEC, ServerDecorationAction::handle);
         registrar.playToClient(ServerBroadcastEntities.TYPE, ServerBroadcastEntities.STREAM_CODEC, ServerBroadcastEntities::handle);
         registrar.playToServer(ClientRadarAction.TYPE, ClientRadarAction.STREAM_CODEC, ClientRadarAction::handle);
+        registrar.playToServer(ClientVehicleSelectPartWeapon.TYPE, ClientVehicleSelectPartWeapon.STREAM_CODEC, ClientVehicleSelectPartWeapon::handle);
         registrar.playToClient(ServerSlicedPacket.TYPE, ServerSlicedPacket.STREAM_CODEC, ServerSlicedPacket::handle);
     }
 
