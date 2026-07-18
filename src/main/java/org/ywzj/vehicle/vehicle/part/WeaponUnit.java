@@ -808,7 +808,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         Vec3 boltPosition = worldBoltPosition(bolt, globalTransform);
         Vector3f worldRot = new Vector3f();
         vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
-        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
+        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x), (float) Math.toDegrees(-worldRot.y));
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
         aimContext.from = boltPosition.add(direction.scale(bolt.barrelLength));
         return aimContext;
