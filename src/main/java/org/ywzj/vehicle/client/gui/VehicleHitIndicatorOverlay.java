@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -144,7 +145,7 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
         }
     }
 
-    private static void renderHitMarker(GuiGraphics graphics) {
+    private static void renderHitMarker(GuiGraphics graphics, float partialTick) {
         long remainHitTime = System.currentTimeMillis() - hitTimestamp;
         long remainKillTime = System.currentTimeMillis() - killTimestamp;
         float fadeTime;
@@ -171,8 +172,8 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
         int size = (int) (16 * scale);
         int sizeHalf = size / 2;
 
-        double x = VehicleAimAtOverlay.getScreenAimX() - sizeHalf;
-        double y = VehicleAimAtOverlay.getScreenAimY() - sizeHalf;
+        double x = Mth.lerp(partialTick, VehicleAimAtOverlay.screenAimXO, VehicleAimAtOverlay.screenAimX) - sizeHalf;
+        double y = Mth.lerp(partialTick, VehicleAimAtOverlay.screenAimYO, VehicleAimAtOverlay.screenAimY) - sizeHalf;
 
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();

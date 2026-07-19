@@ -23,6 +23,18 @@ public abstract class CameraMixin {
     protected abstract void setPosition(double pX, double pY, double pZ);
 
     @Shadow
+    protected abstract void setRotation(float pYRot, float pXRot);
+
+    @Shadow
+    protected abstract void move(double pDistanceOffset, double pVerticalOffset, double pHorizontalOffset);
+
+    @Shadow
+    protected abstract double getMaxZoom(double pStartingDistance);
+
+    @Shadow
+    public abstract float getXRot();
+
+    @Shadow
     private Entity entity;
 
     @Inject(method = "setup", at = @At("TAIL"))
@@ -31,18 +43,35 @@ public abstract class CameraMixin {
             if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
                 return;
             }
-            LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
-            if (pEntity != localVehiclePlayer.getPlayer()) {
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+            if (pEntity != instance.getPlayer()) {
                 if (pEntity instanceof LivingEntity passenger) {
                     Vec3 pos = vehicle.thirdPersonPosition(passenger, pPartialTick);
                     this.setPosition(pos.x, pos.y, pos.z);
+                    moveToThirdPerson(vehicle);
                 }
                 return;
             }
-            this.setPosition(Mth.lerp(pPartialTick, localVehiclePlayer.cameraXO, localVehiclePlayer.cameraX),
-                    Mth.lerp(pPartialTick, localVehiclePlayer.cameraYO, localVehiclePlayer.cameraY),
-                    Mth.lerp(pPartialTick, localVehiclePlayer.cameraZO, localVehiclePlayer.cameraZ));
+            this.setPosition(Mth.lerp(pPartialTick, instance.cameraXO, instance.cameraX),
+                    Mth.lerp(pPartialTick, instance.cameraYO, instance.cameraY),
+                    Mth.lerp(pPartialTick, instance.cameraZO, instance.cameraZ));
+            FirstPersonHandler.zRot = Mth.lerp(pPartialTick, instance.cameraAimRotZO, instance.cameraAimRotZ);
+            setRotation(Mth.lerp(pPartialTick, instance.cameraAimRotYO, instance.cameraAimRotY),
+                    Mth.lerp(pPartialTick, instance.cameraAimRotXO, instance.cameraAimRotX));
+            if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                moveToThirdPerson(vehicle);
+            }
         }
+    }
+
+    private void moveToThirdPerson(AbstractVehicle vehicle) {
+        double distance = vehicle.isViewZoomed()
+                ? vehicle.getViewInfo().thirdPersonDistanceZoomed
+                : vehicle.getViewInfo().thirdPersonDistance;
+        if (!vehicle.isViewZoomed()) {
+            distance = Math.max(0, distance - getXRot() / 90 * vehicle.getViewInfo().thirdPersonCenterOffset.y);
+        }
+        move(-getMaxZoom(distance), 0, 0);
     }
 
     @Inject(method = "isDetached", at = @At("HEAD"), cancellable = true)

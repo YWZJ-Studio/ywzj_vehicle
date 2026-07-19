@@ -29,11 +29,11 @@ import static org.ywzj.vehicle.util.RenderHelper.*;
 @EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleAimAtOverlay implements LayeredDraw.Layer {
 
-    private static double screenAimXO = 0;
-    private static double screenAimYO = 0;
-    private static double screenAimX = 0;
-    private static double screenAimY = 0;
-    private static boolean showAim = true;
+    public static double screenAimXO = 0;
+    public static double screenAimYO = 0;
+    public static double screenAimX = 0;
+    public static double screenAimY = 0;
+    public static boolean showAim = true;
 
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
@@ -176,14 +176,6 @@ public class VehicleAimAtOverlay implements LayeredDraw.Layer {
             case CROSS -> drawCrossDiagonal(guiGraphics, 0, 0, 8, 1, color);
             case BIG_CROSS -> drawCross(guiGraphics, 0, 0, 16, color);
         }
-    }
-
-    public static double getScreenAimX() {
-        return screenAimX;
-    }
-
-    public static double getScreenAimY() {
-        return screenAimY;
     }
 
 }

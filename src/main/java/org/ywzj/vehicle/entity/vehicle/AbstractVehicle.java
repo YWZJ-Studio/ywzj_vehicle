@@ -26,12 +26,10 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.neoforged.api.distmarker.Dist;
@@ -989,10 +987,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 seat.partUnit.setOwnerId(id);
                 seat.passengerId = id;
                 if (seat.passengerId == player.getId()) {
-                    instance.playerLerpXRot = player.getXRot();
-                    instance.playerLerpYRot = seat.partUnit.getSeatRot();
-                    instance.playerLerpSteps = 8;
-                    instance.seat = seat;
+                    instance.toSeat(seat, this);
                 }
             } else {
                 if (index == 0) {
@@ -1067,56 +1062,21 @@ public abstract class AbstractVehicle extends ContainerCraft
     public Vec3 thirdPersonPosition(LivingEntity pPassenger, Float partialTick) {
         if (pPassenger != null) {
             Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
-            double distance = isViewZoomed() ? getViewInfo().thirdPersonDistanceZoomed : getViewInfo().thirdPersonDistance;
             Matrix3f axisRollMat = new Matrix3f();
             Quaternionf q = new Quaternionf();
-            q.rotateY(Math.toRadians(-this.getYRot()));
+            float vehicleYRot = partialTick == null ? this.getYRot() : this.getViewYRot(partialTick);
+            q.rotateY(Math.toRadians(-vehicleYRot));
             q.get(axisRollMat);
             Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
             Vec3 p;
-            float yRot;
-            float xRot;
             if (partialTick == null) {
                 p = this.position();
-                yRot = pPassenger.yHeadRot;
-                xRot = pPassenger.getXRot();
             } else {
                 p = new Vec3(Mth.lerp(partialTick, xo, getX()),
                         Mth.lerp(partialTick, yo, getY()),
                         Mth.lerp(partialTick, zo, getZ()));
-                yRot = Mth.lerp(partialTick, pPassenger.yHeadRotO, pPassenger.yHeadRot);
-                xRot = Mth.lerp(partialTick, pPassenger.xRotO, pPassenger.getXRot());
             }
-            Vec3 thirdPersonCenter = p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
-            axisRollMat = new Matrix3f();
-            q = new Quaternionf();
-            q.rotateY(Math.toRadians(-yRot));
-            q.rotateX(Math.toRadians(xRot));
-            q.get(axisRollMat);
-            float d;
-            if (isViewZoomed()) {
-                d = (float) distance;
-            } else {
-                d = (float) Math.max(0, distance - pPassenger.getXRot() / 90 * offset.y);
-            }
-            Vector3f rotOffset = axisRollMat.transform(new Vector3f(0, 0, -d));
-            Vec3 thirdPersonPos = thirdPersonCenter.add(rotOffset.x, rotOffset.y, rotOffset.z);
-            int maxTry = 128;
-            while (maxTry > 0) {
-                maxTry -= 1;
-                BlockHitResult blockHitResult = level().clip(new ClipContext(thirdPersonPos, thirdPersonCenter,
-                        ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, pPassenger));
-                if (blockHitResult.getType() != BlockHitResult.Type.MISS) {
-                    thirdPersonPos = blockHitResult.getLocation();
-                    Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(0.1);
-                    thirdPersonPos = thirdPersonPos.add(step);
-                } else {
-                    Vec3 step = thirdPersonCenter.subtract(thirdPersonPos).normalize().scale(1);
-                    thirdPersonPos = thirdPersonPos.add(step);
-                    break;
-                }
-            }
-            return thirdPersonPos;
+            return p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
         }
         return Vec3.ZERO;
     }
