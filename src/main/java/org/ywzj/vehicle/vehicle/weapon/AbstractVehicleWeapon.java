@@ -215,11 +215,11 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         }
         float scale = caliber / 20;
         for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
-            for (int i = 0; i < 3 * recoil; i++) {
+            for (int i = 0; i < 3 * recoil + 1; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(new SmokeCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 6, 0.18f * scale, 0.005f), true,
+                level.addParticle(new SmokeCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 0.5f, 0f, 5, 0.18f * scale, 0.1f), true,
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
                         0.015, 0.015, 0.015);
             }
@@ -227,7 +227,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
                 double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
                 double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(new SmokeCloudOption(0.7f, 0.7f, 0.7f, 12, 0.3f * scale, 0.005f), true,
+                level.addParticle(new SmokeCloudOption(0.7f, 0.7f, 0.7f, 0.5f, 0f, 10, 0.3f * scale, 0.1f), true,
                         muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
                         0.015, 0.015, 0.015);
             }

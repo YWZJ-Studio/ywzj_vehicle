@@ -6,20 +6,10 @@
         "turret_fire": ["turret_shoot"],
         "commander_machine_gun_fire": ["commander_machine_gun_shoot"]
     },
-    // 循环动画源
-    "loop_animations": {
-        "static": {
-            "animation": "static"
-        }
-    },
     "graph": {
         // 合并节点，排在后面的pose会覆盖前面的pose中相同骨骼的动画
         "type": "merge",
         "inputs": [
-            {
-                "type": "loop_animation",
-                "ref": "static"
-            },
             {
                 "type": "additive",
                 "base": {

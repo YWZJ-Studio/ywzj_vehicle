@@ -24,51 +24,58 @@
         "energy_consumption_per_tick": 0.00001,
         "engine_particle_offsets": [[-0.5, 0.5, -3]]
     },
+    "physics_info": {
+        "center": [0, -4, 0]
+    },
     "structure_model": "ywzj_vehicle:vehicle/hiace",
     "parts": [
         {
-            "id": "passenger_seat0",
-            "name": "passenger_seat0",
+            "id": "seat0",
+            "name": "seat0",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
+            "passenger_pose": {
+                "left_arm_rot_x": 5,
+                "right_arm_rot_x": 5
+            },
             "seat_offset": [0.5, 1.9, 1.5],
             "owner_view_offset": [0.5, 1.9, 1.5]
         },
         {
-            "id": "passenger_seat1",
-            "name": "passenger_seat1",
+            "id": "seat1",
+            "name": "seat1",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 1.9, 1.5],
             "owner_view_offset": [-0.5, 1.9, 1.5]
         },
         {
-            "id": "passenger_seat2",
-            "name": "passenger_seat2",
+            "id": "seat2",
+            "name": "seat2",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.2, 2, -0.1],
             "owner_view_offset": [0.2, 2, -0.1]
         },
         {
-            "id": "passenger_seat3",
-            "name": "passenger_seat3",
+            "id": "seat3",
+            "name": "seat3",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 2, -0.1],
             "owner_view_offset": [-0.5, 2, -0.1]
         },
         {
-            "id": "passenger_seat4",
-            "name": "passenger_seat4",
+            "id": "seat4",
+            "name": "seat4",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.2, 2, -1.3],
             "owner_view_offset": [0.2, 2, -1.3]
         },
         {
-            "id": "passenger_seat5",
-            "name": "passenger_seat5",
+            "id": "seat5",
+            "name": "seat5",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 2, -1.3],
@@ -80,7 +87,7 @@
             "type": "ywzj_vehicle:door",
             "structure_bone": "front_door_left",
             "is_seat": false,
-            "door_for_seat_id": "passenger_seat0"
+            "door_for_seat_id": "seat0"
         },
         {
             "id": "front_door_right",

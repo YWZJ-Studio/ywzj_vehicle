@@ -1,0 +1,68 @@
+{
+  "name": "atv_coyoto_controller",
+  "script": "ywzj_vehicle:atv_coyoto",
+  "event_animations": {
+    "turret_fire": ["turret_fire"]
+  },
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "additive",
+        "base": {
+          "type": "merge",
+          "inputs": [
+            {
+              "type": "bone_binding",
+              "special_bindings": [
+                {
+                  "bones": ["ctr_wheel_f_l", "ctr_wheel_f_r", "ctr_wheel_b_l", "ctr_wheel_b_r"],
+                  "source": "wheel_rotation",
+                  "axis": "x",
+                  "param": 0.35
+                },
+                {
+                  "bones": ["ctr_wheel_f_l", "ctr_wheel_f_r"],
+                  "source": "steering_angle",
+                  "axis": "y",
+                  "multiplier": 1.0,
+                  "min": -30.0,
+                  "max": 30.0
+                },
+                {
+                  "bones": ["ctrl"],
+                  "source": "steering_angle",
+                  "axis": "y",
+                  "multiplier": 6
+                }
+              ],
+              "part_bindings": [
+                {
+                  "bone": "ctr_machine_gun",
+                  "part": "turret",
+                  "rotation_type": "y",
+                  "axis": "y",
+                  "invert": true
+                },
+                {
+                  "bone": "machine_gun_up",
+                  "part": "turret",
+                  "rotation_type": "x",
+                  "axis": "z",
+                  "invert": true
+                }
+              ]
+            },
+            {
+              "type": "script",
+              "function": "updateBones"
+            }
+          ]
+        },
+        "add": {
+          "type": "event_animation"
+        }
+      }
+    ]
+  }
+}

@@ -6,18 +6,9 @@
         "turret_fire": ["turret_shoot"],
         "anti_aircraft_machine_gun_fire": ["anti_aircraft_machine_gun_shoot"]
     },
-    "loop_animations": {
-        "static": {
-            "animation": "static"
-        }
-    },
     "graph": {
         "type": "merge",
         "inputs": [
-            {
-                "type": "loop_animation",
-                "ref": "static"
-            },
             {
                 "type": "additive",
                 "base": {

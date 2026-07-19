@@ -157,6 +157,12 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             }
         }
 
+        // 失去抓地力
+        if (!onGround()) {
+            motion *= 0.33f;
+            propulsiveForce = Vec3.ZERO;
+        }
+
         // 速度与转向角度产生转向力，并产生车头偏转
         float turnStep = (float) Math.toDegrees(Math.atan2(motion
                 * (turnAngle / maxTurn)
