@@ -398,8 +398,6 @@ public class LocalVehiclePlayer {
                 return true;
             }
         }
-        player.xRotO = player.getXRot();
-        player.yRotO = player.getYRot();
         float fX = (float) (pXRot * 0.15F);
         float fY = (float) (pYRot * 0.15F);
         Quaternionf rot;
@@ -416,8 +414,12 @@ public class LocalVehiclePlayer {
         }
         Vector3f euler = new Vector3f();
         rot.getEulerAnglesYXZ(euler);
-        player.setXRot((float) Math.toDegrees(euler.x));
-        player.setYRot((float) Math.toDegrees(-euler.y));
+        float xRot = (float) Math.toDegrees(euler.x);
+        float yRot = (float) Math.toDegrees(-euler.y);
+        player.xRotO += xRot - player.getXRot();
+        player.yRotO += yRot - player.getYRot();
+        player.setXRot(xRot);
+        player.setYRot(yRot);
         vehicle.onPassengerTurned(player);
         return true;
     }
