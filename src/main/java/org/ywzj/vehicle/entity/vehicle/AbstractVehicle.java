@@ -968,15 +968,16 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @OnlyIn(Dist.CLIENT)
     private void setSeats(int[] ids) {
-        Player player = LocalVehiclePlayer.instance.getPlayer();
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
         List<Integer> passengerIdsBySeat = new ArrayList<>();
         for (int id : ids) {
             passengerIdsBySeat.add(id);
         }
         if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
                 && !passengerIdsBySeat.contains(player.getId())) {
-            LocalVehiclePlayer.instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
-            LocalVehiclePlayer.instance.seat = null;
+            instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
+            instance.seat = null;
         }
         for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
             Seat seat = seats.get(index);
@@ -988,8 +989,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                 seat.partUnit.setOwnerId(id);
                 seat.passengerId = id;
                 if (seat.passengerId == player.getId()) {
-                    seat.partUnit.applySeatRot(player);
-                    LocalVehiclePlayer.instance.seat = seat;
+                    instance.playerLerpXRot = player.getXRot();
+                    instance.playerLerpYRot = seat.partUnit.getSeatRot();
+                    instance.playerLerpSteps = 8;
+                    instance.seat = seat;
                 }
             } else {
                 if (index == 0) {

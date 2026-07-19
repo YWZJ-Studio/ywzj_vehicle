@@ -1,0 +1,33 @@
+{
+  "name": "atv_mrzr4_controller",
+  "graph": {
+    "type": "merge",
+    "inputs": [
+      {
+        "type": "bone_binding",
+        "special_bindings": [
+          {
+            "bones": ["ctr_wheel_f_l", "ctr_wheel_f_r", "ctr_wheel_b_l", "ctr_wheel_b_r"],
+            "source": "wheel_rotation",
+            "axis": "x",
+            "param": 0.35
+          },
+          {
+            "bones": ["ctr_wheel_f_l", "ctr_wheel_f_r"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": 1.0,
+            "min": -30.0,
+            "max": 30.0
+          },
+          {
+            "bones": ["ctrl"],
+            "source": "steering_angle",
+            "axis": "y",
+            "multiplier": 6
+          }
+        ]
+      }
+    ]
+  }
+}

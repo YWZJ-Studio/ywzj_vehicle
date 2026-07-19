@@ -182,9 +182,12 @@ public class LocalVehiclePlayer {
         cameraZO = cameraZ;
         if (partUnit == null) {
             cameraX = player.getX();
-            cameraY = vehicle.getBoundingBox().maxY + 4;
+            cameraY = vehicle.getBoundingBox().maxY + player.getEyeHeight();
             cameraZ = player.getZ();
             return;
+        }
+        if (partUnit instanceof WeaponUnit weaponUnit) {
+            weaponUnit.tickHit();
         }
         cameraAimRotXO = cameraAimRotX;
         cameraAimRotYO = cameraAimRotY;

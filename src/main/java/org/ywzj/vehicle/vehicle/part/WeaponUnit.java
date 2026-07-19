@@ -374,7 +374,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void tick() {
         if (vehicle.level().isClientSide()) {
             tickFireControl();
-            tickHit();
         } else {
             // 通知雷达锁定给目标载具乘客
             if (vehicle.tickCount % 2 == 0 && getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF && !radarUnits.isEmpty()) {
@@ -510,7 +509,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void tickHit() {
+    public void tickHit() {
         weaponHitPosO = weaponHitPos;
         weaponHitPos = currentWeaponHitPosition();
     }
@@ -697,7 +696,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     setXAimRot(targetRot.x);
                     setYAimRot(targetRot.y);
                     ignoreRemoteRotTick = 1;
-                    weaponHitPos = currentWeaponHitPosition();
                 }
             }
         }

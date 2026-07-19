@@ -1,0 +1,71 @@
+{
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "attributes": {
+        "brake_force": 0.025,
+        "forward_force": 0.02,
+        "backward_force": 0.02,
+        "max_speed_forward": 0.8,
+        "max_speed_backward": 0.2,
+        "turn_step": 0.4,
+        "max_turn": 2
+    },
+    "max_health": 300,
+    "defense_stats": {
+        "damage_threshold": 10,
+        "impact_multiplier": 2
+    },
+    "protect_passenger": false,
+    "view_info": {
+        "third_person_center_offset": [0, 4, 0],
+        "third_person_distance": 8,
+        "third_person_center_offset_zoomed": [0, 5, 0],
+        "third_person_distance_zoomed": 0,
+        "sound_distance": 3
+    },
+    "energy_info": {
+        "energy_capacity": 1,
+        "energy_consumption_per_tick": 0.00001
+    },
+    "physics_info": {
+        "center": [0, -2, 0]
+    },
+    "structure_model": "ywzj_vehicle:vehicle/atv_mrzr4",
+    "parts": [
+        {
+            "id": "seat0",
+            "name": "seat0",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "passenger_pose": {
+                "left_arm_rot_x": 4.7,
+                "right_arm_rot_x": 4.7
+            },
+            "seat_offset": [0.4, 1.9, 0.2],
+            "owner_view_offset": [0.4, 1.9, 0.2]
+        },
+        {
+            "id": "seat1",
+            "name": "seat1",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-0.4, 1.9, 0.2],
+            "owner_view_offset": [-0.4, 1.9, 0.2]
+        },
+        {
+            "id": "seat2",
+            "name": "seat2",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [0.4, 2.1, -0.8],
+            "owner_view_offset": [0.4, 2.1, -0.8]
+        },
+        {
+            "id": "seat3",
+            "name": "seat3",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-0.4, 2.1, -0.8],
+            "owner_view_offset": [-0.4, 2.1, -0.8]
+        }
+    ]
+}

@@ -216,19 +216,19 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                     }
                     // 光瞄视野框
                     drawRectByCorner(guiGraphics,
-                            (int) (baseX + weaponUnit.getYRotMin()),
-                            (int) (baseX + weaponUnit.getYRotMax()),
-                            (int) (baseY + weaponUnit.getXRotMin()),
-                            (int) (baseY + weaponUnit.getXRotMax()),
+                            (int) (baseX + weaponUnit.getYRotMin() - weaponUnit.ySelfRot),
+                            (int) (baseX + weaponUnit.getYRotMax() - weaponUnit.ySelfRot),
+                            (int) (baseY + weaponUnit.getXRotMin() - weaponUnit.xSelfRot),
+                            (int) (baseY + weaponUnit.getXRotMax() - weaponUnit.xSelfRot),
                             color, 1f);
                     if (vehicleWeapon instanceof VehicleMissile vehicleMissile) {
                         VehicleMissileWeaponData vehicleMissileWeaponData = vehicleMissile.getData();
                         // 导弹射界框
                         drawRectByCorner(guiGraphics,
-                                (int) (baseX + vehicleMissileWeaponData.getYRotMin()),
-                                (int) (baseX + vehicleMissileWeaponData.getYRotMax()),
-                                (int) (baseY + Math.max(vehicleMissileWeaponData.getXRotMin(), weaponUnit.getXRotMin())),
-                                (int) (baseY + Math.min(vehicleMissileWeaponData.getXRotMax(), weaponUnit.getXRotMax())),
+                                (int) (baseX + vehicleMissileWeaponData.getYRotMin() - weaponUnit.ySelfRot),
+                                (int) (baseX + vehicleMissileWeaponData.getYRotMax() - weaponUnit.ySelfRot),
+                                (int) (baseY + Math.max(vehicleMissileWeaponData.getXRotMin(), weaponUnit.getXRotMin()) - weaponUnit.xSelfRot),
+                                (int) (baseY + Math.min(vehicleMissileWeaponData.getXRotMax(), weaponUnit.getXRotMax()) - weaponUnit.xSelfRot),
                                 color, 1f);
                     }
                     int x = (int) Mth.lerp(partialTick, weaponUnit.yRotO, weaponUnit.getYRot());

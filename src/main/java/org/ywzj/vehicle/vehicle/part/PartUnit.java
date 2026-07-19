@@ -249,8 +249,12 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.ownerViewOffset = ownerViewOffset;
     }
 
+    public float getSeatRot() {
+        return vehicle.getYRot() + seatRot;
+    }
+
     public void applySeatRot(LivingEntity passenger) {
-        float takeSeatRot = vehicle.getYRot() + seatRot;
+        float takeSeatRot = getSeatRot();
         passenger.setYRot(takeSeatRot);
         passenger.setYBodyRot(takeSeatRot);
         passenger.setYHeadRot(takeSeatRot);

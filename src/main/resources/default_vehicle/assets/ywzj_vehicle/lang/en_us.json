@@ -2,7 +2,6 @@
     "default_vehicle": "Limitless Vehicle",
 
     "ywzj_vehicle.dump_truck": "Dump Truck",
-    "ywzj_vehicle.lav150": "LAV-150",
     "ywzj_vehicle.ztl11": "ZTL-11",
     "ywzj_vehicle.ztz99a": "ZTZ-99A",
     "ywzj_vehicle.z10": "Z-10",
@@ -17,9 +16,10 @@
     "ywzj_vehicle.ah_6": "AH-6",
     "ywzj_vehicle.j10c": "J-10C",
     "ywzj_vehicle.rafale": "Rafale",
+    "ywzj_vehicle.atv_coyoto": "Coyote",
+    "ywzj_vehicle.atv_mrzr4": "MRZR4",
 
     "entity.ywzj_vehicle.dump_truck": "Dump Truck",
-    "entity.ywzj_vehicle.lav150": "LAV-150",
     "entity.ywzj_vehicle.ztl11": "ZTL-11",
     "entity.ywzj_vehicle.ztz99a": "ZTZ-99A",
     "entity.ywzj_vehicle.z10": "Z-10",
@@ -33,5 +33,7 @@
     "entity.ywzj_vehicle.bgm_71_tow": "BGM-71 TOW",
     "entity.ywzj_vehicle.ah_6": "AH-6",
     "entity.ywzj_vehicle.j10c": "J-10C",
-    "entity.ywzj_vehicle.rafale": "Rafale"
+    "entity.ywzj_vehicle.rafale": "Rafale",
+    "entity.ywzj_vehicle.atv_coyoto": "Coyote",
+    "entity.ywzj_vehicle.atv_mrzr4": "MRZR4"
 }

@@ -58,6 +58,7 @@ public class SmokeCloudParticle extends TextureSheetParticle {
         this.rCol = this.startR;
         this.gCol = this.startG;
         this.bCol = this.startB;
+        this.alpha = this.startAlpha;
         this.changing = option.changing();
         if (this.changing) {
             this.setSpriteFromAge(spriteSet);

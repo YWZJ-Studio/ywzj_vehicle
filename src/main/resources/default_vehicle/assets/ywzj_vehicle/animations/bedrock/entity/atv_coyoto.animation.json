@@ -1,0 +1,20 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"turret_fire": {
+			"animation_length": 0.0417,
+			"bones": {
+				"machine_gun_up": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.0417": [0, 0, 0.5]
+					},
+					"position": {
+						"0.0": [0, 0, 0],
+						"0.0417": [0.625, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

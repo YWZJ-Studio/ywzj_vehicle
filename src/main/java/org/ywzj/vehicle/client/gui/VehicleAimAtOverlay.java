@@ -154,7 +154,8 @@ public class VehicleAimAtOverlay implements LayeredDraw.Layer {
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
                 // 瞄准位置
-                Vec3 aimScreenPos = VectorUtil.worldToScreen(LocalVehiclePlayer.instance.freeAimPos());
+                LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+                Vec3 aimScreenPos = VectorUtil.worldToScreen(instance.viewType == LocalVehiclePlayer.ViewType.SCOPE ? instance.scopeAimPos() : instance.freeAimPos());
                 if (aimScreenPos.z >= 0) {
                     screenAimXO = screenAimX;
                     screenAimYO = screenAimY;
