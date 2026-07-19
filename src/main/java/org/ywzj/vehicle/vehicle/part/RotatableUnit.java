@@ -3,7 +3,6 @@ package org.ywzj.vehicle.vehicle.part;
 import com.mojang.math.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -233,9 +232,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.yRotO = this.yRot;
         this.yAimRot = this.yRot;
     }
-
-    @Override
-    public void applySeatRot(LivingEntity passenger) {}
 
     public float getViewXRot(float pPartialTicks) {
         return pPartialTicks == 1.0F ? xRot : Mth.lerp(pPartialTicks, this.xRotO, xRot);

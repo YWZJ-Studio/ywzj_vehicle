@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -464,31 +465,20 @@ public class LocalVehiclePlayer {
     }
 
     public void thirdPersonCameraAimAt(Vec3 worldPos, AbstractVehicle vehicle) {
-        Vec3 offset = vehicle.isViewZoomed() ? vehicle.getViewInfo().thirdPersonCenterOffsetZoomed : vehicle.getViewInfo().thirdPersonCenterOffset;
-        double distance = vehicle.isViewZoomed() ? vehicle.getViewInfo().thirdPersonDistanceZoomed : vehicle.getViewInfo().thirdPersonDistance;
-        Vec3 thirdPersonPos = vehicle.relativeRotPos(vehicle.position().add(offset), false);
-        double r = distance;
-        double a = worldPos.distanceTo(thirdPersonPos);
-        double c = Math.asin(r / (a / Math.sin(Math.PI * CAMERA_UPWARD_ANGLE / 180)));
-        Vec3 dir = thirdPersonPos.subtract(worldPos).normalize();
-        double yaw = Math.atan2(dir.z, dir.x);
-        double pitch = Math.asin(dir.y) + c;
-        Vec3 rotatedDir = new Vec3(Math.cos(pitch) * Math.cos(yaw), Math.sin(pitch), Math.cos(pitch) * Math.sin(yaw)).normalize();
-        Vec3 oc = worldPos.subtract(thirdPersonPos);
-        double b2 = 2 * rotatedDir.dot(oc);
-        double c2 = oc.dot(oc) - r * r;
-        double discriminant = b2 * b2 - 4 * c2;
-        if (discriminant >= 0) {
-            double sqrtD = Math.sqrt(discriminant);
-            double t1 = (-b2 - sqrtD) / 2.0;
-            double t2 = (-b2 + sqrtD) / 2.0;
-            double t = Math.max(t1, t2);
-            Vec3 intersection = worldPos.add(rotatedDir.scale(t));
-            cameraX = intersection.x;
-            cameraY = intersection.y;
-            cameraZ = intersection.z;
-            cameraAimAt(thirdPersonPos);
+        Vec3 cameraAnchor = vehicle.thirdPersonPosition(getPlayer(), null);
+        Vec3 direction = worldPos.subtract(cameraAnchor);
+        if (direction.lengthSqr() < 1.0E-8) {
+            return;
         }
+        Vec2 targetRot = VectorUtil.vecToRot(direction);
+        cameraX = cameraAnchor.x;
+        cameraY = cameraAnchor.y;
+        cameraZ = cameraAnchor.z;
+        cameraAimRotX = Mth.wrapDegrees(targetRot.x + CAMERA_UPWARD_ANGLE);
+        cameraAimRotY = Mth.wrapDegrees(targetRot.y);
+        cameraAimRotZ = 0;
+        getPlayer().setXRot(cameraAimRotX);
+        getPlayer().setYRot(cameraAimRotY);
     }
 
     public Vec3 cameraDirection(float upward) {
@@ -507,6 +497,25 @@ public class LocalVehiclePlayer {
         Vec3 direction = cameraDirection(xRot);
         Vec3 end = start.add(direction.scale(renderDistance()));
         return VectorUtil.hitPosition(getPlayer(), start, end);
+    }
+
+    public void toSeat(AbstractVehicle.Seat seat, AbstractVehicle vehicle) {
+        if (seat.partUnit instanceof WeaponUnit weaponUnit) {
+            Vec3 aimHitPosition = weaponUnit.aimHitPosition();
+            Vec3 cameraAnchor = vehicle.thirdPersonPosition(getPlayer(), null);
+            Vec3 direction = aimHitPosition.subtract(cameraAnchor);
+            if (direction.lengthSqr() < 1.0E-8) {
+                return;
+            }
+            Vec2 targetRot = VectorUtil.vecToRot(direction);
+            playerLerpXRot = Mth.wrapDegrees(targetRot.x + CAMERA_UPWARD_ANGLE);
+            playerLerpYRot = Mth.wrapDegrees(targetRot.y);
+        } else {
+            playerLerpXRot = getPlayer().getXRot();
+            playerLerpYRot = seat.partUnit.getSeatRot();
+        }
+        playerLerpSteps = 8;
+        this.seat = seat;
     }
 
     private void fixLerp() {

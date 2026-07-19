@@ -995,10 +995,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 seat.partUnit.setOwnerId(id);
                 seat.passengerId = id;
                 if (seat.passengerId == player.getId()) {
-                    instance.playerLerpXRot = player.getXRot();
-                    instance.playerLerpYRot = seat.partUnit.getSeatRot();
-                    instance.playerLerpSteps = 8;
-                    instance.seat = seat;
+                    instance.toSeat(seat, this);
                 }
             } else {
                 if (index == 0) {
