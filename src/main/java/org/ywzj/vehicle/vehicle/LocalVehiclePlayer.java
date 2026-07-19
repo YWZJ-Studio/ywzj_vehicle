@@ -176,6 +176,11 @@ public class LocalVehiclePlayer {
             return;
         }
         AbstractVehicle vehicle = getVehicle();
+        vehicle.getPartUnits().forEach(partUnit -> {
+            if (partUnit instanceof WeaponUnit weaponUnit) {
+                weaponUnit.tickHit();
+            }
+        });
         Player player = getPlayer();
         PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
         cameraXO = cameraX;
@@ -186,9 +191,6 @@ public class LocalVehiclePlayer {
             cameraY = vehicle.getBoundingBox().maxY + player.getEyeHeight();
             cameraZ = player.getZ();
             return;
-        }
-        if (partUnit instanceof WeaponUnit weaponUnit) {
-            weaponUnit.tickHit();
         }
         cameraAimRotXO = cameraAimRotX;
         cameraAimRotYO = cameraAimRotY;
