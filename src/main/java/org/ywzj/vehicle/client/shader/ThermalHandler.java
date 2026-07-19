@@ -65,9 +65,9 @@ public class ThermalHandler implements ResourceManagerReloadListener {
             return;
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick().getGameTimeDeltaPartialTick(false), event.getFrustum(), event.getCamera());
+            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick().getGameTimeDeltaPartialTick(true), event.getFrustum(), event.getCamera());
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            applyPostProcess(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+            applyPostProcess(event.getPartialTick().getGameTimeDeltaPartialTick(true));
         }
     }
 

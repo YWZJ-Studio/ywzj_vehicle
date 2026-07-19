@@ -37,7 +37,7 @@ public class VehicleAimAtOverlay implements LayeredDraw.Layer {
 
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
-        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(true);
         if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
             return;
         }
@@ -145,7 +145,7 @@ public class VehicleAimAtOverlay implements LayeredDraw.Layer {
     }
 
     @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Post event) {
+    public static void onClientTick(ClientTickEvent.Pre event) {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || !player.isAlive()) {

@@ -40,7 +40,7 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
 
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
-        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(true);
         int screenWidth = guiGraphics.guiWidth();
         int screenHeight = guiGraphics.guiHeight();
         if (!LocalVehiclePlayer.instance.onVehicle() || LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {

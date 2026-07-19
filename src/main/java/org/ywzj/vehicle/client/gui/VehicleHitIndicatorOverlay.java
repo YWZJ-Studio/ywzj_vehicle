@@ -52,7 +52,7 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
     @SubscribeEvent(receiveCanceled = true)
     public static void onRenderOverlay(RenderGuiLayerEvent.Pre event) {
         if (event.getName().equals(VanillaGuiLayers.CROSSHAIR)) {
-            renderHitMarker(event.getGuiGraphics());
+            renderHitMarker(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(true));
         }
     }
 

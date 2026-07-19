@@ -75,7 +75,7 @@ public class CrtHandler implements ResourceManagerReloadListener {
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             ensureChain(minecraft);
-            postChain.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+            postChain.process(event.getPartialTick().getGameTimeDeltaPartialTick(true));
             if (postChain instanceof PostPassesGetter getter) {
                 for (PostPass pass : getter.getPasses()) {
                     pass.getEffect().safeGetUniform("Time").set((float) (System.currentTimeMillis() % 100000) / 1000f);

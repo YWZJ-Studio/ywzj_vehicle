@@ -23,13 +23,10 @@ public abstract class CameraMixin {
     protected abstract void setPosition(double pX, double pY, double pZ);
 
     @Shadow
-    protected abstract void setRotation(float pYRot, float pXRot);
+    protected abstract void move(float pDistanceOffset, float pVerticalOffset, float pHorizontalOffset);
 
     @Shadow
-    protected abstract void move(double pDistanceOffset, double pVerticalOffset, double pHorizontalOffset);
-
-    @Shadow
-    protected abstract double getMaxZoom(double pStartingDistance);
+    protected abstract float getMaxZoom(float pStartingDistance);
 
     @Shadow
     public abstract float getXRot();
@@ -55,9 +52,6 @@ public abstract class CameraMixin {
             this.setPosition(Mth.lerp(pPartialTick, instance.cameraXO, instance.cameraX),
                     Mth.lerp(pPartialTick, instance.cameraYO, instance.cameraY),
                     Mth.lerp(pPartialTick, instance.cameraZO, instance.cameraZ));
-            FirstPersonHandler.zRot = Mth.lerp(pPartialTick, instance.cameraAimRotZO, instance.cameraAimRotZ);
-            setRotation(Mth.lerp(pPartialTick, instance.cameraAimRotYO, instance.cameraAimRotY),
-                    Mth.lerp(pPartialTick, instance.cameraAimRotXO, instance.cameraAimRotX));
             if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 moveToThirdPerson(vehicle);
             }
@@ -71,7 +65,7 @@ public abstract class CameraMixin {
         if (!vehicle.isViewZoomed()) {
             distance = Math.max(0, distance - getXRot() / 90 * vehicle.getViewInfo().thirdPersonCenterOffset.y);
         }
-        move(-getMaxZoom(distance), 0, 0);
+        move(-getMaxZoom((float) distance), 0, 0);
     }
 
     @Inject(method = "isDetached", at = @At("HEAD"), cancellable = true)

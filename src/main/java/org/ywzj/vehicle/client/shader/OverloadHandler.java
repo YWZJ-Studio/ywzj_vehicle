@@ -76,7 +76,7 @@ public class OverloadHandler implements ResourceManagerReloadListener {
         }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             ensureChain(minecraft);
-            postChain.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+            postChain.process(event.getPartialTick().getGameTimeDeltaPartialTick(true));
             if (postChain instanceof PostPassesGetter getter) {
                 for (PostPass pass : getter.getPasses()) {
                     float stamina = LocalVehiclePlayer.instance.stamina;

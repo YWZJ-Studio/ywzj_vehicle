@@ -50,7 +50,7 @@ public class FirstPersonHandler {
         if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE
                 || localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.OPERATOR
                 || localVehiclePlayer.playerLerpSteps > 0) {
-            float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+            float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
             event.setPitch(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotXO, localVehiclePlayer.cameraAimRotX));
             event.setYaw(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY));
             event.setRoll(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ));
