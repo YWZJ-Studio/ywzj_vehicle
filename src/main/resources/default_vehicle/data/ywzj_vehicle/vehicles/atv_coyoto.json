@@ -11,8 +11,7 @@
     },
     "max_health": 300,
     "defense_stats": {
-        "damage_threshold": 10,
-        "impact_multiplier": 2
+        "damage_threshold": 10
     },
     "protect_passenger": false,
     "view_info": {
