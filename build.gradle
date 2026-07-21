@@ -115,7 +115,7 @@ repositories {
             includeGroup "com.github.mcmodderanchor"
         }
     }
-//    mavenLocal()
+    mavenLocal()
 }
 
 dependencies {
@@ -126,8 +126,8 @@ dependencies {
         jarJar.ranged(it, "[1.8.1,)")
     }
     // SBM
-    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.3.3-forge-mc1.20.1"))) {
-        jarJar.ranged(it, "[2.3.3,)")
+    jarJar(implementation(fg.deobf("com.github.mcmodderanchor:simplebedrockmodel:2.5.0"))) {
+        jarJar.ranged(it, "[2.5.0,)")
     }
     compileOnly("com.maydaymemory:mae:1.1.2") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
@@ -147,13 +147,13 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
     runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
     // ar
-    runtimeOnly fg.deobf("maven.modrinth:acceleratedrendering:1.0.8-1.20.1-alpha")
+    runtimeOnly fg.deobf("curse.maven:accelerated-rendering-1314021:8448250")
     // tacz
     implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626")
     // sbw
-    implementation fg.deobf("curse.maven:superb-warfare-1218165:7292685")
-    implementation fg.deobf("curse.maven:curios-309927:6418456")
-    implementation fg.deobf("curse.maven:geckolib-388172:7553267")
+    compileOnly fg.deobf("curse.maven:superb-warfare-1218165:7292685")
+    compileOnly fg.deobf("curse.maven:curios-309927:6418456")
+    compileOnly fg.deobf("curse.maven:geckolib-388172:7553267")
     // vs
     compileOnly("org.valkyrienskies.core:api:1.1.0+") {
         exclude group: 'org.joml', module: 'joml'

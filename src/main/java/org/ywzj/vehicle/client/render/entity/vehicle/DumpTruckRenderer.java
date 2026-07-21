@@ -51,7 +51,6 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             BedrockBone lift2 = model.getBoneMap().get("lift2");
             BedrockBone lift3 = model.getBoneMap().get("lift3");
 
-            // 轮子转速
             float vf = vehicle.getEntityData().get(DumpTruck.FORWARD_SPEED);
             float t = (float) (System.currentTimeMillis() - vehicle.lastRenderTime) / 1000 * 20;
             float s = t * vf;
@@ -60,18 +59,15 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             vehicle.wheelRotation += r;
             vehicle.wheelRotation %= 360;
 
-            // 轮子转向幅度
             float vt = Mth.lerp(pPartialTick, vehicle.turnAngleO, vehicle.turnAngle);
             float turnRotation = vt * 16;
 
-            // 车斗
             float bedXRot = 0;
             PartUnit<?> dumpTruckBed = vehicle.seats.get(0).partUnit.getSubPartUnits().get(0);
             if (dumpTruckBed instanceof RotatableUnit<?> rotatableUnit) {
                 bedXRot = Mth.lerp(pPartialTick, rotatableUnit.xRotO, rotatableUnit.getXRot());
             }
 
-            // 应用程序动画
             wheel1.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
             wheel2.rotation.mul(Axis.YN.rotationDegrees(turnRotation));
             control.rotation.mul(Axis.YN.rotationDegrees(turnRotation * 15));
@@ -96,7 +92,6 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             wheel6.rotation.mul(Axis.XN.rotationDegrees(vehicle.wheelRotation));
 
             Pose pose = model.getPose();
-            
             var instance = vehicle.getAnimationInstance();
             if (instance != null) {
                 instance.tick();
@@ -112,10 +107,8 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
             model.renderToBuffer(pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
             model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
-            // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
-            // 渲染弹孔
             vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
 
             model.applyPose(model.getBindPose());
@@ -130,5 +123,4 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
     public ResourceLocation getTextureLocation(DumpTruck pEntity) {
         return null;
     }
-
 }

@@ -1,5 +1,9 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.time.AnimationClocks;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -61,6 +65,7 @@ import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
@@ -91,6 +96,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public abstract class AbstractVehicle extends ContainerCraft
         implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData {
@@ -112,6 +118,16 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected Map<String, PartUnit<?>> partUnitMap;
     protected final Map<String, DecorationUnit> decorationUnits;
     protected final HashSet<BulletHoleParticle> bulletHoleParticles;
+    @OnlyIn(Dist.CLIENT)
+    private BakedModelInstance modelInstance;
+    @OnlyIn(Dist.CLIENT)
+    private VehicleBedrockModel modelInstanceDefinition;
+    @OnlyIn(Dist.CLIENT)
+    private final AnimationRateLimiter<Pose> bakedPoseRateLimiter = new AnimationRateLimiter<>(
+            AnimationClocks.client(), AnimationRateLimiter.FPS_60);
+    @OnlyIn(Dist.CLIENT)
+    @Nullable
+    private Pose lastAppliedBakedPose;
     protected ViewInfo viewInfo;
     protected boolean viewZoomed;
     public EnergyInfo energyInfo;
@@ -1197,6 +1213,38 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public HashSet<BulletHoleParticle> getBulletHoleParticles() {
         return bulletHoleParticles;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public BakedModelInstance getModelInstance(VehicleBedrockModel model) {
+        if (modelInstance == null || modelInstanceDefinition != model) {
+            modelInstance = model.createBakedInstance();
+            modelInstanceDefinition = model;
+            bakedPoseRateLimiter.reset();
+            lastAppliedBakedPose = null;
+        }
+        return modelInstance;
+    }
+
+    /** 仅在限流器生成新的完整姿态时更新实体持有的 baked 模型实例。 */
+    @OnlyIn(Dist.CLIENT)
+    public void applyRateLimitedBakedPose(BakedModelInstance modelInstance, Supplier<Pose> evaluator) {
+        Pose pose = bakedPoseRateLimiter.update(evaluator);
+        if (pose != lastAppliedBakedPose) {
+            modelInstance.applyPose(pose);
+            lastAppliedBakedPose = pose;
+        }
+    }
+
+    /** 动画实例失效时，仅在此前应用过动画姿态的情况下回退到 bind pose。 */
+    @OnlyIn(Dist.CLIENT)
+    public void resetBakedAnimationPose(BakedModelInstance modelInstance) {
+        if (lastAppliedBakedPose == null) {
+            return;
+        }
+        modelInstance.applyPose(modelInstance.getBindPose());
+        lastAppliedBakedPose = null;
+        bakedPoseRateLimiter.reset();
     }
 
     public List<VehicleCubeOBB> getVehicleCubeOBBs() {

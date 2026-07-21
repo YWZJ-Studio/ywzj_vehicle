@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import org.mozillaa.javascript.*;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -70,6 +71,12 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
     protected AnimationController<CTX> compileAnimationController(AnimationControllerDefinition definition,
                                                                   ScriptManager scriptManager,
                                                                   ScriptContextFactory scriptContextFactory) {
+        BoneIndexProvider animationIndexProvider = getAnimationIndexProvider();
+        if (animationIndexProvider == null) {
+            YwzjVehicle.LOGGER.error("Unable to compile animation controller without a model index provider: {}", animationControllerPath);
+            return null;
+        }
+
         try {
             // Load external script if specified
             Script compiledScript = null;
@@ -110,7 +117,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
             };
 
             AnimationControllerCompiler controllerCompiler = new AnimationControllerCompiler(
-                    stateMachineCompiler, scriptNodeResolver, model
+                    stateMachineCompiler, scriptNodeResolver, animationIndexProvider
             );
 
             return controllerCompiler.compile(definition);
@@ -127,7 +134,10 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
             BaseFunction createPoseHelperFunc = new BaseFunction() {
                 @Override
                 public Object call(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
-                    PoseHelper helper = new PoseHelper(VehicleDisplay.this.model);
+                    BoneIndexProvider animationIndexProvider = VehicleDisplay.this.getAnimationIndexProvider();
+                    PoseHelper helper = animationIndexProvider == null
+                            ? PoseHelper.DUMMY
+                            : new PoseHelper(animationIndexProvider);
                     return Context.javaToJS(helper, scope);
                 }
             };
