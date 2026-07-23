@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.blockentity;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.TreeModelInstance;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.tree.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -14,9 +14,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
-import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -28,6 +30,8 @@ import java.util.*;
 
 public class MachineMaxBlockEntity extends BlockEntity {
 
+    private static final ICube[] NO_CUBES = new ICube[0];
+
     private boolean crafting;
     private boolean hasProduct;
     public float progress;
@@ -35,8 +39,12 @@ public class MachineMaxBlockEntity extends BlockEntity {
     public ResourceLocation craftingVehicleId;
     public BaseDisplay vehicleDisplay;
     public BaseVehicleData vehicleData;
-    public List<MachineMaxBlockRenderer.BedrockBoneWrapper> bedrockBoneWrappers = new ArrayList<>();
-    public MachineMaxBlockRenderer.BedrockBoneWrapper printingBoneWrapper;
+    public TreeBedrockModel printingModel;
+    public TreeModelInstance printingModelInstance;
+    public List<PrintingCube> printingCubes = List.of();
+    public ICube[] staticPrintingCubes = NO_CUBES;
+    public ICube[] visiblePrintingCubes = NO_CUBES;
+    private int cachedVisibleCubeCount = -1;
 
     public MachineMaxBlockEntity(BlockPos pos, BlockState state) {
         super(AllBlockEntities.MACHINE_MAX_BLOCK_ENTITY.get(), pos, state);
@@ -77,20 +85,15 @@ public class MachineMaxBlockEntity extends BlockEntity {
             }
         } else {
             blockEntity.tickAnimation();
-            if (blockEntity.crafting) {
-                if (level.random.nextFloat() < 0.2F) {
-                    Vec3 worldPos = pos.getCenter();
-                    double x = worldPos.x;
-                    double y = worldPos.y + 1D;
-                    double z = worldPos.z;
-                    double xOffset = (level.random.nextDouble() - 0.5D) * 0.5D;
-                    double zOffset = (level.random.nextDouble() - 0.5D) * 0.5D;
-                    level.addParticle(
-                            ParticleTypes.POOF,
-                            x + xOffset, y, z + zOffset,
-                            0.0D, 0.1D, 0.0D
-                    );
-                }
+            if (blockEntity.crafting && level.random.nextFloat() < 0.2F) {
+                Vec3 worldPos = pos.getCenter();
+                double xOffset = (level.random.nextDouble() - 0.5D) * 0.5D;
+                double zOffset = (level.random.nextDouble() - 0.5D) * 0.5D;
+                level.addParticle(
+                        ParticleTypes.POOF,
+                        worldPos.x + xOffset, worldPos.y + 1D, worldPos.z + zOffset,
+                        0.0D, 0.1D, 0.0D
+                );
             }
         }
     }
@@ -115,6 +118,51 @@ public class MachineMaxBlockEntity extends BlockEntity {
         return hasProduct;
     }
 
+    public boolean hasPrintingPreview() {
+        return crafting || hasProduct;
+    }
+
+    /**
+     * 打印时按 cube 进度显示；成品保留全部静态 cube，直到被取走。
+     */
+    public int getVisiblePrintingCubeCount() {
+        if (printingCubes.isEmpty()) {
+            return 0;
+        }
+        if (hasProduct) {
+            return printingCubes.size();
+        }
+        if (!crafting || progress <= 0) {
+            return 0;
+        }
+        return Math.min((int) Math.ceil(progress * printingCubes.size()), printingCubes.size());
+    }
+
+    public PrintingCube getCurrentPrintingCube() {
+        if (printingCubes.isEmpty()) {
+            return null;
+        }
+        if (hasProduct) {
+            return printingCubes.get(printingCubes.size() - 1);
+        }
+        if (!crafting) {
+            return null;
+        }
+        int visibleCount = getVisiblePrintingCubeCount();
+        return printingCubes.get(Math.max(0, visibleCount - 1));
+    }
+
+    public boolean isPrintingPolyMeshStage() {
+        if (!hasPrintingPreview() || printingModel == null) {
+            return false;
+        }
+        return hasProduct || printingCubes.isEmpty() || getVisiblePrintingCubeCount() >= printingCubes.size();
+    }
+
+    public void clearPrintingPreview() {
+        clearAnimation();
+    }
+
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -130,63 +178,145 @@ public class MachineMaxBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains("craftingVehicleId")) {
-            craftingVehicleId = YwzjVehicle.resourceLocation(tag.getString("craftingVehicleId"));
-            if (level != null && level.isClientSide()) {
+        craftingVehicleId = tag.contains("craftingVehicleId")
+                ? YwzjVehicle.resourceLocation(tag.getString("craftingVehicleId"))
+                : null;
+        crafting = tag.getBoolean("crafting");
+        hasProduct = tag.getBoolean("hasProduct");
+        progress = tag.getFloat("progress");
+        step = tag.getFloat("step");
+
+        if (level != null && level.isClientSide()) {
+            if (hasPrintingPreview()) {
                 prepareAnimation();
+                updateVisiblePrintingCubes();
+            } else {
+                clearAnimation();
             }
-        } else {
-            craftingVehicleId = null;
-        }
-        if (tag.contains("crafting")) {
-            crafting = tag.getBoolean("crafting");
-        }
-        if (tag.contains("hasProduct")) {
-            hasProduct = tag.getBoolean("hasProduct");
-        }
-        if (tag.contains("progress")) {
-            progress = tag.getFloat("progress");
-        }
-        if (tag.contains("step")) {
-            step = tag.getFloat("step");
         }
     }
 
     private void tickAnimation() {
-        int total = bedrockBoneWrappers.size();
-        int visibleCount = (int) (progress * total);
-        visibleCount = Math.min(visibleCount, total);
-        for (int index = 0; index < visibleCount; index++) {
-            bedrockBoneWrappers.get(index).appear();
-            printingBoneWrapper = bedrockBoneWrappers.get(index);
+        if (!hasPrintingPreview()) {
+            clearAnimation();
+            return;
         }
+        prepareAnimation();
+        updateVisiblePrintingCubes();
     }
 
+    /**
+     * Tree 模型与其绑定姿势实例仅由当前方块实体持有。cube 会在此处烘焙为模型空间静态几何。
+     */
     private void prepareAnimation() {
-        if (bedrockBoneWrappers.isEmpty()) {
-            vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(craftingVehicleId).orElse(null);
-            if (vehicleDisplay == null) {
-                return;
-            }
-            BedrockModel model = vehicleDisplay.getModel();
-            if (model == null) {
-                return;
-            }
-            Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(craftingVehicleId);
-            if (!vehicleDataOptional.isPresent()) {
-                return;
-            }
-            vehicleData = vehicleDataOptional.get();
-            bedrockBoneWrappers.clear();
-            HashSet<BedrockBone> bones = new HashSet<>();
-            for (BedrockBone bone : model.getBoneMap().values()) {
-                if (bone.parent != null && bone.parent.parent == null) {
-                    MachineMaxBlockRenderer.buildBedrockBoneWrappers(bone, bones, bedrockBoneWrappers, null);
-                }
-            }
-            bedrockBoneWrappers.sort(Comparator.comparingDouble(bone -> bone.y));
+        if (!hasPrintingPreview() || printingModel != null || craftingVehicleId == null) {
+            return;
         }
+
+        vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(craftingVehicleId).orElse(null);
+        if (vehicleDisplay == null || vehicleDisplay.getModelPojo() == null) {
+            return;
+        }
+
+        Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(craftingVehicleId);
+        if (vehicleDataOptional.isEmpty()) {
+            return;
+        }
+
+        TreeBedrockModel treeModel = TreeBedrockModel.bake(vehicleDisplay.getModelPojo());
+        TreeModelInstance treeInstance = treeModel.createInstance();
+        List<PrintingCube> cubes = new ArrayList<>();
+        for (TreeBoneDefinition bone : treeModel.bones()) {
+            Matrix4f boneTransform = treeInstance.getGlobalTransform(bone.index());
+            for (ICube cube : bone.cubes()) {
+                Matrix4f cubeTransform = cubeTransform(boneTransform, cube);
+                cubes.add(new PrintingCube(
+                        bone.index(),
+                        bakeStaticCube(cube, cubeTransform),
+                        cubeModelCenter(cube, cubeTransform)
+                ));
+            }
+        }
+        // 按最终模型空间中心从低到高打印；相同高度仍保持展平时的稳定顺序。
+        cubes.sort(Comparator.comparingDouble(cube -> cube.modelCenter().y));
+
+        vehicleData = vehicleDataOptional.get();
+        printingModel = treeModel;
+        printingModelInstance = treeInstance;
+        printingCubes = List.copyOf(cubes);
+        staticPrintingCubes = printingCubes.stream().map(PrintingCube::cube).toArray(ICube[]::new);
+        cachedVisibleCubeCount = -1;
+        updateVisiblePrintingCubes();
     }
+
+    private void updateVisiblePrintingCubes() {
+        int visibleCount = getVisiblePrintingCubeCount();
+        if (visibleCount == cachedVisibleCubeCount) {
+            return;
+        }
+        visiblePrintingCubes = visibleCount == 0
+                ? NO_CUBES
+                : visibleCount == staticPrintingCubes.length
+                ? staticPrintingCubes
+                : Arrays.copyOf(staticPrintingCubes, visibleCount);
+        cachedVisibleCubeCount = visibleCount;
+    }
+
+    private void clearAnimation() {
+        vehicleDisplay = null;
+        vehicleData = null;
+        printingModel = null;
+        printingModelInstance = null;
+        printingCubes = List.of();
+        staticPrintingCubes = NO_CUBES;
+        visiblePrintingCubes = NO_CUBES;
+        cachedVisibleCubeCount = -1;
+    }
+
+    private static Matrix4f cubeTransform(Matrix4f boneTransform, ICube cube) {
+        Matrix4f transform = new Matrix4f(boneTransform);
+        if (cube.hasRotation()) {
+            float[] pivot = cube.pivot();
+            transform.translate(pivot[0], pivot[1], pivot[2])
+                    .rotate(cube.rotation())
+                    .translate(-pivot[0], -pivot[1], -pivot[2]);
+        }
+        return transform;
+    }
+
+    /**
+     * Tree 的绑定姿势只有平移与旋转；将该刚体变换编码回 SBM 原生 cube，避免运行时骨骼变换。
+     */
+    private static ICube bakeStaticCube(ICube cube, Matrix4f transform) {
+        Quaternionf rotation = transform.getUnnormalizedRotation(new Quaternionf()).normalize();
+        Vector3f offset = new Vector3f(transform.m30(), transform.m31(), transform.m32());
+        new Quaternionf(rotation).invert().transform(offset);
+        float x = cube.x() + offset.x;
+        float y = cube.y() + offset.y;
+        float z = cube.z() + offset.z;
+        float[] pivot = new float[3];
+
+        if (cube instanceof CubeBox box) {
+            return new CubeBox(x, y, z, cube.width(), cube.height(), cube.depth(), cube.inflate(),
+                    box.uvs(), box.uvOrder(), pivot, rotation);
+        }
+        if (cube instanceof CubePerFace perFace) {
+            return new CubePerFace(x, y, z, cube.width(), cube.height(), cube.depth(), cube.inflate(),
+                    perFace.uvs(), perFace.emptyFacesMask(), pivot, rotation);
+        }
+        throw new IllegalArgumentException("Unsupported Tree cube type: " + cube.getClass().getName());
+    }
+
+    private static Vec3 cubeModelCenter(ICube cube, Matrix4f transform) {
+        Vector3f center = new Vector3f(
+                cube.x() + cube.width() * 0.5F,
+                cube.y() + cube.height() * 0.5F,
+                cube.z() + cube.depth() * 0.5F
+        ).mulPosition(transform);
+        return new Vec3(center.x, center.y, center.z);
+    }
+
+    public record PrintingCube(int boneIndex, ICube cube, Vec3 modelCenter) {}
 
     @Override
     public CompoundTag getUpdateTag() {

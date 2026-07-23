@@ -383,7 +383,7 @@ public class MachineMaxScreen extends Screen {
             clientMachineMaxAction.blockPos = machineMaxBlockEntity.getBlockPos();
             clientMachineMaxAction.action = ClientMachineMaxAction.Action.CRAFT;
             Channel.CHANNEL.sendToServer(clientMachineMaxAction);
-            machineMaxBlockEntity.bedrockBoneWrappers.clear();
+            machineMaxBlockEntity.clearPrintingPreview();
         }
     }
 

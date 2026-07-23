@@ -59,6 +59,9 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         if (entity != null) {
                             entity.load(entityData);
                         }
+                        if (entity instanceof AbstractVehicle vehicle) {
+                            vehicle.initDisplayData();
+                        }
                         return entity;
                     }
                     return null;

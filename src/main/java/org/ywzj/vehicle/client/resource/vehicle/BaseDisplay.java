@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.resource.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.BedrockModelPOJO;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakerOptions;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -21,6 +22,7 @@ public class BaseDisplay {
 
     protected ResourceLocation displayId;
     protected ResourceLocation modelPath;
+    protected BedrockModelPOJO modelPojo;
     protected VehicleBedrockModel model;
     protected ResourceLocation texture;
     protected ResourceLocation slotTexture;
@@ -40,11 +42,14 @@ public class BaseDisplay {
     public BaseDisplay(BaseDisplayPojo pojo) {
         var animationPojo = pojo.animations == null ? null : ClientAssetsManager.INSTANCE.getAnimation(pojo.animations).orElse(null);
         Set<String> animatedBones = animationPojo == null ? Set.of() : BakerOptions.collectAnimatedBones(animationPojo);
-        var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
+        var loadedModelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
         this.specialBoneEffects = pojo.specialBoneEffects == null ? List.of() : List.copyOf(pojo.specialBoneEffects);
         BakerOptions bakerOptions = createBakerOptions(pojo, animatedBones);
-        modelPojo.ifPresent(bedrockModelPOJO -> this.model = new VehicleBedrockModel(bedrockModelPOJO, specialBoneEffects, bakerOptions));
+        loadedModelPojo.ifPresent(bedrockModelPOJO -> {
+            this.modelPojo = bedrockModelPOJO;
+            this.model = new VehicleBedrockModel(bedrockModelPOJO, specialBoneEffects, bakerOptions);
+        });
 
         this.texture = pojo.texture;
         this.slotTexture = pojo.slotTexture;
@@ -155,6 +160,11 @@ public class BaseDisplay {
 
     public ResourceLocation getModelPath() {
         return modelPath;
+    }
+
+    @Nullable
+    public BedrockModelPOJO getModelPojo() {
+        return modelPojo;
     }
 
     public ResourceLocation getTexture() {

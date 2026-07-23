@@ -25,3 +25,4 @@ eclipse
 forge*changelog.txt
 webeditor/node_modules/
 webeditor/dist/
+.narrafork/
