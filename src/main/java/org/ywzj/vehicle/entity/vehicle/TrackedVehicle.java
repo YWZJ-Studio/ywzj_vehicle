@@ -61,6 +61,7 @@ public class TrackedVehicle extends AbstractVehicle
 
     @Override
     public void initDisplayData(BaseDisplay display) {
+        super.initDisplayData(display);
         if (display instanceof TrackedVehicleDisplay trackedVehicleDisplay) {
             this.animationInstance = trackedVehicleDisplay.createAnimationInstance(this);
             var trackConfig = trackedVehicleDisplay.getTrackConfig();

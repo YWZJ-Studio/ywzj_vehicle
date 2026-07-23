@@ -113,8 +113,8 @@ public class DecorationSelectScreen extends Screen {
                                 poseStack.mulPose(Axis.YP.rotationDegrees(180));
                                 poseStack.mulPose(Axis.ZP.rotationDegrees(180));
                                 poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
-                                model.renderToBuffer(poseStack, guiGraphics.bufferSource(), texture, 15728880);
-                                model.renderSpecialBones(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
+                                model.renderToBufferBaked(poseStack, guiGraphics.bufferSource(), texture, 15728880);
+                                model.renderSpecialBonesBaked(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
                             }
                             poseStack.popPose();
                         }
@@ -166,8 +166,8 @@ public class DecorationSelectScreen extends Screen {
             poseStack.mulPoseMatrix(new Matrix4f().scaling(scale, scale, -scale));
             // 装饰模型
             VehicleBedrockModel model = display.getModel();
-            model.renderToBuffer(poseStack, guiGraphics.bufferSource(), display.getTexture(), 15728880);
-            model.renderSpecialBones(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
+            model.renderToBufferBaked(poseStack, guiGraphics.bufferSource(), display.getTexture(), 15728880);
+            model.renderSpecialBonesBaked(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
         }
         poseStack.popPose();
         poseStack.pushPose();

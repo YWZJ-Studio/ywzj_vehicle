@@ -12,8 +12,6 @@ import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.animation.PoseNodeDefinition;
 
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * 基础载具效果配置实例
@@ -42,12 +40,11 @@ public class BaseDisplay {
     public BaseDisplay(BaseDisplayPojo pojo) {
         var animationPojo = pojo.animations == null ? null : ClientAssetsManager.INSTANCE.getAnimation(pojo.animations).orElse(null);
         Set<String> animatedBones = animationPojo == null ? Set.of() : BakerOptions.collectAnimatedBones(animationPojo);
-        BakerOptions bakerOptions = createBakerOptions(pojo, animatedBones);
         var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
         this.specialBoneEffects = pojo.specialBoneEffects == null ? List.of() : List.copyOf(pojo.specialBoneEffects);
-        modelPojo.ifPresent(bedrockModelPOJO ->
-                this.model = new VehicleBedrockModel(bedrockModelPOJO, specialBoneEffects, bakerOptions));
+        BakerOptions bakerOptions = createBakerOptions(pojo, animatedBones);
+        modelPojo.ifPresent(bedrockModelPOJO -> this.model = new VehicleBedrockModel(bedrockModelPOJO, specialBoneEffects, bakerOptions));
 
         this.texture = pojo.texture;
         this.slotTexture = pojo.slotTexture;
@@ -85,11 +82,6 @@ public class BaseDisplay {
 
     @Nullable
     private static BakerOptions createBakerOptions(BaseDisplayPojo pojo, Set<String> animatedBones) {
-        BaseDisplayPojo.BakedModelConfig bakedModel = pojo.bakedModel;
-        if (bakedModel == null || !bakedModel.enabled) {
-            return null;
-        }
-
         Set<String> preservedBones = new LinkedHashSet<>(animatedBones);
         if (pojo.animationController != null) {
             AnimationControllerDefinition controller = ClientAssetsManager.INSTANCE
@@ -100,24 +92,12 @@ public class BaseDisplay {
                 return null;
             }
             collectControllerBindingBones(controller.getGraph(), preservedBones);
+            var script = controller.getScript() == null
+                    ? null
+                    : ClientAssetsManager.INSTANCE.getScript(controller.getScript()).orElse(null);
+            preservedBones.addAll(ScriptBoneCollector.collect(controller, script));
         }
-        addBones(preservedBones, bakedModel.preserveBones);
-
-        Set<Pattern> preservedBonePatterns = new LinkedHashSet<>();
-        if (bakedModel.preserveBoneRegexes != null) {
-            try {
-                for (String regex : bakedModel.preserveBoneRegexes) {
-                    if (regex != null && !regex.isBlank()) {
-                        preservedBonePatterns.add(Pattern.compile(regex));
-                    }
-                }
-            } catch (PatternSyntaxException exception) {
-                YwzjVehicle.LOGGER.error("Baked model disabled because preserve_bone_regexes is invalid for {}", pojo.model, exception);
-                return null;
-            }
-        }
-
-        return new BakerOptions(animatedBones, preservedBones, preservedBonePatterns, true, false, true);
+        return new BakerOptions(animatedBones, preservedBones, new HashSet<>(), true, false, true);
     }
 
     private static void collectControllerBindingBones(@Nullable PoseNodeDefinition node, Set<String> preservedBones) {
@@ -212,4 +192,5 @@ public class BaseDisplay {
     public List<SpecialBoneEffect> getSpecialBoneEffects() {
         return specialBoneEffects;
     }
+
 }

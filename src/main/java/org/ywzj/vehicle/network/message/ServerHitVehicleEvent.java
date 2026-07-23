@@ -14,7 +14,6 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
-import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -97,9 +96,10 @@ public class ServerHitVehicleEvent {
                 if (display.getModel() == null) {
                     return;
                 }
-                VectorUtil.HitBone hitBone = display.getModel().hasBakedModel()
-                        ? VectorUtil.hitBone(vehicle, VehicleRender.prepareModelInstance(vehicle, display, 1.0F), start, end)
-                        : VectorUtil.hitBone(vehicle, display.getModel(), start, end);
+                if (!display.getModel().hasBakedModel()) {
+                    return;
+                }
+                VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end);
                 if (hitBone != null) {
                     Vec3 hitPos = hitBone.position();
                     vehicle.level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.0F),
@@ -108,11 +108,7 @@ public class ServerHitVehicleEvent {
                     BulletHoleOption option = new BulletHoleOption(
                             Direction.UP, BlockPos.containing(message.hitPosition),
                             1.0F, 0.0F, 0.0F, message.caliber);
-                    if (display.getModel().hasBakedModel()) {
-                        option.withBakedBone(message.entityId, hitBone.attachmentBoneIndex(), hitBone.offset(), hitBone.rotation());
-                    } else {
-                        option.withBone(message.entityId, hitBone.boneName(), hitBone.offset(), hitBone.rotation());
-                    }
+                    option.withBakedBone(message.entityId, hitBone.attachmentBoneIndex(), hitBone.offset(), hitBone.rotation());
                     Particle particle = Minecraft.getInstance().particleEngine.createParticle(option,
                             message.hitPosition.x, message.hitPosition.y, message.hitPosition.z,
                             0, 0, 0);

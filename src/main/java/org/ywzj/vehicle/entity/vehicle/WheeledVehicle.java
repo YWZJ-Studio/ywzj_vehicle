@@ -61,6 +61,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
 
     @Override
     public void initDisplayData(BaseDisplay display) {
+        super.initDisplayData(display);
         if (display instanceof WheeledVehicleDisplay wheeledVehicleDisplay) {
             this.animationInstance = wheeledVehicleDisplay.createAnimationInstance(this);
         }

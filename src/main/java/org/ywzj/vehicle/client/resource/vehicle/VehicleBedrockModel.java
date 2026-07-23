@@ -9,20 +9,15 @@ import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakerO
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BoneState;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.render.ModRenderTypes;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -33,24 +28,21 @@ import java.util.regex.Pattern;
 public class VehicleBedrockModel extends BedrockModel {
 
     private static final Pattern ILLUMINATED_BONE_PATTERN = Pattern.compile("^illum_.*");
+    private final BakedBedrockModel bakedModel;
+    private final BakedModelInstance defaultModelInstance;
+    private final List<SpecialBoneEntry> specialBoneEntries;
+    private final List<BakedSpecialBoneEntry> bakedSpecialBoneEntries;
 
     public record SpecialBoneEntry(BedrockBone bone, SpecialBoneEffect effect) {}
     public record BakedSpecialBoneEntry(int boneIndex, SpecialBoneEffect effect) {}
-
-    private final Map<String, SpecialBoneEffect> specialBoneMap;
-    private final List<SpecialBoneEntry> specialBoneEntries;
-    private final List<BakedSpecialBoneEntry> bakedSpecialBoneEntries;
-    @Nullable
-    private final BakedBedrockModel bakedModel;
 
     public VehicleBedrockModel(BedrockModelPOJO pojo, List<SpecialBoneEffect> specialBoneEffects) {
         this(pojo, specialBoneEffects, null);
     }
 
-    public VehicleBedrockModel(BedrockModelPOJO pojo, List<SpecialBoneEffect> specialBoneEffects,
-                               @Nullable BakerOptions bakerOptions) {
+    public VehicleBedrockModel(BedrockModelPOJO pojo, List<SpecialBoneEffect> specialBoneEffects, BakerOptions bakerOptions) {
         super(pojo);
-        this.specialBoneMap = new HashMap<>();
+        Map<String, SpecialBoneEffect> specialBoneMap = new HashMap<>();
         this.specialBoneEntries = new ArrayList<>();
         if (specialBoneEffects != null) {
             for (SpecialBoneEffect effect : specialBoneEffects) {
@@ -64,7 +56,7 @@ public class VehicleBedrockModel extends BedrockModel {
             }
         }
         this.boneMap.forEach((name, bone) -> {
-            if (name.startsWith("illum_")) {
+            if (ILLUMINATED_BONE_PATTERN.matcher(name).matches()) {
                 bone.illuminated = true;
             }
         });
@@ -83,6 +75,7 @@ public class VehicleBedrockModel extends BedrockModel {
                     true
             );
             this.bakedModel = BakedBedrockModel.bake(pojo, options);
+            this.defaultModelInstance = this.bakedModel.createInstance();
             this.bakedSpecialBoneEntries = new ArrayList<>();
             for (SpecialBoneEffect effect : specialBoneMap.values()) {
                 int boneIndex = bakedModel.getIndex(effect.bone);
@@ -92,6 +85,7 @@ public class VehicleBedrockModel extends BedrockModel {
             }
         } else {
             this.bakedModel = null;
+            this.defaultModelInstance = null;
             this.bakedSpecialBoneEntries = List.of();
         }
     }
@@ -100,7 +94,6 @@ public class VehicleBedrockModel extends BedrockModel {
         return bakedModel != null;
     }
 
-    @Nullable
     public BakedBedrockModel getBakedModel() {
         return bakedModel;
     }
@@ -110,97 +103,36 @@ public class VehicleBedrockModel extends BedrockModel {
             throw new IllegalStateException("This display does not enable a baked model");
         }
         BakedModelInstance instance = bakedModel.createInstance();
-        initializeBakedInstance(instance);
+        instance.resetPose();
+        for (BoneState bone : instance.getBoneIndexes()) {
+            bone.illuminated = ILLUMINATED_BONE_PATTERN.matcher(bone.name()).matches();
+        }
         return instance;
     }
 
-    /** 初始化新建实例的 bind pose 与固定骨骼状态。 */
-    private void initializeBakedInstance(BakedModelInstance instance) {
-        instance.resetPose();
-        for (BoneState bone : instance.getBoneIndexes()) {
-            bone.illuminated = bone.name().startsWith("illum_");
-        }
-    }
-
-    public Map<String, SpecialBoneEffect> getSpecialBoneMap() {
-        return specialBoneMap;
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay,
-                               float red, float green, float blue, float alpha) {
-        setSpecialBoneVisible(false);
-        super.renderToBuffer(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @ParametersAreNonnullByDefault
-    public void renderToBuffer(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
-        setSpecialBoneVisible(false);
-        super.renderToBuffer(poseStack, bufferSource,
-                RenderType.entityCutout(texture),
-                BedrockModelRenderTypes.polyMeshCutout(texture),
-                packedLight,
-                OverlayTexture.pack(0f, false)
-        );
-    }
+//    @Override
+//    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay,
+//                               float red, float green, float blue, float alpha) {
+//        setSpecialBoneVisible(false);
+//        super.renderToBuffer(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+//    }
+//
+//    @OnlyIn(Dist.CLIENT)
+//    @ParametersAreNonnullByDefault
+//    public void renderToBuffer(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
+//        setSpecialBoneVisible(false);
+//        super.renderToBuffer(poseStack, bufferSource,
+//                RenderType.entityCutout(texture),
+//                BedrockModelRenderTypes.polyMeshCutout(texture),
+//                packedLight,
+//                OverlayTexture.pack(0f, false)
+//        );
+//    }
 
     @OnlyIn(Dist.CLIENT)
-    @ParametersAreNonnullByDefault
-    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
-        renderSpecialBones(poseStack, source, packedLight, packedOverlay, false);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @ParametersAreNonnullByDefault
-    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
-        for (SpecialBoneEntry entry : specialBoneEntries) {
-            VertexConsumer buffer;
-            if (entry.bone.hasCubesInTree()) {
-                switch (entry.effect.type) {
-                    case MUZZLE_FLASH -> buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
-                    case TRANSPARENT -> buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
-                    case COCKPIT -> {
-                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-                            continue;
-                        }
-                        buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
-                    }
-                    default -> {
-                        continue;
-                    }
-                }
-                poseStack.pushPose();
-                poseStack.mulPoseMatrix(getGlobalTransform(entry.bone));
-                entry.bone.render(poseStack, buffer, packedLight, packedOverlay);
-                poseStack.popPose();
-            } else if (entry.bone.hasMeshesInTree()) {
-                switch (entry.effect.type) {
-                    case MUZZLE_FLASH -> buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
-                    case TRANSPARENT -> buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
-                    case COCKPIT -> {
-                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-                            continue;
-                        }
-                        buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
-                    }
-                    default -> {
-                        continue;
-                    }
-                }
-                poseStack.pushPose();
-                poseStack.mulPoseMatrix(getGlobalTransform(entry.bone));
-                entry.bone.renderMeshes(poseStack, buffer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
-                poseStack.popPose();
-            }
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public void renderBakedToBuffer(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource,
-                                    ResourceLocation texture, int packedLight) {
-        setBakedSpecialBoneVisible(instance, false);
-        instance.renderToBuffer(poseStack, bufferSource,
+    public void renderToBufferBaked(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
+        setSpecialBoneBakedVisible(defaultModelInstance, false);
+        defaultModelInstance.renderToBuffer(poseStack, bufferSource,
                 RenderType.entityCutout(texture),
                 BedrockModelRenderTypes.polyMeshCutout(texture),
                 packedLight,
@@ -208,11 +140,82 @@ public class VehicleBedrockModel extends BedrockModel {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void renderBakedSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source,
-                                        int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
+    public void renderToBufferBaked(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
+        setSpecialBoneBakedVisible(instance, false);
+        instance.renderToBuffer(poseStack, bufferSource,
+                RenderType.entityCutout(texture),
+                BedrockModelRenderTypes.polyMeshCutout(texture),
+                packedLight,
+                OverlayTexture.NO_OVERLAY);
+    }
+
+//    @OnlyIn(Dist.CLIENT)
+//    @ParametersAreNonnullByDefault
+//    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
+//        renderSpecialBones(poseStack, source, packedLight, packedOverlay, false);
+//    }
+//
+//    @OnlyIn(Dist.CLIENT)
+//    @ParametersAreNonnullByDefault
+//    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
+//        for (SpecialBoneEntry entry : specialBoneEntries) {
+//            VertexConsumer buffer;
+//            if (entry.bone.hasCubesInTree()) {
+//                switch (entry.effect.type) {
+//                    case MUZZLE_FLASH -> buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
+//                    case TRANSPARENT -> buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
+//                    case COCKPIT -> {
+//                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+//                            continue;
+//                        }
+//                        buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
+//                    }
+//                    default -> {
+//                        continue;
+//                    }
+//                }
+//                poseStack.pushPose();
+//                poseStack.mulPoseMatrix(VectorUtil.getGlobalTransform(entry.bone));
+//                entry.bone.render(poseStack, buffer, packedLight, packedOverlay);
+//                poseStack.popPose();
+//            } else if (entry.bone.hasMeshesInTree()) {
+//                switch (entry.effect.type) {
+//                    case MUZZLE_FLASH -> buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
+//                    case TRANSPARENT -> buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
+//                    case COCKPIT -> {
+//                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+//                            continue;
+//                        }
+//                        buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
+//                    }
+//                    default -> {
+//                        continue;
+//                    }
+//                }
+//                poseStack.pushPose();
+//                poseStack.mulPoseMatrix(VectorUtil.getGlobalTransform(entry.bone));
+//                entry.bone.renderMeshes(poseStack, buffer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+//                poseStack.popPose();
+//            }
+//        }
+//    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void renderSpecialBonesBaked(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
+        renderSpecialBonesBaked(defaultModelInstance, poseStack, source, packedLight, packedOverlay, false);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void renderSpecialBonesBaked(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
+        renderSpecialBonesBaked(instance, poseStack, source, packedLight, packedOverlay, false);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void renderSpecialBonesBaked(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
         if (bakedModel == null) {
             return;
         }
+        setSpecialBoneBakedVisible(instance, true);
         for (BakedSpecialBoneEntry entry : bakedSpecialBoneEntries) {
             if (entry.effect.type == SpecialBoneEffect.SpecialBoneEffectType.COCKPIT
                     && isLocalPlayerVehicle
@@ -238,24 +241,11 @@ public class VehicleBedrockModel extends BedrockModel {
             if (bone == null) {
                 continue;
             }
-            bone.visible = true;
             bakedModel.renderBone(instance, entry.boneIndex, poseStack, source.getBuffer(quadType), packedLight,
                     packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, true);
             bakedModel.renderBone(instance, entry.boneIndex, poseStack, source.getBuffer(meshType), packedLight,
                     packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, false);
-            bone.visible = false;
         }
-    }
-
-    /** 取得 v1 骨骼除自身变换以外的全局变换矩阵。 */
-    public static Matrix4f getGlobalTransform(@NotNull BedrockBone targetBone) {
-        Matrix4f matrix = new Matrix4f();
-        for (BedrockBone bone = targetBone.parent; bone != null; bone = bone.parent) {
-            matrix.scaleLocal(bone.xScale, bone.yScale, bone.zScale);
-            matrix.rotateLocal(bone.rotation);
-            matrix.translateLocal(bone.x / 16.0F, bone.y / 16.0F, bone.z / 16.0F);
-        }
-        return matrix;
     }
 
     private void setSpecialBoneVisible(boolean visible) {
@@ -264,7 +254,7 @@ public class VehicleBedrockModel extends BedrockModel {
         }
     }
 
-    private void setBakedSpecialBoneVisible(BakedModelInstance instance, boolean visible) {
+    private void setSpecialBoneBakedVisible(BakedModelInstance instance, boolean visible) {
         for (BakedSpecialBoneEntry entry : bakedSpecialBoneEntries) {
             BoneState bone = instance.getBone(entry.boneIndex);
             if (bone != null) {
@@ -272,4 +262,5 @@ public class VehicleBedrockModel extends BedrockModel {
             }
         }
     }
+
 }

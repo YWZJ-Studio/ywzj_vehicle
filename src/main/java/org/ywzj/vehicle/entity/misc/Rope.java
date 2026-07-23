@@ -3,6 +3,9 @@ package org.ywzj.vehicle.entity.misc;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -13,6 +16,7 @@ import java.util.List;
 
 public class Rope extends Entity {
 
+    private static final EntityDataAccessor<Float> CONTROLLED_LENGTH = SynchedEntityData.defineId(Rope.class, EntityDataSerializers.FLOAT);
     public boolean falling = true;
     public double partLength = 1;
     public RopeNode fixedRopeNode;
@@ -24,18 +28,17 @@ public class Rope extends Entity {
 
     public void tick() {
         super.tick();
-        if (fixedRopeNode == null) {
-            fixedRopeNode = new RopeNode(this.position());
-            fixedRopeNode.fixed = true;
-            ropeNodes.add(fixedRopeNode);
-        }
+        ensureFixedNode();
         fixedRopeNode.lastPos = fixedRopeNode.pos;
         fixedRopeNode.pos = this.position();
 
-        if (falling) {
+        float controlledLength = getControlledLength();
+        if (controlledLength >= 0) {
+            adjustLength(controlledLength);
+        } else if (falling) {
             RopeNode lastNode = ropeNodes.get(ropeNodes.size() - 1);
             if (level().getBlockState(BlockPos.containing(lastNode.pos.relative(Direction.DOWN, 0.5))).isAir()) {
-                if (ropeNodes.size() < 20) { // 最大长度
+                if (ropeNodes.size() < 20) {
                     Vec3 nextPos = lastNode.pos.add(0, -partLength, 0);
                     ropeNodes.add(new RopeNode(nextPos));
                 }
@@ -46,11 +49,44 @@ public class Rope extends Entity {
         tickPhysics();
     }
 
+    private void ensureFixedNode() {
+        if (fixedRopeNode == null) {
+            fixedRopeNode = new RopeNode(this.position());
+            fixedRopeNode.fixed = true;
+            ropeNodes.add(fixedRopeNode);
+        }
+    }
+
+    private void adjustLength(float length) {
+        int targetNodeCount = (int) Math.ceil(length / partLength) + 1;
+        while (ropeNodes.size() > targetNodeCount) {
+            ropeNodes.remove(ropeNodes.size() - 1);
+        }
+        while (ropeNodes.size() < targetNodeCount) {
+            RopeNode lastNode = ropeNodes.get(ropeNodes.size() - 1);
+            ropeNodes.add(new RopeNode(lastNode.pos.add(0, -partLength, 0)));
+        }
+    }
+
+    public void setControlledLength(float length) {
+        float controlledLength = Math.max(0, length);
+        entityData.set(CONTROLLED_LENGTH, controlledLength);
+        ensureFixedNode();
+        adjustLength(controlledLength);
+    }
+
+    public float getControlledLength() {
+        return entityData.get(CONTROLLED_LENGTH);
+    }
+
+    public Vec3 getEndPosition() {
+        return ropeNodes.isEmpty() ? position() : ropeNodes.get(ropeNodes.size() - 1).pos;
+    }
+
     private void tickPhysics() {
         double gravity = -0.05f;
         double friction = 0.98;
 
-        // 绳节点自身运动
         for (RopeNode node : ropeNodes) {
             if (node.fixed) {
                 continue;
@@ -59,13 +95,12 @@ public class Rope extends Entity {
             node.lastPos = node.pos;
             node.pos = node.pos.add(velocity).add(0, gravity, 0);
         }
-        // 绳节点受前一个绳节点的影响运动
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < ropeNodes.size() - 1; j++) {
                 RopeNode n1 = ropeNodes.get(j);
                 RopeNode n2 = ropeNodes.get(j + 1);
                 double currentDist = n1.pos.distanceTo(n2.pos);
-                double error = Math.abs(currentDist - partLength);
+                double error = currentDist - partLength;
                 if (currentDist > 0) {
                     Vec3 changeDir = n1.pos.subtract(n2.pos).normalize();
                     Vec3 offset = changeDir.scale(error * 0.5);
@@ -77,7 +112,9 @@ public class Rope extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {}
+    protected void defineSynchedData() {
+        entityData.define(CONTROLLED_LENGTH, -1f);
+    }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag pCompound) {}

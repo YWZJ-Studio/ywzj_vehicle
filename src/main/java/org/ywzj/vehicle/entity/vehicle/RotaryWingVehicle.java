@@ -91,6 +91,7 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     @Override
     public void initDisplayData(BaseDisplay display) {
+        super.initDisplayData(display);
         if (display instanceof RotaryWingVehicleDisplay rotaryWingVehicleDisplay) {
             this.animationInstance = rotaryWingVehicleDisplay.createAnimationInstance(this);
         }

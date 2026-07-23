@@ -1,7 +1,5 @@
 package org.ywzj.vehicle.util;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.ModelRayTraceResult;
 import net.minecraft.client.Minecraft;
@@ -17,22 +15,19 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
-import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
-import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 
 import java.lang.Math;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
-
-import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
-
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
@@ -214,82 +209,17 @@ public class VectorUtil {
     }
 
     public record HitBone(String boneName, int attachmentBoneIndex, Vec3 offset, Quaternionf rotation, Vec3 position) {}
-
-    /** 保留 v1 模型的既有命中检测与贴花朝向计算。 */
-    public static HitBone hitBone(AbstractVehicle vehicle, BedrockModel model, Vec3 start, Vec3 end) {
-        if (vehicle instanceof IAnimationEntity<?, ?> animationEntity) {
-            var instance = animationEntity.getAnimationInstance();
-            if (instance != null) {
-                instance.getContext().setPartialTick(1.0F);
-                model.applyPose(BLENDER.blend(model.getBindPose(), instance.getCurrentPose()));
-            }
-        }
-        String hitBoneName = null;
-        Quaternionf hitRotation = new Quaternionf();
-        Vec3 hitOffset = Vec3.ZERO;
-        Vec3 hitPosition = Vec3.ZERO;
-        double minDistance = Double.MAX_VALUE;
-        HashSet<BedrockBone> namedBones = new HashSet<>(model.getBoneMap().values());
-        for (Map.Entry<String, BedrockBone> boneEntry : model.getBoneMap().entrySet()) {
-            BedrockBone bone = boneEntry.getValue();
-            for (OBB.CubeOBB cubeOBB : OBB.getOBBsFromBone(bone, vehicle, namedBones)) {
-                OBB obb = cubeOBB.obb();
-                Optional<Vector3f> hitPosOptional = obb.clip(start.toVector3f(), end.toVector3f());
-                if (hitPosOptional.isEmpty()) {
-                    continue;
-                }
-                Vector3f hitPos = hitPosOptional.get();
-                if (!Float.isFinite(hitPos.x) || !Float.isFinite(hitPos.y) || !Float.isFinite(hitPos.z)) {
-                    continue;
-                }
-                double distance = hitPos.distance(start.toVector3f());
-                if (distance > minDistance) {
-                    continue;
-                }
-                minDistance = distance;
-                Matrix4f globalTransform = bone.getGlobalTransform();
-                Vector3f offset = vehicle.relativeRotDirection(new Vec3(hitPos).subtract(vehicle.position()), true)
-                        .toVector3f().sub(globalTransform.transformPosition(new Vector3f()));
-                globalTransform.getUnnormalizedRotation(new Quaternionf()).conjugate().transform(offset);
-
-                Vector3f[] axes = obb.getAxes();
-                Vector3f localHit = new Vector3f(hitPos).sub(obb.center());
-                float xDist = localHit.dot(axes[0]);
-                float yDist = localHit.dot(axes[1]);
-                float zDist = localHit.dot(axes[2]);
-                Vector3f extents = obb.extents();
-                float fx = Math.abs(xDist / extents.x);
-                float fy = Math.abs(yDist / extents.y);
-                float fz = Math.abs(zDist / extents.z);
-                float max = Math.max(fx, Math.max(fy, fz));
-                Quaternionf boneRotation = globalTransform.getUnnormalizedRotation(new Quaternionf()).premul(vehicle.rotYXZ());
-                Quaternionf cubeRotation = obb.rotation().premul(boneRotation.conjugate()).rotateY((float) Math.PI);
-                if (max == fx) {
-                    cubeRotation.rotateY(xDist > 0 ? (float) -Math.PI / 2 : (float) Math.PI / 2);
-                } else if (max == fy) {
-                    cubeRotation.rotateX(yDist > 0 ? (float) -Math.PI / 2 : (float) Math.PI / 2);
-                } else if (zDist > 0) {
-                    cubeRotation.rotateY((float) Math.PI);
-                }
-                hitBoneName = boneEntry.getKey();
-                hitRotation = cubeRotation;
-                hitOffset = new Vec3(offset);
-                hitPosition = new Vec3(hitPos);
-            }
-        }
-        model.applyPose(model.getBindPose());
-        return hitBoneName == null ? null : new HitBone(hitBoneName, -1, hitOffset, hitRotation, hitPosition);
-    }
-
-    /** 使用烘焙模型保留的 Cube 几何进行命中检测，命中位置和附着偏移均来自当前运行时姿态。 */
-    public static HitBone hitBone(AbstractVehicle vehicle, BakedModelInstance modelInstance, Vec3 start, Vec3 end) {
-        VehicleRender.ModelTransform transform = VehicleRender.getModelTransform(vehicle, 1.0F);
-        ModelRayTraceResult hit = modelInstance.rayTrace(new Matrix4f().rotation(transform.rotation()), transform.origin(), start, end);
-        if (hit == null) {
+    public static HitBone hitBone(AbstractVehicle vehicle, Vec3 start, Vec3 end) {
+        BakedModelInstance modelInstance = vehicle.getModelInstance();
+        Quaternionf vehicleRotation = vehicle.rotYXZ();
+        Vector3f root = vehicle.centerOffset.toVector3f();
+        Vector3f rotatedRoot = new Vector3f(root).rotate(vehicleRotation);
+        Vec3 vehicleOrigin = vehicle.position().add(root.x - rotatedRoot.x, root.y - rotatedRoot.y, root.z - rotatedRoot.z);
+        ModelRayTraceResult rayTraceResult = modelInstance.rayTrace(new Matrix4f().rotation(vehicleRotation), vehicleOrigin, start, end);
+        if (rayTraceResult == null) {
             return null;
         }
-
-        int attachmentBoneIndex = hit.attachmentBoneIndex();
+        int attachmentBoneIndex = rayTraceResult.attachmentBoneIndex();
         String boneName = "";
         if (attachmentBoneIndex >= 0) {
             var attachmentBone = modelInstance.getBone(attachmentBoneIndex);
@@ -298,17 +228,16 @@ public class VectorUtil {
             }
             boneName = attachmentBone.name();
         }
-
         Quaternionf rotation = new Quaternionf();
-        if (hit.attachmentNormal() != null) {
-            rotation.rotationTo(new Vector3f(0.0F, 1.0F, 0.0F), hit.attachmentNormal().toVector3f());
+        if (rayTraceResult.attachmentNormal() != null) {
+            rotation.rotationTo(new Vector3f(0.0F, 1.0F, 0.0F), rayTraceResult.attachmentNormal().toVector3f());
         }
         return new HitBone(
                 boneName,
                 attachmentBoneIndex,
-                hit.attachmentOffset(),
+                rayTraceResult.attachmentOffset(),
                 rotation,
-                hit.location()
+                rayTraceResult.location()
         );
     }
 

@@ -30,6 +30,47 @@
                     }
                 }
             }
+        },
+        "reserved": {
+            "loop": true,
+            "bones": {
+                "control": {
+                    "rotation": [0, 0, 0]
+                },
+                "lift": {
+                    "rotation": [0, 0, 0]
+                },
+                "lift2": {
+                    "rotation": [0, 0, 0]
+                },
+                "lift3": {
+                    "rotation": [0, 0, 0]
+                },
+                "back": {
+                    "rotation": [0, 0, 0]
+                },
+                "back_door": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel3": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel7": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel2": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel8": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel4": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel6": {
+                    "rotation": [0, 0, 0]
+                }
+            }
         }
     }
 }

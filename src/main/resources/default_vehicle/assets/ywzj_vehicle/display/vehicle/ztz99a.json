@@ -1,10 +1,6 @@
 {
     "type": "ywzj_vehicle:tracked_vehicle",
     "model": "ywzj_vehicle:entity/ztz99a",
-    "baked_model": {
-        "enabled": true,
-        "preserve_bones": ["turret"]
-    },
     "texture": "ywzj_vehicle:textures/entity/ztz99a.png",
     "slot_texture": "ywzj_vehicle:textures/slot/ztz99a.png",
     "animations": "ywzj_vehicle:entity/ztz99a.animation",

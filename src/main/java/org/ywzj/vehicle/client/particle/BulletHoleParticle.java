@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.client.particle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -27,11 +26,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.BulletHoleOption;
 
-/** 弹孔贴花同时兼容 v1 骨骼绑定和 baked 实例附件骨骼绑定。 */
+/**
+ * 弹孔贴花粒子：在被命中方块表面渲染方块纹理的小贴片，从曳光颜色渐变到黑色后淡出。
+ * 支持绑定到载具模型的骨骼上，跟随骨骼移动和旋转。
+ * 参考自TaCZ
+ */
 @OnlyIn(Dist.CLIENT)
 public class BulletHoleParticle extends TextureSheetParticle {
 
@@ -41,8 +43,6 @@ public class BulletHoleParticle extends TextureSheetParticle {
     private int vOffset;
     private float textureDensity;
     private AbstractVehicle vehicle;
-    private BedrockBone legacyBone;
-    private int entityId;
     private int attachmentBoneIndex = -1;
     private Vec3 offsetFromBone;
     private Quaternionf selfRotation;
@@ -61,45 +61,17 @@ public class BulletHoleParticle extends TextureSheetParticle {
         this.gCol = g;
         this.bCol = b;
         this.alpha = 0.9F;
-        if (level.getBlockState(pos).isAir()) {
-            this.remove();
-        }
-    }
-
-    public BulletHoleParticle(ClientLevel level, double x, double y, double z,
-                              Direction direction, BlockPos pos, float r, float g, float b, float caliber,
-                              int entityId, String boneName, Quaternionf selfRotation, Vec3 offsetFromBone) {
-        this(level, x, y, z, direction, pos, r, g, b, caliber);
-        if (this.removed || !(level.getEntity(entityId) instanceof AbstractVehicle entity)) {
-            this.remove();
-            return;
-        }
-        this.vehicle = entity;
-        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);
-        if (display == null || display.getModel() == null) {
-            this.remove();
-            return;
-        }
-        this.legacyBone = display.getModel().getBoneMap().get(boneName);
-        if (legacyBone == null) {
-            this.remove();
-            return;
-        }
-        this.entityId = entityId;
-        this.offsetFromBone = offsetFromBone;
-        this.selfRotation = new Quaternionf(selfRotation);
     }
 
     public BulletHoleParticle(ClientLevel level, double x, double y, double z,
                               Direction direction, BlockPos pos, float r, float g, float b, float caliber,
                               int entityId, int attachmentBoneIndex, Quaternionf selfRotation, Vec3 attachmentOffset) {
         this(level, x, y, z, direction, pos, r, g, b, caliber);
-        if (this.removed || !(level.getEntity(entityId) instanceof AbstractVehicle entity)) {
+        if (!(level.getEntity(entityId) instanceof AbstractVehicle vehicle)) {
             this.remove();
             return;
         }
-        this.vehicle = entity;
-        this.entityId = entityId;
+        this.vehicle = vehicle;
         this.attachmentBoneIndex = attachmentBoneIndex;
         this.offsetFromBone = attachmentOffset;
         this.selfRotation = new Quaternionf(selfRotation);
@@ -141,38 +113,8 @@ public class BulletHoleParticle extends TextureSheetParticle {
         emitDoubleSidedQuad(buffer, points, renderData());
     }
 
-    /** 维持专用 v1 renderer 的原有弹孔路径。 */
-    public void renderOnVehicle(float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource) {
-        if (vehicle == null || legacyBone == null) {
-            return;
-        }
-        Quaternionf globalRotation = new Quaternionf(legacyBone.rotation);
-        globalRotation.premul(selfRotation);
-        globalRotation.rotateX((float) (Math.PI / 2));
-        Vector3f offset = legacyBone.rotation.transform(offsetFromBone.toVector3f());
-        Vector3f globalPivot = new Vector3f(legacyBone.x / 16.0F + offset.x, legacyBone.y / 16.0F + offset.y, legacyBone.z / 16.0F + offset.z);
-        BedrockBone parent = legacyBone.parent;
-        while (parent != null) {
-            parent.rotation.transform(globalPivot);
-            globalPivot.add(parent.x / 16, parent.y / 16, parent.z / 16);
-            globalRotation.premul(parent.rotation);
-            parent = parent.parent;
-        }
-        Vector3f[] points = newQuadPoints();
-        float scale = this.getQuadSize(partialTicks);
-        for (Vector3f point : points) {
-            point.rotate(globalRotation);
-            point.mul(scale);
-            point.add(globalPivot);
-        }
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucent(InventoryMenu.BLOCK_ATLAS));
-        emitDoubleSidedQuad(buffer, poseStack.last(), points, renderData());
-    }
-
-    /** baked 通用载具路径使用当前实体实例的附件骨骼或静态模型根变换。 */
-    public void renderOnVehicle(float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource,
-                                BakedModelInstance modelInstance) {
-        if (vehicle == null || legacyBone != null || offsetFromBone == null) {
+    public void renderOnVehicle(float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, BakedModelInstance modelInstance) {
+        if (vehicle == null || offsetFromBone == null) {
             return;
         }
         Matrix4f attachmentTransform = new Matrix4f();
@@ -274,17 +216,14 @@ public class BulletHoleParticle extends TextureSheetParticle {
 
     public static class Provider implements ParticleProvider<BulletHoleOption> {
         @Override
-        public Particle createParticle(BulletHoleOption option, ClientLevel world, double x, double y, double z,
+        public Particle createParticle(BulletHoleOption option, ClientLevel level, double x, double y, double z,
                                        double xSpeed, double ySpeed, double zSpeed) {
             if (option.getEntityId() >= 0 && option.isBakedAttachment()) {
-                return new BulletHoleParticle(world, x, y, z, option.getDirection(), option.getPos(), option.getR(), option.getG(), option.getB(), option.getCaliber(),
+                return new BulletHoleParticle(level, x, y, z, option.getDirection(), option.getPos(), option.getR(), option.getG(), option.getB(), option.getCaliber(),
                         option.getEntityId(), option.getAttachmentBoneIndex(), option.getSelfRotation(), option.getBoneOffset());
             }
-            if (option.getEntityId() >= 0) {
-                return new BulletHoleParticle(world, x, y, z, option.getDirection(), option.getPos(), option.getR(), option.getG(), option.getB(), option.getCaliber(),
-                        option.getEntityId(), option.getBoneName(), option.getSelfRotation(), option.getBoneOffset());
-            }
-            return new BulletHoleParticle(world, x, y, z, option.getDirection(), option.getPos(), option.getR(), option.getG(), option.getB(), option.getCaliber());
+            return new BulletHoleParticle(level, x, y, z, option.getDirection(), option.getPos(), option.getR(), option.getG(), option.getB(), option.getCaliber());
         }
     }
+
 }

@@ -19,7 +19,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.apache.commons.lang3.StringUtils;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
 import org.ywzj.vehicle.client.render.item.DecorationItemRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -96,10 +95,10 @@ public class DecorationItem extends VehicleItem {
         if (display.getModel() == null) {
             return;
         }
-
-        VectorUtil.HitBone hitBone = display.getModel().hasBakedModel()
-                ? VectorUtil.hitBone(vehicle, VehicleRender.prepareModelInstance(vehicle, display, 1.0F), start, end)
-                : VectorUtil.hitBone(vehicle, display.getModel(), start, end);
+        if (!display.getModel().hasBakedModel()) {
+            return;
+        }
+        VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end);
         if (hitBone != null) {
             Vec3 hitPos = hitBone.position();
             vehicle.level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 2.0F),

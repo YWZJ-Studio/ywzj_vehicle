@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BoneState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -11,13 +11,13 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.custom.Quadcopter;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
-import static org.ywzj.vehicle.entity.vehicle.custom.Quadcopter.CABLE_LENGTH;
+import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
 public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
 
@@ -34,19 +34,17 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
         pPoseStack.pushPose();
         {
             VehicleBedrockModel model = display.getModel();
+            BakedModelInstance modelInstance = vehicle.getModelInstance();
 
-            BedrockBone propellerUp1 = model.getBoneMap().get("wing1_up");
-            BedrockBone propellerDown1 = model.getBoneMap().get("wing1_down");
-            BedrockBone propellerUp2 = model.getBoneMap().get("wing2_up");
-            BedrockBone propellerDown2 = model.getBoneMap().get("wing2_down");
-            BedrockBone propellerUp3 = model.getBoneMap().get("wing3_up");
-            BedrockBone propellerDown3 = model.getBoneMap().get("wing3_down");
-            BedrockBone propellerUp4 = model.getBoneMap().get("wing4_up");
-            BedrockBone propellerDown4 = model.getBoneMap().get("wing4_down");
-            BedrockBone ropeConnect = model.getBoneMap().get("rope_connect");
-            BedrockBone rope = model.getBoneMap().get("rope");
+            BoneState propellerUp1 = modelInstance.getBone("wing1_up");
+            BoneState propellerDown1 = modelInstance.getBone("wing1_down");
+            BoneState propellerUp2 = modelInstance.getBone("wing2_up");
+            BoneState propellerDown2 = modelInstance.getBone("wing2_down");
+            BoneState propellerUp3 = modelInstance.getBone("wing3_up");
+            BoneState propellerDown3 = modelInstance.getBone("wing3_down");
+            BoneState propellerUp4 = modelInstance.getBone("wing4_up");
+            BoneState propellerDown4 = modelInstance.getBone("wing4_down");
 
-            float cableLength = vehicle.getEntityData().get(CABLE_LENGTH);
             vehicle.propellerRotation += vehicle.getPower() / 5;
             vehicle.propellerRotation %= 360;
 
@@ -59,41 +57,28 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             propellerUp2.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
             propellerUp3.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
 
-            float d = 16 * cableLength;
-            ropeConnect.y -= d;
-            BedrockCube cube = rope.getChildren().get(0).cubes.get(0);
-            float scale = (cube.height() + cableLength) / cube.height();
-            rope.yScale = scale;
-            float diffY = (cube.y() * scale - cube.y()) * 1.8f;
-            rope.y -= diffY;
-
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             Vec3 root = new Vec3(0, 0, 0);
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-            vehicle.lastRenderTime = System.currentTimeMillis();
-            model.renderToBuffer(pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
-            model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
 
+            var animationInstance = vehicle.getAnimationInstance();
+            if (animationInstance != null) {
+                animationInstance.getContext().setPartialTick(pPartialTick);
+                animationInstance.tick();
+                modelInstance.applyPose(BLENDER.blend(modelInstance.getPose(), animationInstance.getCurrentPose()));
+            }
+            model.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
+            model.renderSpecialBonesBaked(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.getVehicle());
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
             // 渲染弹孔
-            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
+            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource, modelInstance));
+            vehicle.lastRenderTime = System.currentTimeMillis();
 
-            Quaternionf reset = new Quaternionf(0, 0, 0, 1);
-            propellerUp1.rotation.set(reset);
-            propellerUp2.rotation.set(reset);
-            propellerUp3.rotation.set(reset);
-            propellerUp4.rotation.set(reset);
-            propellerDown1.rotation.set(reset);
-            propellerDown2.rotation.set(reset);
-            propellerDown3.rotation.set(reset);
-            propellerDown4.rotation.set(reset);
-            ropeConnect.y += d;
-            rope.yScale = 1;
-            rope.y += diffY;
+            modelInstance.applyPose(modelInstance.getBindPose());
         }
         pPoseStack.popPose();
     }

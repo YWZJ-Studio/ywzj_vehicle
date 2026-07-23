@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.maydaymemory.mae.control.runner.PlayingState;
@@ -61,6 +62,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     private boolean discard;
     protected boolean keepChunkLoaded = false;
     private boolean triggered;
+    private BakedModelInstance modelInstance;
     private AnimationRunner animationRunner;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
@@ -185,10 +187,13 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         }
         weaponId = additionalData.readResourceLocation();
         triggered = additionalData.readBoolean();
-        var displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
-        if (displayOptional.isPresent()) {
-            BaseDisplay display = displayOptional.get();
-            Map<String, BedrockAnimation> animations = display.getAnimations();
+        var weaponDisplayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
+        if (weaponDisplayOptional.isPresent()) {
+            BaseDisplay weaponDisplay = weaponDisplayOptional.get();
+            if (weaponDisplay.getModel() != null && weaponDisplay.getModel().hasBakedModel()) {
+                modelInstance = weaponDisplay.getModel().getBakedModel().createInstance();
+            }
+            Map<String, BedrockAnimation> animations = weaponDisplay.getAnimations();
             if (!animations.isEmpty()) {
                 BedrockAnimation animation = animations.values().iterator().next();
                 AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
@@ -231,6 +236,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
 
     public float getCaliber() {
         return 5.8f;
+    }
+
+    public BakedModelInstance getModelInstance() {
+        return modelInstance;
     }
 
     public AnimationRunner getAnimationRunner() {

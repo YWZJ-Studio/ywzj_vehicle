@@ -555,6 +555,47 @@
                     }
                 }
             }
+        },
+        "reserved": {
+            "loop": true,
+            "bones": {
+                "wheel1": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel2": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel3": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel4": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel5": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel6": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel7": {
+                    "rotation": [0, 0, 0]
+                },
+                "wheel8": {
+                    "rotation": [0, 0, 0]
+                },
+                "turret": {
+                    "rotation": [0, 0, 0]
+                },
+                "canno": {
+                    "rotation": [0, 0, 0]
+                },
+                "machine_gun": {
+                    "rotation": [0, 0, 0]
+                },
+                "bone17": {
+                    "rotation": [0, 0, 0]
+                }
+            }
         }
     }
 }

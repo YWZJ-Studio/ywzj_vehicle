@@ -204,7 +204,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
         }
         if (getOwner() instanceof Player player) {
-            getCurrentWeapon().ifPresent(weapon -> player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true));
+            (secondary ? getCurrentSecondaryWeapon() : getCurrentWeapon()).ifPresent(weapon -> player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true));
         }
     }
 
@@ -329,8 +329,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         weapons.forEach(weapon -> {
             AbstractVehicleWeapon<?> proxyWeapon = proxyWeapon(weapon);
             ClientAssetsManager.INSTANCE.getWeaponDisplay(proxyWeapon.getData().getWeaponId()).ifPresent(weaponDisplay -> {
-                VehicleBedrockModel model = weaponDisplay.getModel();
-                if (model == null) {
+                VehicleBedrockModel weaponModel = weaponDisplay.getModel();
+                if (weaponModel == null) {
+                    return;
+                }
+                if (!weaponModel.hasBakedModel()) {
                     return;
                 }
                 ResourceLocation texture = weaponDisplay.getTexture();
@@ -361,8 +364,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     {
                         Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
                         pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
-                        model.renderToBuffer(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
-                        model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                        weaponModel.renderToBufferBaked(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
+                        weaponModel.renderSpecialBonesBaked(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
                     }
                     pPoseStack.popPose();
                 }

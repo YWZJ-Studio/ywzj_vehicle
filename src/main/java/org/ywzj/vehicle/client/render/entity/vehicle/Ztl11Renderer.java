@@ -1,7 +1,7 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.maydaymemory.mae.basic.Pose;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BoneState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -15,6 +15,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.custom.Ztl11;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
@@ -34,26 +35,21 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
         }
         pPoseStack.pushPose();
         {
-            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-            Vec3 root = new Vec3(0, 0, 0);
-            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
-
             VehicleBedrockModel model = display.getModel();
+            BakedModelInstance modelInstance = vehicle.getModelInstance();
 
-            BedrockBone wheel1 = model.getBoneMap().get("wheel1");
-            BedrockBone wheel2 = model.getBoneMap().get("wheel2");
-            BedrockBone wheel3 = model.getBoneMap().get("wheel3");
-            BedrockBone wheel4 = model.getBoneMap().get("wheel4");
-            BedrockBone wheel5 = model.getBoneMap().get("wheel5");
-            BedrockBone wheel6 = model.getBoneMap().get("wheel6");
-            BedrockBone wheel7 = model.getBoneMap().get("wheel7");
-            BedrockBone wheel8 = model.getBoneMap().get("wheel8");
-            BedrockBone turret = model.getBoneMap().get("turret");
-            BedrockBone cannon = model.getBoneMap().get("canno");
-            BedrockBone machineGunBase = model.getBoneMap().get("machine_gun");
-            BedrockBone machineGun = model.getBoneMap().get("bone17");
+            BoneState wheel1 = modelInstance.getBone("wheel1");
+            BoneState wheel2 = modelInstance.getBone("wheel2");
+            BoneState wheel3 = modelInstance.getBone("wheel3");
+            BoneState wheel4 = modelInstance.getBone("wheel4");
+            BoneState wheel5 = modelInstance.getBone("wheel5");
+            BoneState wheel6 = modelInstance.getBone("wheel6");
+            BoneState wheel7 = modelInstance.getBone("wheel7");
+            BoneState wheel8 = modelInstance.getBone("wheel8");
+            BoneState turret = modelInstance.getBone("turret");
+            BoneState cannon = modelInstance.getBone("canno");
+            BoneState machineGunBase = modelInstance.getBone("machine_gun");
+            BoneState machineGun = modelInstance.getBone("bone17");
 
             // 轮子转速
             float vf = vehicle.getEntityData().get(Ztl11.FORWARD_SPEED);
@@ -114,25 +110,28 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
             machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
             machineGun.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
 
-            Pose pose = model.getPose();
+            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+            Vec3 root = new Vec3(0, 0, 0);
+            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
 
-            var instance = vehicle.getAnimationInstance();
-            if (instance != null) {
-                instance.tick();
-                model.applyPose(BLENDER.blend(pose, instance.getCurrentPose()));
+            var animationInstance = vehicle.getAnimationInstance();
+            if (animationInstance != null) {
+                animationInstance.getContext().setPartialTick(pPartialTick);
+                animationInstance.tick();
+                modelInstance.applyPose(BLENDER.blend(modelInstance.getPose(), animationInstance.getCurrentPose()));
             }
-
-            vehicle.lastRenderTime = System.currentTimeMillis();
-            model.renderToBuffer(pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
-            model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-
+            model.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
+            model.renderSpecialBonesBaked(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.getVehicle());
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
             // 渲染弹孔
-            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
+            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource, modelInstance));
+            vehicle.lastRenderTime = System.currentTimeMillis();
 
-            model.applyPose(model.getBindPose());
+            modelInstance.applyPose(modelInstance.getBindPose());
         }
         pPoseStack.popPose();
     }

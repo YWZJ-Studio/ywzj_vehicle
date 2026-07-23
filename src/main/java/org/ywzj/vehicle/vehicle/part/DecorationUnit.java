@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.vehicle.part;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
@@ -49,6 +48,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
     public Vec3 offsetFromBone;
     public Vec3 offsetFromVehicle;
     public Quaternionf rotation;
+    private BakedModelInstance modelInstance;
     private AnimationRunner animationRunner;
 
     public DecorationUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
@@ -61,10 +61,13 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
 
     private void initAnimation() {
         if (vehicle.level().isClientSide()) {
-            var displayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(displayId);
-            if (displayOptional.isPresent()) {
-                BaseDisplay display = displayOptional.get();
-                Map<String, BedrockAnimation> animations = display.getAnimations();
+            var decorationDisplayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(displayId);
+            if (decorationDisplayOptional.isPresent()) {
+                BaseDisplay decorationDisplay = decorationDisplayOptional.get();
+                if (decorationDisplay.getModel() != null && decorationDisplay.getModel().hasBakedModel()) {
+                    modelInstance = decorationDisplay.getModel().createBakedInstance();
+                }
+                Map<String, BedrockAnimation> animations = decorationDisplay.getAnimations();
                 if (!animations.isEmpty()) {
                     BedrockAnimation animation = animations.values().iterator().next();
                     AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
@@ -135,6 +138,9 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         if (decorationModel == null || decorationTexture == null) {
             return;
         }
+        if (!decorationModel.hasBakedModel()) {
+            return;
+        }
         var vehicleDisplay = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);
         if (vehicleDisplay == null) {
             return;
@@ -143,77 +149,18 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         if (vehicleModel == null) {
             return;
         }
-        if (vehicleModel.hasBakedModel()) {
-            renderOnBakedVehicle(pPoseStack, bufferSource, pPackedLight, decorationModel, decorationTexture, vehicleModel);
+        if (!vehicleModel.hasBakedModel()) {
             return;
         }
-
-        BedrockBone bone = baseBoneName == null || baseBoneName.isBlank()
-                ? null
-                : vehicleModel.getBoneMap().get(baseBoneName);
-        if (bone == null && baseBoneName != null && !baseBoneName.isBlank()) {
-            return;
-        }
-
-        Quaternionf globalRotation;
-        Vector3f globalPivot;
-        if (bone == null) {
-            // 空骨骼名表示 baked 静态根几何；offsetFromBone 已在模型根空间。
-            globalRotation = new Quaternionf().rotateYXZ((float) Math.toRadians(-selfYRot),
-                    (float) Math.toRadians(selfXRot),
-                    (float) Math.toRadians(selfZRot));
-            globalPivot = offsetFromBone.toVector3f();
-        } else {
-            globalRotation = new Quaternionf(bone.rotation);
-            globalRotation.rotateYXZ((float) Math.toRadians(-selfYRot),
-                    (float) Math.toRadians(selfXRot),
-                    (float) Math.toRadians(selfZRot));
-            Vector3f offset = bone.rotation.transform(offsetFromBone.toVector3f());
-            globalPivot = new Vector3f(bone.x / 16.0F + offset.x, bone.y / 16.0F + offset.y, bone.z / 16.0F + offset.z);
-            BedrockBone parent = bone.parent;
-            while (parent != null) {
-                parent.rotation.transform(globalPivot);
-                globalPivot.add(parent.x / 16, parent.y / 16, parent.z / 16);
-                globalRotation.premul(parent.rotation);
-                parent = parent.parent;
-            }
-        }
-        Vector3f rot = new Vector3f();
-        globalRotation.getEulerAnglesYXZ(rot);
-        pPoseStack.pushPose();
-        {
-            pPoseStack.translate(globalPivot.x, globalPivot.y, globalPivot.z);
-            pPoseStack.scale(scale, scale, scale);
-            pPoseStack.rotateAround(Axis.YP.rotation(rot.y), 0, 0, 0);
-            pPoseStack.rotateAround(Axis.XP.rotation(rot.x), 0, 0, 0);
-            pPoseStack.rotateAround(Axis.ZP.rotation(rot.z), 0, 0, 0);
-            offsetFromVehicle = new Vec3(globalPivot);
-            rotation = globalRotation;
-            if (animationRunner != null) {
-                animationRunner.tick();
-                decorationModel.applyPose(BLENDER.blend(decorationModel.getBindPose(), animationRunner.evaluate()));
-            }
-            decorationModel.renderToBuffer(pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
-            decorationModel.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
-        }
-        pPoseStack.popPose();
-    }
-
-    /** 使用当前 baked 模型实例的附件变换，避免与 v1 骨骼索引空间混用。 */
-    @OnlyIn(Dist.CLIENT)
-    private void renderOnBakedVehicle(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
-                                      VehicleBedrockModel decorationModel, ResourceLocation decorationTexture,
-                                      VehicleBedrockModel vehicleModel) {
         boolean rootAttachment = baseBoneName == null || baseBoneName.isBlank();
-        BakedModelInstance modelInstance = vehicle.getModelInstance(vehicleModel);
-        int attachmentBoneIndex = rootAttachment ? -1 : modelInstance.getIndex(baseBoneName);
-        if (!rootAttachment && modelInstance.getBone(attachmentBoneIndex) == null) {
+        BakedModelInstance vehicleModelInstance = vehicle.getModelInstance();
+        int attachmentBoneIndex = rootAttachment ? -1 : vehicleModelInstance.getIndex(baseBoneName);
+        if (!rootAttachment && vehicleModelInstance.getBone(attachmentBoneIndex) == null) {
             return;
         }
-
         Matrix4f attachmentTransform = attachmentBoneIndex < 0
                 ? new Matrix4f()
-                : modelInstance.getGlobalTransform(attachmentBoneIndex);
+                : vehicleModelInstance.getGlobalTransform(attachmentBoneIndex);
         Quaternionf localRotation = new Quaternionf().rotateYXZ((float) Math.toRadians(-selfYRot),
                 (float) Math.toRadians(selfXRot),
                 (float) Math.toRadians(selfZRot));
@@ -223,26 +170,24 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         Vector3f globalPivot = offsetFromBone.toVector3f().mulPosition(attachmentTransform);
         Vector3f localEulerRotation = new Vector3f();
         localRotation.getEulerAnglesYXZ(localEulerRotation);
-
-        poseStack.pushPose();
+        pPoseStack.pushPose();
         {
-            poseStack.mulPoseMatrix(attachmentTransform);
-            poseStack.translate(offsetFromBone.x, offsetFromBone.y, offsetFromBone.z);
-            poseStack.scale(scale, scale, scale);
-            poseStack.rotateAround(Axis.YP.rotation(localEulerRotation.y), 0, 0, 0);
-            poseStack.rotateAround(Axis.XP.rotation(localEulerRotation.x), 0, 0, 0);
-            poseStack.rotateAround(Axis.ZP.rotation(localEulerRotation.z), 0, 0, 0);
+            pPoseStack.mulPoseMatrix(attachmentTransform);
+            pPoseStack.translate(offsetFromBone.x, offsetFromBone.y, offsetFromBone.z);
+            pPoseStack.scale(scale, scale, scale);
+            pPoseStack.rotateAround(Axis.YP.rotation(localEulerRotation.y), 0, 0, 0);
+            pPoseStack.rotateAround(Axis.XP.rotation(localEulerRotation.x), 0, 0, 0);
+            pPoseStack.rotateAround(Axis.ZP.rotation(localEulerRotation.z), 0, 0, 0);
             offsetFromVehicle = new Vec3(globalPivot);
             rotation = globalRotation;
             if (animationRunner != null) {
                 animationRunner.tick();
-                decorationModel.applyPose(BLENDER.blend(decorationModel.getBindPose(), animationRunner.evaluate()));
+                modelInstance.applyPose(BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
             }
-            decorationModel.renderToBuffer(poseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : packedLight);
-            decorationModel.renderSpecialBones(poseStack, bufferSource, vehicle.isDestroyed() ? 64 : packedLight,
-                    OverlayTexture.NO_OVERLAY);
+            decorationModel.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
+            decorationModel.renderSpecialBonesBaked(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
         }
-        poseStack.popPose();
+        pPoseStack.popPose();
     }
 
     @Override

@@ -84,8 +84,8 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
                 machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = bedrockBoneWrapper.visible);
                 VehicleBedrockModel vehicleModel = machineMaxBlockEntity.vehicleDisplay.getModel();
                 vehicleModel.applyPose(vehicleModel.getBindPose());
-                vehicleModel.renderToBuffer(poseStack, bufferSource, machineMaxBlockEntity.vehicleDisplay.getTexture(), packedLight);
-                vehicleModel.renderSpecialBones(poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY);
+//                vehicleModel.renderToBuffer(poseStack, bufferSource, machineMaxBlockEntity.vehicleDisplay.getTexture(), packedLight);
+//                vehicleModel.renderSpecialBones(poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY);
                 machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = true);
             }
             poseStack.popPose();

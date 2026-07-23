@@ -120,6 +120,7 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Rope>> ROPE = ENTITIES.register("rope",
             () -> EntityType.Builder.of(Rope::new, MobCategory.MISC).sized(1f, 1f)
+                    .noSave()
                     .clientTrackingRange(32)
                     .build("rope"));
 
