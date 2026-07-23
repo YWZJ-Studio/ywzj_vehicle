@@ -44,6 +44,8 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             BoneState propellerDown3 = modelInstance.getBone("wing3_down");
             BoneState propellerUp4 = modelInstance.getBone("wing4_up");
             BoneState propellerDown4 = modelInstance.getBone("wing4_down");
+            BoneState rope = modelInstance.getBone("rope");
+            BoneState ropeConnect = modelInstance.getBone("rope_connect");
 
             vehicle.propellerRotation += vehicle.getPower() / 5;
             vehicle.propellerRotation %= 360;
@@ -56,6 +58,13 @@ public class QuadcopterRenderer extends EntityRenderer<Quadcopter> {
             propellerDown4.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
             propellerUp2.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
             propellerUp3.rotation.mul(Axis.YN.rotationDegrees(-vehicle.propellerRotation));
+            if (vehicle.getEntityData().get(Quadcopter.CABLE_LENGTH) > 0) {
+                rope.visible = false;
+                ropeConnect.visible = false;
+            } else {
+                rope.visible = true;
+                ropeConnect.visible = true;
+            }
 
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             Vec3 root = new Vec3(0, 0, 0);

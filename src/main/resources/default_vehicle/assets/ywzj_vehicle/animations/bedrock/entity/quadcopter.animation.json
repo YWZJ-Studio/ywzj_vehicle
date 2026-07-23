@@ -27,6 +27,12 @@
 				},
 				"wing4_down": {
 					"rotation": [0, 0, 0]
+				},
+				"rope": {
+					"rotation": [0, 0, 0]
+				},
+				"rope_connect": {
+					"rotation": [0, 0, 0]
 				}
 			}
 		}

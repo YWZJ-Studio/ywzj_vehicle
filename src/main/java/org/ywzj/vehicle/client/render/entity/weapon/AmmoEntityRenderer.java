@@ -1,6 +1,8 @@
 package org.ywzj.vehicle.client.render.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -72,10 +74,15 @@ public class AmmoEntityRenderer<T extends AmmoEntity> extends EntityRenderer<T> 
                 ammoTexture = defaultTexture;
             }
             BakedModelInstance modelInstance = ammoEntity.getModelInstance();
-            var runner = ammoEntity.getAnimationRunner();
-            if (runner != null) {
-                runner.tick();
-                modelInstance.applyPose(BLENDER.blend(modelInstance.getBindPose(), runner.evaluate()));
+            var animationRunner = ammoEntity.getAnimationRunner();
+            if (animationRunner != null) {
+                animationRunner.tick();
+                AnimationRateLimiter<Pose> animationRateLimiter = ammoEntity.getAnimationRateLimiter();
+                Pose pose = animationRateLimiter.update(() -> BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
+                if (pose != ammoEntity.lastPose) {
+                    modelInstance.applyPose(pose);
+                    ammoEntity.lastPose = pose;
+                }
             }
             ammoModel.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, ammoTexture, pPackedLight);
             ammoModel.applyPose(ammoModel.getBindPose());

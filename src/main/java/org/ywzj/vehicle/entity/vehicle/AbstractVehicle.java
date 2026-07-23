@@ -1,6 +1,9 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.time.AnimationClocks;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -108,6 +111,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     private ResourceLocation vehicleId;
     private ResourceLocation displayId;
     private BakedModelInstance modelInstance;
+    private AnimationRateLimiter<Pose> animationRateLimiter;
+    public Pose lastPose;
     private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -409,6 +414,16 @@ public abstract class AbstractVehicle extends ContainerCraft
         VehicleBedrockModel model = display.getModel();
         if (model != null && model.hasBakedModel()) {
             modelInstance = model.createBakedInstance();
+            animationRateLimiter = new AnimationRateLimiter<>(AnimationClocks.client(), () -> {
+                double distanceSqr = this.distanceToSqr(LocalVehiclePlayer.instance.getPlayer());
+                if (distanceSqr < 64 * 64) {
+                    return AnimationRateLimiter.FPS_120;
+                } else if (distanceSqr < 128 * 128) {
+                    return AnimationRateLimiter.FPS_60;
+                } else {
+                    return AnimationRateLimiter.FPS_30;
+                }
+            });
         }
     }
 
@@ -673,6 +688,10 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public BakedModelInstance getModelInstance() {
         return modelInstance;
+    }
+
+    public AnimationRateLimiter<Pose> getAnimationRateLimiter() {
+        return animationRateLimiter;
     }
 
     public SoundEvent getEngineStartSound() {

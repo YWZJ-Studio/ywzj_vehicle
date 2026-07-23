@@ -1,7 +1,10 @@
 package org.ywzj.vehicle.vehicle.part;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.time.AnimationClocks;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.maydaymemory.mae.control.runner.LoopingState;
@@ -28,6 +31,7 @@ import org.ywzj.vehicle.client.screen.DecorationSettingsScreen;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.DecorationAction;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
@@ -49,6 +53,8 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
     public Vec3 offsetFromVehicle;
     public Quaternionf rotation;
     private BakedModelInstance modelInstance;
+    private AnimationRateLimiter<Pose> animationRateLimiter;
+    public Pose lastPose;
     private AnimationRunner animationRunner;
 
     public DecorationUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
@@ -66,6 +72,16 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
                 BaseDisplay decorationDisplay = decorationDisplayOptional.get();
                 if (decorationDisplay.getModel() != null && decorationDisplay.getModel().hasBakedModel()) {
                     modelInstance = decorationDisplay.getModel().createBakedInstance();
+                    animationRateLimiter = new AnimationRateLimiter<>(AnimationClocks.client(), () -> {
+                        double distanceSqr = this.vehicle.distanceToSqr(LocalVehiclePlayer.instance.getPlayer());
+                        if (distanceSqr < 64 * 64) {
+                            return AnimationRateLimiter.FPS_120;
+                        } else if (distanceSqr < 128 * 128) {
+                            return AnimationRateLimiter.FPS_60;
+                        } else {
+                            return AnimationRateLimiter.FPS_30;
+                        }
+                    });
                 }
                 Map<String, BedrockAnimation> animations = decorationDisplay.getAnimations();
                 if (!animations.isEmpty()) {
@@ -182,7 +198,11 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             rotation = globalRotation;
             if (animationRunner != null) {
                 animationRunner.tick();
-                modelInstance.applyPose(BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
+                Pose pose = animationRateLimiter.update(() -> BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
+                if (pose != lastPose) {
+                    modelInstance.applyPose(pose);
+                    lastPose = pose;
+                }
             }
             decorationModel.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
             decorationModel.renderSpecialBonesBaked(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);

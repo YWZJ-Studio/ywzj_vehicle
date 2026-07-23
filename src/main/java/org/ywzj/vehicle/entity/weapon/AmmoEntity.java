@@ -1,7 +1,10 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.time.AnimationClocks;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.maydaymemory.mae.control.runner.PlayingState;
@@ -39,6 +42,7 @@ import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 import java.util.List;
@@ -63,6 +67,8 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     protected boolean keepChunkLoaded = false;
     private boolean triggered;
     private BakedModelInstance modelInstance;
+    private AnimationRateLimiter<Pose> animationRateLimiter;
+    public Pose lastPose;
     private AnimationRunner animationRunner;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
@@ -192,6 +198,16 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             BaseDisplay weaponDisplay = weaponDisplayOptional.get();
             if (weaponDisplay.getModel() != null && weaponDisplay.getModel().hasBakedModel()) {
                 modelInstance = weaponDisplay.getModel().getBakedModel().createInstance();
+                animationRateLimiter = new AnimationRateLimiter<>(AnimationClocks.client(), () -> {
+                    double distanceSqr = this.distanceToSqr(LocalVehiclePlayer.instance.getPlayer());
+                    if (distanceSqr < 64 * 64) {
+                        return AnimationRateLimiter.FPS_120;
+                    } else if (distanceSqr < 128 * 128) {
+                        return AnimationRateLimiter.FPS_60;
+                    } else {
+                        return AnimationRateLimiter.FPS_30;
+                    }
+                });
             }
             Map<String, BedrockAnimation> animations = weaponDisplay.getAnimations();
             if (!animations.isEmpty()) {
@@ -240,6 +256,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
 
     public BakedModelInstance getModelInstance() {
         return modelInstance;
+    }
+
+    public AnimationRateLimiter<Pose> getAnimationRateLimiter() {
+        return animationRateLimiter;
     }
 
     public AnimationRunner getAnimationRunner() {

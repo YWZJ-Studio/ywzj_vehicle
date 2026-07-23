@@ -49,7 +49,7 @@ public class Quadcopter extends RotaryWingVehicle {
     protected Vec3 tickMove() {
         Vec3 force = super.tickMove();
         Rope rope = getOrCreateCargoRope();
-        rope.setPos(position());
+        rope.setPos(position().add(getDeltaMovement()));
         float cableLength = entityData.get(CABLE_LENGTH);
         if (controlUnit.functionalDown) {
             cableLength = Mth.clamp(cableLength + 1, 0, MAX_CABLE_LENGTH);
@@ -106,6 +106,14 @@ public class Quadcopter extends RotaryWingVehicle {
             level().addFreshEntity(cargoRope);
         }
         return cargoRope;
+    }
+
+    @Override
+    public void impact(Entity entity) {
+        if (entity == cargo) {
+            return;
+        }
+        super.impact(entity);
     }
 
     @Override
