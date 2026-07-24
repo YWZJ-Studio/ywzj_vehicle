@@ -20,9 +20,9 @@ build
 # other
 eclipse
 /run/
+.narrafork/
 
 # Files from Forge MDK
 forge*changelog.txt
 webeditor/node_modules/
 webeditor/dist/
-.narrafork/

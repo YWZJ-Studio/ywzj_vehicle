@@ -31,7 +31,6 @@ import java.util.*;
 public class MachineMaxBlockEntity extends BlockEntity {
 
     private static final ICube[] NO_CUBES = new ICube[0];
-
     private boolean crafting;
     private boolean hasProduct;
     public float progress;

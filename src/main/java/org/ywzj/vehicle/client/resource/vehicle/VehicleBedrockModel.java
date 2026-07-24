@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.BedrockModelPOJO;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakedBedrockModel;
@@ -30,10 +29,8 @@ public class VehicleBedrockModel extends BedrockModel {
     private static final Pattern ILLUMINATED_BONE_PATTERN = Pattern.compile("^illum_.*");
     private final BakedBedrockModel bakedModel;
     private final BakedModelInstance defaultModelInstance;
-    private final List<SpecialBoneEntry> specialBoneEntries;
     private final List<BakedSpecialBoneEntry> bakedSpecialBoneEntries;
 
-    public record SpecialBoneEntry(BedrockBone bone, SpecialBoneEffect effect) {}
     public record BakedSpecialBoneEntry(int boneIndex, SpecialBoneEffect effect) {}
 
     public VehicleBedrockModel(BedrockModelPOJO pojo, List<SpecialBoneEffect> specialBoneEffects) {
@@ -43,15 +40,10 @@ public class VehicleBedrockModel extends BedrockModel {
     public VehicleBedrockModel(BedrockModelPOJO pojo, List<SpecialBoneEffect> specialBoneEffects, BakerOptions bakerOptions) {
         super(pojo);
         Map<String, SpecialBoneEffect> specialBoneMap = new HashMap<>();
-        this.specialBoneEntries = new ArrayList<>();
         if (specialBoneEffects != null) {
             for (SpecialBoneEffect effect : specialBoneEffects) {
                 if (effect.isValid()) {
                     specialBoneMap.put(effect.bone, effect);
-                    BedrockBone bone = getBone(effect.bone);
-                    if (bone != null) {
-                        specialBoneEntries.add(new SpecialBoneEntry(bone, effect));
-                    }
                 }
             }
         }
@@ -90,14 +82,6 @@ public class VehicleBedrockModel extends BedrockModel {
         }
     }
 
-    public boolean hasBakedModel() {
-        return bakedModel != null;
-    }
-
-    public BakedBedrockModel getBakedModel() {
-        return bakedModel;
-    }
-
     public BakedModelInstance createBakedInstance() {
         if (bakedModel == null) {
             throw new IllegalStateException("This display does not enable a baked model");
@@ -110,28 +94,9 @@ public class VehicleBedrockModel extends BedrockModel {
         return instance;
     }
 
-//    @Override
-//    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay,
-//                               float red, float green, float blue, float alpha) {
-//        setSpecialBoneVisible(false);
-//        super.renderToBuffer(poseStack, buffer, packedLight, packedOverlay, red, green, blue, alpha);
-//    }
-//
-//    @OnlyIn(Dist.CLIENT)
-//    @ParametersAreNonnullByDefault
-//    public void renderToBuffer(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
-//        setSpecialBoneVisible(false);
-//        super.renderToBuffer(poseStack, bufferSource,
-//                RenderType.entityCutout(texture),
-//                BedrockModelRenderTypes.polyMeshCutout(texture),
-//                packedLight,
-//                OverlayTexture.pack(0f, false)
-//        );
-//    }
-
     @OnlyIn(Dist.CLIENT)
-    public void renderToBufferBaked(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
-        setSpecialBoneBakedVisible(defaultModelInstance, false);
+    public void renderToBuffer(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
+        setSpecialBoneVisible(defaultModelInstance, false);
         defaultModelInstance.renderToBuffer(poseStack, bufferSource,
                 RenderType.entityCutout(texture),
                 BedrockModelRenderTypes.polyMeshCutout(texture),
@@ -140,8 +105,8 @@ public class VehicleBedrockModel extends BedrockModel {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void renderToBufferBaked(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
-        setSpecialBoneBakedVisible(instance, false);
+    public void renderToBuffer(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
+        setSpecialBoneVisible(instance, false);
         instance.renderToBuffer(poseStack, bufferSource,
                 RenderType.entityCutout(texture),
                 BedrockModelRenderTypes.polyMeshCutout(texture),
@@ -149,73 +114,14 @@ public class VehicleBedrockModel extends BedrockModel {
                 OverlayTexture.NO_OVERLAY);
     }
 
-//    @OnlyIn(Dist.CLIENT)
-//    @ParametersAreNonnullByDefault
-//    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
-//        renderSpecialBones(poseStack, source, packedLight, packedOverlay, false);
-//    }
-//
-//    @OnlyIn(Dist.CLIENT)
-//    @ParametersAreNonnullByDefault
-//    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
-//        for (SpecialBoneEntry entry : specialBoneEntries) {
-//            VertexConsumer buffer;
-//            if (entry.bone.hasCubesInTree()) {
-//                switch (entry.effect.type) {
-//                    case MUZZLE_FLASH -> buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
-//                    case TRANSPARENT -> buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
-//                    case COCKPIT -> {
-//                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-//                            continue;
-//                        }
-//                        buffer = source.getBuffer(ModRenderTypes.cubeTransparent(entry.effect.texture));
-//                    }
-//                    default -> {
-//                        continue;
-//                    }
-//                }
-//                poseStack.pushPose();
-//                poseStack.mulPoseMatrix(VectorUtil.getGlobalTransform(entry.bone));
-//                entry.bone.render(poseStack, buffer, packedLight, packedOverlay);
-//                poseStack.popPose();
-//            } else if (entry.bone.hasMeshesInTree()) {
-//                switch (entry.effect.type) {
-//                    case MUZZLE_FLASH -> buffer = source.getBuffer(ModRenderTypes.muzzleFlash(entry.effect.texture));
-//                    case TRANSPARENT -> buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
-//                    case COCKPIT -> {
-//                        if (isLocalPlayerVehicle && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
-//                            continue;
-//                        }
-//                        buffer = source.getBuffer(ModRenderTypes.polyMeshTransparent(entry.effect.texture));
-//                    }
-//                    default -> {
-//                        continue;
-//                    }
-//                }
-//                poseStack.pushPose();
-//                poseStack.mulPoseMatrix(VectorUtil.getGlobalTransform(entry.bone));
-//                entry.bone.renderMeshes(poseStack, buffer, packedLight, packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
-//                poseStack.popPose();
-//            }
-//        }
-//    }
-
     @OnlyIn(Dist.CLIENT)
-    public void renderSpecialBonesBaked(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
-        renderSpecialBonesBaked(defaultModelInstance, poseStack, source, packedLight, packedOverlay, false);
+    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
+        renderSpecialBones(defaultModelInstance, poseStack, source, packedLight, packedOverlay, false);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void renderSpecialBonesBaked(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
-        renderSpecialBonesBaked(instance, poseStack, source, packedLight, packedOverlay, false);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public void renderSpecialBonesBaked(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
-        if (bakedModel == null) {
-            return;
-        }
-        setSpecialBoneBakedVisible(instance, true);
+    public void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
+        setSpecialBoneVisible(instance, true);
         for (BakedSpecialBoneEntry entry : bakedSpecialBoneEntries) {
             if (entry.effect.type == SpecialBoneEffect.SpecialBoneEffectType.COCKPIT
                     && isLocalPlayerVehicle
@@ -248,19 +154,25 @@ public class VehicleBedrockModel extends BedrockModel {
         }
     }
 
-    private void setSpecialBoneVisible(boolean visible) {
-        for (SpecialBoneEntry entry : specialBoneEntries) {
-            entry.bone.visible = visible;
-        }
-    }
-
-    private void setSpecialBoneBakedVisible(BakedModelInstance instance, boolean visible) {
+    private void setSpecialBoneVisible(BakedModelInstance instance, boolean visible) {
         for (BakedSpecialBoneEntry entry : bakedSpecialBoneEntries) {
             BoneState bone = instance.getBone(entry.boneIndex);
             if (bone != null) {
                 bone.visible = visible;
             }
         }
+    }
+
+    public boolean hasBakedModel() {
+        return bakedModel != null;
+    }
+
+    public BakedBedrockModel getBakedModel() {
+        return bakedModel;
+    }
+
+    public BakedModelInstance getDefaultModelInstance() {
+        return defaultModelInstance;
     }
 
 }

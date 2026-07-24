@@ -126,7 +126,8 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         if (renderer != null) {
                             renderer.render(figureBoxBlockEntity, 0.0f, poseStack, pBuffer, pPackedLight, pPackedOverlay);
                         }
-                    } catch (Exception ignore) {
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
                     }
                 }
             }

@@ -4,11 +4,14 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.Animatio
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.maydaymemory.mae.basic.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -64,14 +67,15 @@ public class AmmoEntityRenderer<T extends AmmoEntity> extends EntityRenderer<T> 
                     ammoTexture = weaponDisplay.getTexture();
                 }
             }
-            if (ammoModel == null) {
-                ammoModel = (VehicleBedrockModel) BedrockModelLoader.getModel(defaultModel);
-            }
-            if (!ammoModel.hasBakedModel()) {
+            if (ammoModel == null || ammoTexture == null) {
+                VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutout(defaultTexture));
+                BedrockModelLoader.getModel(defaultModel).renderToBuffer(pPoseStack, buffer, pPackedLight, OverlayTexture.NO_OVERLAY);
+                pPoseStack.popPose();
                 return;
             }
-            if (ammoTexture == null) {
-                ammoTexture = defaultTexture;
+            if (!ammoModel.hasBakedModel()) {
+                pPoseStack.popPose();
+                return;
             }
             BakedModelInstance modelInstance = ammoEntity.getModelInstance();
             var animationRunner = ammoEntity.getAnimationRunner();
@@ -84,7 +88,7 @@ public class AmmoEntityRenderer<T extends AmmoEntity> extends EntityRenderer<T> 
                     ammoEntity.lastPose = pose;
                 }
             }
-            ammoModel.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, ammoTexture, pPackedLight);
+            ammoModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, ammoTexture, pPackedLight);
             ammoModel.applyPose(ammoModel.getBindPose());
         }
         pPoseStack.popPose();

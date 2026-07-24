@@ -50,7 +50,7 @@ public class DecorationItemRenderer extends BlockEntityWithoutLevelRenderer {
                         poseStack.popPose();
                         return;
                     } else if (model != null && texture != null && model.hasBakedModel()) {
-                        model.renderToBufferBaked(poseStack, pBuffer, texture, pPackedLight);
+                        model.renderToBuffer(poseStack, pBuffer, texture, pPackedLight);
                         poseStack.popPose();
                         return;
                     }

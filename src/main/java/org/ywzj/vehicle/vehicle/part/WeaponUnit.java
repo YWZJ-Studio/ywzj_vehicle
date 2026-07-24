@@ -364,8 +364,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     {
                         Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
                         pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
-                        weaponModel.renderToBufferBaked(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
-                        weaponModel.renderSpecialBonesBaked(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                        weaponModel.renderToBuffer(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
+                        weaponModel.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
                     }
                     pPoseStack.popPose();
                 }

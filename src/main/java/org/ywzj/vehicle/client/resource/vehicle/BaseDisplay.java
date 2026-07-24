@@ -162,7 +162,6 @@ public class BaseDisplay {
         return modelPath;
     }
 
-    @Nullable
     public BedrockModelPOJO getModelPojo() {
         return modelPojo;
     }

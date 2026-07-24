@@ -204,8 +204,8 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
                     lastPose = pose;
                 }
             }
-            decorationModel.renderToBufferBaked(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
-            decorationModel.renderSpecialBonesBaked(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+            decorationModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
+            decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, false);
         }
         pPoseStack.popPose();
     }
