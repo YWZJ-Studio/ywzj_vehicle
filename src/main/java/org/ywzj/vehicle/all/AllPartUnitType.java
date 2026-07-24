@@ -35,6 +35,8 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<ThrustUnit, RotatableUnitData>> THRUST = register(PartUnitTypes.THRUST);
 
+    public static final RegistryObject<PartUnitType<RopeUnit, RopeUnitData>> ROPE = register(PartUnitTypes.ROPE);
+
     private static <T extends PartUnit<D>, D extends PartUnitData> RegistryObject<PartUnitType<T, D>> register(
             PartUnitType<T, D> type
     ) {

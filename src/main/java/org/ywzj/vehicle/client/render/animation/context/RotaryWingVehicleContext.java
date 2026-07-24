@@ -21,4 +21,8 @@ public class RotaryWingVehicleContext extends VehicleContext<RotaryWingVehicle> 
         return Mth.lerp(partialTick, entity.rollInputO, entity.rollInput);
     }
 
+    public float getCargoRopeLength() {
+        return entity.cargoRope == null ? 0 : entity.cargoRope.getLength();
+    }
+
 }

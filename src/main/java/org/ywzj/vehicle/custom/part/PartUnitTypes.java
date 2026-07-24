@@ -106,4 +106,13 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<RopeUnit, RopeUnitData> ROPE =
+            PartUnitType.Builder.<RopeUnit, RopeUnitData>of(YwzjVehicle.modLocation("rope"))
+                    .setFactory(RopeUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, RopeUnitPojo.class);
+                        return new RopeUnitData(pojo);
+                    })
+                    .build();
+
 }

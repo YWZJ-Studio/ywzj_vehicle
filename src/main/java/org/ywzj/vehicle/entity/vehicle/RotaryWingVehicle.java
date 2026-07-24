@@ -10,30 +10,31 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.RotaryWingVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
-import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
-import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
+import org.ywzj.vehicle.vehicle.part.RopeUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -64,7 +65,10 @@ public class RotaryWingVehicle extends AbstractVehicle
     public boolean fastRoping;
     public String fastRopingDoorId;
     public HashMap<UUID, FastRopingContext> fastRopingContexts = new HashMap<>();
-    public float propellerRotation;
+    public RopeUnit fastRopingRope;
+    public Entity cargo;
+    public RopeUnit cargoRope;
+    private int hookCooldown;
     public float collectivePitch;
     public float collectivePitchO;
     public float pitchInput;
@@ -143,6 +147,7 @@ public class RotaryWingVehicle extends AbstractVehicle
             if (fastRoping) {
                 tickFastRoping();
             }
+            tickCargo();
         }
         tickInput();
     }
@@ -171,14 +176,15 @@ public class RotaryWingVehicle extends AbstractVehicle
 
     protected void tickFastRoping() {
         fastRopingContexts.values().removeIf(context -> {
-            context.rope.setPos(relativeRotPos(this.position().add(context.fixedNodeOffset), false));
             if (context.isTouchGround() || context.livingEntity.isShiftKeyDown()) {
-                context.rope.kill();
                 return true;
             }
             context.tickDescending();
             return false;
         });
+        if (fastRopingContexts.isEmpty() && fastRopingRope != null) {
+            fastRopingRope.retract();
+        }
     }
 
     @Override
@@ -330,6 +336,61 @@ public class RotaryWingVehicle extends AbstractVehicle
         return force;
     }
 
+    protected void tickCargo() {
+        if (cargoRope == null) {
+            return;
+        }
+        float cableLength = cargoRope.getLength();
+        if (controlUnit.functionalDown) {
+            cableLength = Mth.clamp(cableLength + 1, 0, cargoRope.getMaxLength());
+        } else if (controlUnit.functionalUp) {
+            cableLength = Mth.clamp(cableLength - 1, 0, cargoRope.getMaxLength());
+        }
+        cargoRope.setLength(cableLength);
+        if (cableLength == 0) {
+            if (cargo != null) {
+                cargo.fallDistance = 0;
+                cargo = null;
+            }
+            return;
+        }
+        Vec3 hookPos = cargoRope.getEndPosition();
+        while (level().getBlockState(BlockPos.containing(hookPos)).isSolid() && cableLength > 0) {
+            cableLength = Mth.clamp(cableLength - 1, 0, cargoRope.getMaxLength());
+            cargoRope.setLength(cableLength);
+            hookPos = cargoRope.getEndPosition();
+        }
+        hookCooldown = Math.max(0, hookCooldown - 1);
+        if (controlUnit.functionalLeft && cargo != null) {
+            cargo.fallDistance = 0;
+            cargo = null;
+            hookCooldown = 20;
+            return;
+        }
+        if (hookCooldown == 0 && cargo == null && getDriver() != null) {
+            List<Entity> entities = level().getEntities(this, AABB.ofSize(hookPos, 2, 4, 2),
+                    entity -> !hasPassenger(entity));
+            if (!entities.isEmpty()) {
+                cargo = entities.get(0);
+                this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN);
+            }
+        }
+        if (cargo != null) {
+            cargo.fallDistance = 0;
+            cargo.setDeltaMovement(Vec3.ZERO);
+            if (!cargo.isAlive()) {
+                cargo = null;
+            } else {
+                hookPos = hookPos.subtract(0, cargo.getEyeHeight(), 0);
+                if (cargo.onGround()) {
+                    hookPos = new Vec3(hookPos.x, Math.max(cargo.position().y, hookPos.y), hookPos.z);
+                }
+                cargo.teleportTo(hookPos.x, hookPos.y, hookPos.z);
+                cargo.hasImpulse = true;
+            }
+        }
+    }
+
     @Override
     protected void tickSound() {
         super.tickSound();
@@ -441,7 +502,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (fastRoping) {
             FastRopingContext fastRopingContext = fastRopingContexts.get(pPassenger.getUUID());
             if (fastRopingContext != null) {
-                return fastRopingContext.rope.position();
+                return fastRopingContext.rope.getAnchorPosition();
             }
         }
         return super.getDismountLocationForPassenger(pPassenger);
@@ -455,20 +516,21 @@ public class RotaryWingVehicle extends AbstractVehicle
                 return;
             }
             Vec3 dismountLocation;
-            if (fastRopingDoorId != null
-                    && partUnitMap.get(fastRopingDoorId) instanceof DoorUnit doorUnit) {
+            if (fastRopingDoorId != null && partUnitMap.get(fastRopingDoorId) instanceof DoorUnit doorUnit) {
                 dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
                 doorUnit.setOn(true);
             } else {
                 dismountLocation = getDismountLocationForPassenger(pPassenger);
             }
+            if (fastRopingRope == null) {
+                return;
+            }
+            RopeUnit rope = fastRopingRope;
+            rope.setPivotOffset(relativeRotPos(dismountLocation, true).subtract(position()));
+            rope.deploy();
             FastRopingContext fastRopingContext = new FastRopingContext();
-            Rope rope = new Rope(AllEntities.ROPE.get(), level());
-            rope.setPos(dismountLocation);
-            level().addFreshEntity(rope);
             fastRopingContext.rope = rope;
             fastRopingContext.livingEntity = pPassenger;
-            fastRopingContext.fixedNodeOffset = relativeRotDirection(dismountLocation.subtract(this.position()), true);
             fastRopingContexts.put(pPassenger.getUUID(), fastRopingContext);
         }
     }
@@ -476,11 +538,10 @@ public class RotaryWingVehicle extends AbstractVehicle
     @Override
     public void onClientVehicleAction(ClientVehicleAction message, Player player) {
         if (message.toggleLandingGear) {
-            SwitchableUnit<?> landingGearUnit = this.getLandingGearUnit();
-            if (landingGearUnit == null) {
+            if (landingGear == null) {
                 player.displayClientMessage(Component.translatable("tips.no_landing_gear"), true);
             } else if (hasPower()) {
-                landingGearUnit.setOn(!isLandingGearUp());
+                landingGear.setOn(!isLandingGearUp());
             }
         }
         if (message.toggleHoverMode) {
@@ -500,6 +561,26 @@ public class RotaryWingVehicle extends AbstractVehicle
         if (partUnits.get(partUnitIndex) instanceof WeaponUnit weaponUnit) {
             weaponUnit.shoot(weaponIndex, aimContexts, operator);
         }
+    }
+
+    @Override
+    public void impact(Entity entity) {
+        if (entity == cargo) {
+            return;
+        }
+        super.impact(entity);
+    }
+
+    @Override
+    public double thirdPersonDistance() {
+        double distance = isViewZoomed()
+                ? getViewInfo().thirdPersonDistanceZoomed
+                : getViewInfo().thirdPersonDistance;
+        distance = distance + cargoRope.getLength() * 1.5f;
+        if (!isViewZoomed()) {
+            distance = java.lang.Math.max(0, distance - getXRot() / 90 * getViewInfo().thirdPersonCenterOffset.y);
+        }
+        return distance;
     }
 
     public float getCollectivePitch() {
@@ -527,35 +608,29 @@ public class RotaryWingVehicle extends AbstractVehicle
         this.entityData.set(ROLL_INPUT, value);
     }
 
-    @Nullable
-    public LandingGearUnit getLandingGearUnit() {
-        return landingGear;
-    }
-
     public boolean isLandingGearUp() {
-        var landingGearUnit = this.getLandingGearUnit();
-        return landingGearUnit != null && landingGearUnit.isOn();
+        return landingGear != null && landingGear.isOn();
     }
 
     public static class FastRopingContext {
 
         public LivingEntity livingEntity;
-        public Rope rope;
-        public Vec3 fixedNodeOffset;
+        public RopeUnit rope;
 
         public boolean isTouchGround() {
             return livingEntity.level().getBlockState(livingEntity.blockPosition().below()).isSolid() || livingEntity.getVehicle() != null;
         }
 
         public void tickDescending() {
-            if (!rope.ropeNodes.isEmpty()) {
-                Rope.RopeNode lastNode = rope.ropeNodes.get(rope.ropeNodes.size() - 1);
+            List<RopeUnit.RopeNode> ropeNodes = rope.getRopeNodes();
+            if (!ropeNodes.isEmpty()) {
+                RopeUnit.RopeNode lastNode = ropeNodes.get(ropeNodes.size() - 1);
                 if (livingEntity.position().y <= lastNode.pos.y) {
                     applyMovement(lastNode.pos, true);
                     return;
                 }
             }
-            for (Rope.RopeNode node : rope.ropeNodes) {
+            for (RopeUnit.RopeNode node : ropeNodes) {
                 if (livingEntity.position().y < node.pos.y) {
                     applyMovement(node.pos, false);
                     break;

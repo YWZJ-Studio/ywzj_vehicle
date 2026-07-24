@@ -1121,6 +1121,17 @@ public abstract class AbstractVehicle extends ContainerCraft
         return Vec3.ZERO;
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public double thirdPersonDistance() {
+        double distance = isViewZoomed()
+                ? getViewInfo().thirdPersonDistanceZoomed
+                : getViewInfo().thirdPersonDistance;
+        if (!isViewZoomed()) {
+            distance = java.lang.Math.max(0, distance - getXRot() / 90 * getViewInfo().thirdPersonCenterOffset.y);
+        }
+        return distance;
+    }
+
     @NotNull
     @Override
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {

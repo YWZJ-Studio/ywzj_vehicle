@@ -149,6 +149,11 @@ public class PhysicsEngine {
                 }
             }
         }
+        BlockPos testBlockPos = BlockPos.containing(new Vec3(physicsCube.obb().center()));
+        BlockState blockState = vehicle.level().getBlockState(testBlockPos);
+        if (blockState.isSolid()) {
+            velocity = velocity.add(0, 0.1, 0);
+        }
         if (!isStuck) {
             stuckTick = Math.max(stuckTick - 1, 0);
         }
