@@ -147,9 +147,7 @@ public class VehicleBedrockModel extends BedrockModel {
             if (bone == null) {
                 continue;
             }
-            bakedModel.renderBone(instance, entry.boneIndex, poseStack, source.getBuffer(quadType), packedLight,
-                    packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, true);
-            bakedModel.renderBone(instance, entry.boneIndex, poseStack, source.getBuffer(meshType), packedLight,
+            instance.renderSingleBone(poseStack, entry.boneIndex, source, quadType, meshType, packedLight,
                     packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, false);
         }
     }

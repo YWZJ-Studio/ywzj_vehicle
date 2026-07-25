@@ -108,6 +108,7 @@ repositories {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
     }
+    mavenLocal()
     maven {
         url = 'https://jitpack.io'
         content {
@@ -133,10 +134,10 @@ dependencies {
     }
     additionalRuntimeClasspath 'org.ywzj:rhino:1.8.1'
     // SBM
-    jarJar(modImplementation('com.github.mcmodderanchor:simplebedrockmodel:2.5.0-forge-mc1.20.1')) {
+    jarJar(modImplementation('com.github.mcmodderanchor:simplebedrockmodel:2.5.1-forge-mc1.20.1')) {
         version {
-            strictly '[2.5.0-forge-mc1.20.1,)'
-            prefer '2.5.0-forge-mc1.20.1'
+            strictly '[2.5.1-forge-mc1.20.1,)'
+            prefer '2.5.1-forge-mc1.20.1'
         }
     }
     compileOnly('com.maydaymemory:mae:1.1.2') {

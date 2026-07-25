@@ -188,7 +188,9 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         localRotation.getEulerAnglesYXZ(localEulerRotation);
         pPoseStack.pushPose();
         {
-            pPoseStack.mulPoseMatrix(attachmentTransform);
+            if (attachmentBoneIndex >= 0) {
+                vehicleModelInstance.mulGlobalTransform(pPoseStack, attachmentBoneIndex);
+            }
             pPoseStack.translate(offsetFromBone.x, offsetFromBone.y, offsetFromBone.z);
             pPoseStack.scale(scale, scale, scale);
             pPoseStack.rotateAround(Axis.YP.rotation(localEulerRotation.y), 0, 0, 0);

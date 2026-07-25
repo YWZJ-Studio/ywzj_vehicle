@@ -145,7 +145,7 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
             Matrix4f boneTransform = instance.getGlobalTransform(bone.index());
             PoseStack.Pose pose = poseStack.last();
             Matrix4f meshPose = new Matrix4f(pose.pose()).mul(boneTransform);
-            Matrix3f meshNormal = new Matrix3f(pose.normal()).mul(new Matrix3f(boneTransform));
+            Matrix3f meshNormal = new Matrix3f(pose.normal()).mul(instance.getGlobalNormal(bone.index()));
             TreeGeometryWriter.writePolyMeshes(bone.polyMeshes(), consumer, meshPose, meshNormal,
                     packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         }
