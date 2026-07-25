@@ -1,9 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.time.AnimationClocks;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
-import com.maydaymemory.mae.basic.Pose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -111,8 +108,6 @@ public abstract class AbstractVehicle extends ContainerCraft
     private ResourceLocation vehicleId;
     private ResourceLocation displayId;
     private BakedModelInstance modelInstance;
-    private AnimationRateLimiter<Pose> animationRateLimiter;
-    public Pose lastPose;
     private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -414,16 +409,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         VehicleBedrockModel model = display.getModel();
         if (model != null && model.hasBakedModel()) {
             modelInstance = model.createBakedInstance();
-            animationRateLimiter = new AnimationRateLimiter<>(AnimationClocks.client(), () -> {
-                double distanceSqr = this.distanceToSqr(LocalVehiclePlayer.instance.getPlayer());
-                if (distanceSqr < 64 * 64) {
-                    return AnimationRateLimiter.FPS_120;
-                } else if (distanceSqr < 128 * 128) {
-                    return AnimationRateLimiter.FPS_60;
-                } else {
-                    return AnimationRateLimiter.FPS_30;
-                }
-            });
         }
     }
 
@@ -688,10 +673,6 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public BakedModelInstance getModelInstance() {
         return modelInstance;
-    }
-
-    public AnimationRateLimiter<Pose> getAnimationRateLimiter() {
-        return animationRateLimiter;
     }
 
     public SoundEvent getEngineStartSound() {
@@ -1014,8 +995,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
                 && !passengerIdsBySeat.contains(player.getId())) {
-            instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
-            instance.seat = null;
+            instance.toSeat(null, this);
         }
         for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
             Seat seat = seats.get(index);
@@ -1122,12 +1102,12 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @OnlyIn(Dist.CLIENT)
-    public double thirdPersonDistance() {
+    public double thirdPersonDistance(float cameraXRot) {
         double distance = isViewZoomed()
                 ? getViewInfo().thirdPersonDistanceZoomed
                 : getViewInfo().thirdPersonDistance;
         if (!isViewZoomed()) {
-            distance = java.lang.Math.max(0, distance - getXRot() / 90 * getViewInfo().thirdPersonCenterOffset.y);
+            distance = Math.max(0, distance - cameraXRot / 90 * getViewInfo().thirdPersonCenterOffset.y);
         }
         return distance;
     }
@@ -1456,24 +1436,27 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         impact(pEntity);
         if (pEntity instanceof AbstractVehicle vehicle) {
-            double d0 = pEntity.getX() - this.getX();
-            double d1 = pEntity.getZ() - this.getZ();
-            double d2 = Mth.absMax(d0, d1);
-            if (d2 >= (double)0.01F) {
-                d2 = Math.sqrt(d2);
-                d0 /= d2;
-                d1 /= d2;
-                double d3 = 1.0D / d2;
-                if (d3 > 1.0D) {
-                    d3 = 1.0D;
-                }
-                d0 *= d3;
-                d1 *= d3;
-                d0 *= 0.05F;
-                d1 *= 0.05F;
-                if (vehicle.isPushable()) {
-                    vehicle.push(d0, 0.0D, d1);
-                }
+            if (this.getId() > vehicle.getId() || !vehicle.isPushable()) {
+                return;
+            }
+            Vec3 separation = new Vec3(vehicle.getX() - this.getX(), 0, vehicle.getZ() - this.getZ());
+            if (separation.horizontalDistanceSqr() < 1.0E-4) {
+                return;
+            }
+            Vec3 normal = separation.normalize();
+            Vec3 thisVelocity = this.getDeltaMovement();
+            Vec3 otherVelocity = vehicle.getDeltaMovement();
+            double relativeNormalSpeed = otherVelocity.subtract(thisVelocity).dot(normal);
+            double separationSpeed = 0.01;
+            if (relativeNormalSpeed < separationSpeed) {
+                double thisMass = Math.max(this.physicsEngine.mass, 1.0E-3);
+                double otherMass = Math.max(vehicle.physicsEngine.mass, 1.0E-3);
+                double velocityChange = separationSpeed - relativeNormalSpeed;
+                double totalMass = thisMass + otherMass;
+                Vec3 thisPush = normal.scale(-velocityChange * otherMass / totalMass);
+                Vec3 otherPush = normal.scale(velocityChange * thisMass / totalMass);
+                this.push(thisPush.x, 0, thisPush.z);
+                vehicle.push(otherPush.x, 0, otherPush.z);
             }
         }
     }

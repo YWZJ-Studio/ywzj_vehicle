@@ -572,13 +572,13 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public double thirdPersonDistance() {
+    public double thirdPersonDistance(float cameraXRot) {
         double distance = isViewZoomed()
                 ? getViewInfo().thirdPersonDistanceZoomed
                 : getViewInfo().thirdPersonDistance;
         distance = distance + cargoRope.getLength() * 1.5f;
         if (!isViewZoomed()) {
-            distance = java.lang.Math.max(0, distance - getXRot() / 90 * getViewInfo().thirdPersonCenterOffset.y);
+            distance = Math.max(0, distance - cameraXRot / 90 * getViewInfo().thirdPersonCenterOffset.y);
         }
         return distance;
     }

@@ -10,6 +10,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -684,18 +685,20 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 Quaternionf relativeRot = baseRot().invert().mul(rotationO);
                 Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
                 Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
-                setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
-                if (org.joml.Math.abs(xRot - xRotO) > 180) {
-                    xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
+                float targetXRot = Mth.clamp(targetRot.x, xRotMin, xRotMax);
+                float targetYRot = Mth.clamp(targetRot.y, yRotMin, yRotMax);
+                setXRot(targetXRot);
+                setYRot(targetYRot);
+                if (Math.abs(xRot - xRotO) > 180) {
+                    xRotO += Math.signum(xRot - xRotO) * 360;
                 }
-                setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
-                if (org.joml.Math.abs(yRot - yRotO) > 180) {
-                    yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
+                if (Math.abs(yRot - yRotO) > 180) {
+                    yRotO += Math.signum(yRot - yRotO) * 360;
                 }
                 updateRot();
                 if (vehicle.level().isClientSide()) {
-                    setXAimRot(targetRot.x);
-                    setYAimRot(targetRot.y);
+                    setXAimRot(targetXRot);
+                    setYAimRot(targetYRot);
                     ignoreRemoteRotTick = 1;
                 }
             }
@@ -774,6 +777,23 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
+    public Vec3 toAimPosition() {
+        if (xTurnGroup == null) {
+            return aimHitPosition();
+        }
+        VehicleCubeGroup.GlobalTransform globalTransform = aimGlobalTransform();
+        List<Vec3> positions = bolts.stream()
+                .map(bolt -> aimContext(bolt, globalTransform).from)
+                .toList();
+        double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+        double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+        double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+        AimContext aimContext = aimContext(getCurrentBolt(), globalTransform);
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = start.add(VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize().scale(1024));
+        return VectorUtil.hitPosition(vehicle, start, end);
+    }
+
     public Vec3 aimHitPosition() {
         List<Vec3> positions = aimContexts().stream().map(context -> context.from).toList();
         double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
@@ -798,18 +818,22 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public AimContext aimContext(Bolt bolt) {
-        AimContext aimContext = new AimContext();
         if (xTurnGroup == null) {
+            AimContext aimContext = new AimContext();
             aimContext.from = this.vehicle.position();
             aimContext.direction = new Vec2(this.vehicle.getXRot(), this.vehicle.getYRot());
             return aimContext;
         }
-        VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
+        return aimContext(bolt, xTurnGroup.globalTransform());
+    }
+
+    private AimContext aimContext(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform) {
+        AimContext aimContext = new AimContext();
         Quaternionf rotation = globalTransform.rotation();
         Vec3 boltPosition = worldBoltPosition(bolt, globalTransform);
         Vector3f worldRot = new Vector3f();
         vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
-        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x), (float) Math.toDegrees(-worldRot.y));
+        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
         aimContext.from = boltPosition.add(direction.scale(bolt.barrelLength));
         return aimContext;
@@ -886,6 +910,30 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         return rotation;
+    }
+
+    private VehicleCubeGroup.GlobalTransform aimGlobalTransform() {
+        Quaternionf globalRotation;
+        if (xTurnGroup == structureGroup) {
+            globalRotation = new Quaternionf(xTurnGroup.baseRotation)
+                    .mul(Axis.YN.rotationDegrees(yAimRot))
+                    .mul(Axis.XP.rotationDegrees(xAimRot));
+        } else {
+            globalRotation = new Quaternionf(xTurnGroup.baseRotation)
+                    .mul(Axis.XP.rotationDegrees(xAimRot));
+        }
+        Vector3f globalPivot = xTurnGroup.pivot.toVector3f();
+        VehicleCubeGroup parentGroup = xTurnGroup.parent;
+        while (parentGroup != null) {
+            Quaternionf parentRotation = parentGroup == structureGroup
+                    ? new Quaternionf(parentGroup.baseRotation).mul(Axis.YN.rotationDegrees(yAimRot))
+                    : parentGroup.rotation;
+            parentRotation.transform(globalPivot);
+            globalPivot.add((float) parentGroup.pivot.x, (float) parentGroup.pivot.y, (float) parentGroup.pivot.z);
+            globalRotation.premul(parentRotation);
+            parentGroup = parentGroup.parent;
+        }
+        return new VehicleCubeGroup.GlobalTransform(new Vec3(globalPivot), globalRotation);
     }
 
     public int getAmmoCapacity() {

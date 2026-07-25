@@ -1,8 +1,6 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
-import com.maydaymemory.mae.basic.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -93,12 +91,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             if (animationInstance != null) {
                 animationInstance.getContext().setPartialTick(partialTick);
                 animationInstance.tick();
-                AnimationRateLimiter<Pose> animationRateLimiter = vehicle.getAnimationRateLimiter();
-                Pose pose = animationRateLimiter.update(() -> BLENDER.blend(modelInstance.getBindPose(), animationInstance.getCurrentPose()));
-                if (pose != vehicle.lastPose) {
-                    modelInstance.applyPose(pose);
-                    vehicle.lastPose = pose;
-                }
+                modelInstance.applyPose(BLENDER.blend(modelInstance.getBindPose(), animationInstance.getCurrentPose()));
             }
         }
     }

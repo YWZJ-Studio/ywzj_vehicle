@@ -66,7 +66,7 @@ public abstract class CameraMixin {
     }
 
     private void moveToThirdPerson(AbstractVehicle vehicle) {
-        move(-getMaxZoom(vehicle.thirdPersonDistance()), 0, 0);
+        move(-getMaxZoom(vehicle.thirdPersonDistance(getXRot())), 0, 0);
     }
 
     @Inject(method = "isDetached", at = @At("HEAD"), cancellable = true)

@@ -21,6 +21,8 @@ public class VehicleCubeGroup {
     public Vec3 pivotOffset;
     public List<VehicleCubeOBB> cubeOBBs = new ArrayList<>();
 
+    public record GlobalTransform(Vec3 offset, Quaternionf rotation) {}
+
     public VehicleCubeGroup(VehicleCubeGroup parent, Quaternionf rotation, Vec3 pivot) {
         this.parent = parent;
         if (this.parent != null) {
@@ -57,7 +59,5 @@ public class VehicleCubeGroup {
         }
         return new VehicleCubeGroup.GlobalTransform(new Vec3(globalPivot), globalRotation);
     }
-
-    public record GlobalTransform(Vec3 offset, Quaternionf rotation) {}
 
 }
