@@ -1079,26 +1079,23 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @OnlyIn(Dist.CLIENT)
-    public Vec3 thirdPersonPosition(LivingEntity pPassenger, Float partialTick) {
-        if (pPassenger != null) {
-            Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
-            Matrix3f axisRollMat = new Matrix3f();
-            Quaternionf q = new Quaternionf();
-            float vehicleYRot = partialTick == null ? this.getYRot() : this.getViewYRot(partialTick);
-            q.rotateY(Math.toRadians(-vehicleYRot));
-            q.get(axisRollMat);
-            Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
-            Vec3 p;
-            if (partialTick == null) {
-                p = this.position();
-            } else {
-                p = new Vec3(Mth.lerp(partialTick, xo, getX()),
-                        Mth.lerp(partialTick, yo, getY()),
-                        Mth.lerp(partialTick, zo, getZ()));
-            }
-            return p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+    public Vec3 thirdPersonPosition(Float partialTick) {
+        Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
+        Matrix3f axisRollMat = new Matrix3f();
+        Quaternionf q = new Quaternionf();
+        float vehicleYRot = partialTick == null ? this.getYRot() : this.getViewYRot(partialTick);
+        q.rotateY(Math.toRadians(-vehicleYRot));
+        q.get(axisRollMat);
+        Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
+        Vec3 p;
+        if (partialTick == null) {
+            p = this.position();
+        } else {
+            p = new Vec3(Mth.lerp(partialTick, xo, getX()),
+                    Mth.lerp(partialTick, yo, getY()),
+                    Mth.lerp(partialTick, zo, getZ()));
         }
-        return Vec3.ZERO;
+        return p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
     }
 
     @OnlyIn(Dist.CLIENT)

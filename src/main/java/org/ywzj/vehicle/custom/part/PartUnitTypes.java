@@ -115,4 +115,13 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<TrackUnit, TrackUnitData> TRACK =
+            PartUnitType.Builder.<TrackUnit, TrackUnitData>of(YwzjVehicle.modLocation("track"))
+                    .setFactory(TrackUnit::new)
+                    .setDataSerializer((json) -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, TrackUnitPojo.class);
+                        return new TrackUnitData(pojo);
+                    })
+                    .build();
+
 }

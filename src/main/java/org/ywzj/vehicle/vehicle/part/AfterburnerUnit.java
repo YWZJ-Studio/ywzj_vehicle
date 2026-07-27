@@ -55,9 +55,9 @@ public class AfterburnerUnit extends SwitchableUnit<PartUnitData> {
 
     @Nullable
     private FixedWingVehicleDisplay getFixedWingDisplay() {
-        var opt = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
-        if (opt.isPresent() && opt.get() instanceof FixedWingVehicleDisplay display) {
-            return display;
+        var displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+        if (displayOptional.isPresent() && displayOptional.get() instanceof FixedWingVehicleDisplay fixedWingVehicleDisplay) {
+            return fixedWingVehicleDisplay;
         }
         return null;
     }

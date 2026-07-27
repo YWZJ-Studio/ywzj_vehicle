@@ -108,13 +108,13 @@ repositories {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
     }
-    mavenLocal()
     maven {
         url = 'https://jitpack.io'
         content {
             includeGroup 'com.github.mcmodderanchor'
         }
     }
+    mavenLocal()
 }
 
 configurations {

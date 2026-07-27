@@ -4,7 +4,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
@@ -46,11 +45,9 @@ public abstract class CameraMixin {
             }
             LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
             if (pEntity != instance.getPlayer()) {
-                if (pEntity instanceof LivingEntity passenger) {
-                    Vec3 pos = vehicle.thirdPersonPosition(passenger, pPartialTick);
-                    this.setPosition(pos.x, pos.y, pos.z);
-                    moveToThirdPerson(vehicle);
-                }
+                Vec3 pos = vehicle.thirdPersonPosition(pPartialTick);
+                this.setPosition(pos.x, pos.y, pos.z);
+                moveToThirdPerson(vehicle);
                 return;
             }
             this.setPosition(Mth.lerp(pPartialTick, instance.cameraXO, instance.cameraX),

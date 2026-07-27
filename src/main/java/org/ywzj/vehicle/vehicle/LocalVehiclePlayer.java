@@ -192,7 +192,7 @@ public class LocalVehiclePlayer {
         cameraAimRotZO = cameraAimRotZ;
         if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
             Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
-                    vehicle.thirdPersonPosition(player, null) : partUnit.worldOwnerViewPosition();
+                    vehicle.thirdPersonPosition(null) : partUnit.worldOwnerViewPosition();
             cameraX = vehicleCameraPos.x;
             cameraY = vehicleCameraPos.y;
             cameraZ = vehicleCameraPos.z;
@@ -325,6 +325,7 @@ public class LocalVehiclePlayer {
     }
 
     public void toSeat(AbstractVehicle.Seat seat, AbstractVehicle vehicle) {
+        boolean enter = this.seat == null && seat != null;
         this.seat = seat;
         if (seat == null) {
             return;
@@ -346,7 +347,7 @@ public class LocalVehiclePlayer {
                 cameraAimRotZO = cameraAimRotZ;
             } else {
                 Vec3 aimHitPosition = weaponUnit.toAimPosition();
-                Vec3 cameraAnchor = vehicle.thirdPersonPosition(getPlayer(), null);
+                Vec3 cameraAnchor = vehicle.thirdPersonPosition(null);
                 Vec3 direction = aimHitPosition.subtract(cameraAnchor);
                 if (direction.lengthSqr() < 1.0E-8) {
                     return;
@@ -360,6 +361,17 @@ public class LocalVehiclePlayer {
             playerLerpXRot = getPlayer().getXRot();
             playerLerpYRot = seat.partUnit.getSeatRot();
             playerLerpSteps = 8;
+        }
+        if (enter && viewType != ViewType.SCOPE) {
+            Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
+                    vehicle.thirdPersonPosition(null) : seat.partUnit.worldOwnerViewPosition();
+            cameraX = vehicleCameraPos.x;
+            cameraY = vehicleCameraPos.y;
+            cameraZ = vehicleCameraPos.z;
+            // 消除插值
+            cameraXO = cameraX;
+            cameraYO = cameraY;
+            cameraZO = cameraZ;
         }
     }
 
@@ -501,7 +513,7 @@ public class LocalVehiclePlayer {
     }
 
     public void thirdPersonCameraAimAt(Vec3 worldPos, AbstractVehicle vehicle) {
-        Vec3 cameraAnchor = vehicle.thirdPersonPosition(getPlayer(), null);
+        Vec3 cameraAnchor = vehicle.thirdPersonPosition(null);
         Vec3 direction = worldPos.subtract(cameraAnchor);
         if (direction.lengthSqr() < 1.0E-8) {
             return;

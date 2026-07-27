@@ -37,6 +37,8 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<RopeUnit, RopeUnitData>> ROPE = register(PartUnitTypes.ROPE);
 
+    public static final RegistryObject<PartUnitType<TrackUnit, TrackUnitData>> TRACK = register(PartUnitTypes.TRACK);
+
     private static <T extends PartUnit<D>, D extends PartUnitData> RegistryObject<PartUnitType<T, D>> register(
             PartUnitType<T, D> type
     ) {
