@@ -124,10 +124,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private int currentSecondaryWeaponIndex = -1;
     public SyncDataHolder<Integer> currentSecondaryIndexHolder;
+    private int ignoreRemoteRotTick;
+    public boolean rotByAim = true;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
     private VehicleSound irTrackAlarmSound;
-    private int ignoreRemoteRotTick;
 
     public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
         super(index, vehicle, data);
@@ -404,7 +405,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 ignoreRemoteRotTick = 0;
             }
         }
-        super.tickRemoteRot();
+        if (vehicle.level().isClientSide()
+                && (getOwner() != LocalVehiclePlayer.instance.getPlayer() || !rotByAim)) {
+            xAimRot = xRemoteAimRot;
+            yAimRot = yRemoteAimRot;
+        }
     }
 
     @Override
@@ -419,6 +424,26 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (xTurnGroup != null) {
             xTurnGroup.rotation = new Quaternionf(xTurnGroup.baseRotation).mul(Axis.XP.rotationDegrees(xRot));
         }
+    }
+
+    @Override
+    protected Quaternionf getViewGroupRotation(VehicleCubeGroup group, float partialTick) {
+        if (partialTick == 1.0F) {
+            return super.getViewGroupRotation(group, 1.0F);
+        }
+        if (group == structureGroup) {
+            Quaternionf rotation = new Quaternionf(group.baseRotation)
+                    .mul(Axis.YN.rotationDegrees(getViewYRot(partialTick)));
+            if (xTurnGroup == structureGroup) {
+                rotation.mul(Axis.XP.rotationDegrees(getViewXRot(partialTick)));
+            }
+            return rotation;
+        }
+        if (group == xTurnGroup) {
+            return new Quaternionf(group.baseRotation)
+                    .mul(Axis.XP.rotationDegrees(getViewXRot(partialTick)));
+        }
+        return super.getViewGroupRotation(group, partialTick);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -707,20 +732,22 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public void aim(Vec3 worldPos) {
-        Vec2 rot = aimRot(worldPos);
-        Bolt bolt = getCurrentBolt();
-        rot = new Vec2(rot.x - bolt.xRot, rot.y + bolt.yRot);
-        if (xAimRot != rot.x || yAimRot != rot.y) {
-            if (vehicle.level().isClientSide()) {
-                ClientVehicleAction control = new ClientVehicleAction();
-                control.vehicleEntityId = vehicle.getId();
-                control.partUnitIndex = index;
-                control.xAimRot = rot.x;
-                control.yAimRot = rot.y;
-                Channel.CHANNEL.sendToServer(control);
+        if (rotByAim) {
+            Vec2 rot = aimRot(worldPos);
+            Bolt bolt = getCurrentBolt();
+            rot = new Vec2(rot.x - bolt.xRot, rot.y + bolt.yRot);
+            if (xAimRot != rot.x || yAimRot != rot.y) {
+                if (vehicle.level().isClientSide()) {
+                    ClientVehicleAction control = new ClientVehicleAction();
+                    control.vehicleEntityId = vehicle.getId();
+                    control.partUnitIndex = index;
+                    control.xAimRot = rot.x;
+                    control.yAimRot = rot.y;
+                    Channel.CHANNEL.sendToServer(control);
+                }
+                xAimRot = rot.x;
+                yAimRot = rot.y;
             }
-            xAimRot = rot.x;
-            yAimRot = rot.y;
         }
         subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));
     }
@@ -857,37 +884,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return vehicle.position().add(vehicle.centerOffset).add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
     }
 
-    public Vec3 worldPivotPosition() {
-        return worldPositionWithBaseRot(pivotOffset);
-    }
-
-    public Vec3 worldOpticalSightPosition() {
-        if (opticalSightOffset == null) {
-            return worldOwnerViewPosition();
-        }
-        Vec3 offsetFromVehicle = pivotOffset.add(opticalSightOffset);
-        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
-            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup);
-        }
-        return worldPosition(offsetFromVehicle);
-    }
-
-    @Override
-    public Vec3 worldOwnerViewPosition() {
-        if (operatorViewOffset == null) {
-            float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
-            return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));
-        }
-        Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
-        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-            return worldPositionWithBaseRot(offsetFromVehicle);
-        }
-        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
-            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup);
-        }
-        return worldPosition(offsetFromVehicle);
-    }
-
     @Override
     public Vec3 worldSeatPosition() {
         float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
@@ -895,6 +891,33 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             return worldPositionWithBaseRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
         }
         return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
+    }
+
+    @Override
+    public Vec3 worldOwnerViewPosition(float partialTick) {
+        if (operatorViewOffset == null) {
+            float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+            return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)), partialTick);
+        }
+        Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
+        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
+            return worldPositionWithBaseRot(offsetFromVehicle, partialTick);
+        }
+        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
+            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup, partialTick);
+        }
+        return worldPosition(offsetFromVehicle, partialTick);
+    }
+
+    public Vec3 worldOpticalSightPosition(float partialTick) {
+        if (opticalSightOffset == null) {
+            return worldOwnerViewPosition(partialTick);
+        }
+        Vec3 offsetFromVehicle = pivotOffset.add(opticalSightOffset);
+        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
+            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup, partialTick);
+        }
+        return worldPosition(offsetFromVehicle, partialTick);
     }
 
     @Override

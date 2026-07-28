@@ -133,22 +133,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return partCubeOBBs.stream().map(VehicleCubeOBB::obb).toList();
     }
 
-    /**
-     * 计算车身、部件、附着部件都未旋转时某相对于载具枢轴的偏移xyz在经由车身、部件、附着部件旋转后的实际世界坐标
-     */
-    public Vec3 worldPosition(Vec3 offsetFromVehicle) {
-        if (offsetFromVehicle == null) {
-            return vehicle.position();
-        }
-        return worldPositionWithSelfRot(offsetFromVehicle);
-    }
-
-    public Vec3 worldOwnerViewPosition() {
-        float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
-        if (ownerViewOffset == null) {
-            return worldPosition(new Vec3(0, eyeHeight, 0));
-        }
-        return worldPosition(ownerViewOffset);
+    public Vec3 worldPivotPosition() {
+        return worldPositionWithBaseRot(pivotOffset);
     }
 
     public Vec3 worldSeatPosition() {
@@ -156,29 +142,72 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
     }
 
-    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {}
+    public Vec3 worldOwnerViewPosition(float partialTick) {
+        float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
+        if (ownerViewOffset == null) {
+            return worldPosition(new Vec3(0, eyeHeight, 0), partialTick);
+        }
+        return worldPosition(ownerViewOffset, partialTick);
+    }
+
+    /**
+     * 计算车身、部件、附着部件都未旋转时某相对于载具枢轴的偏移xyz在经由车身、部件、附着部件旋转后的实际世界坐标
+     */
+    public Vec3 worldPosition(Vec3 offsetFromVehicle) {
+        return worldPosition(offsetFromVehicle, 1.0F);
+    }
 
     public Vec3 worldPositionWithBaseRot(Vec3 offsetFromVehicle) {
-        if (structureGroup == null || structureGroup.parent == null) {
-            return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
-        }
-        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup.parent);
+        return worldPositionWithBaseRot(offsetFromVehicle, 1.0F);
     }
 
     public Vec3 worldPositionWithSelfRot(Vec3 offsetFromVehicle) {
-        if (structureGroup == null) {
-            return vehicle.relativeRotPos(vehicle.position().add(offsetFromVehicle), false);
-        }
-        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup);
+        return worldPositionWithSelfRot(offsetFromVehicle, 1.0F);
     }
 
-    public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group) {
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vec3 rotatedOffsetFromAllParts = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true).offset();
-        rotatedOffsetFromAllParts = rotatedOffsetFromAllParts.subtract(vehicle.centerOffset);
-        Vector3f rotatedOffsetFromVehicle = vehicleRotation.transform(rotatedOffsetFromAllParts.toVector3f());
-        return vehicle.position().add(vehicle.centerOffset).add(rotatedOffsetFromVehicle.x, rotatedOffsetFromVehicle.y, rotatedOffsetFromVehicle.z);
+    public Vec3 worldPosition(Vec3 offsetFromVehicle, float partialTick) {
+        if (offsetFromVehicle == null) {
+            return vehicle.position(partialTick);
+        }
+        return worldPositionWithSelfRot(offsetFromVehicle, partialTick);
     }
+
+    public Vec3 worldPositionWithBaseRot(Vec3 offsetFromVehicle, float partialTick) {
+        if (structureGroup == null || structureGroup.parent == null) {
+            return worldPositionWithVehicleRot(offsetFromVehicle, partialTick);
+        }
+        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup.parent, partialTick);
+    }
+
+    public Vec3 worldPositionWithSelfRot(Vec3 offsetFromVehicle, float partialTick) {
+        if (structureGroup == null) {
+            return worldPositionWithVehicleRot(offsetFromVehicle, partialTick);
+        }
+        return worldPositionWithGroupRot(offsetFromVehicle, structureGroup, partialTick);
+    }
+
+    public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group, float partialTick) {
+        Vec3 rotatedOffset = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true,
+                        currentGroup -> getViewGroupRotation(currentGroup, partialTick))
+                .offset()
+                .subtract(vehicle.centerOffset);
+        Vector3f worldOffset = vehicle.rotYXZ(partialTick).transform(rotatedOffset.toVector3f());
+        return vehicle.position(partialTick).add(vehicle.centerOffset)
+                .add(worldOffset.x, worldOffset.y, worldOffset.z);
+    }
+
+    private Vec3 worldPositionWithVehicleRot(Vec3 offsetFromVehicle, float partialTick) {
+        Vector3f worldOffset = vehicle.rotYXZ(partialTick)
+                .transform(offsetFromVehicle.subtract(vehicle.centerOffset).toVector3f());
+        return vehicle.position(partialTick).add(vehicle.centerOffset)
+                .add(worldOffset.x, worldOffset.y, worldOffset.z);
+    }
+
+    protected Quaternionf getViewGroupRotation(VehicleCubeGroup group, float partialTick) {
+        return new Quaternionf(group.rotation);
+    }
+
+    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {}
 
     public Component getName() {
         return name;

@@ -882,8 +882,8 @@ public abstract class AbstractVehicle extends ContainerCraft
                 dismountLocation = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
             }
             dismountLocations.put(livingEntity, dismountLocation);
-            onLeaveVehicle(livingEntity);
             super.removePassenger(pPassenger);
+            onLeaveVehicle(livingEntity);
         }
     }
 
@@ -957,6 +957,10 @@ public abstract class AbstractVehicle extends ContainerCraft
             if (warningReceiver != null) {
                 warningReceiver.clear();
             }
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+            if (pPassenger == instance.getPlayer()) {
+                instance.toSeat(null, this);
+            }
         }
     }
 
@@ -992,10 +996,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         List<Integer> passengerIdsBySeat = new ArrayList<>();
         for (int id : ids) {
             passengerIdsBySeat.add(id);
-        }
-        if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
-                && !passengerIdsBySeat.contains(player.getId())) {
-            instance.toSeat(null, this);
         }
         for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
             Seat seat = seats.get(index);
@@ -1079,23 +1079,15 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @OnlyIn(Dist.CLIENT)
-    public Vec3 thirdPersonPosition(Float partialTick) {
+    public Vec3 thirdPersonPosition(float partialTick) {
         Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
         Matrix3f axisRollMat = new Matrix3f();
         Quaternionf q = new Quaternionf();
-        float vehicleYRot = partialTick == null ? this.getYRot() : this.getViewYRot(partialTick);
+        float vehicleYRot = partialTick == 1.0F ? this.getYRot() : this.getViewYRot(partialTick);
         q.rotateY(Math.toRadians(-vehicleYRot));
         q.get(axisRollMat);
         Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
-        Vec3 p;
-        if (partialTick == null) {
-            p = this.position();
-        } else {
-            p = new Vec3(Mth.lerp(partialTick, xo, getX()),
-                    Mth.lerp(partialTick, yo, getY()),
-                    Mth.lerp(partialTick, zo, getZ()));
-        }
-        return p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+        return position(partialTick).add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -1280,12 +1272,32 @@ public abstract class AbstractVehicle extends ContainerCraft
         return pPartialTicks == 1.0F ? this.getZRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
     }
 
+    public Quaternionf rotYXZ(float partialTick) {
+        if (partialTick == 1.0F) {
+            return rotYXZ();
+        }
+        Quaternionf previousRotation = new Quaternionf()
+                .rotateY(Math.toRadians(-yRotO))
+                .rotateX(Math.toRadians(xRotO))
+                .rotateZ(Math.toRadians(zRotO));
+        return previousRotation.slerp(rotYXZ(), partialTick);
+    }
+
     public Quaternionf rotYXZ() {
         Quaternionf q = new Quaternionf();
         q.rotateY(Math.toRadians(-yRot))
                 .rotateX(Math.toRadians(xRot))
                 .rotateZ(Math.toRadians(zRot));
         return q;
+    }
+
+    public Vec3 position(float partialTick) {
+        if (partialTick == 1.0F) {
+            return position();
+        }
+        return new Vec3(Mth.lerp(partialTick, xo, getX()),
+                Mth.lerp(partialTick, yo, getY()),
+                Mth.lerp(partialTick, zo, getZ()));
     }
 
     public Vector3f[] axes() {

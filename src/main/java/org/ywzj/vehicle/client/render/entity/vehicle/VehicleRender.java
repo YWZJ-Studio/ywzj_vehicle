@@ -12,7 +12,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Math;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -77,11 +76,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
 
     public static void applyVehicleRotation(AbstractVehicle vehicle, float partialTick, PoseStack poseStack) {
         Vec3 root = vehicle.centerOffset;
-        Quaternionf rot = new Quaternionf()
-                .rotateY(Math.toRadians(-vehicle.yRotO))
-                .rotateX(Math.toRadians(vehicle.xRotO))
-                .rotateZ(Math.toRadians(vehicle.zRotO))
-                .slerp(vehicle.rotYXZ(), partialTick);
+        Quaternionf rot = vehicle.rotYXZ(partialTick);
         poseStack.rotateAround(rot, (float) root.x, (float) root.y, (float) root.z);
     }
 
