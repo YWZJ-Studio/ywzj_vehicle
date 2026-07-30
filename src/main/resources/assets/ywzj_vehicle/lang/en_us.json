@@ -111,6 +111,11 @@
 
   "screen.no_description": "No description",
   "screen.vehicle_weapon_select.weapon_selections": "Weapon Selections",
+  "screen.coordinate_input.title": "Target Coordinates",
+  "screen.coordinate_input.x": "X Coordinate",
+  "screen.coordinate_input.y": "Y Coordinate",
+  "screen.coordinate_input.z": "Z Coordinate",
+  "screen.coordinate_input.confirm": "Confirm",
 
   "button.vehicle.weapon_selections": "Weapon Selections",
   "button.machine_max.printing": "Print",

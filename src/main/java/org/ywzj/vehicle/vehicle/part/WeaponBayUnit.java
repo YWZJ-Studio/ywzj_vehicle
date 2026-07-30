@@ -13,6 +13,9 @@ public class WeaponBayUnit extends SwitchableUnit<PartUnitData> {
 
     @Override
     public void setOn(boolean on) {
+        if (!vehicle.hasPower()) {
+            return;
+        }
         super.setOn(on);
         if (vehicle.getDriver() instanceof ServerPlayer player) {
             player.displayClientMessage(Component.translatable(on ? "tips.bay_open" : "tips.bay_close"), true);

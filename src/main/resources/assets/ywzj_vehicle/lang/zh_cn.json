@@ -111,6 +111,11 @@
 
   "screen.no_description": "暂无介绍",
   "screen.vehicle_weapon_select.weapon_selections": "武器选项",
+  "screen.coordinate_input.title": "目标坐标",
+  "screen.coordinate_input.x": "X 坐标",
+  "screen.coordinate_input.y": "Y 坐标",
+  "screen.coordinate_input.z": "Z 坐标",
+  "screen.coordinate_input.confirm": "确认",
 
   "button.vehicle.weapon_selections": "武器切换",
   "button.machine_max.printing": "打印",

@@ -30,7 +30,7 @@ public class BulletEntity extends AmmoEntity {
 
     private float friction = 0.01F;
     private Vec3 startPos;
-    private float caliber = 7.62f;
+    private float caliber = 5.8f;
     private float tracerR = 1f;
     private float tracerG = 1f;
     private float tracerB = 1f;

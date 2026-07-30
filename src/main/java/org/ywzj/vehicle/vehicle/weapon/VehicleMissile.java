@@ -92,7 +92,6 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
             missileEntity.shoot(vehicle, this.getDisplayName(),
                     aimContext.from, aimContext.direction.x, aimContext.direction.y,
                     this.weaponUnit.getOwner());
-            missileEntity.setDeltaMovement(missileEntity.getDeltaMovement().add(vehicle.getDeltaMovement()));
             vehicle.level().addFreshEntity(missileEntity);
             vehicle.physicsEngine.recoil(weaponUnit, data.getRecoil());
         }

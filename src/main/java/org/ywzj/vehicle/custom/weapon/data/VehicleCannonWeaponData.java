@@ -5,9 +5,6 @@ import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class VehicleCannonWeaponData extends BaseVehicleWeaponData {
 
-    @SerializedName("caliber")
-    private Float caliber = 7.62f;
-
     @SerializedName("friction")
     private float friction = 0.01f;
 
@@ -25,14 +22,6 @@ public class VehicleCannonWeaponData extends BaseVehicleWeaponData {
 
     public float getFriction() {
         return friction;
-    }
-
-    public Float getCaliber() {
-        return caliber;
-    }
-
-    public void setCaliber(Float caliber) {
-        this.caliber = caliber;
     }
 
     public Float getTracerR() {

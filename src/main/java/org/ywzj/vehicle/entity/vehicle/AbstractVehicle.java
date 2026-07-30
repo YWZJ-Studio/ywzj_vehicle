@@ -515,7 +515,6 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             if (uav) {
                 EntityUtil.keepChunkLoaded(this, position());
-                EntityUtil.keepChunkLoaded(this, position().add(getLookAngle().normalize().scale(16)));
                 if (fakeOperatorPosition != null) {
                     EntityUtil.keepChunkLoaded(this, fakeOperatorPosition);
                 }
@@ -954,12 +953,12 @@ public abstract class AbstractVehicle extends ContainerCraft
             seat.passengerId = -1;
             Channel.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this), new ServerVehicleSeatsChange(this));
         } else {
-            if (warningReceiver != null) {
-                warningReceiver.clear();
-            }
             LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-            if (pPassenger == instance.getPlayer()) {
+            if (pPassenger == instance.getPlayer() && instance.toLeave) {
                 instance.toSeat(null, this);
+                if (warningReceiver != null) {
+                    warningReceiver.clear();
+                }
             }
         }
     }
@@ -996,6 +995,10 @@ public abstract class AbstractVehicle extends ContainerCraft
         List<Integer> passengerIdsBySeat = new ArrayList<>();
         for (int id : ids) {
             passengerIdsBySeat.add(id);
+        }
+        if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
+                && !passengerIdsBySeat.contains(player.getId())) {
+            instance.toLeave = true;
         }
         for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
             Seat seat = seats.get(index);

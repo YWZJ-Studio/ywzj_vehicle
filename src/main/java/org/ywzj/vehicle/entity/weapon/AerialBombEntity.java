@@ -3,6 +3,7 @@ package org.ywzj.vehicle.entity.weapon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -21,6 +22,7 @@ import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -90,6 +92,11 @@ public class AerialBombEntity extends AmmoEntity {
         }
         if (!onGround()) {
             tickGuidance();
+        }
+        Vec3 toPosition = position().add(getDeltaMovement());
+        if (!((ServerLevel) level()).isPositionEntityTicking(BlockPos.containing(toPosition))) {
+            EntityUtil.keepChunkLoaded(this, toPosition);
+            return;
         }
         this.move(MoverType.SELF, this.getDeltaMovement());
         if (this.onGround()) {

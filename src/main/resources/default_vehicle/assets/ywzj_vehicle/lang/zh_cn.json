@@ -18,6 +18,7 @@
     "ywzj_vehicle.rafale": "阵风",
     "ywzj_vehicle.atv_coyoto": "郊狼",
     "ywzj_vehicle.atv_mrzr4": "MRZR4",
+    "ywzj_vehicle.htf5980": "HTF5980",
 
     "entity.ywzj_vehicle.dump_truck": "自卸卡车",
     "entity.ywzj_vehicle.ztl11": "ZTL-11",
@@ -35,5 +36,6 @@
     "entity.ywzj_vehicle.j10c": "歼-10C",
     "entity.ywzj_vehicle.rafale": "阵风",
     "entity.ywzj_vehicle.atv_coyoto": "郊狼",
-    "entity.ywzj_vehicle.atv_mrzr4": "MRZR4"
+    "entity.ywzj_vehicle.atv_mrzr4": "MRZR4",
+    "entity.ywzj_vehicle.htf5980": "HTF5980"
 }

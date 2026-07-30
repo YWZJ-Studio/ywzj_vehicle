@@ -17,7 +17,6 @@ import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
-import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -34,7 +33,6 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
 
     private final List<AbstractVehicleWeapon<?>> subWeapons;
     private int selectedIndex = 0;
-    private SyncDataHolder<Integer> selectedIndexHolder;
 
     public VehicleMultiWeapons(AbstractVehicle vehicle, WeaponUnit weaponUnit, int index,
                                List<AbstractVehicleWeapon<?>> subWeapons, String serializeId) {
@@ -60,14 +58,14 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
 
     @Override
     public void defineSyncData(PartUnitSyncData syncData) {
-        this.selectedIndexHolder = syncData.define(
+        syncData.define(
                 SyncDataSerializers.INT,
                 this::setSelectedIndex,
                 this::getSelectedIndex,
                 selectedIndex
         );
-        for (AbstractVehicleWeapon<?> sub : subWeapons) {
-            sub.defineSyncData(syncData);
+        for (AbstractVehicleWeapon<?> subWeapon : subWeapons) {
+            subWeapon.defineSyncData(syncData);
         }
     }
 
@@ -97,6 +95,9 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
     @Override
     @OnlyIn(Dist.CLIENT)
     public boolean doClientShoot() {
+        if (!preClientShoot()) {
+            return false;
+        }
         AbstractVehicleWeapon<?> selected = getSelectedWeapon();
         if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player))) {
             return false;

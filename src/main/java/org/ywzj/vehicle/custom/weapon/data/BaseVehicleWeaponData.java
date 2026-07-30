@@ -13,6 +13,9 @@ public class BaseVehicleWeaponData {
     @SerializedName("name")
     private String name = "vehicle.weapon.unknown";
 
+    @SerializedName("caliber")
+    private Float caliber = 5.8f;
+
     @SerializedName("velocity")
     private float velocity = 10f;
 
@@ -92,6 +95,14 @@ public class BaseVehicleWeaponData {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Float getCaliber() {
+        return caliber;
+    }
+
+    public void setCaliber(Float caliber) {
+        this.caliber = caliber;
     }
 
     public float getVelocity() {

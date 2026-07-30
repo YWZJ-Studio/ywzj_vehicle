@@ -183,6 +183,8 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<Bgm71tow>> BGM_71_TOW = registerVehicle("bgm_71_tow", Bgm71tow::new);
 
+    public static final RegistryObject<EntityType<HTF5980>> HTF5980 = registerVehicle("htf5980", HTF5980::new);
+
     public static <T extends AbstractVehicle> RegistryObject<EntityType<T>> registerVehicle(
             String name, EntityType.EntityFactory<T> factory
     ) {

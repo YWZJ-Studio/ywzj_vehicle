@@ -63,6 +63,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.AH64D.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.LAV_AD.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BGM_71_TOW.get(), VehicleRender::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.HTF5980.get(), VehicleRender::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BULLET.get(), BulletEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROCKET.get(),

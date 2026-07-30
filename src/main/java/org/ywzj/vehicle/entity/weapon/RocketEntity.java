@@ -1,7 +1,9 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,6 +22,7 @@ import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleRocketWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 
@@ -113,6 +116,10 @@ public class RocketEntity extends AmmoEntity {
         double dx = this.getX() + velocity.x;
         double dy = this.getY() + velocity.y;
         double dz = this.getZ() + velocity.z;
+        if (!((ServerLevel) level()).isPositionEntityTicking(BlockPos.containing(dx, dy, dz))) {
+            EntityUtil.keepChunkLoaded(this, new Vec3(dx, dy, dz));
+            return;
+        }
         this.setPos(dx, dy, dz);
         if (tickCount > motorBurnTime && velocity.lengthSqr() > 0.01) {
             Vec3 normVel = velocity.normalize();

@@ -91,7 +91,6 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
             }
             if (keepChunkLoaded) {
                 EntityUtil.keepChunkLoaded(this, this.position());
-                EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
             }
         }
     }

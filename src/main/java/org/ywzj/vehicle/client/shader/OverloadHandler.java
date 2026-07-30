@@ -11,6 +11,7 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.render.util.PostPassesGetter;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -77,11 +78,18 @@ public class OverloadHandler implements ResourceManagerReloadListener {
             if (postChain instanceof PostPassesGetter getter) {
                 for (PostPass pass : getter.getPasses()) {
                     float stamina = LocalVehiclePlayer.instance.stamina;
-                    if (stamina < 70) {
-                        pass.getEffect().safeGetUniform("Progress").set((70 - stamina) / 70);
+                    float overloadCapacityMultiplier = AllConfigs.common.overloadCapacityMultiplier.get().floatValue();
+                    float positiveEffectStart = 100 - 30 * overloadCapacityMultiplier;
+                    float negativeEffectStart = 100 + 10 * overloadCapacityMultiplier;
+                    if (stamina < positiveEffectStart) {
+                        float positiveGLimit = 100 - 100 * overloadCapacityMultiplier;
+                        float progress = (positiveEffectStart - stamina) / (positiveEffectStart - positiveGLimit);
+                        pass.getEffect().safeGetUniform("Progress").set(progress);
                         pass.getEffect().safeGetUniform("Type").set(2);
-                    } else if (stamina > 110) {
-                        pass.getEffect().safeGetUniform("Progress").set((stamina - 110) / 50);
+                    } else if (stamina > negativeEffectStart) {
+                        float negativeGLimit = 100 + 60 * overloadCapacityMultiplier;
+                        float progress = (stamina - negativeEffectStart) / (negativeGLimit - negativeEffectStart);
+                        pass.getEffect().safeGetUniform("Progress").set(progress);
                         pass.getEffect().safeGetUniform("Type").set(1);
                     } else {
                         pass.getEffect().safeGetUniform("Progress").set(0f);

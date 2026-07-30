@@ -1,0 +1,105 @@
+{
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "attributes": {
+        "brake_force": 0.01,
+        "forward_force": 0.01,
+        "backward_force": 0.01,
+        "max_speed_forward": 0.8,
+        "max_speed_backward": 0.2,
+        "turn_step": 0.3,
+        "max_turn": 3
+    },
+    "max_health": 300,
+    "view_info": {
+        "third_person_center_offset": [0, 4, 0],
+        "third_person_distance": 16,
+        "sound_distance": 3,
+        "passenger_view_rot": {
+            "rot_by_vehicle_in_third_person": false,
+            "rot_by_vehicle_in_operator": true
+        }
+    },
+    "energy_info": {
+        "energy_capacity": 1,
+        "energy_consumption_per_tick": 0.00001
+    },
+    "physics_info": {
+        "center": [0, -4, 0]
+    },
+    "structure_model": "ywzj_vehicle:vehicle/htf5980",
+    "parts": [
+        {
+            "id": "driver",
+            "name": "driver",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "driver",
+            "seat_offset": [1.25, 2.0203125, 7.4078125],
+            "operator_on_weapon_unit": false,
+            "rot_info": {
+                "x_rot_speed": 0.9395,
+                "y_rot_speed": 0,
+                "x_rot_max": 0,
+                "x_rot_min": -90
+            },
+            "optical_sight_offset": [0, 0, 0],
+            "operator_view_offset": [0, 0, 0],
+            "optical_sight_type": "none",
+            "zoom_max": 1,
+            "weapons": [
+                {
+                    "id": "ywzj_vehicle:df_41",
+                    "part_unit_id": "missile",
+                    "weapon_bay_unit_id": "pipe"
+                }
+            ]
+        },
+        {
+            "id": "missile",
+            "name": "missile",
+            "type": "ywzj_vehicle:weapon",
+            "structure_bone": "missile",
+            "ammo_capacity": 1,
+            "fire_control_sensor_type": "loc",
+            "is_seat": false,
+            "parent_weapon_unit_aim": true,
+            "crosshair_style": "none",
+            "rot_info": {
+                "x_rot_speed": 1.5,
+                "y_rot_speed": 0,
+                "x_rot_max": 0,
+                "x_rot_min": -90
+            }
+        },
+        {
+            "id": "pipe",
+            "name": "pipe",
+            "type": "ywzj_vehicle:weapon_bay",
+            "structure_bone": "pipe",
+            "is_seat": false
+        },
+        {
+            "id": "seat1",
+            "name": "seat1",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-1.25, 2.0203125, 7.4078125],
+            "owner_view_offset": [2.4046875, 1.7109375, 5.3640625]
+        },
+        {
+            "id": "seat2",
+            "name": "seat2",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [1.25, 2.0203125, 6.3703125],
+            "owner_view_offset": [2.4046875, 1.7109375, 5.3640625]
+        },
+        {
+            "id": "seat3",
+            "name": "seat3",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-1.25, 2.0203125, 6.3703125],
+            "owner_view_offset": [2.4046875, 1.7109375, 5.3640625]
+        }
+    ]
+}

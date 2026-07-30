@@ -21,11 +21,11 @@ import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.screen.CoordinateInputScreen;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataHolder;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
-import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
@@ -33,6 +33,7 @@ import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.AutoWeaponUnit;
+import org.ywzj.vehicle.vehicle.part.WeaponBayUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -60,6 +61,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     protected int reloadTime = 0;
     protected SyncDataHolder<Integer> remainAmmoHolder;
     protected SyncDataHolder<Integer> reloadTimeHolder;
+    protected Vec3 targetLocation;
     protected final ThreadPoolExecutor soundsExecutor = new ThreadPoolExecutor(
             3,
             8,
@@ -125,7 +127,39 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     @OnlyIn(Dist.CLIENT)
+    protected boolean preClientShoot() {
+        Minecraft minecraft = Minecraft.getInstance();
+        WeaponUnit parentWeaponUnit = weaponUnit.getParentWeaponUnit();
+        WeaponBayUnit weaponBayUnit = parentWeaponUnit.weaponBayUnits.get(this);
+        if (weaponBayUnit != null && !weaponBayUnit.isOn()) {
+            parentWeaponUnit.toggleCurrentWeaponBay();
+            return false;
+        }
+        if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.LOC && targetLocation == null) {
+            if (minecraft.screen != null || isCoolingDown() || !hasAmmo()) {
+                return false;
+            }
+            minecraft.setScreen(new CoordinateInputScreen(currentAimHitPosition(), position -> {
+                if (weaponUnit.getFireControlSensorType() != WeaponUnitData.FireControlSensorType.LOC) {
+                    return;
+                }
+                targetLocation = position;
+                try {
+                    doClientShoot();
+                } finally {
+                    targetLocation = null;
+                }
+            }));
+            return false;
+        }
+        return true;
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public boolean doClientShoot() {
+        if (!preClientShoot()) {
+            return false;
+        }
         if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player))) {
             return false;
         }
@@ -150,6 +184,18 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         } else {
             return false;
         }
+        Vec3 aimHitPosition = targetLocation != null ? targetLocation : currentAimHitPosition();
+        aimContexts.forEach(aimContext -> {
+            aimContext.from = aimContext.from.add(vehicle.getDeltaMovement());
+            aimContext.position = aimHitPosition;
+        });
+        lastShootTime = System.currentTimeMillis();
+        sendShoot(this.getVehicle(), partUnitIndex, getIndex(), aimContexts);
+        return true;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    protected Vec3 currentAimHitPosition() {
         WeaponUnit rootParentWeaponUnit = weaponUnit.getRootParentWeaponUnit();
         List<Vec3> positions = rootParentWeaponUnit.aimContexts().stream().map(context -> context.from).toList();
         double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
@@ -159,14 +205,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         Vec3 targetVec = VectorUtil.rotToVec(currentAimContext.direction.x, currentAimContext.direction.y);
         Vec3 start = new Vec3(x, y, z);
         Vec3 end = start.add(targetVec.scale(LocalVehiclePlayer.renderDistance()));
-        Vec3 aimHitPosition = VectorUtil.hitPosition(LocalVehiclePlayer.instance.getPlayer(), start, end);
-        aimContexts.forEach(aimContext -> {
-            aimContext.from = aimContext.from.add(vehicle.getDeltaMovement());
-            aimContext.position = aimHitPosition;
-        });
-        lastShootTime = System.currentTimeMillis();
-        sendShoot(this.getVehicle(), partUnitIndex, getIndex(), aimContexts);
-        return true;
+        return VectorUtil.hitPosition(LocalVehiclePlayer.instance.getPlayer(), start, end);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -209,10 +248,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
             return;
         }
         float recoil = data.getRecoil();
-        float caliber = 20;
-        if (data instanceof VehicleCannonWeaponData vehicleCannonWeaponData) {
-            caliber = vehicleCannonWeaponData.getCaliber();
-        }
+        float caliber = data.getCaliber();
         float scale = caliber / 20;
         for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
             for (int i = 0; i < 3 * recoil + 1; i++) {

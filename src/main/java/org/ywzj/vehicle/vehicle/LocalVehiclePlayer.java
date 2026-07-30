@@ -58,6 +58,7 @@ public class LocalVehiclePlayer {
     public boolean thermalImaging;
     public boolean mouseTurnedAfterScope;
     public AbstractVehicle.Seat seat;
+    public boolean toLeave;
     public AbstractVehicle vehicle;
     public ViewType viewType = ViewType.THIRD_PERSON;
     public int onVehicleTickCount;
@@ -96,6 +97,18 @@ public class LocalVehiclePlayer {
     }
 
     private void tickOverload() {
+        if (!AllConfigs.common.overload.get()) {
+            stamina = 100;
+            lostControl = false;
+            endureTick = 0;
+            unconsciousnessTick = 0;
+            currentG = 1;
+            lastVelocity = Vec3.ZERO;
+            if (OverloadHandler.isActive()) {
+                OverloadHandler.setActive(false);
+            }
+            return;
+        }
         if (stamina != 100) {
             stamina += stamina < 100 ? 1 : -1;
         }
@@ -134,8 +147,11 @@ public class LocalVehiclePlayer {
                 endureTick -= 1;
             }
             float endureG = currentG - 1;
-            stamina = Mth.clamp(stamina - endureG * 0.8f, 0, 160);
-            if (stamina <= 0 || stamina >= 160) {
+            float overloadCapacityMultiplier = AllConfigs.common.overloadCapacityMultiplier.get().floatValue();
+            float positiveGLimit = 100 - 100 * overloadCapacityMultiplier;
+            float negativeGLimit = 100 + 60 * overloadCapacityMultiplier;
+            stamina = Mth.clamp(stamina - endureG * 0.8f, positiveGLimit, negativeGLimit);
+            if (stamina <= positiveGLimit || stamina >= negativeGLimit) {
                 lostControl = true;
                 unconsciousnessTick = 60;
             }
@@ -297,6 +313,7 @@ public class LocalVehiclePlayer {
         if (seat == null) {
             this.seat = null;
             this.vehicle = null;
+            this.toLeave = false;
             return;
         }
         this.seat = seat;

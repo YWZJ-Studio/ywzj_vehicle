@@ -1,0 +1,94 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 16,
+				"texture_height": 16,
+				"visible_bounds_width": 21,
+				"visible_bounds_height": 7,
+				"visible_bounds_offset": [0, 1.5, 0]
+			},
+			"bones": [
+				{
+					"name": "vehicle_body",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-25.875, 0, -136.475],
+							"size": [51.75, 38.05, 267.425],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [27.1, 32.075]},
+								"east": {"uv": [0, 0], "uv_size": [76.6, 32.075]},
+								"south": {"uv": [0, 0], "uv_size": [27.1, 32.075]},
+								"west": {"uv": [0, 0], "uv_size": [76.6, 32.075]},
+								"up": {"uv": [27.1, 76.6], "uv_size": [-27.1, -76.6]},
+								"down": {"uv": [27.1, 76.6], "uv_size": [-27.1, -76.6]}
+							}
+						}
+					]
+				},
+				{
+					"name": "driver",
+					"pivot": [-38.475, 27.375, 85.825],
+					"cubes": [
+						{
+							"origin": [-39.475, 27.375, 84.825],
+							"size": [2, 2, 2],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [2, 2]},
+								"east": {"uv": [0, 0], "uv_size": [2, 2]},
+								"south": {"uv": [0, 0], "uv_size": [2, 2]},
+								"west": {"uv": [0, 0], "uv_size": [2, 2]},
+								"up": {"uv": [2, 2], "uv_size": [-2, -2]},
+								"down": {"uv": [2, 2], "uv_size": [-2, -2]}
+							}
+						}
+					]
+				},
+				{
+					"name": "missile",
+					"pivot": [0, 24.2, -134.6406]
+				},
+				{
+					"name": "missile_barrel",
+					"parent": "missile",
+					"pivot": [0, 24.2, -134.6406],
+					"cubes": [
+						{
+							"origin": [-17.95, 25.55, -151.25],
+							"size": [35.6, 34.325, 303.325],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [27.1, 32.075]},
+								"east": {"uv": [0, 0], "uv_size": [76.6, 32.075]},
+								"south": {"uv": [0, 0], "uv_size": [27.1, 32.075]},
+								"west": {"uv": [0, 0], "uv_size": [76.6, 32.075]},
+								"up": {"uv": [27.1, 76.6], "uv_size": [-27.1, -76.6]},
+								"down": {"uv": [27.1, 76.6], "uv_size": [-27.1, -76.6]}
+							}
+						}
+					]
+				},
+				{
+					"name": "pipe",
+					"pivot": [0, 32.2, 0],
+					"cubes": [
+						{
+							"origin": [-17.95, 25.55, 118.35],
+							"size": [35.6, 34.325, 33.725],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [27.1, 32.075]},
+								"east": {"uv": [0, 0], "uv_size": [76.6, 32.075]},
+								"south": {"uv": [0, 0], "uv_size": [27.1, 32.075]},
+								"west": {"uv": [0, 0], "uv_size": [76.6, 32.075]},
+								"up": {"uv": [27.1, 76.6], "uv_size": [-27.1, -76.6]},
+								"down": {"uv": [27.1, 76.6], "uv_size": [-27.1, -76.6]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

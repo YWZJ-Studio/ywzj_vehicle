@@ -113,6 +113,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public boolean renderSelectedWeapon;
     // OBB结构
     private VehicleCubeGroup xTurnGroup;
+    public float xBarrelSelfRot;
+    public float yBarrelSelfRot;
     // 武器与选射
     public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> secondaryWeapons = new ArrayList<>();
@@ -176,6 +178,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
         super.buildStructure(vehicleCubeGroupCopy);
         this.xTurnGroup = vehicleCubeGroupCopy.get(data.getRawXTurnGroup());
+        if (this.xTurnGroup != null) {
+            Vector3f barrelSelfRot = new Vector3f();
+            this.xTurnGroup.baseRotation.getEulerAnglesYXZ(barrelSelfRot);
+            this.xBarrelSelfRot = (float) Math.toDegrees(barrelSelfRot.x);
+            this.yBarrelSelfRot = (float) Math.toDegrees(-barrelSelfRot.y);
+        }
     }
 
     public void switchWeapon(boolean secondary, boolean next, boolean modding) {
@@ -734,8 +742,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void aim(Vec3 worldPos) {
         if (rotByAim) {
             Vec2 rot = aimRot(worldPos);
-            Bolt bolt = getCurrentBolt();
-            rot = new Vec2(rot.x - bolt.xRot, rot.y + bolt.yRot);
+            rot = new Vec2(rot.x - xBarrelSelfRot, rot.y - yBarrelSelfRot);
             if (xAimRot != rot.x || yAimRot != rot.y) {
                 if (vehicle.level().isClientSide()) {
                     ClientVehicleAction control = new ClientVehicleAction();

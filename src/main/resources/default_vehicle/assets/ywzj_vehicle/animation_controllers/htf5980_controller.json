@@ -1,0 +1,54 @@
+{
+    "name": "htf5980_controller",
+    "script": "ywzj_vehicle:htf5980",
+    "parameters": {},
+    "switchable_animations": {
+        "launch_preparation": {
+            "part_id": "pipe",
+            "animation": "launch_preparation"
+        }
+    },
+    "graph": {
+        "type": "merge",
+        "inputs": [
+            {
+                "type": "bone_binding",
+                "special_bindings": [
+                    {
+                        "bones": [
+                            "wheel_1_l", "wheel_2_l", "wheel_3_l", "wheel_4_l", "wheel_5_l", "wheel_6_l", "wheel_7_l", "wheel_8_l",
+                            "wheel_1_r", "wheel_2_r", "wheel_3_r", "wheel_4_r", "wheel_5_r", "wheel_6_r", "wheel_7_r", "wheel_8_r"
+                        ],
+                        "source": "wheel_rotation",
+                        "axis": "x",
+                        "param": 0.35
+                    },
+                    {
+                        "bones": ["wheel_1_l", "wheel_1_r"],
+                        "source": "steering_angle",
+                        "axis": "y",
+                        "multiplier": 1.0,
+                        "min": -30.0,
+                        "max": 30.0
+                    },
+                    {
+                        "bones": ["wheel_2_l", "wheel_2_r"],
+                        "source": "steering_angle",
+                        "axis": "y",
+                        "multiplier": 1.0,
+                        "min": -15.0,
+                        "max": 15.0
+                    }
+                ]
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "launch_preparation"
+            },
+            {
+                "type": "script",
+                "function": "updateBones"
+            }
+        ]
+    }
+}

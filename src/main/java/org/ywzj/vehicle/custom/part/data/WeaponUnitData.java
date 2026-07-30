@@ -249,6 +249,9 @@ public class WeaponUnitData extends RotatableUnitData {
         // 光电
         @SerializedName("eo")
         EO,
+        // 坐标
+        @SerializedName("loc")
+        LOC,
         // 连续计算弹着点
         @SerializedName("ccip")
         CCIP
