@@ -130,10 +130,12 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     protected boolean preClientShoot() {
         Minecraft minecraft = Minecraft.getInstance();
         WeaponUnit parentWeaponUnit = weaponUnit.getParentWeaponUnit();
-        WeaponBayUnit weaponBayUnit = parentWeaponUnit.weaponBayUnits.get(this);
-        if (weaponBayUnit != null && !weaponBayUnit.isOn()) {
-            parentWeaponUnit.toggleCurrentWeaponBay();
-            return false;
+        if (parentWeaponUnit != null) {
+            WeaponBayUnit weaponBayUnit = parentWeaponUnit.weaponBayUnits.get(this);
+            if (weaponBayUnit != null && !weaponBayUnit.isOn()) {
+                parentWeaponUnit.toggleCurrentWeaponBay();
+                return false;
+            }
         }
         if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.LOC && targetLocation == null) {
             if (minecraft.screen != null || isCoolingDown() || !hasAmmo()) {
