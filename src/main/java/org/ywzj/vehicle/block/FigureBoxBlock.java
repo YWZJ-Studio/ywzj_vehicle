@@ -25,6 +25,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
+import org.ywzj.vehicle.item.FigureBoxItem;
 
 import java.util.List;
 
@@ -62,15 +63,16 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         if (builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
             ItemStack itemStack = AllItems.FIGURE_BOX.get().getDefaultInstance().copy();
+            CompoundTag tag = itemStack.getOrCreateTag();
+            FigureBoxItem.saveDisplayData(tag, figureBoxBlockEntity);
             Entity entity = figureBoxBlockEntity.getEntity();
             if (entity != null) {
-                CompoundTag tag = itemStack.getOrCreateTag();
                 CompoundTag entityData = new CompoundTag();
                 entity.saveWithoutId(entityData);
                 tag.putString(ENTITY_TYPE, EntityType.getKey(entity.getType()).toString());
                 tag.put(ENTITY_DATA, entityData);
-                itemStack.setTag(tag);
             }
+            itemStack.setTag(tag);
             return List.of(itemStack);
         }
         return List.of();
