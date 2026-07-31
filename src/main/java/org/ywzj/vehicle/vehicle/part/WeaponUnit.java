@@ -11,6 +11,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -112,6 +113,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public boolean renderSelectedWeapon;
     // OBB结构
     private VehicleCubeGroup xTurnGroup;
+    public float xBarrelSelfRot;
+    public float yBarrelSelfRot;
     // 武器与选射
     public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> secondaryWeapons = new ArrayList<>();
@@ -123,10 +126,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private int currentSecondaryWeaponIndex = -1;
     public SyncDataHolder<Integer> currentSecondaryIndexHolder;
+    private int ignoreRemoteRotTick;
+    public boolean rotByAim = true;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
     private VehicleSound irTrackAlarmSound;
-    private int ignoreRemoteRotTick;
 
     public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
         super(index, vehicle, data);
@@ -174,6 +178,12 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy) {
         super.buildStructure(vehicleCubeGroupCopy);
         this.xTurnGroup = vehicleCubeGroupCopy.get(data.getRawXTurnGroup());
+        if (this.xTurnGroup != null) {
+            Vector3f barrelSelfRot = new Vector3f();
+            this.xTurnGroup.baseRotation.getEulerAnglesYXZ(barrelSelfRot);
+            this.xBarrelSelfRot = (float) Math.toDegrees(barrelSelfRot.x);
+            this.yBarrelSelfRot = (float) Math.toDegrees(-barrelSelfRot.y);
+        }
     }
 
     public void switchWeapon(boolean secondary, boolean next, boolean modding) {
@@ -204,7 +214,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             vehicle.playVehicleSound(AllSounds.SELECT_WEAPON.get(), true);
         }
         if (getOwner() instanceof Player player) {
-            getCurrentWeapon().ifPresent(weapon -> player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true));
+            (secondary ? getCurrentSecondaryWeapon() : getCurrentWeapon()).ifPresent(weapon -> player.displayClientMessage(Component.translatable("tips.use_weapon", weapon.getDisplayName()), true));
         }
     }
 
@@ -329,8 +339,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         weapons.forEach(weapon -> {
             AbstractVehicleWeapon<?> proxyWeapon = proxyWeapon(weapon);
             ClientAssetsManager.INSTANCE.getWeaponDisplay(proxyWeapon.getData().getWeaponId()).ifPresent(weaponDisplay -> {
-                VehicleBedrockModel model = weaponDisplay.getModel();
-                if (model == null) {
+                VehicleBedrockModel weaponModel = weaponDisplay.getModel();
+                if (weaponModel == null) {
+                    return;
+                }
+                if (!weaponModel.hasBakedModel()) {
                     return;
                 }
                 ResourceLocation texture = weaponDisplay.getTexture();
@@ -361,8 +374,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     {
                         Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
                         pPoseStack.translate(offset.x(), offset.y(), offset.z() + bolt.barrelLength / 2);
-                        model.renderToBuffer(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
-                        model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
+                        pPoseStack.mulPose(weaponUnit.xTurnGroup.rotation);
+                        weaponModel.renderToBuffer(pPoseStack, bufferSource, texture, vehicle.isDestroyed() ? 64 : pPackedLight);
+                        weaponModel.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY);
                     }
                     pPoseStack.popPose();
                 }
@@ -399,7 +413,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 ignoreRemoteRotTick = 0;
             }
         }
-        super.tickRemoteRot();
+        if (vehicle.level().isClientSide()
+                && (getOwner() != LocalVehiclePlayer.instance.getPlayer() || !rotByAim)) {
+            xAimRot = xRemoteAimRot;
+            yAimRot = yRemoteAimRot;
+        }
     }
 
     @Override
@@ -414,6 +432,26 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         if (xTurnGroup != null) {
             xTurnGroup.rotation = new Quaternionf(xTurnGroup.baseRotation).mul(Axis.XP.rotationDegrees(xRot));
         }
+    }
+
+    @Override
+    protected Quaternionf getViewGroupRotation(VehicleCubeGroup group, float partialTick) {
+        if (partialTick == 1.0F) {
+            return super.getViewGroupRotation(group, 1.0F);
+        }
+        if (group == structureGroup) {
+            Quaternionf rotation = new Quaternionf(group.baseRotation)
+                    .mul(Axis.YN.rotationDegrees(getViewYRot(partialTick)));
+            if (xTurnGroup == structureGroup) {
+                rotation.mul(Axis.XP.rotationDegrees(getViewXRot(partialTick)));
+            }
+            return rotation;
+        }
+        if (group == xTurnGroup) {
+            return new Quaternionf(group.baseRotation)
+                    .mul(Axis.XP.rotationDegrees(getViewXRot(partialTick)));
+        }
+        return super.getViewGroupRotation(group, partialTick);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -683,18 +721,20 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 Quaternionf relativeRot = baseRot().invert().mul(rotationO);
                 Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
                 Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
-                setXRot(Math.max(Math.min(targetRot.x, xRotMax), xRotMin));
-                if (org.joml.Math.abs(xRot - xRotO) > 180) {
-                    xRotO += org.joml.Math.signum(xRot - xRotO) * 360;
+                float targetXRot = Mth.clamp(targetRot.x, xRotMin, xRotMax);
+                float targetYRot = Mth.clamp(targetRot.y, yRotMin, yRotMax);
+                setXRot(targetXRot);
+                setYRot(targetYRot);
+                if (Math.abs(xRot - xRotO) > 180) {
+                    xRotO += Math.signum(xRot - xRotO) * 360;
                 }
-                setYRot(Math.max(Math.min(targetRot.y, yRotMax), yRotMin));
-                if (org.joml.Math.abs(yRot - yRotO) > 180) {
-                    yRotO += org.joml.Math.signum(yRot - yRotO) * 360;
+                if (Math.abs(yRot - yRotO) > 180) {
+                    yRotO += Math.signum(yRot - yRotO) * 360;
                 }
                 updateRot();
                 if (vehicle.level().isClientSide()) {
-                    setXAimRot(targetRot.x);
-                    setYAimRot(targetRot.y);
+                    setXAimRot(targetXRot);
+                    setYAimRot(targetYRot);
                     ignoreRemoteRotTick = 1;
                 }
             }
@@ -702,13 +742,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public void aim(Vec3 worldPos) {
-        Vec2 rot = aimRot(worldPos);
-        Bolt bolt = getCurrentBolt();
-        rot = new Vec2(rot.x - bolt.xRot, rot.y + bolt.yRot);
-        if (xAimRot != rot.x || yAimRot != rot.y) {
-            if (vehicle.level().isClientSide()) {
-                ClientVehicleAction control = new ClientVehicleAction();
-                control.vehicleEntityId = vehicle.getId();
+        if (rotByAim) {
+            Vec2 rot = aimRot(worldPos);
+            rot = new Vec2(rot.x - xBarrelSelfRot, rot.y - yBarrelSelfRot);
+            if (xAimRot != rot.x || yAimRot != rot.y) {
+                if (vehicle.level().isClientSide()) {
+                    ClientVehicleAction control = new ClientVehicleAction();
+                    control.vehicleEntityId = vehicle.getId();
                 control.partUnitIndex = index;
                 control.xAimRot = rot.x;
                 control.yAimRot = rot.y;
@@ -716,6 +756,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
             xAimRot = rot.x;
             yAimRot = rot.y;
+            }
         }
         subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));
     }
@@ -773,6 +814,23 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
+    public Vec3 toAimPosition() {
+        if (xTurnGroup == null) {
+            return aimHitPosition();
+        }
+        VehicleCubeGroup.GlobalTransform globalTransform = aimGlobalTransform();
+        List<Vec3> positions = bolts.stream()
+                .map(bolt -> aimContext(bolt, globalTransform).from)
+                .toList();
+        double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+        double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+        double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+        AimContext aimContext = aimContext(getCurrentBolt(), globalTransform);
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = start.add(VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize().scale(1024));
+        return VectorUtil.hitPosition(vehicle, start, end);
+    }
+
     public Vec3 aimHitPosition() {
         List<Vec3> positions = aimContexts().stream().map(context -> context.from).toList();
         double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
@@ -797,18 +855,22 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     public AimContext aimContext(Bolt bolt) {
-        AimContext aimContext = new AimContext();
         if (xTurnGroup == null) {
+            AimContext aimContext = new AimContext();
             aimContext.from = this.vehicle.position();
             aimContext.direction = new Vec2(this.vehicle.getXRot(), this.vehicle.getYRot());
             return aimContext;
         }
-        VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
+        return aimContext(bolt, xTurnGroup.globalTransform());
+    }
+
+    private AimContext aimContext(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform) {
+        AimContext aimContext = new AimContext();
         Quaternionf rotation = globalTransform.rotation();
         Vec3 boltPosition = worldBoltPosition(bolt, globalTransform);
         Vector3f worldRot = new Vector3f();
         vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
-        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x), (float) Math.toDegrees(-worldRot.y));
+        aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
         aimContext.from = boltPosition.add(direction.scale(bolt.barrelLength));
         return aimContext;
@@ -831,37 +893,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return vehicle.position().add(vehicle.centerOffset).add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
     }
 
-    public Vec3 worldPivotPosition() {
-        return worldPositionWithBaseRot(pivotOffset);
-    }
-
-    public Vec3 worldOpticalSightPosition() {
-        if (opticalSightOffset == null) {
-            return worldOwnerViewPosition();
-        }
-        Vec3 offsetFromVehicle = pivotOffset.add(opticalSightOffset);
-        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
-            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup);
-        }
-        return worldPosition(offsetFromVehicle);
-    }
-
-    @Override
-    public Vec3 worldOwnerViewPosition() {
-        if (operatorViewOffset == null) {
-            float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
-            return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)));
-        }
-        Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
-        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
-            return worldPositionWithBaseRot(offsetFromVehicle);
-        }
-        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
-            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup);
-        }
-        return worldPosition(offsetFromVehicle);
-    }
-
     @Override
     public Vec3 worldSeatPosition() {
         float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
@@ -869,6 +900,33 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             return worldPositionWithBaseRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
         }
         return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
+    }
+
+    @Override
+    public Vec3 worldOwnerViewPosition(float partialTick) {
+        if (operatorViewOffset == null) {
+            float eyeHeight = owner == null ? 2 : owner.getEyeHeight();
+            return worldPosition(pivotOffset.add(new Vec3(0, eyeHeight, 0)), partialTick);
+        }
+        Vec3 offsetFromVehicle = pivotOffset.add(operatorViewOffset);
+        if (!operatorOnWeaponUnit && LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
+            return worldPositionWithBaseRot(offsetFromVehicle, partialTick);
+        }
+        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
+            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup, partialTick);
+        }
+        return worldPosition(offsetFromVehicle, partialTick);
+    }
+
+    public Vec3 worldOpticalSightPosition(float partialTick) {
+        if (opticalSightOffset == null) {
+            return worldOwnerViewPosition(partialTick);
+        }
+        Vec3 offsetFromVehicle = pivotOffset.add(opticalSightOffset);
+        if (getOpticalSightType() == WeaponUnitData.OpticalSightType.OPERATOR) {
+            return worldPositionWithGroupRot(offsetFromVehicle, xTurnGroup, partialTick);
+        }
+        return worldPosition(offsetFromVehicle, partialTick);
     }
 
     @Override
@@ -885,6 +943,30 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         return rotation;
+    }
+
+    private VehicleCubeGroup.GlobalTransform aimGlobalTransform() {
+        Quaternionf globalRotation;
+        if (xTurnGroup == structureGroup) {
+            globalRotation = new Quaternionf(xTurnGroup.baseRotation)
+                    .mul(Axis.YN.rotationDegrees(yAimRot))
+                    .mul(Axis.XP.rotationDegrees(xAimRot));
+        } else {
+            globalRotation = new Quaternionf(xTurnGroup.baseRotation)
+                    .mul(Axis.XP.rotationDegrees(xAimRot));
+        }
+        Vector3f globalPivot = xTurnGroup.pivot.toVector3f();
+        VehicleCubeGroup parentGroup = xTurnGroup.parent;
+        while (parentGroup != null) {
+            Quaternionf parentRotation = parentGroup == structureGroup
+                    ? new Quaternionf(parentGroup.baseRotation).mul(Axis.YN.rotationDegrees(yAimRot))
+                    : parentGroup.rotation;
+            parentRotation.transform(globalPivot);
+            globalPivot.add((float) parentGroup.pivot.x, (float) parentGroup.pivot.y, (float) parentGroup.pivot.z);
+            globalRotation.premul(parentRotation);
+            parentGroup = parentGroup.parent;
+        }
+        return new VehicleCubeGroup.GlobalTransform(new Vec3(globalPivot), globalRotation);
     }
 
     public int getAmmoCapacity() {

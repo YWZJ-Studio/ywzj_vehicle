@@ -137,17 +137,32 @@ public class PhysicsEngine {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
                     }
-                    float offsetY = (float) (physicsCube().offset().y - physicsCube.height / 2);
-                    Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f + offsetY, 0));
-                    BlockPos testBlockPos = BlockPos.containing(testPos);
-                    BlockState blockState = vehicle.level().getBlockState(testBlockPos);
-                    if (blockState.isSolid()) {
-                        if (!isHalfBlock(touchPoint.cubePointContext.blockState()) || testPos.y < testBlockPos.getY() + 0.55) {
-                            velocity = new Vec3(velocity.x, Math.min(G + 0.1 * (Math.tan(Math.toRadians(Math.abs(vehicle.getXRot()))) + Math.tan(Math.toRadians(Math.abs(vehicle.getZRot())))), velocity.y + 0.01f), velocity.z);
+                    if (velocity.dot(axesY) < 0.1f) {
+                        float offsetY = (float) (physicsCube().offset().y - physicsCube.height / 2);
+                        Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f + offsetY, 0));
+                        BlockPos testBlockPos = BlockPos.containing(testPos);
+                        BlockState blockState = vehicle.level().getBlockState(testBlockPos);
+                        if (blockState.isSolid()) {
+                            if (!isHalfBlock(touchPoint.cubePointContext.blockState()) || testPos.y < testBlockPos.getY() + 0.55) {
+                                double tilt = Math.acos(Mth.clamp(axesY.y, -1, 1));
+                                double peakTilt = Math.toRadians(15);
+                                double zeroTilt = Math.toRadians(30);
+                                double tiltRatio = tilt <= peakTilt
+                                        ? tilt / peakTilt
+                                        : Math.max(0, (zeroTilt - tilt) / (zeroTilt - peakTilt));
+                                double supportVelocity = Mth.lerp(tiltRatio, 0, 0.01);
+                                velocity = velocity.add(axesY.scale(supportVelocity));
+                            }
                         }
                     }
                 }
             }
+        }
+        Vec3 testPos = new Vec3(physicsCube.obb().center());
+        BlockPos testBlockPos = BlockPos.containing(testPos);
+        BlockState blockState = vehicle.level().getBlockState(testBlockPos);
+        if (blockState.isSolid()) {
+            velocity = velocity.add(0, 0.1, 0);
         }
         if (!isStuck) {
             stuckTick = Math.max(stuckTick - 1, 0);
@@ -165,15 +180,26 @@ public class PhysicsEngine {
         if (stuckTick == 10) {
             if (canDestroyBlock && AllConfigs.common.canDestroyBlock.get()) {
                 Level level = vehicle.level();
+                Vector3f[] axes = physicsCube.obb().getAxes();
+                Vector3f faceNormal = cubeFace == VehicleCubeOBB.CubeFace.LEFT || cubeFace == VehicleCubeOBB.CubeFace.RIGHT ? axes[0] : axes[2];
+                boolean normalAlongX = Math.abs(faceNormal.x) >= Math.abs(faceNormal.z);
+                Set<BlockPos> blocksToDestroy = new HashSet<>();
                 for (VehicleCubeOBB.CubePoint cubePoint : vehicle.getMainCubeOBB().cubePointsByFace.get(cubeFace)) {
                     if (cubePoint.obbLocalPos().y > -physicsCube.getHeight() / 2 + vehicle.getMainCubeOBB().spaceY) {
                         Vec3 pos = new Vec3(cubePoint.cachedWorldPos());
-                        BlockPos bp = BlockPos.containing(pos);
-                        BlockState state = level.getBlockState(bp);
-                        float hardness = state.getDestroySpeed(level, bp);
-                        if (hardness >= 0 && hardness < 50.0F) {
-                            level.destroyBlock(bp, false, vehicle);
+                        BlockPos blockPos = BlockPos.containing(pos);
+                        for (int vertical = -1; vertical <= 1; vertical++) {
+                            for (int horizontal = -1; horizontal <= 1; horizontal++) {
+                                blocksToDestroy.add(blockPos.offset(normalAlongX ? 0 : horizontal, vertical, normalAlongX ? horizontal : 0));
+                            }
                         }
+                    }
+                }
+                for (BlockPos blockPos : blocksToDestroy) {
+                    BlockState blockState = level.getBlockState(blockPos);
+                    float hardness = blockState.getDestroySpeed(level, blockPos);
+                    if (!blockState.isAir() && hardness >= 0 && hardness < 50.0F) {
+                        level.destroyBlock(blockPos, false, vehicle);
                     }
                 }
             }
@@ -415,8 +441,8 @@ public class PhysicsEngine {
         climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
         VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
         Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
-                        .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
-                        .add(vehicle.position()), true);
+                .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
+                .add(vehicle.position()), true);
         double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
         double toLift = Mth.clamp(liftHeight - bottomPosition.y, 0, vehicle.maxUpStep());
         vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);

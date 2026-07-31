@@ -1,14 +1,18 @@
 package org.ywzj.vehicle.client.resource.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.BedrockModelPOJO;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakerOptions;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import org.jetbrains.annotations.Nullable;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
+import org.ywzj.vehicle.client.resource.animation.PoseNodeDefinition;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 基础载具效果配置实例
@@ -18,6 +22,7 @@ public class BaseDisplay {
 
     protected ResourceLocation displayId;
     protected ResourceLocation modelPath;
+    protected BedrockModelPOJO modelPojo;
     protected VehicleBedrockModel model;
     protected ResourceLocation texture;
     protected ResourceLocation slotTexture;
@@ -35,29 +40,27 @@ public class BaseDisplay {
      * @param pojo 配置数据
      */
     public BaseDisplay(BaseDisplayPojo pojo) {
-        var modelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
+        var animationPojo = pojo.animations == null ? null : ClientAssetsManager.INSTANCE.getAnimation(pojo.animations).orElse(null);
+        Set<String> animatedBones = animationPojo == null ? Set.of() : BakerOptions.collectAnimatedBones(animationPojo);
+        var loadedModelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
-
-        if (pojo.specialBoneEffects != null && !pojo.specialBoneEffects.isEmpty()) {
-            this.specialBoneEffects = pojo.specialBoneEffects;
-            modelPojo.ifPresent(bedrockModelPOJO ->
-                this.model = new VehicleBedrockModel(bedrockModelPOJO, pojo.specialBoneEffects));
-        } else {
-            modelPojo.ifPresent(bedrockModelPOJO -> this.model = new VehicleBedrockModel(bedrockModelPOJO, List.of()));
-        }
+        this.specialBoneEffects = pojo.specialBoneEffects == null ? List.of() : List.copyOf(pojo.specialBoneEffects);
+        BakerOptions bakerOptions = createBakerOptions(pojo, animatedBones);
+        loadedModelPojo.ifPresent(bedrockModelPOJO -> {
+            this.modelPojo = bedrockModelPOJO;
+            this.model = new VehicleBedrockModel(bedrockModelPOJO, specialBoneEffects, bakerOptions);
+        });
 
         this.texture = pojo.texture;
         this.slotTexture = pojo.slotTexture;
         this.animationControllerPath = pojo.animationController;
 
-        if (pojo.animations != null) {
-            var animationPojo = ClientAssetsManager.INSTANCE.getAnimation(pojo.animations);
-            var animations = animationPojo
-                    .map(animationPOJO -> BedrockAnimation.createAnimation(animationPOJO, model))
-                    .orElse(List.of());
+        BoneIndexProvider animationIndexProvider = getAnimationIndexProvider();
+        if (animationPojo != null && animationIndexProvider != null) {
+            var loadedAnimations = BedrockAnimation.createAnimation(animationPojo, animationIndexProvider);
             var map = new HashMap<String, BedrockAnimation>();
-            for (var anim : animations) {
-                map.put(anim.getName(), anim);
+            for (var animation : loadedAnimations) {
+                map.put(animation.getName(), animation);
             }
             this.animations = map;
         } else {
@@ -73,6 +76,80 @@ public class BaseDisplay {
         this.tabIndex = pojo.tabIndex;
     }
 
+    @Nullable
+    protected BoneIndexProvider getAnimationIndexProvider() {
+        if (model == null) {
+            return null;
+        }
+        BoneIndexProvider bakedModel = model.getBakedModel();
+        return bakedModel != null ? bakedModel : model;
+    }
+
+    @Nullable
+    private static BakerOptions createBakerOptions(BaseDisplayPojo pojo, Set<String> animatedBones) {
+        Set<String> preservedBones = new LinkedHashSet<>(animatedBones);
+        if (pojo.animationController != null) {
+            AnimationControllerDefinition controller = ClientAssetsManager.INSTANCE
+                    .getAnimationControllerDefinition(pojo.animationController)
+                    .orElse(null);
+            if (controller == null) {
+                YwzjVehicle.LOGGER.warn("Baked model disabled because animation controller is missing: {}", pojo.animationController);
+                return null;
+            }
+            collectControllerBindingBones(controller.getGraph(), preservedBones);
+            var script = controller.getScript() == null
+                    ? null
+                    : ClientAssetsManager.INSTANCE.getScript(controller.getScript()).orElse(null);
+            preservedBones.addAll(ScriptBoneCollector.collect(controller, script));
+        }
+        return new BakerOptions(animatedBones, preservedBones, new HashSet<>(), true, false, true);
+    }
+
+    private static void collectControllerBindingBones(@Nullable PoseNodeDefinition node, Set<String> preservedBones) {
+        if (node == null) {
+            return;
+        }
+        if (node.getSpecialBindings() != null) {
+            for (PoseNodeDefinition.SpecialBindingDefinition binding : node.getSpecialBindings()) {
+                addBones(preservedBones, binding.getBones());
+            }
+        }
+        if (node.getPartBindings() != null) {
+            for (PoseNodeDefinition.PartBindingDefinition binding : node.getPartBindings()) {
+                addBone(preservedBones, binding.getBone());
+            }
+        }
+        if (node.getInputs() != null) {
+            for (PoseNodeDefinition input : node.getInputs()) {
+                collectControllerBindingBones(input, preservedBones);
+            }
+        }
+        collectControllerBindingBones(node.getA(), preservedBones);
+        collectControllerBindingBones(node.getB(), preservedBones);
+        collectControllerBindingBones(node.getBase(), preservedBones);
+        collectControllerBindingBones(node.getAdd(), preservedBones);
+        if (node.getLayers() != null) {
+            for (PoseNodeDefinition.LayerDefinition layer : node.getLayers()) {
+                collectControllerBindingBones(layer.getPose(), preservedBones);
+            }
+        }
+    }
+
+    private static void addBones(Set<String> preservedBones, @Nullable List<String> bones) {
+        if (bones == null) {
+            return;
+        }
+        for (String bone : bones) {
+            addBone(preservedBones, bone);
+        }
+    }
+
+    private static void addBone(Set<String> preservedBones, @Nullable String bone) {
+        if (bone != null && !bone.isBlank()) {
+            preservedBones.add(bone);
+        }
+    }
+
     public ResourceLocation getDisplayId() {
         return displayId;
     }
@@ -83,6 +160,10 @@ public class BaseDisplay {
 
     public ResourceLocation getModelPath() {
         return modelPath;
+    }
+
+    public BedrockModelPOJO getModelPojo() {
+        return modelPojo;
     }
 
     public ResourceLocation getTexture() {

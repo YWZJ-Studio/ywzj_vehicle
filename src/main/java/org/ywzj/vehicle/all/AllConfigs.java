@@ -73,6 +73,8 @@ public class AllConfigs {
         public final ModConfigSpec.ConfigValue<Boolean> hitIndicator;
         public final ModConfigSpec.ConfigValue<Boolean> checkTeamOnEnterVehicle;
         public final ModConfigSpec.ConfigValue<Boolean> figureBoxOnlyCaptureVehicle;
+        public final ModConfigSpec.ConfigValue<Boolean> overload;
+        public final ModConfigSpec.ConfigValue<Double> overloadCapacityMultiplier;
         public final ModConfigSpec.ConfigValue<Integer> aerobaticSmokeR;
         public final ModConfigSpec.ConfigValue<Integer> aerobaticSmokeG;
         public final ModConfigSpec.ConfigValue<Integer> aerobaticSmokeB;
@@ -98,6 +100,10 @@ public class AllConfigs {
                     .define("checkTeamOnEnterVehicle", true);
             figureBoxOnlyCaptureVehicle = builder.comment("手办盒是否只能收纳载具")
                     .define("figureBoxOnlyCaptureVehicle", false);
+            overload = builder.comment("是否启用过载机制")
+                    .define("overload", true);
+            overloadCapacityMultiplier = builder.comment("过载耐受倍率")
+                    .defineInRange("overloadCapacityMultiplier", 1.0, 0.1, 100.0);
             aerobaticSmokeR = builder.comment("特技飞行烟雾颜色 - 红")
                     .defineInRange("aerobaticSmokeR", 255, 0, 255);
             aerobaticSmokeG = builder.comment("特技飞行烟雾颜色 - 绿")

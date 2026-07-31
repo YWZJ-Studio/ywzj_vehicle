@@ -72,9 +72,9 @@ public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
             Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>(result.partUnitMap());
             int index = partUnitMap.size();
             for (AfterburnerOffset offset : afterburnerOffsets) {
-                AfterburnerUnit unit = new AfterburnerUnit(index, vehicle, offset.offset(), offset.scale());
-                partUnitMap.put(unit.getId(), unit);
-                fixedWingVehicle.afterburnerUnits.add(unit);
+                AfterburnerUnit afterburnerUnit = new AfterburnerUnit(index, vehicle, offset.offset(), offset.scale());
+                partUnitMap.put(afterburnerUnit.getId(), afterburnerUnit);
+                fixedWingVehicle.afterburnerUnits.add(afterburnerUnit);
                 index++;
             }
             return new PartUnitsAndSeats(partUnitMap, result.seats());

@@ -35,6 +35,10 @@ public class AllPartUnitType {
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<ThrustUnit, RotatableUnitData>> THRUST = register(PartUnitTypes.THRUST);
 
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<RopeUnit, RopeUnitData>> ROPE = register(PartUnitTypes.ROPE);
+
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<TrackUnit, TrackUnitData>> TRACK = register(PartUnitTypes.TRACK);
+
     private static <T extends PartUnit<D>, D extends PartUnitData> DeferredHolder<PartUnitType<?, ?>, PartUnitType<T, D>> register(
             PartUnitType<T, D> type
     ) {

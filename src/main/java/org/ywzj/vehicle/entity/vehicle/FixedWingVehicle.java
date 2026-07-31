@@ -104,6 +104,7 @@ public class FixedWingVehicle extends AbstractVehicle
 
     @Override
     public void initDisplayData(BaseDisplay display) {
+        super.initDisplayData(display);
         if (display instanceof FixedWingVehicleDisplay fixedWingVehicleDisplay) {
             this.animationInstance = fixedWingVehicleDisplay.createAnimationInstance(this);
         }

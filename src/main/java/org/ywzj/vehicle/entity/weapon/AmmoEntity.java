@@ -1,6 +1,10 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.time.AnimationClocks;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.maydaymemory.mae.control.runner.PlayingState;
@@ -36,6 +40,7 @@ import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.util.BulletHitResult;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 import java.util.List;
@@ -59,6 +64,9 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
     private boolean discard;
     protected boolean keepChunkLoaded = false;
     private boolean triggered;
+    private BakedModelInstance modelInstance;
+    private AnimationRateLimiter<Pose> animationRateLimiter;
+    public Pose lastPose;
     private AnimationRunner animationRunner;
 
     public AmmoEntity(EntityType<? extends Projectile> pEntityType, Level pLevel, ResourceLocation weaponId) {
@@ -81,7 +89,6 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
             }
             if (keepChunkLoaded) {
                 EntityUtil.keepChunkLoaded(this, this.position());
-                EntityUtil.keepChunkLoaded(this, this.position().add(getLookAngle().normalize().scale(16)));
             }
         }
     }
@@ -175,10 +182,23 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         additionalData.readInt();
         weaponId = additionalData.readResourceLocation();
         triggered = additionalData.readBoolean();
-        var displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
-        if (displayOptional.isPresent()) {
-            BaseDisplay display = displayOptional.get();
-            Map<String, BedrockAnimation> animations = display.getAnimations();
+        var weaponDisplayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponId);
+        if (weaponDisplayOptional.isPresent()) {
+            BaseDisplay weaponDisplay = weaponDisplayOptional.get();
+            if (weaponDisplay.getModel() != null && weaponDisplay.getModel().hasBakedModel()) {
+                modelInstance = weaponDisplay.getModel().getBakedModel().createInstance();
+                animationRateLimiter = new AnimationRateLimiter<>(AnimationClocks.client(), () -> {
+                    double distanceSqr = this.distanceToSqr(LocalVehiclePlayer.instance.getPlayer());
+                    if (distanceSqr < 64 * 64) {
+                        return AnimationRateLimiter.FPS_120;
+                    } else if (distanceSqr < 128 * 128) {
+                        return AnimationRateLimiter.FPS_60;
+                    } else {
+                        return AnimationRateLimiter.FPS_30;
+                    }
+                });
+            }
+            Map<String, BedrockAnimation> animations = weaponDisplay.getAnimations();
             if (!animations.isEmpty()) {
                 BedrockAnimation animation = animations.values().iterator().next();
                 AnimationContext animContext = new AnimationContext(animation.getSpecifiedEndTimeS());
@@ -221,6 +241,14 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
 
     public float getCaliber() {
         return 5.8f;
+    }
+
+    public BakedModelInstance getModelInstance() {
+        return modelInstance;
+    }
+
+    public AnimationRateLimiter<Pose> getAnimationRateLimiter() {
+        return animationRateLimiter;
     }
 
     public AnimationRunner getAnimationRunner() {

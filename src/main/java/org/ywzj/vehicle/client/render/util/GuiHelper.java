@@ -78,7 +78,7 @@ public class GuiHelper {
 
     /**
      * 截断字符串至最大像素宽度，超出加省略号
-     * */
+     */
     public static String truncateText(Font font, String text, int maxPx) {
         if (font.width(text) <= maxPx) return text;
         String ellipsis = "..";

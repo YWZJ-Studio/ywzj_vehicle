@@ -22,6 +22,9 @@
         "energy_consumption_per_tick": 0.00001,
         "engine_particle_offsets": [[-1.6, 2, -2]]
     },
+    "physics_info": {
+        "center": [0, -4, 0]
+    },
     "structure_model": "ywzj_vehicle:vehicle/ztl11",
     "parts": [
         {

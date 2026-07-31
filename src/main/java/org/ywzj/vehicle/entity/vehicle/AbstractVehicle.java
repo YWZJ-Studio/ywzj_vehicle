@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -57,6 +58,7 @@ import org.ywzj.vehicle.api.event.VehicleMoveEvent;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
@@ -100,6 +102,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     private ResourceLocation vehicleId;
     private ResourceLocation displayId;
+    private BakedModelInstance modelInstance;
     private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -394,7 +397,12 @@ public abstract class AbstractVehicle extends ContainerCraft
                 );
     }
 
-    public void initDisplayData(BaseDisplay display) {}
+    public void initDisplayData(BaseDisplay display) {
+        VehicleBedrockModel model = display.getModel();
+        if (model != null && model.hasBakedModel()) {
+            modelInstance = model.createBakedInstance();
+        }
+    }
 
     private void initData(BaseVehicleData vehicleData) {
         if (getHealth() < 0) {
@@ -501,7 +509,6 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
             if (uav) {
                 EntityUtil.keepChunkLoaded(this, position());
-                EntityUtil.keepChunkLoaded(this, position().add(getLookAngle().normalize().scale(16)));
                 if (fakeOperatorPosition != null) {
                     EntityUtil.keepChunkLoaded(this, fakeOperatorPosition);
                 }
@@ -653,6 +660,10 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public int passengerCapacity() {
         return seats.size();
+    }
+
+    public BakedModelInstance getModelInstance() {
+        return modelInstance;
     }
 
     public SoundEvent getEngineStartSound() {
@@ -825,6 +836,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (vehicleOBBs.isEmpty()) {
             return AABB.ofSize(position(), 1, 1, 1);
         }
+        vehicleOBBs.add(mainCubeOBB.obb());
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
         for (OBB obb : vehicleOBBs) {
@@ -861,8 +873,8 @@ public abstract class AbstractVehicle extends ContainerCraft
                 dismountLocation = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
             }
             dismountLocations.put(livingEntity, dismountLocation);
-            onLeaveVehicle(livingEntity);
             super.removePassenger(pPassenger);
+            onLeaveVehicle(livingEntity);
         }
     }
 
@@ -933,8 +945,12 @@ public abstract class AbstractVehicle extends ContainerCraft
             seat.passengerId = -1;
             PacketDistributor.sendToPlayersTrackingEntity(this, new ServerVehicleSeatsChange(this));
         } else {
-            if (warningReceiver != null) {
-                warningReceiver.clear();
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+            if (pPassenger == instance.getPlayer() && instance.toLeave) {
+                instance.toSeat(null, this);
+                if (warningReceiver != null) {
+                    warningReceiver.clear();
+                }
             }
         }
     }
@@ -974,8 +990,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         if (seats.stream().anyMatch(seat -> seat.passengerId == player.getId())
                 && !passengerIdsBySeat.contains(player.getId())) {
-            instance.switchViewType(LocalVehiclePlayer.ViewType.THIRD_PERSON);
-            instance.seat = null;
+            instance.toLeave = true;
         }
         for (int index = 0; index < passengerIdsBySeat.size(); index += 1) {
             Seat seat = seats.get(index);
@@ -1059,26 +1074,26 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @OnlyIn(Dist.CLIENT)
-    public Vec3 thirdPersonPosition(LivingEntity pPassenger, Float partialTick) {
-        if (pPassenger != null) {
-            Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
-            Matrix3f axisRollMat = new Matrix3f();
-            Quaternionf q = new Quaternionf();
-            float vehicleYRot = partialTick == null ? this.getYRot() : this.getViewYRot(partialTick);
-            q.rotateY(Math.toRadians(-vehicleYRot));
-            q.get(axisRollMat);
-            Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
-            Vec3 p;
-            if (partialTick == null) {
-                p = this.position();
-            } else {
-                p = new Vec3(Mth.lerp(partialTick, xo, getX()),
-                        Mth.lerp(partialTick, yo, getY()),
-                        Mth.lerp(partialTick, zo, getZ()));
-            }
-            return p.add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+    public Vec3 thirdPersonPosition(float partialTick) {
+        Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
+        Matrix3f axisRollMat = new Matrix3f();
+        Quaternionf q = new Quaternionf();
+        float vehicleYRot = partialTick == 1.0F ? this.getYRot() : this.getViewYRot(partialTick);
+        q.rotateY(Math.toRadians(-vehicleYRot));
+        q.get(axisRollMat);
+        Vector3f rotPos = axisRollMat.transform(offset.toVector3f());
+        return position(partialTick).add(new Vec3(rotPos.x, rotPos.y, rotPos.z));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public double thirdPersonDistance(float cameraXRot) {
+        double distance = isViewZoomed()
+                ? getViewInfo().thirdPersonDistanceZoomed
+                : getViewInfo().thirdPersonDistance;
+        if (!isViewZoomed()) {
+            distance = Math.max(0, distance - cameraXRot / 90 * getViewInfo().thirdPersonCenterOffset.y);
         }
-        return Vec3.ZERO;
+        return distance;
     }
 
     @NotNull
@@ -1252,12 +1267,32 @@ public abstract class AbstractVehicle extends ContainerCraft
         return pPartialTicks == 1.0F ? this.getZRot() : Mth.lerp(pPartialTicks, this.zRotO, this.getZRot());
     }
 
+    public Quaternionf rotYXZ(float partialTick) {
+        if (partialTick == 1.0F) {
+            return rotYXZ();
+        }
+        Quaternionf previousRotation = new Quaternionf()
+                .rotateY(Math.toRadians(-yRotO))
+                .rotateX(Math.toRadians(xRotO))
+                .rotateZ(Math.toRadians(zRotO));
+        return previousRotation.slerp(rotYXZ(), partialTick);
+    }
+
     public Quaternionf rotYXZ() {
         Quaternionf q = new Quaternionf();
         q.rotateY(Math.toRadians(-yRot))
                 .rotateX(Math.toRadians(xRot))
                 .rotateZ(Math.toRadians(zRot));
         return q;
+    }
+
+    public Vec3 position(float partialTick) {
+        if (partialTick == 1.0F) {
+            return position();
+        }
+        return new Vec3(Mth.lerp(partialTick, xo, getX()),
+                Mth.lerp(partialTick, yo, getY()),
+                Mth.lerp(partialTick, zo, getZ()));
     }
 
     public Vector3f[] axes() {
@@ -1402,24 +1437,27 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         impact(pEntity);
         if (pEntity instanceof AbstractVehicle vehicle) {
-            double d0 = pEntity.getX() - this.getX();
-            double d1 = pEntity.getZ() - this.getZ();
-            double d2 = Mth.absMax(d0, d1);
-            if (d2 >= (double)0.01F) {
-                d2 = Math.sqrt(d2);
-                d0 /= d2;
-                d1 /= d2;
-                double d3 = 1.0D / d2;
-                if (d3 > 1.0D) {
-                    d3 = 1.0D;
-                }
-                d0 *= d3;
-                d1 *= d3;
-                d0 *= 0.05F;
-                d1 *= 0.05F;
-                if (vehicle.isPushable()) {
-                    vehicle.push(d0, 0.0D, d1);
-                }
+            if (this.getId() > vehicle.getId() || !vehicle.isPushable()) {
+                return;
+            }
+            Vec3 separation = new Vec3(vehicle.getX() - this.getX(), 0, vehicle.getZ() - this.getZ());
+            if (separation.horizontalDistanceSqr() < 1.0E-4) {
+                return;
+            }
+            Vec3 normal = separation.normalize();
+            Vec3 thisVelocity = this.getDeltaMovement();
+            Vec3 otherVelocity = vehicle.getDeltaMovement();
+            double relativeNormalSpeed = otherVelocity.subtract(thisVelocity).dot(normal);
+            double separationSpeed = 0.01;
+            if (relativeNormalSpeed < separationSpeed) {
+                double thisMass = Math.max(this.physicsEngine.mass, 1.0E-3);
+                double otherMass = Math.max(vehicle.physicsEngine.mass, 1.0E-3);
+                double velocityChange = separationSpeed - relativeNormalSpeed;
+                double totalMass = thisMass + otherMass;
+                Vec3 thisPush = normal.scale(-velocityChange * otherMass / totalMass);
+                Vec3 otherPush = normal.scale(velocityChange * thisMass / totalMass);
+                this.push(thisPush.x, 0, thisPush.z);
+                vehicle.push(otherPush.x, 0, otherPush.z);
             }
         }
     }

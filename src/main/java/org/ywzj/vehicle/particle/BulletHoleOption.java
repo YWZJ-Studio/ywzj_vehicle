@@ -37,6 +37,8 @@ public class BulletHoleOption implements ParticleOptions {
     private final float caliber;
     private int entityId = -1;
     private String boneName = "";
+    private int attachmentBoneIndex = -1;
+    private boolean bakedAttachment;
     private Vec3 boneOffset = Vec3.ZERO;
     private Quaternionf selfRotation = new Quaternionf();
 
@@ -58,12 +60,22 @@ public class BulletHoleOption implements ParticleOptions {
         this.caliber = caliber;
     }
 
-    /** 设置骨骼绑定信息（仅客户端调用） */
+    /** v1 模型骨骼绑定，仅客户端本地粒子使用。 */
     public BulletHoleOption withBone(int entityId, String boneName, Vec3 boneOffset, Quaternionf boneRotation) {
         this.entityId = entityId;
         this.boneName = boneName;
         this.boneOffset = boneOffset;
-        this.selfRotation = boneRotation;
+        this.selfRotation = new Quaternionf(boneRotation);
+        return this;
+    }
+
+    /** v2 baked 模型附件绑定；索引为 -1 时表示静态模型根空间。 */
+    public BulletHoleOption withBakedBone(int entityId, int attachmentBoneIndex, Vec3 attachmentOffset, Quaternionf selfRotation) {
+        this.entityId = entityId;
+        this.attachmentBoneIndex = attachmentBoneIndex;
+        this.bakedAttachment = true;
+        this.boneOffset = attachmentOffset;
+        this.selfRotation = new Quaternionf(selfRotation);
         return this;
     }
 
@@ -75,8 +87,10 @@ public class BulletHoleOption implements ParticleOptions {
     public float getCaliber() { return caliber; }
     public int getEntityId() { return entityId; }
     public String getBoneName() { return boneName; }
+    public int getAttachmentBoneIndex() { return attachmentBoneIndex; }
+    public boolean isBakedAttachment() { return bakedAttachment; }
     public Vec3 getBoneOffset() { return boneOffset; }
-    public Quaternionf getSelfRotation() { return selfRotation; }
+    public Quaternionf getSelfRotation() { return new Quaternionf(selfRotation); }
 
     @Override
     public ParticleType<?> getType() {
@@ -96,5 +110,4 @@ public class BulletHoleOption implements ParticleOptions {
         return new BulletHoleOption(buffer.readEnum(Direction.class), buffer.readBlockPos(),
                 buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
     }
-
 }

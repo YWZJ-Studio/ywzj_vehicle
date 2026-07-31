@@ -61,14 +61,15 @@ public class TrackedVehicle extends AbstractVehicle
 
     @Override
     public void initDisplayData(BaseDisplay display) {
+        super.initDisplayData(display);
         if (display instanceof TrackedVehicleDisplay trackedVehicleDisplay) {
             this.animationInstance = trackedVehicleDisplay.createAnimationInstance(this);
             var trackConfig = trackedVehicleDisplay.getTrackConfig();
-            if (trackConfig != null) {
-                TrackAnimationInstance instance = new TrackAnimationInstance(
-                        trackedVehicleDisplay.getLeftTrackAnimation(),
-                        trackedVehicleDisplay.getRightTrackAnimation()
-                );
+            var leftTrackAnimation = trackedVehicleDisplay.getLeftTrackAnimation();
+            var rightTrackAnimation = trackedVehicleDisplay.getRightTrackAnimation();
+            if (animationInstance != null && trackConfig != null
+                    && leftTrackAnimation != null && rightTrackAnimation != null) {
+                TrackAnimationInstance instance = new TrackAnimationInstance(leftTrackAnimation, rightTrackAnimation);
                 instance.setTrackWidth(trackConfig.trackWidth);
                 instance.setModuleLength(trackConfig.moduleLength);
                 this.animationInstance.getContext().setTrackAnimationInstance(instance);

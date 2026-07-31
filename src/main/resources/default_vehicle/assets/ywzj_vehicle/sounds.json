@@ -56,6 +56,14 @@
         ],
         "subtitle": "ywzj_vehicle.sounds.missile_launch"
     },
+    "large_missile_launch": {
+        "sounds": [
+            "ywzj_vehicle:weapon/missile/missile_start_med_001",
+            "ywzj_vehicle:weapon/missile/missile_start_med_002",
+            "ywzj_vehicle:weapon/missile/missile_start_med_003"
+        ],
+        "subtitle": "ywzj_vehicle.sounds.large_missile_launch"
+    },
     "rocket_flying": {
         "sounds": ["ywzj_vehicle:weapon/rocket/rocket_loop_very_close"],
         "subtitle": "ywzj_vehicle.sounds.rocket_flying"

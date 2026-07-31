@@ -1,7 +1,10 @@
 {
+    "type": "ywzj_vehicle:rotary_wing_vehicle",
     "model": "ywzj_vehicle:entity/quadcopter",
     "texture": "ywzj_vehicle:textures/entity/quadcopter.png",
     "slot_texture": "ywzj_vehicle:textures/slot/quadcopter.png",
+    "animations": "ywzj_vehicle:entity/quadcopter.animation",
+    "animation_controller": "ywzj_vehicle:quadcopter_controller",
     "sounds": {
         "engine_run": "ywzj_vehicle:quadcopter_engine_run"
     },

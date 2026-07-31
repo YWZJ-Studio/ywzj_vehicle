@@ -2,9 +2,14 @@ package org.ywzj.vehicle.client.render.entity.block;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.TreeModelInstance;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.tree.ICube;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.tree.TreeBedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.tree.TreeBoneDefinition;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.tree.TreeGeometryWriter;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -13,27 +18,26 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
-import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
-
-import java.util.HashSet;
-import java.util.List;
 
 public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBlockEntity> {
 
     public static final ResourceLocation MACHINE_MAX_BLOCK_MODEL = YwzjVehicle.modLocation("block/machine_max_block");
     public static final ResourceLocation MACHINE_MAX_BLOCK_TEXTURE = YwzjVehicle.modLocation("textures/block/machine_max_block.png");
+    private static final float VEHICLE_MODEL_YAW = 135.0F;
+    private static final float PRINTER_MODEL_UNITS_PER_BLOCK = 80.0F;
 
     public MachineMaxBlockRenderer(BlockEntityRendererProvider.Context context) {}
 
     @Override
-    public void render(MachineMaxBlockEntity machineMaxBlockEntity, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+    public void render(MachineMaxBlockEntity machineMaxBlockEntity, float partialTicks, PoseStack poseStack,
+                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         poseStack.translate(0.5, 0, 0.5);
         float yRot;
         Direction facing = machineMaxBlockEntity.getBlockState().getValue(FigureBoxBlock.FACING);
@@ -45,6 +49,7 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
             default -> yRot = 0f;
         }
         poseStack.rotateAround(Axis.YP.rotationDegrees(yRot), 0, 0, 0);
+
         BedrockModel machineMaxBlockModel = BedrockModelLoader.getModel(MACHINE_MAX_BLOCK_MODEL);
         BedrockBone boneX = machineMaxBlockModel.getBone("X");
         BedrockBone boneY = machineMaxBlockModel.getBone("Y");
@@ -53,116 +58,97 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
         float yo = boneY.y;
         float zo = boneZ.z;
         float dy = 0;
-        if (machineMaxBlockEntity.craftingVehicleId != null && machineMaxBlockEntity.vehicleData != null) {
+
+        boolean hasPrintingPreview = machineMaxBlockEntity.hasPrintingPreview()
+                && machineMaxBlockEntity.vehicleData != null
+                && machineMaxBlockEntity.vehicleDisplay != null
+                && machineMaxBlockEntity.vehicleDisplay.getTexture() != null
+                && machineMaxBlockEntity.printingModel != null
+                && machineMaxBlockEntity.printingModelInstance != null;
+        float scale = 1;
+        if (hasPrintingPreview) {
             double length = machineMaxBlockEntity.vehicleData.getStructureLength();
-            float scale = (float) (1 / Math.max(length, 4) * 0.7);
-            BedrockBoneWrapper printingBoneWrapper = machineMaxBlockEntity.printingBoneWrapper;
-            // 打印机三轴
-            if (printingBoneWrapper != null) {
-                float r = scale * 1280;
-                boneX.x = (float) (boneX.x - 3f + printingBoneWrapper.x / r);
-                boneZ.z = (float) (boneZ.z - 3f + printingBoneWrapper.z / r);
-                dy = (float) (printingBoneWrapper.y / r);
-                boneY.y = boneY.y + 4.9f - dy;
+            scale = (float) (1 / Math.max(length, 4) * 0.7);
+            MachineMaxBlockEntity.PrintingCube currentCube = machineMaxBlockEntity.getCurrentPrintingCube();
+            if (currentCube != null) {
+                Vector3f headPosition = new Vector3f(
+                        (float) currentCube.modelCenter().x,
+                        (float) currentCube.modelCenter().y,
+                        (float) currentCube.modelCenter().z
+                ).rotateY((float) Math.toRadians(VEHICLE_MODEL_YAW));
+                float printerScale = scale * PRINTER_MODEL_UNITS_PER_BLOCK;
+                boneX.x = boneX.x - 3F + headPosition.x / printerScale;
+                boneZ.z = boneZ.z - 3F + headPosition.z / printerScale;
+                dy = headPosition.y / printerScale;
+                boneY.y = boneY.y + 4.9F - dy;
             }
+        }
+
+        try {
             machineMaxBlockModel.renderToBuffer(poseStack, bufferSource,
                     RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE),
                     BedrockModelRenderTypes.polyMeshCutout(MACHINE_MAX_BLOCK_TEXTURE),
                     packedLight,
                     OverlayTexture.pack(0f, false)
             );
+        } finally {
             boneX.x = xo;
             boneY.y = yo;
             boneZ.z = zo;
-            // 载具模型
-            poseStack.pushPose();
-            {
-                poseStack.translate(0,  (float) 9 / 16 - dy / 16, 0);
-                poseStack.scale(scale, scale, scale);
-                Vec3 root = new Vec3(0, 0, 0);
-                poseStack.rotateAround(Axis.YP.rotationDegrees(135), (float) root.x, (float) root.y, (float) root.z);
-                machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = bedrockBoneWrapper.visible);
-                VehicleBedrockModel vehicleModel = machineMaxBlockEntity.vehicleDisplay.getModel();
-                vehicleModel.applyPose(vehicleModel.getBindPose());
-                vehicleModel.renderToBuffer(poseStack, bufferSource, machineMaxBlockEntity.vehicleDisplay.getTexture(), packedLight);
-                vehicleModel.renderSpecialBones(poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY);
-                machineMaxBlockEntity.bedrockBoneWrappers.forEach(bedrockBoneWrapper -> bedrockBoneWrapper.bone.visible = true);
+        }
+
+        if (!hasPrintingPreview) {
+            return;
+        }
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(0, (float) 9 / 16 - dy / 16, 0);
+            poseStack.scale(scale, scale, scale);
+            poseStack.rotateAround(Axis.YP.rotationDegrees(VEHICLE_MODEL_YAW), 0, 0, 0);
+            renderStaticPrintingCubes(machineMaxBlockEntity, poseStack, bufferSource, packedLight);
+            if (machineMaxBlockEntity.isPrintingPolyMeshStage()) {
+                renderPrintingPolyMeshes(machineMaxBlockEntity, poseStack, bufferSource, packedLight);
             }
+        } finally {
             poseStack.popPose();
-        } else {
-            machineMaxBlockModel.renderToBuffer(poseStack, bufferSource,
-                    RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE),
-                    BedrockModelRenderTypes.polyMeshCutout(MACHINE_MAX_BLOCK_TEXTURE),
-                    packedLight,
-                    OverlayTexture.pack(0f, false)
-            );
         }
     }
 
-    public static void buildBedrockBoneWrappers(BedrockBone bone, HashSet<BedrockBone> bones, List<BedrockBoneWrapper> bedrockBoneWrappers, BedrockBoneWrapper parentWrapper) {
-        if (!bones.contains(bone)) {
-            bones.add(bone);
-            BedrockBoneWrapper bedrockBoneWrapper = new BedrockBoneWrapper(bone, parentWrapper);
-            bedrockBoneWrappers.add(bedrockBoneWrapper);
-            for (BedrockBone child : bone.getChildren()) {
-                buildBedrockBoneWrappers(child, bones, bedrockBoneWrappers, bedrockBoneWrapper);
-            }
+    /**
+     * 每个 cube 已在方块实体准备阶段烘焙为模型空间几何，因此当前可见部分只需一次写入。
+     */
+    private static void renderStaticPrintingCubes(MachineMaxBlockEntity blockEntity, PoseStack poseStack,
+                                                  MultiBufferSource bufferSource, int packedLight) {
+        ICube[] cubes = blockEntity.visiblePrintingCubes;
+        if (cubes.length == 0) {
+            return;
         }
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutout(blockEntity.vehicleDisplay.getTexture()));
+        PoseStack.Pose pose = poseStack.last();
+        TreeGeometryWriter.writeCubes(cubes, consumer, pose.pose(), pose.normal(),
+                packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
     }
 
-    public static class BedrockBoneWrapper {
-
-        public BedrockBone bone;
-        public boolean visible;
-        public double x;
-        public double y;
-        public double z;
-        public BedrockBoneWrapper parentWrapper;
-
-        public BedrockBoneWrapper(BedrockBone bone, BedrockBoneWrapper parentWrapper) {
-            this.bone = bone;
-            Vector3f globalPivot = new Vector3f(bone.x, bone.y, bone.z);
-            if (!bone.cubes.isEmpty()) {
-                Vector3f centerOffset = new Vector3f();
-                double totalX = 0;
-                double totalY = 0;
-                double totalZ = 0;
-                int count = bone.cubes.size();
-                for (BedrockCube cube : bone.cubes) {
-                    totalX += cube.x() * 16 + cube.width() * 16 / 2.0;
-                    totalY += cube.y() * 16 + cube.height() * 16 / 2.0;
-                    totalZ += cube.z() * 16 + cube.depth() * 16 / 2.0;
-                }
-                centerOffset.x += (float) (totalX / count);
-                centerOffset.y += (float) (totalY / count);
-                centerOffset.z += (float) (totalZ / count);
-                bone.rotation.transform(centerOffset);
-                globalPivot.add(centerOffset);
+    /**
+     * Poly mesh 没有可用于打印进度的 cube 颗粒度，因此只在最后一个 cube 阶段整体显示。
+     */
+    private static void renderPrintingPolyMeshes(MachineMaxBlockEntity blockEntity, PoseStack poseStack,
+                                                  MultiBufferSource bufferSource, int packedLight) {
+        TreeBedrockModel model = blockEntity.printingModel;
+        TreeModelInstance instance = blockEntity.printingModelInstance;
+        VertexConsumer consumer = bufferSource.getBuffer(BedrockModelRenderTypes.polyMeshCutout(blockEntity.vehicleDisplay.getTexture()));
+        for (TreeBoneDefinition bone : model.bones()) {
+            if (bone.polyMeshes().length == 0) {
+                continue;
             }
-            BedrockBone parent = bone.parent;
-            while (parent != null) {
-                parent.rotation.transform(globalPivot);
-                globalPivot.add(parent.x, parent.y, parent.z);
-                parent = parent.parent;
-            }
-            Quaternionf rotation = new Quaternionf();
-            rotation.rotateY((float) Math.toRadians(135));
-            rotation.transform(globalPivot);
-            this.x = globalPivot.x;
-            this.y = globalPivot.y;
-            this.z = globalPivot.z;
-            this.parentWrapper = parentWrapper;
+            Matrix4f boneTransform = instance.getGlobalTransform(bone.index());
+            PoseStack.Pose pose = poseStack.last();
+            Matrix4f meshPose = new Matrix4f(pose.pose()).mul(boneTransform);
+            Matrix3f meshNormal = new Matrix3f(pose.normal()).mul(instance.getGlobalNormal(bone.index()));
+            TreeGeometryWriter.writePolyMeshes(bone.polyMeshes(), consumer, meshPose, meshNormal,
+                    packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         }
-
-        public void appear() {
-            this.visible = true;
-            BedrockBoneWrapper parentWrapper = this.parentWrapper;
-            while (parentWrapper != null) {
-                parentWrapper.appear();
-                parentWrapper = parentWrapper.parentWrapper;
-            }
-        }
-
     }
 
 }

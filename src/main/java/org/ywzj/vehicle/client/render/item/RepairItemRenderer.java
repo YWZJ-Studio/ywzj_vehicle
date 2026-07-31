@@ -16,11 +16,13 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.client.render.animation.item.RepairItemAnimationInstance;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.InternalAssets;
+import org.ywzj.vehicle.util.MathUtil;
 
 import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
 import static net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
@@ -86,8 +88,8 @@ public class RepairItemRenderer extends AbstractGeoItemRenderer<HandedBedrockMod
     }
 
     private static void applyFirstPersonPositioningTransform(PoseStack poseStack, HandedBedrockModel model) {
-        Matrix4f idleViewMatrix = new Matrix4f(model.getBone("camera").getGlobalTransform());
-        poseStack.last().pose().mul(idleViewMatrix.invert());
+        Matrix4f idleViewMatrix = new Matrix4f(model.getBone("camera").getGlobalTransform()).invert();
+        MathUtil.mulMatrix(poseStack, idleViewMatrix);
     }
 
     @Override

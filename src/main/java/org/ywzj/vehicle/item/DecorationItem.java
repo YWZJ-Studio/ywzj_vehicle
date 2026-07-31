@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.item;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.component.DataComponents;
@@ -96,12 +95,13 @@ public class DecorationItem extends VehicleItem {
             return;
         }
         BaseDisplay display = displayOptional.get();
-        BedrockModel model = display.getModel();
-        if (model == null) {
+        if (display.getModel() == null) {
             return;
         }
-
-        VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, model, start, end);
+        if (!display.getModel().hasBakedModel()) {
+            return;
+        }
+        VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end);
         if (hitBone != null) {
             Vec3 hitPos = hitBone.position();
             vehicle.level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 2.0F),

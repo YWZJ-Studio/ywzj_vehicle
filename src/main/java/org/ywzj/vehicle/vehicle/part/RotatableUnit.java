@@ -170,6 +170,16 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         }
     }
 
+    @Override
+    protected Quaternionf getViewGroupRotation(VehicleCubeGroup group, float partialTick) {
+        if (partialTick != 1.0F && group == structureGroup) {
+            return new Quaternionf(group.baseRotation)
+                    .mul(Axis.YN.rotationDegrees(getViewYRot(partialTick))
+                            .mul(Axis.XP.rotationDegrees(getViewXRot(partialTick))));
+        }
+        return super.getViewGroupRotation(group, partialTick);
+    }
+
     public Vec2 worldRot() {
         return worldRot(xRot, yRot);
     }
@@ -193,6 +203,16 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public Vec2 worldVecToLocalRot(Vec3 worldVec) {
         return VectorUtil.vecToRot(worldVecToLocalVec(worldVec));
+    }
+
+    public float worldZRot() {
+        Quaternionf rot = new Quaternionf();
+        rot.rotateY(Math.toRadians(-yRot));
+        rot.rotateX(Math.toRadians(-xRot));
+        rot = baseRot().mul(rot);
+        Vector3f eulerAngles = new Vector3f();
+        rot.getEulerAnglesYXZ(eulerAngles);
+        return (float) Math.toDegrees(eulerAngles.z);
     }
 
     public Quaternionf baseRot() {

@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.network.message;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
@@ -98,11 +97,13 @@ public class ServerHitVehicleEvent implements CustomPacketPayload {
                     return;
                 }
                 BaseDisplay display = displayOptional.get();
-                BedrockModel model = display.getModel();
-                if (model == null) {
+                if (display.getModel() == null) {
                     return;
                 }
-                VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, model, start, end);
+                if (!display.getModel().hasBakedModel()) {
+                    return;
+                }
+                VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end);
                 if (hitBone != null) {
                     Vec3 hitPos = hitBone.position();
                     vehicle.level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.0F),
@@ -110,12 +111,14 @@ public class ServerHitVehicleEvent implements CustomPacketPayload {
                             0, 0, 0);
                     BulletHoleOption option = new BulletHoleOption(
                             Direction.UP, BlockPos.containing(message.hitPosition),
-                            1.0F, 0.0F, 0.0F, message.caliber)
-                            .withBone(message.entityId, hitBone.boneName(), hitBone.offset(), hitBone.rotation());
+                            1.0F, 0.0F, 0.0F, message.caliber);
+                    option.withBakedBone(message.entityId, hitBone.attachmentBoneIndex(), hitBone.offset(), hitBone.rotation());
                     Particle particle = Minecraft.getInstance().particleEngine.createParticle(option,
                             message.hitPosition.x, message.hitPosition.y, message.hitPosition.z,
                             0, 0, 0);
-                    vehicle.getBulletHoleParticles().add((BulletHoleParticle) particle);
+                    if (particle instanceof BulletHoleParticle bulletHoleParticle) {
+                        vehicle.getBulletHoleParticles().add(bulletHoleParticle);
+                    }
                 }
             }
         });

@@ -26,9 +26,7 @@ import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.FakePlayerRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.RadarMarkerRenderer;
-import org.ywzj.vehicle.client.render.entity.misc.RopeRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.DumpTruckRenderer;
-import org.ywzj.vehicle.client.render.entity.vehicle.QuadcopterRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
 import org.ywzj.vehicle.client.render.entity.vehicle.Ztl11Renderer;
 import org.ywzj.vehicle.client.render.entity.weapon.AmmoEntityRenderer;
@@ -58,12 +56,13 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.MOTORCYCLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DUMP_TRUCK.get(), DumpTruckRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.HIACE.get(), VehicleRender::new));
-        event.enqueueWork(() -> EntityRenderers.register(AllEntities.QUADCOPTER.get(), QuadcopterRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.QUADCOPTER.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.M1A2.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.CSSA5.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.AH64D.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.LAV_AD.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BGM_71_TOW.get(), VehicleRender::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.HTF5980.get(), VehicleRender::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BULLET.get(), BulletEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROCKET.get(),
@@ -81,7 +80,6 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
-        event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROPE.get(), RopeRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.RADAR_MARKER.get(), RadarMarkerRenderer::new));
 
         ItemBlockRenderTypes.setRenderLayer(AllBlocks.FIGURE_BOX_BLOCK.get(), RenderType.cutout());

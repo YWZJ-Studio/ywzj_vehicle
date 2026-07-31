@@ -1,8 +1,10 @@
 package org.ywzj.vehicle.client.render.entity.weapon;
 
-import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockModelRenderTypes;
-import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.AnimationRateLimiter;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.maydaymemory.mae.basic.Pose;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -12,11 +14,11 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.weapon.AmmoEntity;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 
@@ -25,7 +27,7 @@ import java.util.function.Function;
 
 import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
-public class AmmoEntityRenderer<T extends Entity> extends EntityRenderer<T> {
+public class AmmoEntityRenderer<T extends AmmoEntity> extends EntityRenderer<T> {
 
     private final Function<T, ResourceLocation> weaponIdGetter;
     private final ResourceLocation defaultModel;
@@ -47,45 +49,47 @@ public class AmmoEntityRenderer<T extends Entity> extends EntityRenderer<T> {
     }
 
     @Override
-    public void render(T pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(T ammoEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         pPoseStack.pushPose();
         {
             Vec3 root = new Vec3(0, 0, 0);
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, pEntity.xRotO, pEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-
-            BedrockModel model = null;
-            ResourceLocation texture = null;
-            Optional<BaseDisplay> weaponDisplayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponIdGetter.apply(pEntity));
+            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, ammoEntity.xRotO, ammoEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
+            VehicleBedrockModel ammoModel = null;
+            ResourceLocation ammoTexture = null;
+            Optional<BaseDisplay> weaponDisplayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(weaponIdGetter.apply(ammoEntity));
             if (weaponDisplayOptional.isPresent()) {
                 BaseDisplay weaponDisplay = weaponDisplayOptional.get();
                 if (weaponDisplay.getModel() != null) {
-                    model = weaponDisplay.getModel();
+                    ammoModel = weaponDisplay.getModel();
                 }
                 if (weaponDisplay.getTexture() != null) {
-                    texture = weaponDisplay.getTexture();
+                    ammoTexture = weaponDisplay.getTexture();
                 }
             }
-            if (model == null) {
-                model = BedrockModelLoader.getModel(defaultModel);
+            if (ammoModel == null || ammoTexture == null) {
+                VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutout(defaultTexture));
+                BedrockModelLoader.getModel(defaultModel).renderToBuffer(pPoseStack, buffer, pPackedLight, OverlayTexture.NO_OVERLAY);
+                pPoseStack.popPose();
+                return;
             }
-            if (texture == null) {
-                texture = defaultTexture;
+            if (!ammoModel.hasBakedModel()) {
+                pPoseStack.popPose();
+                return;
             }
-            if (pEntity instanceof AmmoEntity ammoEntity) {
-                var runner = ammoEntity.getAnimationRunner();
-                if (runner != null) {
-                    runner.tick();
-                    model.applyPose(BLENDER.blend(model.getBindPose(), runner.evaluate()));
+            BakedModelInstance modelInstance = ammoEntity.getModelInstance();
+            var animationRunner = ammoEntity.getAnimationRunner();
+            if (animationRunner != null) {
+                animationRunner.tick();
+                AnimationRateLimiter<Pose> animationRateLimiter = ammoEntity.getAnimationRateLimiter();
+                Pose pose = animationRateLimiter.update(() -> BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
+                if (pose != ammoEntity.lastPose) {
+                    modelInstance.applyPose(pose);
+                    ammoEntity.lastPose = pose;
                 }
             }
-            model.renderToBuffer(pPoseStack, bufferSource,
-                    RenderType.entityCutout(texture),
-                    BedrockModelRenderTypes.polyMeshCutout(texture),
-                    pPackedLight,
-                    OverlayTexture.pack(0f, false)
-            );
-            model.applyPose(model.getBindPose());
+            ammoModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, ammoTexture, pPackedLight);
+            ammoModel.applyPose(ammoModel.getBindPose());
         }
         pPoseStack.popPose();
     }

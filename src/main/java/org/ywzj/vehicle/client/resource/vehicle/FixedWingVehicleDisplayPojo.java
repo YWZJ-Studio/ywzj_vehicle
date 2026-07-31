@@ -10,7 +10,7 @@ public class FixedWingVehicleDisplayPojo extends BaseDisplayPojo {
     public ResourceLocation afterburnerModel = YwzjVehicle.resourceLocation("ywzj_vehicle:effect/afterburner_flame");
 
     @SerializedName("afterburner_texture")
-    public ResourceLocation afterburnerTexture = YwzjVehicle.resourceLocation("ywzj_vehicle:textures/entity/afterburner_flame.png");
+    public ResourceLocation afterburnerTexture = YwzjVehicle.resourceLocation("ywzj_vehicle:textures/effect/afterburner_flame.png");
 
     @SerializedName("afterburner_animations")
     public ResourceLocation afterburnerAnimations = YwzjVehicle.resourceLocation("ywzj_vehicle:effect/afterburner_flame.animation");

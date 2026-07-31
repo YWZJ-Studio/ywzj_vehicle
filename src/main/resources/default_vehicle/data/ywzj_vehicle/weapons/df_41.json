@@ -1,0 +1,32 @@
+{
+    "type": "ywzj_vehicle:missile",
+    "name": "DF-41",
+    "life": 12000,
+    "caliber": 225,
+    "damage": 1000,
+    "headshot_multiplier": 1.5,
+    "shoot_interval": 1000,
+    "max_capacity": 1,
+    "reload": {
+        "time": 100,
+        "ammo": "ywzj_vehicle:ammo_missile"
+    },
+    "x_rot_max": 0,
+    "x_rot_min": -90,
+    "y_rot_max": 0,
+    "y_rot_min": 0,
+    "explosion": {
+        "explode": true,
+        "damage": 4399,
+        "radius": 64,
+        "destroy_block": true
+    },
+    "mass": 1,
+    "thrust": 0.2,
+    "engine_nozzle_offset": [0, 0, -9],
+    "motor_burn_time": 12000,
+    "drag_coefficient": 0.005,
+    "max_g": 8,
+    "reference_speed": 5,
+    "guidance": "PRESET"
+}

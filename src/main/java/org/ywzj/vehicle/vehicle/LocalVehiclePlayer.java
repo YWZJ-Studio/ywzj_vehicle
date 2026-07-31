@@ -30,19 +30,12 @@ import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 @OnlyIn(Dist.CLIENT)
 public class LocalVehiclePlayer {
 
     public static LocalVehiclePlayer instance;
     public static final float CAMERA_UPWARD_ANGLE = 10;
-    public double cameraX;
-    public double cameraY;
-    public double cameraZ;
-    public double cameraXO;
-    public double cameraYO;
-    public double cameraZO;
     public float cameraAimRotX;
     public float cameraAimRotY;
     public float cameraAimRotZ;
@@ -65,9 +58,10 @@ public class LocalVehiclePlayer {
     public boolean thermalImaging;
     public boolean mouseTurnedAfterScope;
     public AbstractVehicle.Seat seat;
+    public boolean toLeave;
+    public AbstractVehicle vehicle;
     public ViewType viewType = ViewType.THIRD_PERSON;
     public int onVehicleTickCount;
-    private final ReentrantLock lock = new ReentrantLock();
     public ConcurrentHashMap<Integer, ServerEntity> serverEntities = new ConcurrentHashMap<>();
     public ConcurrentHashMap<MissileEntity, Integer> missiles = new ConcurrentHashMap<>();
     static {
@@ -82,16 +76,19 @@ public class LocalVehiclePlayer {
         return Minecraft.getInstance().player;
     }
 
+    public boolean onVehicle() {
+        return vehicle instanceof AbstractVehicle;
+    }
+
+    public AbstractVehicle getVehicle() {
+        return vehicle;
+    }
+
     public static double renderDistance() {
         return Minecraft.getInstance().options.renderDistance().get() * 16;
     }
 
     public void tick() {
-        if (onVehicle()) {
-            onVehicleTickCount += 1;
-        } else {
-            onVehicleTickCount = 0;
-        }
         tickOverload();
         tickRemote();
         tickLerp();
@@ -100,6 +97,18 @@ public class LocalVehiclePlayer {
     }
 
     private void tickOverload() {
+        if (!AllConfigs.common.overload.get()) {
+            stamina = 100;
+            lostControl = false;
+            endureTick = 0;
+            unconsciousnessTick = 0;
+            currentG = 1;
+            lastVelocity = Vec3.ZERO;
+            if (OverloadHandler.isActive()) {
+                OverloadHandler.setActive(false);
+            }
+            return;
+        }
         if (stamina != 100) {
             stamina += stamina < 100 ? 1 : -1;
         }
@@ -138,8 +147,11 @@ public class LocalVehiclePlayer {
                 endureTick -= 1;
             }
             float endureG = currentG - 1;
-            stamina = Mth.clamp(stamina - endureG * 0.8f, 0, 160);
-            if (stamina <= 0 || stamina >= 160) {
+            float overloadCapacityMultiplier = AllConfigs.common.overloadCapacityMultiplier.get().floatValue();
+            float positiveGLimit = 100 - 100 * overloadCapacityMultiplier;
+            float negativeGLimit = 100 + 60 * overloadCapacityMultiplier;
+            stamina = Mth.clamp(stamina - endureG * 0.8f, positiveGLimit, negativeGLimit);
+            if (stamina <= positiveGLimit || stamina >= negativeGLimit) {
                 lostControl = true;
                 unconsciousnessTick = 60;
             }
@@ -172,9 +184,6 @@ public class LocalVehiclePlayer {
         if (!onVehicle()) {
             return;
         }
-        if (lock.isLocked()) {
-            return;
-        }
         AbstractVehicle vehicle = getVehicle();
         vehicle.getPartUnits().forEach(partUnit -> {
             if (partUnit instanceof WeaponUnit weaponUnit) {
@@ -183,24 +192,13 @@ public class LocalVehiclePlayer {
         });
         Player player = getPlayer();
         PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
-        cameraXO = cameraX;
-        cameraYO = cameraY;
-        cameraZO = cameraZ;
         if (partUnit == null) {
-            cameraX = player.getX();
-            cameraY = vehicle.getBoundingBox().maxY + player.getEyeHeight();
-            cameraZ = player.getZ();
             return;
         }
         cameraAimRotXO = cameraAimRotX;
         cameraAimRotYO = cameraAimRotY;
         cameraAimRotZO = cameraAimRotZ;
         if (viewType == ViewType.THIRD_PERSON || viewType == ViewType.OPERATOR) {
-            Vec3 vehicleCameraPos = viewType == ViewType.THIRD_PERSON ?
-                    vehicle.thirdPersonPosition(player, null) : partUnit.worldOwnerViewPosition();
-            cameraX = vehicleCameraPos.x;
-            cameraY = vehicleCameraPos.y;
-            cameraZ = vehicleCameraPos.z;
             try {
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     if (!(InputHandler.freeCamera || playerLerpSteps > 0) || vehicle instanceof RotaryWingVehicle) {
@@ -238,19 +236,8 @@ public class LocalVehiclePlayer {
         } else if (viewType == ViewType.SCOPE) {
             if (partUnit instanceof WeaponUnit weaponUnit
                     && weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.NONE) {
-                Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
-                        weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
-                cameraX = worldScopePosition.x;
-                cameraY = worldScopePosition.y;
-                cameraZ = worldScopePosition.z;
                 try {
-                    Quaternionf rot = new Quaternionf();
-                    rot.rotateY((float) Math.toRadians(-weaponUnit.getYRot()));
-                    rot.rotateX((float) Math.toRadians(-weaponUnit.getXRot()));
-                    rot = weaponUnit.baseRot().mul(rot);
-                    Vector3f eulerAngles = new Vector3f();
-                    rot.getEulerAnglesYXZ(eulerAngles);
-                    cameraAimRotZ = (float) Math.toDegrees(eulerAngles.z);
+                    cameraAimRotZ = weaponUnit.worldZRot();
                     Vec3 hitPosition = scopeAimWeaponHit(weaponUnit);
                     ClientVehicleAction control = new ClientVehicleAction();
                     control.vehicleEntityId = vehicle.getId();
@@ -275,7 +262,6 @@ public class LocalVehiclePlayer {
         if (!onVehicle()) {
             return;
         }
-        lock.lock();
         try {
             AbstractVehicle vehicle = getVehicle();
             PartUnit<?> partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
@@ -293,21 +279,20 @@ public class LocalVehiclePlayer {
                         toViewType = ViewType.THIRD_PERSON;
                     }
                 }
-                if (toViewType == ViewType.THIRD_PERSON || toViewType == ViewType.OPERATOR) {
+                if (toViewType == ViewType.THIRD_PERSON) {
                     thirdPersonCameraAimAt(weaponUnit.aimHitPosition(), vehicle);
                 } else if (toViewType == ViewType.SCOPE) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
                         return;
                     }
-                    Vec3 worldScopePosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
-                            weaponUnit.worldOpticalSightPosition() : weaponUnit.worldOwnerViewPosition();
-                    cameraX = worldScopePosition.x;
-                    cameraY = worldScopePosition.y;
-                    cameraZ = worldScopePosition.z;
                     scopeAimWeaponHit(weaponUnit);
+                    cameraAimRotZ = weaponUnit.worldZRot();
                     // 切换开镜后，若鼠标未移动，仍向开镜前第三人称预瞄的方向自动旋转
                     mouseTurnedAfterScope = false;
                 }
+                cameraAimRotXO = cameraAimRotX;
+                cameraAimRotYO = cameraAimRotY;
+                cameraAimRotZO = cameraAimRotZ;
             } else {
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
@@ -318,14 +303,43 @@ public class LocalVehiclePlayer {
                 }
             }
             viewType = toViewType;
-            // 消除插值
-            cameraXO = cameraX;
-            cameraYO = cameraY;
-            cameraZO = cameraZ;
         } catch (Exception exception) {
             YwzjVehicle.LOGGER.error("Failed while switch view type", exception);
-        } finally {
-            lock.unlock();
+        }
+    }
+
+    public void toSeat(AbstractVehicle.Seat seat, AbstractVehicle vehicle) {
+        boolean enter = this.seat == null && seat != null;
+        if (seat == null) {
+            this.seat = null;
+            this.vehicle = null;
+            this.toLeave = false;
+            return;
+        }
+        this.seat = seat;
+        this.vehicle = vehicle;
+        if (seat.partUnit instanceof WeaponUnit weaponUnit) {
+            if (viewType == ViewType.SCOPE) {
+                scopeAimWeaponHit(weaponUnit);
+                cameraAimRotXO = cameraAimRotX;
+                cameraAimRotYO = cameraAimRotY;
+                cameraAimRotZO = cameraAimRotZ;
+            } else {
+                Vec3 position = enter ? weaponUnit.aimHitPosition() : weaponUnit.toAimPosition();
+                Vec3 cameraAnchor = vehicle.thirdPersonPosition(1.0F);
+                Vec3 direction = position.subtract(cameraAnchor);
+                if (direction.lengthSqr() < 1.0E-8) {
+                    return;
+                }
+                Vec2 targetRot = VectorUtil.vecToRot(direction);
+                playerLerpXRot = Mth.wrapDegrees(targetRot.x + CAMERA_UPWARD_ANGLE);
+                playerLerpYRot = Mth.wrapDegrees(targetRot.y);
+                playerLerpSteps = 8;
+            }
+        } else {
+            playerLerpXRot = getPlayer().getXRot();
+            playerLerpYRot = seat.partUnit.getSeatRot();
+            playerLerpSteps = 8;
         }
     }
 
@@ -427,55 +441,37 @@ public class LocalVehiclePlayer {
         return true;
     }
 
-    public boolean onVehicle() {
-        Player player = getPlayer();
-        if (player == null) {
-            return false;
-        }
-        return player.getVehicle() instanceof AbstractVehicle;
-    }
-
-    public AbstractVehicle getVehicle() {
-        if (onVehicle()) {
-            return (AbstractVehicle) getPlayer().getVehicle();
-        }
-        return null;
-    }
-
     public Vec3 scopeAimWeaponHit(WeaponUnit weaponUnit) {
         Vec3 hitPosition = weaponUnit.aimHitPosition();
         Vec3 boltPosition = weaponUnit.worldCurrentBoltPosition();
+        Vec3 cameraPosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR
+                ? weaponUnit.worldOpticalSightPosition(1.0F)
+                : weaponUnit.worldOwnerViewPosition(1.0F);
         if (hitPosition.distanceTo(boltPosition) < 128) {
-            cameraAimAt(hitPosition.subtract(boltPosition).normalize().scale(128).add(boltPosition));
+            cameraAimAt(cameraPosition, hitPosition.subtract(boltPosition).normalize().scale(128).add(boltPosition));
         } else {
-            cameraAimAt(hitPosition);
+            cameraAimAt(cameraPosition, hitPosition);
         }
         return hitPosition;
     }
 
-    public void cameraAimAt(Vec3 worldPos) {
-        if (worldPos != null) {
-            double dx = worldPos.x - cameraX;
-            double dy = worldPos.y - cameraY;
-            double dz = worldPos.z - cameraZ;
-            double d = Math.sqrt(dx * dx + dz * dz);
-            cameraAimRotX = Mth.wrapDegrees((float)(-(Mth.atan2(dy, d) * (double)(180F / (float)Math.PI))));
-            cameraAimRotY = Mth.wrapDegrees((float)(Mth.atan2(dz, dx) * (double)(180F / (float)Math.PI)) - 90.0F);
-            getPlayer().setXRot(cameraAimRotX);
-            getPlayer().setYRot(cameraAimRotY);
+    public void cameraAimAt(Vec3 cameraPosition, Vec3 worldPos) {
+        if (cameraPosition != null && worldPos != null) {
+            Vec2 rot = VectorUtil.vecToRot(worldPos.subtract(cameraPosition));
+            cameraAimRotX = rot.x;
+            cameraAimRotY = rot.y;
+            getPlayer().setXRot(rot.x);
+            getPlayer().setYRot(rot.y);
         }
     }
 
     public void thirdPersonCameraAimAt(Vec3 worldPos, AbstractVehicle vehicle) {
-        Vec3 cameraAnchor = vehicle.thirdPersonPosition(getPlayer(), null);
+        Vec3 cameraAnchor = vehicle.thirdPersonPosition(1.0F);
         Vec3 direction = worldPos.subtract(cameraAnchor);
         if (direction.lengthSqr() < 1.0E-8) {
             return;
         }
         Vec2 targetRot = VectorUtil.vecToRot(direction);
-        cameraX = cameraAnchor.x;
-        cameraY = cameraAnchor.y;
-        cameraZ = cameraAnchor.z;
         cameraAimRotX = Mth.wrapDegrees(targetRot.x + CAMERA_UPWARD_ANGLE);
         cameraAimRotY = Mth.wrapDegrees(targetRot.y);
         cameraAimRotZ = 0;
@@ -483,41 +479,47 @@ public class LocalVehiclePlayer {
         getPlayer().setYRot(cameraAimRotY);
     }
 
-    public Vec3 cameraDirection(float upward) {
-        Quaternionf cameraRot = new Quaternionf()
-                .rotateY((float) Math.toRadians(-cameraAimRotY))
-                .rotateX((float) Math.toRadians(cameraAimRotX))
-                .rotateZ((float) Math.toRadians(cameraAimRotZ))
-                .rotateX((float) Math.toRadians(-upward));
-        Vector3f direction = new Vector3f(0, 0, 1);
-        cameraRot.transform(direction);
-        return new Vec3(direction);
-    }
-
     public Vec3 cameraAimHit(float xRot) {
-        Vec3 start = new Vec3(cameraX, cameraY, cameraZ);
+        Vec3 start = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         Vec3 direction = cameraDirection(xRot);
         Vec3 end = start.add(direction.scale(renderDistance()));
         return VectorUtil.hitPosition(getPlayer(), start, end);
     }
 
-    public void toSeat(AbstractVehicle.Seat seat, AbstractVehicle vehicle) {
-        if (seat.partUnit instanceof WeaponUnit weaponUnit) {
-            Vec3 aimHitPosition = weaponUnit.aimHitPosition();
-            Vec3 cameraAnchor = vehicle.thirdPersonPosition(getPlayer(), null);
-            Vec3 direction = aimHitPosition.subtract(cameraAnchor);
-            if (direction.lengthSqr() < 1.0E-8) {
-                return;
-            }
-            Vec2 targetRot = VectorUtil.vecToRot(direction);
-            playerLerpXRot = Mth.wrapDegrees(targetRot.x + CAMERA_UPWARD_ANGLE);
-            playerLerpYRot = Mth.wrapDegrees(targetRot.y);
+    public Vec3 cameraDirection(float upward) {
+        Quaternionf cameraRot = cameraRotation().rotateX((float) Math.toRadians(-upward));
+        Vector3f direction = new Vector3f(0, 0, 1);
+        cameraRot.transform(direction);
+        return new Vec3(direction);
+    }
+
+    public Quaternionf cameraRotation() {
+        return new Quaternionf()
+                .rotateY((float) Math.toRadians(-cameraAimRotY))
+                .rotateX((float) Math.toRadians(cameraAimRotX))
+                .rotateZ((float) Math.toRadians(cameraAimRotZ));
+    }
+
+    public Quaternionf cameraRotationO() {
+        return new Quaternionf()
+                .rotateY((float) Math.toRadians(-cameraAimRotYO))
+                .rotateX((float) Math.toRadians(cameraAimRotXO))
+                .rotateZ((float) Math.toRadians(cameraAimRotZO));
+    }
+
+    public Vec3 cameraPosition(PartUnit<?> operatorUnit, float partialTick) {
+        Vec3 position;
+        if (viewType == LocalVehiclePlayer.ViewType.SCOPE && operatorUnit instanceof WeaponUnit weaponUnit) {
+            position = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR ?
+                    weaponUnit.worldOpticalSightPosition(partialTick) : weaponUnit.worldOwnerViewPosition(partialTick);
+        } else if (viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+            position = operatorUnit.worldOwnerViewPosition(partialTick);
+        } else if (viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+            position = vehicle.thirdPersonPosition(partialTick);
         } else {
-            playerLerpXRot = getPlayer().getXRot();
-            playerLerpYRot = seat.partUnit.getSeatRot();
+            position = vehicle.position().add(0, vehicle.getBoundingBox().getYsize() + getPlayer().getEyeHeight(), 0);
         }
-        playerLerpSteps = 8;
-        this.seat = seat;
+        return position;
     }
 
     private void fixLerp() {
@@ -533,6 +535,12 @@ public class LocalVehiclePlayer {
     }
 
     public void checkState() {
+        if (onVehicle()) {
+            onVehicleTickCount += 1;
+        } else {
+            viewType = ViewType.THIRD_PERSON;
+            onVehicleTickCount = 0;
+        }
         Player player = getPlayer();
         AbstractVehicle vehicle = getVehicle();
         WeaponUnit weaponUnit = null;

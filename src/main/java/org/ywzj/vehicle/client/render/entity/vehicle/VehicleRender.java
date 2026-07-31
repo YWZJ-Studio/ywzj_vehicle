@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.client.render.entity.vehicle;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -11,14 +12,17 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Math;
 import org.joml.Quaternionf;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
+import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.DecorationUnit;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
 
@@ -31,50 +35,60 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
 
     @Override
     public void render(T vehicle, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
-        ResourceLocation displayId = vehicle.getDisplayId();
-        var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(displayId).orElse(null);
-        if (display == null) {
+        BaseDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);
+        if (display == null || display.getModel() == null || display.getTexture() == null) {
             return;
         }
         VehicleBedrockModel model = display.getModel();
-        if (model == null) {
+        if (!model.hasBakedModel()) {
             return;
         }
-        pPoseStack.pushPose();
-        {
-            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-            // 载具自身旋转
-            Vec3 root = vehicle.centerOffset;
-            Quaternionf rot = new Quaternionf()
-                    .rotateY(Math.toRadians(-vehicle.yRotO))
-                    .rotateX(Math.toRadians(vehicle.xRotO))
-                    .rotateZ(Math.toRadians(vehicle.zRotO))
-                    .slerp(vehicle.rotYXZ(), pPartialTick);
-            pPoseStack.rotateAround(rot, (float) root.x, (float) root.y, (float) root.z);
-            // 载具动画
-            if (vehicle instanceof IAnimationEntity<?,?> animationEntity) {
-                var instance = animationEntity.getAnimationInstance();
-                if (instance != null) {
-                    instance.getContext().setPartialTick(pPartialTick);
-                    instance.tick();
-                    model.applyPose(BLENDER.blend(model.getBindPose(), instance.getCurrentPose()));
-                }
-            }
-            // 渲染载具
-            if (model instanceof VehicleBedrockModel) {
-                model.renderToBuffer(pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
-                model.renderSpecialBones(pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.getVehicle());
-            }
-            // 渲染部件
-            vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
-            vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
-            // 渲染弹孔
-            vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource));
-            // 复原模型
-            model.applyPose(model.getBindPose());
-            vehicle.lastRenderTime = System.currentTimeMillis();
+        BakedModelInstance modelInstance = vehicle.getModelInstance();
+        if (modelInstance == null) {
+            modelInstance = display.getModel().getDefaultModelInstance();
         }
-        pPoseStack.popPose();
+        int modelLight = vehicle.isDestroyed() ? 64 : pPackedLight;
+        pPoseStack.pushPose();
+        try {
+            super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
+            applyVehicleRotation(vehicle, pPartialTick, pPoseStack);
+            applyAnimationPose(vehicle, pPartialTick, modelInstance);
+            // 载具
+            model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.getVehicle());
+            // 部件
+            for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
+                partUnit.render(pPoseStack, bufferSource, pPackedLight);
+            }
+            // 饰品
+            for (DecorationUnit decorationUnit : vehicle.getDecorationUnits().values()) {
+                decorationUnit.render(pPoseStack, bufferSource, pPackedLight);
+            }
+            // 弹孔
+            for (BulletHoleParticle bulletHoleParticle : vehicle.getBulletHoleParticles()) {
+                bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource, modelInstance);
+            }
+            vehicle.lastRenderTime = System.currentTimeMillis();
+        } finally {
+            pPoseStack.popPose();
+        }
+    }
+
+    public static void applyVehicleRotation(AbstractVehicle vehicle, float partialTick, PoseStack poseStack) {
+        Vec3 root = vehicle.centerOffset;
+        Quaternionf rot = vehicle.rotYXZ(partialTick);
+        poseStack.rotateAround(rot, (float) root.x, (float) root.y, (float) root.z);
+    }
+
+    public static void applyAnimationPose(AbstractVehicle vehicle, float partialTick, BakedModelInstance modelInstance) {
+        if (vehicle instanceof IAnimationEntity<?, ?> animationEntity) {
+            var animationInstance = animationEntity.getAnimationInstance();
+            if (animationInstance != null) {
+                animationInstance.getContext().setPartialTick(partialTick);
+                animationInstance.tick();
+                modelInstance.applyPose(BLENDER.blend(modelInstance.getBindPose(), animationInstance.getCurrentPose()));
+            }
+        }
     }
 
     @SubscribeEvent
@@ -82,7 +96,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         if (!event.isClientSide()) {
             return;
         }
-        if (event.getVehicle() instanceof IAnimationEntity<?,?> animationEntity) {
+        if (event.getVehicle() instanceof IAnimationEntity<?, ?> animationEntity) {
             var instance = animationEntity.getAnimationInstance();
             if (instance != null) {
                 String partId = event.getWeapon().getWeaponUnit().getId();

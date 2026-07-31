@@ -23,6 +23,9 @@
         "energy_capacity": 1,
         "energy_consumption_per_tick": 0.00001
     },
+    "physics_info": {
+        "center": [0, -1, 0]
+    },
     "structure_model": "ywzj_vehicle:vehicle/motorcycle",
     "parts": [
         {

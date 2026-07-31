@@ -2,10 +2,15 @@ package org.ywzj.vehicle.custom.vehicle;
 
 import net.minecraft.world.level.Level;
 import org.ywzj.vehicle.all.AllEntities;
+import org.ywzj.vehicle.custom.part.data.RopeUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.RopeUnit;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
 
@@ -35,7 +40,18 @@ public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
             if (landingGearUnit instanceof LandingGearUnit switchableUnit) {
                 rotaryWingVehicle.landingGear = switchableUnit;
             }
-            return result;
+            Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>(result.partUnitMap());
+            if (fastRoping) {
+                RopeUnit ropeUnit = new RopeUnit(partUnitMap.size(), vehicle, RopeUnitData.create("fast_roping_rope", 32));
+                partUnitMap.put(ropeUnit.getId(), ropeUnit);
+                ropeUnit.retract();
+                rotaryWingVehicle.fastRopingRope = ropeUnit;
+            }
+            RopeUnit cargoRope = new RopeUnit(partUnitMap.size(), vehicle, RopeUnitData.create("cargo_rope", 8));
+            partUnitMap.put(cargoRope.getId(), cargoRope);
+            cargoRope.retract();
+            rotaryWingVehicle.cargoRope = cargoRope;
+            return new PartUnitsAndSeats(partUnitMap, result.seats());
         }
         return null;
     }

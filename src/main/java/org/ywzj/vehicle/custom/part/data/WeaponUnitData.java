@@ -185,26 +185,30 @@ public class WeaponUnitData extends RotatableUnitData {
         // 若未配置炮闩数据，则从结构模型中推算
         if (this.bolts == null || this.bolts.isEmpty()) {
             this.bolts = new ArrayList<>();
-            buildBolts(xTurnBone, Vec3.ZERO);
+            buildBolts(xTurnBone, xTurnBone, Vec3.ZERO);
         }
     }
 
-    private void buildBolts(BedrockBone bone, Vec3 offset) {
-        for (BedrockCube cube : bone.cubes) {
+    private void buildBolts(BedrockBone xTurnBone, BedrockBone barrelBone, Vec3 offset) {
+        for (BedrockCube cube : barrelBone.cubes) {
             // 使用单个Cube来描述一根炮管
             // 以Cube的Z轴正方向作为炮管轴线，起始端对应炮闩位置，终止端对应炮口位置，Cube在该方向上的整体长度即为炮管长度。
             float x = cube.x() + cube.width() / 2;
             float y = cube.y() + cube.height() / 2;
             float z = cube.z();
-            Vec3 boltOffset = new Vec3(bone.rotation.transform(new Vector3f(x, y, z)));
+            Vec3 boltOffset = new Vec3(barrelBone.rotation.transform(new Vector3f(x, y, z)));
             boltOffset = boltOffset.add(offset);
             float barrelLength = cube.depth();
             Vector3f selfRot = new Vector3f();
-            bone.rotation.getEulerAnglesYXZ(selfRot);
-            this.bolts.add(new Bolt(boltOffset, barrelLength, (float) Math.toDegrees(selfRot.x), (float) Math.toDegrees(-selfRot.y)));
+            if (xTurnBone == barrelBone) {
+                this.bolts.add(new Bolt(boltOffset, barrelLength, 0, 0));
+            } else {
+                barrelBone.rotation.getEulerAnglesYXZ(selfRot);
+                this.bolts.add(new Bolt(boltOffset, barrelLength, (float) Math.toDegrees(selfRot.x), (float) Math.toDegrees(-selfRot.y)));
+            }
         }
-        for (BedrockBone child : bone.getChildren()) {
-            buildBolts(child, offset.add(child.x / 16, child.y / 16, child.z / 16));
+        for (BedrockBone child : barrelBone.getChildren()) {
+            buildBolts(xTurnBone, child, offset.add(child.x / 16, child.y / 16, child.z / 16));
         }
     }
 
@@ -245,6 +249,9 @@ public class WeaponUnitData extends RotatableUnitData {
         // 光电
         @SerializedName("eo")
         EO,
+        // 坐标
+        @SerializedName("loc")
+        LOC,
         // 连续计算弹着点
         @SerializedName("ccip")
         CCIP

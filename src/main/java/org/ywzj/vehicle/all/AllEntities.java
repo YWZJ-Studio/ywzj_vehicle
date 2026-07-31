@@ -12,7 +12,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.misc.RadarMarkerEntity;
-import org.ywzj.vehicle.entity.misc.Rope;
 import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.vehicle.custom.*;
 import org.ywzj.vehicle.entity.weapon.*;
@@ -110,11 +109,6 @@ public class AllEntities {
                     .clientTrackingRange(32)
                     .build("fake_player"));
 
-    public static final DeferredHolder<EntityType<?>, EntityType<Rope>> ROPE = ENTITIES.register("rope",
-            () -> EntityType.Builder.of(Rope::new, MobCategory.MISC).sized(1f, 1f)
-                    .clientTrackingRange(32)
-                    .build("rope"));
-
     public static final DeferredHolder<EntityType<?>, EntityType<NoneVehicle>> NONE_VEHICLE = ENTITIES.register("none_vehicle",
             () -> EntityType.Builder.of(NoneVehicle::new, MobCategory.MISC)
                     .noSummon()
@@ -180,6 +174,8 @@ public class AllEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<Lavad>> LAV_AD = registerVehicle("lav_ad", Lavad::new);
 
     public static final DeferredHolder<EntityType<?>, EntityType<Bgm71tow>> BGM_71_TOW = registerVehicle("bgm_71_tow", Bgm71tow::new);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<HTF5980>> HTF5980 = registerVehicle("htf5980", HTF5980::new);
 
     public static final DeferredHolder<EntityType<?>, EntityType<RadarMarkerEntity>> RADAR_MARKER = ENTITIES.register("radar_marker",
             () -> EntityType.Builder.of(RadarMarkerEntity::new, MobCategory.MISC)

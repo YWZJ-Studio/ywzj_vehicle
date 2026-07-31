@@ -20,6 +20,9 @@
         "energy_consumption_per_tick": 0.00001,
         "engine_particle_offsets": [[-1.672, 1.778, -1.245]]
     },
+    "physics_info": {
+        "center": [0, -4, 0]
+    },
     "structure_model": "ywzj_vehicle:vehicle/lav_ad",
     "parts": [
         {

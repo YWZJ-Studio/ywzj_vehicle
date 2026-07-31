@@ -1,0 +1,14 @@
+{
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "model": "ywzj_vehicle:entity/htf5980",
+    "texture": "ywzj_vehicle:textures/entity/htf5980.png",
+    "slot_texture": "ywzj_vehicle:textures/slot/htf5980.png",
+    "animations": "ywzj_vehicle:entity/htf5980.animation",
+    "animation_controller": "ywzj_vehicle:htf5980_controller",
+    "sounds": {
+        "engine_start": "ywzj_vehicle:lav150_engine_start",
+        "engine_idle": "ywzj_vehicle:truck_engine_idle",
+        "engine_run": "ywzj_vehicle:truck_engine_run"
+    },
+    "tab_index": 204
+}

@@ -17,7 +17,7 @@
     "view_info": {
         "third_person_center_offset": [0, 4, 0],
         "third_person_distance": 8,
-        "third_person_center_offset_zoomed": [0, 5, 0],
+        "third_person_center_offset_zoomed": [0, 3, 0],
         "third_person_distance_zoomed": 0,
         "sound_distance": 3
     },

@@ -1,12 +1,15 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -17,6 +20,8 @@ import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleRocketWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 
 public class RocketEntity extends AmmoEntity {
@@ -42,8 +47,14 @@ public class RocketEntity extends AmmoEntity {
         this.vehicle = vehicle;
         this.name = name;
         this.setPos(spawnPos);
-        this.setRot((float) (ammoYRot + inaccuracy * 16 * (0.5 - this.random.nextFloat())),
-                (float) (ammoXRot + inaccuracy * 16 * (0.5 - this.random.nextFloat())));
+        Vec3 direction = VectorUtil.rotToVec(ammoXRot, ammoYRot);
+        direction = direction.add(
+                this.random.triangle(0.0D, 0.0172275D * inaccuracy),
+                this.random.triangle(0.0D, 0.0172275D * inaccuracy),
+                this.random.triangle(0.0D, 0.0172275D * inaccuracy))
+                .normalize();
+        Vec2 rotation = VectorUtil.vecToRot(direction);
+        this.setRot(rotation.y, rotation.x);
         this.setOwner(shooter);
     }
 
@@ -99,6 +110,10 @@ public class RocketEntity extends AmmoEntity {
         double dx = this.getX() + velocity.x;
         double dy = this.getY() + velocity.y;
         double dz = this.getZ() + velocity.z;
+        if (!((ServerLevel) level()).isPositionEntityTicking(BlockPos.containing(dx, dy, dz))) {
+            EntityUtil.keepChunkLoaded(this, new Vec3(dx, dy, dz));
+            return;
+        }
         this.setPos(dx, dy, dz);
         if (tickCount > motorBurnTime && velocity.lengthSqr() > 0.01) {
             Vec3 normVel = velocity.normalize();

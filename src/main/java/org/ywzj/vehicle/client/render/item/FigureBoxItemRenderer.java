@@ -61,6 +61,9 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         if (entity != null) {
                             entity.load(entityData);
                         }
+                        if (entity instanceof AbstractVehicle vehicle) {
+                            vehicle.initDisplayData();
+                        }
                         return entity;
                     }
                     return null;
@@ -125,7 +128,8 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         if (renderer != null) {
                             renderer.render(figureBoxBlockEntity, 0.0f, poseStack, pBuffer, pPackedLight, pPackedOverlay);
                         }
-                    } catch (Exception ignore) {
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
                     }
                 }
             }

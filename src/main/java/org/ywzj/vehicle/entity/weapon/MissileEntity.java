@@ -1,9 +1,10 @@
 package org.ywzj.vehicle.entity.weapon;
 
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -22,12 +23,15 @@ import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
+import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -41,6 +45,16 @@ import java.util.List;
 
 public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
+    private static final double PRESET_CRUISE_ALTITUDE = 512;
+    private static final double PRESET_MAX_ASCENT_LEAD = 64;
+    private static final double PRESET_ASCENT_RADIUS = 24;
+    private static final double PRESET_DIVE_RADIUS = 24;
+    private static final double PRESET_DIVE_ALTITUDE_FACTOR = 0.75;
+    private static final double PRESET_DIVE_LEAD_FACTOR = 1.5;
+    private static final double PRESET_CRUISE_ALTITUDE_GAIN = 0.002;
+    private static final double PRESET_CRUISE_VERTICAL_DAMPING = 0.05;
+    private static final double PRESET_CRUISE_MAX_VERTICAL_COMPONENT = 0.5;
+    public float caliber;
     public float seekerFov;
     public float mass;
     public float thrust;
@@ -64,6 +78,17 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     private WeaponUnit weaponUnit;
     private VehicleSound sound;
     private Vec3 particlePosO;
+    private PresetPhase presetPhase = PresetPhase.ASCENT;
+    private Vec3 presetLaunchPos;
+    private Vec3 presetTargetPos;
+    private Vec3 presetAscentPos;
+    private Vec3 presetOverheadPos;
+
+    private enum PresetPhase {
+        ASCENT,
+        CRUISE,
+        DIVE
+    }
 
     public MissileEntity(EntityType<? extends Projectile> entityType, Level level, VehicleMissileWeaponData data, WeaponUnit weaponUnit) {
         super(entityType, level, data.getWeaponId());
@@ -82,6 +107,19 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.setPos(spawnPos);
         this.setRot(ammoYRot, ammoXRot);
         this.setOwner(shooter);
+        if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
+            this.presetLaunchPos = spawnPos;
+            this.presetTargetPos = targetPos;
+        }
+        Vec3 velocity = Vec3.ZERO;
+        // 弹仓弹射
+        if (coldLaunchTimeTick > 0) {
+            Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
+            velocity = new Vec3(axes[0]).scale(coldLaunchVelocity.x)
+                    .add(new Vec3(axes[1]).scale(coldLaunchVelocity.y))
+                    .add(new Vec3(axes[2]).scale(coldLaunchVelocity.z));
+        }
+        setDeltaMovement(velocity.add(vehicle.getDeltaMovement()));
     }
 
     @Override
@@ -103,6 +141,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private void initMissile(VehicleMissileWeaponData data) {
+        this.caliber = Math.max(40, data.getCaliber());
         this.seekerFov = data.getSeekerFov();
         this.mass = data.getMass();
         this.thrust = data.getThrust();
@@ -137,6 +176,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (level().isClientSide()) {
             tickParticle();
             tickSound();
+            tickShake();
             updateOwner();
         } else {
             tickGuidance();
@@ -182,9 +222,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                 intercept(null, targetPos);
             }
         } else if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
-            if (targetPos != null) {
-                intercept(null, targetPos);
-            }
+            tickPresetGuidance();
         } else if (guidance == VehicleMissileWeaponData.Guidance.SACLOS) {
             Vec2 rot = weaponUnit.worldRot();
             Vec3 start = weaponUnit.worldPivotPosition();
@@ -210,6 +248,30 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         }
     }
 
+    private void tickPresetGuidance() {
+        if (!initializePresetPath()) {
+            return;
+        }
+        switch (presetPhase) {
+            case ASCENT -> {
+                guideToPresetPosition(presetAscentPos);
+                if (this.position().distanceToSqr(presetAscentPos) <= PRESET_ASCENT_RADIUS * PRESET_ASCENT_RADIUS
+                        || this.getY() >= presetAscentPos.y - PRESET_ASCENT_RADIUS) {
+                    presetPhase = PresetPhase.CRUISE;
+                }
+            }
+            case CRUISE -> {
+                if (shouldBeginPresetDive()) {
+                    presetPhase = PresetPhase.DIVE;
+                    guideToPresetPosition(presetTargetPos);
+                } else {
+                    guidePresetCruise();
+                }
+            }
+            case DIVE -> guideToPresetPosition(presetTargetPos);
+        }
+    }
+
     private void tickMove() {
         if (targetVec != null && targetPos != null && this.position().distanceTo(targetPos) < 5f) {
             targetPos = VectorUtil.hitPosition(this, targetPos, targetPos.add(targetVec.scale(256)));
@@ -230,22 +292,16 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                 velocity = velocity.add(drag);
             }
         }
-        if (tickCount < coldLaunchTimeTick) {
-            // 弹仓弹射
-            Vector3f[] axes = vehicle.getMainCubeOBB().obb().getAxes();
-            Vec3 launchVelocity = new Vec3(axes[0]).scale(coldLaunchVelocity.x)
-                    .add(new Vec3(axes[1]).scale(coldLaunchVelocity.y))
-                    .add(new Vec3(axes[2]).scale(coldLaunchVelocity.z));
-            velocity = vehicle.getDeltaMovement().add(launchVelocity);
-        } else {
-            // 重力
-            velocity = velocity.subtract(0, PhysicsEngine.G, 0);
-        }
+        velocity = velocity.subtract(0, PhysicsEngine.G, 0);
         // 更新速度与位置
-        this.setDeltaMovement(velocity);
         double dx = this.getX() + velocity.x;
         double dy = this.getY() + velocity.y;
         double dz = this.getZ() + velocity.z;
+        if (!((ServerLevel) level()).isPositionEntityTicking(BlockPos.containing(dx, dy, dz))) {
+            EntityUtil.keepChunkLoaded(this, new Vec3(dx, dy, dz));
+            return;
+        }
+        this.setDeltaMovement(velocity);
         this.setPos(dx, dy, dz);
         // 自动归正
         if (tickCount >= coldLaunchTimeTick) {
@@ -331,11 +387,22 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     @OnlyIn(Dist.CLIENT)
+    public void tickShake() {
+        if (tickCount < coldLaunchTimeTick) {
+            return;
+        }
+        if (caliber >= 100 && tickCount % 5 == 0) {
+            FirstPersonHandler.addExplosionShake(position(), caliber / 100 * 8);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public void tickParticle() {
         if (tickCount < coldLaunchTimeTick) {
             return;
         }
         if (tickCount <= motorBurnTime) {
+            float size = caliber / 225;
             Vec3 rotatedOffset = engineNozzleOffset
                     .xRot(-this.getXRot() * Mth.DEG_TO_RAD)
                     .yRot(-this.getYRot() * Mth.DEG_TO_RAD);
@@ -346,12 +413,17 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             int segments = (int) (dist / 0.5);
             Vec3 dir = step.normalize();
             for (int i = 0; i <= segments; i++) {
+                double x = this.random.triangle(0, 0.1f * size * size);
+                double y = this.random.triangle(0, 0.1f * size * size);
+                double z = this.random.triangle(0, 0.1f * size * size);
                 Vec3 particlePos = posO.add(dir.scale(i * 0.5));
-                level().addParticle(
-                        ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
+                level().addParticle(new SmokeCloudOption(false,
+                                0.9f, 0.9f, 0.9f,
+                                0.6f, 0.6f, 0.6f,
+                                0.8f, 0.3f, 1200,
+                                size, 3 * size, 0.01f), true,
                         particlePos.x, particlePos.y, particlePos.z,
-                        0.0D, 0.0D, 0.0D
-                );
+                        x, y, z);
             }
             particlePosO = pos;
         }
@@ -384,7 +456,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
     @Override
     public float getCaliber() {
-        return 40f;
+        return caliber;
     }
 
     private List<Entity> detectTargets() {
@@ -396,6 +468,111 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (ownerId == LocalVehiclePlayer.instance.getPlayer().getId()) {
             LocalVehiclePlayer.instance.missiles.put(this, LocalVehiclePlayer.instance.getPlayer().tickCount);
         }
+    }
+
+    private boolean initializePresetPath() {
+        if (presetTargetPos == null) {
+            presetTargetPos = targetPos;
+        }
+        if (presetTargetPos == null) {
+            return false;
+        }
+        if (presetLaunchPos == null) {
+            presetLaunchPos = this.position();
+        }
+        if (presetAscentPos != null) {
+            return true;
+        }
+        Vec3 horizontalToTarget = new Vec3(
+                presetTargetPos.x - presetLaunchPos.x,
+                0,
+                presetTargetPos.z - presetLaunchPos.z
+        );
+        double horizontalDistance = horizontalToTarget.length();
+        Vec3 forward = horizontalDistance > 1.0E-6
+                ? horizontalToTarget.scale(1 / horizontalDistance)
+                : new Vec3(this.getLookAngle().x, 0, this.getLookAngle().z).normalize();
+        double ascentLead = Math.min(PRESET_MAX_ASCENT_LEAD, horizontalDistance * 0.25);
+        double cruiseY = presetLaunchPos.y + PRESET_CRUISE_ALTITUDE;
+        presetAscentPos = new Vec3(
+                presetLaunchPos.x + forward.x * ascentLead,
+                cruiseY,
+                presetLaunchPos.z + forward.z * ascentLead
+        );
+        presetOverheadPos = new Vec3(presetTargetPos.x, cruiseY, presetTargetPos.z);
+        return true;
+    }
+
+    private void guideToPresetPosition(Vec3 position) {
+        Vec3 desiredDirection = position.subtract(this.position());
+        double missileSpeed = this.getDeltaMovement().length();
+        if (desiredDirection.lengthSqr() <= 1.0E-6 || missileSpeed <= 1.0E-6) {
+            return;
+        }
+        steerTowards(desiredDirection, missileSpeed);
+    }
+
+    private void guidePresetCruise() {
+        Vec3 velocity = this.getDeltaMovement();
+        double missileSpeed = velocity.length();
+        Vec3 horizontalDirection = new Vec3(
+                presetTargetPos.x - this.getX(),
+                0,
+                presetTargetPos.z - this.getZ()
+        );
+        double thrustAcceleration = mass > 1.0E-6 ? thrust / mass : 0;
+        if (missileSpeed <= 1.0E-6 || horizontalDirection.lengthSqr() <= 1.0E-6
+                || thrustAcceleration <= 1.0E-6) {
+            guideToPresetPosition(presetOverheadPos);
+            return;
+        }
+
+        double altitudeError = presetOverheadPos.y - this.getY();
+        double verticalComponent = PhysicsEngine.G / thrustAcceleration
+                + altitudeError * PRESET_CRUISE_ALTITUDE_GAIN
+                - velocity.y * PRESET_CRUISE_VERTICAL_DAMPING;
+        verticalComponent = Mth.clamp(verticalComponent,
+                -PRESET_CRUISE_MAX_VERTICAL_COMPONENT,
+                PRESET_CRUISE_MAX_VERTICAL_COMPONENT);
+        double horizontalComponent = Math.sqrt(1 - verticalComponent * verticalComponent);
+        Vec3 desiredDirection = horizontalDirection.normalize().scale(horizontalComponent)
+                .add(0, verticalComponent, 0);
+        steerTowards(desiredDirection, missileSpeed);
+    }
+
+    private boolean shouldBeginPresetDive() {
+        double dx = this.getX() - presetTargetPos.x;
+        double dz = this.getZ() - presetTargetPos.z;
+        double horizontalDistanceSqr = dx * dx + dz * dz;
+        double verticalDistance = Math.max(0, this.getY() - presetTargetPos.y);
+        double missileSpeed = this.getDeltaMovement().length();
+        double turnAcceleration = availableTurnAcceleration(missileSpeed);
+        double turnRadius = turnAcceleration > 1.0E-6
+                ? missileSpeed * missileSpeed / turnAcceleration
+                : Double.MAX_VALUE;
+        double diveDistance = Math.max(PRESET_DIVE_RADIUS, Math.max(
+                verticalDistance * PRESET_DIVE_ALTITUDE_FACTOR,
+                turnRadius * PRESET_DIVE_LEAD_FACTOR));
+        Vec3 route = new Vec3(
+                presetTargetPos.x - presetLaunchPos.x,
+                0,
+                presetTargetPos.z - presetLaunchPos.z
+        );
+        Vec3 remaining = new Vec3(
+                presetTargetPos.x - this.getX(),
+                0,
+                presetTargetPos.z - this.getZ()
+        );
+        boolean passedTarget = route.lengthSqr() > 1.0E-6 && remaining.dot(route) <= 0;
+        return horizontalDistanceSqr <= diveDistance * diveDistance || passedTarget;
+    }
+
+    private double availableTurnAcceleration(double missileSpeed) {
+        double referenceSpeedSqr = referenceSpeed * referenceSpeed;
+        double dynamicPressureFactor = referenceSpeedSqr > 1.0E-6
+                ? Math.min(1.0, missileSpeed * missileSpeed / referenceSpeedSqr)
+                : 1.0;
+        return this.maxG * dynamicPressureFactor * PhysicsEngine.G;
     }
 
     public void intercept(Entity target, Vec3 pos) {
@@ -457,15 +634,16 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             double k = dot + Math.sqrt(discriminant);
             desiredDir = targetDir.scale(k).subtract(missileVel);
         }
+        steerTowards(desiredDir, missileSpeed);
+    }
+
+    private void steerTowards(Vec3 desiredDir, double missileSpeed) {
         Vec2 rot = VectorUtil.vecToRot(desiredDir);
         float targetXRot = rot.x;
         float targetYRot = rot.y;
         // 适配过载限制与空气动力学
-        double dynamicPressureFactor = Math.min(1.0, (missileSpeed * missileSpeed) / (referenceSpeed * referenceSpeed));
-        // 当前速度下物理能达到的最大过载
-        double availableG = this.maxG * dynamicPressureFactor;
         // 向心加速度公式 a = v * omega  =>  omega = a / v (弧度/tick)
-        double maxAccelLimit = availableG * PhysicsEngine.G;
+        double maxAccelLimit = availableTurnAcceleration(missileSpeed);
         double maxOmega = maxAccelLimit / missileSpeed;
         double maxAnglePerTick = Math.toDegrees(maxOmega);
         // 点火后的逐步解锁机动

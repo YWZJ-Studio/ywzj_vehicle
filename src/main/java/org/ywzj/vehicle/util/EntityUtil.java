@@ -32,8 +32,13 @@ public class EntityUtil {
     private static final Predicate<Entity> PROJECTILE_TARGETS = input -> input != null && input.isPickable() && !input.isSpectator();
 
     public static void keepChunkLoaded(Entity entity, Vec3 position) {
-        ChunkPos chunkpos = new ChunkPos(BlockPos.containing(position));
-        ((ServerLevel) entity.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT, chunkpos, 3, entity.getId());
+        ((ServerLevel) entity.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT,
+                new ChunkPos(BlockPos.containing(position)),
+                3, entity.getId());
+        ((ServerLevel) entity.level()).getChunkSource().addRegionTicket(TicketType.POST_TELEPORT,
+                new ChunkPos(BlockPos.containing(position.add(entity.getLookAngle().normalize().scale(entity.getDeltaMovement().length())))),
+                3, entity.getId());
+
     }
 
     public static void hurt(DamageSource source, Entity entity, float damage) {

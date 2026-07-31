@@ -2,11 +2,11 @@ package org.ywzj.vehicle.mixin.client;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 @Mixin(Camera.class)
 public abstract class CameraMixin {
@@ -32,40 +33,44 @@ public abstract class CameraMixin {
     public abstract float getXRot();
 
     @Shadow
+    protected abstract void setRotation(float yRot, float xRot);
+
+    @Shadow
     private Entity entity;
 
     @Inject(method = "setup", at = @At("TAIL"))
     public void setupVehicleCamera(BlockGetter pLevel, Entity pEntity, boolean pDetached, boolean pThirdPersonReverse, float pPartialTick, CallbackInfo ci) {
-        if (pEntity.getVehicle() instanceof AbstractVehicle vehicle) {
-            if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+        if (!Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
+            return;
+        }
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
+        if (pEntity != player && pEntity.getVehicle() instanceof AbstractVehicle vehicle) {
+            Vec3 pos = vehicle.thirdPersonPosition(pPartialTick);
+            this.setPosition(pos.x, pos.y, pos.z);
+            zoomThirdPerson(vehicle);
+            return;
+        }
+        AbstractVehicle vehicle = instance.getVehicle();
+        if (vehicle != null) {
+            PartUnit<?> operatorUnit = instance.seat.partUnit;
+            if (operatorUnit == null) {
                 return;
             }
-            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-            if (pEntity != instance.getPlayer()) {
-                if (pEntity instanceof LivingEntity passenger) {
-                    Vec3 pos = vehicle.thirdPersonPosition(passenger, pPartialTick);
-                    this.setPosition(pos.x, pos.y, pos.z);
-                    moveToThirdPerson(vehicle);
-                }
-                return;
-            }
-            this.setPosition(Mth.lerp(pPartialTick, instance.cameraXO, instance.cameraX),
-                    Mth.lerp(pPartialTick, instance.cameraYO, instance.cameraY),
-                    Mth.lerp(pPartialTick, instance.cameraZO, instance.cameraZ));
+            Vec3 position = instance.cameraPosition(operatorUnit, pPartialTick);
+            this.setPosition(position.x, position.y, position.z);
+            Vector3f euler = instance.cameraRotationO()
+                    .slerp(instance.cameraRotation(), pPartialTick)
+                    .getEulerAnglesYXZ(new Vector3f());
+            this.setRotation((float) Math.toDegrees(-euler.y), (float) Math.toDegrees(euler.x));
             if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-                moveToThirdPerson(vehicle);
+                zoomThirdPerson(vehicle);
             }
         }
     }
 
-    private void moveToThirdPerson(AbstractVehicle vehicle) {
-        double distance = vehicle.isViewZoomed()
-                ? vehicle.getViewInfo().thirdPersonDistanceZoomed
-                : vehicle.getViewInfo().thirdPersonDistance;
-        if (!vehicle.isViewZoomed()) {
-            distance = Math.max(0, distance - getXRot() / 90 * vehicle.getViewInfo().thirdPersonCenterOffset.y);
-        }
-        move(-getMaxZoom((float) distance), 0, 0);
+    private void zoomThirdPerson(AbstractVehicle vehicle) {
+        move(-getMaxZoom((float) vehicle.thirdPersonDistance(getXRot())), 0, 0);
     }
 
     @Inject(method = "isDetached", at = @At("HEAD"), cancellable = true)

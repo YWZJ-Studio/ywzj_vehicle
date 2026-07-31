@@ -43,7 +43,7 @@ public class ElectroOptical {
     }
 
     public static Entity findTarget(WeaponUnit weaponUnit, Vec3 lookAtPos) {
-        Vec3 opticalSightPosition = weaponUnit.worldOpticalSightPosition();
+        Vec3 opticalSightPosition = weaponUnit.worldOpticalSightPosition(1f);
         Vec3 direction = lookAtPos.subtract(opticalSightPosition).normalize();
         EntityHitResult entityHit = VectorUtil.hitEntity(weaponUnit.getVehicle(), opticalSightPosition, opticalSightPosition.add(direction.scale(LocalVehiclePlayer.renderDistance())));
         if (entityHit != null) {
