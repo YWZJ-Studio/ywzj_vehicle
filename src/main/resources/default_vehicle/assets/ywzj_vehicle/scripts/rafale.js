@@ -3,6 +3,13 @@ const mica = ["mod_mica_em_l", "mod_mica_em_r"]
 const gbu12 = ["missile_gbu12", "missile_gbu4", "missile_gbu3", "missile_gbu6", "missile_gbu2", "missile_gbu5"]
 
 function updateBones(context) {
+    const tickCount = context.tickCount()
+    if (tickCount % 20 < 2) {
+        context.setBoneIlluminated("illum_flash_mid", true)
+    } else {
+        context.setBoneIlluminated("illum_flash_mid", false)
+    }
+
     const pitchInput = context.getPitchInput()
     const yawInput = context.getYawInput()
     const rollInput = context.getRollInput()
