@@ -230,7 +230,7 @@ public class VectorUtil {
         }
         Quaternionf rotation = new Quaternionf();
         if (rayTraceResult.attachmentNormal() != null) {
-            rotation.rotationTo(new Vector3f(0.0F, 1.0F, 0.0F), rayTraceResult.attachmentNormal().toVector3f());
+            rotation.rotationTo(new Vector3f(0.0F, 0.0F, 1.0F), rayTraceResult.attachmentNormal().toVector3f());
         }
         return new HitBone(
                 boneName,
