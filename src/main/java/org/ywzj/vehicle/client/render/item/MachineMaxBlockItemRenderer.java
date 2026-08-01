@@ -32,10 +32,18 @@ public class MachineMaxBlockItemRenderer extends BlockEntityWithoutLevelRenderer
             BedrockModel machineMaxBlockModel = BedrockModelLoader.getModel(MACHINE_MAX_BLOCK_MODEL);
             poseStack.pushPose();
             {
-                poseStack.translate(0.5f, 0.15f, 0.5f);
-                poseStack.scale(0.7F, 0.7F, 0.7F);
-                poseStack.mulPose(Axis.XP.rotationDegrees(20));
-                poseStack.mulPose(Axis.YP.rotationDegrees(165));
+                if (transformType == ItemDisplayContext.FIXED) {
+                    poseStack.translate(0.5, 0.15f, 0.5);
+                    poseStack.scale(0.7F, 0.7F, 0.7F);
+                } else if (transformType == ItemDisplayContext.GUI) {
+                    poseStack.translate(0.5f, 0.15f, 0.5f);
+                    poseStack.mulPose(Axis.XP.rotationDegrees(20));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(165));
+                    poseStack.scale(0.7F, 0.7F, 0.7F);
+                } else {
+                    poseStack.translate(0.5, 0.3f, 0.5);
+                    poseStack.scale(0.5f, 0.5f, 0.5f);
+                }
                 machineMaxBlockModel.renderToBuffer(poseStack, bufferSource,
                         RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE),
                         BedrockModelRenderTypes.polyMeshCutout(MACHINE_MAX_BLOCK_TEXTURE),
