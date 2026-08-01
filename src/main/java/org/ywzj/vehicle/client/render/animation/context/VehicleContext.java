@@ -1,5 +1,7 @@
 package org.ywzj.vehicle.client.render.animation.context;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BoneState;
 import com.maydaymemory.mae.basic.DummyPose;
 import com.maydaymemory.mae.basic.Pose;
 import org.ywzj.vehicle.client.render.animation.util.AnimationHandler;
@@ -41,6 +43,22 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
             return eventAnimationHandler.evaluate();
         }
         return DummyPose.INSTANCE;
+    }
+
+    public void setBoneVisible(String boneName, boolean visible) {
+        BakedModelInstance modelInstance = entity.getModelInstance();
+        BoneState boneState = modelInstance.getBone(boneName);
+        if (boneState != null) {
+            boneState.visible = visible;
+        }
+    }
+
+    public void setBoneIlluminated(String boneName, boolean illuminated) {
+        BakedModelInstance modelInstance = entity.getModelInstance();
+        BoneState boneState = modelInstance.getBone(boneName);
+        if (boneState != null) {
+            boneState.illuminated = illuminated;
+        }
     }
 
     public float getXRot() {
@@ -136,6 +154,10 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
             }
         }
         return "";
+    }
+
+    public int tickCount() {
+        return getEntity().tickCount;
     }
 
     public long lastRenderTime() {

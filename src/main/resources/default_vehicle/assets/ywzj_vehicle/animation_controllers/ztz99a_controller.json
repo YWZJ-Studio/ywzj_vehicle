@@ -1,6 +1,5 @@
 {
     "name": "ztz99a_controller",
-    "script": "ywzj_vehicle:ztz99a",
     "parameters": {},
     "event_animations": {
         "turret_fire": ["turret_shoot"],

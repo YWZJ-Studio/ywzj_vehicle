@@ -7,12 +7,12 @@ function updateBones(context) {
     const yawInput = context.getYawInput()
     const rollInput = context.getRollInput()
 
-    const builder = createPoseBuilder();
-    builder.setRotation("s_wing_l", pitchInput * 16, 0, 0);
-    builder.setRotation("s_wing_r", pitchInput * 16, 0, 0);
-    builder.setRotation("wing_back1_l", -rollInput * 16, 0, 0);
-    builder.setRotation("wing_back1_r", rollInput * 16, 0, 0);
-    builder.setRotation("tail3", 0, -yawInput * 16, 0);
+    const builder = createPoseBuilder()
+    builder.setRotation("s_wing_l", pitchInput * 16, 0, 0)
+    builder.setRotation("s_wing_r", pitchInput * 16, 0, 0)
+    builder.setRotation("wing_back1_l", -rollInput * 16, 0, 0)
+    builder.setRotation("wing_back1_r", rollInput * 16, 0, 0)
+    builder.setRotation("tail3", 0, -yawInput * 16, 0)
     for (let i = 0; i < magic.length; i++) {
         if (i < magic.length - context.getWeaponRemainAmmo("sighting_system", 1)) {
             builder.hideBone(magic[i])
@@ -28,5 +28,5 @@ function updateBones(context) {
             builder.hideBone(gbu12[i])
         }
     }
-    return builder;
+    return builder
 }
