@@ -945,12 +945,17 @@ public abstract class AbstractVehicle extends ContainerCraft
             seat.passengerId = -1;
             PacketDistributor.sendToPlayersTrackingEntity(this, new ServerVehicleSeatsChange(this));
         } else {
-            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-            if (pPassenger == instance.getPlayer() && instance.toLeave) {
-                instance.toSeat(null, this);
-                if (warningReceiver != null) {
-                    warningReceiver.clear();
-                }
+            onClientLeaveVehicle(pPassenger);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void onClientLeaveVehicle(LivingEntity pPassenger) {
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        if (pPassenger == instance.getPlayer() && instance.toLeave) {
+            instance.toSeat(null, this);
+            if (warningReceiver != null) {
+                warningReceiver.clear();
             }
         }
     }

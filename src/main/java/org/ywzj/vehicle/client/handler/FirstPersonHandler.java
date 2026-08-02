@@ -145,6 +145,18 @@ public class FirstPersonHandler {
         event.setRoll((float) (event.getRoll() + currentRollShake));
     }
 
+    public static double getCurrentYawShake() {
+        return currentYawShake;
+    }
+
+    public static double getCurrentPitchShake() {
+        return currentPitchShake;
+    }
+
+    public static double getCurrentRollShake() {
+        return currentRollShake;
+    }
+
     private static double phaseFromSeed(long seed) {
         seed ^= seed >>> 33;
         seed *= 0xff51afd7ed558ccdL;

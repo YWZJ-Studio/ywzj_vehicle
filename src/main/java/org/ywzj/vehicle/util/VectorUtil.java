@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static org.ywzj.vehicle.client.render.animation.util.PoseBlenders.BLENDER;
-
 @EventBusSubscriber(Dist.CLIENT)
 public class VectorUtil {
 

@@ -104,15 +104,15 @@ public class CoordinateInputScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xD0101010);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(font, title, width / 2, top + 12, 0xFFFFFF);
         guiGraphics.drawString(font, Component.literal("X"), left + 31, top + 41, 0xE0E0E0);
         guiGraphics.drawString(font, Component.literal("Y"), left + 31, top + 69, 0xE0E0E0);
         guiGraphics.drawString(font, Component.literal("Z"), left + 31, top + 97, 0xE0E0E0);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override

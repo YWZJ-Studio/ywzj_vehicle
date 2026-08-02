@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.ywzj.vehicle.client.handler.FirstPersonHandler;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
@@ -33,7 +34,7 @@ public abstract class CameraMixin {
     public abstract float getXRot();
 
     @Shadow
-    protected abstract void setRotation(float yRot, float xRot);
+    protected abstract void setRotation(float yRot, float xRot, float zRot);
 
     @Shadow
     private Entity entity;
@@ -62,7 +63,9 @@ public abstract class CameraMixin {
             Vector3f euler = instance.cameraRotationO()
                     .slerp(instance.cameraRotation(), pPartialTick)
                     .getEulerAnglesYXZ(new Vector3f());
-            this.setRotation((float) Math.toDegrees(-euler.y), (float) Math.toDegrees(euler.x));
+            this.setRotation((float) Math.toDegrees(-euler.y) + (float) FirstPersonHandler.getCurrentYawShake(),
+                    (float) Math.toDegrees(euler.x) + (float) FirstPersonHandler.getCurrentPitchShake(),
+                    (float) FirstPersonHandler.getCurrentRollShake());
             if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 zoomThirdPerson(vehicle);
             }
