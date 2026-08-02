@@ -165,6 +165,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     public void updateRot() {
         if (structureGroup != null) {
+            structureGroup.rotationO = new Quaternionf(structureGroup.rotation);
             structureGroup.rotation = new Quaternionf(structureGroup.baseRotation).mul(Axis.YN.rotationDegrees(yRot).mul(Axis.XP.rotationDegrees(xRot)));
         }
     }

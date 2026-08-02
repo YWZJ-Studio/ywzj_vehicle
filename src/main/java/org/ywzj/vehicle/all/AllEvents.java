@@ -162,8 +162,6 @@ public class AllEvents {
                         if (doorUnit != null && !doorUnit.isOn()) {
                             doorUnit.setOn(true);
                         }
-                    } else if (livingEntity == LocalVehiclePlayer.instance.getPlayer()) {
-                        LocalVehiclePlayer.instance.clear();
                     }
                 }
             }

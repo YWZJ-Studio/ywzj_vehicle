@@ -423,6 +423,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     @Override
     public void updateRot() {
         if (structureGroup != null) {
+            structureGroup.rotationO = new Quaternionf(structureGroup.rotation);
             structureGroup.rotation = new Quaternionf(structureGroup.baseRotation).mul(Axis.YN.rotationDegrees(yRot));
             if (xTurnGroup == structureGroup) {
                 structureGroup.rotation = structureGroup.rotation.mul(Axis.XP.rotationDegrees(xRot));
@@ -430,6 +431,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         if (xTurnGroup != null) {
+            xTurnGroup.rotationO = new Quaternionf(xTurnGroup.rotation);
             xTurnGroup.rotation = new Quaternionf(xTurnGroup.baseRotation).mul(Axis.XP.rotationDegrees(xRot));
         }
     }

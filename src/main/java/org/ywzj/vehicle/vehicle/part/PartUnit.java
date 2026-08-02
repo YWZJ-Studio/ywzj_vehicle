@@ -204,6 +204,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     }
 
     protected Quaternionf getViewGroupRotation(VehicleCubeGroup group, float partialTick) {
+        if (partialTick != 1.0F && group.rotationO != null) {
+            return new Quaternionf(group.rotationO).slerp(group.rotation, partialTick);
+        }
         return new Quaternionf(group.rotation);
     }
 

@@ -108,7 +108,8 @@
             "id": "seat",
             "name": "seat",
             "type": "ywzj_vehicle:generic",
-            "seat_offset": [0.5, 1.8, 1.7]
+            "seat_offset": [0.5, 1.8, 1.7],
+            "owner_view_offset": [0, 3.5, 0]
         }
     ]
 }
