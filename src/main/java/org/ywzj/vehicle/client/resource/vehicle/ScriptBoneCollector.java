@@ -57,14 +57,14 @@ final class ScriptBoneCollector {
                     YwzjVehicle.LOGGER.warn("Unable to collect script bones: function {} was not found", functionName);
                     continue;
                 }
-                executeFunction(context, scope, function, functionName);
+                executeFunction(context, scope, function, functionName, collectingIndexProvider);
             }
             for (String inlineScript : inlineScripts) {
                 try {
                     String wrappedCode = "(function(context) { return (" + inlineScript + "); })";
                     Object value = context.evaluateString(scope, wrappedCode, "<bone-collector>", 1, null);
                     if (value instanceof Function function) {
-                        executeFunction(context, scope, function, "<inline>");
+                        executeFunction(context, scope, function, "<inline>", collectingIndexProvider);
                     }
                 } catch (RuntimeException exception) {
                     YwzjVehicle.LOGGER.debug("Unable to compile inline script for bone collection: {}", inlineScript, exception);
@@ -76,10 +76,10 @@ final class ScriptBoneCollector {
         return bones;
     }
 
-    private static void executeFunction(Context context, Scriptable scope, Function function, String functionName) {
+    private static void executeFunction(Context context, Scriptable scope, Function function, String functionName, BoneIndexProvider boneIndexProvider) {
         for (double contextValue : CONTEXT_VALUES) {
             try {
-                CollectionContext collectionContext = new CollectionContext(scope, contextValue);
+                CollectionContext collectionContext = new CollectionContext(scope, contextValue, boneIndexProvider);
                 function.call(context, scope, scope, new Object[]{collectionContext});
             } catch (RuntimeException exception) {
                 YwzjVehicle.LOGGER.debug(
@@ -139,9 +139,11 @@ final class ScriptBoneCollector {
     private static final class CollectionContext extends ScriptableObject {
 
         private final double defaultValue;
+        private final BoneIndexProvider boneIndexProvider;
 
-        private CollectionContext(Scriptable scope, double defaultValue) {
+        private CollectionContext(Scriptable scope, double defaultValue, BoneIndexProvider boneIndexProvider) {
             this.defaultValue = defaultValue;
+            this.boneIndexProvider = boneIndexProvider;
             setParentScope(scope);
             setPrototype(ScriptableObject.getObjectPrototype(scope));
         }
@@ -166,6 +168,9 @@ final class ScriptBoneCollector {
                 @Override
                 public Object call(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
                     if (name.startsWith("set")) {
+                        if (name.startsWith("setBone") && args.length > 0 && args[0] instanceof CharSequence boneName) {
+                            boneIndexProvider.getIndex(boneName.toString());
+                        }
                         return Undefined.instance;
                     }
                     if (name.startsWith("has") || name.startsWith("is")) {

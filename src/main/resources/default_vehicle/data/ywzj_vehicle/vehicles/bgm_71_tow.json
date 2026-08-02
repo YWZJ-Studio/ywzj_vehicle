@@ -20,7 +20,7 @@
             "name": "tow",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "tow",
-            "seat_offset": [0, 2, -1],
+            "seat_offset": [-0.5, 1.5, -1],
             "passenger_pose": {
                 "left_leg_rot_x": 0,
                 "right_leg_rot_x": 0
@@ -36,7 +36,7 @@
             },
             "optical_sight_offset": [1, 1, 1],
             "operator_view_offset": [0, 1.5, 0],
-            "operator_on_weapon_unit": false,
+            "operator_on_weapon_unit": true,
             "optical_sight_type": "crt",
             "zoom_max": 4,
             "weapons": [

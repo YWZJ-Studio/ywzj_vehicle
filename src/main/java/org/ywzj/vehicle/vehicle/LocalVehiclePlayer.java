@@ -279,7 +279,7 @@ public class LocalVehiclePlayer {
                         toViewType = ViewType.THIRD_PERSON;
                     }
                 }
-                if (toViewType == ViewType.THIRD_PERSON) {
+                if (toViewType == ViewType.THIRD_PERSON || toViewType == ViewType.OPERATOR) {
                     thirdPersonCameraAimAt(weaponUnit.aimHitPosition(), vehicle);
                 } else if (toViewType == ViewType.SCOPE) {
                     if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.NONE) {
@@ -311,9 +311,8 @@ public class LocalVehiclePlayer {
     public void toSeat(AbstractVehicle.Seat seat, AbstractVehicle vehicle) {
         boolean enter = this.seat == null && seat != null;
         if (seat == null) {
-            this.seat = null;
-            this.vehicle = null;
             this.toLeave = false;
+            clear();
             return;
         }
         this.seat = seat;
@@ -580,6 +579,8 @@ public class LocalVehiclePlayer {
     }
 
     public void clear() {
+        seat = null;
+        vehicle = null;
         serverEntities.clear();
         missiles.clear();
         CrtHandler.setActive(false);

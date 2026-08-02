@@ -7,6 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -44,9 +45,46 @@ public class FigureBoxItem extends VehicleItem {
 
     public static final String ENTITY_TYPE = "entityId";
     public static final String ENTITY_DATA = "entityData";
+    private static final String DISPLAY_DATA = "figureBoxDisplay";
+    private static final String OPEN = "open";
+    private static final String SCALE = "scale";
+    private static final String X_SHIFT = "xShift";
+    private static final String Y_SHIFT = "yShift";
+    private static final String Z_SHIFT = "zShift";
+    private static final String X_ROT = "xRot";
+    private static final String Y_ROT = "yRot";
+    private static final String Z_ROT = "zRot";
 
     public FigureBoxItem(Properties pProperties) {
         super(pProperties);
+    }
+
+    public static void saveDisplayData(CompoundTag itemTag, FigureBoxBlockEntity figureBox) {
+        CompoundTag displayData = new CompoundTag();
+        displayData.putBoolean(OPEN, figureBox.open);
+        displayData.putFloat(SCALE, figureBox.scale);
+        displayData.putFloat(X_SHIFT, figureBox.xShift);
+        displayData.putFloat(Y_SHIFT, figureBox.yShift);
+        displayData.putFloat(Z_SHIFT, figureBox.zShift);
+        displayData.putFloat(X_ROT, figureBox.xRot);
+        displayData.putFloat(Y_ROT, figureBox.yRot);
+        displayData.putFloat(Z_ROT, figureBox.zRot);
+        itemTag.put(DISPLAY_DATA, displayData);
+    }
+
+    public static void loadDisplayData(CompoundTag itemTag, FigureBoxBlockEntity figureBox) {
+        if (!itemTag.contains(DISPLAY_DATA, Tag.TAG_COMPOUND)) {
+            return;
+        }
+        CompoundTag displayData = itemTag.getCompound(DISPLAY_DATA);
+        figureBox.open = displayData.getBoolean(OPEN);
+        figureBox.scale = displayData.getFloat(SCALE);
+        figureBox.xShift = displayData.getFloat(X_SHIFT);
+        figureBox.yShift = displayData.getFloat(Y_SHIFT);
+        figureBox.zShift = displayData.getFloat(Z_SHIFT);
+        figureBox.xRot = displayData.getFloat(X_ROT);
+        figureBox.yRot = displayData.getFloat(Y_ROT);
+        figureBox.zRot = displayData.getFloat(Z_ROT);
     }
 
     @Override
@@ -157,7 +195,10 @@ public class FigureBoxItem extends VehicleItem {
                     BlockEntity blockEntity = level.getBlockEntity(pos);
                     if (blockEntity instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
                         figureBoxBlockEntity.setEntity(entity);
+                        loadDisplayData(tag, figureBoxBlockEntity);
                         figureBoxBlockEntity.setChanged();
+                        level.setBlockAndUpdate(pos, figureBoxBlockEntity.getBlockState()
+                                .setValue(FigureBoxBlock.OPEN, figureBoxBlockEntity.open));
                         player.getItemInHand(context.getHand()).shrink(1);
                         return InteractionResult.SUCCESS;
                     }

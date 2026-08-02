@@ -16,6 +16,7 @@ public class VehicleCubeGroup {
     public Quaternionf baseRotation;
     // 组旋转的实际值
     public Quaternionf rotation;
+    public Quaternionf rotationO;
     // 相对于父组枢轴
     public Vec3 pivot;
     // 相对于载具枢轴
@@ -31,6 +32,7 @@ public class VehicleCubeGroup {
         }
         this.baseRotation = rotation;
         this.rotation = rotation;
+        this.rotationO = new Quaternionf(rotation);
         this.pivot = pivot;
         this.pivotOffset = globalTransform().offset;
     }

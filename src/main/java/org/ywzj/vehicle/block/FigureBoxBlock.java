@@ -27,6 +27,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
+import org.ywzj.vehicle.item.FigureBoxItem;
 
 import java.util.List;
 
@@ -71,15 +72,16 @@ public class FigureBoxBlock extends HorizontalEntityBlock {
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         if (builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof FigureBoxBlockEntity figureBoxBlockEntity) {
             ItemStack itemStack = AllItems.FIGURE_BOX.get().getDefaultInstance().copy();
+            CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+            FigureBoxItem.saveDisplayData(tag, figureBoxBlockEntity);
             Entity entity = figureBoxBlockEntity.getEntity();
             if (entity != null) {
-                CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
                 CompoundTag entityData = new CompoundTag();
                 entity.saveWithoutId(entityData);
                 tag.putString(ENTITY_TYPE, EntityType.getKey(entity.getType()).toString());
                 tag.put(ENTITY_DATA, entityData);
-                itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             }
+            itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
             return List.of(itemStack);
         }
         return List.of();
