@@ -17,8 +17,8 @@ import org.joml.Quaternionf;
 import java.util.Map;
 
 public class RepairItemAnimationInstance implements IFPAnimationInstance {
-    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
 
+    private static final EulerAdditiveBlender BLENDER = new SimpleEulerAdditiveBlender(new ZYXBoneTransformFactory(), ArrayPoseBuilder::new);
     private RepairItemContext ctx;
     private Map<String, BedrockAnimation> animations;
     private HandedBedrockModel model;
@@ -96,4 +96,5 @@ public class RepairItemAnimationInstance implements IFPAnimationInstance {
     public boolean shouldRenderHand() {
         return true;
     }
+
 }

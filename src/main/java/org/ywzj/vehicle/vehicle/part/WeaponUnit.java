@@ -798,24 +798,30 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 if (vehicleWeapon instanceof VehicleMultiWeapons vehicleMultiWeapons) {
                     vehicleWeapon = vehicleMultiWeapons.getSelectedWeapon();
                 }
+                List<Vec3> releasePositions = currentWeaponUnit.aimContexts().stream()
+                        .map(context -> context.from)
+                        .toList();
+                double releaseX = releasePositions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
+                double releaseY = releasePositions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
+                double releaseZ = releasePositions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
+                Vec3 releasePos = new Vec3(releaseX, releaseY, releaseZ).add(vehicle.getDeltaMovement());
                 if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
-                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition().add(0, 0, 0);
                     float dragCoefficient = bomb.getData().getDragCoefficient();
                     aimHitPosition = CcipUtil.computeCcip(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
                 } else if (vehicleWeapon instanceof VehicleRocket rocket) {
-                    Vec3 releasePos = currentWeaponUnit.worldPivotPosition();
                     var data = rocket.getData();
-                    Vec2 rot = currentWeaponUnit.worldRot();
-                    Vec3 aimDir = VectorUtil.rotToVec(rot.x, rot.y).normalize();
-                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
-                    aimHitPosition = CcipUtil.computeCcipRocket(vehicle.level(), releasePos, startVelocity,
-                            data.getThrust(), data.getMass(), data.getMotorBurnTime(), data.getDragCoefficient());
-                } else if (vehicleWeapon instanceof VehicleCannon cannon) {
                     AimContext aimContext = currentWeaponUnit.aimContext();
-                    var data = cannon.getData();
                     Vec3 aimDir = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize();
                     Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
-                    aimHitPosition = CcipUtil.computeCcipCannon(vehicle.level(), vehicle, aimContext.from, startVelocity,
+                    aimHitPosition = CcipUtil.computeCcipRocket(vehicle.level(), vehicle, releasePos, startVelocity,
+                            aimDir, data.getThrust(), data.getMass(), data.getMotorBurnTime(),
+                            data.getDragCoefficient(), data.getLife());
+                } else if (vehicleWeapon instanceof VehicleCannon cannon) {
+                    var data = cannon.getData();
+                    AimContext aimContext = currentWeaponUnit.aimContext();
+                    Vec3 aimDir = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize();
+                    Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                    aimHitPosition = CcipUtil.computeCcipCannon(vehicle.level(), vehicle, releasePos, startVelocity,
                             data.getFriction(), data.getLife());
                 }
             }

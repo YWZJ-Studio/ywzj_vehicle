@@ -75,7 +75,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected List<PartUnit<?>> attPartUnits = new ArrayList<>();
     protected T data;
     protected PartUnitSyncData syncData;
-    public float uiHealth;
+    public float healthO = -1;
     public int hurtTick = 0;
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
@@ -142,20 +142,28 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         if (!this.getVehicle().level().isClientSide()) {
             syncData.tick();
         } else {
-            if (hurtTick > 0) {
-                hurtTick--;
-                if (hurtTick <= 0) {
-                    uiHealth = this.getHealth();
-                }
-            } else if (uiHealth != this.getHealth()) {
-                hurtTick = 10;
-            }
             tickParticle();
         }
+        tickHurt();
     }
 
     @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {}
+
+    protected void tickHurt() {
+        if (healthO == -1) {
+            healthO = getHealth();
+            return;
+        }
+        if (hurtTick > 0) {
+            hurtTick--;
+            if (hurtTick <= 0) {
+                healthO = getHealth();
+            }
+        } else if (healthO != getHealth()) {
+            hurtTick = 10;
+        }
+    }
 
     public boolean onInteract(Player player, InteractionHand hand) {
         return true;

@@ -363,7 +363,7 @@ public class VehicleOverlay implements IGuiOverlay {
             }
         }
         renderHealth(guiGraphics, x, y, barWidth, barHeight, vehicle.getDisplayName(), nameColor,
-                vehicle.getHealth(), vehicle.getMaxHealth(), vehicle.uiHealth, vehicle.hurtTick,
+                vehicle.getHealth(), vehicle.getMaxHealth(), vehicle.healthO, vehicle.hurtTick,
                 vehicle.isDestroyed(), size);
     }
 
@@ -391,13 +391,13 @@ public class VehicleOverlay implements IGuiOverlay {
             return;
         }
         renderHealth(guiGraphics, screenPos.x, screenPos.y, 60, 4, partUnit.getName(), nameColor,
-                partUnit.getHealth(), partUnit.getMaxHealth(), partUnit.uiHealth, partUnit.hurtTick,
+                partUnit.getHealth(), partUnit.getMaxHealth(), partUnit.healthO, partUnit.hurtTick,
                 partUnit.isDestroyed(), size);
     }
 
     private static void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight,
                                      Component name, int nameColor, float health, float maxHealth,
-                                     float uiHealth, int hurtTick, boolean destroyed, float size) {
+                                     float healthO, int hurtTick, boolean destroyed, float size) {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
@@ -415,9 +415,8 @@ public class VehicleOverlay implements IGuiOverlay {
 
             float percent = maxHealth > 0 ? Math.max(0, Math.min(1, health / maxHealth)) : 0f;
             float hurtT = Math.max(0f, Math.min(1f, hurtTick / 10f));
-            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, uiHealth / maxHealth)) : percent;
+            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, healthO / maxHealth)) : percent;
             float lastPercent = Mth.lerp(hurtT, percent, rawLastPercent);
-            float healthDiff = uiHealth - health;
 
             int red, green;
             if (destroyed) {
@@ -451,6 +450,7 @@ public class VehicleOverlay implements IGuiOverlay {
                 String text = String.format("%.0f/%.0f", health, maxHealth);
                 poseStack.translate(0, -3.5, 0);
                 RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, Color.WHITE);
+                float healthDiff = healthO - health;
                 if (healthDiff > 0) {
                     RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 1 + barHeight, Color.RED);
                 } else if (healthDiff < 0 && !destroyed) {

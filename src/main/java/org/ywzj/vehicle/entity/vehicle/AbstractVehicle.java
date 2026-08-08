@@ -1520,6 +1520,11 @@ public abstract class AbstractVehicle extends ContainerCraft
                 return;
             }
         }
+        if (entity instanceof AbstractVehicle vehicle) {
+            if (vehicle.hurtTick > 0) {
+                return;
+            }
+        }
         double velocity = this.getDeltaMovement().length();
         double entityVelocity = entity.getDeltaMovement().dot(this.getDeltaMovement()) / velocity;
         double relVelocity = (velocity - entityVelocity) * 20;

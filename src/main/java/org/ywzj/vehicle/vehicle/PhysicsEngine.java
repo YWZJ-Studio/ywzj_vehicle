@@ -298,16 +298,18 @@ public class PhysicsEngine {
                     rotV = 0;
                     climb(touchPoints);
                     if (!localForcePoints.stream().allMatch(localForcePoint -> localForcePoint.y < -physicsCube.obb().extents().y - 0.01)) {
+                        Vector3f selfRot = new Vector3f();
+                        physicsCube.selfRot().getEulerAnglesYXZ(selfRot);
                         // 保持静态倾斜的理论极限角度是半格高垫起车身边，再小则自动补正
-                        double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
                         double angleDepth = Math.toDegrees(Math.atan2(0.5, physicsCube.getDepth()));
+                        double angleWidth = Math.toDegrees(Math.atan2(0.5, physicsCube.getWidth()));
                         boolean shouldRotUpdate = false;
-                        if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
-                            vehicle.setZRot(0);
+                        if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
+                            vehicle.setXRot((float) Math.toDegrees(-selfRot.x));
                             shouldRotUpdate = true;
                         }
-                        if (Mth.abs(vehicle.getXRot()) < angleDepth - MAGIC_NUMBER / 10) {
-                            vehicle.setXRot(0);
+                        if (Mth.abs(vehicle.getZRot()) < angleWidth - MAGIC_NUMBER / 10) {
+                            vehicle.setZRot((float) Math.toDegrees(-selfRot.z));
                             shouldRotUpdate = true;
                         }
                         if (shouldRotUpdate && rotTick > 0) {

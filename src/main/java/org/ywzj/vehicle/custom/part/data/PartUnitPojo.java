@@ -47,6 +47,9 @@ public class PartUnitPojo {
     @SerializedName("passenger_pose")
     public PassengerPose passengerPose = null;
 
+    @SerializedName("passenger_can_use_item")
+    public boolean passengerCanUseItem = false;
+
     @SerializedName("owner_view_offset")
     public Vec3 ownerViewOffset = null;
 

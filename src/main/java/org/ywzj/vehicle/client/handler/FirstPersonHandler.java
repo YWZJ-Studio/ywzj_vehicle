@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.client.handler;
 
-import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -35,28 +34,33 @@ public class FirstPersonHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRenderOverlay(RenderHandEvent event) {
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        if (player == null || !player.isAlive()) {
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
+        if (player == null) {
             return;
         }
-        if (mc.options.getCameraType() == CameraType.FIRST_PERSON
-                && player.getVehicle() instanceof AbstractVehicle) {
-            event.setCanceled(true);
+        if (instance.onVehicle()) {
+            if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                event.setCanceled(true);
+            } else {
+                AbstractVehicle.Seat seat = LocalVehiclePlayer.instance.seat;
+                if (seat != null && !seat.partUnit.getData().passengerCanUseItem()) {
+                    event.setCanceled(true);
+                }
+            }
         }
     }
 
     @SubscribeEvent
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
         if (player == null) {
             return;
         }
-        LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
-        if (localVehiclePlayer != null && localVehiclePlayer.onVehicle()) {
-            if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE
-                    || localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
+        if (instance.onVehicle()) {
+            if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE
+                    || instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
                 event.setRoll(zRot);
             }
         }
