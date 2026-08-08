@@ -69,6 +69,7 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Boolean> canDestroyBlock;
         public final ForgeConfigSpec.ConfigValue<Boolean> explosionDropBlock;
         public final ForgeConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
+        public final ForgeConfigSpec.ConfigValue<Double> cameraShakeMultiplier;
         public final ForgeConfigSpec.ConfigValue<Boolean> selfRighting;
         public final ForgeConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
@@ -90,6 +91,8 @@ public class AllConfigs {
                     .define("explosionDropBlock", true);
             vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
                     .defineInRange("vehicleExplosionHurtPassengerDamage", 512.0, 0.0, Double.MAX_VALUE);
+            cameraShakeMultiplier = builder.comment("镜头晃动强度倍率")
+                    .defineInRange("cameraShakeMultiplier", 1.0, 0.0, 10.0);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
             infiniteFuel = builder.comment("无需燃油仍可运作")

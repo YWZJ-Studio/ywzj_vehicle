@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.entity.vehicle;
 
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -29,7 +28,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.*;
@@ -576,15 +575,10 @@ public class FixedWingVehicle extends AbstractVehicle
         Vec3 airSpeed = getDeltaMovement();
         if (airSpeed.length() > 1) {
             Vector3f[] axes = mainCubeOBB.obb().getAxes();
-            double angelX = VectorUtil.angleBetween(airSpeed, new Vec3(axes[1])) - Math.PI / 2;
-            double degreeX = Math.toDegrees(angelX);
-            if (degreeX < angleOfAttackMin * 3f || degreeX > angleOfAttackMax * 0.9f) {
-                vortexOffsets.forEach(offset -> {
-                    Vec3 particlePos = relativeRotPos(position().add(offset), false);
-                    level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 3.0F),
-                            true, particlePos.x, particlePos.y, particlePos.z,
-                            0, 0, 0);
-                });
+            double angleX = VectorUtil.angleBetween(airSpeed, new Vec3(axes[1])) - Math.PI / 2;
+            double degreesX = Math.toDegrees(angleX);
+            if (degreesX < angleOfAttackMin * 3f || degreesX > angleOfAttackMax * 0.9f) {
+                ParticleUtil.spawnWingVortices(level(), vortexOffsets, position(), pos -> relativeRotPos(pos, false));
             }
         }
         // 引擎烟
@@ -592,18 +586,9 @@ public class FixedWingVehicle extends AbstractVehicle
             float engineSpeed = getPower();
             float throttlelevel = getThrottleLevel();
             if ((engineSpeed > 0 && engineParticleTick > Mth.clamp(10 - throttlelevel / 10, 3, 10))) {
-                energyInfo.engineParticleOffsets.forEach(offset -> {
-                    Vec3 engineSmokePos = this.position().add(offset);
-                    engineSmokePos = relativeRotPos(engineSmokePos, false);
-                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.3);
-                    level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
-                                    0.0f, 0.0f, 0.0f, 0.7f,
-                                    20, 0.3f, 0.4f, 0.005f), true,
-                            engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                            engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
-                            engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
-                            engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
-                });
+                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(),
+                        pos -> relativeRotPos(pos, false), getLookAngle().normalize().scale(-0.3),
+                        1, 20, 0.3f, 0.4f);
                 engineParticleTick = 0;
             } else {
                 engineParticleTick += 1;
@@ -611,29 +596,12 @@ public class FixedWingVehicle extends AbstractVehicle
         }
         // 特技拉烟
         if (level().isClientSide() && isAerobaticSmokeOn() && aerobaticSmokeOffsets != null) {
-            Vec3 vehiclePos = position();
-            Vec3 vehiclePosO = new Vec3(xo, yo, zo);
-            Vec3 step = vehiclePos.subtract(vehiclePosO);
-            int segments = (int) (step.length());
-            Vec3 dir = step.normalize();
-            float r = getAerobaticSmokeR() / 255f;
-            float g = getAerobaticSmokeG() / 255f;
-            float b = getAerobaticSmokeB() / 255f;
-            Level level = level();
-            for (Vec3 offset : aerobaticSmokeOffsets) {
-                for (int i = 0; i <= segments; i++) {
-                    double x = this.random.triangle(0, 0.1f);
-                    double y = this.random.triangle(0, 0.1f);
-                    double z = this.random.triangle(0, 0.1f);
-                    Vec3 interpolatedPos = vehiclePos.add(offset);
-                    Vec3 worldPos = relativeRotPos(interpolatedPos, false).subtract(dir.scale(i)).subtract(getDeltaMovement());
-                    level.addParticle(new SmokeCloudOption(false, r, g, b, r, g, b,
-                                    0.5f, 0.1f, 1200,
-                                    0.3f, 5f, 0.01f), true,
-                            worldPos.x, worldPos.y, worldPos.z,
-                            x, y, z);
-                }
-            }
+            ParticleUtil.spawnAerobaticSmoke(level(), random, aerobaticSmokeOffsets,
+                    position(), new Vec3(xo, yo, zo), getDeltaMovement(),
+                    pos -> relativeRotPos(pos, false),
+                    getAerobaticSmokeR() / 255f,
+                    getAerobaticSmokeG() / 255f,
+                    getAerobaticSmokeB() / 255f);
         }
     }
 

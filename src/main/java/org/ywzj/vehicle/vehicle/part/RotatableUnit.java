@@ -15,10 +15,13 @@ import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.custom.part.data.RotatableUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +37,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public float yRotO;
     protected float xRemoteAimRot;
     protected float yRemoteAimRot;
-
     public float xSelfRot;
     public float ySelfRot;
     public float xRotSpeed;
@@ -44,13 +46,11 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     public float yRotMax = Float.MAX_VALUE;
     public float yRotMin = -Float.MAX_VALUE;
     public boolean needPower = true;
-
     private VehicleSound turnYSoundInstance;
     private VehicleSound turnXSoundInstance;
 
     public RotatableUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
-
         var rotInfo = data.getRotInfo();
         this.xRotSpeed = rotInfo.xRotSpeed;
         this.yRotSpeed = rotInfo.yRotSpeed;
@@ -63,7 +63,6 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         this.yRot = rotInfo.yRot;
         this.yAimRot = this.yRot;
         this.needPower = rotInfo.needPower;
-
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setXRemoteAimRot, this::getXAimRot, 0f);
         this.getSyncData().define(SyncDataSerializers.FLOAT, this::setYRemoteAimRot, this::getYAimRot, 0f);
     }
@@ -91,7 +90,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
 
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
-        if (!needPower || vehicle.hasPower()) {
+        if ((!needPower || vehicle.hasPower()) && !isDestroyed()) {
             if (yRotSpeed != 0 && Math.abs((yAimRot - yRot) % 360) > 1 && yRot < yRotMax && yRot > yRotMin) {
                 if (turnYSoundInstance == null) {
                     turnYSoundInstance = new VehicleSound(AllSounds.TURRET_TURN_SERVO_H.get(), 1f, 1f, 1f, true, 10, true, true, vehicle.getId());
@@ -134,10 +133,17 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         }
     }
 
+    @Override
+    protected void tickParticle() {
+        if (isDestroyed() && !vehicle.isDestroyed() && vehicle.tickCount % 20 == 0) {
+            ParticleUtil.spawnWreckageSmoke(vehicle.level(), OBB.toAABB(List.of(getLargestCube().obb())), 5);
+        }
+    }
+
     protected void tickRot() {
         xRotO = xRot;
         yRotO = yRot;
-        if (!needPower || vehicle.hasPower()) {
+        if ((!needPower || vehicle.hasPower()) && !isDestroyed()) {
             float xDiff = Mth.wrapDegrees(xAimRot - xRot);
             float yDiff = Mth.wrapDegrees(yAimRot - yRot);
             if (Math.abs(xDiff) > xRotSpeed) {

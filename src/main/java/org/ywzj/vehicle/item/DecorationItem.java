@@ -98,7 +98,7 @@ public class DecorationItem extends VehicleItem {
         if (!display.getModel().hasBakedModel()) {
             return;
         }
-        VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end);
+        VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end, new Vec3(0, 0, 1));
         if (hitBone != null) {
             Vec3 hitPos = hitBone.position();
             vehicle.level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 2.0F),

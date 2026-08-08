@@ -332,6 +332,17 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 radarUnit.setParentPartUnit(this);
             }
         }
+        // 无座圈的附着武器站
+        for (PartUnit<?> partUnit : partUnitsView.values()) {
+            if (partUnit instanceof WeaponUnit weaponUnit) {
+                if (weaponUnit.structureGroup == null && weaponUnit.xTurnGroup != null) {
+                    if (structureGroup != null && structureGroup.children.contains(weaponUnit.xTurnGroup)) {
+                        attPartUnits.add(weaponUnit);
+                        weaponUnit.basePartUnit = this;
+                    }
+                }
+            }
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -702,6 +713,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
      */
     @Override
     public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
+        if (isDestroyed()) {
+            return;
+        }
         if (Math.abs(xAimRot - xRot) > 5 || Math.abs(yAimRot - yRot) > 5) {
             return;
         }

@@ -17,6 +17,7 @@ import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.AmmoEntity;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 
 public class DamageSystem {
@@ -39,9 +40,11 @@ public class DamageSystem {
         }
         double scale = 1;
         boolean explosion = damageSource.getMsgId().equals("ywzj_vehicle.explosion");
+        PartUnit<?> hitPartUnit = null;
         Vec3 hitPos = null;
         float caliber = 5.8f;
         if (damageSource.getDirectEntity() instanceof Projectile projectile) {
+            hitPartUnit = VectorUtil.hitPartUnit(vehicle, projectile.position(), projectile.position().add(projectile.getDeltaMovement()), false);
             Vec3 closestHitPos = VectorUtil.closestHitObbPosition(vehicle, projectile.position(), projectile.position().add(projectile.getDeltaMovement()));
             if (closestHitPos != null) {
                 hitPos = closestHitPos;
@@ -55,7 +58,20 @@ public class DamageSystem {
         }
         if (amount < 0.1) {
             amount = 0;
-        } else if (amount < vehicle.defenseStats.damageThreshold) {
+        }
+        // 部件损伤
+        if (hitPartUnit != null && hitPartUnit.isDefensive() && !hitPartUnit.isDetached()) {
+            float partUnitDamage = amount;
+            if (partUnitDamage < 0.1) {
+                partUnitDamage = 0;
+            } else if (amount < hitPartUnit.getDefenseStats().damageThreshold) {
+                partUnitDamage = 0.1f;
+            }
+            hitPartUnit.hurt(damageSource, partUnitDamage);
+            amount = partUnitDamage * hitPartUnit.getDefenseStats().damageTransferCoefficient;
+        }
+        // 载具损伤
+        if (amount < vehicle.defenseStats.damageThreshold) {
             amount = 0.1f;
         } else {
             if (hitPos == null) {

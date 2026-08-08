@@ -17,7 +17,7 @@ public class OBBRenderer {
 
     public static final OBBRenderer INSTANCE = new OBBRenderer();
 
-    public void render(Vec3 position, List<OBB> obbList, PoseStack poseStack, VertexConsumer buffer, float red, float green, float blue, float alpha, float pPartialTicks) {
+    public void render(Vec3 position, List<OBB> obbList, PoseStack poseStack, VertexConsumer buffer, float red, float green, float blue, float alpha) {
         for (OBB obb : obbList) {
             Vector3f center = obb.center();
             Vector3f halfExtents = obb.extents();

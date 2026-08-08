@@ -5,11 +5,14 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubeP
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -18,13 +21,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.sync.SyncDataEntry;
+import org.ywzj.vehicle.entity.misc.VehiclePart;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
+import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
@@ -49,6 +55,11 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected List<VehicleCubeOBB> partCubeOBBs;
     protected LivingEntity owner;
     protected int ownerId;
+    protected boolean detached;
+    protected float health;
+    protected float maxHealth;
+    protected DefenseStats defenseStats = new DefenseStats();
+    protected String renderBoneName;
     protected boolean isSeat;
     protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
@@ -60,8 +71,12 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected Vec3 displayOffset;
     protected PartUnit<?> parentPartUnit;
     protected List<PartUnit<?>> subPartUnits = new ArrayList<>();
+    protected PartUnit<?> basePartUnit;
+    protected List<PartUnit<?>> attPartUnits = new ArrayList<>();
     protected T data;
     protected PartUnitSyncData syncData;
+    public float uiHealth;
+    public int hurtTick = 0;
 
     public PartUnit(int index, AbstractVehicle vehicle, T data) {
         this.index = index;
@@ -69,6 +84,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.name = Component.translatable(data.getName());
         this.vehicle = vehicle;
         this.data = data;
+        this.health = data.getMaxHealth();
+        this.maxHealth = data.getMaxHealth();
+        this.defenseStats = data.getDefenseStats();
+        this.renderBoneName = data.getRenderBone();
         this.isSeat = data.isSeat();
         this.seatRot = data.getSeatRot();
         this.seatOffset = data.getSeatOffset();
@@ -79,6 +98,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.displayId = data.getDisplayId();
         this.displayOffset = data.getDisplayOffset();
         this.syncData = new PartUnitSyncData(this);
+        this.syncData.define(SyncDataSerializers.BOOLEAN, this::setDetached, this::isDetached, this.detached);
+        this.syncData.define(SyncDataSerializers.FLOAT, this::setHealth, this::getHealth, this.health);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
     }
 
@@ -104,6 +125,12 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
                 subPartUnit.setParentPartUnit(this);
             }
         }
+        for (PartUnit<?> partUnit : partUnitsView.values()) {
+            if (structureGroup != null && structureGroup.children.contains(partUnit.structureGroup)) {
+                attPartUnits.add(partUnit);
+                partUnit.basePartUnit = this;
+            }
+        }
     }
 
     public void onRemoved() {}
@@ -114,11 +141,28 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     public void tick() {
         if (!this.getVehicle().level().isClientSide()) {
             syncData.tick();
+        } else {
+            if (hurtTick > 0) {
+                hurtTick--;
+                if (hurtTick <= 0) {
+                    uiHealth = this.getHealth();
+                }
+            } else if (uiHealth != this.getHealth()) {
+                hurtTick = 10;
+            }
+            tickParticle();
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
+    protected void tickParticle() {}
+
     public boolean onInteract(Player player, InteractionHand hand) {
         return true;
+    }
+
+    public void hurt(DamageSource damageSource, float amount) {
+        setHealth(Math.max(0, health - amount));
     }
 
     public PartUnitSyncData getSyncData() {
@@ -131,6 +175,19 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public List<OBB> getOBBs() {
         return partCubeOBBs.stream().map(VehicleCubeOBB::obb).toList();
+    }
+
+    public VehicleCubeOBB getLargestCube() {
+        VehicleCubeOBB largestCube = null;
+        double largestVolume = 0;
+        for (VehicleCubeOBB cubeOBB : getPartCubeOBBs()) {
+            double volume = cubeOBB.volume();
+            if (volume > largestVolume) {
+                largestVolume = volume;
+                largestCube = cubeOBB;
+            }
+        }
+        return largestCube;
     }
 
     public Vec3 worldPivotPosition() {
@@ -214,6 +271,34 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Component getName() {
         return name;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public void setMaxHealth(float maxHealth) {
+        this.maxHealth = maxHealth;
+    }
+
+    public DefenseStats getDefenseStats() {
+        return defenseStats;
+    }
+
+    public String getRenderBoneName() {
+        return renderBoneName;
+    }
+
+    public void setRenderBoneName(String renderBoneName) {
+        this.renderBoneName = renderBoneName;
     }
 
     public int getIndex() {
@@ -319,6 +404,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return subPartUnits;
     }
 
+    public PartUnit<?> getBasePartUnit() {
+        return basePartUnit;
+    }
+
+    public List<PartUnit<?>> getAttPartUnits() {
+        return attPartUnits;
+    }
+
     @OnlyIn(Dist.CLIENT)
     public void onUpdateReceived(List<SyncDataEntry<?>> entries) {
         syncData.onUpdateReceived(entries);
@@ -342,15 +435,73 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     @Override
     public CompoundTag serializeNBT() {
-        return new CompoundTag();
+        CompoundTag tag = new CompoundTag();
+        tag.putBoolean("Detached", detached);
+        tag.putFloat("Health", health);
+        return tag;
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {}
+    public void deserializeNBT(CompoundTag nbt) {
+        if (nbt.contains("Detached", Tag.TAG_ANY_NUMERIC)) {
+            this.detached = nbt.getBoolean("Detached");
+        }
+        if (nbt.contains("Health", Tag.TAG_ANY_NUMERIC)) {
+            this.health = nbt.getFloat("Health");
+        }
+    }
+
+    public VehiclePart detach() {
+        VehicleCubeOBB largestCube = getLargestCube();
+        if (largestCube == null) {
+            return null;
+        }
+        largestCube.update(vehicle);
+        OBB worldObb = largestCube.obb();
+        Vec3 cubeCenterWorld = new Vec3(worldObb.center().x, worldObb.center().y, worldObb.center().z);
+        double halfHeight = largestCube.height / 2;
+        VehiclePart vehiclePart = new VehiclePart(AllEntities.VEHICLE_PART.get(), vehicle.level());
+        vehiclePart.initPart(this);
+        if (this instanceof RotatableUnit<?> rotatableUnit) {
+            Vec2 rot = rotatableUnit.worldRot();
+            vehiclePart.setXRot(rot.x);
+            vehiclePart.setYRot(rot.y);
+            vehiclePart.setZRot(rotatableUnit.worldZRot());
+        } else {
+            vehiclePart.setXRot(vehicle.getXRot());
+            vehiclePart.setYRot(vehicle.getYRot());
+            vehiclePart.setZRot(vehicle.getZRot());
+        }
+        Vector3f bottomWorldOffset = vehiclePart.rotYXZ().transform(new Vector3f(0, (float) halfHeight, 0));
+        Vec3 bottomWorld = cubeCenterWorld.subtract(bottomWorldOffset.x, bottomWorldOffset.y, bottomWorldOffset.z);
+        vehiclePart.setPos(bottomWorld.x, bottomWorld.y, bottomWorld.z);
+        setDetached(true);
+        return vehiclePart;
+    }
 
     @NotNull
     public String getId() {
         return id;
+    }
+
+    public boolean isDefensive() {
+        return health > 0;
+    }
+
+    public boolean isDestroyed() {
+        return health == 0;
+    }
+
+    public boolean isDetachable() {
+        return data.isDetachable() && renderBoneName != null && !renderBoneName.isBlank() && structureGroup != null;
+    }
+
+    public boolean isDetached() {
+        return detached || (basePartUnit != null && basePartUnit.isDetached());
+    }
+
+    public void setDetached(boolean detached) {
+        this.detached = detached;
     }
 
     @Deprecated
@@ -368,6 +519,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.syncData = new PartUnitSyncData(this);
         this.syncData.define(SyncDataSerializers.VEC3, this::setSeatOffset, this::getSeatOffset, Vec3.ZERO);
         this.vehicle = vehicle;
+        this.health = this.maxHealth;
         this.structureGroup = null;
         this.partCubeOBBs = new ArrayList<>();
         this.initStructureModel(id);

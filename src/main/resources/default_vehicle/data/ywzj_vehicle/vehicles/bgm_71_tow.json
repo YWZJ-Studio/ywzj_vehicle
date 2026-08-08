@@ -19,6 +19,8 @@
             "id": "tow",
             "name": "tow",
             "type": "ywzj_vehicle:weapon",
+            "max_health": 15,
+            "render_bone": "rot",
             "structure_bone": "tow",
             "seat_offset": [-0.5, 1.5, -1],
             "passenger_pose": {

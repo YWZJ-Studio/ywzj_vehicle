@@ -31,7 +31,7 @@ public class WarningReceiver {
     public static void handle(ServerVehicleWarn message) {
         Level level = Minecraft.getInstance().level;
         if (level.getEntity(message.toEntityId) instanceof AbstractVehicle toVehicle
-                && toVehicle.equals(LocalVehiclePlayer.instance.getVehicle())) {
+                && toVehicle.equals(LocalVehiclePlayer.instance.vehicle)) {
             // RWR接收角度限制
             Entity entity = level.getEntity(message.fromEntityId);
             if (entity == null) {

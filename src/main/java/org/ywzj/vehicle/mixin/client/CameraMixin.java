@@ -52,7 +52,7 @@ public abstract class CameraMixin {
             zoomThirdPerson(vehicle);
             return;
         }
-        AbstractVehicle vehicle = instance.getVehicle();
+        AbstractVehicle vehicle = instance.vehicle;
         if (vehicle != null) {
             PartUnit<?> operatorUnit = instance.seat.partUnit;
             if (operatorUnit == null) {

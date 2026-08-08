@@ -25,7 +25,7 @@ public class RotaryWingVehicleOverlay implements IGuiOverlay {
         if (!LocalVehiclePlayer.instance.onVehicle()) {
             return;
         }
-        AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+        AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
         if (!(vehicle instanceof RotaryWingVehicle rotaryWingVehicle)
                 || !LocalVehiclePlayer.instance.getPlayer().equals(rotaryWingVehicle.getDriver())) {
             return;

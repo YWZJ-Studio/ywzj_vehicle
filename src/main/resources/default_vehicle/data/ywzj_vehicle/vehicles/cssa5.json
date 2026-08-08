@@ -31,6 +31,8 @@
             "id": "turret",
             "name": "turret",
             "type": "ywzj_vehicle:weapon",
+            "max_health": 600,
+            "render_bone": "turret",
             "structure_bone": "turret",
             "seat_offset": [-0.5, 2.5, 0],
             "crosshair_style": "circle",
@@ -90,6 +92,8 @@
             "id": "radar",
             "name": "radar",
             "type": "ywzj_vehicle:radar",
+            "max_health": 200,
+            "render_bone": "obj_center",
             "structure_bone": "radar",
             "is_seat": false,
             "rot_info": {

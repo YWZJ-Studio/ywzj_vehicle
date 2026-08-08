@@ -12,6 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.entity.misc.VehiclePart;
 import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.vehicle.custom.*;
 import org.ywzj.vehicle.entity.weapon.*;
@@ -116,6 +117,14 @@ public class AllEntities {
             () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
                     .clientTrackingRange(32)
                     .build("fake_player"));
+
+    public static final RegistryObject<EntityType<VehiclePart>> VEHICLE_PART = ENTITIES.register("vehicle_part",
+            () -> EntityType.Builder.of(VehiclePart::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(32)
+                    .build("vehicle_part"));
 
     public static final RegistryObject<EntityType<NoneVehicle>> NONE_VEHICLE = ENTITIES.register("none_vehicle",
             () -> EntityType.Builder.of(NoneVehicle::new, MobCategory.MISC)

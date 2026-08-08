@@ -10,4 +10,4 @@
     - [![License](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)]()
 * Art Assets
     - (c) 2026 - Present LesRaisins-Studios
-    - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%203.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/3.0/)
+    - [![License](https://img.shields.io/badge/License-ARR-red.svg?style=flat-square)]()

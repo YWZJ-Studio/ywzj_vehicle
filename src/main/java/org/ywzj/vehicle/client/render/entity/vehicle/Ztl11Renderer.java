@@ -4,6 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.Bake
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BoneState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -29,6 +30,7 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
 
     @Override
     public void render(Ztl11 vehicle, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        VehicleRender.renderHitbox(vehicle, pPoseStack, bufferSource);
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(AllEntities.ZTL11.getId()).orElse(null);
         if (display == null || display.getModel() == null) {
             return;
@@ -110,6 +112,13 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
             machineGunBase.rotation.mul(Axis.YN.rotationDegrees(machineGunYRot));
             machineGun.rotation.mul(Axis.XN.rotationDegrees(machineGunXRot));
 
+            int modelLight = pPackedLight;
+            if (vehicle.isDestroyed()) {
+                int blockLight = (int) (LightTexture.block(pPackedLight) / 1.5f);
+                int skyLight = (int) (LightTexture.sky(pPackedLight) / 1.5f);
+                modelLight = LightTexture.pack(blockLight, skyLight);
+            }
+
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             Vec3 root = new Vec3(0, 0, 0);
             pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
@@ -122,8 +131,8 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
                 animationInstance.tick();
                 modelInstance.applyPose(BLENDER.blend(modelInstance.getPose(), animationInstance.getCurrentPose()));
             }
-            model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), vehicle.isDestroyed() ? 64 : pPackedLight);
-            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.getVehicle());
+            model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.vehicle);
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));

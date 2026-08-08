@@ -41,7 +41,7 @@ public class VehicleCubeOBB {
         this.obb = obb;
         this.cubePoints = new ArrayList<>();
         this.initCubePoints();
-        this.offset = Vec3.ZERO;
+        this.offset = new Vec3(obb.extents().x, obb.extents().y, obb.extents().z);
         this.x = 0;
         this.y = 0;
         this.z = 0;

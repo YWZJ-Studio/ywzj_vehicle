@@ -56,6 +56,7 @@
   "key.ywzj_vehicle.open_inventory.desc": "Open Vehicle Inventory",
   "key.ywzj_vehicle.free_camera.desc": "Free Look",
   "key.ywzj_vehicle.leave_vehicle.desc": "Exit Vehicle",
+  "key.ywzj_vehicle.inspect_vehicle.desc": "Inspect Vehicle",
   "key.ywzj_vehicle.change_seat.desc": "Switch Seat (Use with number keys)",
   "key.ywzj_vehicle.debug_gui.desc": "Debug Info",
 

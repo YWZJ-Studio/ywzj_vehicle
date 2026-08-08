@@ -65,7 +65,7 @@ public class InputHandler {
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (action == GLFW.GLFW_PRESS) {
             if (instance.onVehicle()) {
-                AbstractVehicle vehicle = instance.getVehicle();
+                AbstractVehicle vehicle = instance.vehicle;
                 WeaponUnit weaponUnit = instance.getWeaponUnit();
                 if (matchesKey(SWITCH_VIEW, key, scanCode)) {
                     instance.switchViewType(null);
@@ -156,7 +156,7 @@ public class InputHandler {
         }
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (instance.onVehicle() && MAGNIFICATION_CHANGE.isDown() && instance.onVehicleTickCount > 5) {
-            AbstractVehicle vehicle = instance.getVehicle();
+            AbstractVehicle vehicle = instance.vehicle;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                 if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                     weaponUnit.switchZoom();
@@ -270,7 +270,7 @@ public class InputHandler {
             return;
         }
         if (LocalVehiclePlayer.instance.onVehicle()) {
-            AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+            AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
             boolean previous = event.getScrollDelta() == -1;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
                 Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.PRIMARY, previous));

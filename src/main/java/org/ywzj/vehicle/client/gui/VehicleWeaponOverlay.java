@@ -58,7 +58,7 @@ public class VehicleWeaponOverlay implements IGuiOverlay {
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (!instance.onVehicle()) return;
 
-        AbstractVehicle vehicle = instance.getVehicle();
+        AbstractVehicle vehicle = instance.vehicle;
         PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(instance.getPlayer());
         if (!(operatorUnit instanceof WeaponUnit weaponUnit)) return;
 

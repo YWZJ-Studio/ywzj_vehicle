@@ -12,6 +12,7 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -144,9 +145,10 @@ public class FirstPersonHandler {
             currentRollShake = 0.0;
             return;
         }
-        event.setYaw((float) (event.getYaw() + currentYawShake));
-        event.setPitch((float) (event.getPitch() + currentPitchShake));
-        event.setRoll((float) (event.getRoll() + currentRollShake));
+        double shakeMultiplier = AllConfigs.common.cameraShakeMultiplier.get();
+        event.setYaw((float) (event.getYaw() + currentYawShake * shakeMultiplier));
+        event.setPitch((float) (event.getPitch() + currentPitchShake * shakeMultiplier));
+        event.setRoll((float) (event.getRoll() + currentRollShake * shakeMultiplier));
     }
 
     private static double phaseFromSeed(long seed) {

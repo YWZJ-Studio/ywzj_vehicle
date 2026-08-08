@@ -46,7 +46,7 @@ public class VehicleDebugOverlay implements IGuiOverlay {
         }
         UUID uuid = mc.player.getUUID();
         ServerPlayer serverPlayer = server.getPlayerList().getPlayer(uuid);
-        Entity entity = serverPlayer.level().getEntity(LocalVehiclePlayer.instance.getVehicle().getId());
+        Entity entity = serverPlayer.level().getEntity(LocalVehiclePlayer.instance.vehicle.getId());
         if (!(entity instanceof AbstractVehicle vehicle)) {
             return;
         }

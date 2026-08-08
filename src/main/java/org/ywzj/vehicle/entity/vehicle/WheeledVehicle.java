@@ -10,7 +10,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
@@ -18,8 +17,7 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
-import org.ywzj.vehicle.particle.SmokeCloudOption;
-import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
@@ -304,35 +302,15 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             trackLength = 0;
             Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
             Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            if (EntityUtil.isOnBlockSurface(this, trackLeftPos)) {
-                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackLeftPos.x, trackLeftPos.y, trackLeftPos.z,  trackSize, this.getYRot(), 0
-                );
-            }
-            if (EntityUtil.isOnBlockSurface(this, trackRightPos)) {
-                this.level().addParticle(AllParticleTypes.TRACK.get(), true,
-                        trackRightPos.x, trackRightPos.y, trackRightPos.z,  trackSize, this.getYRot(), 0
-                );
-            }
+            ParticleUtil.spawnTracks(level(), this, trackSize, getYRot(), trackLeftPos, trackRightPos);
         }
         // 引擎烟
         if (hasPower()) {
             double velocity = Math.abs(entityData.get(FORWARD_SPEED));
             if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
-                energyInfo.engineParticleOffsets.forEach(offset -> {
-                    Vec3 engineSmokePos = this.position().add(offset);
-                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.1);
-                    engineSmokePos = relativeRotPos(engineSmokePos, false);
-                    for (int count = 0; count < velocity / 16 + 1; count++) {
-                        level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
-                                        0.0f, 0.0f, 0.0f, 0.7f,
-                                        10, 0.2f, 0.3f, 0.005f), true,
-                                engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                                engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
-                                engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
-                                engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
-                    }
-                });
+                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(),
+                        pos -> relativeRotPos(pos, false), getLookAngle().normalize().scale(-0.1),
+                        (int) Math.ceil(velocity / 16 + 1), 10, 0.2f, 0.3f);
                 engineParticleTick = 0;
             } else {
                 engineParticleTick += 1;

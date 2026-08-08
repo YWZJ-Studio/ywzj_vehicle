@@ -1,7 +1,6 @@
 package org.ywzj.vehicle.entity.vehicle;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -21,7 +20,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
@@ -29,8 +27,8 @@ import org.ywzj.vehicle.client.render.animation.context.RotaryWingVehicleContext
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
@@ -445,31 +443,9 @@ public class RotaryWingVehicle extends AbstractVehicle
         super.tickParticle();
         // 飞行扬尘效果
         if (getPower() > 30 && tickCount % 2 == 0) {
-            // 获取当前位置并从下方开始查找第一个实心方块
-            BlockPos basePos = null;
-            for (int y = 1; y <= 32; y++) {
-                BlockPos checkPos = this.blockPosition().below(y);
-                if (!level().getBlockState(checkPos).isAir()) {
-                    basePos = checkPos; // 找到第一个实心方块
-                    break;
-                }
-            }
-            if (basePos != null) {
-                double radius = (double) tickCount % 20 / 20 * 10;
-                if (radius > 0 && radius < mainCubeOBB.depth * 1.3f) {
-                    int pointCount = 8; // 生成的粒子数量
-                    int particleCount = 2; // 生成的粒子数量
-                    for (int i = 0; i < pointCount; i++) {
-                        for (int j = 0; j < particleCount; j++) {
-                            double bias = ((2 * Math.PI) / pointCount) * random.nextDouble();
-                            double angle = (i * 2 * Math.PI) / pointCount;
-                            double xOffset = radius * Math.cos(angle + bias) + random.nextDouble() * 0.5;
-                            double zOffset = radius * Math.sin(angle + bias) + random.nextDouble() * 0.5;
-                            Vec3 particlePos = new Vec3(basePos.getX() + xOffset, basePos.getY() + 1 + random.nextDouble() * 1, basePos.getZ() + zOffset);
-                            level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 3.0F), true, particlePos.x, particlePos.y, particlePos.z, 0, 0, 0);
-                        }
-                    }
-                }
+            double radius = (double) tickCount % 20 / 20 * 10;
+            if (radius > 0 && radius < mainCubeOBB.depth * 1.3f) {
+                ParticleUtil.spawnRotorDownwash(level(), random, blockPosition(), radius);
             }
         }
         // 引擎烟
@@ -477,18 +453,9 @@ public class RotaryWingVehicle extends AbstractVehicle
             float engineSpeed = getPower();
             float collectivePitch = getCollectivePitch();
             if ((engineSpeed > 0 && engineParticleTick > Mth.clamp(10 - collectivePitch / 10, 3, 10))) {
-                energyInfo.engineParticleOffsets.forEach(offset -> {
-                    Vec3 engineSmokePos = this.position().add(offset);
-                    engineSmokePos = relativeRotPos(engineSmokePos, false);
-                    Vec3 engineSmokeVelocity = this.getLookAngle().normalize().scale(-0.3);
-                    level().addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
-                                    0.0f, 0.0f, 0.0f, 0.7f,
-                                    20, 0.3f, 0.4f, 0.005f), true,
-                            engineSmokePos.x, engineSmokePos.y, engineSmokePos.z,
-                            engineSmokeVelocity.x + (level().random.nextDouble() - 0.5) * 0.05,
-                            engineSmokeVelocity.y + (level().random.nextDouble() - 0.5) * 0.05,
-                            engineSmokeVelocity.z + (level().random.nextDouble() - 0.5) * 0.05);
-                });
+                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(),
+                        pos -> relativeRotPos(pos, false), getLookAngle().normalize().scale(-0.3),
+                        1, 20, 0.3f, 0.4f);
                 engineParticleTick = 0;
             } else {
                 engineParticleTick += 1;
