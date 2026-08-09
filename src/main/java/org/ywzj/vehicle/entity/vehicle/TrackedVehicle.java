@@ -279,7 +279,7 @@ public class TrackedVehicle extends AbstractVehicle
         if (hasPower()) {
             double velocity = Math.abs(entityData.get(FORWARD_SPEED)) + Math.abs(entityData.get(TURN_SPEED));
             if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
-                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(),
+                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(), new Vec3(xo, yo, zo),
                         pos -> relativeRotPos(pos, false), getLookAngle().normalize().scale(-0.2),
                         (int) Math.ceil(velocity / 16 + 1), 20, 0.3f, 0.4f);
                 engineParticleTick = 0;

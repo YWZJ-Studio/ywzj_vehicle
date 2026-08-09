@@ -27,6 +27,7 @@ public class PartUnitData {
     protected boolean isSeat;
     protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
+    protected Vec3 dismountOffset;
     protected PassengerPose passengerPose;
     protected boolean passengerCanUseItem;
     protected Vec3 ownerViewOffset = null;
@@ -57,6 +58,7 @@ public class PartUnitData {
         this.isSeat = pojo.isSeat;
         this.seatRot = pojo.seatRot;
         this.seatOffset = pojo.seatOffset;
+        this.dismountOffset = pojo.dismountOffset;
         this.passengerPose = pojo.passengerPose;
         this.passengerCanUseItem = pojo.passengerCanUseItem;
         this.ownerViewOffset = pojo.ownerViewOffset;
@@ -153,6 +155,10 @@ public class PartUnitData {
 
     public Vec3 getSeatOffset() {
         return seatOffset;
+    }
+
+    public Vec3 getDismountOffset() {
+        return dismountOffset;
     }
 
     public PassengerPose getPassengerPose() {

@@ -80,11 +80,12 @@ public final class ParticleUtil {
         }
     }
 
-    public static void spawnEngineSmoke(Level level, Iterable<Vec3> offsets, Vec3 vehiclePosition,
+    public static void spawnEngineSmoke(Level level, Iterable<Vec3> offsets, Vec3 vehiclePosition, Vec3 previousVehiclePosition,
                                         Function<Vec3, Vec3> positionTransform, Vec3 velocity,
                                         int count, int lifetime, float startSize, float endSize) {
+        Vec3 movement = vehiclePosition.subtract(previousVehiclePosition);
         for (Vec3 offset : offsets) {
-            Vec3 smokePosition = positionTransform.apply(vehiclePosition.add(offset));
+            Vec3 smokePosition = positionTransform.apply(vehiclePosition.add(offset)).subtract(movement);
             for (int i = 0; i < count; i++) {
                 level.addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
                                 0.0f, 0.0f, 0.0f, 0.7f,

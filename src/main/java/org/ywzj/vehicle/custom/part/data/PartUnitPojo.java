@@ -44,6 +44,9 @@ public class PartUnitPojo {
     @SerializedName("seat_offset")
     public Vec3 seatOffset = Vec3.ZERO;
 
+    @SerializedName("dismount_offset")
+    public Vec3 dismountOffset = null;
+
     @SerializedName("passenger_pose")
     public PassengerPose passengerPose = null;
 

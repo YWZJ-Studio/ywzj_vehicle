@@ -864,12 +864,18 @@ public abstract class AbstractVehicle extends ContainerCraft
     @Override
     protected void removePassenger(Entity pPassenger) {
         if (pPassenger instanceof LivingEntity livingEntity) {
-            Vec3 dismountLocation;
-            DoorUnit doorUnit = getNearestDoorUnit(livingEntity);
-            if (doorUnit != null) {
-                dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
-            } else {
-                PartUnit<?> partUnit = getOwnOperatorUnit(livingEntity);
+            Vec3 dismountLocation = null;
+            PartUnit<?> partUnit = getOwnOperatorUnit(livingEntity);
+            if (partUnit != null) {
+                dismountLocation = partUnit.worldDismountPosition();
+            }
+            if (dismountLocation == null) {
+                DoorUnit doorUnit = getNearestDoorUnit(livingEntity);
+                if (doorUnit != null) {
+                    dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
+                }
+            }
+            if (dismountLocation == null) {
                 dismountLocation = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
             }
             dismountLocations.put(livingEntity, dismountLocation);

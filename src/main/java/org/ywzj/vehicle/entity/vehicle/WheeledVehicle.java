@@ -308,7 +308,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         if (hasPower()) {
             double velocity = Math.abs(entityData.get(FORWARD_SPEED));
             if (engineParticleTick > (maxSpeedForward * 0.5 - velocity) / maxSpeedForward * 10) {
-                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(),
+                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(), new Vec3(xo, yo, zo),
                         pos -> relativeRotPos(pos, false), getLookAngle().normalize().scale(-0.1),
                         (int) Math.ceil(velocity / 16 + 1), 10, 0.2f, 0.3f);
                 engineParticleTick = 0;

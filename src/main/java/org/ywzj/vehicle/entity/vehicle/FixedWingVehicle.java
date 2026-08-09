@@ -586,7 +586,7 @@ public class FixedWingVehicle extends AbstractVehicle
             float engineSpeed = getPower();
             float throttlelevel = getThrottleLevel();
             if ((engineSpeed > 0 && engineParticleTick > Mth.clamp(10 - throttlelevel / 10, 3, 10))) {
-                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(),
+                ParticleUtil.spawnEngineSmoke(level(), energyInfo.engineParticleOffsets, position(), new Vec3(xo, yo, zo),
                         pos -> relativeRotPos(pos, false), getLookAngle().normalize().scale(-0.3),
                         1, 20, 0.3f, 0.4f);
                 engineParticleTick = 0;

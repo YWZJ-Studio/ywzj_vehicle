@@ -63,6 +63,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected boolean isSeat;
     protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
+    protected Vec3 dismountOffset;
     protected PassengerPose passengerPose;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
@@ -91,6 +92,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.isSeat = data.isSeat();
         this.seatRot = data.getSeatRot();
         this.seatOffset = data.getSeatOffset();
+        this.dismountOffset = data.getDismountOffset();
         this.passengerPose = data.getPassengerPose();
         this.ownerViewOffset = data.getOwnerViewOffset();
         this.pivotOffset = data.getPivotOffset();
@@ -205,6 +207,13 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     public Vec3 worldSeatPosition() {
         float eyeHeight = getOwner() == null ? 2 : owner.getEyeHeight();
         return worldPositionWithSelfRot(new Vec3(seatOffset.x, seatOffset.y  - eyeHeight, seatOffset.z));
+    }
+
+    public Vec3 worldDismountPosition() {
+        if (dismountOffset == null) {
+            return null;
+        }
+        return worldPosition(dismountOffset);
     }
 
     public Vec3 worldOwnerViewPosition(float partialTick) {
@@ -390,6 +399,14 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public void setSeatOffset(Vec3 seatOffset) {
         this.seatOffset = seatOffset;
+    }
+
+    public Vec3 getDismountOffset() {
+        return dismountOffset;
+    }
+
+    public void setDismountOffset(Vec3 dismountOffset) {
+        this.dismountOffset = dismountOffset;
     }
 
     public PassengerPose getPassengerPose() {
