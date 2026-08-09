@@ -418,10 +418,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.name = vehicleData.getName();
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
-        this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
-        this.physicsEngine.center = vehicleData.getPhysicsInfo().center;
-        this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
-        this.physicsEngine.radarCrossSection = vehicleData.getPhysicsInfo().radarCrossSection;
+        this.physicsEngine.physicsInfo = vehicleData.getPhysicsInfo().copy();
         this.defenseStats = vehicleData.getDefenseStats();
         this.centerOffset = vehicleData.getCenterOffset();
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
@@ -534,7 +531,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             float fuel = cap.getFuel();
             fuel = Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100);
-            physicsEngine.mass = curbWeight + fuel;
+            physicsEngine.physicsInfo.mass = curbWeight + fuel;
             entityData.set(ENERGY, fuel);
             setEnergy(fuel);
         });
@@ -1348,7 +1345,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             cap.setFuel(amount);
             entityData.set(ENERGY, amount);
-            physicsEngine.mass = curbWeight + amount;
+            physicsEngine.physicsInfo.mass = curbWeight + amount;
         });
     }
 
@@ -1468,8 +1465,8 @@ public abstract class AbstractVehicle extends ContainerCraft
             double relativeNormalSpeed = otherVelocity.subtract(thisVelocity).dot(normal);
             double separationSpeed = 0.01;
             if (relativeNormalSpeed < separationSpeed) {
-                double thisMass = Math.max(this.physicsEngine.mass, 1.0E-3);
-                double otherMass = Math.max(vehicle.physicsEngine.mass, 1.0E-3);
+                double thisMass = Math.max(this.physicsEngine.physicsInfo.mass, 1.0E-3);
+                double otherMass = Math.max(vehicle.physicsEngine.physicsInfo.mass, 1.0E-3);
                 double velocityChange = separationSpeed - relativeNormalSpeed;
                 double totalMass = thisMass + otherMass;
                 Vec3 thisPush = normal.scale(-velocityChange * otherMass / totalMass);

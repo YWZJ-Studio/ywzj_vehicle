@@ -71,7 +71,7 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<SmokeGrenadeEntity>> SMOKE_GRENADE = ENTITIES.register("smoke_grenade",
             () -> EntityType.Builder.<SmokeGrenadeEntity>of(SmokeGrenadeEntity::new, MobCategory.MISC)
-            .setShouldReceiveVelocityUpdates(true)
+            .setShouldReceiveVelocityUpdates(false)
             .setTrackingRange(16)
             .setUpdateInterval(1)
             .setCustomClientFactory(SmokeGrenadeEntity::new)
@@ -82,7 +82,7 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<ActiveProtectionGrenadeEntity>> APS_GRENADE = ENTITIES.register("aps_grenade",
             () -> EntityType.Builder.<ActiveProtectionGrenadeEntity>of(ActiveProtectionGrenadeEntity::new, MobCategory.MISC)
-                    .setShouldReceiveVelocityUpdates(true)
+                    .setShouldReceiveVelocityUpdates(false)
                     .setTrackingRange(16)
                     .setUpdateInterval(1)
                     .setCustomClientFactory(ActiveProtectionGrenadeEntity::new)
@@ -93,7 +93,7 @@ public class AllEntities {
 
     public static final RegistryObject<EntityType<FragGrenadeEntity>> FRAG_GRENADE = ENTITIES.register("frag_grenade",
             () -> EntityType.Builder.<FragGrenadeEntity>of(FragGrenadeEntity::new, MobCategory.MISC)
-                    .setShouldReceiveVelocityUpdates(true)
+                    .setShouldReceiveVelocityUpdates(false)
                     .setTrackingRange(16)
                     .setUpdateInterval(1)
                     .setCustomClientFactory(FragGrenadeEntity::new)

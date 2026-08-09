@@ -207,7 +207,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
                 }
             }
             decorationModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
-            decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, false);
+            decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, null, false);
         }
         pPoseStack.popPose();
     }

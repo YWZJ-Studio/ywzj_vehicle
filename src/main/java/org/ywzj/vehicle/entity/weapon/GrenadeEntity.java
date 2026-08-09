@@ -59,8 +59,25 @@ public abstract class GrenadeEntity extends AmmoEntity {
     }
 
     @Override
+    public void writeSpawnData(FriendlyByteBuf buffer) {
+        super.writeSpawnData(buffer);
+        buffer.writeDouble(this.getDeltaMovement().x);
+        buffer.writeDouble(this.getDeltaMovement().y);
+        buffer.writeDouble(this.getDeltaMovement().z);
+        buffer.writeInt(this.vehicle == null ? -1 : this.vehicle.getId());
+    }
+
+    @Override
     public void readSpawnData(FriendlyByteBuf additionalData) {
         super.readSpawnData(additionalData);
+        this.setDeltaMovement(
+                additionalData.readDouble(),
+                additionalData.readDouble(),
+                additionalData.readDouble());
+        Entity vehicle = this.level().getEntity(additionalData.readInt());
+        if (vehicle instanceof AbstractVehicle abstractVehicle) {
+            this.vehicle = abstractVehicle;
+        }
         VehicleWeaponIndex<?, ?> index = CommonAssetsManager.vehicleWeaponManager().getIndex(getWeaponId()).orElse(null);
         if (index != null && index.data() instanceof VehicleGrenadeWeaponData data) {
             initGrenade(data);
@@ -170,7 +187,7 @@ public abstract class GrenadeEntity extends AmmoEntity {
             case ENTITY -> {
                 EntityHitResult entityResult = (EntityHitResult) result;
                 Entity entity = entityResult.getEntity();
-                if (entity == this.getOwner() || entity == this.getVehicle()) return;
+                if (entity == this.getOwner() || entity == this.vehicle) return;
                 double speed = this.getDeltaMovement().length();
                 if (speed > 0.1) {
                     entity.hurt(entity.damageSources().thrown(this, this.getOwner()), this.damage);
@@ -208,7 +225,7 @@ public abstract class GrenadeEntity extends AmmoEntity {
             } else if (hitResult.getType() == HitResult.Type.ENTITY) {
                 EntityHitResult entityResult = (EntityHitResult) hitResult;
                 Entity entity = entityResult.getEntity();
-                if (entity == this.getOwner() || entity == this.getVehicle()) break;
+                if (entity == this.getOwner() || entity == this.vehicle) break;
 
                 Direction direction = Direction.getNearest(endVecOffset.x(), endVecOffset.y(), endVecOffset.z()).getOpposite();
                 Vec3 hit = hitResult.getLocation();

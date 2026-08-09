@@ -71,12 +71,12 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         pPoseStack.pushPose();
         try {
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-            applyDetachedPart(vehicle, modelInstance);
+            List<BoneState> invisibleBones = applyDetachedPart(vehicle, modelInstance);
             applyVehicleRotation(vehicle, pPartialTick, pPoseStack);
             applyAnimationPose(vehicle, pPartialTick, modelInstance);
             // 载具
             model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
-            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.vehicle);
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, invisibleBones, vehicle == LocalVehiclePlayer.instance.vehicle);
             // 部件
             for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
                 if (partUnit.isDetached()) {
@@ -151,7 +151,8 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         }
     }
 
-    public static void applyDetachedPart(AbstractVehicle vehicle, BakedModelInstance modelInstance) {
+    public static List<BoneState> applyDetachedPart(AbstractVehicle vehicle, BakedModelInstance modelInstance) {
+        List<BoneState> invisibleBones = new ArrayList<>();
         for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
             String renderBoneName = partUnit.getRenderBoneName();
             if (renderBoneName == null) {
@@ -160,8 +161,12 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             BoneState bone = modelInstance.getBone(renderBoneName);
             if (bone != null) {
                 bone.visible = !partUnit.isDetached();
+                if (!bone.visible) {
+                    invisibleBones.add(bone);
+                }
             }
         }
+        return invisibleBones;
     }
 
     public static void applyVehicleRotation(AbstractVehicle vehicle, float partialTick, PoseStack poseStack) {

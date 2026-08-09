@@ -15,6 +15,7 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.PhysicsInfo;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -26,9 +27,7 @@ public class PhysicsEngine {
     public static final double MAGIC_NUMBER = .943;
     public static float G = 9.8f / 400;
     public final AbstractVehicle vehicle;
-    public float radarCrossSection;
-    public float mass = 1;
-    public Vec3 center;
+    public PhysicsInfo physicsInfo;
     public float bounce = 0.05f;
     public float angularDampingGround = 0.88f;
     public float angularDampingAir = 0.96f;
@@ -45,16 +44,15 @@ public class PhysicsEngine {
     public Vector3f planeSupport;
     public Vector3f planeU;
     public Vector3f planeV;
-    public float friction = 0.005f;
     public Vector3f velocity = new Vector3f(0, 0, 0);
     public Vector3f velocityO = new Vector3f(0, 0, 0);
     public boolean lockZRot;
     public boolean lockCenterRot;
-    public boolean canDestroyBlock;
     public int stuckTick;
 
     public PhysicsEngine(AbstractVehicle vehicle) {
         this.vehicle = vehicle;
+        this.physicsInfo = new PhysicsInfo();
     }
 
     public VehicleCubeOBB physicsCube() {
@@ -178,7 +176,7 @@ public class PhysicsEngine {
     private void destroyBlocks(VehicleCubeOBB physicsCube, VehicleCubeOBB.CubeFace cubeFace) {
         stuckTick += 1;
         if (stuckTick == 10) {
-            if (canDestroyBlock && AllConfigs.common.canDestroyBlock.get()) {
+            if (physicsInfo.canDestroyBlock && AllConfigs.common.canDestroyBlock.get()) {
                 Level level = vehicle.level();
                 Vector3f[] axes = physicsCube.obb().getAxes();
                 Vector3f faceNormal = cubeFace == VehicleCubeOBB.CubeFace.LEFT || cubeFace == VehicleCubeOBB.CubeFace.RIGHT ? axes[0] : axes[2];
@@ -213,7 +211,7 @@ public class PhysicsEngine {
     public Vec3 decelerationByFriction(List<VehicleCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
         if (!touchPoints.isEmpty()) {
             // 接触摩擦力
-            velocity = velocity.normalize().scale(Math.max(0, velocity.length() - friction / mass));
+            velocity = velocity.normalize().scale(Math.max(0, velocity.length() - physicsInfo.friction / physicsInfo.mass));
         }
         this.velocity = velocity.toVector3f();
         return velocity;
@@ -227,10 +225,10 @@ public class PhysicsEngine {
         try {
             // 加速度使得重心偏移
             Vector3f a = new Vector3f(velocity).sub(this.velocityO);
-            Vector3f gravityCenter = center.toVector3f();
+            Vector3f gravityCenter = physicsInfo.center.toVector3f();
             gravityCenter.add(a.mul((float) (physicsCube.height * 8)));
             // 升力影响
-            if (force.y >= G * mass) {
+            if (force.y >= G * physicsInfo.mass) {
                 velocity.y -= G;
                 vehicle.setOnGround(false);
                 return new Vec3(velocity);
@@ -370,10 +368,10 @@ public class PhysicsEngine {
             localRotAxisVec = new Vector3f(localRotAxisEnd).sub(localRotAxisStart);
             // 基于力矩和转动惯量计算角加速度
             // 合力 = 重力 + 外部推力（force在局部坐标系下的投影）
-            Vector3f netForceLocal = new Vector3f(gLocalDirection).mul(G * mass);
+            Vector3f netForceLocal = new Vector3f(gLocalDirection).mul(G * physicsInfo.mass);
             netForceLocal.add(force.dot(axes[0]), force.dot(axes[1]), force.dot(axes[2]));
             float torque = computeTorque(localRotAxisStart, localRotAxisEnd, gravityCenter, netForceLocal);
-            float moi = computeMomentOfInertia(localRotAxisStart, localRotAxisEnd, physicsCube, mass, gravityCenter);
+            float moi = computeMomentOfInertia(localRotAxisStart, localRotAxisEnd, physicsCube, physicsInfo.mass, gravityCenter);
             float angularAccel = moi > 0.001f ? torqueScale * torque / moi : 0;
             rotV = rotV * angularDampingGround + angularAccel;
             rotV = Math.min(rotV, maxRotV);

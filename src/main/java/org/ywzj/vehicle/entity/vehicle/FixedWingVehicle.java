@@ -220,7 +220,7 @@ public class FixedWingVehicle extends AbstractVehicle
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             float fuel = cap.getFuel();
             fuel = org.joml.Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100 * getThrottleLevel() / 100);
-            physicsEngine.mass = curbWeight + fuel;
+            physicsEngine.physicsInfo.mass = curbWeight + fuel;
             entityData.set(ENERGY, fuel);
             setEnergy(fuel);
         });
@@ -349,7 +349,7 @@ public class FixedWingVehicle extends AbstractVehicle
                 }
             }
         }
-        double mass = physicsEngine.mass;
+        double mass = physicsEngine.physicsInfo.mass;
         // 空速
         Vec3 airSpeed = getDeltaMovement();
         // 地面航行

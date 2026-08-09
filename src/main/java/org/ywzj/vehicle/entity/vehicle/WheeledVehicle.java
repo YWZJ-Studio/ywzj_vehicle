@@ -170,7 +170,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         Vec3 turnForce = turnDirection.normalize().scale(turnStep / 100);
         this.setYRot(this.getYRot() + turnStep);
         // 受力产生加速度
-        Vec3 deltaVelocity = propulsiveForce.add(turnForce).scale(1 / physicsEngine.mass);
+        Vec3 deltaVelocity = propulsiveForce.add(turnForce).scale(1 / physicsEngine.physicsInfo.mass);
         velocity = velocity.add(deltaVelocity);
         motion = velocity.length();
         angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));

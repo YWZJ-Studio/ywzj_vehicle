@@ -116,12 +116,13 @@ public class VehicleBedrockModel extends BedrockModel {
 
     @OnlyIn(Dist.CLIENT)
     public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
-        renderSpecialBones(defaultModelInstance, poseStack, source, packedLight, packedOverlay, false);
+        renderSpecialBones(defaultModelInstance, poseStack, source, packedLight, packedOverlay, null, false);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, boolean isLocalPlayerVehicle) {
+    public void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, List<BoneState> invisibleBones, boolean isLocalPlayerVehicle) {
         setSpecialBoneVisible(instance, true);
+        invisibleBones.forEach(invisibleBone -> invisibleBone.visible = false);
         for (BakedSpecialBoneEntry entry : bakedSpecialBoneEntries) {
             if (entry.effect.type == SpecialBoneEffect.SpecialBoneEffectType.COCKPIT
                     && isLocalPlayerVehicle

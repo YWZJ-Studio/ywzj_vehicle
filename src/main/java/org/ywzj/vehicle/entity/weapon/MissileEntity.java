@@ -48,15 +48,6 @@ import java.util.List;
 
 public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
-    private static final double PRESET_CRUISE_ALTITUDE = 512;
-    private static final double PRESET_MAX_ASCENT_LEAD = 64;
-    private static final double PRESET_ASCENT_RADIUS = 24;
-    private static final double PRESET_DIVE_RADIUS = 24;
-    private static final double PRESET_DIVE_ALTITUDE_FACTOR = 0.75;
-    private static final double PRESET_DIVE_LEAD_FACTOR = 1.5;
-    private static final double PRESET_CRUISE_ALTITUDE_GAIN = 0.002;
-    private static final double PRESET_CRUISE_VERTICAL_DAMPING = 0.05;
-    private static final double PRESET_CRUISE_MAX_VERTICAL_COMPONENT = 0.5;
     public float caliber;
     public float seekerFov;
     public float mass;
@@ -68,6 +59,15 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public float dragCoefficient;
     public float maxG;
     public float referenceSpeed;
+    public double presetCruiseAltitude;
+    public double presetMaxAscentLead;
+    public double presetAscentRadius;
+    public double presetDiveRadius;
+    public double presetDiveAltitudeFactor;
+    public double presetDiveLeadFactor;
+    public double presetCruiseAltitudeGain;
+    public double presetCruiseVerticalDamping;
+    public double presetCruiseMaxVerticalComponent;
     public float activeRadarActivationRange = 1024;
     private VehicleMissileWeaponData.Guidance guidance;
     private VehicleMissileWeaponData.HomingMode homingMode;
@@ -157,6 +157,15 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.dragCoefficient = data.getDragCoefficient();
         this.maxG = data.getMaxG();
         this.referenceSpeed = data.getReferenceSpeed();
+        this.presetCruiseAltitude = data.getPresetCruiseAltitude();
+        this.presetMaxAscentLead = data.getPresetMaxAscentLead();
+        this.presetAscentRadius = data.getPresetAscentRadius();
+        this.presetDiveRadius = data.getPresetDiveRadius();
+        this.presetDiveAltitudeFactor = data.getPresetDiveAltitudeFactor();
+        this.presetDiveLeadFactor = data.getPresetDiveLeadFactor();
+        this.presetCruiseAltitudeGain = data.getPresetCruiseAltitudeGain();
+        this.presetCruiseVerticalDamping = data.getPresetCruiseVerticalDamping();
+        this.presetCruiseMaxVerticalComponent = data.getPresetCruiseMaxVerticalComponent();
         this.guidance = data.getGuidance();
         this.homingMode = data.getHomingMode();
         this.damage = data.getDamage();
@@ -262,8 +271,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         switch (presetPhase) {
             case ASCENT -> {
                 guideToPresetPosition(presetAscentPos);
-                if (this.position().distanceToSqr(presetAscentPos) <= PRESET_ASCENT_RADIUS * PRESET_ASCENT_RADIUS
-                        || this.getY() >= presetAscentPos.y - PRESET_ASCENT_RADIUS) {
+                if (this.position().distanceToSqr(presetAscentPos) <= presetAscentRadius * presetAscentRadius
+                        || this.getY() >= presetAscentPos.y - presetAscentRadius) {
                     presetPhase = PresetPhase.CRUISE;
                 }
             }
@@ -499,8 +508,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         Vec3 forward = horizontalDistance > 1.0E-6
                 ? horizontalToTarget.scale(1 / horizontalDistance)
                 : new Vec3(this.getLookAngle().x, 0, this.getLookAngle().z).normalize();
-        double ascentLead = Math.min(PRESET_MAX_ASCENT_LEAD, horizontalDistance * 0.25);
-        double cruiseY = presetLaunchPos.y + PRESET_CRUISE_ALTITUDE;
+        double ascentLead = Math.min(presetMaxAscentLead, horizontalDistance * 0.25);
+        double cruiseY = presetLaunchPos.y + presetCruiseAltitude;
         presetAscentPos = new Vec3(
                 presetLaunchPos.x + forward.x * ascentLead,
                 cruiseY,
@@ -536,11 +545,11 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
         double altitudeError = presetOverheadPos.y - this.getY();
         double verticalComponent = PhysicsEngine.G / thrustAcceleration
-                + altitudeError * PRESET_CRUISE_ALTITUDE_GAIN
-                - velocity.y * PRESET_CRUISE_VERTICAL_DAMPING;
+                + altitudeError * presetCruiseAltitudeGain
+                - velocity.y * presetCruiseVerticalDamping;
         verticalComponent = Mth.clamp(verticalComponent,
-                -PRESET_CRUISE_MAX_VERTICAL_COMPONENT,
-                PRESET_CRUISE_MAX_VERTICAL_COMPONENT);
+                -presetCruiseMaxVerticalComponent,
+                presetCruiseMaxVerticalComponent);
         double horizontalComponent = Math.sqrt(1 - verticalComponent * verticalComponent);
         Vec3 desiredDirection = horizontalDirection.normalize().scale(horizontalComponent)
                 .add(0, verticalComponent, 0);
@@ -557,9 +566,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         double turnRadius = turnAcceleration > 1.0E-6
                 ? missileSpeed * missileSpeed / turnAcceleration
                 : Double.MAX_VALUE;
-        double diveDistance = Math.max(PRESET_DIVE_RADIUS, Math.max(
-                verticalDistance * PRESET_DIVE_ALTITUDE_FACTOR,
-                turnRadius * PRESET_DIVE_LEAD_FACTOR));
+        double diveDistance = Math.max(presetDiveRadius, Math.max(
+                verticalDistance * presetDiveAltitudeFactor,
+                turnRadius * presetDiveLeadFactor));
         Vec3 route = new Vec3(
                 presetTargetPos.x - presetLaunchPos.x,
                 0,

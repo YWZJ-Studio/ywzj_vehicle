@@ -46,7 +46,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
-    public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.mass;
+    public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.physicsInfo.mass;
     public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -217,7 +217,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         airSpeed = airSpeed.add(force);
         double al = airSpeed.length();
         // 空气阻力
-        airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.friction / physicsEngine.mass);
+        airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.physicsInfo.friction / physicsEngine.physicsInfo.mass);
         if (airSpeed.length() >= maxAirSpeed) {
             airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }

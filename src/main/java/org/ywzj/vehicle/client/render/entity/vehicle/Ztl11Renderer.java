@@ -132,7 +132,7 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
                 modelInstance.applyPose(BLENDER.blend(modelInstance.getPose(), animationInstance.getCurrentPose()));
             }
             model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
-            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, vehicle == LocalVehiclePlayer.instance.vehicle);
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, null, vehicle == LocalVehiclePlayer.instance.vehicle);
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));

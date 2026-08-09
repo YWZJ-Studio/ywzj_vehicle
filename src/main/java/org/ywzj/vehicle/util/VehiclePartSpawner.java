@@ -43,7 +43,7 @@ public final class VehiclePartSpawner {
                 (random.nextDouble() - 0.5) * 0.3
         );
         direction = direction.normalize().add(randomOffset).normalize();
-        double speed = 0.8 + random.nextDouble() * 0.2;
+        double speed = vehicle.physicsEngine.physicsInfo.destroyExplosionVelocity + random.nextDouble() * 0.2;
         return direction.scale(speed);
     }
 
