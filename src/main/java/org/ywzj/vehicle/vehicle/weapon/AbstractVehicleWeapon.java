@@ -257,7 +257,8 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         }
         float recoil = data.getRecoil();
         float caliber = data.getCaliber();
-        float scale = caliber / 20;
+        float scaleDivisor = 20f + 30f * caliber / 1000f;
+        float scale = caliber / scaleDivisor;
         for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
             for (int i = 0; i < 3 * recoil + 1; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
