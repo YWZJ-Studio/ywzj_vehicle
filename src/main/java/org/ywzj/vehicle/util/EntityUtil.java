@@ -79,11 +79,12 @@ public class EntityUtil {
                 if (result == null) {
                     continue;
                 }
-                hitPos = result.getLocation();
-                double distanceToHit = startVec.distanceTo(hitPos);
+                Vec3 resultHitPos = result.getLocation();
+                double distanceToHit = startVec.distanceTo(resultHitPos);
                 if (entity.isAlive()) {
                     if (distanceToHit < closestDistance) {
                         hitEntity = entity;
+                        hitPos = resultHitPos;
                         closestDistance = distanceToHit;
                         headshot = result.isHeadshot();
                     }
@@ -120,7 +121,7 @@ public class EntityUtil {
         if (entity instanceof AbstractVehicle) {
             Vec3 closestHitPos = VectorUtil.closestHitObbPosition(entity, startVec, endVec);
             if (closestHitPos != null) {
-                return new BulletHitResult(bulletEntity, closestHitPos, false);
+                return new BulletHitResult(entity, closestHitPos, false);
             } else {
                 return null;
             }

@@ -49,6 +49,8 @@
             "id": "turret",
             "name": "turret",
             "type": "ywzj_vehicle:weapon",
+            "max_health": 100,
+            "render_bone": "ctr_machine_gun",
             "structure_bone": "turret",
             "seat_offset": [-0.25, 2.8, -0.5],
             "crosshair_style": "circle",

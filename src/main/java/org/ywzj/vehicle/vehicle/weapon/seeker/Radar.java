@@ -82,7 +82,7 @@ public class Radar {
                 if (vehicle.isDestroyed()) {
                     continue;
                 } else {
-                    rcs = vehicle.physicsEngine.radarCrossSection;
+                    rcs = vehicle.physicsEngine.physicsInfo.radarCrossSection;
                 }
             }
             // 基础校验
@@ -140,7 +140,7 @@ public class Radar {
             Entity entity = detectedObject.entity;
             float rcs = 1;
             if (entity instanceof AbstractVehicle vehicle) {
-                rcs = vehicle.physicsEngine.radarCrossSection;
+                rcs = vehicle.physicsEngine.physicsInfo.radarCrossSection;
             }
             // 基础校验
             if (entity == camera.getEntity()
@@ -181,7 +181,7 @@ public class Radar {
         double v39 = Math.abs(target.getDeltaMovement().dot(target.position().subtract(radarEntity.position()).normalize()));
         float rcs = 1;
         if (target instanceof AbstractVehicle vehicle) {
-            rcs = vehicle.physicsEngine.radarCrossSection;
+            rcs = vehicle.physicsEngine.physicsInfo.radarCrossSection;
         }
         // y = ln(1 + speed * rcs) * scale
         return (int) (Math.log1p(v39 * rcs) * 1000);

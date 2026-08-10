@@ -16,6 +16,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import java.util.List;
 
 public class NoneVehicle extends AbstractVehicle implements IAnimationEntity<AbstractVehicle, VehicleContext<AbstractVehicle>> {
+
     private IAnimationInstance<VehicleContext<AbstractVehicle>> animationInstance;
 
     public NoneVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {

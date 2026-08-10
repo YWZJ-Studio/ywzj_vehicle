@@ -111,6 +111,14 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
         }).orElse(0f);
     }
 
+    public boolean isPartDestroyed(String id) {
+        return getEntity().getPartUnit(id).map(PartUnit::isDestroyed).orElse(false);
+    }
+
+    public boolean isPartDetached(String id) {
+        return getEntity().getPartUnit(id).map(PartUnit::isDetached).orElse(false);
+    }
+
     public boolean isPartOn(String id) {
         return getEntity().getPartUnit(id).map(part -> {
             if (part instanceof SwitchableUnit<?> switchableUnit) {

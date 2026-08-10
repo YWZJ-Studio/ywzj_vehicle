@@ -10,6 +10,7 @@ import java.lang.Math;
  * from TACZ Guns
  */
 public class MathUtil {
+
     public static final float[] QUATERNION_ONE = {0, 0, 0, 1};
     public static final Quaternionf IDENTITY_QUATERNION = new Quaternionf();
 
@@ -296,4 +297,5 @@ public class MathUtil {
         float h4 = t3 - t2;
         return h1 * y[1] + h2 * y[2] + h3 * v0 + h4 * v1;
     }
+
 }

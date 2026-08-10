@@ -25,8 +25,10 @@ import org.ywzj.vehicle.client.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.FakePlayerRenderer;
+import org.ywzj.vehicle.client.render.entity.misc.ParagliderCanopyRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.RadarMarkerRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.DumpTruckRenderer;
+import org.ywzj.vehicle.client.render.entity.vehicle.VehiclePartRender;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
 import org.ywzj.vehicle.client.render.entity.vehicle.Ztl11Renderer;
 import org.ywzj.vehicle.client.render.entity.weapon.AmmoEntityRenderer;
@@ -44,6 +46,7 @@ public class ClientSetupHandler {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.NONE_VEHICLE.get(), VehicleRender::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.VEHICLE_PART.get(), VehiclePartRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.WHEELED_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.TRACKED_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROTARY_WING_VEHICLE.get(), VehicleRender::new));
@@ -81,6 +84,7 @@ public class ClientSetupHandler {
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.RADAR_MARKER.get(), RadarMarkerRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.PARAGLIDER_CANOPY.get(), ParagliderCanopyRenderer::new));
 
         ItemBlockRenderTypes.setRenderLayer(AllBlocks.FIGURE_BOX_BLOCK.get(), RenderType.cutout());
         BlockEntityRenderers.register(AllBlockEntities.FIGURE_BOX_BLOCK_ENTITY.get(), FigureBoxBlockRenderer::new);

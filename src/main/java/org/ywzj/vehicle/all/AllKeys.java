@@ -40,6 +40,7 @@ public class AllKeys {
     public static final KeyMapping MULTI_WEAPON_SWITCH = key("multi_weapon_switch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F);
     public static final KeyMapping MAGNIFICATION_CHANGE = key("magnification_change", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
     public static final KeyMapping FIRE_CONTROL_LOCK = key("fire_control_lock", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R);
+    public static final KeyMapping PRESET_COORDINATE_INPUT = key("preset_coordinate_input", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N);
     public static final KeyMapping DECOY_FLARE_LAUNCH = key("decoy_flare_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT);
     public static final KeyMapping SMOKE_GRENADE_LAUNCH = key("smoke_grenade_launch", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H);
     public static final KeyMapping TOGGLE_SEEKER = key("toggle_seeker", InputConstants.Type.MOUSE, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
@@ -52,6 +53,8 @@ public class AllKeys {
     public static final KeyMapping FREE_CAMERA = key("free_camera", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C);
     public static final KeyMapping OPEN_INVENTORY = key("open_inventory", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B);
     public static final KeyMapping LEAVE_VEHICLE = key("leave_vehicle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J);
+    public static final KeyMapping INSPECT_VEHICLE = key("inspect_vehicle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O);
+    public static final KeyMapping OPEN_PARACHUTE = key("open_parachute", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_SPACE);
 
     // 座位切换
     public static final KeyMapping CHANGE_SEAT = key("change_seat", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_GRAVE_ACCENT);
@@ -60,8 +63,8 @@ public class AllKeys {
             FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, LEFT_YAW, RIGHT_YAW, FUNCTIONAL_UP, FUNCTIONAL_DOWN, FUNCTIONAL_LEFT, FUNCTIONAL_RIGHT,
             TOGGLE_ENGINE, TOGGLE_LANDING_GEAR, TOGGLE_AIRBRAKE, TOGGLE_HOVER_MODE, TOGGLE_RADAR, TOGGLE_THERMAL_IMAGING,
             MAIN_WEAPON_SHOOT, SECONDARY_WEAPON_SHOOT, SECONDARY_WEAPON_SWITCH, MULTI_WEAPON_SWITCH,
-            MAGNIFICATION_CHANGE, FIRE_CONTROL_LOCK, DECOY_FLARE_LAUNCH, SMOKE_GRENADE_LAUNCH, TOGGLE_SEEKER, TOGGLE_WEAPON_BAY,
-            SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE,
+            MAGNIFICATION_CHANGE, FIRE_CONTROL_LOCK, PRESET_COORDINATE_INPUT, DECOY_FLARE_LAUNCH, SMOKE_GRENADE_LAUNCH, TOGGLE_SEEKER, TOGGLE_WEAPON_BAY,
+            SWITCH_VIEW, SWITCH_SCOPE, FREE_CAMERA, OPEN_INVENTORY, LEAVE_VEHICLE, INSPECT_VEHICLE, OPEN_PARACHUTE,
             CHANGE_SEAT, TOGGLE_AEROBATIC_SMOKE
     };
 

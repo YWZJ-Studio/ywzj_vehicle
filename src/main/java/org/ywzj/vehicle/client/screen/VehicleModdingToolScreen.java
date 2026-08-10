@@ -19,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.client.component.ScrollableTextPanel;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -36,6 +37,7 @@ public class VehicleModdingToolScreen extends Screen {
     private static final int ITEM_HEIGHT = 20;
     private static final int LIST_WIDTH = 150;
     private static final int VISIBLE_ITEMS = 10;
+    private static final int DESCRIPTION_MARGIN = 10;
     private int scrollOffset = 0;
     private int selectedIndex = -1;
     private int leftPos;
@@ -52,6 +54,7 @@ public class VehicleModdingToolScreen extends Screen {
     private float viewScale = 1;
     private float viewRotX;
     private float viewRotY;
+    private final ScrollableTextPanel descriptionPanel = new ScrollableTextPanel();
 
     public VehicleModdingToolScreen(AbstractVehicle vehicle) {
         super(Component.literal("Vehicle Display Tool"));
@@ -202,25 +205,34 @@ public class VehicleModdingToolScreen extends Screen {
             );
         }
         poseStack.popPose();
-        Optional<BaseDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
-        if (vehicleDisplayOptional.isPresent()) {
-            BaseDisplay vehicleDisplay = vehicleDisplayOptional.get();
-            // 介绍
-            if (vehicleDisplay.getDescription() != null) {
-                poseStack.pushPose();
-                {
-                    int x = leftPos + LIST_WIDTH + 10;
-                    int maxWidth = width - x;
-                    poseStack.translate(x, (double) height / 2 + 32, 0);
-                    poseStack.scale(0.95f, 0.95f, 0.95f);
-                    var lines = font.split(Component.translatable(vehicleDisplay.getDescription()), maxWidth);
-                    for (int i = 0; i < lines.size(); i++) {
-                        guiGraphics.drawString(font, lines.get(i), 0, i * 9, 0xFFFFFFFF);
-                    }
-                }
-                poseStack.popPose();
-            }
+        drawVehicleDescription(guiGraphics);
+    }
+
+    private void drawVehicleDescription(GuiGraphics guiGraphics) {
+        Optional<Component> descriptionOptional = getVehicleDescription();
+        if (descriptionOptional.isEmpty()) {
+            descriptionPanel.clear();
+            return;
         }
+        updateDescriptionPanelBounds();
+        descriptionPanel.setContent(vehicle.getDisplayId(), descriptionOptional.get());
+        descriptionPanel.render(guiGraphics, font, 0xFFFFFFFF);
+    }
+
+    private Optional<Component> getVehicleDescription() {
+        return ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId())
+                .map(BaseDisplay::getDescription)
+                .filter(description -> !description.isBlank())
+                .map(Component::translatable);
+    }
+
+    private void updateDescriptionPanelBounds() {
+        descriptionPanel.setBounds(
+                leftPos + LIST_WIDTH + DESCRIPTION_MARGIN,
+                height / 2 + 32,
+                width - DESCRIPTION_MARGIN,
+                height - DESCRIPTION_MARGIN
+        );
     }
 
     @Override
@@ -242,6 +254,10 @@ public class VehicleModdingToolScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        updateDescriptionPanelBounds();
+        if (descriptionPanel.mouseScrolled(mouseX, mouseY, deltaY, font)) {
+            return true;
+        }
         if (mouseX > leftPos + LIST_WIDTH) {
             if (deltaY > 0) {
                 this.viewScale *= 1.1f;
@@ -276,6 +292,7 @@ public class VehicleModdingToolScreen extends Screen {
     }
 
     private void onDisplaySelected(ResourceLocation displayId) {
+        this.descriptionPanel.resetScroll();
         PacketDistributor.sendToServer(new ClientVehicleChangeDisplay(vehicle.getId(), displayId));
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }

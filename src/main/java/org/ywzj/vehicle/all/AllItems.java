@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.all;
 
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -24,6 +25,7 @@ public class AllItems {
     public static final DeferredHolder<Item, RepairToolItem> REPAIR_TOOL = registerItem(AllTabs.Category.MISC, "repair_tool", RepairToolItem::new);
     public static final DeferredHolder<Item, ModdingToolItem> MODDING_TOOL = registerItem(AllTabs.Category.MISC, "modding_tool", () -> new ModdingToolItem(new Item.Properties().stacksTo(1)));
     public static final DeferredHolder<Item, DecorationItem> DECORATION_ITEM = registerItem(AllTabs.Category.MISC, "decoration_item", DecorationItem::new);
+    public static final DeferredHolder<Item, ParachutePackItem> PARACHUTE_PACK = registerItem(AllTabs.Category.MISC, "parachute_pack", () -> new ParachutePackItem(ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(1)));
     public static final DeferredHolder<Item, Item> AMMO_CREATIVE = registerItem(AllTabs.Category.MISC, "ammo_creative", () -> new AmmoItem(new Item.Properties().stacksTo(1), AmmoItem.AmmoType.MACHINE_GUN));
     public static final DeferredHolder<Item, Item> AMMO_MACHINE_GUN = registerItem(AllTabs.Category.MISC, "ammo_machine_gun", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MACHINE_GUN));
     public static final DeferredHolder<Item, Item> AMMO_AUTO_CANNON = registerItem(AllTabs.Category.MISC, "ammo_auto_cannon", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AUTO_CANNON));

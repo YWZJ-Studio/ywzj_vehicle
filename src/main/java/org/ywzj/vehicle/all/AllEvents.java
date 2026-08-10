@@ -118,7 +118,8 @@ public class AllEvents {
         @OnlyIn(Dist.CLIENT)
         @SubscribeEvent
         public static void onInteractionKeyMappingTriggered(InputEvent.InteractionKeyMappingTriggered event) {
-            if (LocalVehiclePlayer.instance.onVehicle()) {
+            AbstractVehicle.Seat seat = LocalVehiclePlayer.instance.seat;
+            if (seat != null && !seat.partUnit.getData().passengerCanUseItem()) {
                 event.setCanceled(true);
             }
         }

@@ -23,7 +23,7 @@ public class FixedWingVehicleOverlay implements LayeredDraw.Layer {
         if (!LocalVehiclePlayer.instance.onVehicle()) {
             return;
         }
-        AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+        AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
         if (!(vehicle instanceof FixedWingVehicle fixedWingVehicle)
                 || !LocalVehiclePlayer.instance.getPlayer().equals(fixedWingVehicle.getDriver())) {
             return;

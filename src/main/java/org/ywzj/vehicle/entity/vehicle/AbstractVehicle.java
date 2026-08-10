@@ -3,7 +3,6 @@ package org.ywzj.vehicle.entity.vehicle;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -19,7 +18,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -67,9 +65,7 @@ import org.ywzj.vehicle.entity.ContainerCraft;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.message.*;
-import org.ywzj.vehicle.util.EntityUtil;
-import org.ywzj.vehicle.util.VectorUtil;
-import org.ywzj.vehicle.util.VehicleExplosion;
+import org.ywzj.vehicle.util.*;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
@@ -100,8 +96,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Float> ENGINE_SPEED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
-    private ResourceLocation vehicleId;
-    private ResourceLocation displayId;
+    protected ResourceLocation vehicleId;
+    protected ResourceLocation displayId;
     private BakedModelInstance modelInstance;
     private Component name;
     public final ControlUnit controlUnit;
@@ -141,7 +137,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public PlayerTeam remoteTeam;
     public boolean protectPassenger;
     protected boolean dataInitialized;
-    private long destroyedTime;
+    protected int destroyedTick;
     protected int engineParticleTick;
     public long lastRenderTime;
     private boolean finalRotUpdate;
@@ -183,7 +179,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         compound.putFloat("Energy", getEnergy());
         compound.putFloat("Power", getPower());
         compound.putBoolean("Destroyed", isDestroyed());
-        compound.putLong("DestroyedTime", destroyedTime);
+        compound.putInt("DestroyedTick", destroyedTick);
         compound.putString(ICustomVehicle.TAG_VEHICLE_ID, this.getVehicleId().toString());
         compound.putString(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID, this.getDisplayId().toString());
         compound.put("PartUnits", serializePartUnitsData());
@@ -212,8 +208,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (compound.contains("Destroyed", Tag.TAG_ANY_NUMERIC)) {
             entityData.set(DESTROYED, compound.getBoolean("Destroyed"));
         }
-        if (compound.contains("DestroyedTime", Tag.TAG_ANY_NUMERIC)) {
-            destroyedTime = compound.getLong("DestroyedTime");
+        if (compound.contains("DestroyedTick", Tag.TAG_ANY_NUMERIC)) {
+            destroyedTick = compound.getInt("DestroyedTick");
         }
         if (compound.contains(ICustomVehicle.TAG_VEHICLE_ID, Tag.TAG_STRING)) {
             ResourceLocation vehicleId = ResourceLocation.tryParse(compound.getString(ICustomVehicle.TAG_VEHICLE_ID));
@@ -249,6 +245,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         buffer.writeResourceLocation(this.getVehicleId());
         buffer.writeResourceLocation(this.getDisplayId());
+        buffer.writeInt(destroyedTick);
         buffer.writeNbt(serializePartUnitsData());
         buffer.writeNbt(serializeDecorationUnitsData());
         buffer.writeInt(seats.size());
@@ -261,6 +258,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public void readSpawnData(RegistryFriendlyByteBuf buffer) {
         this.vehicleId = buffer.readResourceLocation();
         this.displayId = buffer.readResourceLocation();
+        destroyedTick = buffer.readInt();
         initData();
         deserializePartUnitsData(buffer.readNbt());
         deserializeDecorationUnitsData(buffer.readNbt());
@@ -412,10 +410,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.name = vehicleData.getName();
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
-        this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
-        this.physicsEngine.center = vehicleData.getPhysicsInfo().center;
-        this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
-        this.physicsEngine.radarCrossSection = vehicleData.getPhysicsInfo().radarCrossSection;
+        this.physicsEngine.physicsInfo = vehicleData.getPhysicsInfo().copy();
         this.defenseStats = vehicleData.getDefenseStats();
         this.centerOffset = vehicleData.getCenterOffset();
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
@@ -489,14 +484,20 @@ public abstract class AbstractVehicle extends ContainerCraft
             if (warningReceiver != null) {
                 warningReceiver.tick();
             }
+            if (isDestroyed()) {
+                destroyedTick += 1;
+            }
         } else {
             if (tickCount == 1) {
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
                     passenger.stopRiding();
                 }
             }
-            if (isDestroyed() && System.currentTimeMillis() - destroyedTime > 60000) {
-                this.discard();
+            if (isDestroyed()) {
+                destroyedTick += 1;
+                if (destroyedTick > 20 * 60) {
+                    this.discard();
+                }
             }
             tickEnergy();
             tickPower();
@@ -644,12 +645,11 @@ public abstract class AbstractVehicle extends ContainerCraft
                         this.discard();
                     } else {
                         this.getPassengers().forEach(Entity::stopRiding);
-                        entityData.set(DESTROYED, true);
-                        this.setHealth(this.getMaxHealth());
-                        destroyedTime = System.currentTimeMillis();
+                        setDestroyed();
                         VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), damageSource.getEntity(), this, this.position(),
-                                (float) mainCubeOBB.depth, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
+                                (float) mainCubeOBB.depth / 2, AllConfigs.common.vehicleExplosionHurtPassengerDamage.get().floatValue(), false, false);
                         vehicleExplosion.explode(Collections.singletonList(this));
+                        VehiclePartSpawner.spawnDestroyedParts(this);
                     }
                 }
             }
@@ -709,19 +709,19 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
-        if (isDestroyed() && tickCount % 20 == 0) {
-            AABB aabb = getBoundingBox();
-            Level level = this.level();
-            if (level.isClientSide()) {
-                for (int i = 0; i < 5; i++) {
-                    double x = Mth.nextDouble(RandomSource.create(), aabb.minX, aabb.maxX);
-                    double y = Mth.nextDouble(RandomSource.create(), aabb.minY, aabb.maxY);
-                    double z = Mth.nextDouble(RandomSource.create(), aabb.minZ, aabb.maxZ);
-                    double vx = (level.random.nextDouble() - 0.5D) * 0.02D;
-                    double vy = level.random.nextDouble() * 0.05D + 0.02D;
-                    double vz = (level.random.nextDouble() - 0.5D) * 0.02D;
-                    level.addParticle(ParticleTypes.LARGE_SMOKE, true, x, y, z, vx, vy, vz);
-                }
+        if (isDestroyed()) {
+            Level level = level();
+            if (!level.isClientSide()) {
+                return;
+            }
+            if (destroyedTick < 20 * 30 && destroyedTick % 5 == 0) {
+                ParticleUtil.spawnDestroyedVehicleCloud(level,
+                        new Vec3(mainCubeOBB.obb().center()),
+                        (float) Math.max(mainCubeOBB.width, mainCubeOBB.depth),
+                        mainCubeOBB.height);
+            }
+            if (tickCount % 20 == 0) {
+                ParticleUtil.spawnWreckageSmoke(level, getBoundingBox(), 5);
             }
         }
     }
@@ -812,7 +812,9 @@ public abstract class AbstractVehicle extends ContainerCraft
     public List<OBB> getOBBs() {
         List<OBB> vehicleOBBs = new ArrayList<>(this.vehicleCubeOBBs.stream().map(VehicleCubeOBB::obb).toList());
         for (PartUnit<?> partUnit : partUnits) {
-            vehicleOBBs.addAll(partUnit.getOBBs());
+            if (!partUnit.isDetached()) {
+                vehicleOBBs.addAll(partUnit.getOBBs());
+            }
         }
         return vehicleOBBs;
     }
@@ -837,20 +839,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             return AABB.ofSize(position(), 1, 1, 1);
         }
         vehicleOBBs.add(mainCubeOBB.obb());
-        double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
-        double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        for (OBB obb : vehicleOBBs) {
-            Vector3f[] vertices = obb.getVertices();
-            for (Vector3f v : vertices) {
-                if (v.x < minX) minX = v.x;
-                if (v.y < minY) minY = v.y;
-                if (v.z < minZ) minZ = v.z;
-                if (v.x > maxX) maxX = v.x;
-                if (v.y > maxY) maxY = v.y;
-                if (v.z > maxZ) maxZ = v.z;
-            }
-        }
-        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+        return OBB.toAABB(vehicleOBBs);
     }
 
     @Override
@@ -864,12 +853,18 @@ public abstract class AbstractVehicle extends ContainerCraft
     @Override
     protected void removePassenger(Entity pPassenger) {
         if (pPassenger instanceof LivingEntity livingEntity) {
-            Vec3 dismountLocation;
-            DoorUnit doorUnit = getNearestDoorUnit(livingEntity);
-            if (doorUnit != null) {
-                dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
-            } else {
-                PartUnit<?> partUnit = getOwnOperatorUnit(livingEntity);
+            Vec3 dismountLocation = null;
+            PartUnit<?> partUnit = getOwnOperatorUnit(livingEntity);
+            if (partUnit != null) {
+                dismountLocation = partUnit.worldDismountPosition();
+            }
+            if (dismountLocation == null) {
+                DoorUnit doorUnit = getNearestDoorUnit(livingEntity);
+                if (doorUnit != null) {
+                    dismountLocation = doorUnit.worldPosition(doorUnit.getPivotOffset()).subtract(0, pPassenger.getEyeHeight() / 2, 0);
+                }
+            }
+            if (dismountLocation == null) {
                 dismountLocation = relativeRotPos(position().add(mainCubeOBB.obb().extents().x + 1, 1, partUnit != null ? partUnit.getSeatOffset().z : 0), false);
             }
             dismountLocations.put(livingEntity, dismountLocation);
@@ -1345,7 +1340,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public void setEnergy(float amount) {
         entityData.set(ENERGY, amount);
-        physicsEngine.mass = curbWeight + amount;
+        physicsEngine.physicsInfo.mass = curbWeight + amount;
     }
 
     public float addEnergy(float amount) {
@@ -1404,8 +1399,17 @@ public abstract class AbstractVehicle extends ContainerCraft
         return entityData.get(DESTROYED);
     }
 
+    public void setDestroyed() {
+        this.entityData.set(DESTROYED, true);
+        this.setHealth(this.getMaxHealth());
+        this.destroyedTick = 0;
+    }
+
     @Override
     public Vec3 getLightProbePosition(float pPartialTicks) {
+        if (mainCubeOBB == null) {
+            return position();
+        }
         return new Vec3(mainCubeOBB.obb().center());
     }
 
@@ -1455,8 +1459,8 @@ public abstract class AbstractVehicle extends ContainerCraft
             double relativeNormalSpeed = otherVelocity.subtract(thisVelocity).dot(normal);
             double separationSpeed = 0.01;
             if (relativeNormalSpeed < separationSpeed) {
-                double thisMass = Math.max(this.physicsEngine.mass, 1.0E-3);
-                double otherMass = Math.max(vehicle.physicsEngine.mass, 1.0E-3);
+                double thisMass = Math.max(this.physicsEngine.physicsInfo.mass, 1.0E-3);
+                double otherMass = Math.max(vehicle.physicsEngine.physicsInfo.mass, 1.0E-3);
                 double velocityChange = separationSpeed - relativeNormalSpeed;
                 double totalMass = thisMass + otherMass;
                 Vec3 thisPush = normal.scale(-velocityChange * otherMass / totalMass);
@@ -1510,6 +1514,11 @@ public abstract class AbstractVehicle extends ContainerCraft
         LivingEntity driver = getDriver();
         if (entity instanceof TamableAnimal tamableAnimal) {
             if (tamableAnimal.getOwner() == driver) {
+                return;
+            }
+        }
+        if (entity instanceof AbstractVehicle vehicle) {
+            if (vehicle.hurtTick > 0) {
                 return;
             }
         }

@@ -102,10 +102,11 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
         // 子弹在 tick 结束的位置
         Vec3 endVec = startVec.add(this.getDeltaMovement());
         BulletHitResult entityResult = EntityUtil.findEntityOnPath(this, startVec, endVec);
+        BlockHitResult blockResult = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        boolean entityHitFirst = entityResult != null
+                && (blockResult.getType() == HitResult.Type.MISS || startVec.distanceToSqr(entityResult.getLocation()) <= startVec.distanceToSqr(blockResult.getLocation()));
         // 实体命中
-        if (entityResult != null
-                && entityResult.getEntity() != vehicle
-                && !vehicle.getPassengers().contains(entityResult.getEntity())) {
+        if (entityHitFirst && entityResult.getEntity() != vehicle && !vehicle.getPassengers().contains(entityResult.getEntity())) {
             Entity entity = entityResult.getEntity();
             Entity owner = this.getOwner();
             // 伤害实体
@@ -136,14 +137,13 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
             }
         }
         // 方块命中
-        BlockHitResult result = this.level().clip(new ClipContext(startVec, endVec, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-        if (result.getType() != HitResult.Type.MISS) {
-            BlockPos hitPos = result.getBlockPos();
+        if (blockResult.getType() != HitResult.Type.MISS) {
+            BlockPos hitPos = blockResult.getBlockPos();
             BlockState hitBlock = this.level().getBlockState(hitPos);
             if (this.level() instanceof ServerLevel serverLevel) {
-                Vec3 normal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
-                Vec3 loc1 = result.getLocation().add(normal.scale(0.3));
-                Vec3 loc2 = result.getLocation().add(normal.scale(0.01));
+                Vec3 normal = Vec3.atLowerCornerOf(blockResult.getDirection().getNormal());
+                Vec3 loc1 = blockResult.getLocation().add(normal.scale(0.3));
+                Vec3 loc2 = blockResult.getLocation().add(normal.scale(0.01));
                 BlockParticleOption option = new BlockParticleOption(ParticleTypes.BLOCK, hitBlock);
                 for (ServerPlayer player : serverLevel.players()) {
                     if (player.distanceToSqr(loc1) < 128 * 128) {
@@ -152,7 +152,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
                                 loc1.x, loc1.y, loc1.z,
                                 5, 0, 0, 0, 0.1);
                         // 弹孔
-                        BulletHoleOption bulletHole = new BulletHoleOption(result.getDirection(), hitPos, 1, 0, 0, getCaliber());
+                        BulletHoleOption bulletHole = new BulletHoleOption(blockResult.getDirection(), hitPos, 1, 0, 0, getCaliber());
                         serverLevel.sendParticles(player, bulletHole, true,
                                 loc2.x, loc2.y, loc2.z,
                                 1, 0, 0, 0, 0);
@@ -161,7 +161,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityWithComple
             }
             // 子弹击中方块时，设置击中方块的位置为子弹的结束位置
             if (explosion != null && explosion.explode) {
-                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, result.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
+                VehicleExplosion vehicleExplosion = new VehicleExplosion(level(), this.getOwner(), this, blockResult.getLocation(), explosion.radius, explosion.damage, explosion.destroyBlock);
                 vehicleExplosion.explode();
             }
             discard = true;
