@@ -16,11 +16,9 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
+import org.ywzj.vehicle.item.ParachutePackItem;
 import org.ywzj.vehicle.network.Channel;
-import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
-import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
-import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
+import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
@@ -140,6 +138,10 @@ public class InputHandler {
                         Channel.CHANNEL.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.MULTI, true));
                     }
                 }
+            } else {
+                if (matchesKey(OPEN_PARACHUTE, key, scanCode) && ParachutePackItem.canOpen(player)) {
+                    Channel.CHANNEL.sendToServer(new ClientOpenParachute());
+                }
             }
         } else if (action == GLFW.GLFW_RELEASE) {
             if (instance.onVehicle()) {
@@ -256,11 +258,13 @@ public class InputHandler {
                     controlUnit.yRot = controlRot.y;
                     controlXRotO = controlUnit.xRot;
                     controlYRotO = controlUnit.yRot;
-                    playerXRotO = player.getXRot();
-                    playerYRotO = player.getYRot();
                 }
                 vehicle.controlUnit.update(controlUnit);
                 sendControl(vehicle, controlUnit);
+            }
+            if (!freeCamera) {
+                playerXRotO = player.getXRot();
+                playerYRotO = player.getYRot();
             }
             handleShoot(vehicle, player);
         }

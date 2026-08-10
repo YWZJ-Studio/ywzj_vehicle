@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.all;
 
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -20,11 +21,12 @@ public class AllItems {
     public static final RegistryObject<PlainTextureItem> PLAIN_TEXTURE_ITEM = registerItem(AllTabs.Category.NONE, "plain_texture_item", () -> new PlainTextureItem(new Item.Properties().durability(1)));
     public static final RegistryObject<Item> FUEL_TANK = registerItem(AllTabs.Category.MISC, "fuel_tank", () -> new FuelTankItem(new Item.Properties().durability(125)));
     public static final RegistryObject<Item> UAV_CONTROLLER = registerItem(AllTabs.Category.MISC, "uav_controller", () -> new UavControllerItem(new Item.Properties().stacksTo(1)));
-    public static final RegistryObject<Item> FIGURE_BOX = registerItem(AllTabs.Category.MISC, "figure_box", () -> new FigureBoxItem(new Item.Properties().stacksTo(1)));
-    public static final RegistryObject<Item> MACHINE_MAX_BLOCK = registerItem(AllTabs.Category.MISC, "machine_max_block", () -> new MachineMaxBlockItem(AllBlocks.MACHINE_MAX_BLOCK.get(), new Item.Properties().stacksTo(1)));
     public static final RegistryObject<RepairToolItem> REPAIR_TOOL = registerItem(AllTabs.Category.MISC, "repair_tool", RepairToolItem::new);
     public static final RegistryObject<ModdingToolItem> MODDING_TOOL = registerItem(AllTabs.Category.MISC, "modding_tool", () -> new ModdingToolItem(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<DecorationItem> DECORATION_ITEM = registerItem(AllTabs.Category.MISC, "decoration_item", DecorationItem::new);
+    public static final RegistryObject<ParachutePackItem> PARACHUTE_PACK = registerItem(AllTabs.Category.MISC, "parachute_pack", () -> new ParachutePackItem(ArmorItem.Type.CHESTPLATE, new Item.Properties().durability(1)));
+    public static final RegistryObject<Item> FIGURE_BOX = registerItem(AllTabs.Category.MISC, "figure_box", () -> new FigureBoxItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> MACHINE_MAX_BLOCK = registerItem(AllTabs.Category.MISC, "machine_max_block", () -> new MachineMaxBlockItem(AllBlocks.MACHINE_MAX_BLOCK.get(), new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> AMMO_CREATIVE = registerItem(AllTabs.Category.MISC, "ammo_creative", () -> new AmmoItem(new Item.Properties().stacksTo(1), AmmoItem.AmmoType.MACHINE_GUN));
     public static final RegistryObject<Item> AMMO_MACHINE_GUN = registerItem(AllTabs.Category.MISC, "ammo_machine_gun", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.MACHINE_GUN));
     public static final RegistryObject<Item> AMMO_AUTO_CANNON = registerItem(AllTabs.Category.MISC, "ammo_auto_cannon", () -> new AmmoItem(new Item.Properties().stacksTo(64), AmmoItem.AmmoType.AUTO_CANNON));

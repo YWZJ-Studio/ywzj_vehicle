@@ -43,6 +43,8 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_V = registerSoundEvent("turret_turn_servo_v", YwzjVehicle.modLocation("turret_turn_servo_v"));
     public static final RegistryObject<SoundEvent> TURRET_TURN_SERVO_H = registerSoundEvent("turret_turn_servo_h", YwzjVehicle.modLocation("turret_turn_servo_h"));
     public static final RegistryObject<SoundEvent> SELECT_WEAPON = registerSoundEvent("select_weapon", YwzjVehicle.modLocation("select_weapon"));
+    public static final RegistryObject<SoundEvent> PARACHUTE_OPEN = registerSoundEvent("parachute_open", YwzjVehicle.modLocation("parachute_open"));
+    public static final RegistryObject<SoundEvent> PARACHUTE_DOWN = registerSoundEvent("parachute_down", YwzjVehicle.modLocation("parachute_down"));
 
     public static final RegistryObject<SoundEvent> LAV150_ENGINE_START = registerSoundEvent("lav150_engine_start", YwzjVehicle.modLocation("lav150_engine_start"));
     public static final RegistryObject<SoundEvent> LAV150_ENGINE_IDLE = registerSoundEvent("lav150_engine_idle", YwzjVehicle.modLocation("lav150_engine_idle"));

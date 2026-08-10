@@ -26,6 +26,7 @@ import org.ywzj.vehicle.client.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.FakePlayerRenderer;
+import org.ywzj.vehicle.client.render.entity.misc.ParagliderCanopyRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.DumpTruckRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehiclePartRender;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
@@ -83,6 +84,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.PARAGLIDER_CANOPY.get(), ParagliderCanopyRenderer::new));
 
         ItemBlockRenderTypes.setRenderLayer(AllBlocks.FIGURE_BOX_BLOCK.get(), RenderType.cutout());
         BlockEntityRenderers.register(AllBlockEntities.FIGURE_BOX_BLOCK_ENTITY.get(), FigureBoxBlockRenderer::new);

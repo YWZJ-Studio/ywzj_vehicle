@@ -12,6 +12,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.misc.FakePlayer;
+import org.ywzj.vehicle.entity.misc.ParagliderCanopy;
 import org.ywzj.vehicle.entity.misc.VehiclePart;
 import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.vehicle.custom.*;
@@ -20,6 +21,21 @@ import org.ywzj.vehicle.entity.weapon.*;
 public class AllEntities {
 
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, YwzjVehicle.MOD_ID);
+
+    public static final RegistryObject<EntityType<ParagliderCanopy>> PARAGLIDER_CANOPY = ENTITIES.register("paraglider_canopy",
+            () -> EntityType.Builder.of(ParagliderCanopy::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .sized(1F, 1F)
+                    .clientTrackingRange(32)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("paraglider_canopy"));
+
+    public static final RegistryObject<EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
+            () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
+                    .clientTrackingRange(32)
+                    .build("fake_player"));
 
     public static final RegistryObject<EntityType<BulletEntity>> BULLET = ENTITIES.register("bullet",
             () -> EntityType.Builder.<BulletEntity>of(BulletEntity::new, MobCategory.MISC)
@@ -112,11 +128,6 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .setCustomClientFactory(DecoyFlareEntity::new)
                     .build("decoy_flare"));
-
-    public static final RegistryObject<EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
-            () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
-                    .clientTrackingRange(32)
-                    .build("fake_player"));
 
     public static final RegistryObject<EntityType<VehiclePart>> VEHICLE_PART = ENTITIES.register("vehicle_part",
             () -> EntityType.Builder.of(VehiclePart::new, MobCategory.MISC)

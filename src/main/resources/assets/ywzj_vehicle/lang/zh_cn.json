@@ -3,6 +3,7 @@
 
   "item.ywzj_vehicle.fuel_tank": "燃油桶",
   "item.ywzj_vehicle.uav_controller": "无人机遥控器",
+  "item.ywzj_vehicle.parachute_pack": "降落伞包",
   "item.ywzj_vehicle.figure_box": "手办盒",
   "item.ywzj_vehicle.repair_tool": "焊枪",
   "item.ywzj_vehicle.modding_tool": "改装工具",
@@ -58,6 +59,7 @@
   "key.ywzj_vehicle.free_camera.desc": "自由视角",
   "key.ywzj_vehicle.leave_vehicle.desc": "离开载具",
   "key.ywzj_vehicle.inspect_vehicle.desc": "检视载具",
+  "key.ywzj_vehicle.open_parachute.desc": "打开降落伞",
   "key.ywzj_vehicle.change_seat.desc": "座位切换（可配合数字键指定座位）",
   "key.ywzj_vehicle.debug_gui.desc": "调试信息",
 

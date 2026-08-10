@@ -12,6 +12,7 @@
     "client.LivingEntityRendererMixin",
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
+    "client.PlayerRendererMixin",
     "client.PostChainMixin",
     "tacz.ShootKeyMixin"
   ],

@@ -3,6 +3,7 @@
 
   "item.ywzj_vehicle.fuel_tank": "Fuel Tank",
   "item.ywzj_vehicle.uav_controller": "UAV Controller",
+  "item.ywzj_vehicle.parachute_pack": "Parachute Pack",
   "item.ywzj_vehicle.figure_box": "Figure Box",
   "item.ywzj_vehicle.repair_tool": "Welding Torch",
   "item.ywzj_vehicle.modding_tool": "Modding Tool",
@@ -58,6 +59,7 @@
   "key.ywzj_vehicle.free_camera.desc": "Free Look",
   "key.ywzj_vehicle.leave_vehicle.desc": "Exit Vehicle",
   "key.ywzj_vehicle.inspect_vehicle.desc": "Inspect Vehicle",
+  "key.ywzj_vehicle.open_parachute.desc": "Open Parachute",
   "key.ywzj_vehicle.change_seat.desc": "Switch Seat (Use with number keys)",
   "key.ywzj_vehicle.debug_gui.desc": "Debug Info",
 
