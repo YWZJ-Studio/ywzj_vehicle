@@ -4,9 +4,11 @@ import com.github.mcmodderanchor.simplebedrockmodel.v2.client.renderer.GeoArmorR
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.tree.TreeBedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.resource.BedrockModelResources;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
@@ -16,7 +18,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -33,11 +37,22 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.entity.misc.ParagliderCanopy;
 import org.ywzj.vehicle.resource.ParachuteModels;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 @EventBusSubscriber
 public class ParachutePackItem extends ArmorItem {
 
+    private static final Holder<ArmorMaterial> MATERIAL = Holder.direct(new ArmorMaterial(
+            Map.of(),
+            0,
+            SoundEvents.ARMOR_EQUIP_LEATHER,
+            () -> Ingredient.of(ItemTags.WOOL),
+            List.of(new ArmorMaterial.Layer(YwzjVehicle.modLocation("parachute_pack"))),
+            0,
+            0
+    ));
     private static final String OPEN_TAG = "ParachutePackOpen";
     private static final String CANOPY_ID_TAG = "ParachutePackCanopyId";
     private static final double MIN_OPEN_DESCENT_SPEED = 0.5;
@@ -47,7 +62,7 @@ public class ParachutePackItem extends ArmorItem {
     private static final double INERTIA = 0.1;
 
     public ParachutePackItem(Type type, Properties properties) {
-        super(ParachutePackArmorMaterial.INSTANCE, type, properties);
+        super(MATERIAL, type, properties);
     }
 
     public static boolean canOpen(LivingEntity entity) {
@@ -66,7 +81,7 @@ public class ParachutePackItem extends ArmorItem {
             return;
         }
         ItemStack stack = player.getItemBySlot(EquipmentSlot.CHEST);
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = getCustomData(stack);
         tag.putBoolean(OPEN_TAG, true);
         stack.setDamageValue(1);
         player.startFallFlying();
@@ -74,11 +89,12 @@ public class ParachutePackItem extends ArmorItem {
         ParagliderCanopy canopy = new ParagliderCanopy(AllEntities.PARAGLIDER_CANOPY.get(), player.level());
         canopy.equip(player);
         tag.putInt(CANOPY_ID_TAG, canopy.getId());
+        setCustomData(stack, tag);
         player.level().playSound(null, player, AllSounds.PARACHUTE_OPEN.get(), SoundSource.PLAYERS, 3F, 1F);
     }
 
     public static boolean isOpen(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(OPEN_TAG);
+        return getCustomData(stack).getBoolean(OPEN_TAG);
     }
 
     @Override
@@ -92,7 +108,7 @@ public class ParachutePackItem extends ArmorItem {
     }
 
     @Override
-    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, Consumer<T> onBroken) {
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
         return 0;
     }
 
@@ -133,13 +149,14 @@ public class ParachutePackItem extends ArmorItem {
     }
 
     private static void close(ItemStack stack, ServerPlayer player, boolean landed) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = getCustomData(stack);
         Entity canopy = player.level().getEntity(tag.getInt(CANOPY_ID_TAG));
         if (canopy instanceof ParagliderCanopy paragliderCanopy) {
             paragliderCanopy.fallThenDiscard();
         }
         tag.remove(OPEN_TAG);
         tag.remove(CANOPY_ID_TAG);
+        setCustomData(stack, tag);
         if (landed) {
             player.fallDistance = 0;
             player.level().playSound(null, player, AllSounds.PARACHUTE_DOWN.get(), SoundSource.PLAYERS, 3F, 1F);
@@ -154,10 +171,10 @@ public class ParachutePackItem extends ArmorItem {
         }
         ItemStack repaired = parachutePack.copy();
         repaired.setDamageValue(0);
-        if (repaired.hasTag()) {
-            repaired.getTag().remove(OPEN_TAG);
-            repaired.getTag().remove(CANOPY_ID_TAG);
-        }
+        CompoundTag tag = getCustomData(repaired);
+        tag.remove(OPEN_TAG);
+        tag.remove(CANOPY_ID_TAG);
+        setCustomData(repaired, tag);
         event.setOutput(repaired);
         event.setMaterialCost(1);
         event.setCost(1);
@@ -184,54 +201,17 @@ public class ParachutePackItem extends ArmorItem {
     }
 
     @Override
-    public @Nullable String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        return ParachuteModels.PARACHUTE_PACK_TEXTURE.toString();
+    public @Nullable ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+                                                      ArmorMaterial.Layer layer, boolean innerModel) {
+        return ParachuteModels.PARACHUTE_PACK_TEXTURE;
     }
 
-}
-
-enum ParachutePackArmorMaterial implements ArmorMaterial {
-
-    INSTANCE;
-
-    @Override
-    public int getDurabilityForType(ArmorItem.Type type) {
-        return 1;
+    private static CompoundTag getCustomData(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     }
 
-    @Override
-    public int getDefenseForType(ArmorItem.Type type) {
-        return 0;
-    }
-
-    @Override
-    public int getEnchantmentValue() {
-        return 0;
-    }
-
-    @Override
-    public @NotNull SoundEvent getEquipSound() {
-        return SoundEvents.ARMOR_EQUIP_LEATHER;
-    }
-
-    @Override
-    public @NotNull Ingredient getRepairIngredient() {
-        return Ingredient.of(ItemTags.WOOL);
-    }
-
-    @Override
-    public @NotNull String getName() {
-        return "ywzj_vehicle:parachute_pack";
-    }
-
-    @Override
-    public float getToughness() {
-        return 0;
-    }
-
-    @Override
-    public float getKnockbackResistance() {
-        return 0;
+    private static void setCustomData(ItemStack stack, CompoundTag tag) {
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
 }
