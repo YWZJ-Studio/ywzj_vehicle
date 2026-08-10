@@ -65,7 +65,7 @@ public abstract class CameraMixin {
                     .getEulerAnglesYXZ(new Vector3f());
             this.setRotation((float) Math.toDegrees(-euler.y) + (float) FirstPersonHandler.getCurrentYawShake(),
                     (float) Math.toDegrees(euler.x) + (float) FirstPersonHandler.getCurrentPitchShake(),
-                    (float) FirstPersonHandler.getCurrentRollShake());
+                    (float) Math.toDegrees(euler.z) + (float) FirstPersonHandler.getCurrentRollShake());
             if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
                 zoomThirdPerson(vehicle);
             }
