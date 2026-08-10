@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.entity.weapon;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -141,7 +142,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private void initMissile(VehicleMissileWeaponData data) {
-        this.caliber = Math.max(40, data.getCaliber());
+        this.caliber = data.getCaliber() < 40 ? 150 : data.getCaliber();
         this.seekerFov = data.getSeekerFov();
         this.mass = data.getMass();
         this.thrust = data.getThrust();
@@ -400,8 +401,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (tickCount < coldLaunchTimeTick) {
             return;
         }
-        if (caliber >= 100 && tickCount % 5 == 0) {
-            FirstPersonHandler.addExplosionShake(position(), caliber / 100 * 8);
+        if (caliber >= 1000 && tickCount % 5 == 0) {
+            FirstPersonHandler.addExplosionShake(position(), caliber / 1000 * 8);
         }
     }
 
@@ -411,7 +412,6 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             return;
         }
         if (tickCount <= motorBurnTime) {
-            float size = caliber / 225;
             Vec3 rotatedOffset = engineNozzleOffset
                     .xRot(-this.getXRot() * Mth.DEG_TO_RAD)
                     .yRot(-this.getYRot() * Mth.DEG_TO_RAD);
@@ -421,18 +421,30 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             double dist = step.length();
             int segments = (int) (dist / 0.5);
             Vec3 dir = step.normalize();
-            for (int i = 0; i <= segments; i++) {
-                double x = this.random.triangle(0, 0.1f * size * size);
-                double y = this.random.triangle(0, 0.1f * size * size);
-                double z = this.random.triangle(0, 0.1f * size * size);
-                Vec3 particlePos = posO.add(dir.scale(i * 0.5));
-                level().addParticle(new SmokeCloudOption(false,
-                                0.9f, 0.9f, 0.9f,
-                                0.6f, 0.6f, 0.6f,
-                                0.8f, 0.3f, 1200,
-                                size, 3 * size, 0.01f), true,
-                        particlePos.x, particlePos.y, particlePos.z,
-                        x, y, z);
+            if (caliber >= 150) {
+                float size = 0.2f * (float) Math.pow(5, caliber / 2250f);
+                for (int i = 0; i <= segments; i++) {
+                    double x = this.random.triangle(0, 0.1f * size * size);
+                    double y = this.random.triangle(0, 0.1f * size * size);
+                    double z = this.random.triangle(0, 0.1f * size * size);
+                    Vec3 particlePos = posO.add(dir.scale(i * 0.5));
+                    level().addParticle(new SmokeCloudOption(false,
+                                    0.9f, 0.9f, 0.9f,
+                                    0.6f, 0.6f, 0.6f,
+                                    0.8f, 0.3f, 1200,
+                                    size, 3 * size, 0.01f), true,
+                            particlePos.x, particlePos.y, particlePos.z,
+                            x, y, z);
+                }
+            } else {
+                for (int i = 0; i <= segments; i++) {
+                    Vec3 particlePos = posO.add(dir.scale(i * 0.5));
+                    level().addParticle(
+                            ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
+                            particlePos.x, particlePos.y, particlePos.z,
+                            0.0D, 0.0D, 0.0D
+                    );
+                }
             }
             particlePosO = pos;
         }
