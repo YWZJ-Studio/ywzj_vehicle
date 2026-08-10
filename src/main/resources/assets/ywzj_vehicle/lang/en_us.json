@@ -46,6 +46,7 @@
   "key.ywzj_vehicle.multi_weapon_switch.desc": "Switch Ammo Type",
   "key.ywzj_vehicle.magnification_change.desc": "Change Zoom",
   "key.ywzj_vehicle.fire_control_lock.desc": "Fire Control Lock",
+  "key.ywzj_vehicle.preset_coordinate_input.desc": "Enter Preset Coordinates",
   "key.ywzj_vehicle.decoy_flare_launch.desc": "Launch Flares",
   "key.ywzj_vehicle.smoke_grenade_launch.desc": "Launch Smoke",
   "key.ywzj_vehicle.toggle_seeker.desc": "Toggle Seeker",
@@ -61,6 +62,7 @@
   "key.ywzj_vehicle.debug_gui.desc": "Debug Info",
 
   "tips.spotter": "No Weapon Equipped",
+  "tips.preset_coordinate_required": "No preset coordinates set. Press %s to enter coordinates",
   "tips.uav_controller": "Paired UAV: %s",
   "tips.uav_controller.uav_at": "Located at: %s",
   "tips.uav_controller.paired": "UAV Paired",

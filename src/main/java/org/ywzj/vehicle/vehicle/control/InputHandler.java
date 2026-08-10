@@ -89,6 +89,10 @@ public class InputHandler {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
                     }
+                } else if (matchesKey(PRESET_COORDINATE_INPUT, key, scanCode)) {
+                    if (weaponUnit != null) {
+                        weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::openCoordinateInputScreen);
+                    }
                 } else if (matchesKey(TOGGLE_HOVER_MODE, key, scanCode)) {
                     sendToggleHoverMode(vehicle);
                 } else if (matchesKey(TOGGLE_RADAR, key, scanCode)) {

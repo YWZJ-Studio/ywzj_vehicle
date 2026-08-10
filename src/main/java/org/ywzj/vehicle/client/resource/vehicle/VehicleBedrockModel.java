@@ -149,7 +149,7 @@ public class VehicleBedrockModel extends BedrockModel {
                 continue;
             }
             instance.renderSingleBone(poseStack, entry.boneIndex, source, quadType, meshType, packedLight,
-                    packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, false);
+                    packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, true);
         }
     }
 
