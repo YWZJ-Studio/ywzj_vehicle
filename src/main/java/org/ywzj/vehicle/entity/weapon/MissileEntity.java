@@ -61,14 +61,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public float maxG;
     public float referenceSpeed;
     public double presetCruiseAltitude;
-    public double presetMaxAscentLead;
-    public double presetAscentRadius;
-    public double presetDiveRadius;
-    public double presetDiveAltitudeFactor;
-    public double presetDiveLeadFactor;
-    public double presetCruiseAltitudeGain;
-    public double presetCruiseVerticalDamping;
-    public double presetCruiseMaxVerticalComponent;
+    public double presetAscentDistance;
+    public double presetDiveDistance;
     public float activeRadarActivationRange = 1024;
     private VehicleMissileWeaponData.Guidance guidance;
     private VehicleMissileWeaponData.HomingMode homingMode;
@@ -78,15 +72,15 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public Entity targetEntity;
     public Vec3 targetVec;
     public Vec3 targetPos;
-    public int ownerId;
-    private WeaponUnit weaponUnit;
-    private VehicleSound sound;
-    private Vec3 particlePosO;
     private PresetPhase presetPhase = PresetPhase.ASCENT;
     private Vec3 presetLaunchPos;
     private Vec3 presetTargetPos;
     private Vec3 presetAscentPos;
-    private Vec3 presetOverheadPos;
+    private Vec3 presetDivePos;
+    public int ownerId;
+    private WeaponUnit weaponUnit;
+    private VehicleSound sound;
+    private Vec3 particlePosO;
 
     private enum PresetPhase {
         ASCENT,
@@ -116,8 +110,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.setRot(ammoYRot, ammoXRot);
         this.setOwner(shooter);
         if (guidance == VehicleMissileWeaponData.Guidance.PRESET) {
-            this.presetLaunchPos = spawnPos;
-            this.presetTargetPos = targetPos;
+            presetLaunchPos = spawnPos;
+            presetTargetPos = targetPos;
         }
         Vec3 velocity = Vec3.ZERO;
         // 弹仓弹射
@@ -159,14 +153,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         this.maxG = data.getMaxG();
         this.referenceSpeed = data.getReferenceSpeed();
         this.presetCruiseAltitude = data.getPresetCruiseAltitude();
-        this.presetMaxAscentLead = data.getPresetMaxAscentLead();
-        this.presetAscentRadius = data.getPresetAscentRadius();
-        this.presetDiveRadius = data.getPresetDiveRadius();
-        this.presetDiveAltitudeFactor = data.getPresetDiveAltitudeFactor();
-        this.presetDiveLeadFactor = data.getPresetDiveLeadFactor();
-        this.presetCruiseAltitudeGain = data.getPresetCruiseAltitudeGain();
-        this.presetCruiseVerticalDamping = data.getPresetCruiseVerticalDamping();
-        this.presetCruiseMaxVerticalComponent = data.getPresetCruiseMaxVerticalComponent();
+        this.presetAscentDistance = data.getPresetAscentDistance();
+        this.presetDiveDistance = data.getPresetDiveDistance();
         this.guidance = data.getGuidance();
         this.homingMode = data.getHomingMode();
         this.damage = data.getDamage();
@@ -265,30 +253,6 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         }
     }
 
-    private void tickPresetGuidance() {
-        if (!initializePresetPath()) {
-            return;
-        }
-        switch (presetPhase) {
-            case ASCENT -> {
-                guideToPresetPosition(presetAscentPos);
-                if (this.position().distanceToSqr(presetAscentPos) <= presetAscentRadius * presetAscentRadius
-                        || this.getY() >= presetAscentPos.y - presetAscentRadius) {
-                    presetPhase = PresetPhase.CRUISE;
-                }
-            }
-            case CRUISE -> {
-                if (shouldBeginPresetDive()) {
-                    presetPhase = PresetPhase.DIVE;
-                    guideToPresetPosition(presetTargetPos);
-                } else {
-                    guidePresetCruise();
-                }
-            }
-            case DIVE -> guideToPresetPosition(presetTargetPos);
-        }
-    }
-
     private void tickMove() {
         if (targetVec != null && targetPos != null && this.position().distanceTo(targetPos) < 5f) {
             targetPos = VectorUtil.hitPosition(this, targetPos, targetPos.add(targetVec.scale(256)));
@@ -332,6 +296,29 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                     this.setYRot((float) Mth.lerp(0.2, this.getYRot(), yaw));
                 }
             }
+        }
+    }
+
+    private void tickPresetGuidance() {
+        if (!initializePresetPath()) {
+            return;
+        }
+        if (presetPhase == PresetPhase.ASCENT) {
+            if (hasReachedPresetWaypoint(presetAscentPos, this.position())) {
+                presetPhase = PresetPhase.CRUISE;
+            }
+        }
+        if (presetPhase == PresetPhase.CRUISE) {
+            if (hasReachedPresetWaypoint(presetDivePos, this.position().add(this.getDeltaMovement()))
+                    || (this.position().distanceTo(presetTargetPos) / this.getDeltaMovement().length() < 200 && shouldBeginPresetDive())) {
+                presetDivePos = new Vec3(this.getX(), presetAscentPos.y, this.getZ());
+                presetPhase = PresetPhase.DIVE;
+            }
+        }
+        switch (presetPhase) {
+            case ASCENT -> intercept(null, presetAscentPos);
+            case CRUISE -> intercept(null, presetDivePos);
+            case DIVE -> intercept(null, presetTargetPos);
         }
     }
 
@@ -519,88 +506,118 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         double horizontalDistance = horizontalToTarget.length();
         Vec3 forward = horizontalDistance > 1.0E-6
                 ? horizontalToTarget.scale(1 / horizontalDistance)
-                : new Vec3(this.getLookAngle().x, 0, this.getLookAngle().z).normalize();
-        double ascentLead = Math.min(presetMaxAscentLead, horizontalDistance * 0.25);
+                : Vec3.ZERO;
+        double ascentDistance = Math.max(0, presetAscentDistance);
+        double diveDistance = Math.max(0, presetDiveDistance);
+        double transitionDistance = ascentDistance + diveDistance;
+        if (transitionDistance > horizontalDistance && transitionDistance > 1.0E-6) {
+            double scale = horizontalDistance / transitionDistance;
+            ascentDistance *= scale;
+            diveDistance *= scale;
+        }
         double cruiseY = presetLaunchPos.y + presetCruiseAltitude;
         presetAscentPos = new Vec3(
-                presetLaunchPos.x + forward.x * ascentLead,
+                presetLaunchPos.x + forward.x * ascentDistance,
                 cruiseY,
-                presetLaunchPos.z + forward.z * ascentLead
+                presetLaunchPos.z + forward.z * ascentDistance
         );
-        presetOverheadPos = new Vec3(presetTargetPos.x, cruiseY, presetTargetPos.z);
+        presetDivePos = new Vec3(
+                presetTargetPos.x - forward.x * diveDistance,
+                cruiseY,
+                presetTargetPos.z - forward.z * diveDistance
+        );
         return true;
     }
 
-    private void guideToPresetPosition(Vec3 position) {
-        Vec3 desiredDirection = position.subtract(this.position());
-        double missileSpeed = this.getDeltaMovement().length();
-        if (desiredDirection.lengthSqr() <= 1.0E-6 || missileSpeed <= 1.0E-6) {
-            return;
-        }
-        steerTowards(desiredDirection, missileSpeed);
-    }
-
-    private void guidePresetCruise() {
-        Vec3 velocity = this.getDeltaMovement();
-        double missileSpeed = velocity.length();
-        Vec3 horizontalDirection = new Vec3(
-                presetTargetPos.x - this.getX(),
-                0,
-                presetTargetPos.z - this.getZ()
-        );
-        double thrustAcceleration = mass > 1.0E-6 ? thrust / mass : 0;
-        if (missileSpeed <= 1.0E-6 || horizontalDirection.lengthSqr() <= 1.0E-6
-                || thrustAcceleration <= 1.0E-6) {
-            guideToPresetPosition(presetOverheadPos);
-            return;
-        }
-
-        double altitudeError = presetOverheadPos.y - this.getY();
-        double verticalComponent = PhysicsEngine.G / thrustAcceleration
-                + altitudeError * presetCruiseAltitudeGain
-                - velocity.y * presetCruiseVerticalDamping;
-        verticalComponent = Mth.clamp(verticalComponent,
-                -presetCruiseMaxVerticalComponent,
-                presetCruiseMaxVerticalComponent);
-        double horizontalComponent = Math.sqrt(1 - verticalComponent * verticalComponent);
-        Vec3 desiredDirection = horizontalDirection.normalize().scale(horizontalComponent)
-                .add(0, verticalComponent, 0);
-        steerTowards(desiredDirection, missileSpeed);
-    }
-
-    private boolean shouldBeginPresetDive() {
-        double dx = this.getX() - presetTargetPos.x;
-        double dz = this.getZ() - presetTargetPos.z;
-        double horizontalDistanceSqr = dx * dx + dz * dz;
-        double verticalDistance = Math.max(0, this.getY() - presetTargetPos.y);
-        double missileSpeed = this.getDeltaMovement().length();
-        double turnAcceleration = availableTurnAcceleration(missileSpeed);
-        double turnRadius = turnAcceleration > 1.0E-6
-                ? missileSpeed * missileSpeed / turnAcceleration
-                : Double.MAX_VALUE;
-        double diveDistance = Math.max(presetDiveRadius, Math.max(
-                verticalDistance * presetDiveAltitudeFactor,
-                turnRadius * presetDiveLeadFactor));
+    private boolean hasReachedPresetWaypoint(Vec3 waypoint, Vec3 missilePos) {
         Vec3 route = new Vec3(
                 presetTargetPos.x - presetLaunchPos.x,
                 0,
                 presetTargetPos.z - presetLaunchPos.z
         );
-        Vec3 remaining = new Vec3(
-                presetTargetPos.x - this.getX(),
+        if (route.lengthSqr() <= 1.0E-6) {
+            return true;
+        }
+        Vec3 waypointToMissile = new Vec3(
+                missilePos.x - waypoint.x,
                 0,
-                presetTargetPos.z - this.getZ()
+                missilePos.z - waypoint.z
         );
-        boolean passedTarget = route.lengthSqr() > 1.0E-6 && remaining.dot(route) <= 0;
-        return horizontalDistanceSqr <= diveDistance * diveDistance || passedTarget;
+        return waypointToMissile.dot(route) >= 0;
     }
 
-    private double availableTurnAcceleration(double missileSpeed) {
-        double referenceSpeedSqr = referenceSpeed * referenceSpeed;
-        double dynamicPressureFactor = referenceSpeedSqr > 1.0E-6
-                ? Math.min(1.0, missileSpeed * missileSpeed / referenceSpeedSqr)
-                : 1.0;
-        return this.maxG * dynamicPressureFactor * PhysicsEngine.G;
+    private boolean shouldBeginPresetDive() {
+        Vec3 predictedImpact = predictPresetDiveImpact();
+        if (predictedImpact == null) {
+            return false;
+        }
+        Vec3 route = new Vec3(
+                presetTargetPos.x - presetLaunchPos.x,
+                0,
+                presetTargetPos.z - presetLaunchPos.z
+        );
+        if (route.lengthSqr() <= 1.0E-6) {
+            return true;
+        }
+        Vec3 targetToImpact = new Vec3(
+                predictedImpact.x - presetTargetPos.x,
+                0,
+                predictedImpact.z - presetTargetPos.z
+        );
+        return targetToImpact.dot(route) >= 0;
+    }
+
+    private Vec3 predictPresetDiveImpact() {
+        Vec3 simulatedPos = this.position();
+        Vec3 simulatedVelocity = this.getDeltaMovement();
+        Vec2 simulatedRotation = new Vec2(this.getXRot(), this.getYRot());
+        int simulationTicks = life;
+        for (int i = 0; i < simulationTicks; i++) {
+            double speed = simulatedVelocity.length();
+            Vec3 desiredDir = calculateInterceptDirection(simulatedPos, simulatedVelocity, presetTargetPos);
+            int simulatedTickCount = tickCount + i;
+            int motorTick = simulatedTickCount - coldLaunchTimeTick;
+            if (desiredDir != null) {
+                simulatedRotation = calculateSteeredRotation(simulatedRotation, desiredDir, speed, motorTick);
+            }
+            if (simulatedTickCount >= coldLaunchTimeTick) {
+                if (motorTick <= motorBurnTime) {
+                    Vec3 lookDirection = VectorUtil.rotToVec(simulatedRotation.x, simulatedRotation.y);
+                    simulatedVelocity = simulatedVelocity.add(lookDirection.scale(this.thrust / this.mass));
+                }
+                double speedSqr = simulatedVelocity.lengthSqr();
+                if (speedSqr > 0) {
+                    Vec3 drag = simulatedVelocity.normalize().scale(-dragCoefficient * speedSqr);
+                    simulatedVelocity = simulatedVelocity.add(drag);
+                }
+            }
+            simulatedVelocity = simulatedVelocity.subtract(0, PhysicsEngine.G, 0);
+            Vec3 nextPos = simulatedPos.add(simulatedVelocity);
+            Vec3 projectedImpact = intersectTargetHeight(nextPos, nextPos.add(simulatedVelocity));
+            if (projectedImpact != null) {
+                return projectedImpact;
+            }
+            Vec3 movementImpact = intersectTargetHeight(simulatedPos, nextPos);
+            if (movementImpact != null) {
+                return movementImpact;
+            }
+            simulatedPos = nextPos;
+        }
+        return null;
+    }
+
+    private Vec3 intersectTargetHeight(Vec3 start, Vec3 end) {
+        double startHeight = start.y - presetTargetPos.y;
+        double endHeight = end.y - presetTargetPos.y;
+        if (startHeight < 0 || endHeight > 0) {
+            return null;
+        }
+        double heightDelta = startHeight - endHeight;
+        if (heightDelta <= 1.0E-6) {
+            return start;
+        }
+        double t = startHeight / heightDelta;
+        return start.add(end.subtract(start).scale(t));
     }
 
     public void intercept(Entity target, Vec3 pos) {
@@ -650,45 +667,59 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         // 拦截点
         Vec3 interceptPos = targetPos.add(targetVel.scale(t));
         // 导弹当前速度与推力下，飞向拦截点的修正指向
-        Vec3 desiredDir;
+        Vec3 desiredDir = calculateInterceptDirection(missilePos, missileVel, interceptPos);
+        if (desiredDir != null) {
+            int motorTick = tickCount - coldLaunchTimeTick;
+            Vec2 rotation = calculateSteeredRotation(new Vec2(this.getXRot(), this.getYRot()), desiredDir, missileSpeed, motorTick);
+            this.setXRot(rotation.x);
+            this.setYRot(rotation.y);
+        }
+    }
+
+    private Vec3 calculateInterceptDirection(Vec3 missilePos, Vec3 missileVel, Vec3 interceptPos) {
+        double missileSpeed = missileVel.length();
+        Vec3 toIntercept = interceptPos.subtract(missilePos);
+        if (missileSpeed <= 1.0E-6 || toIntercept.lengthSqr() <= 1.0E-6) {
+            return null;
+        }
         double acceleration = (this.thrust / this.mass);
-        Vec3 targetDir = interceptPos.subtract(missilePos).normalize();
+        Vec3 targetDir = toIntercept.normalize();
         double dot = missileVel.dot(targetDir);
         double magSq = missileSpeed * missileSpeed;
         double discriminant = dot * dot - (magSq - acceleration * acceleration);
         if (discriminant < 0) {
-            desiredDir = targetDir.scale(dot * PhysicsEngine.MAGIC_NUMBER * 4).subtract(missileVel);
-        } else {
-            double k = dot + Math.sqrt(discriminant);
-            desiredDir = targetDir.scale(k).subtract(missileVel);
+            return targetDir.scale(dot * PhysicsEngine.MAGIC_NUMBER * 4).subtract(missileVel);
         }
-        steerTowards(desiredDir, missileSpeed);
+        double k = dot + Math.sqrt(discriminant);
+        return targetDir.scale(k).subtract(missileVel);
     }
 
-    private void steerTowards(Vec3 desiredDir, double missileSpeed) {
+    private Vec2 calculateSteeredRotation(Vec2 currentRotation, Vec3 desiredDir, double missileSpeed, int motorTick) {
         Vec2 rot = VectorUtil.vecToRot(desiredDir);
         float targetXRot = rot.x;
         float targetYRot = rot.y;
         // 适配过载限制与空气动力学
         // 向心加速度公式 a = v * omega  =>  omega = a / v (弧度/tick)
-        double maxAccelLimit = availableTurnAcceleration(missileSpeed);
+        double referenceSpeedSqr = referenceSpeed * referenceSpeed;
+        double dynamicPressureFactor = referenceSpeedSqr > 1.0E-6
+                ? Math.min(1.0, missileSpeed * missileSpeed / referenceSpeedSqr)
+                : 1.0;
+        double maxAccelLimit = this.maxG * dynamicPressureFactor * PhysicsEngine.G;
         double maxOmega = maxAccelLimit / missileSpeed;
         double maxAnglePerTick = Math.toDegrees(maxOmega);
         // 点火后的逐步解锁机动
-        int motorTick = tickCount - coldLaunchTimeTick;
         if (motorTick < 5) {
             maxAnglePerTick *= Math.pow((double) motorTick / 5.0, 2);
         }
         // 平滑施加角速度
-        float curX = this.getXRot();
-        float curY = this.getYRot();
+        float curX = currentRotation.x;
+        float curY = currentRotation.y;
         float deltaX = Mth.wrapDegrees(targetXRot - curX);
         float deltaY = Mth.wrapDegrees(targetYRot - curY);
         // 限制在最大转向角速度内
         deltaX = Mth.clamp(deltaX, (float)-maxAnglePerTick, (float)maxAnglePerTick);
         deltaY = Mth.clamp(deltaY, (float)-maxAnglePerTick, (float)maxAnglePerTick);
-        this.setXRot(curX + deltaX);
-        this.setYRot(curY + deltaY);
+        return new Vec2(curX + deltaX, curY + deltaY);
     }
 
 }

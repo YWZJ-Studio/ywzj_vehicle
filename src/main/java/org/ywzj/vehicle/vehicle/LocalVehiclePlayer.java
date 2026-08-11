@@ -16,6 +16,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
+import org.ywzj.vehicle.client.screen.CoordinateInputScreen;
 import org.ywzj.vehicle.client.shader.CrtHandler;
 import org.ywzj.vehicle.client.shader.OverloadHandler;
 import org.ywzj.vehicle.client.shader.ThermalHandler;
@@ -218,6 +219,9 @@ public class LocalVehiclePlayer {
                 weaponUnit.tickHit();
             }
         });
+        if (Minecraft.getInstance().screen instanceof CoordinateInputScreen) {
+            return;
+        }
         Player player = getPlayer();
         PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(player);
         if (partUnit == null) {
