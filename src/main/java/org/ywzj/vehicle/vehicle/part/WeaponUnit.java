@@ -257,7 +257,18 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     }
                 }
                 if (!multiWeapons.isEmpty()) {
-                    VehicleMultiWeapons multi = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
+                    VehicleMultiWeapons multi;
+                    if (weaponInfo.partUnitId != null
+                            && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
+                            && subWeaponUnit != parent) {
+                        if (subWeaponUnit.getParentWeaponUnit() == null) {
+                            subWeaponUnit.setParentWeaponUnit(parent);
+                        }
+                        parent.addSubWeaponUnit(subWeaponUnit);
+                        multi = new VehicleMultiWeapons(vehicle, subWeaponUnit, index, multiWeapons, weaponInfo.saveId);
+                    } else {
+                        multi = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
+                    }
                     multi.defineSyncData(this.getSyncData());
                     if (weaponInfo.secondary) {
                         secondaryWeapons.add(multi);

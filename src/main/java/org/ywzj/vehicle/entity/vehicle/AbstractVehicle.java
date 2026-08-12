@@ -1440,13 +1440,18 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (this.isPassengerOfSameVehicle(pEntity)) {
             return;
         }
+        OBB mainCubeOBB = getMainCubeOBB().obb();
         if (pEntity instanceof AbstractVehicle vehicle) {
-            VehicleCubeOBB bodyCube = vehicle.getMainCubeOBB();
-            if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
+            if (!OBB.isColliding(vehicle.getMainCubeOBB().obb(), mainCubeOBB)) {
                 return;
             }
         } else {
-            if (!getMainCubeOBB().obb().contains(pEntity.getEyePosition())) {
+            AABB entityAABB = pEntity.getBoundingBox();
+            if (!OBB.isColliding(mainCubeOBB, entityAABB)) {
+                return;
+            }
+            Vec3 contactNormal = new Vec3(mainCubeOBB.calculateMTV(entityAABB));
+            if (contactNormal.dot(getDeltaMovement()) <= 0) {
                 return;
             }
         }
@@ -1529,11 +1534,14 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
         }
         double velocity = this.getDeltaMovement().length();
+        if (velocity == 0) {
+            return;
+        }
         double entityVelocity = entity.getDeltaMovement().dot(this.getDeltaMovement()) / velocity;
-        double relVelocity = (velocity - entityVelocity) * 20;
+        double relVelocity = (velocity - entityVelocity) * 10;
         if (relVelocity > 1) {
             entity.hurt(AllDamageTypes.Sources.vehicleCollision(level().registryAccess(), this, this.getDriver(), null),
-                    (float) relVelocity * curbWeight);
+                    (float) (0.5 * curbWeight * relVelocity * relVelocity));
         }
     }
 
