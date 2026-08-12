@@ -1,16 +1,11 @@
 package org.ywzj.vehicle.all;
 
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.misc.RadarMarkerEntity;
 import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.vehicle.custom.*;
@@ -104,11 +99,6 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .build("decoy_flare"));
 
-    public static final DeferredHolder<EntityType<?>, EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
-            () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
-                    .clientTrackingRange(32)
-                    .build("fake_player"));
-
     public static final DeferredHolder<EntityType<?>, EntityType<NoneVehicle>> NONE_VEHICLE = ENTITIES.register("none_vehicle",
             () -> EntityType.Builder.of(NoneVehicle::new, MobCategory.MISC)
                     .noSummon()
@@ -199,14 +189,8 @@ public class AllEntities {
                 .build(name));
     }
 
-    @SubscribeEvent
-    public static void onEntityAttributeCreationEvent(EntityAttributeCreationEvent event) {
-        event.put(AllEntities.FAKE_PLAYER.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 8.0D).build());
-    }
-
     public static void register(IEventBus eventBus) {
         ENTITIES.register(eventBus);
-        eventBus.register(AllEntities.class);
     }
 
 }

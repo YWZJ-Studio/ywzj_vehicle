@@ -12,7 +12,7 @@ public class RenderLivingHandler {
     @SubscribeEvent
     public static void onRenderLiving(RenderLivingEvent.Pre event) {
         if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle) {
-            if (vehicle.uav) {
+            if (vehicle.uav && vehicle.getDetachedBodyAnchor(event.getEntity()) == null) {
                 event.setCanceled(true);
             }
         }

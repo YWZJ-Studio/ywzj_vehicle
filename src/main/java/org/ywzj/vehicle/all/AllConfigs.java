@@ -118,12 +118,45 @@ public class AllConfigs {
 
         public final ModConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
         public final ModConfigSpec.ConfigValue<Integer> serverBroadcastEntitiesInterval;
+        public final ModConfigSpec.ConfigValue<Integer> detachedStreamRadius;
+        public final ModConfigSpec.ConfigValue<Integer> detachedMaxChunksPerTick;
+        public final ModConfigSpec.ConfigValue<Integer> detachedBodyPinRadius;
+        public final ModConfigSpec.ConfigValue<Boolean> detachedSuppressBodyStream;
+        public final ModConfigSpec.ConfigValue<Integer> vehicleWakeupTimeout;
+        public final ModConfigSpec.ConfigValue<Integer> vehicleWakeupTicketRadius;
+        public final ModConfigSpec.ConfigValue<Boolean> chunkStreamDebug;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> chunkStreamDebugCategories;
+        public final ModConfigSpec.ConfigValue<Integer> chunkStreamDebugHeartbeat;
 
         public ServerConfig(ModConfigSpec.Builder builder) {
             showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离（单位：block）")
                     .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
             serverBroadcastEntitiesInterval = builder.comment("服务端向玩家广播其所在世界超视距实体的时间间隔（单位：tick）")
                     .defineInRange("serverBroadcastEntitiesInterval", 5, 1, 72000);
+            builder.push("detachedBody");
+            detachedStreamRadius = builder.comment("Chunk radius streamed around a remotely operated vehicle, clamped to the server view distance.")
+                    .defineInRange("streamRadius", 12, 2, 32);
+            detachedMaxChunksPerTick = builder.comment("Maximum chunks pushed to one operator per tick.",
+                            "Taking control over already generated terrain would otherwise dump the whole view square at once and stall input for a few seconds.")
+                    .defineInRange("maxChunksPerTick", 16, 1, 1024);
+            detachedBodyPinRadius = builder.comment("Chunk radius kept alive around the operator's real body while they operate remotely.")
+                    .defineInRange("bodyPinRadius", 1, 0, 8);
+            detachedSuppressBodyStream = builder.comment("While operating remotely, stop streaming entities around the operator's real body, which they cannot see anyway.",
+                            "Entities the body rides or is attached to are never hidden, and the surroundings are restored the instant control ends.")
+                    .define("suppressBodyStream", true);
+            vehicleWakeupTimeout = builder.comment("How long to wait for a vehicle in an unloaded chunk to load when connecting to it, in ticks.")
+                    .defineInRange("wakeupTimeout", 200, 20, 6000);
+            vehicleWakeupTicketRadius = builder.comment("Chunk ticket radius applied when waking a sleeping vehicle.")
+                    .defineInRange("wakeupTicketRadius", 2, 1, 8);
+            builder.pop();
+            builder.push("chunkStreamDebug");
+            chunkStreamDebug = builder.comment("Log chunk streaming diagnostics for remotely operated vehicles.")
+                    .define("enabled", false);
+            chunkStreamDebugCategories = builder.comment("Categories to log: ALL, SESSION, TICKET, CHUNK, CENTER, PIN, ENTITY, WAKEUP, CLIENT.")
+                    .defineList("categories", List.of("ALL"), obj -> obj instanceof String);
+            chunkStreamDebugHeartbeat = builder.comment("Interval between debug heartbeat lines, in ticks.")
+                    .defineInRange("heartbeatTicks", 40, 1, 12000);
+            builder.pop();
         }
 
     }

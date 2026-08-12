@@ -604,9 +604,17 @@ public class LocalVehiclePlayer {
 
     public void rangeFinding(Vec3 worldPos) {
         double renderDistance = renderDistance();
-        double aimLocationDistance = getPlayer().position().distanceTo(worldPos);
+        double aimLocationDistance = viewOrigin().distanceTo(worldPos);
         this.outOfRangeFinding = aimLocationDistance > renderDistance;
         this.aimLocationDistance = Math.min(aimLocationDistance, renderDistance);
+    }
+
+    public Vec3 viewOrigin() {
+        AbstractVehicle vehicle = getVehicle();
+        if (vehicle != null && vehicle.getDetachedBodyAnchor(getPlayer()) != null) {
+            return vehicle.position();
+        }
+        return getPlayer().position();
     }
 
     public WeaponUnit getWeaponUnit() {

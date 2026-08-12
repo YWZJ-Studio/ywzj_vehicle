@@ -1,5 +1,8 @@
 package org.ywzj.vehicle.mixin.plugin;
 
+import net.neoforged.fml.loading.LoadingModList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -19,11 +22,38 @@ public class MixinPlugin implements IMixinConfigPlugin {
         return null;
     }
 
+    private static final Logger LOGGER = LogManager.getLogger("ywzj_vehicle|chunk-stream");
+    private static final String[] SODIUM_LIKE = {"embeddium", "rubidium", "sodium"};
+
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.contains("tacz")) return getClass("com.tacz.guns.GunMod");
         if (mixinClassName.contains("sable")) return getClass("dev.ryanhcode.sable.Sable");
+        // Sodium-likes replace LevelRenderer's chunk bookkeeping wholesale and already build their
+        // render list from the camera, so the render-origin redirect is both useless and unsafe there.
+        if (mixinClassName.endsWith("LevelRendererOriginMixin")) {
+            boolean sodium = sodiumPresent();
+            LOGGER.info("detached body render origin redirect {} (sodium-family renderer {})",
+                    sodium ? "skipped" : "applied", sodium ? "present" : "absent");
+            return !sodium;
+        }
         return true;
+    }
+
+    private boolean sodiumPresent() {
+        try {
+            LoadingModList mods = LoadingModList.get();
+            if (mods == null) {
+                return false;
+            }
+            for (String id : SODIUM_LIKE) {
+                if (mods.getModFileById(id) != null) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
     }
 
     /**

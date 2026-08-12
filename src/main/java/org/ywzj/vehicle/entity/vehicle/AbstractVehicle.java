@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -47,8 +49,8 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
-import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
+import org.ywzj.vehicle.api.entity.DetachedBodyVehicle;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
@@ -64,10 +66,8 @@ import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.ContainerCraft;
-import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.item.VehicleItem;
 import org.ywzj.vehicle.network.message.*;
-import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.DamageSystem;
@@ -90,7 +90,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 import java.util.*;
 
 public abstract class AbstractVehicle extends ContainerCraft
-        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityWithComplexSpawn {
+        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityWithComplexSpawn, DetachedBodyVehicle {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -100,6 +100,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Float> ENGINE_SPEED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<CompoundTag> DETACHED_ANCHORS = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final String DETACHED_ANCHORS_TAG = "DetachedAnchors";
     private ResourceLocation vehicleId;
     private ResourceLocation displayId;
     private BakedModelInstance modelInstance;
@@ -134,8 +136,6 @@ public abstract class AbstractVehicle extends ContainerCraft
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav = false;
-    private Vec3 fakeOperatorPosition;
-    private FakePlayer fakeOperator;
     public boolean collision = true;
     public boolean remote = false;
     public PlayerTeam remoteTeam;
@@ -161,6 +161,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.energyInfo = new EnergyInfo();
         this.physicsEngine = new PhysicsEngine(this);
         this.dismountLocations = new HashMap<>();
+        // A remotely operated vehicle reaches the client's entity list before its chunk is streamed,
+        // so the HUD can draw it before it has ever ticked client-side.
+        this.deltaMovementO = Vec3.ZERO;
     }
 
     @Override
@@ -174,6 +177,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         builder.define(ENGINE_SPEED, 0f);
         builder.define(ENGINE_ON, false);
         builder.define(DESTROYED, false);
+        builder.define(DETACHED_ANCHORS, new CompoundTag());
     }
 
     @Override
@@ -188,12 +192,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         compound.putString(ICustomVehicle.TAG_VEHICLE_DISPLAY_ID, this.getDisplayId().toString());
         compound.put("PartUnits", serializePartUnitsData());
         compound.put("DecorationUnits", serializeDecorationUnitsData());
-        if (uav) {
-            if (fakeOperatorPosition != null) {
-                compound.putDouble("fakeOperatorPositionX", fakeOperatorPosition.x);
-                compound.putDouble("fakeOperatorPositionY", fakeOperatorPosition.y);
-                compound.putDouble("fakeOperatorPositionZ", fakeOperatorPosition.z);
-            }
+        CompoundTag anchors = entityData.get(DETACHED_ANCHORS);
+        if (!anchors.isEmpty()) {
+            compound.put(DETACHED_ANCHORS_TAG, anchors.copy());
         }
     }
 
@@ -234,14 +235,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (compound.contains("DecorationUnits", Tag.TAG_COMPOUND)) {
             deserializeDecorationUnitsData(compound.getCompound("DecorationUnits"));
         }
-        if (uav) {
-            if (compound.contains("fakeOperatorPositionX")) {
-                fakeOperatorPosition = new Vec3(
-                        compound.getDouble("fakeOperatorPositionX"),
-                        compound.getDouble("fakeOperatorPositionY"),
-                        compound.getDouble("fakeOperatorPositionZ")
-                );
-            }
+        if (compound.contains(DETACHED_ANCHORS_TAG, Tag.TAG_COMPOUND)) {
+            entityData.set(DETACHED_ANCHORS, compound.getCompound(DETACHED_ANCHORS_TAG).copy());
         }
     }
 
@@ -367,17 +362,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         super.onRemovedFromLevel();
         partUnits.forEach((PartUnit::onRemoved));
         if (!level().isClientSide()) {
-            if (uav) {
-                if (getDriver() instanceof ServerPlayer serverPlayer && fakeOperator != null) {
-                    onLeaveVehicle(serverPlayer);
-                    serverPlayer.unRide();
-                    Vec3 backPosition = fakeOperator.position();
-                    serverPlayer.teleportTo(backPosition.x, backPosition.y, backPosition.z);
-                    serverPlayer.setYRot(fakeOperator.getYRot());
-                    serverPlayer.setYBodyRot(fakeOperator.yBodyRot);
-                    serverPlayer.setXRot(fakeOperator.getXRot());
-                    fakeOperatorPosition = null;
-                }
+            for (Entity operator : new ArrayList<>(getDetachedOperators())) {
+                operator.stopRiding();
             }
         }
     }
@@ -494,6 +480,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
                     passenger.stopRiding();
                 }
+                clearDetachedBodyAnchors();
             }
             if (isDestroyed() && System.currentTimeMillis() - destroyedTime > 60000) {
                 this.discard();
@@ -506,12 +493,6 @@ public abstract class AbstractVehicle extends ContainerCraft
             NeoForge.EVENT_BUS.post(__event);
             if (__event.isCanceled()) {
                 this.setDeltaMovement(Vec3.ZERO);
-            }
-            if (uav) {
-                EntityUtil.keepChunkLoaded(this, position());
-                if (fakeOperatorPosition != null) {
-                    EntityUtil.keepChunkLoaded(this, fakeOperatorPosition);
-                }
             }
         }
         tickParts();
@@ -880,15 +861,8 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public void onEnterVehicle(LivingEntity livingEntity) {
         if (!level().isClientSide()) {
-            if (uav) {
-                if (livingEntity instanceof ServerPlayer serverPlayer && tickCount != 0) {
-                    fakeOperatorPosition = livingEntity.position();
-                    fakeOperator = new FakePlayer(AllEntities.FAKE_PLAYER.get(), level());
-                    fakeOperator.spawn(serverPlayer);
-                    fakeOperator.setPos(fakeOperatorPosition);
-                    level().addFreshEntity(fakeOperator);
-                    livingEntity.teleportTo(this.position().x, this.position().y, this.position().z);
-                }
+            if (uav && livingEntity instanceof ServerPlayer serverPlayer && tickCount != 0) {
+                setDetachedBodyAnchor(serverPlayer, serverPlayer.position());
             }
             ServerLevel serverLevel = (ServerLevel) level();
             Seat targetSeat = null;
@@ -1104,24 +1078,79 @@ public abstract class AbstractVehicle extends ContainerCraft
     @NotNull
     @Override
     public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity pPassenger) {
-        if (uav) {
-            if (fakeOperator != null) {
-                Vec3 position = fakeOperator.position();
-                fakeOperatorPosition = null;
-                pPassenger.setYRot(fakeOperator.getYRot());
-                pPassenger.setYBodyRot(fakeOperator.yBodyRot);
-                pPassenger.setXRot(fakeOperator.getXRot());
-                return position;
-            } else if (fakeOperatorPosition != null) {
-                // 可能是服务端崩溃或客户端异常退出
-                return fakeOperatorPosition;
-            }
+        Vec3 anchor = getDetachedBodyAnchor(pPassenger);
+        if (anchor != null) {
+            setDetachedBodyAnchor(pPassenger, null);
+            return anchor;
         }
         return dismountLocations.getOrDefault(pPassenger, super.getDismountLocationForPassenger(pPassenger));
     }
 
     @Override
+    public boolean isDetachedBodyActive() {
+        return this.uav && !entityData.get(DETACHED_ANCHORS).isEmpty();
+    }
+
+    @Nullable
+    @Override
+    public Vec3 getDetachedBodyAnchor(Entity operator) {
+        if (operator == null) {
+            return null;
+        }
+        ListTag anchor = entityData.get(DETACHED_ANCHORS).getList(operator.getStringUUID(), Tag.TAG_DOUBLE);
+        if (anchor.size() != 3) {
+            return null;
+        }
+        return new Vec3(anchor.getDouble(0), anchor.getDouble(1), anchor.getDouble(2));
+    }
+
+    @Override
+    public void setDetachedBodyAnchor(Entity operator, @Nullable Vec3 anchor) {
+        if (operator == null || level().isClientSide()) {
+            return;
+        }
+        CompoundTag anchors = entityData.get(DETACHED_ANCHORS).copy();
+        if (anchor == null) {
+            anchors.remove(operator.getStringUUID());
+        } else {
+            ListTag list = new ListTag();
+            list.add(DoubleTag.valueOf(anchor.x));
+            list.add(DoubleTag.valueOf(anchor.y));
+            list.add(DoubleTag.valueOf(anchor.z));
+            anchors.put(operator.getStringUUID(), list);
+        }
+        entityData.set(DETACHED_ANCHORS, anchors);
+    }
+
+    @Override
+    public void clearDetachedBodyAnchors() {
+        if (!level().isClientSide()) {
+            entityData.set(DETACHED_ANCHORS, new CompoundTag());
+        }
+    }
+
+    @Override
+    public Collection<Entity> getDetachedOperators() {
+        CompoundTag anchors = entityData.get(DETACHED_ANCHORS);
+        if (anchors.isEmpty()) {
+            return List.of();
+        }
+        List<Entity> operators = new ArrayList<>();
+        for (Entity passenger : getPassengers()) {
+            if (anchors.contains(passenger.getStringUUID(), Tag.TAG_LIST)) {
+                operators.add(passenger);
+            }
+        }
+        return operators;
+    }
+
+    @Override
     protected void positionRider(@NotNull Entity pPassenger, Entity.MoveFunction pCallback) {
+        Vec3 anchor = getDetachedBodyAnchor(pPassenger);
+        if (anchor != null) {
+            pCallback.accept(pPassenger, anchor.x, anchor.y, anchor.z);
+            return;
+        }
         if (!(pPassenger instanceof LivingEntity living)) {
             super.positionRider(pPassenger, pCallback);
             return;

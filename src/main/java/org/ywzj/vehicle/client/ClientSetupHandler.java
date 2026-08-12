@@ -24,7 +24,6 @@ import org.ywzj.vehicle.client.particle.DustStoneParticle;
 import org.ywzj.vehicle.client.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
 import org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer;
-import org.ywzj.vehicle.client.render.entity.misc.FakePlayerRenderer;
 import org.ywzj.vehicle.client.render.entity.misc.RadarMarkerRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.DumpTruckRenderer;
 import org.ywzj.vehicle.client.render.entity.vehicle.VehicleRender;
@@ -79,7 +78,6 @@ public class ClientSetupHandler {
                 ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, "entity/grenade_40mm", "textures/entity/grenade_40mm.png")));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
-        event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.RADAR_MARKER.get(), RadarMarkerRenderer::new));
 
         ItemBlockRenderTypes.setRenderLayer(AllBlocks.FIGURE_BOX_BLOCK.get(), RenderType.cutout());
