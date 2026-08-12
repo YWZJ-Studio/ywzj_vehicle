@@ -4,9 +4,11 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.api.entity.DetachedBodyVehicle;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -34,6 +36,33 @@ public final class DetachedBodyStreaming {
 
     public static boolean isPiloting(UUID playerId) {
         return playerId != null && piloting.contains(playerId);
+    }
+
+    public static void clearPilot(UUID playerId) {
+        Set<UUID> current = piloting;
+        if (playerId == null || !current.contains(playerId)) {
+            return;
+        }
+        Set<UUID> next = new HashSet<>(current);
+        next.remove(playerId);
+        piloting = next;
+    }
+
+    public static boolean suppressesBodyEntities(UUID playerId) {
+        return isPiloting(playerId) && AllConfigs.server.detachedSuppressBodyStream.get();
+    }
+
+
+    public static int bodyViewDistance(UUID playerId, int serverViewDistance) {
+        if (!isPiloting(playerId)) {
+            return -1;
+        }
+        int configured = AllConfigs.server.detachedBodyViewDistance.get();
+        return configured < 2 ? -1 : Math.min(configured, serverViewDistance);
+    }
+
+    public static boolean parksBodyTickets(UUID playerId) {
+        return isPiloting(playerId) && AllConfigs.server.detachedBodyTicketRadius.get() >= 0;
     }
 
     public static boolean isChunkStreamedTo(UUID playerId, int chunkX, int chunkZ) {

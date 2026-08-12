@@ -44,6 +44,7 @@ public final class DetachedBodyStreamer {
 
     private static final Comparator<Unit> UNIT_COMPARATOR = (a, b) -> 0;
     private static final TicketType<Unit> STREAM_TICKET = TicketType.create("ywzj_detached_stream", UNIT_COMPARATOR, 40);
+    private static final TicketType<Unit> BODY_TICKET = TicketType.create("ywzj_detached_body", UNIT_COMPARATOR, 40);
     private static final LongOpenHashSet EMPTY_CHUNKS = new LongOpenHashSet();
     private static final int PIN_REFRESH_TICKS = 200;
 
@@ -132,11 +133,8 @@ public final class DetachedBodyStreamer {
 
         collectOperators(radius);
 
-        if (AllConfigs.server.detachedSuppressBodyStream.get() && !this.viewing.isEmpty()) {
-            DetachedBodyStreaming.publishPilots(new HashSet<>(this.viewing.keySet()));
-        } else {
-            DetachedBodyStreaming.publishPilots(Collections.emptySet());
-        }
+        DetachedBodyStreaming.publishPilots(this.viewing.isEmpty()
+                ? Collections.emptySet() : new HashSet<>(this.viewing.keySet()));
 
         this.workUuids.clear();
         this.workUuids.addAll(this.subscribed.keySet());
@@ -261,6 +259,9 @@ public final class DetachedBodyStreamer {
             session.centerUpdates++;
             ChunkStreamDebug.log(ChunkStreamDebug.Category.CENTER, "{}: cache center -> {}",
                     operator.getScoreboardName(), target);
+        }
+        if (firstView || bodyMoved || this.ticks % 20 == 0) {
+            parkBody(operator, level, body, firstView || bodyMoved);
         }
         if (firstView) {
                 ChunkStreamDebug.log(ChunkStreamDebug.Category.SESSION,
@@ -430,6 +431,7 @@ public final class DetachedBodyStreamer {
      */
     private void releaseToBody(ServerPlayer operator, String reason) {
         UUID id = operator.getUUID();
+        DetachedBodyStreaming.clearPilot(id);
         LongOpenHashSet streamed = this.subscribed.remove(id);
         this.lastCenter.remove(id);
         this.pinnedSent.remove(id);
@@ -448,6 +450,7 @@ public final class DetachedBodyStreamer {
         }
         ChunkPos body = operator.chunkPosition();
         ChunkMapAccessor chunkMap = (ChunkMapAccessor) (Object) level.getChunkSource().chunkMap;
+        level.getChunkSource().move(operator);
         operator.setChunkTrackingView(ChunkTrackingView.EMPTY);
         chunkMap.ywzj$updateChunkTracking(operator);
         session.centerUpdates++;
@@ -456,6 +459,21 @@ public final class DetachedBodyStreamer {
                 operator.getScoreboardName(), body, reason,
                 streamed == null ? 0 : streamed.size(), chunkMap.ywzj$playerViewDistance(operator));
         ChunkStreamDebug.endSession(id, reason);
+    }
+
+
+    private void parkBody(ServerPlayer operator, ServerLevel level, ChunkPos body, boolean apply) {
+        int ticketRadius = AllConfigs.server.detachedBodyTicketRadius.get();
+        if (ticketRadius < 0) {
+            return;
+        }
+        level.getChunkSource().addRegionTicket(BODY_TICKET, body, ticketRadius, Unit.INSTANCE);
+        if (!apply) {
+            return;
+        }
+        level.getChunkSource().move(operator);
+        ChunkStreamDebug.state(ChunkStreamDebug.Category.TICKET, "body " + operator.getScoreboardName(),
+                "parked at " + body + " on a radius " + ticketRadius + " ticket");
     }
 
     private static int clientStorageRadius(int viewDistance) {

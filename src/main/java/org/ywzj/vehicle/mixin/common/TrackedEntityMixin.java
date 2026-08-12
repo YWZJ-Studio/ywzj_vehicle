@@ -26,7 +26,7 @@ public abstract class TrackedEntityMixin implements DetachedTracked {
         if (DetachedBodyStreaming.shouldReveal(this.entity, player)) {
             return true;
         }
-        if (DetachedBodyStreaming.isPiloting(player.getUUID())) {
+        if (DetachedBodyStreaming.suppressesBodyEntities(player.getUUID())) {
             return DetachedBodyStreaming.mustStayPaired(this.entity, player) && visible;
         }
         return visible;

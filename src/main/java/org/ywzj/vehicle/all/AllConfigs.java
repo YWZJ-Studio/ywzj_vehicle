@@ -122,6 +122,8 @@ public class AllConfigs {
         public final ModConfigSpec.ConfigValue<Integer> detachedMaxChunksPerTick;
         public final ModConfigSpec.ConfigValue<Integer> detachedBodyPinRadius;
         public final ModConfigSpec.ConfigValue<Boolean> detachedSuppressBodyStream;
+        public final ModConfigSpec.ConfigValue<Integer> detachedBodyViewDistance;
+        public final ModConfigSpec.ConfigValue<Integer> detachedBodyTicketRadius;
         public final ModConfigSpec.ConfigValue<Integer> vehicleWakeupTimeout;
         public final ModConfigSpec.ConfigValue<Integer> vehicleWakeupTicketRadius;
         public final ModConfigSpec.ConfigValue<Boolean> chunkStreamDebug;
@@ -144,6 +146,12 @@ public class AllConfigs {
             detachedSuppressBodyStream = builder.comment("While operating remotely, stop streaming entities around the operator's real body, which they cannot see anyway.",
                             "Entities the body rides or is attached to are never hidden, and the surroundings are restored the instant control ends.")
                     .define("suppressBodyStream", true);
+            detachedBodyViewDistance = builder.comment("View distance applied to the operator's real body while they operate remotely.",
+                            "The body only needs enough of a view to stay simulated and collidable, so shrinking it stops the server re-sending terrain the operator cannot see. Below 2 keeps the operator's normal view distance.")
+                    .defineInRange("bodyViewDistance", 2, -1, 32);
+            detachedBodyTicketRadius = builder.comment("Chunk radius kept loaded around the operator's real body in place of their normal player ticket.",
+                            "Releasing that ticket stops the server ticking a full simulation distance of chunks nobody is watching, at the cost of freezing mobs, redstone and farms around the body until control ends. Negative keeps the normal player ticket.")
+                    .defineInRange("bodyTicketRadius", 2, -1, 8);
             vehicleWakeupTimeout = builder.comment("How long to wait for a vehicle in an unloaded chunk to load when connecting to it, in ticks.")
                     .defineInRange("wakeupTimeout", 200, 20, 6000);
             vehicleWakeupTicketRadius = builder.comment("Chunk ticket radius applied when waking a sleeping vehicle.")

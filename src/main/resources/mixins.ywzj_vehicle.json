@@ -23,6 +23,7 @@
   },
   "mixins": [
     "common.ChunkMapAccessor",
+    "common.ChunkMapBodyLoadMixin",
     "common.EntityMixin",
     "common.ExplosionAccessor",
     "common.LivingEntityMixin",
