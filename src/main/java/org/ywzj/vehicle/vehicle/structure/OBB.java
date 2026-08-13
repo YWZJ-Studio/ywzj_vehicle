@@ -260,11 +260,19 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
 
     // 局部坐标转世界坐标
     public Vector3f localToWorld(Vector3f localPoint, Vector3f[] axes) {
-        Vector3f result = new Vector3f(center);
-        result.add(axes[0].mul(localPoint.x, new Vector3f()));
-        result.add(axes[1].mul(localPoint.y, new Vector3f()));
-        result.add(axes[2].mul(localPoint.z, new Vector3f()));
-        return result;
+        return localToWorld(localPoint, axes, new Vector3f());
+    }
+
+    // Local to world, writing into dest.
+    // avoids the 4 temporary Vector3f allocations the other one makes per call.
+    public Vector3f localToWorld(Vector3f localPoint, Vector3f[] axes, Vector3f dest) {
+        float lx = localPoint.x, ly = localPoint.y, lz = localPoint.z;
+        dest.set(
+                center.x + axes[0].x * lx + axes[1].x * ly + axes[2].x * lz,
+                center.y + axes[0].y * lx + axes[1].y * ly + axes[2].y * lz,
+                center.z + axes[0].z * lx + axes[1].z * ly + axes[2].z * lz
+        );
+        return dest;
     }
 
     public OBB inflate(float amount) {

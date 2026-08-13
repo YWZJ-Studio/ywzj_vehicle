@@ -17,9 +17,12 @@ import java.util.List;
  */
 public class VehicleCubeOBB {
 
+    private static final int MAX_SAMPLES_PER_AXIS = 24;
+
     private final OBB obb;
     public VehicleCubeGroup group;
     private final List<CubePoint> cubePoints;
+    private boolean pointsInitialized;
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
     public CubePoint bottomPoint;
     private Vec3 offset = Vec3.ZERO;
@@ -40,7 +43,7 @@ public class VehicleCubeOBB {
     public VehicleCubeOBB(OBB obb) {
         this.obb = obb;
         this.cubePoints = new ArrayList<>();
-        this.initCubePoints();
+        this.initSpacing();
         this.offset = Vec3.ZERO;
         this.x = 0;
         this.y = 0;
@@ -64,14 +67,14 @@ public class VehicleCubeOBB {
         this.width = cube.width();
         this.depth = cube.depth();
         group.addCubeOBB(this);
-        this.initCubePoints();
+        this.initSpacing();
     }
 
     public VehicleCubeOBB(VehicleCubeOBB origin) {
         this.obb = origin.obb.copy();
         this.group = origin.group;
         this.cubePoints = new ArrayList<>();
-        this.initCubePoints();
+        this.initSpacing();
         this.offset = origin.offset;
         this.x = origin.x;
         this.y = origin.y;
@@ -95,7 +98,8 @@ public class VehicleCubeOBB {
         obb.setExtents(new Vector3f((float) (width / 2), (float) (height / 2), (float) (depth / 2)));
         cubePoints.clear();
         cubePointsByFace.clear();
-        initCubePoints();
+        pointsInitialized = false;
+        initSpacing();
     }
 
     public void update(AbstractVehicle vehicle) {
@@ -122,25 +126,60 @@ public class VehicleCubeOBB {
         return new VehicleCubeOBB(new OBB(Vec3.ZERO.toVector3f(), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf()));
     }
 
+    /**
+     * Initialises sample spacing and the per-face table.
+     */
+    private void initSpacing() {
+        float gap = 0.1f;
+        float offset = 0.001f;
+        float x1 = -obb.extents().x - gap;
+        float x2 = obb.extents().x + gap;
+        float y1 = -obb.extents().y - offset;
+        float y2 = obb.extents().y + gap;
+        float z1 = -obb.extents().z - gap;
+        float z2 = obb.extents().z + gap;
+        spaceX = spacing(x2 - x1);
+        spaceY = spacing(y2 - y1);
+        spaceZ = spacing(z2 - z1);
+        for (CubeFace face : CubeFace.values()) {
+            cubePointsByFace.put(face, new ArrayList<>());
+        }
+    }
+
+    /**
+     * Divides span into equal segments, at most MAX_SAMPLES_PER_AXIS of them.
+     * At a fixed 1-block spacing the sample count grows with surface area
+     * an 8x3x10 tank needs ~460 points, but scales poory beyond that
+     * When span is at most MAX_SAMPLES_PER_AXIS this reduces to span / ceil(span), identical
+     * to the original, so existing small and mid-sized vehicles keep exactly
+     * the same sample point layout.
+     * For the time being should allow for much cheaper larger vehices.
+     * TODO: logarithmically scaled sample based on surface?
+     */
+    private static double spacing(double span) {
+        double step = Math.max(1.0, span / MAX_SAMPLES_PER_AXIS);
+        return span / Math.max(1, Math.ceil(span / step));
+    }
+
+
+    private void ensurePoints() {
+        if (pointsInitialized) {
+            return;
+        }
+        pointsInitialized = true;
+        initCubePoints();
+    }
+
     public void initCubePoints() {
         float gap = 0.1f;
         float slack = 0.1f;
         float offset = 0.001f;
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
-        spaceX = (x2 - x1) / Math.ceil(x2 - x1);
         float y1 = -obb.extents().y - offset;
         float y2 = obb.extents().y + gap;
-        spaceY = (y2 - y1) / Math.ceil(y2 - y1);
         float z1 = -obb.extents().z - gap;
         float z2 = obb.extents().z + gap;
-        spaceZ = (z2 - z1) / Math.ceil(z2 - z1);
-        cubePointsByFace.put(CubeFace.FRONT, new ArrayList<>());
-        cubePointsByFace.put(CubeFace.BACK, new ArrayList<>());
-        cubePointsByFace.put(CubeFace.LEFT, new ArrayList<>());
-        cubePointsByFace.put(CubeFace.RIGHT, new ArrayList<>());
-        cubePointsByFace.put(CubeFace.TOP, new ArrayList<>());
-        cubePointsByFace.put(CubeFace.BOTTOM, new ArrayList<>());
         CubePoint cubePoint;
         // 前后
         for (float x = x1; x <= x2 + slack; x += spaceX) {
@@ -179,7 +218,11 @@ public class VehicleCubeOBB {
     }
 
     public void initBottomPoint() {
+        ensurePoints();
         List<CubePoint> bottomPoints = cubePointsByFace.get(CubeFace.BOTTOM);
+        if (bottomPoints == null || bottomPoints.isEmpty()) {
+            return;
+        }
         bottomPoints.sort(Comparator.comparingDouble(p -> p.obbLocalPos().y));
         bottomPoint = bottomPoints.get(0);
     }
@@ -201,6 +244,7 @@ public class VehicleCubeOBB {
     }
 
     public List<CubePoint> cubePoints() {
+        ensurePoints();
         return cubePoints;
     }
 
@@ -252,8 +296,11 @@ public class VehicleCubeOBB {
         }
 
         public Vector3f worldPos(Vector3f[] axes) {
-            worldPos = vehicleCubeOBB.obb.localToWorld(obbLocalPos, axes == null ? vehicleCubeOBB.obb.getAxes() : axes);
-            return worldPos;
+            if (worldPos == null) {
+                worldPos = new Vector3f();
+            }
+            return vehicleCubeOBB.obb.localToWorld(
+                    obbLocalPos, axes == null ? vehicleCubeOBB.obb.getAxes() : axes, worldPos);
         }
 
         public Vector3f cachedWorldPos() {
