@@ -6,10 +6,13 @@
   "minVersion": "0.8",
   "client": [
     "client.CameraMixin",
+    "client.ClientChunkCacheMixin",
+    "client.ClientLevelUnloadMixin",
     "client.ClientPacketListenerMixin",
     "client.EntityRenderDispatcherMixin",
     "client.HumanoidModelMixin",
     "client.LevelRendererMixin",
+    "client.LevelRendererOriginMixin",
     "client.LivingEntityRendererMixin",
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
@@ -19,11 +22,14 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "common.ChunkMapAccessor",
+    "common.ChunkMapBodyLoadMixin",
     "common.EntityMixin",
     "common.ExplosionAccessor",
     "common.LivingEntityMixin",
     "common.PlayerMixin",
     "common.ProjectileUtilMixin",
+    "common.TrackedEntityMixin",
     "create.ContraptionColliderMixin",
     "sable.AbstractVehicleSableMixin",
     "sable.SubLevelEntityCollisionMixin"

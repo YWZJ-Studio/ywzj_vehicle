@@ -181,8 +181,14 @@ public class AllEvents {
 
         @SubscribeEvent
         public static void onLivingHurt(LivingDamageEvent.Pre event) {
-            if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle && vehicle.protectPassenger) {
-                event.setNewDamage(0);
+            if (event.getEntity().getVehicle() instanceof AbstractVehicle vehicle) {
+                if (vehicle.getDetachedBodyAnchor(event.getEntity()) != null) {
+                    event.getEntity().stopRiding();
+                    return;
+                }
+                if (vehicle.protectPassenger) {
+                    event.setNewDamage(0);
+                }
             }
         }
 

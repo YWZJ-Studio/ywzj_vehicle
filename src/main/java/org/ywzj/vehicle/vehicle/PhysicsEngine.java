@@ -34,6 +34,7 @@ public class PhysicsEngine {
     public float angularDampingAir = 0.96f;
     public float torqueScale = 4.0f;
     public float maxRotV = 0.3f;
+    public float maxTipSpeed = 3.6f;
     public float rotV = 0;
     public int rotTick;
     public Quaternionf stepRot;
@@ -59,6 +60,15 @@ public class PhysicsEngine {
 
     public VehicleCubeOBB physicsCube() {
         return vehicle.getMainCubeOBB();
+    }
+
+
+    public float effectiveMaxRotV() {
+        float radius = vehicle.getMainCubeOBB().obb().extents().length();
+        if (radius < 1.0e-3f) {
+            return maxRotV;
+        }
+        return Math.min(maxRotV, maxTipSpeed / radius);
     }
 
     /**
@@ -139,7 +149,12 @@ public class PhysicsEngine {
                     }
                     if (velocity.dot(axesY) < 0.1f) {
                         float offsetY = (float) (physicsCube().offset().y - physicsCube.height / 2);
-                        Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f + offsetY, 0));
+                        // cachedWorldPos() hands back the point's shared buffer and Vector3f.add
+                        // mutates in place, so adding to it directly corrupted the cached position
+                        // for every later reader in the same tick — notably the half-block filter
+                        // in rotAndFallByGravity, which runs after this and saw an inflated Y.
+                        Vector3f cachedWorldPos = touchPoint.cachedWorldPos();
+                        Vec3 testPos = new Vec3(cachedWorldPos.x, cachedWorldPos.y + 0.1f + offsetY, cachedWorldPos.z);
                         BlockPos testBlockPos = BlockPos.containing(testPos);
                         BlockState blockState = vehicle.level().getBlockState(testBlockPos);
                         if (blockState.isSolid()) {
@@ -374,7 +389,7 @@ public class PhysicsEngine {
             float moi = computeMomentOfInertia(localRotAxisStart, localRotAxisEnd, physicsCube, mass, gravityCenter);
             float angularAccel = moi > 0.001f ? torqueScale * torque / moi : 0;
             rotV = rotV * angularDampingGround + angularAccel;
-            rotV = Math.min(rotV, maxRotV);
+            rotV = Math.min(rotV, effectiveMaxRotV());
             rot(axes);
             return new Vec3(velocity);
         } catch (Exception exception) {
@@ -404,7 +419,7 @@ public class PhysicsEngine {
             localRotAxisStart = axis.normalize().scale(5).toVector3f();
             localRotAxisEnd = axis.normalize().scale(-5).toVector3f();
             checkDirection(forcePointLocal);
-            rotV = 0.05f * recoil;
+            rotV = Math.min(0.05f * recoil, effectiveMaxRotV());
             Vec3 lastPosition = vehicle.position();
             rot(axes);
             vehicle.setPos(lastPosition);

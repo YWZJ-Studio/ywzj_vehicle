@@ -35,7 +35,6 @@ import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.render.item.FigureBoxItemRenderer;
-import org.ywzj.vehicle.entity.misc.FakePlayer;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.List;
@@ -127,7 +126,7 @@ public class FigureBoxItem extends VehicleItem {
     @Override
     public InteractionResult interactEntity(ItemStack itemStack, Player player, Entity target, InteractionHand hand) {
         if (!player.level().isClientSide() && hand == InteractionHand.MAIN_HAND) {
-            if (target instanceof ServerPlayer || target instanceof FakePlayer) {
+            if (target instanceof ServerPlayer) {
                 return InteractionResult.PASS;
             }
             if (AllConfigs.common.figureBoxOnlyCaptureVehicle.get() && !(target instanceof AbstractVehicle)) {

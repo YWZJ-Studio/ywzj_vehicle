@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import org.ywzj.vehicle.command.sub.ChunkStreamCommand;
 import org.ywzj.vehicle.command.sub.DebugCommand;
 import org.ywzj.vehicle.command.sub.ReloadCommand;
 import org.ywzj.vehicle.command.sub.SummonCommand;
@@ -16,6 +17,7 @@ public class RootCommand {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal(ROOT_NAME)
                 .requires((source -> source.hasPermission(2)));
         root.then(DebugCommand.get());
+        root.then(ChunkStreamCommand.get());
         root.then(SummonCommand.get());
         root.then(ReloadCommand.get());
         dispatcher.register(root);
