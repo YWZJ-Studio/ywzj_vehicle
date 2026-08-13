@@ -31,6 +31,9 @@ public class BaseVehicleDataPojo {
     @SerializedName("uav")
     public boolean uav = false;
 
+    @SerializedName("can_wade")
+    public boolean canWade = false;
+
     @SerializedName("with_warning_receiver")
     public boolean withWarningReceiver = false;
 

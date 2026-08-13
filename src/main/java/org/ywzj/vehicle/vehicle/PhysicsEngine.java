@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Math;
 import org.joml.Quaternionf;
@@ -48,6 +49,7 @@ public class PhysicsEngine {
     public Vector3f velocityO = new Vector3f(0, 0, 0);
     public boolean lockZRot;
     public boolean lockCenterRot;
+    private float submergedRatio;
     public int stuckTick;
 
     public PhysicsEngine(AbstractVehicle vehicle) {
@@ -59,6 +61,15 @@ public class PhysicsEngine {
         return vehicle.getMainCubeOBB();
     }
 
+    public void beginTick(Vec3 velocity) {
+        velocityO.set(this.velocity);
+        this.velocity.set((float) velocity.x, (float) velocity.y, (float) velocity.z);
+    }
+
+    public Vec3 endTick() {
+        return new Vec3(velocity);
+    }
+
     /**
      * 载具的正朝向约定为自身Z轴正方向
      * 车体视作理想刚体，采样点受方块的力垂直于OBB面向内
@@ -67,9 +78,10 @@ public class PhysicsEngine {
      * 为助于攀爬方块，一定车体高度下的方块碰撞会被忽略
      * 车体底面若有陷地则会施加较大的向上速度
      */
-    public Vec3 motionByImpact(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vec3 velocity) {
+    public void motionByImpact(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes) {
         VehicleCubeOBB physicsCube = vehicle.getMainCubeOBB();
         boolean isStuck = false;
+        Vec3 velocity = new Vec3(this.velocity);
 
         double velocityO = velocity.length();
         for (VehicleCubeOBB.CubePoint touchPoint : touchPoints) {
@@ -165,12 +177,11 @@ public class PhysicsEngine {
         if (!isStuck) {
             stuckTick = Math.max(stuckTick - 1, 0);
         }
-        this.velocity = velocity.toVector3f();
+        this.velocity.set((float) velocity.x, (float) velocity.y, (float) velocity.z);
         double velocityDiff = velocityO - velocity.length();
         if (velocityDiff > 0.5) {
             DamageSystem.impactHurt(velocityDiff, vehicle);
         }
-        return velocity;
     }
 
     private void destroyBlocks(VehicleCubeOBB physicsCube, VehicleCubeOBB.CubeFace cubeFace) {
@@ -206,22 +217,77 @@ public class PhysicsEngine {
     }
 
     /**
-     * 阻力影响
+     * 摩擦力影响
      */
-    public Vec3 decelerationByFriction(List<VehicleCubeOBB.CubePoint> touchPoints, Vec3 velocity) {
+    public void decelerationByFriction(List<VehicleCubeOBB.CubePoint> touchPoints) {
+        Vec3 velocity = new Vec3(this.velocity);
         if (!touchPoints.isEmpty()) {
             // 接触摩擦力
             velocity = velocity.normalize().scale(Math.max(0, velocity.length() - physicsInfo.friction / physicsInfo.mass));
         }
-        this.velocity = velocity.toVector3f();
-        return velocity;
+        this.velocity.set((float) velocity.x, (float) velocity.y, (float) velocity.z);
+    }
+
+    /**
+     * 浮力影响
+     */
+    public Vec3 motionByBuoyancy() {
+        submergedRatio = 0;
+        if (physicsInfo.density <= 0 || physicsInfo.mass <= 0) {
+            return Vec3.ZERO;
+        }
+        Vec3 velocity = new Vec3(this.velocity);
+        VehicleCubeOBB physicsCube = physicsCube();
+        OBB obb = physicsCube.obb();
+        Vector3f[] axes = obb.getAxes();
+        Vector3f extents = obb.extents();
+        int samplesX = buoyancySamples(extents.x * 2);
+        int samplesY = buoyancySamples(extents.y * 2);
+        int samplesZ = buoyancySamples(extents.z * 2);
+        int sampleCount = samplesX * samplesY * samplesZ;
+        double physicsCubeVolume = physicsCube.volume();
+        double sampleVolume = physicsCubeVolume / sampleCount;
+        double displacedVolume = 0;
+        double displacedFluidMass = 0;
+        for (int x = 0; x < samplesX; x++) {
+            float localX = sampleCoordinate(extents.x, x, samplesX);
+            for (int y = 0; y < samplesY; y++) {
+                float localY = sampleCoordinate(extents.y, y, samplesY);
+                for (int z = 0; z < samplesZ; z++) {
+                    float localZ = sampleCoordinate(extents.z, z, samplesZ);
+                    Vector3f worldPos = obb.localToWorld(new Vector3f(localX, localY, localZ), axes);
+                    BlockPos blockPos = BlockPos.containing(worldPos.x, worldPos.y, worldPos.z);
+                    FluidState fluidState = vehicle.level().getFluidState(blockPos);
+                    if (fluidState.isEmpty()) {
+                        continue;
+                    }
+                    double fluidSurface = blockPos.getY() + fluidState.getHeight(vehicle.level(), blockPos);
+                    if (worldPos.y < fluidSurface) {
+                        int fluidDensity = fluidState.getFluidType().getDensity(fluidState, vehicle.level(), blockPos);
+                        if (fluidDensity > 0) {
+                            displacedVolume += sampleVolume;
+                            displacedFluidMass += sampleVolume * fluidDensity / 1000.0;
+                        }
+                    }
+                }
+            }
+        }
+        double buoyancyForce = G * physicsInfo.mass * displacedFluidMass / (physicsInfo.density * physicsCubeVolume);
+        double buoyancyAcceleration = buoyancyForce / physicsInfo.mass;
+        submergedRatio = (float) (displacedVolume / physicsCubeVolume);
+        double damping = Mth.clamp(1 - physicsInfo.liquidDamping * submergedRatio, 0, 1);
+        velocity = velocity.scale(damping);
+        velocity = velocity.add(0, buoyancyAcceleration, 0);
+        this.velocity.set((float) velocity.x, (float) velocity.y, (float) velocity.z);
+        return new Vec3(0, buoyancyForce, 0);
     }
 
     /**
      * 受重力影响下的自由落体与三轴滚动
      */
-    public Vec3 rotAndFallByGravity(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vector3f force, Vector3f velocity) {
+    public void rotAndFallByGravity(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes, Vector3f force) {
         var physicsCube = vehicle.getMainCubeOBB();
+        Vector3f velocity = this.velocity;
         try {
             // 加速度使得重心偏移
             Vector3f a = new Vector3f(velocity).sub(this.velocityO);
@@ -231,7 +297,7 @@ public class PhysicsEngine {
             if (force.y >= G * physicsInfo.mass) {
                 velocity.y -= G;
                 vehicle.setOnGround(false);
-                return new Vec3(velocity);
+                return;
             }
             // 无任何接触，因转动惯量而继续转动，因重力而自由落体
             if (touchPoints.isEmpty()) {
@@ -242,7 +308,7 @@ public class PhysicsEngine {
                 }
                 velocity.y -= G;
                 vehicle.setOnGround(false);
-                return new Vec3(velocity);
+                return;
             }
             vehicle.setOnGround(true);
             // 统计重力在三轴方向上的分力的出面上的接触点，取其局部坐标
@@ -321,7 +387,7 @@ public class PhysicsEngine {
                             vehicle.setZRot(0);
                         }
                     }
-                    return new Vec3(velocity);
+                    return;
                 }
                 float minDist = Float.MAX_VALUE;
                 int minIdx = -1;
@@ -334,7 +400,7 @@ public class PhysicsEngine {
                     }
                 }
                 if (minIdx == -1) {
-                    return new Vec3(velocity);
+                    return;
                 }
                 localRotAxisStart = points.get(polygon.get(minIdx));
                 localRotAxisEnd = points.get(polygon.get((minIdx + 1) % polygon.size()));
@@ -348,7 +414,7 @@ public class PhysicsEngine {
                 float len = vProj.length();
                 if (len < 0.0001f) {
                     rotV = 0;
-                    return new Vec3(velocity);
+                    return;
                 }
                 // 旋转轴在支撑平面内，垂直于vProj：axis = gLocal × vProj
                 Vector3f axisDir = new Vector3f(gLocalDirection).cross(vProj).normalize();
@@ -361,7 +427,7 @@ public class PhysicsEngine {
                 if (rotV < 0.001f) rotV = 0;
                 centerRot(gravityCenter, axes);
                 velocity.y -= G;
-                return new Vec3(velocity);
+                return;
             }
             checkDirection(gravityCenter);
             rotLoss(gc);
@@ -376,13 +442,28 @@ public class PhysicsEngine {
             rotV = rotV * angularDampingGround + angularAccel;
             rotV = Math.min(rotV, maxRotV);
             rot(axes);
-            return new Vec3(velocity);
         } catch (Exception exception) {
             exception.printStackTrace();
         } finally {
-            this.velocity = velocity;
+            rightInLiquid();
         }
-        return new Vec3(velocity);
+    }
+
+    private void rightInLiquid() {
+        if (submergedRatio <= 0) {
+            return;
+        }
+        rotV *= Mth.clamp(1 - submergedRatio * 0.2f, 0, 1);
+        if (rotV < 0.001f) {
+            rotV = 0;
+        }
+        float rightingStep = 1.5f * submergedRatio;
+        vehicle.setXRot(Mth.approachDegrees(vehicle.getXRot(), 0, rightingStep));
+        if (lockZRot) {
+            vehicle.setZRot(0);
+        } else {
+            vehicle.setZRot(Mth.approachDegrees(vehicle.getZRot(), 0, rightingStep));
+        }
     }
 
     /**
@@ -592,6 +673,14 @@ public class PhysicsEngine {
         Vector3f perp = new Vector3f(r).sub(projOnAxis);
         float distSq = perp.lengthSquared();
         return I_center + mass * distSq;
+    }
+
+    private static int buoyancySamples(float size) {
+        return Mth.clamp(Mth.ceil(size * 2), 1, 8);
+    }
+
+    private static float sampleCoordinate(float extent, int sample, int sampleCount) {
+        return -extent + extent * 2 * (sample + 0.5f) / sampleCount;
     }
 
 }

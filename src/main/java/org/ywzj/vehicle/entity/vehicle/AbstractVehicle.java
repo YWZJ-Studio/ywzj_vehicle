@@ -135,6 +135,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav = false;
+    protected boolean canWade;
     private Vec3 fakeOperatorPosition;
     private FakePlayer fakeOperator;
     public boolean collision = true;
@@ -429,6 +430,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
         this.seats.addAll(partUnitsAndSeats.seats());
         this.uav = vehicleData.isUav();
+        this.canWade = vehicleData.canWade();
         if (vehicleData.withWarningReceiver()) {
             this.warningReceiver = new WarningReceiver(this);
         }
@@ -539,7 +541,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     protected void tickPower() {
         FluidState fluidState = level().getFluidState(BlockPos.containing(new Vec3(mainCubeOBB.obb().center())));
-        if (!fluidState.isEmpty()) {
+        if (!canWade && !fluidState.isEmpty()) {
             setPower(0);
             return;
         }
@@ -592,18 +594,20 @@ public abstract class AbstractVehicle extends ContainerCraft
 //            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()), p.cubeFace());
 //        });
 
-        // 碰撞
-        Vec3 velocity = getDeltaMovement();
-        if (collision) {
-            velocity = physicsEngine.motionByImpact(touchPoints, axes, velocity);
-        }
-        // 阻力
-        velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
-        // 重力与旋转
-        velocity = physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f(), velocity.toVector3f());
-        physicsEngine.velocityO = physicsEngine.velocity;
+        physicsEngine.beginTick(getDeltaMovement());
 
-        setDeltaMovement(velocity);
+        // 碰撞
+        if (collision) {
+            physicsEngine.motionByImpact(touchPoints, axes);
+        }
+        // 摩擦力
+        physicsEngine.decelerationByFriction(touchPoints);
+        // 浮力
+        force = force.add(physicsEngine.motionByBuoyancy());
+        // 重力与旋转
+        physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f());
+
+        setDeltaMovement(physicsEngine.endTick());
 
 //        if (this instanceof Ztz99a) {
 //            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).worldCurrentBoltPosition());
@@ -717,11 +721,14 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
+        Level level = level();
+        if (!level.isClientSide()) {
+            return;
+        }
+        if (mainCubeOBB != null && tickCount % 5 == 0) {
+            ParticleUtil.spawnWaterSurfaceBubbles(level, random, mainCubeOBB);
+        }
         if (isDestroyed()) {
-            Level level = level();
-            if (!level.isClientSide()) {
-                return;
-            }
             if (destroyedTick < 20 * 30 && destroyedTick % 5 == 0) {
                 ParticleUtil.spawnDestroyedVehicleCloud(level,
                         new Vec3(mainCubeOBB.obb().center()),

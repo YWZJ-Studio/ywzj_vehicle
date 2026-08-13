@@ -157,7 +157,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         }
 
         // 失去抓地力
-        if (!onGround()) {
+        if (!onGround() && !(isInWater() && canWade)) {
             motion *= 0.33f;
             propulsiveForce = Vec3.ZERO;
         }

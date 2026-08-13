@@ -157,7 +157,7 @@ public class TrackedVehicle extends AbstractVehicle
         }
         entityData.set(TURN_SPEED, vt);
 
-        if (onGround()) {
+        if (onGround() || (isInWater() && canWade)) {
             // 转向幅度应用于车身朝向
             if (controlUnit.backward) {
                 vt *= -1;
