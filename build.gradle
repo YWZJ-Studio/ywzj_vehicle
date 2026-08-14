@@ -164,6 +164,8 @@ dependencies {
     modLocalRuntime 'curse.maven:accelerated-rendering-1314021:8448250'
     // tacz
     modImplementation 'curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626'
+    // apricityui
+    modImplementation 'curse.maven:apricityui-1470115:8610014'
     // sbw
     modCompileOnly 'curse.maven:superb-warfare-1218165:7292685'
     modCompileOnly 'curse.maven:curios-309927:6418456'
