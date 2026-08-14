@@ -343,7 +343,7 @@ public class LocalVehiclePlayer {
     public void toSeat(AbstractVehicle.Seat seat, AbstractVehicle vehicle) {
         boolean enter = this.seat == null && seat != null;
         if (seat == null) {
-            this.toLeave = false;
+            toLeave = false;
             clear();
             return;
         }

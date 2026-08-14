@@ -15,7 +15,7 @@ public class PhysicsInfo {
     public float friction = 0.005f;
 
     @SerializedName("liquid_damping")
-    public float liquidDamping = 0.01f;
+    public float liquidDamping = 0.1f;
 
     @SerializedName("center")
     public Vec3 center = Vec3.ZERO;

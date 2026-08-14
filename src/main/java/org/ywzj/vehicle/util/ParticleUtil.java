@@ -6,7 +6,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
@@ -88,11 +87,12 @@ public final class ParticleUtil {
         }
     }
 
-    public static void spawnTracks(Level level, Entity vehicle, float trackSize, float yaw, Vec3... positions) {
+    public static void spawnTracks(Level level, float trackSize, float yaw, Vec3... positions) {
         for (Vec3 position : positions) {
-            if (EntityUtil.isOnBlockSurface(vehicle, position)) {
-                level.addParticle(AllParticleTypes.TRACK.get(), true,
-                        position.x, position.y, position.z, trackSize, yaw, 0);
+            var surfaceY = EntityUtil.blockSurfaceY(level, position, 0.25);
+            if (surfaceY.isPresent()) {
+                level.addParticle(AllParticleTypes.TRACK.get(), true, position.x, surfaceY.getAsDouble() + 0.001, position.z,
+                        trackSize, yaw, 0);
             }
         }
     }
@@ -103,6 +103,7 @@ public final class ParticleUtil {
             BlockPos checkPosition = vehiclePosition.below(y);
             if (!level.getBlockState(checkPosition).isAir()) {
                 surface = checkPosition;
+                break;
             }
         }
         if (surface == null) {
@@ -115,7 +116,7 @@ public final class ParticleUtil {
                 double bias = ((2 * Math.PI) / pointCount) * random.nextDouble();
                 double angle = (i * 2 * Math.PI) / pointCount;
                 double x = surface.getX() + radius * Math.cos(angle + bias) + random.nextDouble() * 0.5;
-                double y = surface.getY() + 1 + random.nextDouble();
+                double y = surface.getY() + 2;
                 double z = surface.getZ() + radius * Math.sin(angle + bias) + random.nextDouble() * 0.5;
                 level.addParticle(WHITE_DUST, true, x, y, z, 0, 0, 0);
             }

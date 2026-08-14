@@ -10,6 +10,7 @@
         "max_turn": 2
     },
     "max_health": 2000,
+    "can_wade": true,
     "view_info": {
         "third_person_center_offset": [0, 4, 0],
         "third_person_distance": 7,
@@ -23,6 +24,7 @@
         "engine_particle_offsets": [[-1.6, 2, -2]]
     },
     "physics_info": {
+        "density": 0.75,
         "center": [0, -4, 0]
     },
     "structure_model": "ywzj_vehicle:vehicle/ztl11",

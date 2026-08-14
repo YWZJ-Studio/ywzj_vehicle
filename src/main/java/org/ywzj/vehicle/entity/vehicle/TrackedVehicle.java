@@ -273,7 +273,7 @@ public class TrackedVehicle extends AbstractVehicle
             trackLength = 0;
             Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
             Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTracks(level(), this, trackSize, getYRot(), trackLeftPos, trackRightPos);
+            ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackLeftPos, trackRightPos);
         }
         // 引擎烟
         if (hasPower()) {

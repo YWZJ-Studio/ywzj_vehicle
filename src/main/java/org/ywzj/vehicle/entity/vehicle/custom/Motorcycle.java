@@ -42,7 +42,7 @@ public class Motorcycle extends WheeledVehicle {
         if (trackLength >= 0.5) {
             trackLength = 0;
             Vec3 trackPos = relativeRotPos(position().add(0, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTracks(level(), this, trackSize, getYRot(), trackPos);
+            ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackPos);
         }
 
         double speedSqr = this.getDeltaMovement().lengthSqr();
