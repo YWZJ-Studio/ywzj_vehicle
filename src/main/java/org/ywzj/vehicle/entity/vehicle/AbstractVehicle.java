@@ -30,7 +30,6 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -54,6 +53,8 @@ import org.ywzj.vehicle.api.entity.DetachedBodyVehicle;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
+import org.ywzj.vehicle.api.collision.CollisionProvider;
+import org.ywzj.vehicle.api.collision.CollisionProviders;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
@@ -73,6 +74,13 @@ import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
+import org.ywzj.vehicle.vehicle.PhysicsTrace;
+import org.ywzj.vehicle.vehicle.collision.BoxBuffer;
+import org.ywzj.vehicle.vehicle.collision.GroundFollower;
+import org.ywzj.vehicle.vehicle.collision.MoverSolver;
+import org.ywzj.vehicle.vehicle.collision.ChunkCollisionCache;
+import org.ywzj.vehicle.vehicle.collision.ContactSynthesis;
+import org.ywzj.vehicle.vehicle.collision.SweptHull;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
@@ -84,6 +92,7 @@ import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
 import org.ywzj.vehicle.vehicle.structure.OBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
@@ -131,16 +140,82 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected List<VehicleCubeOBB> vehicleCubeOBBs;
     protected VehicleCubeOBB mainCubeOBB;
     private List<OBB> cachedOBBs = List.of();
-    private final BlockPos.MutableBlockPos scratchBlockPos = new BlockPos.MutableBlockPos();
+    private ChunkCollisionCache.Cursor collisionCursor;
+    private ContactSynthesis.ContactResolver collisionResolver;
+    private final BoxBuffer scratchBoxes = new BoxBuffer();
+    // Providers hand back real AABBs, so that path keeps a list — reused, not rebuilt per tick.
+    private final List<AABB> providerBoxes = new ArrayList<>();
+    // Reused across ticks. This used to be allocated fresh every tick along with one AABB per
+    // merged box in the swept region, all of which escaped into it and so survived the JIT.
+    private final BoxBuffer sweptBoxes = new BoxBuffer();
+    // The hull actually swept against the world: the main OBB with its climb skirt trimmed off.
+    // Per-vehicle and rewritten every substep, so it must not live on the shared cube groups.
+    private final OBB sweepHull = new OBB(new Vector3f(), new Vector3f(), new Quaternionf());
+    private final MoverSolver.Workspace moverWork = new MoverSolver.Workspace();
+    private final GroundFollower groundFollower = new GroundFollower();
+    private final Vector3f moverDelta = new Vector3f();
+    private final Vector3f clipScratch = new Vector3f();
+    /**
+     * Ride height the ground spring holds, in blocks below the hull's underside. Small: this is
+     * suspension travel, not clearance, and a vehicle should look like it is sitting on the ground.
+     */
+    private static final double GROUND_CLEARANCE = 0.05;
+    /**
+     * How far a kerb — geometry low enough to drive over — may push the hull back horizontally.
+     * Enough that a hull cannot bury itself in one, small enough that it does not stop it.
+     */
+    private static final float RIDE_PUSH_LIMIT = 0.05f;
+    // How far to widen the hull bound before asking which sections to prepare. Sample points sit
+    // up to 0.2 blocks outside their OBB (the `slack` overshoot in initCubePoints), rotating that
+    // local margin into world space costs at most 0.2*sqrt(3), and flooring to a block position
+    // can reach one block further. 2.0 covers all of it with room to spare, and since sections
+    // are 16 blocks wide the extra margin almost never pulls in another section.
+    private static final double SAMPLE_GATE_MARGIN = 2.0;
+    // Flattened body + part geometry, indexed once in buildOBBIndex(). Neither vehicleCubeOBBs
+    // nor any partUnit's cube list changes after initData(), so rebuilding these every
+    // updateOBBs() was pure waste. cubeGroupIndex is parallel to allCubeOBBs with one extra
+    // trailing slot for mainCubeOBB, which is a separate copy and not a member of either list.
+    private List<VehicleCubeOBB> allCubeOBBs;
+    private int[] cubeGroupIndex = new int[0];
+    // Group forest in topological order (parents first), plus this vehicle's own copy of each
+    // group's transform relative to the vehicle pivot. The transforms must NOT live on the
+    // VehicleCubeGroup itself: body and main-structure groups are shared between every instance
+    // of a vehicle type (see BaseVehicleData.getVehicleStructObbs), only part groups are cloned.
+    private VehicleCubeGroup[] groupOrder = new VehicleCubeGroup[0];
+    private int[] groupParent = new int[0];
+    private Vector3f[] groupOffset = new Vector3f[0];
+    private Quaternionf[] groupRotation = new Quaternionf[0];
+    // Bound over all OBBs in vehicle-local space, refreshed in updateOBBs(). makeBoundingBox()
+    // rotates its 8 corners rather than re-deriving a hull from every OBB.
+    private double localMinX, localMinY, localMinZ, localMaxX, localMaxY, localMaxZ;
+    private boolean localBoundsValid;
+    private final Matrix3f scratchLocalRot = new Matrix3f();
     // Resolve passes over the OBB set in support(). Overlapping part boxes can each push the
     // entity, so one pass leaves it displaced by their sum; re-testing until nothing overlaps
     // converges instead. Bounded so pathological geometry cannot spin here.
     private static final int SUPPORT_RESOLVE_PASSES = 4;
     // Upper bound on movement substeps, so a fast vehicle cannot multiply per-tick cost without limit
-    private static final int MAX_COLLISION_SUBSTEPS = 4;
+    private static final int MAX_COLLISION_SUBSTEPS = 16;
+    /**
+     * Largest displacement allowed in one collision step. Half a block, so a slab is the thinnest
+     * geometry that can hide between two samples; blocks and walls never can.
+     */
+    private static final double SAFE_STEP = 0.5;
+    /**
+     * Clearance added above {@link #maxUpStep()} when deciding how much of the hull to sweep.
+     * <p>
+     * Without it the sweep hull's underside sits exactly on the tallest climbable step, so a step
+     * of precisely that height is a boundary touch and may clip the vehicle to a halt instead of
+     * letting {@code climb} lift it. The cost is a sliver of wall height — 1.00 to 1.05 blocks —
+     * that no sweep will stop, which is not a height any block combination produces.
+     */
+    private static final double SWEEP_STEP_MARGIN = 0.05;
     protected double structureLength;
     public WarningReceiver warningReceiver;
     public PhysicsEngine physicsEngine;
+    /** Null unless someone asked for a trace; every recording site null-checks this. */
+    @Nullable
+    private PhysicsTrace physicsTrace;
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav = false;
@@ -430,6 +505,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         this.partUnitMap = map;
         vehicleData.inject(this);
+        // Re-index from scratch: initData can run more than once (save data, then spawn data),
+        // and parts only finish attaching their cubes during createPartUnits above.
+        this.allCubeOBBs = null;
         updateOBBs();
         this.dataInitialized = true;
     }
@@ -471,6 +549,13 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public void tick() {
+        // Opened here rather than around tickPhysics so the window covers a whole tick: ordinary
+        // movement is applied in aiStep, before physics runs, and the ledger only closes if it
+        // sees that too.
+        PhysicsTrace trace = physicsTrace;
+        if (trace != null) {
+            trace.beginTick(this);
+        }
         super.tick();
         deltaMovementO = getDeltaMovement();
         tickPosAndRot();
@@ -496,7 +581,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             tickEnergy();
             tickPower();
             tickEngineSpeed();
+            this.level().getProfiler().push("vehicle_physics");
             tickPhysics(tickMove());
+            this.level().getProfiler().pop();
             VehicleMoveEvent __event = new VehicleMoveEvent(this);
             NeoForge.EVENT_BUS.post(__event);
             if (__event.isCanceled()) {
@@ -506,7 +593,12 @@ public abstract class AbstractVehicle extends ContainerCraft
         tickParts();
         tickDecorations();
         afterVehicleRot();
+        this.level().getProfiler().push("vehicle_obb");
         updateOBBs();
+        this.level().getProfiler().pop();
+        if (trace != null) {
+            trace.endTick(this);
+        }
     }
 
     protected void tickEnergy() {
@@ -541,27 +633,123 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     protected void tickPhysics(Vec3 force) {
         Vector3f[] axes = mainCubeOBB.obb().getAxes();
-        // 车体大OBB的表面采样点
-        List<VehicleCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
         // 接触方块的采样点
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
 
-        for (VehicleCubeOBB.CubePoint point : surfacePoints) {
-            Vector3f worldPos = point.worldPos(axes);
-            // Reused mutable position; equivalent to BlockPos.containing(worldPos)
-            scratchBlockPos.set(Mth.floor(worldPos.x), Mth.floor(worldPos.y), Mth.floor(worldPos.z));
+        this.level().getProfiler().push("sample");
+        AABB hullBounds = getBoundingBox().inflate(SAMPLE_GATE_MARGIN);
+        ChunkCollisionCache collisionCache = ChunkCollisionCache.of(this.level());
+        // prepare() returning false is exact, not a guess: every section overlapping the hull was
+        // proven to hold nothing with a collision shape, so the query below could only have
+        // produced an empty list. Skipping it is what makes an airborne or floating vehicle cost
+        // nothing here.
+        boolean anySolidNearby = collisionCache.prepare(this.level(), hullBounds);
 
-            // 调试
-//            DebugUtil.particle(level(), new Vec3(worldPos), point.cubeFace());
-//            DebugUtil.particle(level(), new Vec3(scratchBlockPos.getX(), scratchBlockPos.getY(), scratchBlockPos.getZ()));
+        List<CollisionProvider.Session> providers = openProviderSessions(hullBounds);
+        boolean inverted = AllConfigs.common.invertedCollisionQuery.get();
+        // Sessions that could not describe themselves as boxes, and so still need the hull grid.
+        List<CollisionProvider.Session> gridSessions = providers;
+        if (anySolidNearby || !providers.isEmpty()) {
+            if (collisionCursor == null) {
+                collisionCursor = collisionCache.cursor();
+                collisionResolver = ContactSynthesis.blocks(collisionCursor);
+            }
+            collisionCursor.reset();
 
-            BlockState blockState = level().getBlockState(scratchBlockPos);
-            if (blockState.isSolid()) {
-                point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(scratchBlockPos));
-                point.cubePointContext.setBlockState(blockState);
-                touchPoints.add(point);
+            if (inverted) {
+                if (anySolidNearby) {
+                    // Gather the merged block boxes near the hull and generate contacts only
+                    // where they actually touch it, so cost tracks contact area, not hull area.
+                    scratchBoxes.clear();
+                    collisionCache.collectBoxes(hullBounds, scratchBoxes);
+                    ContactSynthesis.collect(mainCubeOBB, axes, scratchBoxes, collisionResolver, touchPoints);
+                }
+                // A provider that can describe itself as boxes goes through exactly the same
+                // path, so installing Sable or Create no longer drags the whole hull grid back
+                // in. One that cannot falls through to the grid below, alone.
+                gridSessions = List.of();
+                for (int i = 0, size = providers.size(); i < size; i++) {
+                    CollisionProvider.Session session = providers.get(i);
+                    providerBoxes.clear();
+                    if (session.collectBoxes(hullBounds, providerBoxes)) {
+                        ContactSynthesis.collect(mainCubeOBB, axes, providerBoxes,
+                                ContactSynthesis.provider(session), touchPoints);
+                    } else {
+                        if (gridSessions.isEmpty()) {
+                            gridSessions = new ArrayList<>(size - i);
+                        }
+                        gridSessions.add(session);
+                    }
+                }
+            }
+
+            // A part can attach sample points below the hull — landing gear legs reach a couple of
+            // blocks under the OBB — and those are not on the OBB's surface, so no box pass can
+            // produce them. Probe them as points, which is what lets a plane rest on its wheels
+            // instead of sinking onto its belly. They are skipped by the grid loop below, which
+            // under the inverted query serves only providers that could not describe themselves
+            // as boxes.
+            List<VehicleCubeOBB.CubePoint> attachedPoints = mainCubeOBB.attachedPoints();
+            if (inverted && !attachedPoints.isEmpty()) {
+                for (int i = 0, size = attachedPoints.size(); i < size; i++) {
+                    VehicleCubeOBB.CubePoint point = attachedPoints.get(i);
+                    Vector3f worldPos = point.worldPos(axes);
+                    if (anySolidNearby && ContactSynthesis.resolveColumn(
+                            collisionCursor, point.cubePointContext, worldPos)) {
+                        touchPoints.add(point);
+                        continue;
+                    }
+                    for (int p = 0, count = providers.size(); p < count; p++) {
+                        CollisionProvider.Contact contact = providers.get(p).contactAt(point, worldPos);
+                        if (contact != null) {
+                            point.cubePointContext.setBlockPos(contact.blockPos());
+                            point.cubePointContext.setBlockState(contact.state());
+                            point.cubePointContext.setSurfaceY(Double.NaN);
+                            touchPoints.add(point);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            boolean gridForBlocks = anySolidNearby && !inverted;
+            if (gridForBlocks || !gridSessions.isEmpty()) {
+                // 车体大OBB的表面采样点. One pass, shared by every provider — each point is
+                // transformed into world space exactly once no matter how many are installed.
+                for (VehicleCubeOBB.CubePoint point : mainCubeOBB.cubePoints()) {
+                    if (inverted && attachedPoints.contains(point)) {
+                        continue;
+                    }
+                    Vector3f worldPos = point.worldPos(axes);
+
+                    // 调试
+//                    DebugUtil.particle(level(), new Vec3(worldPos), point.cubeFace());
+
+                    if (gridForBlocks
+                            && ContactSynthesis.resolveColumn(
+                                    collisionCursor, point.cubePointContext, worldPos)) {
+                        touchPoints.add(point);
+                        continue;
+                    }
+                    for (int i = 0, size = gridSessions.size(); i < size; i++) {
+                        CollisionProvider.Contact contact = gridSessions.get(i).contactAt(point, worldPos);
+                        if (contact != null) {
+                            point.cubePointContext.setBlockPos(contact.blockPos());
+                            point.cubePointContext.setBlockState(contact.state());
+                            // Sample points are reused every tick, so a stale surface height from
+                            // an earlier block contact would otherwise survive into this one.
+                            point.cubePointContext.setSurfaceY(Double.NaN);
+                            touchPoints.add(point);
+                            break;
+                        }
+                    }
+                }
+            }
+            for (int i = 0, size = providers.size(); i < size; i++) {
+                providers.get(i).end(touchPoints);
             }
         }
+        this.level().getProfiler().pop();
         NeoForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
 
         // 调试
@@ -603,6 +791,25 @@ public abstract class AbstractVehicle extends ContainerCraft
 //            DebugUtil.particle(level(), seats.get(0).partUnit.worldSeatPosition());
 //        }
 
+    }
+
+    /**
+     * Opens a session per registered provider that wants this vehicle, so the sampling loop can
+     * consult them all in one pass.
+     */
+    private List<CollisionProvider.Session> openProviderSessions(AABB hullBounds) {
+        List<CollisionProvider> registered = CollisionProviders.providers();
+        if (registered.isEmpty()) {
+            return List.of();
+        }
+        List<CollisionProvider.Session> sessions = new ArrayList<>(registered.size());
+        for (int i = 0, size = registered.size(); i < size; i++) {
+            CollisionProvider.Session session = registered.get(i).begin(this, hullBounds);
+            if (session != null) {
+                sessions.add(session);
+            }
+        }
+        return sessions;
     }
 
     @Override
@@ -809,43 +1016,166 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (mainCubeOBB == null) {
             return;
         }
-        List<VehicleCubeOBB> allCubeOBBS = new ArrayList<>(this.vehicleCubeOBBs);
-        for (PartUnit<?> partUnit : partUnits) {
-            allCubeOBBS.addAll(partUnit.getPartCubeOBBs());
+        if (allCubeOBBs == null) {
+            buildOBBIndex();
         }
-        allCubeOBBS.forEach(cubeOBB -> cubeOBB.update(this));
-        mainCubeOBB.update(this);
-        List<OBB> obbs = new ArrayList<>(allCubeOBBS.size());
-        for (VehicleCubeOBB cubeOBB : allCubeOBBS) {
-            obbs.add(cubeOBB.obb());
-        }
-        this.cachedOBBs = Collections.unmodifiableList(obbs);
-    }
+        refreshGroupTransforms();
 
-    @Override
-    protected AABB makeBoundingBox() {
-        if (remote || !dataInitialized) {
-            return AABB.ofSize(position(), 1, 1, 1);
-        }
-        List<OBB> vehicleOBBs = getOBBs();
-        if (vehicleOBBs.isEmpty()) {
-            return AABB.ofSize(position(), 1, 1, 1);
-        }
+        Quaternionf vehicleRotation = rotYXZ();
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        for (int i = 0, size = vehicleOBBs.size(); i <= size; i++) {
-            OBB obb = i == size ? mainCubeOBB.obb() : vehicleOBBs.get(i);
-            Vector3f[] vertices = obb.getVertices();
-            for (Vector3f v : vertices) {
-                if (v.x < minX) minX = v.x;
-                if (v.y < minY) minY = v.y;
-                if (v.z < minZ) minZ = v.z;
-                if (v.x > maxX) maxX = v.x;
-                if (v.y > maxY) maxY = v.y;
-                if (v.z > maxZ) maxZ = v.z;
+        for (int i = 0, size = allCubeOBBs.size(); i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : allCubeOBBs.get(i);
+            int group = cubeGroupIndex[i];
+            cubeOBB.update(this, vehicleRotation, groupOffset[group], groupRotation[group]);
+
+            // Local-space AABB of this cube: project its extents onto the vehicle-local axes.
+            Vector3f center = cubeOBB.localCenter();
+            Vector3f extents = cubeOBB.obb().extents();
+            cubeOBB.localRotation().get(scratchLocalRot);
+            float rx = Math.abs(scratchLocalRot.m00) * extents.x + Math.abs(scratchLocalRot.m10) * extents.y + Math.abs(scratchLocalRot.m20) * extents.z;
+            float ry = Math.abs(scratchLocalRot.m01) * extents.x + Math.abs(scratchLocalRot.m11) * extents.y + Math.abs(scratchLocalRot.m21) * extents.z;
+            float rz = Math.abs(scratchLocalRot.m02) * extents.x + Math.abs(scratchLocalRot.m12) * extents.y + Math.abs(scratchLocalRot.m22) * extents.z;
+            if (center.x - rx < minX) minX = center.x - rx;
+            if (center.y - ry < minY) minY = center.y - ry;
+            if (center.z - rz < minZ) minZ = center.z - rz;
+            if (center.x + rx > maxX) maxX = center.x + rx;
+            if (center.y + ry > maxY) maxY = center.y + ry;
+            if (center.z + rz > maxZ) maxZ = center.z + rz;
+        }
+        localMinX = minX; localMinY = minY; localMinZ = minZ;
+        localMaxX = maxX; localMaxY = maxY; localMaxZ = maxZ;
+        localBoundsValid = minX <= maxX;
+
+        // Vanilla only refreshes the bound on setPos, so a pure rotation — selfRighting snapping
+        // 75 degrees to level, or Sable yawing the hull — used to leave it describing the old
+        // orientation until something moved. That now matters more, because the broad-phase gate
+        // in tickPhysics decides which sections to look at from this box. Cheap enough to just
+        // do since Phase 2 made makeBoundingBox O(1).
+        setBoundingBox(makeBoundingBox());
+    }
+
+    /**
+     * Flattens body and part geometry once, and lays out the group forest in topological
+     * order so {@link #refreshGroupTransforms()} can resolve each group from its parent in
+     * constant time instead of re-walking the chain per cube.
+     */
+    private void buildOBBIndex() {
+        List<VehicleCubeOBB> cubes = new ArrayList<>(vehicleCubeOBBs);
+        for (PartUnit<?> partUnit : partUnits) {
+            cubes.addAll(partUnit.getPartCubeOBBs());
+        }
+        allCubeOBBs = List.copyOf(cubes);
+
+        List<OBB> obbs = new ArrayList<>(cubes.size());
+        for (VehicleCubeOBB cubeOBB : cubes) {
+            obbs.add(cubeOBB.obb());
+        }
+        cachedOBBs = Collections.unmodifiableList(obbs);
+
+        // Roots first, then each group is appended after its parent, so a single forward
+        // sweep resolves the whole forest. A cube with no group gets the identity slot 0.
+        List<VehicleCubeGroup> order = new ArrayList<>();
+        Map<VehicleCubeGroup, Integer> indexOf = new IdentityHashMap<>();
+        order.add(null);
+        for (int i = 0, size = cubes.size(); i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : cubes.get(i);
+            indexGroupChain(cubeOBB.group, order, indexOf);
+        }
+
+        groupOrder = order.toArray(new VehicleCubeGroup[0]);
+        groupParent = new int[groupOrder.length];
+        groupOffset = new Vector3f[groupOrder.length];
+        groupRotation = new Quaternionf[groupOrder.length];
+        for (int i = 0; i < groupOrder.length; i++) {
+            VehicleCubeGroup group = groupOrder[i];
+            groupParent[i] = group == null || group.parent == null ? -1 : indexOf.get(group.parent);
+            groupOffset[i] = new Vector3f();
+            groupRotation[i] = new Quaternionf();
+        }
+
+        cubeGroupIndex = new int[cubes.size() + 1];
+        for (int i = 0, size = cubes.size(); i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : cubes.get(i);
+            cubeGroupIndex[i] = cubeOBB.group == null ? 0 : indexOf.get(cubeOBB.group);
+        }
+    }
+
+    /**
+     * Registers a group and every ancestor of it, parents before children.
+     */
+    private static void indexGroupChain(VehicleCubeGroup group, List<VehicleCubeGroup> order, Map<VehicleCubeGroup, Integer> indexOf) {
+        if (group == null || indexOf.containsKey(group)) {
+            return;
+        }
+        indexGroupChain(group.parent, order, indexOf);
+        indexOf.put(group, order.size());
+        order.add(group);
+    }
+
+    /**
+     * Resolves every group's transform relative to the vehicle pivot in one forward sweep.
+     * Equivalent to {@link VehicleCubeGroup#globalTransform()} per group, but O(groups)
+     * instead of O(cubes x depth) and without allocating.
+     */
+    private void refreshGroupTransforms() {
+        for (int i = 0; i < groupOrder.length; i++) {
+            VehicleCubeGroup group = groupOrder[i];
+            if (group == null) {
+                continue;
+            }
+            Vector3f offset = groupOffset[i];
+            Quaternionf rotation = groupRotation[i];
+            offset.set((float) group.pivot.x, (float) group.pivot.y, (float) group.pivot.z);
+            int parent = groupParent[i];
+            if (parent < 0) {
+                rotation.set(group.rotation);
+            } else {
+                groupRotation[parent].transform(offset);
+                offset.add(groupOffset[parent]);
+                groupRotation[parent].mul(group.rotation, rotation);
             }
         }
-        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    /**
+     * Vanilla calls this from every {@code setPos}, so it has to stay O(1). Rather than
+     * re-deriving a tight hull from the 8 vertices of every OBB, it rotates the 8 corners of
+     * the vehicle-local bound cached by {@link #updateOBBs()}.
+     * <p>
+     * The result is a conservative superset of the old tight hull — identical while the
+     * vehicle is level, and looser the further a sparse model (wings, tail) is rotated. Every
+     * consumer treats this box as a broad phase and re-tests against the OBBs themselves, so
+     * a superset costs a few extra rejected candidates and nothing else.
+     */
+    @Override
+    protected AABB makeBoundingBox() {
+        if (remote || !dataInitialized || !localBoundsValid) {
+            return AABB.ofSize(position(), 1, 1, 1);
+        }
+        Quaternionf rotation = rotYXZ();
+        Vector3f corner = new Vector3f();
+        double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < 8; i++) {
+            corner.set(
+                    (float) ((i & 1) == 0 ? localMinX : localMaxX),
+                    (float) ((i & 2) == 0 ? localMinY : localMaxY),
+                    (float) ((i & 4) == 0 ? localMinZ : localMaxZ));
+            rotation.transform(corner);
+            if (corner.x < minX) minX = corner.x;
+            if (corner.y < minY) minY = corner.y;
+            if (corner.z < minZ) minZ = corner.z;
+            if (corner.x > maxX) maxX = corner.x;
+            if (corner.y > maxY) maxY = corner.y;
+            if (corner.z > maxZ) maxZ = corner.z;
+        }
+        double originX = getX() + centerOffset.x;
+        double originY = getY() + centerOffset.y;
+        double originZ = getZ() + centerOffset.z;
+        return new AABB(
+                minX + originX, minY + originY, minZ + originZ,
+                maxX + originX, maxY + originY, maxZ + originZ);
     }
 
     @Override
@@ -1585,12 +1915,21 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
 
+    /**
+     * How finely to slice this tick's movement.
+     * <p>
+     * The divisor used to be the hull's own thinnest dimension, which is the wrong quantity
+     * entirely: whether a vehicle steps over a wall depends on how thick the <em>wall</em> is, not
+     * on how fat the vehicle is. An 8×3×10 tank got a divisor of 3, so at three blocks per tick it
+     * took a single three-block step and passed straight through a one-block wall without ever
+     * generating a contact. Slicing against a world feature size instead is what makes the step
+     * bounded by something the world can actually be thin enough to hide behind.
+     */
     private int collisionSubsteps(Vec3 movement) {
         Vector3f extents = mainCubeOBB.obb().extents();
         float radius = extents.length();
         double tipDisplacement = movement.length() + Math.abs(physicsEngine.rotV) * radius;
-        double thinnest = 2.0 * Math.min(extents.x, Math.min(extents.y, extents.z));
-        return Mth.clamp(Mth.ceil(tipDisplacement / Math.max(0.5, thinnest)), 1, MAX_COLLISION_SUBSTEPS);
+        return Mth.clamp(Mth.ceil(tipDisplacement / SAFE_STEP), 1, MAX_COLLISION_SUBSTEPS);
     }
 
     public void impact(Entity entity) {
@@ -1630,6 +1969,104 @@ public abstract class AbstractVehicle extends ContainerCraft
         return 1.0F;
     }
 
+    /**
+     * Hull-local Y of the underside of the hull that gets swept against the world.
+     * <p>
+     * Normally the climb skirt, so that geometry the contact stage rides over does not read as a
+     * wall to the sweep. But the skirt is derived from sample spacing, not from what the vehicle
+     * can climb, and for a three-block-tall hull it works out at about 1.55 blocks against a
+     * {@link #maxUpStep()} of 1. Everything in between is a hole: too tall for {@code climb} to
+     * lift over, too low for a contact or a sweep to notice, so the vehicle drives through it. A
+     * block-and-a-slab wall is exactly 1.5.
+     * <p>
+     * Capping at the step height closes it. The sweep is a backstop, so being a little more
+     * conservative than the contact stage is the safe direction: obstacles it now stops against
+     * are precisely the ones {@code climb} would have refused to lift anyway.
+     */
+    public double sweepSkirt() {
+        return java.lang.Math.min(mainCubeOBB.climbSkirt(),
+                -mainCubeOBB.obb().extents().y + maxUpStep() + SWEEP_STEP_MARGIN);
+    }
+
+    @Nullable
+    public PhysicsTrace physicsTrace() {
+        return physicsTrace;
+    }
+
+    public void setPhysicsTrace(@Nullable PhysicsTrace physicsTrace) {
+        this.physicsTrace = physicsTrace;
+    }
+
+    /**
+     * Moves the hull by redirecting the desired motion against contact planes and following the
+     * ground with a spring, rather than truncating it with a scalar time of impact.
+     * <p>
+     * Replaces the substep-and-clip loop, and with it {@code climb()}, the support lift and the
+     * centre kick — see {@link MoverSolver}. Stepping is no longer a mechanism: a step's top face
+     * is a supporting plane, the solver pushes the hull onto it, and the spring smooths the result
+     * into a ramp. A two-block riser is the same code path and simply refuses to move the hull,
+     * because its face is a wall rather than support.
+     */
+    private void moveByPlanes(Vec3 movement, @Nullable PhysicsTrace trace) {
+        OBB hull = mainCubeOBB.obb();
+        double rideHeight = maxUpStep() + SWEEP_STEP_MARGIN;
+
+        // Ground spring. Probed across the footprint from the hull's underside, so a vehicle
+        // spanning several blocks follows the highest ground beneath any part of it.
+        Vector3f extents = hull.extents();
+        Vector3f centre = hull.center();
+        Matrix3f basis = hull.rotation().get(new Matrix3f());
+        // World-space footprint, not the hull's own extents: a vehicle at any yaw covers a
+        // different patch of ground than its local dimensions suggest, and probing the local box
+        // would miss the ground under a diagonally-parked hull's corners.
+        float halfHeight = Math.abs(basis.m01()) * extents.x
+                + Math.abs(basis.m11()) * extents.y
+                + Math.abs(basis.m21()) * extents.z;
+        float halfX = Math.abs(basis.m00()) * extents.x
+                + Math.abs(basis.m10()) * extents.y
+                + Math.abs(basis.m20()) * extents.z;
+        float halfZ = Math.abs(basis.m02()) * extents.x
+                + Math.abs(basis.m12()) * extents.y
+                + Math.abs(basis.m22()) * extents.z;
+        double bottom = centre.y - halfHeight;
+        double lift = 0;
+        if (!sweptBoxes.isEmpty()) {
+            double ground = GroundFollower.probe(sweptBoxes, centre.x, centre.z,
+                    halfX, halfZ, bottom + rideHeight);
+            float measured = ground == GroundFollower.NO_GROUND
+                    ? groundFollower.maxLength
+                    : (float) (bottom - ground);
+            groundFollower.restLength = (float) GROUND_CLEARANCE;
+            groundFollower.maxLength = (float) (GROUND_CLEARANCE + rideHeight);
+            lift = groundFollower.step(measured, (float) movement.y, 1.0f);
+        } else {
+            groundFollower.reset();
+        }
+
+        MoverSolver.move(hull, sweptBoxes,
+                movement.x, movement.y + lift, movement.z,
+                rideHeight, RIDE_PUSH_LIMIT, moverWork, moverDelta);
+
+        this.move(MoverType.SELF, new Vec3(moverDelta.x, moverDelta.y, moverDelta.z));
+        this.level().getProfiler().push("vehicle_obb");
+        this.updateOBBs();
+        this.level().getProfiler().pop();
+
+        // Velocity is clipped, never written, by the position solve. Letting depenetration leave
+        // momentum behind is the mechanism behind every launch this codebase has had; the spring
+        // deliberately contributes nothing here either.
+        Vec3 velocity = this.getDeltaMovement();
+        clipScratch.set((float) velocity.x, (float) velocity.y, (float) velocity.z);
+        MoverSolver.clipVelocity(moverWork, clipScratch);
+        this.setDeltaMovement(clipScratch.x, clipScratch.y, clipScratch.z);
+
+        if (trace != null) {
+            trace.add(PhysicsTrace.Source.CLIMB, lift);
+            trace.sweep(this, 0, 1, movement);
+        }
+        this.supportEntities();
+    }
+
     public void aiStep() {
         Vec3 v = this.getDeltaMovement();
         double dx = v.x;
@@ -1651,9 +2088,63 @@ public abstract class AbstractVehicle extends ContainerCraft
             Vec3 movement = this.getDeltaMovement();
             int substeps = collisionSubsteps(movement);
             Vec3 stepMovement = substeps > 1 ? movement.scale(1.0 / substeps) : movement;
+            // Boxes over the whole swept path, not just where the hull is now — the geometry a
+            // fast vehicle is about to hit is by definition not the geometry it currently
+            // overlaps, and querying only the latter is why it could pass through anything.
+            sweptBoxes.clear();
+            if (collision && movement.lengthSqr() > 1.0e-8) {
+                AABB swept = getBoundingBox().expandTowards(movement).inflate(1.0);
+                ChunkCollisionCache cache = ChunkCollisionCache.of(this.level());
+                if (cache.prepare(this.level(), swept)) {
+                    cache.collectBoxes(swept, sweptBoxes);
+                }
+            }
+            PhysicsTrace trace = physicsTrace != null && physicsTrace.isRecording()
+                    ? physicsTrace : null;
+            SweptHull.Probe probe = trace != null ? trace.probe() : null;
+            boolean swept = !sweptBoxes.isEmpty();
+            if (AllConfigs.common.planeSolverMovement.get()) {
+                moveByPlanes(movement, trace);
+                this.level().getProfiler().pop();
+                this.level().getProfiler().push("push");
+                this.pushEntities();
+                this.level().getProfiler().pop();
+                return;
+            }
             for (int step = 0; step < substeps; step++) {
-                this.move(MoverType.SELF, stepMovement);
+                Vec3 clipped = stepMovement;
+                if (swept) {
+                    // Never end a step on the far side of something solid. What the velocity does
+                    // about that is still the physics engine's call, next tick, with the hull now
+                    // resting against the obstacle rather than buried in it.
+                    //
+                    // Swept above the climb skirt, never on the full hull: below the skirt is the
+                    // band the contact stage ignores so steps can be climbed, so a full-hull sweep
+                    // collides with the floor the vehicle is driving on.
+                    OBB hull = SweptHull.climbHull(mainCubeOBB.obb(), sweepSkirt(), sweepHull);
+                    double toi = SweptHull.timeOfImpact(hull, sweptBoxes, stepMovement, probe);
+                    if (toi < 1.0) {
+                        clipped = stepMovement.scale(toi);
+                    }
+                } else if (probe != null) {
+                    probe.reset();
+                }
+                this.move(MoverType.SELF, clipped);
+                this.level().getProfiler().push("vehicle_obb");
                 this.updateOBBs();
+                this.level().getProfiler().pop();
+                if (trace != null) {
+                    // After the OBB refresh, so the overlap measured is the pose the substep
+                    // actually ended in rather than the one it started from, and against the same
+                    // trimmed hull the sweep used — overlap inside the skirt is by design and
+                    // reporting it as penetration buries the real signal.
+                    if (swept) {
+                        SweptHull.measurePenetration(
+                                SweptHull.climbHull(mainCubeOBB.obb(), sweepSkirt(), sweepHull),
+                                sweptBoxes, probe);
+                    }
+                    trace.sweep(this, step, substeps, stepMovement);
+                }
                 if (step < substeps - 1) {
                     this.supportEntities();
                 }

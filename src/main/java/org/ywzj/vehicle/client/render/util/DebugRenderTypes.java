@@ -1,0 +1,49 @@
+package org.ywzj.vehicle.client.render.util;
+
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.RenderType;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+
+import java.util.OptionalDouble;
+
+/**
+ * Render types for debug overlays.
+ * <p>
+ * Subclasses {@link RenderType} purely to reach {@code create} and the state shards, which are
+ * protected. Nothing is ever instantiated.
+ */
+@OnlyIn(Dist.CLIENT)
+public final class DebugRenderTypes extends RenderType {
+
+    /**
+     * Lines that ignore the depth buffer, so geometry buried inside terrain stays visible.
+     * <p>
+     * The stock {@link RenderType#lines()} depth-tests, which for a collision overlay hides
+     * exactly the thing you want to inspect — the baked boxes underneath the surface.
+     */
+    public static final RenderType LINES_NO_DEPTH = create(
+            "ywzj_lines_no_depth",
+            DefaultVertexFormat.POSITION_COLOR_NORMAL,
+            VertexFormat.Mode.LINES,
+            1536,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LINES_SHADER)
+                    .setLineState(new LineStateShard(OptionalDouble.empty()))
+                    .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setOutputState(ITEM_ENTITY_TARGET)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(NO_DEPTH_TEST)
+                    .createCompositeState(false));
+
+    private DebugRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize,
+                             boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
+        super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
+    }
+
+}

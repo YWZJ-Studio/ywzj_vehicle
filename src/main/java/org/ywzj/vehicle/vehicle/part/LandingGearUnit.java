@@ -45,9 +45,7 @@ public class LandingGearUnit extends SwitchableUnit<LandingGearUnitData> {
             VehicleCubeOBB.CubePoint cubePoint = new VehicleCubeOBB.CubePoint(mainCubeOBB, obbLocalPos, VehicleCubeOBB.CubeFace.BOTTOM);
             gearCubes.add(new GearCube(partCubeOBB, cubePoint));
         });
-        List<VehicleCubeOBB.CubePoint> cubePoints = gearCubes.stream().map(gearCube -> gearCube.gearCubePoint).toList();
-        mainCubeOBB.cubePoints().addAll(cubePoints);
-        mainCubeOBB.cubePointsByFace.get(VehicleCubeOBB.CubeFace.BOTTOM).addAll(cubePoints);
+        gearCubes.forEach(gearCube -> mainCubeOBB.attachPoint(gearCube.gearCubePoint));
         mainCubeOBB.initBottomPoint();
     }
 

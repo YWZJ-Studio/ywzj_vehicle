@@ -26,6 +26,7 @@
     "common.ChunkMapBodyLoadMixin",
     "common.EntityMixin",
     "common.ExplosionAccessor",
+    "common.LevelChunkCollisionMixin",
     "common.LivingEntityMixin",
     "common.PlayerMixin",
     "common.ProjectileUtilMixin",

@@ -68,6 +68,9 @@ public class AllConfigs {
         public final ModConfigSpec.ConfigValue<Boolean> explosionDropBlock;
         public final ModConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
         public final ModConfigSpec.ConfigValue<Boolean> selfRighting;
+        public final ModConfigSpec.ConfigValue<Boolean> invertedCollisionQuery;
+        public final ModConfigSpec.ConfigValue<Boolean> arcadeFlightModel;
+        public final ModConfigSpec.ConfigValue<Boolean> planeSolverMovement;
         public final ModConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ModConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
         public final ModConfigSpec.ConfigValue<Boolean> hitIndicator;
@@ -90,6 +93,22 @@ public class AllConfigs {
                     .defineInRange("vehicleExplosionHurtPassengerDamage", 512.0, 0.0, Double.MAX_VALUE);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
+            // Inverted: gather nearby merged block boxes and generate contacts where they touch,
+            // instead of testing a fixed grid of hull surface points. Cost scales with contact
+            // area rather than hull surface area. Turn off to fall back to grid sampling if the
+            // handling feel regresses on a particular vehicle.
+            invertedCollisionQuery = builder.comment("碰撞检测使用反向查询（按接触面积计算，而非车体表面采样）")
+                    .define("invertedCollisionQuery", true);
+            // Anisotropic drag plus a pitch/speed trade, so an aircraft tracks where its nose
+            // points and trades height for speed, instead of coasting the same in every direction.
+            arcadeFlightModel = builder.comment("飞行器使用街机风格气动模型（贴合机头方向的阻力）")
+                    .define("arcadeFlightModel", true);
+            // Movement resolved by redirecting against contact planes and following the ground
+            // with a spring, rather than a scalar time of impact plus a step-up teleport. Stepping
+            // then falls out of the solver: climb, the support lift and the centre kick are all
+            // switched off when this is on, because their job is done by the ground constraint.
+            planeSolverMovement = builder.comment("使用接触平面求解器处理移动与地面跟随（替代旧的攀爬/抬升逻辑）")
+                    .define("planeSolverMovement", true);
             infiniteFuel = builder.comment("无需燃油仍可运作")
                     .define("infiniteFuel", false);
             fuelNameWhiteList = builder.comment("允许视作燃油的液体")

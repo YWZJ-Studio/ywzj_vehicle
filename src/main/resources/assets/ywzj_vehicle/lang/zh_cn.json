@@ -57,6 +57,7 @@
   "key.ywzj_vehicle.free_camera.desc": "自由视角",
   "key.ywzj_vehicle.leave_vehicle.desc": "离开载具",
   "key.ywzj_vehicle.change_seat.desc": "座位切换（可配合数字键指定座位）",
+  "key.ywzj_vehicle.toggle_collision_debug.desc": "循环切换碰撞调试显示",
   "key.ywzj_vehicle.debug_gui.desc": "调试信息",
 
   "tips.spotter": "未装备武器",

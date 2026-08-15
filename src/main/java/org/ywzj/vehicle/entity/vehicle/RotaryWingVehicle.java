@@ -31,7 +31,9 @@ import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.solver.AircraftAerodynamics;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.RopeUnit;
@@ -61,6 +63,8 @@ public class RotaryWingVehicle extends AbstractVehicle
     public float yRotSpeed;
     public float zRotSpeed;
     public Vec3 airSpeed = new Vec3(0, 0, 0);
+    /** Arcade flight response. Per-vehicle so its control-authority ramp has somewhere to live. */
+    protected final AircraftAerodynamics aerodynamics = new AircraftAerodynamics();
     public boolean hoverMode;
     public boolean fastRoping;
     public String fastRopingDoorId;
@@ -212,27 +216,50 @@ public class RotaryWingVehicle extends AbstractVehicle
         // 高度越高，空气越稀薄，发动机出力与桨叶效率都会降低，约定在64格高的海平面以下才可达到满效率
         double scaleAir = position().y < 64 ? 1 : Math.pow(Math.max(0, ceiling - position().y), 0.2) / Math.pow(ceiling - 64, 0.2);
         // 螺旋桨方向的力
-        Vec3 force = vP.scale(scale * scaleAir * mainRotorForce);
+        double tiltCompensation = AllConfigs.common.arcadeFlightModel.get()
+                ? aerodynamics.liftTiltCompensation((float) vP.y)
+                : 1.0;
+        Vec3 force = vP.scale(scale * scaleAir * mainRotorForce * tiltCompensation);
         // 桨叶水平方向的空速带来升力
         double dVH = Math.sqrt(Math.pow(airSpeed.length(), 2) - Math.pow(dVV, 2));
         force.add(vP.scale(dVH * scaleAir * 0.005f));
         airSpeed = airSpeed.add(force);
-        double al = airSpeed.length();
-        // 空气阻力
-        airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.friction / physicsEngine.mass);
+        if (AllConfigs.common.arcadeFlightModel.get()) {
+            // Drag along the nose is cheap and drag across it is expensive, so the machine tracks
+            // where it is pointed rather than sliding. Isotropic drag is the single biggest reason
+            // a helicopter reads as skating; this is the same shape Superb Warfare uses.
+            org.joml.Vector3f v = airSpeed.toVector3f();
+            aerodynamics.applyToVelocity(v, getYRot(), getXRot(), onGround());
+            airSpeed = new Vec3(v);
+        } else {
+            double al = airSpeed.length();
+            // 空气阻力
+            airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.friction / physicsEngine.mass);
+        }
         if (airSpeed.length() >= maxAirSpeed) {
             airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }
         this.setDeltaMovement(airSpeed);
 
         if (hoverMode) {
-            controlUnit.xRot = 0;
+            // Deliberately no longer forces the nose level. Hover mode is an altitude hold, not an
+            // attitude hold, and pinning pitch to zero is what made the machine feel bolted
+            // upright: the pilot tilts to go somewhere and it immediately argues back.
             controlUnit.yRot = getYRot();
             double vy = airSpeed.y - physicsEngine.G;
             if (vy > 0.01) {
                 setCollectivePitch(Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
             } else if (vy < -0.01) {
                 setCollectivePitch(Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
+            }
+        } else if (AllConfigs.common.arcadeFlightModel.get()
+                && !controlUnit.up && !controlUnit.down && !onGround()) {
+            // Hands off the collective: trim it to hold height. Tilt compensation above covers the
+            // thrust a lean costs, and this covers everything else — gusts of drag, a heavy load,
+            // bleeding speed in a turn — so going somewhere does not mean sinking.
+            float delta = aerodynamics.altitudeHoldDelta((float) airSpeed.y);
+            if (delta != 0) {
+                setCollectivePitch(Mth.clamp(getCollectivePitch() + delta * 100f, 0f, 100f));
             }
         }
 
@@ -298,7 +325,12 @@ public class RotaryWingVehicle extends AbstractVehicle
             }
         }
 
-        if (!(controlUnit.left || controlUnit.right)) {
+        if (!(controlUnit.left || controlUnit.right) && AllConfigs.common.arcadeFlightModel.get()) {
+            // Bleed the bank off slowly rather than driving it to zero. A helicopter that snaps
+            // level the instant the stick centres cannot hold a turn, and reads as upright.
+            this.setZRot(aerodynamics.settleRoll(this.getZRot(), false, onGround()));
+            zRotSpeed = 0;
+        } else if (!(controlUnit.left || controlUnit.right)) {
             float zDiff = Mth.wrapDegrees(-this.getZRot());
             float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
             if (zDiff > 0) {

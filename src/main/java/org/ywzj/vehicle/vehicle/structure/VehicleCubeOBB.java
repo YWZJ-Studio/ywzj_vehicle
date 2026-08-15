@@ -19,10 +19,16 @@ public class VehicleCubeOBB {
 
     private static final int MAX_SAMPLES_PER_AXIS = 24;
 
+    /** How far outside its face a sample point sits, so a resting hull still registers. */
+    public static final float POINT_OFFSET = 0.001f;
+
     private final OBB obb;
     public VehicleCubeGroup group;
     private final List<CubePoint> cubePoints;
+    private final List<CubePoint> attachedPoints = new ArrayList<>();
     private boolean pointsInitialized;
+    private final Vector3f localCenter = new Vector3f();
+    private final Quaternionf localRotation = new Quaternionf();
     public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
     public CubePoint bottomPoint;
     private Vec3 offset = Vec3.ZERO;
@@ -98,28 +104,64 @@ public class VehicleCubeOBB {
         obb.setExtents(new Vector3f((float) (width / 2), (float) (height / 2), (float) (depth / 2)));
         cubePoints.clear();
         cubePointsByFace.clear();
+        attachedPoints.clear();
         pointsInitialized = false;
         initSpacing();
     }
 
+    /**
+     * Standalone refresh: walks the group's parent chain itself. Use the overload below
+     * when updating many cubes at once, so the chain walk and vehicle rotation are shared.
+     */
     public void update(AbstractVehicle vehicle) {
+        VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
+        update(vehicle, vehicle.rotYXZ(), globalTransform.offset().toVector3f(), globalTransform.rotation());
+    }
+
+    /**
+     * Refreshes this cube's local and world pose.
+     * <p>
+     * {@code groupOffset} and {@code groupRotation} are the owning group's transform relative
+     * to the vehicle pivot, and {@code vehicleRotation} is {@link AbstractVehicle#rotYXZ()};
+     * the caller computes each of them once for the whole model rather than per cube. Both are
+     * only read, so the caller may reuse its own buffers across cubes.
+     */
+    public void update(AbstractVehicle vehicle, Quaternionf vehicleRotation, Vector3f groupOffset, Quaternionf groupRotation) {
         positionO = position;
         rotationO = rotation;
-        VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
-        Quaternionf globalRotation = globalTransform.rotation();
-        Vector3f centerOffset = new Vector3f((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
-        globalRotation.transform(centerOffset);
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vector3f center = vehicleRotation.transform(globalTransform.offset()
-                .add(centerOffset.x, centerOffset.y, centerOffset.z)
-                .subtract(vehicle.centerOffset.x, vehicle.centerOffset.y, vehicle.centerOffset.z)
-                .toVector3f());
-        position = vehicle.position()
-                .add(vehicle.centerOffset)
-                .add(center.x, center.y, center.z);
-        obb.setCenter(position.toVector3f());
-        rotation = vehicleRotation.mul(globalRotation);
+
+        localCenter.set((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
+        groupRotation.transform(localCenter);
+        localCenter.add(groupOffset);
+        localCenter.sub((float) vehicle.centerOffset.x, (float) vehicle.centerOffset.y, (float) vehicle.centerOffset.z);
+        localRotation.set(groupRotation);
+
+
+        Vector3f center = obb.center();
+        center.set(localCenter);
+        vehicleRotation.transform(center);
+        position = new Vec3(
+                vehicle.getX() + vehicle.centerOffset.x + center.x,
+                vehicle.getY() + vehicle.centerOffset.y + center.y,
+                vehicle.getZ() + vehicle.centerOffset.z + center.z);
+        center.set((float) position.x, (float) position.y, (float) position.z);
+
+        rotation = vehicleRotation.mul(groupRotation, new Quaternionf());
         obb.setRotation(rotation);
+    }
+
+    /**
+     * Centre of this cube in vehicle-local space. Read-only; owned by {@link #update}.
+     */
+    public Vector3f localCenter() {
+        return localCenter;
+    }
+
+    /**
+     * Orientation of this cube in vehicle-local space. Read-only; owned by {@link #update}.
+     */
+    public Quaternionf localRotation() {
+        return localRotation;
     }
 
     public static VehicleCubeOBB defaultCube() {
@@ -131,7 +173,7 @@ public class VehicleCubeOBB {
      */
     private void initSpacing() {
         float gap = 0.1f;
-        float offset = 0.001f;
+        float offset = POINT_OFFSET;
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
         float y1 = -obb.extents().y - offset;
@@ -162,6 +204,31 @@ public class VehicleCubeOBB {
     }
 
 
+    /**
+     * Hull-local Y below which a contact on a side face is something to ride over rather than
+     * something to be stopped by — the vehicle's suspension, in effect. Above it, a side contact
+     * cancels the velocity pressing into it.
+     * <p>
+     * <b>Why two rows and not one.</b> {@code PhysicsEngine} used to test this inline as
+     * {@code -extents.y + spaceY}, but that was never the value it enforced. The sample grid puts
+     * its lowest row at {@code -extents.y - POINT_OFFSET} and steps by {@code spaceY}, so rows 0
+     * and 1 both fall below that threshold — row 1 by exactly {@code POINT_OFFSET} — and row 2 is
+     * the first that can block. No sample existed in between, so the difference never showed.
+     * <p>
+     * Contacts built from real geometry land wherever the geometry is, and they promptly found
+     * that empty band: a one-block step touches the hull about a block up, which is above the
+     * written threshold and below the real one, so vehicles stopped dead against steps they had
+     * always driven over. This is the band they actually had.
+     * <p>
+     * It scales with the hull because the grid did, which reads as bigger vehicles riding over
+     * bigger bumps. Note it exceeds {@link AbstractVehicle#maxUpStep()}: an obstacle between the
+     * two is neither blocked nor climbed in one go, and gets ploughed into. That gap predates the
+     * contact work.
+     */
+    public double climbSkirt() {
+        return -obb.extents().y - POINT_OFFSET + 2 * spaceY;
+    }
+
     private void ensurePoints() {
         if (pointsInitialized) {
             return;
@@ -173,7 +240,7 @@ public class VehicleCubeOBB {
     public void initCubePoints() {
         float gap = 0.1f;
         float slack = 0.1f;
-        float offset = 0.001f;
+        float offset = POINT_OFFSET;
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
         float y1 = -obb.extents().y - offset;
@@ -248,6 +315,29 @@ public class VehicleCubeOBB {
         return cubePoints;
     }
 
+    /**
+     * Adds a sample point a part owns, such as a landing gear leg reaching below the hull.
+     */
+    public void attachPoint(CubePoint point) {
+        ensurePoints();
+        cubePoints.add(point);
+        cubePointsByFace.get(point.cubeFace()).add(point);
+        attachedPoints.add(point);
+    }
+
+    /**
+     * Sample points a part attached, as opposed to the ones {@link #initCubePoints} lays over the
+     * cube's own surface.
+     * <p>
+     * The distinction only matters to the inverted collision query, which asks which world boxes
+     * overlap the OBB rather than what is under each sample point. That answers for the surface
+     * and nothing else — a landing gear leg reaches a couple of blocks <em>below</em> the OBB, so
+     * no box pass can ever produce it. These are probed as points under either query.
+     */
+    public List<CubePoint> attachedPoints() {
+        return attachedPoints;
+    }
+
     public double getX() {
         return x;
     }
@@ -317,6 +407,7 @@ public class VehicleCubeOBB {
 
         private Vec3 blockPos;
         private BlockState blockState;
+        private double surfaceY = Double.NaN;
 
         public Vec3 blockPos() {
             return blockPos;
@@ -332,6 +423,24 @@ public class VehicleCubeOBB {
 
         public void setBlockState(BlockState blockState) {
             this.blockState = blockState;
+        }
+
+        /**
+         * World height of the top of the geometry this point is touching, or {@code NaN} when the
+         * source could not say.
+         * <p>
+         * This is the number "am I standing on a slab or a block?" actually wants. It used to be
+         * guessed downstream from the block state — {@code HALF} property present, so assume half
+         * a block — which is right for a bottom slab, wrong for a top slab, and wrong for stairs.
+         * A collision snapshot knows the real answer, so it reports it. Providers do not have
+         * geometry to report, so they leave it {@code NaN} and the old estimate still applies.
+         */
+        public double surfaceY() {
+            return surfaceY;
+        }
+
+        public void setSurfaceY(double surfaceY) {
+            this.surfaceY = surfaceY;
         }
 
     }

@@ -114,6 +114,39 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         );
     }
 
+    /**
+     * Allocation-free OBB-versus-box test, against a box given as six primitives and a rotation
+     * given as a matrix the caller has already extracted.
+     * <p>
+     * {@link #isColliding(OBB, AABB)} allocates seven objects per call — the array and three
+     * vectors from {@link #getAxes()}, plus the {@code Vec3} centre, its {@code Vector3f}
+     * conversion and a half-extents vector. That is free when the call is inlined and nothing
+     * escapes, and decidedly not free when it runs once per box over a list of hundreds, several
+     * times per tick. The axes are also identical for every box in such a loop, so recomputing
+     * them per box is wasted work regardless of where the objects go.
+     * <p>
+     * Hoist the matrix out of the loop with {@code obb.rotation().get(new Matrix3f())}; its
+     * columns are exactly what {@link #getAxes()} returns.
+     */
+    public static boolean intersectsBox(Matrix3f basis, float cx, float cy, float cz,
+                                        Vector3f extents,
+                                        double minX, double minY, double minZ,
+                                        double maxX, double maxY, double maxZ) {
+        return Intersectionf.testObOb(
+                cx, cy, cz,
+                basis.m00(), basis.m01(), basis.m02(),
+                basis.m10(), basis.m11(), basis.m12(),
+                basis.m20(), basis.m21(), basis.m22(),
+                extents.x, extents.y, extents.z,
+                (float) ((minX + maxX) * 0.5), (float) ((minY + maxY) * 0.5),
+                (float) ((minZ + maxZ) * 0.5),
+                1, 0, 0,
+                0, 1, 0,
+                0, 0, 1,
+                (float) ((maxX - minX) * 0.5), (float) ((maxY - minY) * 0.5),
+                (float) ((maxZ - minZ) * 0.5));
+    }
+
     public record CubeOBB(BedrockBone bone, BedrockCube cube, OBB obb) {}
 
     public static List<CubeOBB> getOBBsFromBone(BedrockBone bone, AbstractVehicle vehicle, HashSet<BedrockBone> namedBones) {
