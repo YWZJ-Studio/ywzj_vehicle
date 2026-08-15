@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 import net.minecraft.resources.ResourceLocation;
 import org.ywzj.vehicle.YwzjVehicle;
 
-public class FixedWingVehicleDisplayPojo extends BaseDisplayPojo {
+public class FixedWingVehicleDisplayPojo extends VehicleDisplayPojo {
 
     @SerializedName("afterburner_model")
     public ResourceLocation afterburnerModel = YwzjVehicle.resourceLocation("ywzj_vehicle:effect/afterburner_flame");

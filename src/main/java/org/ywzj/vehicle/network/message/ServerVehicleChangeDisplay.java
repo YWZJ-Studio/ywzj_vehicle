@@ -39,6 +39,7 @@ public class ServerVehicleChangeDisplay {
             context.enqueueWork(() -> {
                 if (Minecraft.getInstance().level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
                     vehicle.setDisplayId(message.displayId);
+                    vehicle.initDisplayData();
                 }
             });
         }

@@ -18,24 +18,16 @@ import java.util.Map;
 
 public class VehicleAnimationInstance<T extends BaseAnimationContext> implements IAnimationInstance<T> {
 
-    private final Map<String, AnimationStateMachine<T>> stateMachines;
-    private final AnimationController<T> controller;
     private final T context;
+    private final AnimationController<T> controller;
+    private final Map<String, AnimationStateMachine<T>> stateMachines;
+    private VehicleAnimationInstance<T> cabinAnimationInstance;
     private boolean isError = false;
 
     public VehicleAnimationInstance(AnimationController<T> controller, @NotNull T context) {
         this.controller = controller;
         this.context = context;
         this.stateMachines = controller.initialize(context);
-    }
-
-    public AnimationStateMachine<T> getStateMachine(String name) {
-        return stateMachines.get(name);
-    }
-
-    @NotNull
-    public T getContext() {
-        return context;
     }
 
     public void tick() {
@@ -75,6 +67,27 @@ public class VehicleAnimationInstance<T extends BaseAnimationContext> implements
             }
             return DummyPose.INSTANCE;
         }
+    }
+
+    public AnimationStateMachine<T> getStateMachine(String name) {
+        return stateMachines.get(name);
+    }
+
+    @NotNull
+    public T getContext() {
+        return context;
+    }
+
+    public AnimationController<T> getController() {
+        return controller;
+    }
+
+    public VehicleAnimationInstance<T> getCabinAnimationInstance() {
+        return cabinAnimationInstance;
+    }
+
+    public void setCabinAnimationInstance(VehicleAnimationInstance<T> cabinAnimationInstance) {
+        this.cabinAnimationInstance = cabinAnimationInstance;
     }
 
 }

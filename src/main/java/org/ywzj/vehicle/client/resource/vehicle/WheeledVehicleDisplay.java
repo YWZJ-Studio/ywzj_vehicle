@@ -5,7 +5,7 @@ import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 
 public class WheeledVehicleDisplay extends VehicleDisplay<WheeledVehicle, WheeledVehicleContext> {
 
-    public WheeledVehicleDisplay(BaseDisplayPojo pojo) {
+    public WheeledVehicleDisplay(VehicleDisplayPojo pojo) {
         super(pojo);
     }
 

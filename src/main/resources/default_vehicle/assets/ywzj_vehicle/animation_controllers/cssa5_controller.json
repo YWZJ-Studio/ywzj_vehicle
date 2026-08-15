@@ -45,6 +45,12 @@
                         "multiplier": -1.0,
                         "min": -30.0,
                         "max": 30.0
+                    },
+                    {
+                        "bones": ["ctrl"],
+                        "source": "steering_angle",
+                        "axis": "y",
+                        "multiplier": 6
                     }
                 ],
                 "part_bindings": [

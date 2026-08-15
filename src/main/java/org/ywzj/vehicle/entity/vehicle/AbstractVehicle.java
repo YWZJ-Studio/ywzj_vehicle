@@ -59,8 +59,8 @@ import org.ywzj.vehicle.api.event.VehicleMoveEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
@@ -103,7 +103,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     protected ResourceLocation vehicleId;
     protected ResourceLocation displayId;
-    private BakedModelInstance modelInstance;
+    private BakedModelInstance vehicleModelInstance;
+    private BakedModelInstance cabinModelInstance;
     private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -404,10 +405,16 @@ public abstract class AbstractVehicle extends ContainerCraft
                 );
     }
 
-    public void initDisplayData(BaseDisplay display) {
-        VehicleBedrockModel model = display.getModel();
-        if (model != null && model.hasBakedModel()) {
-            modelInstance = model.createBakedInstance();
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
+        VehicleBedrockModel vehicleModel = display.getModel();
+        if (vehicleModel != null && vehicleModel.hasBakedModel()) {
+            vehicleModelInstance = vehicleModel.createBakedInstance();
+        }
+        if (display.getCabinDisplay() != null) {
+            VehicleBedrockModel cabinModel = display.getCabinDisplay().getModel();
+            if (cabinModel != null && cabinModel.hasBakedModel()) {
+                cabinModelInstance = cabinModel.createBakedInstance();
+            }
         }
     }
 
@@ -674,27 +681,31 @@ public abstract class AbstractVehicle extends ContainerCraft
         return seats.size();
     }
 
-    public BakedModelInstance getModelInstance() {
-        return modelInstance;
+    public BakedModelInstance getVehicleModelInstance() {
+        return vehicleModelInstance;
+    }
+
+    public BakedModelInstance getCabinModelInstance() {
+        return cabinModelInstance;
     }
 
     public SoundEvent getEngineStartSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_start")).orElse(null);
     }
 
     public SoundEvent getEngineStopSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_stop")).orElse(null);
     }
 
     public SoundEvent getEngineIdleSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_idle")).orElse(null);
     }
 
     public SoundEvent getEngineRunSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_run")).orElse(null);
     }
 

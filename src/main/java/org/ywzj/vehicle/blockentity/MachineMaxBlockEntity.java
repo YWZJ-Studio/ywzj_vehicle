@@ -20,7 +20,7 @@ import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlockEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -36,7 +36,7 @@ public class MachineMaxBlockEntity extends BlockEntity {
     public float progress;
     public float step;
     public ResourceLocation craftingVehicleId;
-    public BaseDisplay vehicleDisplay;
+    public VehicleDisplay<?, ?> vehicleDisplay;
     public BaseVehicleData vehicleData;
     public TreeBedrockModel printingModel;
     public TreeModelInstance printingModelInstance;

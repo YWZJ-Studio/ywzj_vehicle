@@ -4,7 +4,6 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.BoneIndexProvider;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import org.mozillaa.javascript.*;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.compiler.*;
@@ -25,30 +24,25 @@ import org.ywzj.vehicle.vehicle.part.SwitchableUnit;
 import java.util.*;
 
 public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContext<E>> extends BaseDisplay {
-    
+
     protected AnimationController<CTX> animationController;
     protected AnimationContextFactory<E, CTX> contextFactory;
     protected Scriptable scriptScope;
     protected Map<String, Function> scriptFunctions = new HashMap<>();
+    protected VehicleDisplay<E, CTX> cabinDisplay;
 
-    public VehicleDisplay(BaseDisplayPojo pojo) {
+    public VehicleDisplay(VehicleDisplayPojo pojo) {
         super(pojo);
+        if (pojo.cabinModel != null) {
+            pojo.model = pojo.cabinModel;
+            pojo.texture = pojo.cabinTexture;
+            pojo.cabinModel = null;
+            pojo.cabinTexture = null;
+            cabinDisplay = new VehicleDisplay<>(pojo);
+        }
     }
 
-    public AnimationController<CTX> getAnimationController() {
-        return animationController;
-    }
-
-    public void setContextFactory(AnimationContextFactory<E, CTX> factory) {
-        this.contextFactory = factory;
-    }
-
-    public AnimationContextFactory<E, CTX> getContextFactory() {
-        return contextFactory;
-    }
-
-    public void initializeAnimationController(ScriptManager scriptManager,
-                                             ScriptContextFactory scriptContextFactory) {
+    public void initializeAnimationController(ScriptManager scriptManager, ScriptContextFactory scriptContextFactory) {
         if (animationControllerPath == null) {
             return;
         }
@@ -150,7 +144,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
         }
     }
 
-    public IAnimationInstance<CTX> createAnimationInstance(E entity) {
+    public VehicleAnimationInstance<CTX> createAnimationInstance(E entity) {
         if (animationController == null || contextFactory == null) {
             return null;
         }
@@ -158,9 +152,8 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
         CTX context = contextFactory.create(entity);
         context.setAnimations(animations);
 
-        AnimationController<CTX> typedController = animationController;
         Set<String> partIds = new HashSet<>();
-        for (var entry : typedController.getSwitchableAnimations().entrySet()) {
+        for (var entry : animationController.getSwitchableAnimations().entrySet()) {
             String animationName = entry.getValue().getAnimation();
             boolean invert = entry.getValue().isInvert();
             BedrockAnimation animation = context.getAnimation(animationName);
@@ -189,7 +182,7 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
             }
         }
 
-        for (var entry : typedController.getLoopAnimations().entrySet()) {
+        for (var entry : animationController.getLoopAnimations().entrySet()) {
             String animationName = entry.getValue().getAnimation();
             BedrockAnimation animation = context.getAnimation(animationName);
             if (animation == null) {
@@ -198,12 +191,24 @@ public class VehicleDisplay<E extends AbstractVehicle, CTX extends VehicleContex
             context.addLoopRunner(entry.getKey(), new LoopAnimationRunner(animation));
         }
 
-        var eventAnimations = typedController.getEventAnimations();
+        var eventAnimations = animationController.getEventAnimations();
         if (eventAnimations != null) {
             context.setEventAnimationHandler(new AnimationHandler(context::getAnimation, eventAnimations));
         }
 
-        return new VehicleAnimationInstance<>(typedController, context);
+        VehicleAnimationInstance<CTX> vehicleAnimationInstance = new VehicleAnimationInstance<>(animationController, context);
+        if (cabinDisplay != null) {
+            vehicleAnimationInstance.setCabinAnimationInstance(cabinDisplay.createAnimationInstance(entity));
+        }
+        return vehicleAnimationInstance;
+    }
+
+    public void setContextFactory(AnimationContextFactory<E, CTX> factory) {
+        this.contextFactory = factory;
+    }
+
+    public VehicleDisplay<E, CTX> getCabinDisplay() {
+        return cabinDisplay;
     }
 
 }

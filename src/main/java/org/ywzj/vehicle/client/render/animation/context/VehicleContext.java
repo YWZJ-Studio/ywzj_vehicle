@@ -46,18 +46,32 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
     }
 
     public void setBoneVisible(String boneName, boolean visible) {
-        BakedModelInstance modelInstance = entity.getModelInstance();
-        BoneState boneState = modelInstance.getBone(boneName);
+        BakedModelInstance vehicleModelInstance = entity.getVehicleModelInstance();
+        BoneState boneState = vehicleModelInstance.getBone(boneName);
         if (boneState != null) {
             boneState.visible = visible;
+        }
+        BakedModelInstance cabinModelInstance = entity.getCabinModelInstance();
+        if (cabinModelInstance != null) {
+            boneState = cabinModelInstance.getBone(boneName);
+            if (boneState != null) {
+                boneState.visible = visible;
+            }
         }
     }
 
     public void setBoneIlluminated(String boneName, boolean illuminated) {
-        BakedModelInstance modelInstance = entity.getModelInstance();
-        BoneState boneState = modelInstance.getBone(boneName);
+        BakedModelInstance vehicleModelInstance = entity.getVehicleModelInstance();
+        BoneState boneState = vehicleModelInstance.getBone(boneName);
         if (boneState != null) {
             boneState.illuminated = illuminated;
+        }
+        BakedModelInstance cabinModelInstance = entity.getCabinModelInstance();
+        if (cabinModelInstance != null) {
+            boneState = cabinModelInstance.getBone(boneName);
+            if (boneState != null) {
+                boneState.illuminated = illuminated;
+            }
         }
     }
 

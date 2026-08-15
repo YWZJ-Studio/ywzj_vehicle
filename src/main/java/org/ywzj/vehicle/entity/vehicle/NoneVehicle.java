@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.context.VehicleContext;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.SimpleVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -41,7 +41,7 @@ public class NoneVehicle extends AbstractVehicle implements IAnimationEntity<Abs
     }
 
     @Override
-    public void initDisplayData(BaseDisplay display) {
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
         super.initDisplayData(display);
         if (display instanceof SimpleVehicleDisplay simpleVehicleDisplay) {
             this.animationInstance = simpleVehicleDisplay.createAnimationInstance(this);

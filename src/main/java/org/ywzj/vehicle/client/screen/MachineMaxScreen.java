@@ -23,7 +23,7 @@ import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.component.ScrollableTextPanel;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -262,9 +262,9 @@ public class MachineMaxScreen extends Screen {
             );
         }
         poseStack.popPose();
-        Optional<BaseDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+        Optional<VehicleDisplay<?, ?>> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
         if (vehicleDisplayOptional.isPresent()) {
-            BaseDisplay vehicleDisplay = vehicleDisplayOptional.get();
+            VehicleDisplay<?, ?> vehicleDisplay = vehicleDisplayOptional.get();
             Component description = vehicleDisplay.getDescription() == null || vehicleDisplay.getDescription().isBlank()
                     ? Component.translatable("screen.no_description")
                     : Component.translatable(vehicleDisplay.getDescription());

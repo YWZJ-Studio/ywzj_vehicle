@@ -32,9 +32,7 @@ public class SpecialBoneEffect {
      * @return 配置是否有效
      */
     public boolean isValid() {
-        return bone != null && !bone.isEmpty()
-            && texture != null
-            && type != null;
+        return bone != null && !bone.isEmpty() && type != null;
     }
 
     public enum SpecialBoneEffectType {

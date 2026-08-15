@@ -77,10 +77,13 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
                     continue;
                 }
 
-                if (display instanceof VehicleDisplay<?, ?> vd) {
-                    vd.initializeAnimationController(scriptManager, scriptContextFactory);
+                if (display instanceof VehicleDisplay<?, ?> vehicleDisplay) {
+                    vehicleDisplay.initializeAnimationController(scriptManager, scriptContextFactory);
+                    if (vehicleDisplay.getCabinDisplay() != null) {
+                        vehicleDisplay.getCabinDisplay().initializeAnimationController(scriptManager, scriptContextFactory);
+                    }
                 }
-                
+
                 displayMapBuilder.put(displayIdAndDataJson.getKey(), display);
                 display.setDisplayId(displayIdAndDataJson.getKey());
                 if (display.getModelPath() != null) {

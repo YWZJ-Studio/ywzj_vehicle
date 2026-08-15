@@ -23,10 +23,12 @@ import org.ywzj.vehicle.all.AllKeys;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
+import org.ywzj.vehicle.client.render.animation.VehicleAnimationInstance;
+import org.ywzj.vehicle.client.render.animation.context.EntityContext;
 import org.ywzj.vehicle.client.render.util.OBBRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -50,17 +52,24 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
     @Override
     public void render(T vehicle, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         renderHitbox(vehicle, pPoseStack, bufferSource);
-        BaseDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);
-        if (display == null || display.getModel() == null || display.getTexture() == null) {
+        VehicleDisplay<?, ?> display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);
+        if (display == null) {
             return;
         }
-        VehicleBedrockModel model = display.getModel();
+        boolean isCabinView = LocalVehiclePlayer.instance.vehicle == vehicle
+                && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR
+                && display.getCabinDisplay() != null;
+        VehicleBedrockModel model = isCabinView ? display.getCabinDisplay().getModel() : display.getModel();
+        ResourceLocation texture = isCabinView ? display.getCabinDisplay().getTexture() : display.getTexture();
+        if (model == null || texture == null) {
+            return;
+        }
         if (!model.hasBakedModel()) {
             return;
         }
-        BakedModelInstance modelInstance = vehicle.getModelInstance();
+        BakedModelInstance modelInstance = isCabinView ? vehicle.getCabinModelInstance() : vehicle.getVehicleModelInstance();
         if (modelInstance == null) {
-            modelInstance = display.getModel().getDefaultModelInstance();
+            modelInstance = model.getDefaultModelInstance();
         }
         int modelLight = pPackedLight;
         if (vehicle.isDestroyed()) {
@@ -73,10 +82,10 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
             List<BoneState> invisibleBones = applyDetachedPart(vehicle, modelInstance);
             applyVehicleRotation(vehicle, pPartialTick, pPoseStack);
-            applyAnimationPose(vehicle, pPartialTick, modelInstance);
+            applyAnimationPose(vehicle, pPartialTick, modelInstance, isCabinView);
             // 载具
-            model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
-            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, invisibleBones, vehicle == LocalVehiclePlayer.instance.vehicle);
+            model.renderToBuffer(modelInstance, pPoseStack, bufferSource, texture, modelLight);
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, texture, modelLight, OverlayTexture.NO_OVERLAY, invisibleBones, vehicle == LocalVehiclePlayer.instance.vehicle);
             // 部件
             for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
                 if (partUnit.isDetached()) {
@@ -175,10 +184,13 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         poseStack.rotateAround(rot, (float) root.x, (float) root.y, (float) root.z);
     }
 
-    public static void applyAnimationPose(AbstractVehicle vehicle, float partialTick, BakedModelInstance modelInstance) {
+    public static void applyAnimationPose(AbstractVehicle vehicle, float partialTick, BakedModelInstance modelInstance, boolean isCabinView) {
         if (vehicle instanceof IAnimationEntity<?, ?> animationEntity) {
             var animationInstance = animationEntity.getAnimationInstance();
-            if (animationInstance != null) {
+            if (animationInstance instanceof VehicleAnimationInstance<? extends EntityContext<?>> vehicleAnimationInstance) {
+                if (isCabinView) {
+                    animationInstance = vehicleAnimationInstance.getCabinAnimationInstance();
+                }
                 animationInstance.getContext().setPartialTick(partialTick);
                 animationInstance.tick();
                 modelInstance.applyPose(BLENDER.blend(modelInstance.getBindPose(), animationInstance.getCurrentPose()));
@@ -191,11 +203,25 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
         if (!event.isClientSide()) {
             return;
         }
-        if (event.getVehicle() instanceof IAnimationEntity<?, ?> animationEntity) {
-            var instance = animationEntity.getAnimationInstance();
-            if (instance != null) {
+        AbstractVehicle vehicle = event.getVehicle();
+        VehicleDisplay<?, ?> display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);
+        if (display == null) {
+            return;
+        }
+        if (vehicle instanceof IAnimationEntity<?, ?> animationEntity) {
+            if (animationEntity.getAnimationInstance() instanceof VehicleAnimationInstance<? extends EntityContext<?>> vehicleAnimationInstance) {
                 String partId = event.getWeapon().getWeaponUnit().getId();
-                instance.getContext().offerEvent(partId + "_fire");
+                boolean isCabinView = LocalVehiclePlayer.instance.vehicle == vehicle
+                        && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR
+                        && display.getCabinDisplay() != null;
+                if (isCabinView) {
+                    var cabinAnimationInstance = vehicleAnimationInstance.getCabinAnimationInstance();
+                    if (cabinAnimationInstance != null) {
+                        cabinAnimationInstance.getContext().offerEvent(partId + "_fire");
+                    }
+                } else {
+                    vehicleAnimationInstance.getContext().offerEvent(partId + "_fire");
+                }
             }
         }
     }

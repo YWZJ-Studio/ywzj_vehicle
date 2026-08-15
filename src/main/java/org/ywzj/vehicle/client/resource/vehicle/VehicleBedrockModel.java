@@ -115,12 +115,12 @@ public class VehicleBedrockModel extends BedrockModel {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay) {
-        renderSpecialBones(defaultModelInstance, poseStack, source, packedLight, packedOverlay, null, false);
+    public void renderSpecialBones(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        renderSpecialBones(defaultModelInstance, poseStack, bufferSource, null, packedLight, packedOverlay, null, false);
     }
 
     @OnlyIn(Dist.CLIENT)
-    public void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource source, int packedLight, int packedOverlay, List<BoneState> invisibleBones, boolean isLocalPlayerVehicle) {
+    public void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight, int packedOverlay, List<BoneState> invisibleBones, boolean isLocalPlayerVehicle) {
         setSpecialBoneVisible(instance, true);
         if (invisibleBones != null) {
             invisibleBones.forEach(invisibleBone -> invisibleBone.visible = false);
@@ -131,16 +131,19 @@ public class VehicleBedrockModel extends BedrockModel {
                     && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
                 continue;
             }
+            if (entry.effect.texture != null) {
+                texture = entry.effect.texture;
+            }
             RenderType quadType;
             RenderType meshType;
             switch (entry.effect.type) {
                 case MUZZLE_FLASH -> {
-                    quadType = ModRenderTypes.muzzleFlash(entry.effect.texture);
-                    meshType = ModRenderTypes.muzzleFlash(entry.effect.texture);
+                    quadType = ModRenderTypes.muzzleFlash(texture);
+                    meshType = ModRenderTypes.muzzleFlash(texture);
                 }
                 case TRANSPARENT, COCKPIT -> {
-                    quadType = ModRenderTypes.cubeTransparent(entry.effect.texture);
-                    meshType = ModRenderTypes.polyMeshTransparent(entry.effect.texture);
+                    quadType = ModRenderTypes.cubeTransparent(texture);
+                    meshType = ModRenderTypes.polyMeshTransparent(texture);
                 }
                 default -> {
                     continue;
@@ -150,7 +153,7 @@ public class VehicleBedrockModel extends BedrockModel {
             if (bone == null) {
                 continue;
             }
-            instance.renderSingleBone(poseStack, entry.boneIndex, source, quadType, meshType, packedLight,
+            instance.renderSingleBone(poseStack, entry.boneIndex, bufferSource, quadType, meshType, packedLight,
                     packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, true);
         }
     }

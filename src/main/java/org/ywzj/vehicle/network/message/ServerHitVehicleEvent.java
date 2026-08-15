@@ -15,7 +15,7 @@ import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.client.gui.VehicleHitIndicatorOverlay;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -88,11 +88,11 @@ public class ServerHitVehicleEvent {
             if (LocalVehiclePlayer.instance.getPlayer().level().getEntity(message.entityId) instanceof AbstractVehicle vehicle) {
                 Vec3 start = message.hitPosition;
                 Vec3 end = start.add(message.hitVector.normalize().scale(3));
-                Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+                Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
                 if (displayOptional.isEmpty()) {
                     return;
                 }
-                BaseDisplay display = displayOptional.get();
+                VehicleDisplay<?, ?> display = displayOptional.get();
                 if (display.getModel() == null) {
                     return;
                 }

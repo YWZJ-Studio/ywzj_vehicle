@@ -18,6 +18,7 @@ import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -153,11 +154,14 @@ public enum ClientAssetsManager {
     }
 
     @NotNull
-    public Optional<BaseDisplay> getVehicleDisplay(ResourceLocation id) {
+    public Optional<VehicleDisplay<?, ?>> getVehicleDisplay(ResourceLocation id) {
         if (vehicleDisplayManager == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(vehicleDisplayManager.getDisplayMap().get(id));
+        BaseDisplay display = vehicleDisplayManager.getDisplayMap().get(id);
+        return display instanceof VehicleDisplay<?, ?> vehicleDisplay
+                ? Optional.of(vehicleDisplay)
+                : Optional.empty();
     }
 
     @NotNull

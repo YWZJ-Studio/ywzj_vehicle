@@ -24,8 +24,8 @@ import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.RotaryWingVehicleContext;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.ParticleUtil;
@@ -92,7 +92,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public void initDisplayData(BaseDisplay display) {
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
         super.initDisplayData(display);
         if (display instanceof RotaryWingVehicleDisplay rotaryWingVehicleDisplay) {
             this.animationInstance = rotaryWingVehicleDisplay.createAnimationInstance(this);
@@ -306,7 +306,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         }
 
         if (!(controlUnit.left || controlUnit.right)) {
-            float targetZRot = yawAimControl ? yawAssistRoll(yDiff, force.length()) : 0;
+            float targetZRot = yawAimControl ? yawAssistRoll(yDiff) : 0;
             float zDiff = Mth.wrapDegrees(targetZRot - this.getZRot());
             float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
             if (zDiff > 0) {
@@ -618,18 +618,12 @@ public class RotaryWingVehicle extends AbstractVehicle
         return Mth.lerp(speedFactor, 1, 0.35f);
     }
 
-    private float yawAssistRoll(float yRotDiff, double lift) {
+    private float yawAssistRoll(float yRotDiff) {
         float speedFactor = linearSpeedFactor(forwardSpeed(), 0.25f, 0.75f);
         float yawFactor = Mth.clamp(yRotDiff / 60, -1, 1);
         Vec3 forwardDirection = relativeRotDirection(new Vec3(0, 0, 1), false);
         double horizontalFactor = Math.sqrt(forwardDirection.x * forwardDirection.x + forwardDirection.z * forwardDirection.z);
-        double verticalLiftWithoutRoll = lift * Math.max(0, Math.cos(Math.toRadians(getXRot())));
-        double weight = physicsEngine.G * physicsEngine.physicsInfo.mass;
-        if (verticalLiftWithoutRoll <= weight) {
-            return 0;
-        }
-        double maxRoll = Math.toDegrees(Math.acos(Mth.clamp(weight / verticalLiftWithoutRoll, 0, 1)));
-        return (float) (maxRoll * speedFactor * horizontalFactor * yawFactor);
+        return 60f * speedFactor * (float) horizontalFactor * yawFactor;
     }
 
     private float forwardSpeed() {

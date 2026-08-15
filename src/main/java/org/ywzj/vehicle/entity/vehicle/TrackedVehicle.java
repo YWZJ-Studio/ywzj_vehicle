@@ -18,8 +18,8 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.TrackAnimationInstance;
 import org.ywzj.vehicle.client.render.animation.context.TrackedVehicleContext;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -58,7 +58,7 @@ public class TrackedVehicle extends AbstractVehicle
     }
 
     @Override
-    public void initDisplayData(BaseDisplay display) {
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
         super.initDisplayData(display);
         if (display instanceof TrackedVehicleDisplay trackedVehicleDisplay) {
             this.animationInstance = trackedVehicleDisplay.createAnimationInstance(this);
@@ -98,7 +98,7 @@ public class TrackedVehicle extends AbstractVehicle
     }
 
     public SoundEvent getTrackRunSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("track_run")).orElse(null);
     }
 

@@ -2,8 +2,16 @@
     "type": "ywzj_vehicle:rotary_wing_vehicle",
     "model": "ywzj_vehicle:entity/ah64d",
     "texture": "ywzj_vehicle:textures/entity/ah64d.png",
+    "cabin_model": "ywzj_vehicle:cabin/ah64d",
+    "cabin_texture": "ywzj_vehicle:textures/entity/ah64d.png",
     "slot_texture": "ywzj_vehicle:textures/slot/ah64d.png",
     "animation_controller": "ywzj_vehicle:ah64d_controller",
+    "special_bone_effects": [
+        {
+            "bone": "body2",
+            "type": "transparent"
+        }
+    ],
     "sounds": {
         "engine_start": "ywzj_vehicle:z10_engine_start",
         "engine_stop": "ywzj_vehicle:z10_engine_stop",
