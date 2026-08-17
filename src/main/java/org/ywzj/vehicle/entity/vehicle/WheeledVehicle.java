@@ -15,7 +15,7 @@ import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
 import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -58,7 +58,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     }
 
     @Override
-    public void initDisplayData(BaseDisplay display) {
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
         super.initDisplayData(display);
         if (display instanceof WheeledVehicleDisplay wheeledVehicleDisplay) {
             this.animationInstance = wheeledVehicleDisplay.createAnimationInstance(this);
@@ -157,7 +157,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         }
 
         // 失去抓地力
-        if (!onGround()) {
+        if (!onGround() && !(isInWater() && canWade)) {
             motion *= 0.33f;
             propulsiveForce = Vec3.ZERO;
         }
@@ -302,7 +302,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             trackLength = 0;
             Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
             Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTracks(level(), this, trackSize, getYRot(), trackLeftPos, trackRightPos);
+            ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackLeftPos, trackRightPos);
         }
         // 引擎烟
         if (hasPower()) {

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public class AnimationControllerCompiler {
+
     private final StateMachineCompiler stateMachineCompiler;
     private final PoseGraphCompiler poseGraphCompiler;
 
@@ -58,4 +59,5 @@ public class AnimationControllerCompiler {
                 poseGraph
         );
     }
+
 }

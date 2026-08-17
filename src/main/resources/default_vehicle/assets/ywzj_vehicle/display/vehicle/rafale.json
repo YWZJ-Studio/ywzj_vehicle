@@ -8,17 +8,14 @@
     "special_bone_effects": [
         {
             "bone": "cap",
-            "texture": "ywzj_vehicle:textures/entity/rafale.png",
             "type": "cockpit"
         },
         {
             "bone": "tail4",
-            "texture": "ywzj_vehicle:textures/entity/rafale.png",
             "type": "cockpit"
         },
         {
             "bone": "hud",
-            "texture": "ywzj_vehicle:textures/entity/rafale.png",
             "type": "transparent"
         }
     ],

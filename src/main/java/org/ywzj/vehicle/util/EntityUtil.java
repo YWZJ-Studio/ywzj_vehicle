@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,6 +26,7 @@ import org.ywzj.vehicle.network.message.ServerVehicleHurtEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.function.Predicate;
 
 public class EntityUtil {
@@ -149,6 +151,29 @@ public class EntityUtil {
             headshot = true;
         }
         return new BulletHitResult(entity, hitPos, headshot);
+    }
+
+    public static OptionalDouble blockSurfaceY(Level level, Vec3 pos, double maxDistance) {
+        int maxBlockY = Mth.floor(pos.y + maxDistance);
+        int minBlockY = Mth.floor(pos.y - maxDistance);
+        double surfaceY = Double.NEGATIVE_INFINITY;
+        for (int blockY = maxBlockY; blockY >= minBlockY; blockY--) {
+            BlockPos blockPos = BlockPos.containing(pos.x, blockY, pos.z);
+            BlockState blockState = level.getBlockState(blockPos);
+            VoxelShape shape = blockState.getCollisionShape(level, blockPos);
+            double localX = pos.x - blockPos.getX();
+            double localZ = pos.z - blockPos.getZ();
+            for (AABB box : shape.toAabbs()) {
+                if (localX < box.minX || localX > box.maxX || localZ < box.minZ || localZ > box.maxZ) {
+                    continue;
+                }
+                double candidateY = blockPos.getY() + box.maxY;
+                if (Math.abs(pos.y - candidateY) <= maxDistance) {
+                    surfaceY = Math.max(surfaceY, candidateY);
+                }
+            }
+        }
+        return surfaceY == Double.NEGATIVE_INFINITY ? OptionalDouble.empty() : OptionalDouble.of(surfaceY);
     }
 
     public static boolean isOnBlockSurface(Entity entity, Vec3 pos) {

@@ -8,8 +8,10 @@ function updateBones(context) {
     const builder = createPoseBuilder()
     builder.setRotation("z10w_top", 0, -propellerRotation, 0)
     builder.setRotation("z10w_tail", -propellerRotation * 5, 0, 0)
+
     builder.setRotation("z10w_camera", context.getPartXRot("sighting_system"), context.getPartYRot("sighting_system"), 0)
     builder.setRotation("z10w_canno", context.getPartXRot("auto_cannon"), context.getPartYRot("auto_cannon"), 0)
+
     let remainMissiles = context.getWeaponRemainAmmo("sighting_system", 1)
     for (let i = 0; i < missiles.length; i++) {
         if (i < missiles.length - remainMissiles) {

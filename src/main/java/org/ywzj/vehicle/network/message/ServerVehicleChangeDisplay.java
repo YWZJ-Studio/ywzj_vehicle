@@ -38,6 +38,7 @@ public class ServerVehicleChangeDisplay implements CustomPacketPayload {
     public static void handle(ServerVehicleChangeDisplay message, IPayloadContext ctx) {
         if (Minecraft.getInstance().level.getEntity(message.vehicleEntityId) instanceof AbstractVehicle vehicle) {
             vehicle.setDisplayId(message.displayId);
+            vehicle.initDisplayData();
         }
     }
 

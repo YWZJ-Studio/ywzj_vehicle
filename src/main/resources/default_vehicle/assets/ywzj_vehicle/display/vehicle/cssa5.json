@@ -2,6 +2,8 @@
     "type": "ywzj_vehicle:wheeled_vehicle",
     "model": "ywzj_vehicle:entity/cssa5",
     "texture": "ywzj_vehicle:textures/entity/cssa5.png",
+    "cabin_model": "ywzj_vehicle:cabin/cssa5",
+    "cabin_texture": "ywzj_vehicle:textures/cabin/cssa5.png",
     "slot_texture": "ywzj_vehicle:textures/slot/cssa5.png",
     "animation_controller": "ywzj_vehicle:cssa5_controller",
     "sounds": {

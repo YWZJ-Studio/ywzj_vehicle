@@ -11,6 +11,7 @@ import com.maydaymemory.mae.control.runner.LoopingState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.HolderLookup;
@@ -170,7 +171,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             return;
         }
         boolean rootAttachment = baseBoneName == null || baseBoneName.isBlank();
-        BakedModelInstance vehicleModelInstance = vehicle.getModelInstance();
+        BakedModelInstance vehicleModelInstance = vehicle.getVehicleModelInstance();
         int attachmentBoneIndex = rootAttachment ? -1 : vehicleModelInstance.getIndex(baseBoneName);
         if (!rootAttachment && vehicleModelInstance.getBone(attachmentBoneIndex) == null) {
             return;
@@ -207,8 +208,14 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
                     lastPose = pose;
                 }
             }
-            decorationModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
-            decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, null, false);
+            int modelLight = pPackedLight;
+            if (vehicle.isDestroyed()) {
+                int blockLight = (int) (LightTexture.block(pPackedLight) / 1.5f);
+                int skyLight = (int) (LightTexture.sky(pPackedLight) / 1.5f);
+                modelLight = LightTexture.pack(blockLight, skyLight);
+            }
+            decorationModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, decorationTexture, modelLight);
+            decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, decorationTexture, modelLight, OverlayTexture.NO_OVERLAY, null, false);
         }
         pPoseStack.popPose();
     }

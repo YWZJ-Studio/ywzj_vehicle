@@ -55,8 +55,8 @@ import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.part.data.PartUnitPojo;
@@ -98,7 +98,8 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     protected ResourceLocation vehicleId;
     protected ResourceLocation displayId;
-    private BakedModelInstance modelInstance;
+    private BakedModelInstance vehicleModelInstance;
+    private BakedModelInstance cabinModelInstance;
     private Component name;
     public final ControlUnit controlUnit;
     public List<Seat> seats;
@@ -130,6 +131,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav = false;
+    protected boolean canWade;
     private Vec3 fakeOperatorPosition;
     private FakePlayer fakeOperator;
     public boolean collision = true;
@@ -395,10 +397,16 @@ public abstract class AbstractVehicle extends ContainerCraft
                 );
     }
 
-    public void initDisplayData(BaseDisplay display) {
-        VehicleBedrockModel model = display.getModel();
-        if (model != null && model.hasBakedModel()) {
-            modelInstance = model.createBakedInstance();
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
+        VehicleBedrockModel vehicleModel = display.getModel();
+        if (vehicleModel != null && vehicleModel.hasBakedModel()) {
+            vehicleModelInstance = vehicleModel.createBakedInstance();
+        }
+        if (display.getCabinDisplay() != null) {
+            VehicleBedrockModel cabinModel = display.getCabinDisplay().getModel();
+            if (cabinModel != null && cabinModel.hasBakedModel()) {
+                cabinModelInstance = cabinModel.createBakedInstance();
+            }
         }
     }
 
@@ -421,6 +429,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
         this.seats.addAll(partUnitsAndSeats.seats());
         this.uav = vehicleData.isUav();
+        this.canWade = vehicleData.canWade();
         if (vehicleData.withWarningReceiver()) {
             this.warningReceiver = new WarningReceiver(this);
         }
@@ -529,7 +538,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     protected void tickPower() {
         FluidState fluidState = level().getFluidState(BlockPos.containing(new Vec3(mainCubeOBB.obb().center())));
-        if (!fluidState.isEmpty()) {
+        if (!canWade && !fluidState.isEmpty()) {
             setPower(0);
             return;
         }
@@ -582,18 +591,20 @@ public abstract class AbstractVehicle extends ContainerCraft
 //            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()), p.cubeFace());
 //        });
 
-        // 碰撞
-        Vec3 velocity = getDeltaMovement();
-        if (collision) {
-            velocity = physicsEngine.motionByImpact(touchPoints, axes, velocity);
-        }
-        // 阻力
-        velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
-        // 重力与旋转
-        velocity = physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f(), velocity.toVector3f());
-        physicsEngine.velocityO = physicsEngine.velocity;
+        physicsEngine.beginTick(getDeltaMovement());
 
-        setDeltaMovement(velocity);
+        // 碰撞
+        if (collision) {
+            physicsEngine.motionByImpact(touchPoints, axes);
+        }
+        // 摩擦力
+        physicsEngine.decelerationByFriction(touchPoints);
+        // 浮力
+        force = force.add(physicsEngine.motionByBuoyancy());
+        // 重力与旋转
+        physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f());
+
+        setDeltaMovement(physicsEngine.endTick());
 
 //        if (this instanceof Ztz99a) {
 //            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).worldCurrentBoltPosition());
@@ -662,27 +673,31 @@ public abstract class AbstractVehicle extends ContainerCraft
         return seats.size();
     }
 
-    public BakedModelInstance getModelInstance() {
-        return modelInstance;
+    public BakedModelInstance getVehicleModelInstance() {
+        return vehicleModelInstance;
+    }
+
+    public BakedModelInstance getCabinModelInstance() {
+        return cabinModelInstance;
     }
 
     public SoundEvent getEngineStartSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_start")).orElse(null);
     }
 
     public SoundEvent getEngineStopSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_stop")).orElse(null);
     }
 
     public SoundEvent getEngineIdleSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_idle")).orElse(null);
     }
 
     public SoundEvent getEngineRunSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_run")).orElse(null);
     }
 
@@ -709,11 +724,14 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
+        Level level = level();
+        if (!level.isClientSide()) {
+            return;
+        }
+        if (mainCubeOBB != null && tickCount % 5 == 0) {
+            ParticleUtil.spawnWaterSurfaceBubbles(level, random, mainCubeOBB);
+        }
         if (isDestroyed()) {
-            Level level = level();
-            if (!level.isClientSide()) {
-                return;
-            }
             if (destroyedTick < 20 * 30 && destroyedTick % 5 == 0) {
                 ParticleUtil.spawnDestroyedVehicleCloud(level,
                         new Vec3(mainCubeOBB.obb().center()),
@@ -1434,13 +1452,18 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (this.isPassengerOfSameVehicle(pEntity)) {
             return;
         }
+        OBB mainCubeOBB = getMainCubeOBB().obb();
         if (pEntity instanceof AbstractVehicle vehicle) {
-            VehicleCubeOBB bodyCube = vehicle.getMainCubeOBB();
-            if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
+            if (!OBB.isColliding(vehicle.getMainCubeOBB().obb(), mainCubeOBB)) {
                 return;
             }
         } else {
-            if (!getMainCubeOBB().obb().contains(pEntity.getEyePosition())) {
+            AABB entityAABB = pEntity.getBoundingBox();
+            if (!OBB.isColliding(mainCubeOBB, entityAABB)) {
+                return;
+            }
+            Vec3 contactNormal = new Vec3(mainCubeOBB.calculateMTV(entityAABB));
+            if (contactNormal.dot(getDeltaMovement()) <= 0) {
                 return;
             }
         }
@@ -1523,11 +1546,14 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
         }
         double velocity = this.getDeltaMovement().length();
+        if (velocity == 0) {
+            return;
+        }
         double entityVelocity = entity.getDeltaMovement().dot(this.getDeltaMovement()) / velocity;
-        double relVelocity = (velocity - entityVelocity) * 20;
+        double relVelocity = (velocity - entityVelocity) * 10;
         if (relVelocity > 1) {
             entity.hurt(AllDamageTypes.Sources.vehicleCollision(level().registryAccess(), this, this.getDriver(), null),
-                    (float) relVelocity * curbWeight);
+                    (float) (0.5 * curbWeight * relVelocity * relVelocity));
         }
     }
 

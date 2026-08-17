@@ -5,7 +5,7 @@ import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 
 public class RotaryWingVehicleDisplay extends VehicleDisplay<RotaryWingVehicle, RotaryWingVehicleContext> {
 
-    public RotaryWingVehicleDisplay(BaseDisplayPojo pojo) {
+    public RotaryWingVehicleDisplay(VehicleDisplayPojo pojo) {
         super(pojo);
     }
 

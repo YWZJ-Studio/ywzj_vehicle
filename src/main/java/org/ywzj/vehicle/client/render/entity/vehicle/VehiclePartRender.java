@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.entity.misc.VehiclePart;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 
@@ -31,7 +31,7 @@ public class VehiclePartRender extends EntityRenderer<VehiclePart> {
     @Override
     public void render(VehiclePart part, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
         VehicleRender.renderHitbox(part, pPoseStack, bufferSource);
-        BaseDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(part.getDisplayId()).orElse(null);
+        VehicleDisplay<?, ?> display = ClientAssetsManager.INSTANCE.getVehicleDisplay(part.getDisplayId()).orElse(null);
         if (display == null || display.getModel() == null || display.getTexture() == null) {
             return;
         }
@@ -39,7 +39,7 @@ public class VehiclePartRender extends EntityRenderer<VehiclePart> {
         if (!model.hasBakedModel()) {
             return;
         }
-        BakedModelInstance modelInstance = part.getModelInstance();
+        BakedModelInstance modelInstance = part.getVehicleModelInstance();
         if (modelInstance == null) {
             return;
         }

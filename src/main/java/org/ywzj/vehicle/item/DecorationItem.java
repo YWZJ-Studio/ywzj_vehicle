@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.client.render.item.DecorationItemRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.client.screen.DecorationSelectScreen;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
@@ -90,11 +90,11 @@ public class DecorationItem extends VehicleItem {
     private void decorate(AbstractVehicle vehicle, ItemStack itemStack) {
         Vec3 start = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         Vec3 end = new Vec3(Minecraft.getInstance().gameRenderer.getMainCamera().getLookVector().mul(8)).add(start);
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
         if (displayOptional.isEmpty()) {
             return;
         }
-        BaseDisplay display = displayOptional.get();
+        VehicleDisplay<?, ?> display = displayOptional.get();
         if (display.getModel() == null) {
             return;
         }

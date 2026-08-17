@@ -3,22 +3,176 @@ package org.ywzj.vehicle.util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllParticleTypes;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.vehicle.structure.OBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.function.Function;
 
 public final class ParticleUtil {
 
     private static final DustParticleOptions WHITE_DUST = new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 3.0F);
+
+    public static void spawnWaterSurfaceBubbles(Level level, RandomSource random, VehicleCubeOBB mainCubeOBB) {
+        OBB obb = mainCubeOBB.obb();
+        AABB bounds = OBB.toAABB(java.util.List.of(obb));
+        Vector3f[] axes = obb.getAxes();
+        Vector3f extents = obb.extents();
+        int minY = Mth.floor(bounds.minY);
+        int maxY = Mth.floor(bounds.maxY);
+        int surfaceSearchMaxY = maxY + 8;
+        int spawned = 0;
+        float margin = 0.12f;
+        for (int side = 0; side < 4 && spawned < 32; side++) {
+            for (int sample = 0; sample < 8 && spawned < 32; sample++) {
+                float along = ((sample + 0.5f) / 8 - 0.5f) * 2;
+                float localX;
+                float localZ;
+                if (side == 0 || side == 1) {
+                    localX = side == 0 ? extents.x + margin : -extents.x - margin;
+                    localZ = along * extents.z;
+                } else {
+                    localX = along * extents.x;
+                    localZ = side == 2 ? extents.z + margin : -extents.z - margin;
+                }
+                Vector3f worldPoint = obb.localToWorld(new Vector3f(localX, 0, localZ), axes);
+                BlockPos column = BlockPos.containing(worldPoint.x, worldPoint.y, worldPoint.z);
+                for (int y = surfaceSearchMaxY; y >= minY; y--) {
+                    BlockPos pos = new BlockPos(column.getX(), y, column.getZ());
+                    FluidState fluidState = level.getFluidState(pos);
+                    if (!fluidState.is(FluidTags.WATER)) {
+                        continue;
+                    }
+                    double surfaceY = y + fluidState.getHeight(level, pos);
+                    if (surfaceY < bounds.minY) {
+                        continue;
+                    }
+                    double spawnY = Math.min(worldPoint.y, surfaceY - 0.08);
+                    spawnY = Math.max(spawnY, bounds.minY + 0.05);
+                    level.addParticle(ParticleTypes.BUBBLE,
+                            worldPoint.x, spawnY, worldPoint.z,
+                            0, 0.025 + random.nextDouble() * 0.02, 0);
+                    spawned++;
+                    break;
+                }
+            }
+        }
+    }
+
+    public static void spawnEngineSmoke(Level level, Iterable<Vec3> offsets, Vec3 vehiclePosition, Vec3 previousVehiclePosition,
+                                        Function<Vec3, Vec3> positionTransform, Vec3 velocity,
+                                        int count, int lifetime, float startSize, float endSize) {
+        Vec3 movement = vehiclePosition.subtract(previousVehiclePosition);
+        for (Vec3 offset : offsets) {
+            Vec3 smokePosition = positionTransform.apply(vehiclePosition.add(offset)).subtract(movement);
+            for (int i = 0; i < count; i++) {
+                level.addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
+                                0.0f, 0.0f, 0.0f, 0.7f,
+                                lifetime, startSize, endSize, 0.005f), true,
+                        smokePosition.x, smokePosition.y, smokePosition.z,
+                        velocity.x + (level.random.nextDouble() - 0.5) * 0.05,
+                        velocity.y + (level.random.nextDouble() - 0.5) * 0.05,
+                        velocity.z + (level.random.nextDouble() - 0.5) * 0.05);
+            }
+        }
+    }
+
+    public static void spawnTracks(Level level, float trackSize, float yaw, Vec3... positions) {
+        for (Vec3 position : positions) {
+            var surfaceY = EntityUtil.blockSurfaceY(level, position, 0.25);
+            if (surfaceY.isPresent()) {
+                level.addParticle(AllParticleTypes.TRACK.get(), true, position.x, surfaceY.getAsDouble() + 0.001, position.z,
+                        trackSize, yaw, 0);
+            }
+        }
+    }
+
+    public static void spawnRotorDownwash(Level level, RandomSource random, BlockPos vehiclePosition, double radius) {
+        BlockPos surface = null;
+        for (int y = 1; y <= 32; y++) {
+            BlockPos checkPosition = vehiclePosition.below(y);
+            if (!level.getBlockState(checkPosition).isAir()) {
+                surface = checkPosition;
+                break;
+            }
+        }
+        if (surface == null) {
+            return;
+        }
+        int pointCount = 8;
+        int particleCount = 2;
+        for (int i = 0; i < pointCount; i++) {
+            for (int j = 0; j < particleCount; j++) {
+                double bias = ((2 * Math.PI) / pointCount) * random.nextDouble();
+                double angle = (i * 2 * Math.PI) / pointCount;
+                double x = surface.getX() + radius * Math.cos(angle + bias) + random.nextDouble() * 0.5;
+                double y = surface.getY() + 2;
+                double z = surface.getZ() + radius * Math.sin(angle + bias) + random.nextDouble() * 0.5;
+                level.addParticle(WHITE_DUST, true, x, y, z, 0, 0, 0);
+            }
+        }
+    }
+
+    public static void spawnWingVortices(Level level, Iterable<Vec3> offsets, Vec3 vehiclePosition, Function<Vec3, Vec3> positionTransform) {
+        for (Vec3 offset : offsets) {
+            Vec3 position = positionTransform.apply(vehiclePosition.add(offset));
+            level.addParticle(WHITE_DUST, true, position.x, position.y, position.z, 0, 0, 0);
+        }
+    }
+
+    public static void spawnAerobaticSmoke(Level level, RandomSource random, Iterable<Vec3> offsets,
+                                           Vec3 vehiclePosition, Vec3 previousPosition, Vec3 movement,
+                                           Function<Vec3, Vec3> positionTransform,
+                                           float red, float green, float blue) {
+        Vec3 step = vehiclePosition.subtract(previousPosition);
+        int segments = (int) step.length();
+        Vec3 direction = step.normalize();
+        for (Vec3 offset : offsets) {
+            for (int i = 0; i <= segments; i++) {
+                Vec3 position = positionTransform.apply(vehiclePosition.add(offset))
+                        .subtract(direction.scale(i))
+                        .subtract(movement);
+                level.addParticle(new SmokeCloudOption(false, red, green, blue, red, green, blue,
+                                0.5f, 0.1f, 1200, 0.3f, 5f, 0.01f), true,
+                        position.x, position.y, position.z,
+                        random.triangle(0, 0.1f),
+                        random.triangle(0, 0.1f),
+                        random.triangle(0, 0.1f));
+            }
+        }
+    }
+
+    public static void spawnMotorcycleDust(Level level, RandomSource random, Vec3 wheelPosition, Vec3 movement, boolean frontWheel) {
+        level.addParticle(new DustSmokeOption(2.5f),
+                wheelPosition.x - movement.x,
+                wheelPosition.y + 0.1,
+                wheelPosition.z - movement.z,
+                movement.x * 0.1,
+                0.02,
+                movement.z * 0.1);
+        if (random.nextFloat() < 0.5f) {
+            return;
+        }
+        double horizontalSpeedScale = frontWheel ? 0.1 : 0.25;
+        double verticalSpeed = frontWheel ? 0.02 : 0.1;
+        level.addParticle(AllParticleTypes.DUST_STONE.get(),
+                wheelPosition.x + random.nextDouble() * 0.1 - movement.x,
+                wheelPosition.y + 0.1,
+                wheelPosition.z + random.nextDouble() * 0.1 - movement.z,
+                movement.x * horizontalSpeedScale + random.nextDouble() * 0.1,
+                verticalSpeed,
+                movement.z * horizontalSpeedScale + random.nextDouble() * 0.1);
+    }
 
     public static void spawnDestroyedVehicleCloud(Level level, Vec3 center, float vehicleRadius, double vehicleHeight) {
         double angle = level.random.nextDouble() * Math.PI * 2;
@@ -69,109 +223,6 @@ public final class ParticleUtil {
             double vz = (level.random.nextDouble() - 0.5D) * 0.02D;
             level.addParticle(ParticleTypes.LARGE_SMOKE, true, x, y, z, vx, vy, vz);
         }
-    }
-
-    public static void spawnTracks(Level level, Entity vehicle, float trackSize, float yaw, Vec3... positions) {
-        for (Vec3 position : positions) {
-            if (EntityUtil.isOnBlockSurface(vehicle, position)) {
-                level.addParticle(AllParticleTypes.TRACK.get(), true,
-                        position.x, position.y, position.z, trackSize, yaw, 0);
-            }
-        }
-    }
-
-    public static void spawnEngineSmoke(Level level, Iterable<Vec3> offsets, Vec3 vehiclePosition, Vec3 previousVehiclePosition,
-                                        Function<Vec3, Vec3> positionTransform, Vec3 velocity,
-                                        int count, int lifetime, float startSize, float endSize) {
-        Vec3 movement = vehiclePosition.subtract(previousVehiclePosition);
-        for (Vec3 offset : offsets) {
-            Vec3 smokePosition = positionTransform.apply(vehiclePosition.add(offset)).subtract(movement);
-            for (int i = 0; i < count; i++) {
-                level.addParticle(new SmokeCloudOption(0.3f, 0.3f, 0.3f,
-                                0.0f, 0.0f, 0.0f, 0.7f,
-                                lifetime, startSize, endSize, 0.005f), true,
-                        smokePosition.x, smokePosition.y, smokePosition.z,
-                        velocity.x + (level.random.nextDouble() - 0.5) * 0.05,
-                        velocity.y + (level.random.nextDouble() - 0.5) * 0.05,
-                        velocity.z + (level.random.nextDouble() - 0.5) * 0.05);
-            }
-        }
-    }
-
-    public static void spawnWingVortices(Level level, Iterable<Vec3> offsets, Vec3 vehiclePosition, Function<Vec3, Vec3> positionTransform) {
-        for (Vec3 offset : offsets) {
-            Vec3 position = positionTransform.apply(vehiclePosition.add(offset));
-            level.addParticle(WHITE_DUST, true, position.x, position.y, position.z, 0, 0, 0);
-        }
-    }
-
-    public static void spawnRotorDownwash(Level level, RandomSource random, BlockPos vehiclePosition, double radius) {
-        BlockPos surface = null;
-        for (int y = 1; y <= 32; y++) {
-            BlockPos checkPosition = vehiclePosition.below(y);
-            if (!level.getBlockState(checkPosition).isAir()) {
-                surface = checkPosition;
-            }
-        }
-        if (surface == null) {
-            return;
-        }
-        int pointCount = 8;
-        int particleCount = 2;
-        for (int i = 0; i < pointCount; i++) {
-            for (int j = 0; j < particleCount; j++) {
-                double bias = ((2 * Math.PI) / pointCount) * random.nextDouble();
-                double angle = (i * 2 * Math.PI) / pointCount;
-                double x = surface.getX() + radius * Math.cos(angle + bias) + random.nextDouble() * 0.5;
-                double y = surface.getY() + 1 + random.nextDouble();
-                double z = surface.getZ() + radius * Math.sin(angle + bias) + random.nextDouble() * 0.5;
-                level.addParticle(WHITE_DUST, true, x, y, z, 0, 0, 0);
-            }
-        }
-    }
-
-    public static void spawnAerobaticSmoke(Level level, RandomSource random, Iterable<Vec3> offsets,
-                                           Vec3 vehiclePosition, Vec3 previousPosition, Vec3 movement,
-                                           Function<Vec3, Vec3> positionTransform,
-                                           float red, float green, float blue) {
-        Vec3 step = vehiclePosition.subtract(previousPosition);
-        int segments = (int) step.length();
-        Vec3 direction = step.normalize();
-        for (Vec3 offset : offsets) {
-            for (int i = 0; i <= segments; i++) {
-                Vec3 position = positionTransform.apply(vehiclePosition.add(offset))
-                        .subtract(direction.scale(i))
-                        .subtract(movement);
-                level.addParticle(new SmokeCloudOption(false, red, green, blue, red, green, blue,
-                                0.5f, 0.1f, 1200, 0.3f, 5f, 0.01f), true,
-                        position.x, position.y, position.z,
-                        random.triangle(0, 0.1f),
-                        random.triangle(0, 0.1f),
-                        random.triangle(0, 0.1f));
-            }
-        }
-    }
-
-    public static void spawnMotorcycleDust(Level level, RandomSource random, Vec3 wheelPosition, Vec3 movement, boolean frontWheel) {
-        level.addParticle(new DustSmokeOption(2.5f),
-                wheelPosition.x - movement.x,
-                wheelPosition.y + 0.1,
-                wheelPosition.z - movement.z,
-                movement.x * 0.1,
-                0.02,
-                movement.z * 0.1);
-        if (random.nextFloat() < 0.5f) {
-            return;
-        }
-        double horizontalSpeedScale = frontWheel ? 0.1 : 0.25;
-        double verticalSpeed = frontWheel ? 0.02 : 0.1;
-        level.addParticle(AllParticleTypes.DUST_STONE.get(),
-                wheelPosition.x + random.nextDouble() * 0.1 - movement.x,
-                wheelPosition.y + 0.1,
-                wheelPosition.z + random.nextDouble() * 0.1 - movement.z,
-                movement.x * horizontalSpeedScale + random.nextDouble() * 0.1,
-                verticalSpeed,
-                movement.z * horizontalSpeedScale + random.nextDouble() * 0.1);
     }
 
 }

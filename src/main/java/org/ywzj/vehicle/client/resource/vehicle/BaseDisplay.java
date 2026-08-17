@@ -32,6 +32,7 @@ public class BaseDisplay {
     protected String description;
     protected int tabIndex;
     protected List<SpecialBoneEffect> specialBoneEffects = new ArrayList<>();
+    protected BakerOptions bakerOptions;
 
     public BaseDisplay() {}
 
@@ -45,7 +46,7 @@ public class BaseDisplay {
         var loadedModelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
         this.modelPath = pojo.model;
         this.specialBoneEffects = pojo.specialBoneEffects == null ? List.of() : List.copyOf(pojo.specialBoneEffects);
-        BakerOptions bakerOptions = createBakerOptions(pojo, animatedBones);
+        this.bakerOptions = createBakerOptions(pojo, animatedBones);
         loadedModelPojo.ifPresent(bedrockModelPOJO -> {
             this.modelPojo = bedrockModelPOJO;
             this.model = new VehicleBedrockModel(bedrockModelPOJO, specialBoneEffects, bakerOptions);

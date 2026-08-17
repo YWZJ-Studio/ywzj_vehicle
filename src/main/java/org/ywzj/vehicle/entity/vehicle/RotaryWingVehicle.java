@@ -24,8 +24,8 @@ import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.RotaryWingVehicleContext;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.ParticleUtil;
@@ -92,7 +92,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public void initDisplayData(BaseDisplay display) {
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
         super.initDisplayData(display);
         if (display instanceof RotaryWingVehicleDisplay rotaryWingVehicleDisplay) {
             this.animationInstance = rotaryWingVehicleDisplay.createAnimationInstance(this);
@@ -212,8 +212,8 @@ public class RotaryWingVehicle extends AbstractVehicle
         // 螺旋桨方向的力
         Vec3 force = vP.scale(scale * scaleAir * mainRotorForce);
         // 桨叶水平方向的空速带来升力
-        double dVH = Math.sqrt(Math.pow(airSpeed.length(), 2) - Math.pow(dVV, 2));
-        force.add(vP.scale(dVH * scaleAir * 0.005f));
+        double dVH = Math.sqrt(Math.max(0, airSpeed.lengthSqr() - dVV * dVV));
+        force = force.add(vP.scale(dVH * scaleAir * 0.005f));
         airSpeed = airSpeed.add(force);
         double al = airSpeed.length();
         // 空气阻力
@@ -237,8 +237,11 @@ public class RotaryWingVehicle extends AbstractVehicle
         float xRotSpeedAcceleration = (float) (this.xRotSpeedAcceleration * scale);
         float yRotSpeedAcceleration = (float) (this.yRotSpeedAcceleration * scale);
         float zRotSpeedAcceleration = (float) (this.zRotSpeedAcceleration * scale);
-        if (!(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep && scale > 0) {
-            float yDiff = Mth.wrapDegrees(controlUnit.yRot - this.getYRot());
+        boolean yawAimControl = !(controlUnit.leftYaw || controlUnit.rightYaw) && !controlUnit.yRotKeep && scale > 0;
+        applyYawStability();
+        float yDiff = yawAimControl ? Mth.wrapDegrees(controlUnit.yRot - this.getYRot()) : 0;
+        float yRotSpeedMax = this.yRotSpeedMax * yawSpeedFactor();
+        if (yawAimControl) {
             float shrink = Math.min(1, Math.abs(yDiff) / yRotSpeedAcceleration);
             if (yDiff > 0) {
                 yRotSpeed = Math.min(yRotSpeedMax, yRotSpeed + yRotSpeedAcceleration * shrink);
@@ -250,10 +253,15 @@ public class RotaryWingVehicle extends AbstractVehicle
                     if (Math.abs(yDiff) <= Math.abs(yRotSpeed)) {
                         yRotSpeed = (float) Mth.lerp(0.3, yRotSpeed, yDiff);
                     }
-                    this.setYRot(this.getYRot() + yRotSpeed);
+                    yRotSpeed = Mth.clamp(yRotSpeed, -yRotSpeedMax, yRotSpeedMax);
+                    float yRotStep = Mth.clamp(yDiff, -Math.abs(yRotSpeed), Math.abs(yRotSpeed));
+                    applyYawStep(yRotStep);
                 } else {
-                    yRotSpeed = 0;
-                    this.setYRot(controlUnit.yRot);
+                    float yRotStep = Mth.clamp(yDiff, -yRotSpeedMax, yRotSpeedMax);
+                    float appliedStep = applyYawStep(yRotStep);
+                    if (appliedStep == yRotStep && yRotStep == yDiff) {
+                        yRotSpeed = 0;
+                    }
                 }
             }
         } else {
@@ -264,7 +272,8 @@ public class RotaryWingVehicle extends AbstractVehicle
                 yRotSpeed = Math.max(-yRotSpeedMax, yRotSpeed - yRotSpeedAcceleration);
             }
             if (yRotSpeed != 0) {
-                this.setYRot(this.getYRot() + yRotSpeed);
+                yRotSpeed = Mth.clamp(yRotSpeed, -yRotSpeedMax, yRotSpeedMax);
+                applyYawStep(yRotSpeed);
             }
         }
 
@@ -297,7 +306,8 @@ public class RotaryWingVehicle extends AbstractVehicle
         }
 
         if (!(controlUnit.left || controlUnit.right)) {
-            float zDiff = Mth.wrapDegrees(-this.getZRot());
+            float targetZRot = yawAimControl ? yawAssistRoll(yDiff) : 0;
+            float zDiff = Mth.wrapDegrees(targetZRot - this.getZRot());
             float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
             if (zDiff > 0) {
                 zRotSpeed = Math.min(zRotSpeedMax, zRotSpeed + zRotSpeedAcceleration * shrink);
@@ -309,7 +319,7 @@ public class RotaryWingVehicle extends AbstractVehicle
                     this.setZRot(this.getZRot() + zRotSpeed);
                 } else {
                     zRotSpeed = 0;
-                    this.setZRot(0);
+                    this.setZRot(targetZRot);
                 }
             }
         } else {
@@ -442,10 +452,12 @@ public class RotaryWingVehicle extends AbstractVehicle
     protected void tickParticle() {
         super.tickParticle();
         // 飞行扬尘效果
-        if (getPower() > 30 && tickCount % 2 == 0) {
-            double radius = (double) tickCount % 20 / 20 * 10;
-            if (radius > 0 && radius < mainCubeOBB.depth * 1.3f) {
-                ParticleUtil.spawnRotorDownwash(level(), random, blockPosition(), radius);
+        if (mainCubeOBB.depth > 2) {
+            if (getPower() > 30 && tickCount % 2 == 0) {
+                double radius = (double) tickCount % 20 / 20 * 10;
+                if (radius > 0 && radius < mainCubeOBB.depth / 2 * 1.5) {
+                    ParticleUtil.spawnRotorDownwash(level(), random, blockPosition(), radius);
+                }
             }
         }
         // 引擎烟
@@ -548,6 +560,97 @@ public class RotaryWingVehicle extends AbstractVehicle
             distance = Math.max(0, distance - cameraXRot / 90 * getViewInfo().thirdPersonCenterOffset.y);
         }
         return distance;
+    }
+
+    private float applyYawStep(float yRotStep) {
+        float sideslipLimit = yawSideslipLimit();
+        if (sideslipLimit >= 180) {
+            setYRot(getYRot() + yRotStep);
+            return yRotStep;
+        }
+        Vec3 horizontalAirSpeed = new Vec3(airSpeed.x, 0, airSpeed.z);
+        if (horizontalAirSpeed.lengthSqr() < 1.0E-6) {
+            setYRot(getYRot() + yRotStep);
+            return yRotStep;
+        }
+        float airSpeedYRot = VectorUtil.vecToRot(horizontalAirSpeed).y;
+        float currentSideslip = Mth.wrapDegrees(getYRot() - airSpeedYRot);
+        float targetSideslip = Mth.wrapDegrees(currentSideslip + yRotStep);
+        if (Math.abs(currentSideslip) > sideslipLimit) {
+            if (Math.abs(targetSideslip) >= Math.abs(currentSideslip)) {
+                return 0;
+            }
+            setYRot(getYRot() + yRotStep);
+            return yRotStep;
+        }
+        float limitedSideslip = Mth.clamp(targetSideslip, -sideslipLimit, sideslipLimit);
+        float appliedStep = Mth.wrapDegrees(limitedSideslip - currentSideslip);
+        setYRot(getYRot() + appliedStep);
+        return appliedStep;
+    }
+
+    private float yawSideslipLimit() {
+        float speedFactor = linearSpeedFactor(horizontalForwardSpeed(), 0.5f, 1f);
+        if (speedFactor == 0) {
+            return 180;
+        }
+        return Mth.lerp(speedFactor, 180, 15);
+    }
+
+    private void applyYawStability() {
+        float speedFactor = linearSpeedFactor(horizontalForwardSpeed(), 0.25f, 1f);
+        if (speedFactor == 0) {
+            return;
+        }
+        Vec3 horizontalAirSpeed = new Vec3(airSpeed.x, 0, airSpeed.z);
+        if (horizontalAirSpeed.lengthSqr() < 1.0E-6) {
+            return;
+        }
+        float airSpeedYRot = VectorUtil.vecToRot(horizontalAirSpeed).y;
+        float sideslip = Mth.wrapDegrees(getYRot() - airSpeedYRot);
+        float maxCorrection = speedFactor;
+        float correction = Mth.clamp(sideslip * 0.08f * speedFactor, -maxCorrection, maxCorrection);
+        setYRot(getYRot() - correction);
+    }
+
+    private float yawSpeedFactor() {
+        float speedFactor = linearSpeedFactor(horizontalForwardSpeed(), 0.25f, 1f);
+        return Mth.lerp(speedFactor, 1, 0.35f);
+    }
+
+    private float yawAssistRoll(float yRotDiff) {
+        float speedFactor = linearSpeedFactor(forwardSpeed(), 0.25f, 0.75f);
+        float yawFactor = Mth.clamp(yRotDiff / 60, -1, 1);
+        Vec3 forwardDirection = relativeRotDirection(new Vec3(0, 0, 1), false);
+        double horizontalFactor = Math.sqrt(forwardDirection.x * forwardDirection.x + forwardDirection.z * forwardDirection.z);
+        return 60f * speedFactor * (float) horizontalFactor * yawFactor;
+    }
+
+    private float forwardSpeed() {
+        Vec3 forwardDirection = relativeRotDirection(new Vec3(0, 0, 1), false);
+        return (float) Math.max(0, airSpeed.dot(forwardDirection));
+    }
+
+    private float horizontalForwardSpeed() {
+        Vec3 forwardDirection = relativeRotDirection(new Vec3(0, 0, 1), false);
+        Vec3 horizontalAirSpeed = new Vec3(airSpeed.x, 0, airSpeed.z);
+        Vec3 horizontalForwardDirection = new Vec3(forwardDirection.x, 0, forwardDirection.z);
+        if (horizontalForwardDirection.lengthSqr() < 1.0E-6
+                || horizontalAirSpeed.dot(horizontalForwardDirection) <= 0) {
+            return 0;
+        }
+        return (float) (horizontalAirSpeed.length() * pitchYawControlFactor());
+    }
+
+    private float pitchYawControlFactor() {
+        return Mth.clamp((60 - Math.abs(Mth.wrapDegrees(getXRot()))) / 45, 0, 1);
+    }
+
+    private float linearSpeedFactor(float speed, float startSpeed, float fullSpeed) {
+        if (fullSpeed <= startSpeed) {
+            return speed >= fullSpeed ? 1 : 0;
+        }
+        return Mth.clamp((speed - startSpeed) / (fullSpeed - startSpeed), 0, 1);
     }
 
     public float getCollectivePitch() {

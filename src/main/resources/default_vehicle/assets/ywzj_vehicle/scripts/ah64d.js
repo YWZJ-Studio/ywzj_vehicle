@@ -8,8 +8,13 @@ function updateBones(context) {
     const builder = createPoseBuilder()
     builder.setRotation("propeller", 0, -propellerRotation, 0)
     builder.setRotation("propeller_tail", -propellerRotation * 5, 0, 0)
+
+    builder.setRotation("lever1", context.getPitchInput() * -10, 0, -context.getRollInput() * -10)
+    builder.setRotation("lever3", -context.getCollectivePitch() / 100 * 10, 0, 0)
+
     builder.setRotation("mg", 0, -context.getPartYRot("auto_cannon"), 0)
     builder.setRotation("mg_up", context.getPartXRot("auto_cannon"), 0, 0)
+
     let remainMissiles = context.getWeaponRemainAmmo("sighting_system", 1)
     for (let i = 0; i < missiles.length; i++) {
         if (i < missiles.length - remainMissiles) {

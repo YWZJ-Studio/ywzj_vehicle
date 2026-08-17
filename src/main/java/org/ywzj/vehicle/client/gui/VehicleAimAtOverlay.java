@@ -23,6 +23,9 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.*;
 
@@ -70,25 +73,37 @@ public class VehicleAimAtOverlay implements LayeredDraw.Layer {
                     }
                     poseStack.popPose();
                 }
-                weaponUnit.getCurrentWeapon().ifPresent(vehicleWeapon -> {
-                    // 落点
-                    WeaponUnitData.CrosshairStyle crosshairStyle = vehicleWeapon.getWeaponUnit().crosshairStyle;
-                    if (crosshairStyle != null) {
-                        Vec3 weaponHitPos = weaponUnit.weaponHitPos;
-                        Vec3 weaponHitPosO = weaponUnit.weaponHitPosO;
-                        if (weaponHitPos != null && weaponHitPosO != null) {
-                            Vec3 screenHitPos = VectorUtil.worldToScreen(weaponHitPos);
-                            Vec3 screenHitPosO = VectorUtil.worldToScreen(weaponHitPosO);
-                            if (screenHitPos.z >= 0) {
-                                double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
-                                double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
-                                PoseStack poseStack = guiGraphics.pose();
-                                poseStack.pushPose();
-                                {
-                                    poseStack.translate(x, y, 0);
-                                    drawCrosshair(guiGraphics, vehicleWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP ? Color.GREEN : color, poseStack, crosshairStyle);
+                weaponUnit.getCurrentWeapon().ifPresent(weapon -> {
+                    List<AbstractVehicleWeapon<?>> aimingWeapons = new ArrayList<>();
+                    aimingWeapons.add(weapon);
+                    if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.FULL_SALVO) {
+                        aimingWeapons.addAll(weaponUnit.fullSalvoWeapons);
+                    }
+                    for (AbstractVehicleWeapon<?> aimingWeapon : aimingWeapons) {
+                        // 落点
+                        WeaponUnit aimingWeaponUnit = aimingWeapon.getWeaponUnit();
+                        WeaponUnitData.CrosshairStyle crosshairStyle = aimingWeaponUnit.crosshairStyle;
+                        if (crosshairStyle != null) {
+                            if (aimingWeaponUnit.isParentWeaponUnitAim()
+                                    || (aimingWeaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP && aimingWeaponUnit.getCurrentWeapon().isEmpty())) {
+                                aimingWeaponUnit = weaponUnit;
+                            }
+                            Vec3 weaponHitPos = aimingWeaponUnit.weaponHitPos;
+                            Vec3 weaponHitPosO = aimingWeaponUnit.weaponHitPosO;
+                            if (weaponHitPos != null && weaponHitPosO != null) {
+                                Vec3 screenHitPos = VectorUtil.worldToScreen(weaponHitPos);
+                                Vec3 screenHitPosO = VectorUtil.worldToScreen(weaponHitPosO);
+                                if (screenHitPos.z >= 0) {
+                                    double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
+                                    double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
+                                    PoseStack poseStack = guiGraphics.pose();
+                                    poseStack.pushPose();
+                                    {
+                                        poseStack.translate(x, y, 0);
+                                        drawCrosshair(guiGraphics, aimingWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP ? Color.GREEN : color, poseStack, crosshairStyle);
+                                    }
+                                    poseStack.popPose();
                                 }
-                                poseStack.popPose();
                             }
                         }
                     }
@@ -96,7 +111,7 @@ public class VehicleAimAtOverlay implements LayeredDraw.Layer {
                     if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR
                             || weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
                         if (weaponUnit.isSeekerOn()) {
-                            WeaponUnit currentWeaponUnit = vehicleWeapon.getWeaponUnit();
+                            WeaponUnit currentWeaponUnit = weapon.getWeaponUnit();
                             Vec3 screenHitPos = VectorUtil.worldToScreen(currentWeaponUnit.weaponHitPos);
                             Vec3 screenHitPosO = VectorUtil.worldToScreen(currentWeaponUnit.weaponHitPosO);
                             if (screenHitPos.z >= 0) {

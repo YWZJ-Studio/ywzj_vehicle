@@ -19,7 +19,7 @@ public class WeaponInfoSerializer implements JsonDeserializer<WeaponInfo> {
                 throw new JsonParseException("Invalid weapon info string: " + str);
             }
             String saveId = id.toString();
-            return new WeaponInfo(id, null, null, null, false, saveId);
+            return new WeaponInfo(id, null, null, null, false, false, saveId);
         } else if (json.isJsonArray()) {
             List<ResourceLocation> ids = new ArrayList<>();
             for (JsonElement elem : json.getAsJsonArray()) {
@@ -32,7 +32,7 @@ public class WeaponInfoSerializer implements JsonDeserializer<WeaponInfo> {
                 throw new JsonParseException("Invalid weapon info array (empty): " + json);
             }
             String saveId = "multi_weapons";
-            return new WeaponInfo(null, ids, null, null, false, saveId);
+            return new WeaponInfo(null, ids, null, null, false, false, saveId);
         } else if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
             String id = GsonHelper.getAsString(obj, "id", null);
@@ -52,8 +52,9 @@ public class WeaponInfoSerializer implements JsonDeserializer<WeaponInfo> {
             String partUnitId = GsonHelper.getAsString(obj, "part_unit_id", null);
             String weaponBayUnitId = GsonHelper.getAsString(obj, "weapon_bay_unit_id", null);
             boolean secondary = GsonHelper.getAsBoolean(obj, "secondary", false);
+            boolean fullSalvo = GsonHelper.getAsBoolean(obj, "full_salvo", false);
             String saveId = GsonHelper.getAsString(obj, "save_id", partUnitId);
-            return new WeaponInfo(id == null ? null : ResourceLocation.tryParse(id), ids, partUnitId, weaponBayUnitId, secondary, saveId);
+            return new WeaponInfo(id == null ? null : ResourceLocation.tryParse(id), ids, partUnitId, weaponBayUnitId, secondary, fullSalvo, saveId);
         } else {
             throw new JsonParseException("Invalid weapon info format: " + json);
         }

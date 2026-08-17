@@ -18,22 +18,25 @@ public record VehicleDisplayType<D extends BaseDisplay> (
         DataSerializer<D> dataSerializer,
         AnimationContextFactory<?, ?> contextFactory
 ) {
-    @SuppressWarnings("unchecked")
     @Nullable
     public D parse(@NotNull JsonElement json) {
         D display = dataSerializer.parse(json);
-        
-        // Set context factory if this is a VehicleDisplay
-        if (display instanceof VehicleDisplay<?, ?> vd && contextFactory != null) {
-            VehicleDisplay<AbstractVehicle, VehicleContext<AbstractVehicle>> typedDisplay =
-                (VehicleDisplay<AbstractVehicle, VehicleContext<AbstractVehicle>>) vd;
-
-            AnimationContextFactory<AbstractVehicle, VehicleContext<AbstractVehicle>> typedFactory =
-                (AnimationContextFactory<AbstractVehicle, VehicleContext<AbstractVehicle>>) contextFactory;
-            typedDisplay.setContextFactory(typedFactory);
+        if (display instanceof VehicleDisplay<?, ?> vehicleDisplay && contextFactory != null) {
+            setContextFactory(vehicleDisplay, contextFactory);
         }
-        
         return display;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E extends AbstractVehicle, CTX extends VehicleContext<E>> void setContextFactory(
+            VehicleDisplay<E, CTX> display,
+            AnimationContextFactory<?, ?> factory
+    ) {
+        AnimationContextFactory<E, CTX> typedFactory = (AnimationContextFactory<E, CTX>) factory;
+        display.setContextFactory(typedFactory);
+        if (display.cabinDisplay != null) {
+            display.cabinDisplay.setContextFactory(typedFactory);
+        }
     }
 
     @NotNull

@@ -224,7 +224,7 @@ public class VectorUtil {
 
     public record HitBone(String boneName, int attachmentBoneIndex, Vec3 offset, Quaternionf rotation, Vec3 position) {}
     public static HitBone hitBone(AbstractVehicle vehicle, Vec3 start, Vec3 end, Vec3 forward) {
-        BakedModelInstance modelInstance = vehicle.getModelInstance();
+        BakedModelInstance modelInstance = vehicle.getVehicleModelInstance();
         Quaternionf vehicleRotation = vehicle.rotYXZ();
         Vector3f root = vehicle.centerOffset.toVector3f();
         Vector3f rotatedRoot = new Vector3f(root).rotate(vehicleRotation);

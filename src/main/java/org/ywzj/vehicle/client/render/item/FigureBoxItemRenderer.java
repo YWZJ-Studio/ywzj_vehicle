@@ -34,7 +34,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllBlocks;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.item.FigureBoxItem;
 
@@ -108,7 +108,7 @@ public class FigureBoxItemRenderer extends BlockEntityWithoutLevelRenderer {
                         }
                         if (entity instanceof AbstractVehicle vehicle && transformType == ItemDisplayContext.GUI) {
                             ResourceLocation vehicleId = vehicle.getVehicleId();
-                            BaseDisplay display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
+                            VehicleDisplay<?, ?> display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicleId).orElse(null);
                             if (display != null) {
                                 ResourceLocation slotTexture = display.getSlotTexture();
                                 if (slotTexture != null) {

@@ -39,15 +39,21 @@ public class WeaponInfo {
     @SerializedName("secondary")
     public boolean secondary;
 
+    @SerializedName("full_salvo")
+    public boolean fullSalvo;
+
     @SerializedName("save_id")
     public String saveId;
 
-    public WeaponInfo(@Nullable ResourceLocation id, @Nullable List<ResourceLocation> ids, @Nullable String partUnitId, @Nullable String weaponBayUnitId, boolean secondary, String saveId) {
+    public WeaponInfo(@Nullable ResourceLocation id, @Nullable List<ResourceLocation> ids,
+                      @Nullable String partUnitId, @Nullable String weaponBayUnitId,
+                      boolean secondary, boolean fullSalvo, String saveId) {
         this.id = id;
         this.ids = ids;
         this.partUnitId = partUnitId;
         this.weaponBayUnitId = weaponBayUnitId;
         this.secondary = secondary;
+        this.fullSalvo = fullSalvo;
         this.saveId = saveId;
     }
 

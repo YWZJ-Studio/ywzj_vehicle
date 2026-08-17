@@ -39,7 +39,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
         pPoseStack.pushPose();
         {
             VehicleBedrockModel model = display.getModel();
-            BakedModelInstance modelInstance = vehicle.getModelInstance();
+            BakedModelInstance modelInstance = vehicle.getVehicleModelInstance();
 
             BoneState wheel1 = modelInstance.getBone("wheel3");
             BoneState wheel2 = modelInstance.getBone("wheel6");
@@ -119,7 +119,7 @@ public class DumpTruckRenderer extends EntityRenderer<DumpTruck> {
                 modelInstance.applyPose(BLENDER.blend(modelInstance.getPose(), animationInstance.getCurrentPose()));
             }
             model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
-            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, modelLight, OverlayTexture.NO_OVERLAY, null, vehicle == LocalVehiclePlayer.instance.vehicle);
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, null, modelLight, OverlayTexture.NO_OVERLAY, null, vehicle == LocalVehiclePlayer.instance.vehicle);
             // 渲染部件
             vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
             vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));

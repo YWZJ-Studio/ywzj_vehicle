@@ -99,8 +99,8 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                 }
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
-                        rot = lerpZRotDiff(subWeaponUnit, vehicle, partialTick);
                         for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
+                            rot = lerpZRotDiff(partCubeOBB, vehicle, partialTick);
                             renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, color);
                         }
                     }
@@ -391,6 +391,16 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
             zRotO += (zRotO - zRot) < 0 ? 360f : -360f;
         }
         return Mth.lerp(partialTick, zRotO, zRot);
+    }
+
+    private float lerpZRotDiff(VehicleCubeOBB cubeOBB, AbstractVehicle vehicle, float partialTick) {
+        if (cubeOBB.rotationO == null || cubeOBB.rotation == null) {
+            return 0;
+        }
+        Quaternionf rotation = new Quaternionf(cubeOBB.rotationO).slerp(cubeOBB.rotation, partialTick);
+        Vector3f forward = rotation.transform(new Vector3f(0, 0, 1));
+        float worldYRot = VectorUtil.vecToRot(new Vec3(forward)).y;
+        return Mth.wrapDegrees(worldYRot - vehicle.getViewYRot(partialTick));
     }
 
 }

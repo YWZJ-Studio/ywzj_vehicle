@@ -34,7 +34,8 @@
             "max_health": 600,
             "render_bone": "turret",
             "structure_bone": "turret",
-            "seat_offset": [-0.5, 2.5, 0],
+            "seat_offset": [0.471875, 1.8546875, 1.94375],
+            "operator_on_weapon_unit": false,
             "crosshair_style": "circle",
             "rot_info": {
                 "x_rot_speed": 3,
@@ -43,7 +44,7 @@
                 "x_rot_min": -85
             },
             "optical_sight_offset": [0.719, 0.883, 0.14],
-            "operator_view_offset": [0, 1.5, 0],
+            "operator_view_offset": [0.471875, -0.3, 2.31875],
             "optical_sight_type": "crt",
             "with_stabilizer": true,
             "with_thermal_imager": true,
@@ -101,6 +102,7 @@
                 "y_rot_speed": 15,
                 "x_rot": -45
             },
+            "radar_type": "PLB-625",
             "scan_sector_angle": 80,
             "max_scan_distance": 4096
         }

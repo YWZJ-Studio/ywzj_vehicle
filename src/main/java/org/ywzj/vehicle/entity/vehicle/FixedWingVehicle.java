@@ -24,8 +24,8 @@ import org.ywzj.vehicle.api.animation.IAnimationInstance;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.FixedWingVehicleContext;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -102,7 +102,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
-    public void initDisplayData(BaseDisplay display) {
+    public void initDisplayData(VehicleDisplay<?, ?> display) {
         super.initDisplayData(display);
         if (display instanceof FixedWingVehicleDisplay fixedWingVehicleDisplay) {
             this.animationInstance = fixedWingVehicleDisplay.createAnimationInstance(this);
@@ -189,12 +189,12 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     public SoundEvent getEngineThrustSound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("engine_thrust")).orElse(null);
     }
 
     public SoundEvent getEnginePassbySound() {
-        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
+        Optional<VehicleDisplay<?, ?>> displayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(getDisplayId());
         return displayOptional.map(display -> display.getSoundEvents().get("passby")).orElse(null);
     }
 

@@ -215,12 +215,15 @@ public class WeaponUnitData extends RotatableUnitData {
     }
 
     public enum FiringMode {
-        // 轮射
+        // 当前武器轮射
         @SerializedName("ripple")
         RIPPLE,
-        // 齐射
+        // 当前武器齐射
         @SerializedName("salvo")
-        SALVO
+        SALVO,
+        // 全武器站齐射
+        @SerializedName("full_salvo")
+        FULL_SALVO
     }
 
     public enum OpticalSightType {

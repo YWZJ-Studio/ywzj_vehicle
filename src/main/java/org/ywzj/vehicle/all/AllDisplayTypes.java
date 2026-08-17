@@ -15,7 +15,7 @@ public class AllDisplayTypes {
     public static final DeferredHolder<VehicleDisplayType<?>, VehicleDisplayType<SimpleVehicleDisplay>> GENERIC_VEHICLE = register(
             "generic",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                var pojo = GsonUtil.GSON.fromJson(json, VehicleDisplayPojo.class);
                 return new SimpleVehicleDisplay(pojo);
             },
             AnimationContextFactory.vehicle()
@@ -33,7 +33,7 @@ public class AllDisplayTypes {
     public static final DeferredHolder<VehicleDisplayType<?>, VehicleDisplayType<WheeledVehicleDisplay>> WHEELED_VEHICLE = register(
             "wheeled_vehicle",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                var pojo = GsonUtil.GSON.fromJson(json, VehicleDisplayPojo.class);
                 return new WheeledVehicleDisplay(pojo);
             },
             AnimationContextFactory.wheeledVehicle()
@@ -51,7 +51,7 @@ public class AllDisplayTypes {
     public static final DeferredHolder<VehicleDisplayType<?>, VehicleDisplayType<RotaryWingVehicleDisplay>> ROTARY_WING_VEHICLE = register(
             "rotary_wing_vehicle",
             json -> {
-                var pojo = GsonUtil.GSON.fromJson(json, BaseDisplayPojo.class);
+                var pojo = GsonUtil.GSON.fromJson(json, VehicleDisplayPojo.class);
                 return new RotaryWingVehicleDisplay(pojo);
             },
             AnimationContextFactory.rotaryWingVehicle()

@@ -118,6 +118,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     // 武器与选射
     public final List<AbstractVehicleWeapon<?>> weapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> secondaryWeapons = new ArrayList<>();
+    public final List<AbstractVehicleWeapon<?>> fullSalvoWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> independentWeapons = new ArrayList<>();
     public final List<AbstractVehicleWeapon<?>> indexedWeapons = new ArrayList<>();
     // 弹仓
@@ -257,32 +258,51 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     }
                 }
                 if (!multiWeapons.isEmpty()) {
-                    VehicleMultiWeapons multi = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
-                    multi.defineSyncData(this.getSyncData());
-                    if (weaponInfo.secondary) {
-                        secondaryWeapons.add(multi);
+                    VehicleMultiWeapons multiWeapon;
+                    if (weaponInfo.partUnitId != null
+                            && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
+                            && subWeaponUnit != parent) {
+                        if (subWeaponUnit.getParentWeaponUnit() == null) {
+                            subWeaponUnit.setParentWeaponUnit(parent);
+                        }
+                        parent.addSubWeaponUnit(subWeaponUnit);
+                        multiWeapon = new VehicleMultiWeapons(vehicle, subWeaponUnit, index, multiWeapons, weaponInfo.saveId);
                     } else {
-                        weapons.add(multi);
+                        multiWeapon = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
                     }
-                    indexedWeapons.add(multi);
+                    multiWeapon.defineSyncData(this.getSyncData());
+                    if (weaponInfo.secondary) {
+                        secondaryWeapons.add(multiWeapon);
+                    } else {
+                        weapons.add(multiWeapon);
+                    }
+                    if (weaponInfo.fullSalvo) {
+                        fullSalvoWeapons.add(multiWeapon);
+                    }
+                    indexedWeapons.add(multiWeapon);
                     if (weaponInfo.weaponBayUnitId != null
                             && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
-                        weaponBayUnits.put(multi, weaponBayUnit);
+                        weaponBayUnits.put(multiWeapon, weaponBayUnit);
                     }
                     index += 1;
                 }
             }
             // 武器站加入武器列表
-            else if (weaponInfo.id == null) {
-                if (weaponInfo.partUnitId != null
-                        && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit
-                        && agentWeaponUnit != parent) {
+            else if (weaponInfo.id == null && weaponInfo.partUnitId != null) {
+                if (partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit && agentWeaponUnit != parent) {
                     if (agentWeaponUnit.getParentWeaponUnit() == null) {
                         agentWeaponUnit.setParentWeaponUnit(parent);
                     }
                     parent.addSubWeaponUnit(agentWeaponUnit);
                     VehicleWeaponAgent weaponAgent = new VehicleWeaponAgent(vehicle, agentWeaponUnit, index);
-                    weapons.add(weaponAgent);
+                    if (weaponInfo.secondary) {
+                        secondaryWeapons.add(weaponAgent);
+                    } else {
+                        weapons.add(weaponAgent);
+                    }
+                    if (weaponInfo.fullSalvo) {
+                        fullSalvoWeapons.add(weaponAgent);
+                    }
                     indexedWeapons.add(weaponAgent);
                     if (weaponInfo.weaponBayUnitId != null
                             && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {
@@ -307,6 +327,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     } else {
                         weapon = vehicleWeaponIndex.create(vehicle, parent, index, weaponInfo.saveId);
                     }
+                    weapon.defineSyncData(this.getSyncData());
                     if (vehicleWeaponIndex.data().independent) {
                         independentWeapons.add(weapon);
                     } else if (weaponInfo.secondary) {
@@ -314,7 +335,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     } else {
                         weapons.add(weapon);
                     }
-                    weapon.defineSyncData(this.getSyncData());
+                    if (weaponInfo.fullSalvo) {
+                        fullSalvoWeapons.add(weapon);
+                    }
                     indexedWeapons.add(weapon);
                     if (weaponInfo.weaponBayUnitId != null
                             && partUnitsView.get(weaponInfo.weaponBayUnitId) instanceof WeaponBayUnit weaponBayUnit) {

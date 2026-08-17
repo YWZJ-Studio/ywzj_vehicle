@@ -22,6 +22,7 @@ public class CoordinateInputScreen extends Screen {
     private static final int INPUT_WIDTH = 170;
     private static final int INPUT_HEIGHT = 20;
     private final Vec3 initialPosition;
+    private Vec3 aimPosition;
     private final Consumer<Vec3> onConfirm;
     private EditBox xInput;
     private EditBox yInput;
@@ -76,19 +77,21 @@ public class CoordinateInputScreen extends Screen {
         }
         if (allValid) {
             LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-            if (instance.onVehicle() && instance.seat.partUnit instanceof WeaponUnit weaponUnit) {
+            if (instance.onVehicle()
+                    && instance.seat.partUnit instanceof WeaponUnit weaponUnit
+                    && weaponUnit.getYRotSpeed() > 0 && weaponUnit.getXRotSpeed() > 0) {
                 Vec3 targetPosition = new Vec3(
                         Double.parseDouble(xInput.getValue()),
                         Double.parseDouble(yInput.getValue()),
                         Double.parseDouble(zInput.getValue())
                 );
-                Vec3 position = targetPosition;
+                aimPosition = targetPosition;
                 var currentWeapon = weaponUnit.getCurrentWeapon().orElse(null);
                 if (currentWeapon instanceof VehicleMissile vehicleMissile
                         && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.PRESET) {
-                    position = calculatePresetAscentEnd(vehicleMissile, targetPosition);
+                    aimPosition = calculatePresetAscentEnd(vehicleMissile, targetPosition);
                 }
-                instance.thirdPersonCameraAimAt(position, instance.vehicle);
+                weaponUnit.aim(aimPosition);
             }
         }
     }
@@ -105,11 +108,16 @@ public class CoordinateInputScreen extends Screen {
                 ? horizontalToTarget.scale(1 / horizontalDistance)
                 : Vec3.ZERO;
         VehicleMissileWeaponData data = vehicleMissile.getData();
-        double ascentLead = Math.min(data.getPresetMaxAscentLead(), horizontalDistance * 0.25);
+        double ascentDistance = Math.max(0, data.getPresetAscentDistance());
+        double diveDistance = Math.max(0, data.getPresetDiveDistance());
+        double transitionDistance = ascentDistance + diveDistance;
+        if (transitionDistance > horizontalDistance && transitionDistance > 1.0E-6) {
+            ascentDistance *= horizontalDistance / transitionDistance;
+        }
         return new Vec3(
-                launchPosition.x + forward.x * ascentLead,
+                launchPosition.x + forward.x * ascentDistance,
                 launchPosition.y + data.getPresetCruiseAltitude(),
-                launchPosition.z + forward.z * ascentLead
+                launchPosition.z + forward.z * ascentDistance
         );
     }
 
@@ -130,6 +138,10 @@ public class CoordinateInputScreen extends Screen {
                 Double.parseDouble(yInput.getValue()),
                 Double.parseDouble(zInput.getValue()));
         onClose();
+        if (aimPosition != null) {
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+            instance.thirdPersonCameraAimAt(aimPosition, instance.vehicle);
+        }
         onConfirm.accept(position);
     }
 
