@@ -1,0 +1,504 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="aui-font-mode" content="web">
+    <meta name="aui-viewport" content="mode=browser">
+    
+    
+    
+    <link rel="stylesheet" href="/apricityui/theme/ore/ore.css">
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .machine-screen {
+            color: var(--ore-ink);
+            background: var(--ore-canvas);
+            font-family: OreRegular, "Microsoft YaHei";
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.ore-theme.machine-screen .navbar-brand,
+        body.ore-theme.machine-screen .card-header,
+        body.ore-theme.machine-screen .panel-header,
+        body.ore-theme.machine-screen .button,
+        body.ore-theme.machine-screen .form-button,
+        body.ore-theme.machine-screen .page-button {
+            font-family: OreDisplay, "Microsoft YaHei";
+        }
+
+        body.ore-theme.machine-screen .form-input,
+        body.ore-theme.machine-screen .form-select,
+        body.ore-theme.machine-screen .form-textarea {
+            font-family: OreRegular, "Microsoft YaHei";
+        }
+
+        .machine-screen .machine-navbar {
+            min-height: 38px;
+            padding: 6px 10px 10px;
+            flex: 0 0 auto;
+        }
+
+        .machine-screen .navbar-brand {
+            font-size: 16px;
+        }
+
+        .machine-title-code {
+            margin-left: 7px;
+            color: #4d4f52;
+            font-family: OreRegular, "Microsoft YaHei";
+            font-size: 9px;
+        }
+
+        .machine-workspace {
+            width: 100%;
+            padding: 7px;
+            box-sizing: border-box;
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            gap: 7px;
+        }
+
+        .machine-screen .machine-panel {
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .machine-screen .card-header {
+            min-height: 30px;
+            padding: 8px 9px;
+            font-size: 11px;
+            flex: 0 0 auto;
+        }
+
+        .machine-screen .card-body {
+            min-height: 0;
+            padding: 7px;
+        }
+
+        .machine-screen .card-footer {
+            padding: 7px;
+            flex: 0 0 auto;
+            background: transparent !important;
+            border-top: none !important;
+        }
+
+        .catalog-panel {
+            width: 25%;
+            flex: 0 0 25%;
+        }
+
+        .catalog-panel .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .machine-screen .form-input {
+            min-height: 29px;
+            padding: 5px 7px;
+            border-width: 2px;
+            font-size: 10px;
+        }
+
+        .vehicle-list {
+            min-height: 0;
+            border-width: 2px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+
+        .machine-screen .vehicle-entry {
+            min-height: 32px;
+            padding: 5px 7px;
+            gap: 4px;
+            cursor: pointer;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .vehicle-entry-name {
+            width: 100%;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.15;
+            white-space: nowrap;
+            overflow: hidden;
+            font-weight: bold;
+        }
+
+        .vehicle-entry-code {
+            width: 100%;
+            color: var(--ore-ink-muted);
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .empty-state {
+            padding: 9px 6px;
+            color: var(--ore-ink-muted);
+            font-size: 9px;
+            text-align: center;
+        }
+
+        .preview-panel {
+            flex: 1 1 auto;
+        }
+
+        .preview-panel .card-body {
+            position: relative;
+            padding: 0;
+            background: #252628;
+            overflow: hidden;
+            flex: 1 1 auto;
+        }
+
+        .preview-viewport {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            bottom: 5px;
+            left: 5px;
+            border: 2px solid #56585b;
+            background: #303133;
+            box-shadow: inset 3px 3px #222325, inset -3px -3px #444649;
+        }
+
+        .preview-axis-x,
+        .preview-axis-y {
+            position: absolute;
+            background: #3e4043;
+        }
+
+        .preview-axis-x {
+            top: 50%;
+            right: 7px;
+            left: 7px;
+            height: 1px;
+        }
+
+        .preview-axis-y {
+            top: 7px;
+            bottom: 7px;
+            left: 50%;
+            width: 1px;
+        }
+
+        #vehicle-preview {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            bottom: 7px;
+            left: 7px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        #vehicle-preview.dragging {
+            cursor: grabbing;
+        }
+
+        .right-column {
+            width: 30%;
+            min-width: 0;
+            min-height: 0;
+            flex: 0 0 30%;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .profile-panel {
+            min-height: 82px;
+        }
+
+        .profile-panel .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow: auto;
+        }
+
+        .profile-identity {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        #selected-vehicle-name {
+            min-width: 0;
+            color: #ffffff;
+            font-family: OreDisplay, "Microsoft YaHei";
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        #selected-vehicle-id {
+            max-width: 46%;
+            white-space: nowrap;
+            overflow: hidden;
+            flex: 0 0 auto;
+        }
+
+        .profile-description {
+            min-height: 0;
+            color: var(--ore-ink-muted);
+            font-size: 14px;
+            line-height: 1.25;
+            overflow-y: auto;
+            flex: 1 1 auto;
+            font-family: OreDisplay, "Microsoft YaHei";
+        }
+
+        .fabrication-panel {
+            flex-shrink: 0;
+        }
+
+        .fabrication-panel .card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .section-label {
+            color: var(--ore-gold);
+            font-family: OreDisplay, "Microsoft YaHei";
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .requirements {
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-content: start;
+            gap: 4px;
+            flex: 1 1 auto;
+        }
+
+        .material-row {
+            min-height: 44px;
+            min-width: 0;
+            padding: 4px 5px;
+            border: 2px solid var(--ore-edge);
+            background: #3b3c3e;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .requirement-slot {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            flex: 0 0 34px;
+            --aui-slot-size: 34;
+            --aui-slot-icon-scale: 2;
+        }
+
+        .requirement-slot > ingredient {
+            width: 32px;
+            height: 32px;
+            left: 1px;
+            top: 1px;
+        }
+
+        .requirement-slot > item {
+            width: 32px;
+            height: 32px;
+            left: 1px;
+            top: 1px;
+        }
+
+        .requirement-slot ingredient > item {
+            width: 32px;
+            height: 32px;
+            left: 0;
+            top: 0;
+        }
+
+        .material-copy {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .material-name {
+            color: #ffffff;
+            font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .material-options {
+            color: var(--ore-ink-muted);
+            font-size: 9px;
+        }
+
+        .material-count {
+            color: var(--ore-gold);
+            font-family: OreDisplay, "Microsoft YaHei";
+            font-size: 14px;
+            flex: 0 0 auto;
+        }
+
+        .progress-copy {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .machine-screen .machine-progress {
+            height: 16px;
+            padding: 2px;
+            border-width: 2px;
+        }
+
+        .machine-screen .close-button {
+            width: 30px;
+            height: 26px;
+            min-height: 26px;
+            padding: 3px 7px 7px;
+            font-size: 14px;
+            line-height: 1;
+            flex: 0 0 30px;
+        }
+
+        .product-note {
+            min-height: 12px;
+            color: var(--ore-gold);
+            font-size: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .machine-screen .craft-button {
+            width: 100%;
+            min-height: 34px;
+            padding: 6px 10px 10px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 560px) {
+            .machine-screen .split {
+                align-items: center;
+                flex-direction: row;
+            }
+
+            .machine-screen .button {
+                width: auto;
+            }
+
+            .machine-screen .craft-button {
+                width: 100%;
+            }
+
+            .machine-title-code,
+            .vehicle-entry-code,
+            .material-options {
+                display: none;
+            }
+
+            .catalog-panel {
+                width: 25%;
+                flex-basis: 25%;
+            }
+
+            .right-column {
+                width: 31%;
+                flex-basis: 31%;
+            }
+        }
+
+        .vehicle-entry {
+            gap: 2px !important;
+        }
+    </style>
+</head>
+<body class="ore-theme machine-screen">
+    <nav class="navbar machine-navbar">
+        <div class="navbar-brand">
+            <translation>block.ywzj_vehicle.machine_max_block</translation>
+        </div>
+        <button id="close-button" class="button button-danger close-button" type="button" aria-label="Close">X</button>
+    </nav>
+
+    <main class="machine-workspace">
+        <aside class="card card-accent-green machine-panel catalog-panel">
+            <div class="card-header split">
+                <span><translation>screen.machine_max.catalog</translation></span>
+                <span id="vehicle-count" class="badge">0</span>
+            </div>
+            <div class="card-body">
+                <input id="vehicle-search" class="form-input" type="text" placeholder="Search / 搜索">
+                <div id="vehicle-list" class="list-group vehicle-list"></div>
+                <div id="vehicle-list-empty" class="empty-state hidden"><translation>screen.machine_max.no_results</translation></div>
+            </div>
+        </aside>
+
+        <section class="card card-accent-purple machine-panel preview-panel">
+            <div class="card-header split">
+                <span><translation>screen.machine_max.preview</translation></span>
+                <span class="badge badge-purple">3D</span>
+            </div>
+            <div class="card-body">
+                <div class="preview-viewport">
+                    <div class="preview-axis-x"></div>
+                    <div class="preview-axis-y"></div>
+                    <div id="vehicle-preview"></div>
+                </div>
+            </div>
+        </section>
+
+        <div class="right-column">
+            <section class="card card-accent-purple machine-panel profile-panel">
+                <div class="card-header"><translation>screen.machine_max.profile</translation></div>
+                <div class="card-body">
+                    <div class="profile-identity">
+                        <span id="selected-vehicle-name"><translation>screen.machine_max.preview</translation></span>
+                        <span id="selected-vehicle-id" class="badge badge-purple">--</span>
+                    </div>
+                    <div id="vehicle-description" class="profile-description"><translation>screen.no_description</translation></div>
+                </div>
+            </section>
+
+            <aside class="card card-accent-gold machine-panel fabrication-panel">
+                <div class="card-header"><translation>screen.machine_max.fabrication</translation></div>
+                <div class="card-body">
+                    <div class="section-label"><translation>screen.machine_max.requirements</translation></div>
+                    <div id="vehicle-requirements" class="requirements"></div>
+                    <div id="requirements-empty" class="empty-state hidden"><translation>tips.no_recipe</translation></div>
+                    <div class="split progress-copy">
+                        <span id="progress-label"><translation>screen.machine_max.progress</translation></span>
+                        <span id="progress-value">0%</span>
+                    </div>
+                    <div class="progress machine-progress">
+                        <div id="vehicle-progress" class="progress-bar" style="width:0%"></div>
+                    </div>
+                    <div class="card-footer">
+                        <div id="product-note" class="product-note"></div>
+                        <button id="craft-button" class="button button-primary craft-button" type="button">
+                            <translation>button.machine_max.printing</translation>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+</body>
+</html>
