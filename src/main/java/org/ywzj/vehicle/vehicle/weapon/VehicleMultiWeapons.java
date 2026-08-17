@@ -118,7 +118,7 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         List<AimContext> aimContexts;
         if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
             aimContexts = Collections.singletonList(weaponUnit.aimContext());
-        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO) {
+        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO || weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.FULL_SALVO) {
             aimContexts = weaponUnit.aimContexts();
         } else {
             return false;

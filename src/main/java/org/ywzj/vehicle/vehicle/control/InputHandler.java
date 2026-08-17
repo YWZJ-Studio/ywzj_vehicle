@@ -13,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
@@ -291,7 +292,13 @@ public class InputHandler {
     private static void handleShoot(AbstractVehicle vehicle, LocalPlayer player) {
         if (MAIN_WEAPON_SHOOT.isDown()) {
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
-                weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
+                if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.FULL_SALVO) {
+                    for (AbstractVehicleWeapon<?> weapon : weaponUnit.fullSalvoWeapons) {
+                        weapon.doClientShoot();
+                    }
+                } else {
+                    weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::doClientShoot);
+                }
             } else {
                 LocalVehiclePlayer.instance.sendMessage("tips.spotter");
             }
