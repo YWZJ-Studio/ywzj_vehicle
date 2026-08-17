@@ -13,8 +13,7 @@
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
     "client.PlayerRendererMixin",
-    "client.PostChainMixin",
-    "tacz.ShootKeyMixin"
+    "client.PostChainMixin"
   ],
   "injectors": {
     "defaultRequire": 1

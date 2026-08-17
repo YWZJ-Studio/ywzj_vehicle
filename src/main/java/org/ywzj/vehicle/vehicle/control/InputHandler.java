@@ -276,7 +276,7 @@ public class InputHandler {
             return;
         }
         if (LocalVehiclePlayer.instance.onVehicle()) {
-            AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+            AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
             boolean previous = event.getScrollDeltaY() < 0;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
                 PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.PRIMARY, previous));

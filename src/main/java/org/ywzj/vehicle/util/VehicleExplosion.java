@@ -310,7 +310,7 @@ public class VehicleExplosion {
         }
         if (block == Blocks.GRASS_BLOCK) {
             level.setBlock(pos, Blocks.COARSE_DIRT.defaultBlockState(), 3);
-        } else if (block == Blocks.GRASS
+        } else if (block == Blocks.SHORT_GRASS
                 || block == Blocks.TALL_GRASS
                 || block == Blocks.FERN
                 || block == Blocks.LARGE_FERN

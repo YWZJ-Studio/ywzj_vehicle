@@ -2,7 +2,6 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -18,7 +17,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllKeys;

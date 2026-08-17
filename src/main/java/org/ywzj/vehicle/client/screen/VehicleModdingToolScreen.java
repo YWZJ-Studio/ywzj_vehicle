@@ -105,8 +105,12 @@ public class VehicleModdingToolScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawVehiclePreview(guiGraphics);
         if (vehicle instanceof FixedWingVehicle) {

@@ -19,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.component.ScrollableTextPanel;
@@ -102,16 +101,20 @@ public class MachineMaxScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        if (!this.hoveredStack.isEmpty()) {
+            guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         drawMainBackground(guiGraphics);
         drawVehicleList(guiGraphics, mouseX, mouseY);
         drawPreviewPanel(guiGraphics);
         drawProgressBar(guiGraphics);
         drawReceipt(guiGraphics, mouseX, mouseY);
-        if (!this.hoveredStack.isEmpty()) {
-            guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
-        }
     }
 
     private void drawMainBackground(GuiGraphics guiGraphics) {
