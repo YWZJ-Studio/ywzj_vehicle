@@ -223,6 +223,7 @@
 
         .profile-panel {
             min-height: 82px;
+            flex: 2 1 0;
         }
 
         .profile-panel .card-body {
@@ -257,17 +258,26 @@
         }
 
         .profile-description {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
             min-height: 0;
+            box-sizing: border-box;
             color: var(--ore-ink-muted);
             font-size: 14px;
-            line-height: 1.25;
+            line-height: 1.35;
+            letter-spacing: 0;
+            text-align: left;
+            white-space: normal;
             overflow-y: auto;
+            overflow-x: hidden;
             flex: 1 1 auto;
-            font-family: OreDisplay, "Microsoft YaHei";
+            font-family: OreRegular, "Microsoft YaHei";
         }
 
         .fabrication-panel {
-            flex-shrink: 0;
+            min-height: 0;
+            flex: 3 1 0;
         }
 
         .fabrication-panel .card-body {

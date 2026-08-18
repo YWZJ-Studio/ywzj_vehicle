@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="aui-font-mode" content="web">
+    <meta name="aui-viewport" content="mode=browser">
+    <link rel="stylesheet" href="/apricityui/theme/ore/ore.css">
+    <style>
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+        .weapon-screen { color: var(--ore-ink); background: var(--ore-canvas); display: flex; flex-direction: column; font-family: OreRegular, "Microsoft YaHei"; }
+        body.ore-theme.weapon-screen .navbar-brand { font-size: 18px; line-height: 1.1; }
+        .weapon-screen .navbar { min-height: 38px; padding: 6px 10px 10px; flex: 0 0 auto; }
+        .weapon-screen .navbar-brand, .weapon-screen .card-header, .weapon-screen .button { font-family: OreDisplay, "Microsoft YaHei"; }
+        .weapon-workspace { display: flex; gap: 7px; padding: 7px; min-height: 0; flex: 1 1 auto; }
+        .weapon-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+        .selection-panel { width: 22%; flex: 0 0 22%; }
+        .weapon-list-panel { width: 28%; flex: 0 0 28%; }
+        .weapon-detail-column { min-width: 0; min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 7px; }
+        .preview-panel { min-height: 0; flex: 3 1 0; }
+        .description-panel { min-height: 90px; flex: 2 1 0; }
+        .weapon-screen .card-header { min-height: 30px; padding: 8px 9px; font-size: 11px; flex: 0 0 auto; }
+        .weapon-panel .card-body { min-height: 0; padding: 7px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+        .weapon-list { min-height: 0; overflow-y: auto; flex: 1 1 auto; }
+        .weapon-entry { min-height: 30px; padding: 6px 8px; box-sizing: border-box; border: 2px solid transparent; background: #363739; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 16px; }
+        .weapon-entry + .weapon-entry { margin-top: 3px; }
+        .weapon-entry:hover, .weapon-entry:focus { border-color: #85878b; background: #4a4b4e; }
+        .weapon-entry.active { border-color: var(--ore-gold); background: #514a35; }
+        .weapon-entry-name { min-width: 0; overflow: hidden; white-space: nowrap; }
+        .weapon-entry-count { color: var(--ore-ink-muted); flex: 0 0 auto; font-size: 12px; }
+        .empty-state { padding: 9px 6px; color: var(--ore-ink-muted); font-size: 10px; text-align: center; }
+        .preview-panel .card-body { position: relative; padding: 0; background: #252628; overflow: hidden; flex: 1 1 auto; }
+        .preview-viewport { position: absolute; inset: 6px; border: 2px solid #56585b; background: #303133; box-shadow: inset 3px 3px #222325, inset -3px -3px #444649; }
+        #weapon-vehicle-preview { position: absolute; inset: 8px; cursor: grab; }
+        #weapon-vehicle-preview.dragging { cursor: grabbing; }
+        .description-panel .card-body { display: block; width: 100%; min-width: 0; min-height: 0; max-width: 100%; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; color: var(--ore-ink-muted); font-family: OreRegular, "Microsoft YaHei"; font-size: 14px; line-height: 1.35; letter-spacing: 0; text-align: left; white-space: normal; }
+        /* Match the full-size machine screen controls. */
+        .preview-viewport { inset: 5px; }
+        .weapon-entry { min-height: 32px; padding: 5px 7px; }
+        .description-panel { min-height: 82px; }
+        .weapon-screen .close-button { width: 30px; height: 26px; min-height: 26px; padding: 3px 7px 7px; font-size: 14px; line-height: 1; flex: 0 0 30px; }
+        @media (max-width: 560px) { .selection-panel { width: 24%; flex-basis: 24%; } .weapon-list-panel { width: 29%; flex-basis: 29%; } }
+    </style>
+</head>
+<body class="ore-theme weapon-screen">
+    <nav class="navbar"><div class="navbar-brand"><translation>screen.vehicle_weapon_select.title</translation></div><button id="close-button" class="button button-danger" type="button">X</button></nav>
+    <main class="weapon-workspace">
+        <aside class="card card-accent-green weapon-panel selection-panel">
+            <div class="card-header"><translation>screen.vehicle_weapon_select.weapon_selections</translation></div>
+            <div class="card-body"><div id="weapon-selection-list" class="weapon-list"></div><div id="weapon-selection-empty" class="empty-state hidden"><translation>screen.vehicle_weapon_select.no_selections</translation></div></div>
+        </aside>
+        <aside class="card card-accent-gold weapon-panel weapon-list-panel">
+            <div class="card-header"><span id="selected-part-name"><translation>screen.vehicle_weapon_select.select_part</translation></span></div>
+            <div class="card-body"><div id="weapon-list" class="weapon-list"></div><div id="weapon-list-empty" class="empty-state hidden"><translation>screen.vehicle_weapon_select.no_weapons</translation></div></div>
+        </aside>
+        <div class="weapon-detail-column">
+            <section class="card card-accent-purple weapon-panel preview-panel">
+                <div class="card-header"><span><translation>screen.vehicle_weapon_select.preview</translation></span><span class="badge badge-purple">3D</span></div>
+                <div class="card-body"><div class="preview-viewport"><div id="weapon-vehicle-preview"></div></div></div>
+            </section>
+            <section class="card card-accent-purple weapon-panel description-panel">
+                <div class="card-header"><translation>screen.vehicle_weapon_select.description</translation></div>
+                <div id="selected-weapon-description" class="card-body"><translation>screen.no_description</translation></div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

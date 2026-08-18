@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="aui-font-mode" content="web">
+    <meta name="aui-viewport" content="mode=browser">
+    <link rel="stylesheet" href="/apricityui/theme/ore/ore.css">
+    <style>
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+        .modding-screen { color: var(--ore-ink); background: var(--ore-canvas); display: flex; flex-direction: column; font-family: OreRegular, "Microsoft YaHei"; }
+        body.ore-theme.modding-screen .navbar-brand { font-size: 18px; line-height: 1.1; }
+        .modding-screen .navbar { min-height: 38px; padding: 6px 10px 10px; flex: 0 0 auto; }
+        .modding-screen .navbar-brand, .modding-screen .card-header, .modding-screen .button { font-family: OreDisplay, "Microsoft YaHei"; }
+        .modding-workspace { display: flex; gap: 7px; padding: 7px; min-height: 0; flex: 1 1 auto; }
+        .modding-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+        .catalog-panel { width: 27%; flex: 0 0 27%; }
+        .detail-column { min-width: 0; min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 7px; }
+        .preview-panel { min-height: 0; flex: 3 1 0; }
+        .profile-panel { min-height: 120px; flex: 2 1 0; }
+        .modding-screen .card-header { min-height: 30px; padding: 8px 9px; font-size: 11px; flex: 0 0 auto; }
+        .catalog-panel .card-body { min-height: 0; padding: 7px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+        .modding-screen .form-input { min-height: 29px; padding: 5px 7px; border-width: 2px; font-size: 10px; flex: 0 0 auto; }
+        .display-list { min-height: 0; overflow-y: auto; flex: 1 1 auto; }
+        .display-entry { min-height: 30px; padding: 6px 8px; border: 2px solid transparent; background: #363739; color: #fff; cursor: pointer; display: flex; align-items: center; white-space: nowrap; overflow: hidden; font-size: 16px; }
+        .display-entry + .display-entry { margin-top: 3px; }
+        .display-entry:hover, .display-entry:focus { border-color: #85878b; background: #4a4b4e; }
+        .display-entry.active { border-color: var(--ore-gold); background: #514a35; }
+        .empty-state { padding: 9px 6px; color: var(--ore-ink-muted); font-size: 10px; text-align: center; }
+        .preview-panel .card-body { position: relative; padding: 0; background: #252628; overflow: hidden; flex: 1 1 auto; }
+        .preview-viewport { position: absolute; inset: 6px; border: 2px solid #56585b; background: #303133; box-shadow: inset 3px 3px #222325, inset -3px -3px #444649; }
+        #modding-preview { position: absolute; inset: 8px; cursor: grab; }
+        #modding-preview.dragging { cursor: grabbing; }
+        .profile-panel .card-body { min-height: 0; display: flex; gap: 8px; overflow: hidden; }
+        .profile-copy { width: 0; min-width: 0; max-width: calc(67% - 8px); flex: 1 1 0; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+        #selected-display-name { color: #fff; font-family: OreDisplay, "Microsoft YaHei"; font-size: 18px; white-space: nowrap; overflow: hidden; }
+        #selected-display-id { align-self: flex-start; }
+        #vehicle-description { display: block; width: 100%; min-width: 0; min-height: 0; max-width: 100%; box-sizing: border-box; color: var(--ore-ink-muted); font-family: OreRegular, "Microsoft YaHei"; font-size: 14px; line-height: 1.35; letter-spacing: 0; text-align: left; white-space: normal; overflow-x: hidden; overflow-y: auto; flex: 1 1 auto; }
+        .profile-actions { width: 33%; min-width: 120px; flex: 0 0 33%; display: flex; flex-direction: column; gap: 6px; }
+        .profile-actions .button { min-height: 30px; }
+        .smoke-controls { padding: 6px; border: 2px solid var(--ore-edge); background: #343537; }
+        .smoke-title { color: var(--ore-gold); font-size: 10px; margin-bottom: 4px; }
+        .smoke-row { display: flex; align-items: center; gap: 4px; min-height: 18px; font-size: 12px; }
+        .smoke-row .smoke-range { min-width: 0; margin: 0; flex: 1 1 auto; accent-color: var(--ore-gold); }
+        .form-input.smoke-value-input { width: 48px; min-width: 48px; min-height: 24px; padding: 3px 5px; font-size: 10px; text-align: right; flex: 0 0 48px; }
+        #smoke-swatch { width: 36px; height: 36px; border: 2px solid #56585b; flex: 0 0 36px; }
+        /* Match the full-size machine screen controls. */
+        .preview-viewport { inset: 5px; }
+        .display-entry { min-height: 32px; padding: 5px 7px; }
+        .profile-actions .button { min-height: 34px; font-size: 12px; }
+        .smoke-controls { padding: 7px; }
+        .smoke-title { font-size: 12px; margin-bottom: 5px; }
+        .smoke-row { min-height: 24px; gap: 6px; font-size: 14px; }
+        .form-input.smoke-value-input { width: 56px; min-width: 56px; min-height: 28px; padding: 4px 6px; font-size: 12px; }
+        #smoke-swatch { width: 42px; height: 42px; flex-basis: 42px; }
+        .modding-screen .close-button { width: 30px; height: 26px; min-height: 26px; padding: 3px 7px 7px; font-size: 14px; line-height: 1; flex: 0 0 30px; }
+        @media (max-width: 560px) { .catalog-panel { width: 30%; flex-basis: 30%; } .profile-copy { max-width: calc(62% - 8px); } .profile-actions { width: 38%; min-width: 96px; flex-basis: 38%; } }
+    </style>
+</head>
+<body class="ore-theme modding-screen">
+    <nav class="navbar"><div class="navbar-brand"><translation>screen.vehicle_modding_tool.title</translation></div><button id="close-button" class="button button-danger" type="button">X</button></nav>
+    <main class="modding-workspace">
+        <aside class="card card-accent-green modding-panel catalog-panel">
+            <div class="card-header"><translation>screen.vehicle_modding_tool.catalog</translation></div>
+            <div class="card-body"><input id="display-search" class="form-input" type="text" placeholder="Search / 搜索"><div id="display-list" class="display-list"></div><div id="display-empty" class="empty-state hidden"><translation>screen.vehicle_modding_tool.no_results</translation></div></div>
+        </aside>
+        <div class="detail-column">
+            <section class="card card-accent-purple modding-panel preview-panel">
+                <div class="card-header split"><span><translation>screen.vehicle_modding_tool.preview</translation></span><span class="badge badge-purple">3D</span></div>
+                <div class="card-body"><div class="preview-viewport"><div id="modding-preview"></div></div></div>
+            </section>
+            <section class="card card-accent-gold modding-panel profile-panel">
+                <div class="card-header"><translation>screen.vehicle_modding_tool.profile</translation></div>
+                <div class="card-body">
+                    <div class="profile-copy"><div id="selected-display-name"><translation>screen.vehicle_modding_tool.select_display</translation></div><span id="selected-display-id" class="badge badge-purple">--</span><div id="vehicle-description"><translation>screen.no_description</translation></div></div>
+                    <div class="profile-actions"><button id="weapon-button" class="button button-secondary" type="button"><translation>button.vehicle.weapon_selections</translation></button><div id="smoke-controls" class="smoke-controls hidden"><div class="smoke-title"><translation>ui.aerobatic_smoke</translation></div><div class="smoke-row">R <input id="smoke-red" class="smoke-range" type="range" min="0" max="255" step="1"><input id="smoke-red-value" class="form-input smoke-value-input" type="text" inputmode="numeric"></div><div class="smoke-row">G <input id="smoke-green" class="smoke-range" type="range" min="0" max="255" step="1"><input id="smoke-green-value" class="form-input smoke-value-input" type="text" inputmode="numeric"></div><div class="smoke-row">B <input id="smoke-blue" class="smoke-range" type="range" min="0" max="255" step="1"><input id="smoke-blue-value" class="form-input smoke-value-input" type="text" inputmode="numeric"></div><div id="smoke-swatch"></div></div></div>
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

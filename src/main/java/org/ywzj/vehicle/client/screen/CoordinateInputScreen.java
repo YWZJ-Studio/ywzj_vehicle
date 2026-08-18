@@ -17,10 +17,10 @@ import java.util.function.Consumer;
 
 public class CoordinateInputScreen extends Screen {
 
-    private static final int PANEL_WIDTH = 250;
-    private static final int PANEL_HEIGHT = 160;
-    private static final int INPUT_WIDTH = 170;
-    private static final int INPUT_HEIGHT = 20;
+    private static final int PANEL_WIDTH = 360;
+    private static final int PANEL_HEIGHT = 230;
+    private static final int INPUT_WIDTH = 250;
+    private static final int INPUT_HEIGHT = 28;
     private final Vec3 initialPosition;
     private Vec3 aimPosition;
     private final Consumer<Vec3> onConfirm;
@@ -39,17 +39,17 @@ public class CoordinateInputScreen extends Screen {
     protected void init() {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
-        int inputX = left + 55;
+        int inputX = left + 76;
 
-        xInput = addCoordinateInput(inputX, top + 35, "screen.coordinate_input.x", initialPosition.x);
-        yInput = addCoordinateInput(inputX, top + 63, "screen.coordinate_input.y", initialPosition.y);
-        zInput = addCoordinateInput(inputX, top + 91, "screen.coordinate_input.z", initialPosition.z);
+        xInput = addCoordinateInput(inputX, top + 48, "screen.coordinate_input.x", initialPosition.x);
+        yInput = addCoordinateInput(inputX, top + 84, "screen.coordinate_input.y", initialPosition.y);
+        zInput = addCoordinateInput(inputX, top + 120, "screen.coordinate_input.z", initialPosition.z);
 
         confirmButton = addRenderableWidget(Button.builder(Component.translatable("screen.coordinate_input.confirm"), button -> confirm())
-                .bounds(left + 23, top + 127, 98, 20)
+                .bounds(left + 32, top + 174, 140, 28)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), button -> onClose())
-                .bounds(left + 129, top + 127, 98, 20)
+                .bounds(left + 188, top + 174, 140, 28)
                 .build());
 
         updateInputState();
@@ -161,10 +161,10 @@ public class CoordinateInputScreen extends Screen {
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xD0101010);
-        guiGraphics.drawCenteredString(font, title, width / 2, top + 12, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.literal("X"), left + 31, top + 41, 0xE0E0E0);
-        guiGraphics.drawString(font, Component.literal("Y"), left + 31, top + 69, 0xE0E0E0);
-        guiGraphics.drawString(font, Component.literal("Z"), left + 31, top + 97, 0xE0E0E0);
+        guiGraphics.drawCenteredString(font, title, width / 2, top + 16, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.literal("X"), left + 42, top + 57, 0xE0E0E0);
+        guiGraphics.drawString(font, Component.literal("Y"), left + 42, top + 93, 0xE0E0E0);
+        guiGraphics.drawString(font, Component.literal("Z"), left + 42, top + 129, 0xE0E0E0);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 

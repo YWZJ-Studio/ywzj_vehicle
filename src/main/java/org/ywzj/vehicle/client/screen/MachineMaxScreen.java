@@ -71,9 +71,13 @@ public class MachineMaxScreen extends ApricityScreen {
     private double previewZoom = 1.0;
     private double previewPanX;
     private double previewPanY;
+    private float previewRotationX = 165.0F;
+    private float previewRotationY;
     private boolean previewDragging;
+    private int previewDragButton = -1;
     private int lastProgress = -1;
     private MachineState lastMachineState;
+    private boolean vehicleDetailsDirty;
 
     public MachineMaxScreen(MachineMaxBlockEntity machine) {
         super(TEMPLATE);
@@ -92,6 +96,8 @@ public class MachineMaxScreen extends ApricityScreen {
 
     @Override
     protected void init() {
+        appliedQuery = null;
+        vehicleDetailsDirty = true;
         super.init();
         document = getLinkedDocument();
         if (document == null) {
@@ -130,6 +136,13 @@ public class MachineMaxScreen extends ApricityScreen {
 
         applyFilter(filter);
         updateMachineState(true);
+    }
+
+    @Override
+    public void resize(Minecraft minecraft, int width, int height) {
+        appliedQuery = null;
+        vehicleDetailsDirty = true;
+        super.resize(minecraft, width, height);
     }
 
     private Element element(String id) {
@@ -192,11 +205,15 @@ public class MachineMaxScreen extends ApricityScreen {
         if (retainedIndex >= 0) {
             selectedIndex = retainedIndex;
             refreshEntrySelection();
+            if (vehicleDetailsDirty) {
+                updateVehicleDetails(selectedVehicleData);
+            }
         } else if (!visibleVehicles.isEmpty()) {
             selectVehicle(0, false);
         } else {
             clearSelection();
         }
+        vehicleDetailsDirty = false;
     }
 
     private boolean matches(BaseVehicleData<?> vehicleData, String query) {
@@ -284,7 +301,7 @@ public class MachineMaxScreen extends ApricityScreen {
                     .map(BaseDisplay::getDescription)
                     .filter(value -> value != null && !value.isBlank())
                     .orElse("screen.no_description");
-            description.setTextContent(Component.translatable(descriptionKey).getString());
+            setDescriptionText(Component.translatable(descriptionKey).getString());
         }
 
         selectedVehicleHasRecipe = updateRequirements(vehicleData.getVehicleId());
@@ -411,7 +428,7 @@ public class MachineMaxScreen extends ApricityScreen {
         refreshEntrySelection();
         setText(selectedVehicleName, Component.translatable("screen.machine_max.preview").getString());
         setText(selectedVehicleId, "--");
-        setText(description, Component.translatable("screen.machine_max.select_vehicle").getString());
+        setDescriptionText(Component.translatable("screen.machine_max.select_vehicle").getString());
         if (requirements != null) {
             requirements.setTextContent("");
         }
@@ -423,6 +440,12 @@ public class MachineMaxScreen extends ApricityScreen {
     private void setText(Element element, String text) {
         if (element != null) {
             element.setTextContent(text);
+        }
+    }
+
+    private void setDescriptionText(String text) {
+        if (description != null) {
+            description.setTextContent(text);
         }
     }
 
@@ -521,7 +544,8 @@ public class MachineMaxScreen extends ApricityScreen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         PreviewBounds bounds = getPreviewBounds();
-        if (button == 0 && previewVehicle != null && bounds != null && bounds.contains(mouseX, mouseY)) {
+        if ((button == 0 || button == 1) && previewVehicle != null && bounds != null && bounds.contains(mouseX, mouseY)) {
+            previewDragButton = button;
             setPreviewDragging(true);
             return true;
         }
@@ -530,7 +554,12 @@ public class MachineMaxScreen extends ApricityScreen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (button == 0 && previewDragging) {
+        if (previewDragging && button == previewDragButton && button == 0) {
+            previewRotationY -= (float) dragX;
+            previewRotationX -= (float) dragY;
+            return true;
+        }
+        if (previewDragging && button == previewDragButton && button == 1) {
             previewPanX += dragX;
             previewPanY += dragY;
             PreviewBounds bounds = getPreviewBounds();
@@ -544,7 +573,8 @@ public class MachineMaxScreen extends ApricityScreen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && previewDragging) {
+        if (previewDragging && button == previewDragButton) {
+            previewDragButton = -1;
             setPreviewDragging(false);
             return true;
         }
@@ -577,6 +607,9 @@ public class MachineMaxScreen extends ApricityScreen {
         previewZoom = 1.0;
         previewPanX = 0;
         previewPanY = 0;
+        previewRotationX = 165.0F;
+        previewRotationY = 0;
+        previewDragButton = -1;
         setPreviewDragging(false);
     }
 
@@ -620,9 +653,8 @@ public class MachineMaxScreen extends ApricityScreen {
         poseStack.pushPose();
         try {
             poseStack.translate((float) centerX, (float) centerY, 512);
-            float rotation = (System.currentTimeMillis() % 12000L) / 12000.0F * 360.0F;
-            poseStack.mulPose(Axis.XP.rotationDegrees(165));
-            poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
+            poseStack.mulPose(Axis.XP.rotationDegrees(previewRotationX));
+            poseStack.mulPose(Axis.YP.rotationDegrees(previewRotationY));
             poseStack.mulPoseMatrix(new Matrix4f().scaling(modelScale, modelScale, -modelScale));
 
             dispatcher.setRenderShadow(false);

@@ -65,6 +65,9 @@ public class FigureBoxBlockEntity extends BlockEntity {
 
     private void updateEntity() {
         if (level != null && entityType != null && entityData != null) {
+            if (entity != null && entityType.equals(EntityType.getKey(entity.getType()).toString())) {
+                return;
+            }
             EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(YwzjVehicle.resourceLocation(entityType));
             if (type != null) {
                 Entity entity = type.create(level);
