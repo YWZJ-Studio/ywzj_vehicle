@@ -612,7 +612,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         boolean async = false;
         boolean harnessed = VehicleHarness.isHarnessed(this);
-        if (!this.isRemoved() && !harnessed) {
+        boolean resting = !level().isClientSide() && skipRestingSolve();
+        if (!this.isRemoved() && !harnessed && !resting) {
             if (!level().isClientSide()) {
                 async = tryLaunchAsyncPhysics();
             }
@@ -633,10 +634,13 @@ public abstract class AbstractVehicle extends ContainerCraft
             tickEnergy();
             tickPower();
             tickEngineSpeed();
-            this.level().getProfiler().push("vehicle_physics");
-            tickPhysics(tickMove());
-            this.level().getProfiler().pop();
-            postMoveEvent();
+            // Housekeeping above still runs while resting; only the solve is worth skipping.
+            if (!resting) {
+                this.level().getProfiler().push("vehicle_physics");
+                tickPhysics(tickMove());
+                this.level().getProfiler().pop();
+                postMoveEvent();
+            }
         }
         if (!async) {
             finishTick(trace);
@@ -710,10 +714,19 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
 
+    /**
+     * Contact points for this vehicle's solve, refilled each tick rather than reallocated. Owned
+     * by one vehicle, and a solve is confined to one thread, so no synchronisation is needed.
+     */
+    private final ContactSynthesis.ContactPool contactPool = new ContactSynthesis.ContactPool();
+    private final List<VehicleCubeOBB.CubePoint> touchPointBuffer = new ArrayList<>();
+
     void solveContacts(PhysicsRig rig, Vec3 force, boolean allowProviders) {
         Vector3f[] axes = rig.axes();
         // 接触方块的采样点
-        List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
+        contactPool.reset();
+        List<VehicleCubeOBB.CubePoint> touchPoints = touchPointBuffer;
+        touchPoints.clear();
 
         AABB hullBounds = rig.bounds().inflate(SAMPLE_GATE_MARGIN);
         boolean anySolidNearby;
@@ -730,7 +743,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 allowProviders ? openProviderSessions(hullBounds) : List.of();
         boolean inverted = AllConfigs.Cached.invertedCollisionQuery;
         ChunkCollisionCache.Cursor cursor = rig.cursor;
-        carrierLink.collect(mainCubeOBB, rig.hull, axes, touchPoints);
+        carrierLink.collect(mainCubeOBB, rig.hull, axes, contactPool, touchPoints);
         List<CollisionProvider.Session> gridSessions = providers;
         if (anySolidNearby || !providers.isEmpty() || carrierLink.active()) {
             cursor.reset();
@@ -740,7 +753,8 @@ public abstract class AbstractVehicle extends ContainerCraft
                 if (anySolidNearby) {
                     scratchBoxes.clear();
                     ChunkCollisionCache.collectBoxes(rig.sections, hullBounds, scratchBoxes);
-                    ContactSynthesis.collect(mainCubeOBB, rig.hull, axes, scratchBoxes, resolver, touchPoints);
+                    ContactSynthesis.collect(mainCubeOBB, rig.hull, axes, scratchBoxes, resolver,
+                            contactPool, touchPoints);
                 }
 
                 gridSessions = List.of();
@@ -749,7 +763,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                     providerBoxes.clear();
                     if (session.collectBoxes(hullBounds, providerBoxes)) {
                         ContactSynthesis.collect(mainCubeOBB, rig.hull, axes, providerBoxes,
-                                ContactSynthesis.provider(session), touchPoints);
+                                ContactSynthesis.provider(session), contactPool, touchPoints);
                     } else {
                         if (gridSessions.isEmpty()) {
                             gridSessions = new ArrayList<>(size - i);
@@ -770,8 +784,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                         touchPoints.add(point);
                         continue;
                     }
-                    if (anySolidNearby && ContactSynthesis.resolveColumn(
-                            cursor, point.cubePointContext, worldPos)) {
+                    if (anySolidNearby && ContactSynthesis.resolveColumn(cursor, point)) {
                         touchPoints.add(point);
                         continue;
                     }
@@ -796,9 +809,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                     }
                     Vector3f worldPos = point.worldPos(rig.hull, axes);
 
-                    if (gridForBlocks
-                            && ContactSynthesis.resolveColumn(
-                                    cursor, point.cubePointContext, worldPos)) {
+                    if (gridForBlocks && ContactSynthesis.resolveColumn(cursor, point)) {
                         touchPoints.add(point);
                         continue;
                     }
@@ -862,6 +873,52 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
 
         physicsEngine.applyPendingBreaks();
+    }
+
+    /** Ticks of stillness before a grounded, empty vehicle drops to the reduced solve rate. */
+    private static final int REST_TICKS_TO_SLEEP = 20;
+
+    /**
+     * How often a resting vehicle still runs a full solve. A heartbeat rather than a full stop:
+     * the ways a parked vehicle can be disturbed are many and easy to miss one of, so a missed
+     * wake costs a few ticks of latency instead of a vehicle left hanging in the air.
+     */
+    private static final int REST_SOLVE_INTERVAL = 10;
+
+    private static final double REST_LINEAR = 0.003;
+    private static final float REST_ANGULAR = 0.002f;
+
+    private int physicsRestTicks;
+
+    /**
+     * Whether this vehicle has been still long enough that this tick's solve can be skipped.
+     * A resting hull re-derives the same contacts and the same zero movement every tick.
+     */
+    private boolean skipRestingSolve() {
+        if (!AllConfigs.Cached.restingVehicleSleep || !atRest()) {
+            physicsRestTicks = 0;
+            return false;
+        }
+        if (physicsRestTicks < REST_TICKS_TO_SLEEP) {
+            physicsRestTicks++;
+            return false;
+        }
+        return tickCount % REST_SOLVE_INTERVAL != 0;
+    }
+
+    /** Whether nothing about this vehicle's state asks for a solve. */
+    private boolean atRest() {
+        if (mainCubeOBB == null || !onGround() || isDestroyed() || this.isRemoved()) {
+            return false;
+        }
+        // Anything aboard can steer, and anything unsupported is still falling.
+        if (!getPassengers().isEmpty() || isEngineOn() || carrierLink.active()) {
+            return false;
+        }
+        Vec3 movement = getDeltaMovement();
+        return movement.lengthSqr() <= REST_LINEAR * REST_LINEAR
+                && Math.abs(physicsEngine.rotV) <= REST_ANGULAR
+                && physicsEngine.angularVelocity.lengthSquared() <= REST_ANGULAR * REST_ANGULAR;
     }
 
     /**
@@ -2326,10 +2383,14 @@ public abstract class AbstractVehicle extends ContainerCraft
         turnSpin.rotationY((float) Math.toRadians(-degrees));
         turnTrialHull.extents().set(obb.extents());
         turnSpin.mul(obb.rotation(), turnTrialHull.rotation());
-        turnTrialHull.center().set(obb.center())
-                .sub((float) getX(), (float) getY(), (float) getZ());
-        turnSpin.transform(turnTrialHull.center())
-                .add((float) getX(), (float) getY(), (float) getZ());
+        // Spin the hull's offset from the pivot, then put it back; the arm is formed in doubles so
+        // the rotation is about the vehicle's real position rather than a narrowed one.
+        Vector3f arm = turnTrialHull.center().set(
+                (float) (obb.centerX() - getX()),
+                (float) (obb.centerY() - getY()),
+                (float) (obb.centerZ() - getZ()));
+        turnSpin.transform(arm);
+        turnTrialHull.setCenter(getX() + arm.x, getY() + arm.y, getZ() + arm.z);
         OBB trial = SweptHull.climbHull(turnTrialHull, sweepSkirt(), sweepHull);
         int hit = SweptHull.firstOverlappingBox(trial, turnBoxes);
         if (hit < 0) {
@@ -2420,7 +2481,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         sweptLegX = 0;
         if (moveX != 0) {
             sweptLegX = moveX * castToi(hull, near, moveX, 0, 0, probe, sweepFrame);
-            hull.center().x += (float) sweptLegX;
+            hull.translate(sweptLegX, 0, 0);
         }
     }
 
@@ -2429,26 +2490,26 @@ public abstract class AbstractVehicle extends ContainerCraft
         sweptLegZ = 0;
         if (moveZ != 0) {
             sweptLegZ = moveZ * castToi(hull, near, 0, 0, moveZ, probe, sweepFrame);
-            hull.center().z += (float) sweptLegZ;
+            hull.translate(0, 0, sweptLegZ);
         }
     }
 
     private static final int STEP_UP_ITERATIONS = 4;
 
     /** Retries a clipped horizontal step with the hull raised, returning the smallest lift that helps. */
-    private double stepUp(OBB hull, BoxBuffer near, float baseX, float baseY, float baseZ,
+    private double stepUp(OBB hull, BoxBuffer near, double baseX, double baseY, double baseZ,
                           double moveX, double moveZ, double baseGain) {
         double stepLen = Math.sqrt(moveX * moveX + moveZ * moveZ);
         double budget = Math.min(maxUpStep(), stepLen * physicsEngine.climbGradient);
         if (budget <= 1.0e-4) {
             return 0;
         }
-        hull.center().set(baseX, baseY, baseZ);
+        hull.setCenter(baseX, baseY, baseZ);
         budget *= castToi(hull, near, 0, budget, 0, null, sweepFrame);
         if (budget <= 1.0e-4) {
             return 0;
         }
-        hull.center().set(baseX, (float) (baseY + budget), baseZ);
+        hull.setCenter(baseX, baseY + budget, baseZ);
         sweepHorizontal(hull, near, moveX, moveZ, null);
         double raisedGain = Math.abs(sweptLegX) + Math.abs(sweptLegZ);
         if (raisedGain <= baseGain + 1.0e-7) {
@@ -2460,7 +2521,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         double hi = budget;
         for (int i = 0; i < STEP_UP_ITERATIONS; i++) {
             double mid = (lo + hi) * 0.5;
-            hull.center().set(baseX, (float) (baseY + mid), baseZ);
+            hull.setCenter(baseX, baseY + mid, baseZ);
             sweepHorizontal(hull, near, moveX, moveZ, null);
             if (Math.abs(sweptLegX) + Math.abs(sweptLegZ) >= raisedGain - 1.0e-7) {
                 hi = mid;
@@ -2639,13 +2700,23 @@ public abstract class AbstractVehicle extends ContainerCraft
         PhysicsTrace trace = physicsTrace != null && physicsTrace.isRecording()
                 ? physicsTrace : null;
         SweptHull.Probe probe = trace != null ? trace.probe() : null;
+        boolean sidewaysTick = horizontal(stepMovement);
+        // Gathered once for the whole tick rather than per slice. Every substep's query bound is
+        // contained in the bound of the tick's full movement, because a slice can only ever move
+        // the hull less than it asked for, so the per-slice gathers were re-reading the same
+        // sections and refilling the same buffer up to sixteen times over.
+        BoxBuffer near = null;
+        if (swept) {
+            OBB tickHull = SweptHull.climbHull(rig.hull, sweepSkirt(), sweepHull);
+            Vec3 whole = rig.travelMovement;
+            near = sweptBroadphase.near(tickHull, whole.x,
+                    whole.y + (sidewaysTick ? maxUpStep() : 0), whole.z);
+        }
         for (int step = 0; step < substeps; step++) {
             Vec3 clipped = stepMovement;
             if (swept) {
                 OBB hull = SweptHull.climbHull(rig.hull, sweepSkirt(), sweepHull);
-                boolean sideways = horizontal(stepMovement);
-                BoxBuffer near = sweptBroadphase.near(hull, stepMovement.x,
-                        stepMovement.y + (sideways ? maxUpStep() : 0), stepMovement.z);
+                boolean sideways = sidewaysTick;
                 double stepY = stepMovement.y;
                 if (stepY != 0) {
                     stepY *= castToi(hull, near, 0, stepY, 0,
@@ -2655,10 +2726,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                 double movedZ = 0;
                 double stepUpLift = 0;
                 if (sideways) {
-                    hull.center().y += (float) stepY;
-                    float baseX = hull.center().x;
-                    float baseY = hull.center().y;
-                    float baseZ = hull.center().z;
+                    hull.translate(0, stepY, 0);
+                    double baseX = hull.centerX();
+                    double baseY = hull.centerY();
+                    double baseZ = hull.centerZ();
                     sweepHorizontal(hull, near, stepMovement.x, stepMovement.z, probe);
                     movedX = sweptLegX;
                     movedZ = sweptLegZ;
@@ -2683,9 +2754,10 @@ public abstract class AbstractVehicle extends ContainerCraft
             rig.move(clipped.x, clipped.y, clipped.z);
             if (trace != null) {
                 if (swept) {
+                    // Measured against the tick's buffer; it is a superset of what a fresh gather
+                    // at this pose would return, and re-gathering would clobber the shared scratch.
                     OBB ended = SweptHull.climbHull(rig.hull, sweepSkirt(), sweepHull);
-                    SweptHull.measurePenetration(ended,
-                            sweptBroadphase.near(ended, 0, 0, 0), probe);
+                    SweptHull.measurePenetration(ended, near, probe);
                 }
                 trace.sweep(this, rig, step, substeps, stepMovement);
             }
@@ -2696,15 +2768,29 @@ public abstract class AbstractVehicle extends ContainerCraft
     void flushTravel(PhysicsRig rig) {
         var moves = rig.substepMoves;
         int steps = moves.size() / 3;
+        // A swept slice has already been clipped against the world by the hull's own cast. Handing
+        // it to the vanilla mover makes it walk every cell in this entity's bounding box to derive
+        // an axis-aligned answer that is both coarser and thrown away, and that box is the world
+        // bound of the rotated hull, so the cost grows with the cube of vehicle size.
+        boolean resolved = rig.swept;
         for (int step = 0; step < steps; step++) {
             double dx = moves.getDouble(step * 3);
             double dy = moves.getDouble(step * 3 + 1);
             double dz = moves.getDouble(step * 3 + 2);
-            this.move(MoverType.SELF, new Vec3(dx, dy, dz));
+            if (resolved) {
+                this.setPos(this.getX() + dx, this.getY() + dy, this.getZ() + dz);
+            } else {
+                this.move(MoverType.SELF, new Vec3(dx, dy, dz));
+            }
             this.translateOBBs(dx, dy, dz);
             if (step < steps - 1) {
                 this.supportEntities(rig.carried);
             }
+        }
+        if (resolved && steps > 0) {
+            // The vanilla mover would have done this; portals, fire and the like still have to see
+            // the blocks the vehicle ended up in.
+            this.checkInsideBlocks();
         }
     }
 

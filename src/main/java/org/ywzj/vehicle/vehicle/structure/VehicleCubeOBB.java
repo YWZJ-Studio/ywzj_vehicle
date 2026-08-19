@@ -157,7 +157,8 @@ public class VehicleCubeOBB {
                 vehicle.getX() + vehicle.centerOffset.x + center.x,
                 vehicle.getY() + vehicle.centerOffset.y + center.y,
                 vehicle.getZ() + vehicle.centerOffset.z + center.z);
-        center.set((float) position.x, (float) position.y, (float) position.z);
+        // The pose is known in doubles here; hand the hull that rather than a narrowed copy.
+        obb.setCenter(position);
 
         rotation = vehicleRotation.mul(groupRotation, new Quaternionf());
         obb.setRotation(rotation);
@@ -169,7 +170,7 @@ public class VehicleCubeOBB {
         if (position != null) {
             position = position.add(dx, dy, dz);
         }
-        obb.center().add(fx, fy, fz);
+        obb.translate(dx, dy, dz);
     }
 
     /**
@@ -370,11 +371,18 @@ public class VehicleCubeOBB {
 
     public static class CubePoint {
 
-        private final VehicleCubeOBB vehicleCubeOBB;
+        private VehicleCubeOBB vehicleCubeOBB;
         private final Vector3f obbLocalPos;
         private Vector3f worldPos;
-        private final CubeFace cubeFace;
+        private CubeFace cubeFace;
         public CubePointContext cubePointContext;
+
+        /**
+         * World position at the hull centre's precision. The float mirror above is what most
+         * callers read, but anything that turns a contact into a block coordinate uses these:
+         * at a million blocks out a float ordinate lands on a grid coarser than the contact margin.
+         */
+        private double wx, wy, wz;
 
         public CubePoint(VehicleCubeOBB vehicleCubeOBB, Vector3f obbLocalPos, CubeFace cubeFace) {
             this.vehicleCubeOBB = vehicleCubeOBB;
@@ -383,16 +391,20 @@ public class VehicleCubeOBB {
             this.cubePointContext = new CubePointContext();
         }
 
+        /** Re-aims a pooled point at a new contact, clearing whatever the last one touched. */
+        public void reuse(VehicleCubeOBB hull, float lx, float ly, float lz, CubeFace face) {
+            this.vehicleCubeOBB = hull;
+            this.obbLocalPos.set(lx, ly, lz);
+            this.cubeFace = face;
+            this.cubePointContext.reset();
+        }
+
         public Vector3f obbLocalPos() {
             return obbLocalPos;
         }
 
         public Vector3f worldPos(Vector3f[] axes) {
-            if (worldPos == null) {
-                worldPos = new Vector3f();
-            }
-            return vehicleCubeOBB.obb.localToWorld(
-                    obbLocalPos, axes == null ? vehicleCubeOBB.obb.getAxes() : axes, worldPos);
+            return worldPos(vehicleCubeOBB.obb, axes == null ? vehicleCubeOBB.obb.getAxes() : axes);
         }
 
 
@@ -400,11 +412,28 @@ public class VehicleCubeOBB {
             if (worldPos == null) {
                 worldPos = new Vector3f();
             }
-            return pose.localToWorld(obbLocalPos, axes, worldPos);
+            float lx = obbLocalPos.x, ly = obbLocalPos.y, lz = obbLocalPos.z;
+            wx = pose.centerX() + (axes[0].x * lx + axes[1].x * ly + axes[2].x * lz);
+            wy = pose.centerY() + (axes[0].y * lx + axes[1].y * ly + axes[2].y * lz);
+            wz = pose.centerZ() + (axes[0].z * lx + axes[1].z * ly + axes[2].z * lz);
+            worldPos.set((float) wx, (float) wy, (float) wz);
+            return worldPos;
         }
 
         public Vector3f cachedWorldPos() {
             return worldPos;
+        }
+
+        public double worldX() {
+            return wx;
+        }
+
+        public double worldY() {
+            return wy;
+        }
+
+        public double worldZ() {
+            return wz;
         }
 
         public CubeFace cubeFace() {
@@ -459,6 +488,13 @@ public class VehicleCubeOBB {
         public void clearCell() {
             this.cellPos = NO_CELL;
             this.worldCell = false;
+        }
+
+        /** Wipes everything the last contact left behind, for points that outlive one tick. */
+        public void reset() {
+            clearCell();
+            this.blockState = null;
+            this.surfaceY = Double.NaN;
         }
 
 

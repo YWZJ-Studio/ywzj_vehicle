@@ -10,6 +10,9 @@ import org.ywzj.vehicle.api.collision.CollisionProvider;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,6 +47,56 @@ public final class ContactSynthesis {
      */
     public static final double CONTACT_MARGIN = 0.05;
 
+    /**
+     * How far inside the clipped footprint the extreme samples sit. The containment test below is
+     * half-open like a block cell, so a sample placed exactly on the far edge belongs to the next
+     * cell along and would be thrown away.
+     */
+    private static final float EDGE_INSET = 0.001f;
+
+    /**
+     * Interior rows added between the extremes on a footprint wider than a block. The support
+     * polygon only needs the extremes, but contact-driven block breaking works from the cells
+     * samples land in, so a wide face still has to put something between its corners.
+     */
+    private static final int MAX_INTERIOR_SAMPLES = 2;
+
+    /**
+     * Per-vehicle store of contact points, refilled each tick instead of reallocated. A hull on
+     * broken ground generates hundreds of these, and they never outlive the tick that made them.
+     *
+     * <p>Points handed out here are recycled on the next {@link #reset}, so nothing may retain one
+     * past the solve that produced it.
+     */
+    public static final class ContactPool {
+
+        private final List<VehicleCubeOBB.CubePoint> points = new ArrayList<>();
+        private int used;
+
+        /** Hands every point back. Call once per solve, before any contact is generated. */
+        public void reset() {
+            used = 0;
+        }
+
+        VehicleCubeOBB.CubePoint take(VehicleCubeOBB hull, float lx, float ly, float lz,
+                                      VehicleCubeOBB.CubeFace face) {
+            if (used == points.size()) {
+                points.add(new VehicleCubeOBB.CubePoint(hull, new Vector3f(), face));
+            }
+            VehicleCubeOBB.CubePoint point = points.get(used++);
+            point.reuse(hull, lx, ly, lz, face);
+            return point;
+        }
+
+        /** Takes back the point handed out last, when it turned out to touch nothing. */
+        void releaseLast() {
+            if (used > 0) {
+                used--;
+            }
+        }
+
+    }
+
     private ContactSynthesis() {}
 
     /**
@@ -66,9 +119,9 @@ public final class ContactSynthesis {
      */
     public static ContactResolver blocks(ChunkCollisionCache.Cursor cursor) {
         return (point, worldPos, box) -> {
-            int blockX = Mth.floor(Mth.clamp(worldPos.x, box.minX, box.maxX - 1.0e-6));
-            int blockZ = Mth.floor(Mth.clamp(worldPos.z, box.minZ, box.maxZ - 1.0e-6));
-            int from = Mth.floor(Mth.clamp(worldPos.y, box.minY, box.maxY - 1.0e-6));
+            int blockX = Mth.floor(Mth.clamp(point.worldX(), box.minX, box.maxX - 1.0e-6));
+            int blockZ = Mth.floor(Mth.clamp(point.worldZ(), box.minZ, box.maxZ - 1.0e-6));
+            int from = Mth.floor(Mth.clamp(point.worldY(), box.minY, box.maxY - 1.0e-6));
             int to = Math.max(Mth.floor(box.minY), from - OWNER_SEARCH_DEPTH);
             // A box can stand taller than the cell that owns it, so the cell the contact lands in
             // is not always the one holding the block. Walk down to find it.
@@ -90,10 +143,11 @@ public final class ContactSynthesis {
      * Resolves what a hull sample point is standing in, for the grid query.
      */
     public static boolean resolveColumn(ChunkCollisionCache.Cursor cursor,
-                                        VehicleCubeOBB.CubePointContext context, Vector3f worldPos) {
-        int blockX = Mth.floor(worldPos.x);
-        int blockZ = Mth.floor(worldPos.z);
-        int blockY = Mth.floor(worldPos.y);
+                                        VehicleCubeOBB.CubePoint point) {
+        VehicleCubeOBB.CubePointContext context = point.cubePointContext;
+        int blockX = Mth.floor(point.worldX());
+        int blockZ = Mth.floor(point.worldZ());
+        int blockY = Mth.floor(point.worldY());
         BlockState state = cursor.collisionAt(blockX, blockY, blockZ);
         if (state == null) {
             blockY--;
@@ -101,7 +155,7 @@ public final class ContactSynthesis {
             // Margin applies here too; a point held above the surface by the sweep would be
             // judged as standing on nothing without it.
             if (state == null
-                    || cursor.collisionTop(blockX, blockY, blockZ) + CONTACT_MARGIN <= worldPos.y) {
+                    || cursor.collisionTop(blockX, blockY, blockZ) + CONTACT_MARGIN <= point.worldY()) {
                 return false;
             }
         }
@@ -138,7 +192,22 @@ public final class ContactSynthesis {
                                ContactResolver resolver, List<VehicleCubeOBB.CubePoint> out) {
         BoxBuffer buffer = new BoxBuffer(boxes.size());
         buffer.addAll(boxes);
-        collect(hull, pose, axes, buffer, resolver, out);
+        collect(hull, pose, axes, buffer, resolver, null, out);
+    }
+
+    /** As above, drawing its contact points from a pool. */
+    public static void collect(VehicleCubeOBB hull, OBB pose, Vector3f[] axes, List<AABB> boxes,
+                               ContactResolver resolver, @Nullable ContactPool pool,
+                               List<VehicleCubeOBB.CubePoint> out) {
+        BoxBuffer buffer = new BoxBuffer(boxes.size());
+        buffer.addAll(boxes);
+        collect(hull, pose, axes, buffer, resolver, pool, out);
+    }
+
+    /** As below, allocating a fresh point per contact; for callers with no pool of their own. */
+    public static void collect(VehicleCubeOBB hull, OBB pose, Vector3f[] axes, BoxBuffer boxes,
+                               ContactResolver resolver, List<VehicleCubeOBB.CubePoint> out) {
+        collect(hull, pose, axes, boxes, resolver, null, out);
     }
 
     /**
@@ -147,7 +216,8 @@ public final class ContactSynthesis {
      *             advanced by substeps while the live OBB has not
      */
     public static void collect(VehicleCubeOBB hull, OBB pose, Vector3f[] axes, BoxBuffer boxes,
-                               ContactResolver resolver, List<VehicleCubeOBB.CubePoint> out) {
+                               ContactResolver resolver, @Nullable ContactPool pool,
+                               List<VehicleCubeOBB.CubePoint> out) {
         OBB obb = pose;
         Vector3f extents = obb.extents();
         Vector3f localMin = new Vector3f();
@@ -245,7 +315,10 @@ public final class ContactSynthesis {
                     local.setComponent(uAxis, uPos);
                     local.setComponent(vAxis, vPos);
 
-                    Vector3f world = obb.localToWorld(local, axes, corner);
+                    VehicleCubeOBB.CubePoint point = pool == null
+                            ? new VehicleCubeOBB.CubePoint(hull, new Vector3f(local), FACES[face])
+                            : pool.take(hull, local.x, local.y, local.z, FACES[face]);
+                    Vector3f world = point.worldPos(obb, axes);
                     // The footprint was clipped from an axis-aligned bound of a possibly rotated
                     // box, and the sample sits on the hull's face rather than the box's. Testing
                     // the box directly is what makes the contact set a subset of the real
@@ -253,15 +326,14 @@ public final class ContactSynthesis {
                     // cell-granular test would have accepted the whole cell it sits in.
                     // Against the grown bounds, not the true box: a sample sitting in the gap the
                     // sweep leaves above a surface is exactly the contact that has to survive.
-                    if (!contains(world, boxMinX, boxMinY, boxMinZ, boxMaxX, boxMaxY, boxMaxZ)) {
+                    if (!contains(point, boxMinX, boxMinY, boxMinZ, boxMaxX, boxMaxY, boxMaxZ)
+                            || !resolver.resolve(point, world, box)) {
+                        if (pool != null) {
+                            pool.releaseLast();
+                        }
                         continue;
                     }
-                    VehicleCubeOBB.CubePoint point =
-                            new VehicleCubeOBB.CubePoint(hull, new Vector3f(local), FACES[face]);
-                    point.worldPos(obb, axes);
-                    if (resolver.resolve(point, world, box)) {
-                        out.add(point);
-                    }
+                    out.add(point);
                 }
             }
         }
@@ -272,12 +344,12 @@ public final class ContactSynthesis {
      * Half-open on the far face, like a block cell; a point at exactly the maximum boundary
      * belongs to the adjacent cell, preserving agreement with the cell-based grid query.
      */
-    private static boolean contains(Vector3f point,
+    private static boolean contains(VehicleCubeOBB.CubePoint point,
                                     double minX, double minY, double minZ,
                                     double maxX, double maxY, double maxZ) {
-        return point.x >= minX && point.x < maxX
-                && point.y >= minY && point.y < maxY
-                && point.z >= minZ && point.z < maxZ;
+        return point.worldX() >= minX && point.worldX() < maxX
+                && point.worldY() >= minY && point.worldY() < maxY
+                && point.worldZ() >= minZ && point.worldZ() < maxZ;
     }
 
     /**
@@ -324,27 +396,37 @@ public final class ContactSynthesis {
         return bestAxis * 2 + (bestDistance < 0 ? 1 : 0);
     }
 
-    private static int sampleCount(float span) {
-        if (span <= 1.0e-4f) {
-            return 1;
-        }
-        return Mth.clamp(Mth.ceil(span) + 1, 1, MAX_SAMPLES_PER_AXIS);
-    }
-
     /**
-     * Fills out with evenly spaced coordinates across the footprint, plus one extra at the
-     * given position if it lies inside.
+     * Fills out with the footprint's two extremes, any interior rows a wide footprint needs, and
+     * one extra at the given position if it lies inside.
+     *
+     * <p>The extremes are what the hull's support polygon is built from, and evenly spacing a
+     * fixed number of samples across the footprint never placed one there: a box merged across
+     * sixteen blocks got four rows spread over it, so the polygon came out narrower than the
+     * ground the hull was actually standing on. Sampling the edges costs the same and reports the
+     * real extent.
+     *
      * @return the number of entries written
      */
     private static int axisSamples(float from, float to, float extra, float[] out) {
-        int steps = sampleCount(to - from);
-        for (int i = 0; i < steps; i++) {
-            out[i] = steps == 1 ? (from + to) * 0.5f : from + (to - from) * i / (steps - 1);
+        float span = to - from;
+        int count = 0;
+        if (span <= 2 * EDGE_INSET) {
+            out[count++] = (from + to) * 0.5f;
+        } else {
+            float lo = from + EDGE_INSET;
+            float hi = to - EDGE_INSET;
+            out[count++] = lo;
+            int interior = Mth.clamp(Mth.floor(span) - 1, 0, MAX_INTERIOR_SAMPLES);
+            for (int i = 1; i <= interior; i++) {
+                out[count++] = lo + (hi - lo) * i / (interior + 1);
+            }
+            out[count++] = hi;
         }
         if (extra >= from && extra <= to) {
-            out[steps++] = extra;
+            out[count++] = extra;
         }
-        return steps;
+        return count;
     }
 
 }

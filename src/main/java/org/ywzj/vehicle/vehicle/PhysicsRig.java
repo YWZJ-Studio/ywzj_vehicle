@@ -85,11 +85,11 @@ public final class PhysicsRig {
         // Client vehicle may tick before hull data arrives; zero hull is safe for that case.
         if (vehicle.getMainCubeOBB() != null) {
             OBB live = vehicle.getMainCubeOBB().obb();
-            hull.center().set(live.center());
+            hull.setCenter(live);
             hull.extents().set(live.extents());
             hull.rotation().set(live.rotation());
         } else {
-            hull.center().zero();
+            hull.setCenter(0, 0, 0);
             hull.extents().zero();
             hull.rotation().identity();
         }
@@ -135,7 +135,7 @@ public final class PhysicsRig {
         this.x += dx;
         this.y += dy;
         this.z += dz;
-        hull.center().add((float) dx, (float) dy, (float) dz);
+        hull.translate(dx, dy, dz);
         substepMoves.add(dx);
         substepMoves.add(dy);
         substepMoves.add(dz);

@@ -472,11 +472,10 @@ public class PhysicsEngine {
                     }
                     if (!embedded) {
                         float offsetY = (float) (physicsCube().offset().y - physicsCube.height / 2);
-                        Vector3f cachedWorldPos = touchPoint.cachedWorldPos();
-                        double testY = cachedWorldPos.y + 0.1f + offsetY;
-                        int blockX = Mth.floor(cachedWorldPos.x);
+                        double testY = touchPoint.worldY() + 0.1f + offsetY;
+                        int blockX = Mth.floor(touchPoint.worldX());
                         int blockY = Mth.floor(testY);
-                        int blockZ = Mth.floor(cachedWorldPos.z);
+                        int blockZ = Mth.floor(touchPoint.worldZ());
                         BlockState blockState =
                                 cursor == null ? null : cursor.collisionAt(blockX, blockY, blockZ);
                         if (blockState != null && blockState.isSolid()
@@ -511,9 +510,9 @@ public class PhysicsEngine {
         if (stuckFaces != 0) {
             queueGrindBreaks(cursor, physicsCube, stuckFaces, touchPoints);
         }
-        Vector3f centre = rig.hull.center();
         BlockState centreState = cursor == null ? null
-                : cursor.collisionAt(Mth.floor(centre.x), Mth.floor(centre.y), Mth.floor(centre.z));
+                : cursor.collisionAt(Mth.floor(rig.hull.centerX()), Mth.floor(rig.hull.centerY()),
+                        Mth.floor(rig.hull.centerZ()));
         if (centreState != null && centreState.isSolid()) {
             vy += 0.1;
             trace(PhysicsTrace.Source.CENTRE_KICK, 0.1);
@@ -856,15 +855,14 @@ public class PhysicsEngine {
                     continue;
                 }
                 VehicleCubeOBB.CubePointContext context = touchPoint.cubePointContext;
-                Vector3f worldPos = touchPoint.cachedWorldPos();
                 double surfaceY = context.surfaceY();
                 if (!Double.isNaN(surfaceY)) {
                     // Reject contacts above geometry; tolerance covers point placement offset.
-                    if (worldPos.y > surfaceY + 0.1) {
+                    if (touchPoint.worldY() > surfaceY + 0.1) {
                         continue;
                     }
                 } else if (isHalfBlock(context.blockState()) && context.hasCell()
-                        && worldPos.y > context.cellY() + 0.6f) {
+                        && touchPoint.worldY() > context.cellY() + 0.6f) {
                     // No geometry; fallback estimate for half blocks.
                     continue;
                 }
@@ -1090,13 +1088,12 @@ public class PhysicsEngine {
                 continue;
             }
             anyClimbPoint = true;
-            Vector3f worldPos = point.cachedWorldPos();
-            if (worldPos == null) {
+            if (point.cachedWorldPos() == null) {
                 continue;
             }
             double top = contactTop(point);
             if (top != Double.NEGATIVE_INFINITY) {
-                rise = java.lang.Math.max(rise, top - worldPos.y);
+                rise = java.lang.Math.max(rise, top - point.worldY());
             }
         }
         if (!anyClimbPoint) {

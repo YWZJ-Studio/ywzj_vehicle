@@ -49,6 +49,7 @@ public class AllConfigs {
         public static volatile boolean carrierDecks = true;
         public static volatile boolean deckHarness = true;
         public static volatile boolean asyncVehiclePhysics = true;
+        public static volatile boolean restingVehicleSleep = true;
         public static volatile int physicsThreads = 0;
 
         static void refresh() {
@@ -65,6 +66,7 @@ public class AllConfigs {
             carrierDecks = common.carrierDecks.get();
             deckHarness = common.deckHarness.get();
             asyncVehiclePhysics = common.asyncVehiclePhysics.get();
+            restingVehicleSleep = common.restingVehicleSleep.get();
             physicsThreads = common.physicsThreads.get();
         }
 
@@ -118,6 +120,7 @@ public class AllConfigs {
         public final ModConfigSpec.ConfigValue<Boolean> carrierDecks;
         public final ModConfigSpec.ConfigValue<Boolean> deckHarness;
         public final ModConfigSpec.ConfigValue<Boolean> asyncVehiclePhysics;
+        public final ModConfigSpec.ConfigValue<Boolean> restingVehicleSleep;
         public final ModConfigSpec.ConfigValue<Integer> physicsThreads;
         public final ModConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ModConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
@@ -161,6 +164,8 @@ public class AllConfigs {
                     .define("deckHarness", true);
             asyncVehiclePhysics = builder.comment("载具物理在工作线程上求解（结果按刻内顺序确定性应用）")
                     .define("asyncVehiclePhysics", true);
+            restingVehicleSleep = builder.comment("静止且无人的载具降低物理求解频率（纯性能优化）")
+                    .define("restingVehicleSleep", true);
             physicsThreads = builder.comment("物理求解线程数，0为自动（约为CPU核心数的一半）")
                     .defineInRange("physicsThreads", 0, 0, 64);
             infiniteFuel = builder.comment("无需燃油仍可运作")

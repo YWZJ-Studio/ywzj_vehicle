@@ -140,10 +140,11 @@ public final class CarrierLink {
         if (!active()) {
             return 1.0;
         }
-        Vector3f centre = worldHull.center();
+        // Full precision: a deck contact is meaningless if the hull's own position was rounded
+        // to a float grid before it was rotated into the carrier's frame.
         DeckFrame.toLocal(inverse, pivotX, pivotY, pivotZ,
-                centre.x, centre.y, centre.z, scratchLocal);
-        localHull.center().set((float) scratchLocal.x, (float) scratchLocal.y, (float) scratchLocal.z);
+                worldHull.centerX(), worldHull.centerY(), worldHull.centerZ(), scratchLocal);
+        localHull.setCenter(scratchLocal.x, scratchLocal.y, scratchLocal.z);
         localHull.extents().set(worldHull.extents());
         // Transform movement to the carrier's frame.
         scratchMove.set((float) moveX, (float) moveY, (float) moveZ);
@@ -158,19 +159,20 @@ public final class CarrierLink {
      * @param pose the hull's world OBB at the pose being sampled
      */
     public void collect(VehicleCubeOBB hull, OBB pose, Vector3f[] worldAxes,
+                        @Nullable ContactSynthesis.ContactPool pool,
                         List<VehicleCubeOBB.CubePoint> out) {
         supportContacts = 0;
         if (!active()) {
             return;
         }
-        Vector3f centre = pose.center();
+        // Full precision, as above.
         DeckFrame.toLocal(inverse, pivotX, pivotY, pivotZ,
-                centre.x, centre.y, centre.z, scratchLocal);
-        localHull.center().set((float) scratchLocal.x, (float) scratchLocal.y, (float) scratchLocal.z);
+                pose.centerX(), pose.centerY(), pose.centerZ(), scratchLocal);
+        localHull.setCenter(scratchLocal.x, scratchLocal.y, scratchLocal.z);
         localHull.extents().set(pose.extents());
 
         int before = out.size();
-        ContactSynthesis.collect(hull, localHull, localAxes, boxes, DECK_RESOLVER, out);
+        ContactSynthesis.collect(hull, localHull, localAxes, boxes, DECK_RESOLVER, pool, out);
         for (int i = before, size = out.size(); i < size; i++) {
             VehicleCubeOBB.CubePoint point = out.get(i);
             VehicleCubeOBB.CubePointContext context = point.cubePointContext;
@@ -228,10 +230,11 @@ public final class CarrierLink {
         if (!active()) {
             return false;
         }
-        Vector3f centre = worldHull.center();
+        // Full precision: a deck contact is meaningless if the hull's own position was rounded
+        // to a float grid before it was rotated into the carrier's frame.
         DeckFrame.toLocal(inverse, pivotX, pivotY, pivotZ,
-                centre.x, centre.y, centre.z, scratchLocal);
-        turnHull.center().set((float) scratchLocal.x, (float) scratchLocal.y, (float) scratchLocal.z);
+                worldHull.centerX(), worldHull.centerY(), worldHull.centerZ(), scratchLocal);
+        turnHull.setCenter(scratchLocal.x, scratchLocal.y, scratchLocal.z);
         turnHull.extents().set(worldHull.extents());
         DeckFrame.toLocalRotation(inverse, worldHull.rotation(), turnHull.rotation());
         return SweptHull.firstOverlappingBox(turnHull, boxes) >= 0;

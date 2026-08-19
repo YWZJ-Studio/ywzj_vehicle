@@ -14,14 +14,80 @@ import java.util.*;
 /**
  * Codes based on @AnECanSaiTin's <a href="https://github.com/AnECanSaiTin/HitboxAPI">HitboxAPI</a>
  *
- * @param center   旋转中心
- * @param extents  三个轴向上的半长
- * @param rotation 旋转
+ * <p>The centre is held in doubles and mirrored into a float vector. A hull's centre is a world
+ * coordinate, and float carries about 0.008 blocks of resolution at 100k and 0.0625 at a million,
+ * which is coarser than the sweep's own skin and contact margin. Reads of {@link #center()} stay
+ * float because callers use it for hull-relative work, but everything that turns a hull position
+ * into a world query goes through the doubles.
+ *
+ * <p>The float vector is a mirror, not a second copy of the truth: write through
+ * {@link #setCenter} or {@link #translate}, never into the vector {@link #center()} hands back.
  */
-public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
+public final class OBB {
+
+    private final Vector3f center;
+    private final Vector3f extents;
+    private final Quaternionf rotation;
+
+    /** Authoritative centre. The float vector above is kept in step with these. */
+    private double cx, cy, cz;
+
+    public OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
+        this.center = center;
+        this.extents = extents;
+        this.rotation = rotation;
+        this.cx = center.x;
+        this.cy = center.y;
+        this.cz = center.z;
+    }
+
+    public Vector3f center() {
+        return center;
+    }
+
+    public Vector3f extents() {
+        return extents;
+    }
+
+    public Quaternionf rotation() {
+        return rotation;
+    }
+
+    public double centerX() {
+        return cx;
+    }
+
+    public double centerY() {
+        return cy;
+    }
+
+    public double centerZ() {
+        return cz;
+    }
 
     public void setCenter(Vector3f center) {
-        this.center.set(center);
+        setCenter(center.x, center.y, center.z);
+    }
+
+    public void setCenter(Vec3 center) {
+        setCenter(center.x, center.y, center.z);
+    }
+
+    public void setCenter(double x, double y, double z) {
+        this.cx = x;
+        this.cy = y;
+        this.cz = z;
+        this.center.set((float) x, (float) y, (float) z);
+    }
+
+    /** Copies another hull's centre at full precision. */
+    public void setCenter(OBB source) {
+        setCenter(source.cx, source.cy, source.cz);
+    }
+
+    /** Shifts the centre; substeps accumulate here rather than in the float mirror. */
+    public void translate(double dx, double dy, double dz) {
+        setCenter(cx + dx, cy + dy, cz + dz);
     }
 
     public void setExtents(Vector3f extents) {
@@ -162,8 +228,10 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
 
         private final Matrix3f basis = new Matrix3f();
 
-        float r00, r01, r02, r10, r11, r12, r20, r21, r22;
-        float a00, a01, a02, a10, a11, a12, a20, a21, a22;
+        /** Rows of the hull's rotation: r[i][j] is component i of hull axis j. */
+        public float r00, r01, r02, r10, r11, r12, r20, r21, r22;
+        /** Absolute values of the above, nudged by an epsilon so parallel axes stay conservative. */
+        public float a00, a01, a02, a10, a11, a12, a20, a21, a22;
 
         public SatFrame set(Quaternionf rotation) {
             Matrix3f m = rotation.get(basis);
@@ -183,16 +251,19 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
     }
 
 
-    public static boolean intersectsBox(SatFrame f, float cx, float cy, float cz,
+    public static boolean intersectsBox(SatFrame f, double cx, double cy, double cz,
                                         Vector3f extents,
                                         double minX, double minY, double minZ,
                                         double maxX, double maxY, double maxZ) {
         float h0 = (float) ((maxX - minX) * 0.5);
         float h1 = (float) ((maxY - minY) * 0.5);
         float h2 = (float) ((maxZ - minZ) * 0.5);
-        float t0 = (float) ((minX + maxX) * 0.5) - cx;
-        float t1 = (float) ((minY + maxY) * 0.5) - cy;
-        float t2 = (float) ((minZ + maxZ) * 0.5) - cz;
+        // Subtract in double, narrow after. Both terms are world coordinates and their difference
+        // is hull-sized, so doing it the other way round spends the whole float mantissa on a
+        // magnitude that cancels out.
+        float t0 = (float) ((minX + maxX) * 0.5 - cx);
+        float t1 = (float) ((minY + maxY) * 0.5 - cy);
+        float t2 = (float) ((minZ + maxZ) * 0.5 - cz);
         float e0 = extents.x;
         float e1 = extents.y;
         float e2 = extents.z;
@@ -387,6 +458,29 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         return localToWorld(localPoint, axes, new Vector3f());
     }
 
+    /**
+     * Local to world at the centre's full precision, into a caller-owned length-3 scratch.
+     * The rotated offset stays float because it is hull-sized; only the sum needs the range.
+     */
+    public void localToWorld(Vector3f localPoint, Vector3f[] axes, double[] dest) {
+        float lx = localPoint.x, ly = localPoint.y, lz = localPoint.z;
+        dest[0] = cx + (axes[0].x * lx + axes[1].x * ly + axes[2].x * lz);
+        dest[1] = cy + (axes[0].y * lx + axes[1].y * ly + axes[2].y * lz);
+        dest[2] = cz + (axes[0].z * lx + axes[1].z * ly + axes[2].z * lz);
+    }
+
+    /** World to local from a double world point; the relative vector is formed before narrowing. */
+    public Vector3f worldToLocal(double wx, double wy, double wz, Vector3f[] axes, Vector3f dest) {
+        float rx = (float) (wx - cx);
+        float ry = (float) (wy - cy);
+        float rz = (float) (wz - cz);
+        dest.set(
+                rx * axes[0].x + ry * axes[0].y + rz * axes[0].z,
+                rx * axes[1].x + ry * axes[1].y + rz * axes[1].z,
+                rx * axes[2].x + ry * axes[2].y + rz * axes[2].z);
+        return dest;
+    }
+
     // Local to world, writing into dest.
     // avoids the 4 temporary Vector3f allocations the other one makes per call.
     public Vector3f localToWorld(Vector3f localPoint, Vector3f[] axes, Vector3f dest) {
@@ -401,17 +495,22 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
 
     public OBB inflate(float amount) {
         Vector3f newExtents = new Vector3f(extents).add(amount, amount, amount);
-        return new OBB(center, newExtents, rotation);
+        OBB inflated = new OBB(new Vector3f(center), newExtents, rotation);
+        inflated.setCenter(cx, cy, cz);
+        return inflated;
     }
 
     public OBB inflate(float x, float y, float z) {
         Vector3f newExtents = new Vector3f(extents).add(x, y, z);
-        return new OBB(center, newExtents, rotation);
+        OBB inflated = new OBB(new Vector3f(center), newExtents, rotation);
+        inflated.setCenter(cx, cy, cz);
+        return inflated;
     }
 
     public OBB move(Vec3 vec3) {
-        Vector3f newCenter = new Vector3f((float) (center.x + vec3.x), (float) (center.y + vec3.y), (float) (center.z + vec3.z));
-        return new OBB(newCenter, extents, rotation);
+        OBB moved = new OBB(new Vector3f(center), extents, rotation);
+        moved.setCenter(cx + vec3.x, cy + vec3.y, cz + vec3.z);
+        return moved;
     }
 
     /**
@@ -532,15 +631,15 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         return mtvAxis.mul(minOverlap);
     }
 
-    public static float mtv(SatFrame f, float cx, float cy, float cz, Vector3f extents,
+    public static float mtv(SatFrame f, double cx, double cy, double cz, Vector3f extents,
                             double minX, double minY, double minZ,
                             double maxX, double maxY, double maxZ, Vector3f dest) {
         float h0 = (float) ((maxX - minX) * 0.5);
         float h1 = (float) ((maxY - minY) * 0.5);
         float h2 = (float) ((maxZ - minZ) * 0.5);
-        float t0 = (float) ((minX + maxX) * 0.5) - cx;
-        float t1 = (float) ((minY + maxY) * 0.5) - cy;
-        float t2 = (float) ((minZ + maxZ) * 0.5) - cz;
+        float t0 = (float) ((minX + maxX) * 0.5 - cx);
+        float t1 = (float) ((minY + maxY) * 0.5 - cy);
+        float t2 = (float) ((minZ + maxZ) * 0.5 - cz);
         float e0 = extents.x;
         float e1 = extents.y;
         float e2 = extents.z;
@@ -745,11 +844,13 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
     }
 
     public OBB copy() {
-        return new OBB(
+        OBB copy = new OBB(
                 new Vector3f(center),
                 new Vector3f(extents),
                 new Quaternionf(rotation)
         );
+        copy.setCenter(cx, cy, cz);
+        return copy;
     }
 
 }

@@ -10,15 +10,12 @@ import org.ywzj.vehicle.vehicle.structure.OBB;
 import java.util.Arrays;
 
 /**
- * Stops a hull from stepping over geometry it should have hit using conservative advancement.
- * The hull is trimmed to its climb skirt, bisected until the last moment it did not overlap a box,
- * and rested against obstacles instead of teleporting past them; an embedded hull can still escape
- * what it started inside while being stopped by new geometry.
+ * Stops a hull from stepping over geometry it should have hit. The hull is trimmed to its climb
+ * skirt and its step clipped to the exact fraction at which it first meets a box, so it rests
+ * against obstacles instead of teleporting past them; an embedded hull can still escape what it
+ * started inside while being stopped by new geometry.
  */
 public final class SweptHull {
-
-    /** Bisection steps; six gives 1/64 of a block on a one-block step. */
-    private static final int ITERATIONS = 6;
 
     /**
      * Depth of overlap treated as resolved rather than as a collision, in blocks;
@@ -28,9 +25,13 @@ public final class SweptHull {
 
     /**
      * Fraction of the step held back on impact so the hull stops short of touching rather than
-     * landing exactly on the boundary.
+     * landing exactly on the boundary. Small because the impact fraction is now solved rather
+     * than searched for, so there is no interval left over to cover.
      */
-    private static final double SKIN = 0.01;
+    private static final double SKIN = 0.001;
+
+    /** Closing speed along an axis below which the pair is treated as neither meeting nor parting. */
+    private static final float MOTION_EPS = 1.0e-7f;
 
     /** Why timeOfImpact returned what it did. */
     public enum Outcome {
@@ -109,7 +110,6 @@ public final class SweptHull {
          * Boxes that could matter to a cast along the movement; returned buffer is scratch.
          */
         public BoxBuffer near(OBB hull, double moveX, double moveY, double moveZ) {
-            Vector3f centre = hull.center();
             Vector3f extents = hull.extents();
             // Project extents onto world axes through rotation; not the circumscribed sphere, which
             // defeats the narrowing for the large hulls it exists for.
@@ -120,12 +120,12 @@ public final class SweptHull {
                     + Math.abs(m.m21()) * extents.z + MARGIN;
             double reachZ = Math.abs(m.m02()) * extents.x + Math.abs(m.m12()) * extents.y
                     + Math.abs(m.m22()) * extents.z + MARGIN;
-            double minX = centre.x + Math.min(0, moveX) - reachX;
-            double minY = centre.y + Math.min(0, moveY) - reachY;
-            double minZ = centre.z + Math.min(0, moveZ) - reachZ;
-            double maxX = centre.x + Math.max(0, moveX) + reachX;
-            double maxY = centre.y + Math.max(0, moveY) + reachY;
-            double maxZ = centre.z + Math.max(0, moveZ) + reachZ;
+            double minX = hull.centerX() + Math.min(0, moveX) - reachX;
+            double minY = hull.centerY() + Math.min(0, moveY) - reachY;
+            double minZ = hull.centerZ() + Math.min(0, moveZ) - reachZ;
+            double maxX = hull.centerX() + Math.max(0, moveX) + reachX;
+            double maxY = hull.centerY() + Math.max(0, moveY) + reachY;
+            double maxZ = hull.centerZ() + Math.max(0, moveZ) + reachZ;
             nearby.clear();
             if (source != null) {
                 ChunkCollisionCache.collectBoxes(source, minX, minY, minZ, maxX, maxY, maxZ, nearby);
@@ -158,7 +158,7 @@ public final class SweptHull {
         // sits above the underside.
         float band = (float) skirt + extentY;
         if (band <= 0) {
-            dest.center().set(source.center());
+            dest.setCenter(source);
             dest.extents().set(source.extents());
             dest.rotation().set(source.rotation());
             return dest;
@@ -174,8 +174,11 @@ public final class SweptHull {
         dest.rotation().set(source.rotation());
         dest.extents().set(source.extents().x - inset, (top - bottom) * 0.5f,
                 source.extents().z - inset);
-        dest.center().set(0, (top + bottom) * 0.5f, 0).rotate(source.rotation())
-                .add(source.center());
+        // Borrow dest's own mirror as scratch for the rotated offset; setCenter overwrites it.
+        Vector3f offset = dest.center().set(0, (top + bottom) * 0.5f, 0).rotate(source.rotation());
+        dest.setCenter(source.centerX() + offset.x,
+                source.centerY() + offset.y,
+                source.centerZ() + offset.z);
         return dest;
     }
 
@@ -226,74 +229,233 @@ public final class SweptHull {
             return 1.0;
         }
         // The hull's centre is never moved; the probe position is just arithmetic.
-        Vector3f centre = obb.center();
-        double ox = centre.x;
-        double oy = centre.y;
-        double oz = centre.z;
+        double ox = obb.centerX();
+        double oy = obb.centerY();
+        double oz = obb.centerZ();
         Vector3f extents = obb.extents();
 
-        int atEnd = firstOverlap(frame, extents, boxes, ox + moveX, oy + moveY, oz + moveZ);
-        if (atEnd < 0) {
-            if (probe != null) {
-                probe.outcome = Outcome.CLEAR;
-            }
-            return 1.0;
-        }
-        // Already inside something at the start. Motion within or out of those boxes is free,
-        // new geometry still clips.
-        int atStart = firstOverlap(frame, extents, boxes, ox, oy, oz);
-        if (atStart >= 0) {
-            // Excuse every box the hull starts inside, not just the first found.
-            int[] ignore = allOverlaps(frame, extents, boxes, ox, oy, oz);
-            if (probe != null) {
-                probe.outcome = Outcome.ALREADY_INSIDE;
-                probe.blocker = boxes.get(atStart);
-            }
-            if (firstOverlapExcluding(frame, extents, boxes,
-                    ox + moveX, oy + moveY, oz + moveZ, ignore) < 0) {
+        double entry = sweepAll(frame, extents, boxes, ox, oy, oz, moveX, moveY, moveZ, null, probe);
+        if (entry > 0) {
+            if (entry >= 1.0) {
+                if (probe != null) {
+                    probe.outcome = Outcome.CLEAR;
+                }
                 return 1.0;
             }
-            return bisect(frame, extents, boxes, ox, oy, oz, moveX, moveY, moveZ, ignore, probe);
-        }
-        return bisect(frame, extents, boxes, ox, oy, oz, moveX, moveY, moveZ, null, probe);
-    }
-
-    /**
-     * Largest fraction of movement that lands the hull in nothing it is not already in.
-     *
-     * @param ignore indices of boxes the hull started inside; overlaps with those do not count as a hit.
-     */
-    private static double bisect(OBB.SatFrame frame, Vector3f extents, BoxBuffer boxes,
-                                 double ox, double oy, double oz,
-                                 double moveX, double moveY, double moveZ,
-                                 int @Nullable [] ignore, @Nullable Probe probe) {
-        double clear = 0.0;
-        double blocked = 1.0;
-        int blocker = firstOverlapExcluding(frame, extents, boxes,
-                ox + moveX, oy + moveY, oz + moveZ, ignore);
-        for (int i = 0; i < ITERATIONS; i++) {
-            double mid = (clear + blocked) * 0.5;
-            int hit = firstOverlapExcluding(frame, extents, boxes,
-                    ox + moveX * mid, oy + moveY * mid, oz + moveZ * mid, ignore);
-            if (hit >= 0) {
-                blocked = mid;
-                blocker = hit;
-            } else {
-                clear = mid;
-            }
-        }
-        double toi = Math.max(0.0, clear - SKIN);
-        if (probe != null) {
-            // Embedded hull keeps ALREADY_INSIDE verdict but reports the actual allowed fraction.
-            if (probe.outcome != Outcome.ALREADY_INSIDE) {
+            double toi = Math.max(0.0, entry - SKIN);
+            if (probe != null) {
                 probe.outcome = Outcome.CLIPPED;
+                probe.toi = toi;
             }
-            if (blocker >= 0) {
-                probe.blocker = boxes.get(blocker);
-            }
+            return toi;
+        }
+        // Entry at or before zero means the hull began inside something. Motion within or out of
+        // those boxes is free, new geometry still clips.
+        int[] ignore = allOverlaps(frame, extents, boxes, ox, oy, oz);
+        if (probe != null) {
+            probe.outcome = Outcome.ALREADY_INSIDE;
+        }
+        if (ignore.length == 0) {
+            // Nothing actually overlaps at the start pose, so the zero came from a graze the
+            // static test does not agree with. Take it as blocked rather than looping.
+            return 0.0;
+        }
+        double free = sweepAll(frame, extents, boxes, ox, oy, oz, moveX, moveY, moveZ, ignore, probe);
+        if (free >= 1.0) {
+            return 1.0;
+        }
+        double toi = Math.max(0.0, free - SKIN);
+        if (probe != null) {
             probe.toi = toi;
         }
         return toi;
+    }
+
+    /**
+     * Earliest fraction of the movement at which the hull meets any box it is not excused from.
+     * Returns 1.0 when the whole step is clear, and 0 when it starts overlapping.
+     *
+     * @param ignore indices of boxes the hull started inside; overlaps with those do not count as a hit.
+     */
+    private static double sweepAll(OBB.SatFrame frame, Vector3f extents, BoxBuffer boxes,
+                                   double ox, double oy, double oz,
+                                   double moveX, double moveY, double moveZ,
+                                   int @Nullable [] ignore, @Nullable Probe probe) {
+        double earliest = 1.0;
+        int hit = -1;
+        for (int i = 0, size = boxes.size(); i < size; i++) {
+            if (ignore != null && containsIndex(ignore, i)) {
+                continue;
+            }
+            double entry = sweepBox(frame, extents, ox, oy, oz, moveX, moveY, moveZ,
+                    boxes.minX(i), boxes.minY(i), boxes.minZ(i),
+                    boxes.maxX(i), boxes.maxY(i), boxes.maxZ(i));
+            if (entry < earliest) {
+                earliest = entry;
+                hit = i;
+                if (entry <= 0) {
+                    break;
+                }
+            }
+        }
+        if (probe != null && hit >= 0) {
+            probe.blocker = boxes.get(hit);
+        }
+        return earliest;
+    }
+
+    /**
+     * Exact time of impact for one box under pure translation, by clipping the step against the
+     * fifteen separating slabs. The Minkowski sum of two boxes is bounded by exactly these
+     * fifteen directions, so the earliest time all of them overlap is the true contact time
+     * rather than an approximation of it, and one pass replaces the search that used to find it.
+     *
+     * @return the entry fraction in [0, 1]; 1 when this box is never met, 0 when already inside.
+     */
+    private static double sweepBox(OBB.SatFrame f, Vector3f extents,
+                                   double ox, double oy, double oz,
+                                   double moveX, double moveY, double moveZ,
+                                   double minX, double minY, double minZ,
+                                   double maxX, double maxY, double maxZ) {
+        float h0 = (float) ((maxX - minX) * 0.5);
+        float h1 = (float) ((maxY - minY) * 0.5);
+        float h2 = (float) ((maxZ - minZ) * 0.5);
+        float t0 = (float) ((minX + maxX) * 0.5 - ox);
+        float t1 = (float) ((minY + maxY) * 0.5 - oy);
+        float t2 = (float) ((minZ + maxZ) * 0.5 - oz);
+        float vx = (float) moveX;
+        float vy = (float) moveY;
+        float vz = (float) moveZ;
+        float e0 = extents.x;
+        float e1 = extents.y;
+        float e2 = extents.z;
+
+        float enter = 0;
+        float exit = 1;
+        float d, r, v, ta, tb, swap;
+
+        // World axes.
+        d = t0; r = h0 + e0 * f.a00 + e1 * f.a01 + e2 * f.a02; v = vx;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t1; r = h1 + e0 * f.a10 + e1 * f.a11 + e2 * f.a12; v = vy;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t2; r = h2 + e0 * f.a20 + e1 * f.a21 + e2 * f.a22; v = vz;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        // Hull axes.
+        d = t0 * f.r00 + t1 * f.r10 + t2 * f.r20; r = e0 + h0 * f.a00 + h1 * f.a10 + h2 * f.a20;
+        v = vx * f.r00 + vy * f.r10 + vz * f.r20;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t0 * f.r01 + t1 * f.r11 + t2 * f.r21; r = e1 + h0 * f.a01 + h1 * f.a11 + h2 * f.a21;
+        v = vx * f.r01 + vy * f.r11 + vz * f.r21;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t0 * f.r02 + t1 * f.r12 + t2 * f.r22; r = e2 + h0 * f.a02 + h1 * f.a12 + h2 * f.a22;
+        v = vx * f.r02 + vy * f.r12 + vz * f.r22;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        // Cross axes, world axis by hull axis. Unnormalised: distance, radius and closing speed
+        // all scale with the axis length, so the fraction they solve for is unaffected.
+        d = t2 * f.r10 - t1 * f.r20; r = h1 * f.a20 + h2 * f.a10 + e1 * f.a02 + e2 * f.a01;
+        v = vz * f.r10 - vy * f.r20;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t2 * f.r11 - t1 * f.r21; r = h1 * f.a21 + h2 * f.a11 + e2 * f.a00 + e0 * f.a02;
+        v = vz * f.r11 - vy * f.r21;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t2 * f.r12 - t1 * f.r22; r = h1 * f.a22 + h2 * f.a12 + e0 * f.a01 + e1 * f.a00;
+        v = vz * f.r12 - vy * f.r22;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t0 * f.r20 - t2 * f.r00; r = h2 * f.a00 + h0 * f.a20 + e1 * f.a12 + e2 * f.a11;
+        v = vx * f.r20 - vz * f.r00;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t0 * f.r21 - t2 * f.r01; r = h2 * f.a01 + h0 * f.a21 + e2 * f.a10 + e0 * f.a12;
+        v = vx * f.r21 - vz * f.r01;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t0 * f.r22 - t2 * f.r02; r = h2 * f.a02 + h0 * f.a22 + e0 * f.a11 + e1 * f.a10;
+        v = vx * f.r22 - vz * f.r02;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t1 * f.r00 - t0 * f.r10; r = h0 * f.a10 + h1 * f.a00 + e1 * f.a22 + e2 * f.a21;
+        v = vy * f.r00 - vx * f.r10;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t1 * f.r01 - t0 * f.r11; r = h0 * f.a11 + h1 * f.a01 + e2 * f.a20 + e0 * f.a22;
+        v = vy * f.r01 - vx * f.r11;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        d = t1 * f.r02 - t0 * f.r12; r = h0 * f.a12 + h1 * f.a02 + e0 * f.a21 + e1 * f.a20;
+        v = vy * f.r02 - vx * f.r12;
+        if (v > -MOTION_EPS && v < MOTION_EPS) { if (d > r || d < -r) return 1.0; }
+        else { ta = (d - r) / v; tb = (d + r) / v;
+            if (ta > tb) { swap = ta; ta = tb; tb = swap; }
+            if (ta > enter) enter = ta; if (tb < exit) exit = tb;
+            if (enter > exit) return 1.0; }
+
+        return enter;
     }
 
     /**
@@ -304,10 +466,9 @@ public final class SweptHull {
         probe.penetrationAxis.zero();
         probe.penetrator = null;
         OBB.SatFrame frame = new OBB.SatFrame().set(obb.rotation());
-        Vector3f centre = obb.center();
         for (int i = 0, size = boxes.size(); i < size; i++) {
             // Cheap rejection first; most boxes are nowhere near the hull.
-            if (!OBB.intersectsBox(frame, centre.x, centre.y, centre.z, obb.extents(),
+            if (!OBB.intersectsBox(frame, obb.centerX(), obb.centerY(), obb.centerZ(), obb.extents(),
                     boxes.minX(i), boxes.minY(i), boxes.minZ(i),
                     boxes.maxX(i), boxes.maxY(i), boxes.maxZ(i))) {
                 continue;
@@ -324,30 +485,6 @@ public final class SweptHull {
         }
     }
 
-    /**
-     * As firstOverlap, skipping a set of box indices; ignore holds the boxes the hull began inside.
-     */
-    private static int firstOverlapExcluding(OBB.SatFrame frame, Vector3f extents, BoxBuffer boxes,
-                                             double x, double y, double z, int @Nullable [] ignore) {
-        if (ignore == null) {
-            return firstOverlap(frame, extents, boxes, x, y, z);
-        }
-        float cx = (float) x;
-        float cy = (float) y;
-        float cz = (float) z;
-        for (int i = 0, size = boxes.size(); i < size; i++) {
-            if (containsIndex(ignore, i)) {
-                continue;
-            }
-            if (OBB.intersectsBox(frame, cx, cy, cz, extents,
-                    boxes.minX(i), boxes.minY(i), boxes.minZ(i),
-                    boxes.maxX(i), boxes.maxY(i), boxes.maxZ(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     /** Whether value is in indices; indices are the handful of boxes a hull starts embedded in. */
     private static boolean containsIndex(int[] indices, int value) {
         for (int index : indices) {
@@ -362,10 +499,7 @@ public final class SweptHull {
      * Every box the hull overlaps with its centre at the given point; array is tiny.
      */
     private static int[] allOverlaps(OBB.SatFrame frame, Vector3f extents, BoxBuffer boxes,
-                                     double x, double y, double z) {
-        float cx = (float) x;
-        float cy = (float) y;
-        float cz = (float) z;
+                                     double cx, double cy, double cz) {
         int[] found = new int[4];
         int count = 0;
         for (int i = 0, size = boxes.size(); i < size; i++) {
@@ -385,17 +519,13 @@ public final class SweptHull {
      * Index of the first box the hull overlaps at its current pose, or -1.
      */
     public static int firstOverlappingBox(OBB obb, BoxBuffer boxes) {
-        Vector3f centre = obb.center();
         return firstOverlap(new OBB.SatFrame().set(obb.rotation()), obb.extents(), boxes,
-                centre.x, centre.y, centre.z);
+                obb.centerX(), obb.centerY(), obb.centerZ());
     }
 
     /** Index of the first box overlapping the hull at the given centre, or -1. */
     private static int firstOverlap(OBB.SatFrame frame, Vector3f extents, BoxBuffer boxes,
-                                    double x, double y, double z) {
-        float cx = (float) x;
-        float cy = (float) y;
-        float cz = (float) z;
+                                    double cx, double cy, double cz) {
         for (int i = 0, size = boxes.size(); i < size; i++) {
             if (OBB.intersectsBox(frame, cx, cy, cz, extents,
                     boxes.minX(i), boxes.minY(i), boxes.minZ(i),
