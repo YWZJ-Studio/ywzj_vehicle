@@ -61,6 +61,7 @@
   "key.ywzj_vehicle.inspect_vehicle.desc": "检视载具",
   "key.ywzj_vehicle.open_parachute.desc": "打开降落伞",
   "key.ywzj_vehicle.change_seat.desc": "座位切换（可配合数字键指定座位）",
+  "key.ywzj_vehicle.toggle_collision_debug.desc": "循环切换碰撞调试显示",
   "key.ywzj_vehicle.debug_gui.desc": "调试信息",
 
   "tips.spotter": "未装备武器",

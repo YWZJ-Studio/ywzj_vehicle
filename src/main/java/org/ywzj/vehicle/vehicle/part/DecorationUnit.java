@@ -145,6 +145,11 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
     @Override
     @OnlyIn(Dist.CLIENT)
     public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+        render(pPoseStack, bufferSource, pPackedLight, true, true);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight, boolean renderBase, boolean renderSpecial) {
         Optional<BaseDisplay> decorationDisplayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(displayId);
         if (decorationDisplayOptional.isEmpty()) {
             return;
@@ -171,6 +176,9 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
         }
         boolean rootAttachment = baseBoneName == null || baseBoneName.isBlank();
         BakedModelInstance vehicleModelInstance = vehicle.getModelInstance();
+        if (vehicleModelInstance == null) {
+            return;
+        }
         int attachmentBoneIndex = rootAttachment ? -1 : vehicleModelInstance.getIndex(baseBoneName);
         if (!rootAttachment && vehicleModelInstance.getBone(attachmentBoneIndex) == null) {
             return;
@@ -197,18 +205,23 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             pPoseStack.rotateAround(Axis.YP.rotation(localEulerRotation.y), 0, 0, 0);
             pPoseStack.rotateAround(Axis.XP.rotation(localEulerRotation.x), 0, 0, 0);
             pPoseStack.rotateAround(Axis.ZP.rotation(localEulerRotation.z), 0, 0, 0);
-            offsetFromVehicle = new Vec3(globalPivot);
-            rotation = globalRotation;
-            if (animationRunner != null) {
-                animationRunner.tick();
-                Pose pose = animationRateLimiter.update(() -> BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
-                if (pose != lastPose) {
-                    modelInstance.applyPose(pose);
-                    lastPose = pose;
+            int light = vehicle.isDestroyed() ? 64 : pPackedLight;
+            if (renderBase) {
+                offsetFromVehicle = new Vec3(globalPivot);
+                rotation = globalRotation;
+                if (animationRunner != null) {
+                    animationRunner.tick();
+                    Pose pose = animationRateLimiter.update(() -> BLENDER.blend(modelInstance.getBindPose(), animationRunner.evaluate()));
+                    if (pose != lastPose) {
+                        modelInstance.applyPose(pose);
+                        lastPose = pose;
+                    }
                 }
+                decorationModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, decorationTexture, light);
             }
-            decorationModel.renderToBuffer(modelInstance, pPoseStack, bufferSource, decorationTexture, vehicle.isDestroyed() ? 64 : pPackedLight);
-            decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, vehicle.isDestroyed() ? 64 : pPackedLight, OverlayTexture.NO_OVERLAY, null, false);
+            if (renderSpecial) {
+                decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, light, OverlayTexture.NO_OVERLAY, null, false);
+            }
         }
         pPoseStack.popPose();
     }

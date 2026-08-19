@@ -22,7 +22,7 @@ public class Motorcycle extends WheeledVehicle {
 
     public Motorcycle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        physicsEngine.physicsInfo.friction = 0.003f;
+        physicsEngine.friction = 0.003f;
         physicsEngine.lockZRot = true;
     }
 

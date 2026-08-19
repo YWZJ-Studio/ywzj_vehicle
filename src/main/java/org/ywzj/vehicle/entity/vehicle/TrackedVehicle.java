@@ -162,7 +162,7 @@ public class TrackedVehicle extends AbstractVehicle
             if (controlUnit.backward) {
                 vt *= -1;
             }
-            this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
+            this.turnBy(vt + Math.abs(vf) / maxSpeedForward * vt / 5);
             if (Math.abs(vt) > 0) {
                 vf *= 0.98f;
             }

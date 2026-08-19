@@ -1,7 +1,9 @@
 package org.ywzj.vehicle.all;
 
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
@@ -20,14 +22,52 @@ public class AllConfigs {
     public static List<String> figureBoxCaptureBlacklist = new ArrayList<>();
     public static List<String> serverBroadcastEntityWhitelist = new ArrayList<>();
 
-    public static void register(ModLoadingContext context) {
+    public static void register(ModLoadingContext context, IEventBus modEventBus) {
         Pair<CommonConfig, ModConfigSpec> specPairCommon = new ModConfigSpec.Builder().configure(CommonConfig::new);
         common = specPairCommon.getLeft();
         context.getActiveContainer().registerConfig(ModConfig.Type.COMMON, specPairCommon.getRight());
         Pair<ServerConfig, ModConfigSpec> specPairServer = new ModConfigSpec.Builder().configure(ServerConfig::new);
         server = specPairServer.getLeft();
         context.getActiveContainer().registerConfig(ModConfig.Type.SERVER, specPairServer.getRight());
+        modEventBus.addListener((ModConfigEvent.Loading event) -> Cached.refresh());
+        modEventBus.addListener((ModConfigEvent.Reloading event) -> Cached.refresh());
         loadExternal();
+    }
+
+    /**
+     * Cached config values for physics to read every vehicle tick.
+     */
+    public static final class Cached {
+
+        public static volatile boolean invertedCollisionQuery = true;
+        public static volatile boolean canDestroyBlock = true;
+        public static volatile double ramBreakMomentum = 0.125;
+        public static volatile boolean selfRighting = true;
+        public static volatile boolean tumbling = false;
+        public static volatile double rightingEffortPerPlayer = 30.0;
+        public static volatile boolean deckParenting = true;
+        public static volatile boolean carrierDecks = true;
+        public static volatile boolean deckHarness = true;
+        public static volatile boolean asyncVehiclePhysics = true;
+        public static volatile int physicsThreads = 0;
+
+        static void refresh() {
+            if (common == null) {
+                return;
+            }
+            invertedCollisionQuery = common.invertedCollisionQuery.get();
+            canDestroyBlock = common.canDestroyBlock.get();
+            ramBreakMomentum = common.ramBreakMomentum.get();
+            selfRighting = common.selfRighting.get();
+            tumbling = common.tumbling.get();
+            rightingEffortPerPlayer = common.rightingEffortPerPlayer.get();
+            deckParenting = common.deckParenting.get();
+            carrierDecks = common.carrierDecks.get();
+            deckHarness = common.deckHarness.get();
+            asyncVehiclePhysics = common.asyncVehiclePhysics.get();
+            physicsThreads = common.physicsThreads.get();
+        }
+
     }
 
     public static void loadExternal() {
@@ -65,10 +105,20 @@ public class AllConfigs {
 
         public final ModConfigSpec.ConfigValue<Boolean> allowMeleeDamageVehicle;
         public final ModConfigSpec.ConfigValue<Boolean> canDestroyBlock;
+        public final ModConfigSpec.ConfigValue<Double> ramBreakMomentum;
         public final ModConfigSpec.ConfigValue<Boolean> explosionDropBlock;
         public final ModConfigSpec.ConfigValue<Double> vehicleExplosionHurtPassengerDamage;
         public final ModConfigSpec.ConfigValue<Double> cameraShakeMultiplier;
         public final ModConfigSpec.ConfigValue<Boolean> selfRighting;
+        public final ModConfigSpec.ConfigValue<Boolean> tumbling;
+        public final ModConfigSpec.ConfigValue<Double> rightingEffortPerPlayer;
+        public final ModConfigSpec.ConfigValue<Boolean> invertedCollisionQuery;
+        public final ModConfigSpec.ConfigValue<Boolean> arcadeFlightModel;
+        public final ModConfigSpec.ConfigValue<Boolean> deckParenting;
+        public final ModConfigSpec.ConfigValue<Boolean> carrierDecks;
+        public final ModConfigSpec.ConfigValue<Boolean> deckHarness;
+        public final ModConfigSpec.ConfigValue<Boolean> asyncVehiclePhysics;
+        public final ModConfigSpec.ConfigValue<Integer> physicsThreads;
         public final ModConfigSpec.ConfigValue<Boolean> infiniteFuel;
         public final ModConfigSpec.ConfigValue<List<? extends String>> fuelNameWhiteList;
         public final ModConfigSpec.ConfigValue<Boolean> hitIndicator;
@@ -85,6 +135,8 @@ public class AllConfigs {
                     .define("allowMeleeDamageVehicle", false);
             canDestroyBlock = builder.comment("载具是否能破坏方块")
                     .define("canDestroyBlock", true);
+            ramBreakMomentum = builder.comment("撞击破坏方块所需的动量（每点方块硬度），数值越小越容易撞碎")
+                    .defineInRange("ramBreakMomentum", 0.125, 0.0, Double.MAX_VALUE);
             explosionDropBlock = builder.comment("爆炸是否掉落方块")
                     .define("explosionDropBlock", true);
             vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
@@ -93,6 +145,24 @@ public class AllConfigs {
                     .defineInRange("cameraShakeMultiplier", 1.0, 0.0, 10.0);
             selfRighting = builder.comment("倾角过大时是否自动回正")
                     .define("selfRighting", true);
+            tumbling = builder.comment("载具可自由翻滚（关闭自动回正等保护，改用真实角速度）")
+                    .define("tumbling", false);
+            rightingEffortPerPlayer = builder.comment("每名潜行玩家能推翻的车体量（质量×主碰撞体积），需要 ceil(质量×体积/此值) 人同时推；0为禁用手动翻正")
+                    .defineInRange("rightingEffortPerPlayer", 30.0, 0.0, Double.MAX_VALUE);
+            invertedCollisionQuery = builder.comment("碰撞检测使用反向查询（按接触面积计算，而非车体表面采样）")
+                    .define("invertedCollisionQuery", true);
+            arcadeFlightModel = builder.comment("飞行器使用街机风格气动模型（贴合机头方向的阻力）")
+                    .define("arcadeFlightModel", true);
+            deckParenting = builder.comment("实体站上载具时使用父子坐标系承载（关闭则回退为推出修正）")
+                    .define("deckParenting", true);
+            carrierDecks = builder.comment("载具可停靠在其他载具声明的甲板上（模型中名为 deck 的骨骼）")
+                    .define("carrierDecks", true);
+            deckHarness = builder.comment("停放在甲板上的载具进入休眠，位姿直接由母舰推导（纯性能优化）")
+                    .define("deckHarness", true);
+            asyncVehiclePhysics = builder.comment("载具物理在工作线程上求解（结果按刻内顺序确定性应用）")
+                    .define("asyncVehiclePhysics", true);
+            physicsThreads = builder.comment("物理求解线程数，0为自动（约为CPU核心数的一半）")
+                    .defineInRange("physicsThreads", 0, 0, 64);
             infiniteFuel = builder.comment("无需燃油仍可运作")
                     .define("infiniteFuel", false);
             fuelNameWhiteList = builder.comment("允许视作燃油的液体")

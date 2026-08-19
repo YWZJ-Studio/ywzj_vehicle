@@ -17,6 +17,9 @@ public class PhysicsInfo {
     @SerializedName("can_destroy_block")
     public boolean canDestroyBlock = false;
 
+    @SerializedName("can_tumble")
+    public boolean canTumble = true;
+
     @SerializedName("radar_cross_section")
     public float radarCrossSection = 1f;
 

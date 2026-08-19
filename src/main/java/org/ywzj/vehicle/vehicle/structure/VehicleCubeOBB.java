@@ -1,15 +1,18 @@
 package org.ywzj.vehicle.vehicle.structure;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 
 /**
@@ -19,11 +22,21 @@ public class VehicleCubeOBB {
 
     private static final int MAX_SAMPLES_PER_AXIS = 24;
 
+    // How far outside its face a sample point sits for contact detection.
+    public static final float POINT_OFFSET = 0.001f;
+    // Headroom above the step height, in blocks. Must stay above the speculative contact margin,
+    // or a contact generated before overlap reads as a wall instead of a step.
+    private static final double RIDE_STEP_MARGIN = 0.06;
+
     private final OBB obb;
     public VehicleCubeGroup group;
+    private boolean deck;
     private final List<CubePoint> cubePoints;
+    private final List<CubePoint> attachedPoints = new ArrayList<>();
     private boolean pointsInitialized;
-    public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
+    private final Vector3f localCenter = new Vector3f();
+    private final Quaternionf localRotation = new Quaternionf();
+    public EnumMap<CubeFace, List<CubePoint>> cubePointsByFace = new EnumMap<>(CubeFace.class);
     public CubePoint bottomPoint;
     private Vec3 offset = Vec3.ZERO;
     public double x;
@@ -73,6 +86,7 @@ public class VehicleCubeOBB {
     public VehicleCubeOBB(VehicleCubeOBB origin) {
         this.obb = origin.obb.copy();
         this.group = origin.group;
+        this.deck = origin.deck;
         this.cubePoints = new ArrayList<>();
         this.initSpacing();
         this.offset = origin.offset;
@@ -85,10 +99,21 @@ public class VehicleCubeOBB {
     }
 
     public static VehicleCubeOBB init(VehicleCubeGroup group, BedrockCube cube) {
+        return init(group, cube, false);
+    }
+
+    public static VehicleCubeOBB init(VehicleCubeGroup group, BedrockCube cube, boolean deck) {
         OBB obb = new OBB(Vec3.ZERO.toVector3f(),
                 new Vector3f(cube.width() / 2, cube.height() / 2, cube.depth() / 2),
                 new Quaternionf(group.rotation));
-        return new VehicleCubeOBB(obb, group, cube);
+        VehicleCubeOBB cubeOBB = new VehicleCubeOBB(obb, group, cube);
+        cubeOBB.deck = deck;
+        return cubeOBB;
+    }
+
+    // Whether this cube is declared landing surface for other vehicles.
+    public boolean isDeck() {
+        return deck;
     }
 
     public void rebuild() {
@@ -98,28 +123,67 @@ public class VehicleCubeOBB {
         obb.setExtents(new Vector3f((float) (width / 2), (float) (height / 2), (float) (depth / 2)));
         cubePoints.clear();
         cubePointsByFace.clear();
+        attachedPoints.clear();
         pointsInitialized = false;
         initSpacing();
     }
 
+    /**
+     * Refreshes this cube's pose by walking the parent chain.
+     */
     public void update(AbstractVehicle vehicle) {
+        VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
+        update(vehicle, vehicle.rotYXZ(), globalTransform.offset().toVector3f(), globalTransform.rotation());
+    }
+
+    /**
+     * Refreshes this cube's local and world pose.
+     */
+    public void update(AbstractVehicle vehicle, Quaternionf vehicleRotation, Vector3f groupOffset, Quaternionf groupRotation) {
         positionO = position;
         rotationO = rotation;
-        VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
-        Quaternionf globalRotation = globalTransform.rotation();
-        Vector3f centerOffset = new Vector3f((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
-        globalRotation.transform(centerOffset);
-        Quaternionf vehicleRotation = vehicle.rotYXZ();
-        Vector3f center = vehicleRotation.transform(globalTransform.offset()
-                .add(centerOffset.x, centerOffset.y, centerOffset.z)
-                .subtract(vehicle.centerOffset.x, vehicle.centerOffset.y, vehicle.centerOffset.z)
-                .toVector3f());
-        position = vehicle.position()
-                .add(vehicle.centerOffset)
-                .add(center.x, center.y, center.z);
-        obb.setCenter(position.toVector3f());
-        rotation = vehicleRotation.mul(globalRotation);
+
+        localCenter.set((float) (x + width / 2), (float) (y + height / 2), (float) (z + depth / 2));
+        groupRotation.transform(localCenter);
+        localCenter.add(groupOffset);
+        localCenter.sub((float) vehicle.centerOffset.x, (float) vehicle.centerOffset.y, (float) vehicle.centerOffset.z);
+        localRotation.set(groupRotation);
+
+
+        Vector3f center = obb.center();
+        center.set(localCenter);
+        vehicleRotation.transform(center);
+        position = new Vec3(
+                vehicle.getX() + vehicle.centerOffset.x + center.x,
+                vehicle.getY() + vehicle.centerOffset.y + center.y,
+                vehicle.getZ() + vehicle.centerOffset.z + center.z);
+        center.set((float) position.x, (float) position.y, (float) position.z);
+
+        rotation = vehicleRotation.mul(groupRotation, new Quaternionf());
         obb.setRotation(rotation);
+    }
+
+    public void translate(float fx, float fy, float fz, double dx, double dy, double dz) {
+        positionO = position;
+        rotationO = rotation;
+        if (position != null) {
+            position = position.add(dx, dy, dz);
+        }
+        obb.center().add(fx, fy, fz);
+    }
+
+    /**
+     * Centre of this cube in vehicle-local space. Read-only
+     */
+    public Vector3f localCenter() {
+        return localCenter;
+    }
+
+    /**
+     * Orientation of this cube in vehicle-local space. Read-only
+     */
+    public Quaternionf localRotation() {
+        return localRotation;
     }
 
     public static VehicleCubeOBB defaultCube() {
@@ -127,11 +191,11 @@ public class VehicleCubeOBB {
     }
 
     /**
-     * Initialises sample spacing and the per-face table.
+     * Initializes sample spacing and the per-face table.
      */
     private void initSpacing() {
         float gap = 0.1f;
-        float offset = 0.001f;
+        float offset = POINT_OFFSET;
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
         float y1 = -obb.extents().y - offset;
@@ -147,20 +211,31 @@ public class VehicleCubeOBB {
     }
 
     /**
-     * Divides span into equal segments, at most MAX_SAMPLES_PER_AXIS of them.
-     * At a fixed 1-block spacing the sample count grows with surface area
-     * an 8x3x10 tank needs ~460 points, but scales poory beyond that
-     * When span is at most MAX_SAMPLES_PER_AXIS this reduces to span / ceil(span), identical
-     * to the original, so existing small and mid-sized vehicles keep exactly
-     * the same sample point layout.
-     * For the time being should allow for much cheaper larger vehices.
-     * TODO: logarithmically scaled sample based on surface?
+     * Divides span into at most MAX_SAMPLES_PER_AXIS equal segments.
      */
     private static double spacing(double span) {
         double step = Math.max(1.0, span / MAX_SAMPLES_PER_AXIS);
         return span / Math.max(1, Math.ceil(span / step));
     }
 
+
+
+    /**
+     * Height above the hull underside, in local coordinates, below which a contact is treated as
+     * something to ride over rather than something to stop against. Scales with the hull, so
+     * bigger vehicles ride over bigger bumps.
+     */
+    public double climbSkirt() {
+        return -obb.extents().y - POINT_OFFSET + 2 * spaceY;
+    }
+
+    /**
+     * The climb skirt clamped to what this vehicle can actually step up. Anchored to the hull
+     * underside, never to a datum an obstacle can raise.
+     */
+    public double rideSkirt(double maxUpStep) {
+        return Math.min(climbSkirt(), -obb.extents().y + maxUpStep + RIDE_STEP_MARGIN);
+    }
 
     private void ensurePoints() {
         if (pointsInitialized) {
@@ -173,7 +248,7 @@ public class VehicleCubeOBB {
     public void initCubePoints() {
         float gap = 0.1f;
         float slack = 0.1f;
-        float offset = 0.001f;
+        float offset = POINT_OFFSET;
         float x1 = -obb.extents().x - gap;
         float x2 = obb.extents().x + gap;
         float y1 = -obb.extents().y - offset;
@@ -248,6 +323,23 @@ public class VehicleCubeOBB {
         return cubePoints;
     }
 
+    /**
+     * Adds a sample point a part owns, such as a landing gear leg reaching below the hull.
+     */
+    public void attachPoint(CubePoint point) {
+        ensurePoints();
+        cubePoints.add(point);
+        cubePointsByFace.get(point.cubeFace()).add(point);
+        attachedPoints.add(point);
+    }
+
+    /**
+     * Sample points attached by parts, distinct from those initialized on the cube surface.
+     */
+    public List<CubePoint> attachedPoints() {
+        return attachedPoints;
+    }
+
     public double getX() {
         return x;
     }
@@ -303,6 +395,14 @@ public class VehicleCubeOBB {
                     obbLocalPos, axes == null ? vehicleCubeOBB.obb.getAxes() : axes, worldPos);
         }
 
+
+        public Vector3f worldPos(OBB pose, Vector3f[] axes) {
+            if (worldPos == null) {
+                worldPos = new Vector3f();
+            }
+            return pose.localToWorld(obbLocalPos, axes, worldPos);
+        }
+
         public Vector3f cachedWorldPos() {
             return worldPos;
         }
@@ -315,15 +415,60 @@ public class VehicleCubeOBB {
 
     public static class CubePointContext {
 
-        private Vec3 blockPos;
+        public static final long NO_CELL = Long.MIN_VALUE;
+        private long cellPos = NO_CELL;
+        private boolean worldCell;
         private BlockState blockState;
+        private double surfaceY = Double.NaN;
 
-        public Vec3 blockPos() {
-            return blockPos;
+        /** The contacted cell packed as a long, or NO_CELL if none. */
+        public long cellPos() {
+            return cellPos;
         }
 
-        public void setBlockPos(Vec3 blockPos) {
-            this.blockPos = blockPos;
+        /** True when a cell is set and it names a real block in this level. */
+        public boolean hasWorldCell() {
+            return worldCell && cellPos != NO_CELL;
+        }
+
+        public boolean hasCell() {
+            return cellPos != NO_CELL;
+        }
+
+        public int cellY() {
+            return BlockPos.getY(cellPos);
+        }
+
+        /** Records a contact against a real block in this level. */
+        public void setWorldCell(int x, int y, int z) {
+            this.cellPos = BlockPos.asLong(x, y, z);
+            this.worldCell = true;
+        }
+
+        /** Records a contact against provider geometry, which must never be written back to. */
+        public void setProviderCell(Vec3 blockPos) {
+            if (blockPos == null) {
+                clearCell();
+                return;
+            }
+            this.cellPos = BlockPos.asLong(
+                    Mth.floor(blockPos.x), Mth.floor(blockPos.y), Mth.floor(blockPos.z));
+            this.worldCell = false;
+        }
+
+        public void clearCell() {
+            this.cellPos = NO_CELL;
+            this.worldCell = false;
+        }
+
+
+        @Nullable
+        public Vec3 blockPos() {
+            if (cellPos == NO_CELL) {
+                return null;
+            }
+            return new Vec3(BlockPos.getX(cellPos) + 0.5, BlockPos.getY(cellPos),
+                    BlockPos.getZ(cellPos) + 0.5);
         }
 
         public BlockState blockState() {
@@ -332,6 +477,17 @@ public class VehicleCubeOBB {
 
         public void setBlockState(BlockState blockState) {
             this.blockState = blockState;
+        }
+
+        /**
+         * World height of the top of the geometry this point is touching, or NaN if unknown.
+         */
+        public double surfaceY() {
+            return surfaceY;
+        }
+
+        public void setSurfaceY(double surfaceY) {
+            this.surfaceY = surfaceY;
         }
 
     }

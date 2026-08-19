@@ -3,6 +3,7 @@ package org.ywzj.vehicle.compat.sable;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
+import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.mixinterface.entity.entity_sublevel_collision.EntityMovementExtension;
 import dev.ryanhcode.sable.mixinterface.entity.entity_sublevel_collision.LevelExtension;
 import dev.ryanhcode.sable.mixinterface.entity.entity_sublevel_collision.LivingEntityMovementExtension;
@@ -14,21 +15,22 @@ import net.minecraft.network.protocol.game.VecDeltaCodec;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.common.EventBusSubscriber;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniond;
 import org.joml.Quaterniondc;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
+import org.ywzj.vehicle.api.collision.CollisionProvider;
+import org.ywzj.vehicle.api.collision.CollisionProviders;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.collision.ChunkCollisionCache;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EventBusSubscriber
 public class SableCompat {
 
     private static final String MOD_ID = "sable";
@@ -38,18 +40,13 @@ public class SableCompat {
         IS_LOADED = ModList.get().isLoaded(MOD_ID);
         if (IS_LOADED) {
             SubLevelRadarManager.init();
+            // Only register when Sable is present to avoid classloading.
+            CollisionProviders.register(new SableCollisionProvider());
         }
     }
 
     public static boolean isLoaded() {
         return IS_LOADED;
-    }
-
-    @SubscribeEvent
-    public static void onVehicleCollectCollision(VehicleCollectCollisionEvent event) {
-        if (isLoaded()) {
-            SableImplementation.collideVehicle(event);
-        }
     }
 
     public static Vec3 transformInverse(Level level, Vec3 checkPos, Vec3 worldPos) {
@@ -62,37 +59,129 @@ public class SableCompat {
 
 }
 
-class SableImplementation {
+/**
+ * Contributes contacts against Sable sub-level blocks; carries the vehicle with its supporting sub-level.
+ */
+class SableCollisionProvider implements CollisionProvider {
 
-    protected static void collideVehicle(VehicleCollectCollisionEvent event) {
-        AbstractVehicle vehicle = event.getVehicle();
+    @Nullable
+    @Override
+    public Session begin(AbstractVehicle vehicle, AABB hullBounds) {
         Level level = vehicle.level();
-        VehicleCubeOBB mainCubeOBB = vehicle.getMainCubeOBB();
-        Vector3f[] axes = mainCubeOBB.obb().getAxes();
-        List<VehicleCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
-        List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
-        SubLevel trackedSubLevel = null;
-        for (VehicleCubeOBB.CubePoint point : surfacePoints) {
-            Vec3 worldPos = new Vec3(point.worldPos(axes));
-            BoundingBox3d queryBounds = new BoundingBox3d(
-                    worldPos.x - 0.001, worldPos.y - 0.001, worldPos.z - 0.001,
-                    worldPos.x + 0.001, worldPos.y + 0.001, worldPos.z + 0.001
-            );
-            for (SubLevel subLevel : Sable.HELPER.getAllIntersecting(level, queryBounds)) {
+        BoundingBox3d bounds = new BoundingBox3d(
+                hullBounds.minX, hullBounds.minY, hullBounds.minZ,
+                hullBounds.maxX, hullBounds.maxY, hullBounds.maxZ);
+        List<SableSession.Region> regions = new ArrayList<>();
+        ChunkCollisionCache cache = ChunkCollisionCache.of(level);
+        for (SubLevel subLevel : Sable.HELPER.getAllIntersecting(level, bounds)) {
+            // A sub-level's blocks live in the host level at its plot coordinates, so pulling the
+            // hull's bound back through the pose gives ordinary blocks the snapshot cache can answer for.
+            AABB localBounds = transformBounds(subLevel.logicalPose(), hullBounds, true);
+            // begin() runs on the tick thread, which is the only place chunk data may be read.
+            // Everything the session does afterwards reads finished snapshots.
+            cache.prepare(level, localBounds);
+            regions.add(new SableSession.Region(subLevel, localBounds));
+        }
+        // No sub-level anywhere near the hull: skip every point.
+        if (regions.isEmpty()) {
+            return null;
+        }
+        return new SableSession(vehicle, level, regions);
+    }
+
+    private static final class SableSession implements Session {
+
+        record Region(SubLevel subLevel, AABB localBounds) {}
+
+        private final AbstractVehicle vehicle;
+        private final Level level;
+        private final List<Region> regions;
+        private SubLevel trackedSubLevel;
+
+        private SableSession(AbstractVehicle vehicle, Level level, List<Region> regions) {
+            this.vehicle = vehicle;
+            this.level = level;
+            this.regions = regions;
+        }
+
+        /**
+         * Merged block boxes from each sub-level, transformed to world space.
+         */
+        @Override
+        public boolean collectBoxes(AABB bounds, List<AABB> out) {
+            ChunkCollisionCache cache = ChunkCollisionCache.of(level);
+            List<AABB> localBoxes = new ArrayList<>();
+            for (Region region : regions) {
+                localBoxes.clear();
+                cache.collectBoxes(region.localBounds(), localBoxes);
+                Pose3dc pose = region.subLevel().logicalPose();
+                for (int i = 0, size = localBoxes.size(); i < size; i++) {
+                    AABB worldBox = transformBounds(pose, localBoxes.get(i), false);
+                    if (worldBox.intersects(bounds)) {
+                        out.add(worldBox);
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Nullable
+        @Override
+        public Contact contactAt(VehicleCubeOBB.CubePoint point, Vector3f pointPos) {
+            Vec3 worldPos = new Vec3(pointPos.x, pointPos.y, pointPos.z);
+            for (int i = 0, size = regions.size(); i < size; i++) {
+                SubLevel subLevel = regions.get(i).subLevel();
+                // Boundary check prevents distant sub-levels from false positives.
+                if (!subLevel.boundingBox().contains(worldPos.x, worldPos.y, worldPos.z)) {
+                    continue;
+                }
                 Vec3 localPos = subLevel.logicalPose().transformPositionInverse(worldPos);
                 BlockPos blockPos = BlockPos.containing(localPos);
                 BlockState state = level.getBlockState(blockPos);
                 if (!state.isAir() && !state.getCollisionShape(level, blockPos).isEmpty()) {
-                    point.cubePointContext.setBlockPos(worldPos.add(0, -1, 0));
-                    point.cubePointContext.setBlockState(state);
-                    touchPoints.add(point);
                     if (trackedSubLevel == null) {
                         trackedSubLevel = subLevel;
                     }
+                    return new Contact(worldPos.add(0, -1, 0), state);
                 }
             }
+            return null;
         }
-        if (trackedSubLevel != null) {
+
+        @Override
+        public void end(List<VehicleCubeOBB.CubePoint> contacts) {
+            if (trackedSubLevel != null) {
+                SableImplementation.rideSubLevel(vehicle, trackedSubLevel);
+            }
+        }
+
+    }
+
+    /** Axis-aligned bound of a box's eight corners taken through a pose, either way round. */
+    private static AABB transformBounds(Pose3dc pose, AABB box, boolean inverse) {
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, minZ = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
+        for (int corner = 0; corner < 8; corner++) {
+            Vec3 point = new Vec3(
+                    (corner & 1) == 0 ? box.minX : box.maxX,
+                    (corner & 2) == 0 ? box.minY : box.maxY,
+                    (corner & 4) == 0 ? box.minZ : box.maxZ);
+            Vec3 mapped = inverse ? pose.transformPositionInverse(point) : pose.transformPosition(point);
+            minX = Math.min(minX, mapped.x);
+            minY = Math.min(minY, mapped.y);
+            minZ = Math.min(minZ, mapped.z);
+            maxX = Math.max(maxX, mapped.x);
+            maxY = Math.max(maxY, mapped.y);
+            maxZ = Math.max(maxZ, mapped.z);
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+}
+
+class SableImplementation {
+
+    protected static void rideSubLevel(AbstractVehicle vehicle, SubLevel trackedSubLevel) {
             // 伴随旋转
             Quaterniondc lastOrientation = trackedSubLevel.lastPose().orientation();
             Quaterniondc currentOrientation = trackedSubLevel.logicalPose().orientation();
@@ -131,8 +220,6 @@ class SableImplementation {
                     (short) ((int) positionCodec.encodeZ(vec31)),
                     (byte) 0, (byte) 0, vehicle.onGround());
             ((ServerLevel) vehicle.level()).getChunkSource().broadcast(vehicle, packet);
-        }
-        event.getTouchPoints().addAll(touchPoints);
     }
 
     protected static Vec3 transformInverse(Level level, Vec3 checkPos, Vec3 worldPos) {

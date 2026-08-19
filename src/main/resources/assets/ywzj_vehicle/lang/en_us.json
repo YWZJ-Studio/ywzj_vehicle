@@ -61,6 +61,7 @@
   "key.ywzj_vehicle.inspect_vehicle.desc": "Inspect Vehicle",
   "key.ywzj_vehicle.open_parachute.desc": "Open Parachute",
   "key.ywzj_vehicle.change_seat.desc": "Switch Seat (Use with number keys)",
+  "key.ywzj_vehicle.toggle_collision_debug.desc": "Cycle Collision Debug Overlay",
   "key.ywzj_vehicle.debug_gui.desc": "Debug Info",
 
   "tips.spotter": "No Weapon Equipped",

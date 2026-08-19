@@ -29,6 +29,8 @@ import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.vehicle.solver.AircraftAerodynamics;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.*;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
@@ -89,6 +91,9 @@ public class FixedWingVehicle extends AbstractVehicle
     private VehicleSound aerobaticSmokeSoundInstance;
     private VehicleSound passbySoundInstance;
     private IAnimationInstance<FixedWingVehicleContext> animationInstance;
+
+    /** Arcade flight response. Fixed-wing uses only its sideslip term; the rest is its own. */
+    protected final AircraftAerodynamics aerodynamics = new AircraftAerodynamics();
 
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -344,7 +349,7 @@ public class FixedWingVehicle extends AbstractVehicle
                 }
             }
         }
-        double mass = physicsEngine.physicsInfo.mass;
+        double mass = physicsEngine.mass;
         // 空速
         Vec3 airSpeed = getDeltaMovement();
         // 地面航行
@@ -352,7 +357,7 @@ public class FixedWingVehicle extends AbstractVehicle
             double al = airSpeed.length();
             if (controlUnit.leftYaw || controlUnit.rightYaw) {
                 float k = (float) (al / 1.4);
-                setYRot(getYRot() + (controlUnit.leftYaw ? -k : k));
+                turnBy(controlUnit.leftYaw ? -k : k);
                 forwardDirection = getLookAngle();
                 airSpeed = forwardDirection.scale(Math.max(0, al - 0.0001));
             }
@@ -382,6 +387,12 @@ public class FixedWingVehicle extends AbstractVehicle
         double al = airSpeed.length();
         double f = al * al * k;
         airSpeed = airSpeed.normalize().scale(al - f / mass);
+        if (AllConfigs.common.arcadeFlightModel.get()) {
+            // Sideslip drag prevents the plane from drifting sideways as cheaply as it flies forward.
+            Vec3 right = relativeRotDirection(new Vec3(1, 0, 0), false);
+            double lateral = airSpeed.dot(right);
+            airSpeed = airSpeed.subtract(right.scale(aerodynamics.sideslipBleed((float) lateral)));
+        }
         // 升力
         double aRaw = airSpeed.length();
         double degreeX = Math.toDegrees(angelX);

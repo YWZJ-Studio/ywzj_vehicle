@@ -26,7 +26,7 @@ public class YwzjVehicle {
         Dist side = FMLLoader.getDist();
         VehiclePackLoader.INSTANCE.packType = side.isClient() ? PackType.CLIENT_RESOURCES : PackType.SERVER_DATA;
         VehiclePackLoader.INSTANCE.scanVehiclePacks();
-        AllConfigs.register(ModLoadingContext.get());
+        AllConfigs.register(ModLoadingContext.get(), modEventBus);
         AllBlocks.register(modEventBus);
         AllBlockEntities.register(modEventBus);
         AllItems.register(modEventBus);

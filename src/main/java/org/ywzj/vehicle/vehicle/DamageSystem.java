@@ -136,7 +136,7 @@ public class DamageSystem {
 
     public static void impactHurt(double velocityDiff, AbstractVehicle vehicle) {
         velocityDiff *= 20;
-        float damage = (float) (0.5 * vehicle.physicsEngine.physicsInfo.mass * velocityDiff * velocityDiff * vehicle.defenseStats.impactMultiplier);
+        float damage = (float) (0.5 * vehicle.physicsEngine.mass * velocityDiff * velocityDiff * vehicle.defenseStats.impactMultiplier);
         vehicle.hurt(AllDamageTypes.Sources.vehicleCollision(vehicle.level().registryAccess(), vehicle, vehicle.getDriver(), null), damage);
     }
 

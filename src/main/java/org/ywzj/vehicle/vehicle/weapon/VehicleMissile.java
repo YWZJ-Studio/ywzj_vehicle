@@ -93,7 +93,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
                     aimContext.from, aimContext.direction.x, aimContext.direction.y,
                     this.weaponUnit.getOwner());
             vehicle.level().addFreshEntity(missileEntity);
-            vehicle.physicsEngine.recoil(weaponUnit, data.getRecoil());
+            vehicle.queueRecoil(weaponUnit, data.getRecoil());
         }
         return true;
     }

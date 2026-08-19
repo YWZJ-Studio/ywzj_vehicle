@@ -19,6 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
 import org.ywzj.vehicle.api.animation.IAnimationInstance;
@@ -28,8 +29,10 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.RotaryWingVehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.solver.AircraftAerodynamics;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
 import org.ywzj.vehicle.vehicle.part.RopeUnit;
@@ -46,7 +49,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
-    public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.physicsInfo.mass;
+    public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.mass;
     public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -59,6 +62,8 @@ public class RotaryWingVehicle extends AbstractVehicle
     public float yRotSpeed;
     public float zRotSpeed;
     public Vec3 airSpeed = new Vec3(0, 0, 0);
+    /** Arcade flight response. Per-vehicle so its control-authority ramp has somewhere to live. */
+    protected final AircraftAerodynamics aerodynamics = new AircraftAerodynamics();
     public boolean hoverMode;
     public boolean fastRoping;
     public String fastRopingDoorId;
@@ -210,27 +215,48 @@ public class RotaryWingVehicle extends AbstractVehicle
         // 高度越高，空气越稀薄，发动机出力与桨叶效率都会降低，约定在64格高的海平面以下才可达到满效率
         double scaleAir = position().y < 64 ? 1 : Math.pow(Math.max(0, ceiling - position().y), 0.2) / Math.pow(ceiling - 64, 0.2);
         // 螺旋桨方向的力
-        Vec3 force = vP.scale(scale * scaleAir * mainRotorForce);
+        boolean arcade = AllConfigs.common.arcadeFlightModel.get();
+        double tiltCompensation = arcade ? aerodynamics.liftTiltCompensation((float) vP.y) : 1.0;
+        Vec3 force = vP.scale(scale * scaleAir * mainRotorForce * tiltCompensation);
         // 桨叶水平方向的空速带来升力
         double dVH = Math.sqrt(Math.pow(airSpeed.length(), 2) - Math.pow(dVV, 2));
-        force.add(vP.scale(dVH * scaleAir * 0.005f));
+        force = force.add(vP.scale(dVH * scaleAir * 0.005f));
+        if (arcade) {
+            float gain = aerodynamics.discTiltGain;
+            force = new Vec3(force.x * gain, force.y, force.z * gain);
+        }
         airSpeed = airSpeed.add(force);
-        double al = airSpeed.length();
-        // 空气阻力
-        airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.physicsInfo.friction / physicsEngine.physicsInfo.mass);
+        if (AllConfigs.common.arcadeFlightModel.get()) {
+           Vector3f v = airSpeed.toVector3f();
+            aerodynamics.applyToVelocity(v, getYRot(), getXRot(), onGround());
+            airSpeed = new Vec3(v);
+        } else {
+            double al = airSpeed.length();
+            // 空气阻力
+            airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.friction / physicsEngine.mass);
+        }
         if (airSpeed.length() >= maxAirSpeed) {
             airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }
         this.setDeltaMovement(airSpeed);
 
         if (hoverMode) {
-            controlUnit.xRot = 0;
+            // Hover mode holds altitude, not attitude. Forcing pitch to zero
+            // made the machine feel bolted upright.
             controlUnit.yRot = getYRot();
             double vy = airSpeed.y - physicsEngine.G;
             if (vy > 0.01) {
                 setCollectivePitch(Mth.clamp(getCollectivePitch() - 1f, 0f, 100f));
             } else if (vy < -0.01) {
                 setCollectivePitch(Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
+            }
+        } else if (arcade && !controlUnit.up && !controlUnit.down && !onGround()) {
+            // Hands off collective: trim to hold height. PhysicsEngine subtracts one tick of gravity
+            // after tickMove, so airSpeed.y here is velocity before the fall; trimming it to zero
+            // prevents a permanent sink of one tick of gravity.
+            float delta = aerodynamics.altitudeHoldDelta((float) (airSpeed.y - physicsEngine.G));
+            if (delta != 0) {
+                setCollectivePitch(Mth.clamp(getCollectivePitch() + delta * 100f, 0f, 100f));
             }
         }
 
@@ -296,7 +322,11 @@ public class RotaryWingVehicle extends AbstractVehicle
             }
         }
 
-        if (!(controlUnit.left || controlUnit.right)) {
+        if (!(controlUnit.left || controlUnit.right) && AllConfigs.common.arcadeFlightModel.get()) {
+            // Bleed bank off slowly; snapping level instantly prevents holding a turn.
+            this.setZRot(aerodynamics.settleRoll(this.getZRot(), false, onGround()));
+            zRotSpeed = 0;
+        } else if (!(controlUnit.left || controlUnit.right)) {
             float zDiff = Mth.wrapDegrees(-this.getZRot());
             float shrink = Math.min(1, Math.abs(zDiff) / zRotSpeedAcceleration);
             if (zDiff > 0) {

@@ -28,7 +28,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -52,6 +52,8 @@ import org.ywzj.vehicle.api.entity.DetachedBodyVehicle;
 import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
+import org.ywzj.vehicle.api.collision.CollisionProvider;
+import org.ywzj.vehicle.api.collision.CollisionProviders;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
 import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
@@ -70,17 +72,33 @@ import org.ywzj.vehicle.util.*;
 import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
+import org.ywzj.vehicle.vehicle.PhysicsRig;
+import org.ywzj.vehicle.vehicle.PhysicsTrace;
+import org.ywzj.vehicle.vehicle.VehicleRighting;
+import org.ywzj.vehicle.vehicle.schedule.VehiclePhysicsJob;
+import org.ywzj.vehicle.vehicle.schedule.VehiclePhysicsScheduler;
+import org.ywzj.vehicle.vehicle.collision.BoxBuffer;
+import org.ywzj.vehicle.vehicle.collision.ChunkCollisionCache;
+import org.ywzj.vehicle.vehicle.collision.ContactSynthesis;
+import org.ywzj.vehicle.vehicle.collision.SweptHull;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.parenting.CarrierDecks;
+import org.ywzj.vehicle.vehicle.parenting.CarrierLink;
+import org.ywzj.vehicle.vehicle.parenting.DeckAttachment;
+import org.ywzj.vehicle.vehicle.parenting.DeckSnapshot;
+import org.ywzj.vehicle.vehicle.parenting.VehicleHarness;
+import org.ywzj.vehicle.vehicle.parenting.VehicleParenting;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.EnergyInfo;
 import org.ywzj.vehicle.vehicle.pojo.ViewInfo;
 import org.ywzj.vehicle.vehicle.structure.OBB;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
@@ -98,6 +116,11 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Boolean> ENGINE_ON = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Boolean> DESTROYED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<CompoundTag> DETACHED_ANCHORS = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.COMPOUND_TAG);
+    /**
+     * Entity id of the carrier this vehicle is asleep on, or -1. Synced to prevent the client
+     * interpolating a parked aircraft and its ship separately, causing them to drift apart visually.
+     */
+    public static final EntityDataAccessor<Integer> HARNESS_CARRIER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.INT);
     private static final String DETACHED_ANCHORS_TAG = "DetachedAnchors";
     protected ResourceLocation vehicleId;
     protected ResourceLocation displayId;
@@ -128,16 +151,99 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected List<VehicleCubeOBB> vehicleCubeOBBs;
     protected VehicleCubeOBB mainCubeOBB;
     private List<OBB> cachedOBBs = List.of();
-    private final BlockPos.MutableBlockPos scratchBlockPos = new BlockPos.MutableBlockPos();
+    private List<OBB> activeOBBs = List.of();
+    private ChunkCollisionCache.Cursor collisionCursor;
+    private final BoxBuffer scratchBoxes = new BoxBuffer();
+    // Providers hand back real AABBs, cached and reused across ticks rather than rebuilt.
+    private final List<AABB> providerBoxes = new ArrayList<>();
+    // Hull swept against world, rewritten per substep; must not live on shared cube groups.
+    private final OBB sweepHull = new OBB(new Vector3f(), new Vector3f(), new Quaternionf());
+    private final SweptHull.Broadphase sweptBroadphase = new SweptHull.Broadphase();
+    private final OBB.SatFrame sweepFrame = new OBB.SatFrame();
+    @Nullable
+    private AABB preparedBounds;
+    private boolean tickAnySolidNearby;
+    private final OBB.SatFrame supportFrame = new OBB.SatFrame();
+    private final Vector3f supportMtv = new Vector3f();
+    private final Quaternionf cachedRotYXZ = new Quaternionf();
+    private float cachedRotYXZYaw = Float.NaN;
+    private float cachedRotYXZPitch = Float.NaN;
+    private float cachedRotYXZRoll = Float.NaN;
+    // Margin in blocks when collecting collision sections; 2.0 covers sample overshoot and block rounding.
+    private static final double SAMPLE_GATE_MARGIN = 2.0;
+    // Flattened body and part geometry, indexed once at startup; cube lists are static after initData.
+    private List<VehicleCubeOBB> allCubeOBBs;
+    private int[] cubeGroupIndex = new int[0];
+    /** Owning part unit per entry of allCubeOBBs, or -1 for body cubes. */
+    private int[] cubePartIndex = new int[0];
+    private boolean[] cubeDetached = new boolean[0];
+    // Group forest in topological order; transforms must not live on shared cube groups.
+    private VehicleCubeGroup[] groupOrder = new VehicleCubeGroup[0];
+    private int[] groupParent = new int[0];
+    private Vector3f[] groupOffset = new Vector3f[0];
+    private Quaternionf[] groupRotation = new Quaternionf[0];
+    // Vehicle-local bounds of all OBBs, used to compute bounding box by rotating corners.
+    private double localMinX, localMinY, localMinZ, localMaxX, localMaxY, localMaxZ;
+    private boolean localBoundsValid;
+    private final Matrix3f scratchLocalRot = new Matrix3f();
+    /**
+     * Every structure cube's vehicle-local axis-aligned bound, six floats each. Mesh entities
+     * standing on this vehicle collide against these. Filled by updateOBBs at no extra cost.
+     * mainCubeOBB is deliberately not in here; it is the hull's bounding volume, which for
+     * anything wing-shaped is too large to stand on. Double-buffered and published by reference:
+     * updateOBBs fills the buffer that is not currently published, then stores it into deckSnapshot.
+     */
+    private final DeckSnapshot[] deckSnapshotBuffers = {new DeckSnapshot(), new DeckSnapshot()};
+    private int deckSnapshotSlot;
+    private volatile DeckSnapshot deckSnapshot = DeckSnapshot.EMPTY;
+    /** Count of allCubeOBBs declared as landing surface. */
+    private int deckCubes;
+    /**
+     * This tick's frozen view of the carrier this vehicle is flying over, driving on or landing on.
+     * Per vehicle and rewritten on the tick thread, so the solve reads numbers nobody else is touching.
+     */
+    private final CarrierLink carrierLink = new CarrierLink();
+    /** Set while this vehicle's pose is derived from a carrier's rather than solved. */
+    @Nullable
+    private VehicleHarness harness;
+    /** Consecutive ticks this vehicle has been parked on a deck, counting towards harness. */
+    private int harnessDwell;
+    /** Vehicles asleep on this one. */
+    private final List<AbstractVehicle> harnessedVehicles = new ArrayList<>(0);
+    /** Whether this vehicle is currently in its level's carrier list. */
+    private boolean carrierRegistered;
+    /** Entities parented to this vehicle. */
+    private final List<Entity> deckRiders = new ArrayList<>();
     // Resolve passes over the OBB set in support(). Overlapping part boxes can each push the
     // entity, so one pass leaves it displaced by their sum; re-testing until nothing overlaps
     // converges instead. Bounded so pathological geometry cannot spin here.
     private static final int SUPPORT_RESOLVE_PASSES = 4;
     // Upper bound on movement substeps, so a fast vehicle cannot multiply per-tick cost without limit
-    private static final int MAX_COLLISION_SUBSTEPS = 4;
+    private static final int MAX_COLLISION_SUBSTEPS = 16;
+    // Maximum displacement per collision step, in blocks; half block width hides between samples.
+    private static final double SAFE_STEP = 0.5;
+    // Clearance above max step height in sweep hull; prevents clipping on boundary-height steps.
+    private static final double SWEEP_STEP_MARGIN = 0.05;
     protected double structureLength;
     public WarningReceiver warningReceiver;
     public PhysicsEngine physicsEngine;
+    /** The working pose the physics pipeline runs against, sync or async. */
+    private final PhysicsRig physicsRig = new PhysicsRig();
+    /** World view frozen for this vehicle's async solve. */
+    private final ChunkCollisionCache.PinnedSections pinnedSections =
+            new ChunkCollisionCache.PinnedSections();
+    /** Engine state as of submit, restored if the solve is discarded. */
+    private final PhysicsEngine.State engineStateSnapshot = new PhysicsEngine.State();
+    /** The solve in flight between this vehicle's tick and the level barrier, or null. */
+    @Nullable
+    private VehiclePhysicsJob physicsJob;
+    /** Recoils fired while a solve owned the engine state; run at the barrier. */
+    private final List<Runnable> pendingRecoils = new ArrayList<>(0);
+    /** Physics trace recorder if one was requested; null otherwise. */
+    @Nullable
+    private PhysicsTrace physicsTrace;
+    /** Consecutive ticks players have been shoving this hull back onto its wheels. */
+    public int rightingHold;
     private final HashMap<LivingEntity, Vec3> dismountLocations;
     protected boolean driverXYRotControl = false;
     public boolean uav = false;
@@ -183,6 +289,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         builder.define(ENGINE_ON, false);
         builder.define(DESTROYED, false);
         builder.define(DETACHED_ANCHORS, new CompoundTag());
+        builder.define(HARNESS_CARRIER, -1);
     }
 
     @Override
@@ -367,6 +474,11 @@ public abstract class AbstractVehicle extends ContainerCraft
     @Override
     public void onRemovedFromLevel() {
         super.onRemovedFromLevel();
+        VehicleParenting.releaseAll(this, true);
+        CarrierDecks.unregister(this);
+        carrierRegistered = false;
+        VehicleHarness.releaseAll(this, true);
+        VehicleHarness.detach(this, true);
         partUnits.forEach((PartUnit::onRemoved));
         if (!level().isClientSide()) {
             for (Entity operator : new ArrayList<>(getDetachedOperators())) {
@@ -405,7 +517,13 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.name = vehicleData.getName();
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
-        this.physicsEngine.physicsInfo = vehicleData.getPhysicsInfo().copy();
+        this.physicsEngine.mass = vehicleData.getPhysicsInfo().mass;
+        this.physicsEngine.friction = vehicleData.getPhysicsInfo().friction;
+        this.physicsEngine.center = vehicleData.getPhysicsInfo().center;
+        this.physicsEngine.canDestroyBlock = vehicleData.getPhysicsInfo().canDestroyBlock;
+        this.physicsEngine.canTumble = vehicleData.getPhysicsInfo().canTumble;
+        this.physicsEngine.radarCrossSection = vehicleData.getPhysicsInfo().radarCrossSection;
+        this.physicsEngine.destroyExplosionVelocity = vehicleData.getPhysicsInfo().destroyExplosionVelocity;
         this.defenseStats = vehicleData.getDefenseStats();
         this.centerOffset = vehicleData.getCenterOffset();
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
@@ -426,6 +544,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         this.partUnitMap = map;
         vehicleData.inject(this);
+        // Re-index from scratch; initData runs more than once, on the save and spawn data paths,
+        // and parts finish attaching cubes here.
+        this.allCubeOBBs = null;
         updateOBBs();
         this.dataInitialized = true;
     }
@@ -467,22 +588,15 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public void tick() {
+        PhysicsTrace trace = physicsTrace;
+        if (trace != null) {
+            trace.beginTick(this);
+        }
+        VehicleParenting.capture(this);
         super.tick();
         deltaMovementO = getDeltaMovement();
         tickPosAndRot();
-        if (!this.isRemoved()) {
-            aiStep();
-        }
-        if (level().isClientSide()) {
-            tickSound();
-            tickParticle();
-            if (warningReceiver != null) {
-                warningReceiver.tick();
-            }
-            if (isDestroyed()) {
-                destroyedTick += 1;
-            }
-        } else {
+        if (!level().isClientSide() && !this.isRemoved()) {
             if (tickCount == 1) {
                 for (Entity passenger : new ArrayList<>(getPassengers())) {
                     passenger.stopRiding();
@@ -495,20 +609,66 @@ public abstract class AbstractVehicle extends ContainerCraft
                     this.discard();
                 }
             }
+        }
+        boolean async = false;
+        boolean harnessed = VehicleHarness.isHarnessed(this);
+        if (!this.isRemoved() && !harnessed) {
+            if (!level().isClientSide()) {
+                async = tryLaunchAsyncPhysics();
+            }
+            if (!async) {
+                aiStep();
+            }
+        }
+        if (level().isClientSide()) {
+            tickSound();
+            tickParticle();
+            if (warningReceiver != null) {
+                warningReceiver.tick();
+            }
+            if (isDestroyed()) {
+                destroyedTick += 1;
+            }
+        } else if (!async && !harnessed && !this.isRemoved()) {
             tickEnergy();
             tickPower();
             tickEngineSpeed();
+            this.level().getProfiler().push("vehicle_physics");
             tickPhysics(tickMove());
-            VehicleMoveEvent __event = new VehicleMoveEvent(this);
-            NeoForge.EVENT_BUS.post(__event);
-            if (__event.isCanceled()) {
-                this.setDeltaMovement(Vec3.ZERO);
-            }
+            this.level().getProfiler().pop();
+            postMoveEvent();
+        }
+        if (!async) {
+            finishTick(trace);
+        }
+    }
+
+    private void finishTick(@Nullable PhysicsTrace trace) {
+        if (!level().isClientSide()) {
+            VehicleRighting.tick(this);
         }
         tickParts();
         tickDecorations();
         afterVehicleRot();
+        this.level().getProfiler().push("vehicle_obb");
         updateOBBs();
+        this.level().getProfiler().pop();
+        this.level().getProfiler().push("vehicle_riders");
+        VehicleParenting.tick(this);
+        VehicleHarness.applyChildren(this);
+        this.level().getProfiler().pop();
+        VehicleHarness.tick(this);
+        if (trace != null) {
+            trace.endTick(this);
+        }
+    }
+
+    private void postMoveEvent() {
+        VehicleMoveEvent __event = new VehicleMoveEvent(this);
+        NeoForge.EVENT_BUS.post(__event);
+        if (__event.isCanceled()) {
+            this.setDeltaMovement(Vec3.ZERO);
+        }
     }
 
     protected void tickEnergy() {
@@ -542,69 +702,316 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     protected void tickPhysics(Vec3 force) {
-        Vector3f[] axes = mainCubeOBB.obb().getAxes();
-        // 车体大OBB的表面采样点
-        List<VehicleCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
+        physicsRig.capturePose(this);
+        physicsRig.bindWorld(ChunkCollisionCache.of(this.level()));
+        collisionCursor = physicsRig.cursor;
+        solveContacts(physicsRig, force, true);
+        flushContacts(physicsRig);
+    }
+
+
+    void solveContacts(PhysicsRig rig, Vec3 force, boolean allowProviders) {
+        Vector3f[] axes = rig.axes();
         // 接触方块的采样点
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
 
-        for (VehicleCubeOBB.CubePoint point : surfacePoints) {
-            Vector3f worldPos = point.worldPos(axes);
-            // Reused mutable position; equivalent to BlockPos.containing(worldPos)
-            scratchBlockPos.set(Mth.floor(worldPos.x), Mth.floor(worldPos.y), Mth.floor(worldPos.z));
+        AABB hullBounds = rig.bounds().inflate(SAMPLE_GATE_MARGIN);
+        boolean anySolidNearby;
+        if (covers(preparedBounds, hullBounds)) {
+            anySolidNearby = tickAnySolidNearby;
+        } else if (rig.sections instanceof ChunkCollisionCache liveCache) {
+            anySolidNearby = liveCache.prepare(this.level(), hullBounds);
+        } else {
+            rig.needsLiveWorld = true;
+            return;
+        }
 
-            // 调试
-//            DebugUtil.particle(level(), new Vec3(worldPos), point.cubeFace());
-//            DebugUtil.particle(level(), new Vec3(scratchBlockPos.getX(), scratchBlockPos.getY(), scratchBlockPos.getZ()));
+        List<CollisionProvider.Session> providers =
+                allowProviders ? openProviderSessions(hullBounds) : List.of();
+        boolean inverted = AllConfigs.Cached.invertedCollisionQuery;
+        ChunkCollisionCache.Cursor cursor = rig.cursor;
+        carrierLink.collect(mainCubeOBB, rig.hull, axes, touchPoints);
+        List<CollisionProvider.Session> gridSessions = providers;
+        if (anySolidNearby || !providers.isEmpty() || carrierLink.active()) {
+            cursor.reset();
+            ContactSynthesis.ContactResolver resolver = ContactSynthesis.blocks(cursor);
 
-            BlockState blockState = level().getBlockState(scratchBlockPos);
-            if (blockState.isSolid()) {
-                point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(scratchBlockPos));
-                point.cubePointContext.setBlockState(blockState);
-                touchPoints.add(point);
+            if (inverted) {
+                if (anySolidNearby) {
+                    scratchBoxes.clear();
+                    ChunkCollisionCache.collectBoxes(rig.sections, hullBounds, scratchBoxes);
+                    ContactSynthesis.collect(mainCubeOBB, rig.hull, axes, scratchBoxes, resolver, touchPoints);
+                }
+
+                gridSessions = List.of();
+                for (int i = 0, size = providers.size(); i < size; i++) {
+                    CollisionProvider.Session session = providers.get(i);
+                    providerBoxes.clear();
+                    if (session.collectBoxes(hullBounds, providerBoxes)) {
+                        ContactSynthesis.collect(mainCubeOBB, rig.hull, axes, providerBoxes,
+                                ContactSynthesis.provider(session), touchPoints);
+                    } else {
+                        if (gridSessions.isEmpty()) {
+                            gridSessions = new ArrayList<>(size - i);
+                        }
+                        gridSessions.add(session);
+                    }
+                }
+            }
+
+            // Landing gear and wheels attach sample points below the hull, so they must be probed
+            // as points; the box passes skip them.
+            List<VehicleCubeOBB.CubePoint> attachedPoints = mainCubeOBB.attachedPoints();
+            if (inverted && !attachedPoints.isEmpty()) {
+                for (int i = 0, size = attachedPoints.size(); i < size; i++) {
+                    VehicleCubeOBB.CubePoint point = attachedPoints.get(i);
+                    Vector3f worldPos = point.worldPos(rig.hull, axes);
+                    if (carrierLink.contactAt(point, worldPos)) {
+                        touchPoints.add(point);
+                        continue;
+                    }
+                    if (anySolidNearby && ContactSynthesis.resolveColumn(
+                            cursor, point.cubePointContext, worldPos)) {
+                        touchPoints.add(point);
+                        continue;
+                    }
+                    for (int p = 0, count = providers.size(); p < count; p++) {
+                        CollisionProvider.Contact contact = providers.get(p).contactAt(point, worldPos);
+                        if (contact != null) {
+                            point.cubePointContext.setProviderCell(contact.blockPos());
+                            point.cubePointContext.setBlockState(contact.state());
+                            point.cubePointContext.setSurfaceY(Double.NaN);
+                            touchPoints.add(point);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            boolean gridForBlocks = anySolidNearby && !inverted;
+            if (gridForBlocks || !gridSessions.isEmpty()) {
+                for (VehicleCubeOBB.CubePoint point : mainCubeOBB.cubePoints()) {
+                    if (inverted && attachedPoints.contains(point)) {
+                        continue;
+                    }
+                    Vector3f worldPos = point.worldPos(rig.hull, axes);
+
+                    if (gridForBlocks
+                            && ContactSynthesis.resolveColumn(
+                                    cursor, point.cubePointContext, worldPos)) {
+                        touchPoints.add(point);
+                        continue;
+                    }
+                    for (int i = 0, size = gridSessions.size(); i < size; i++) {
+                        CollisionProvider.Contact contact = gridSessions.get(i).contactAt(point, worldPos);
+                        if (contact != null) {
+                            point.cubePointContext.setProviderCell(contact.blockPos());
+                            point.cubePointContext.setBlockState(contact.state());
+                            // Sample points are reused every tick, so a stale surface height from
+                            // an earlier block contact would otherwise survive into this one.
+                            point.cubePointContext.setSurfaceY(Double.NaN);
+                            touchPoints.add(point);
+                            break;
+                        }
+                    }
+                }
+            }
+            for (int i = 0, size = providers.size(); i < size; i++) {
+                providers.get(i).end(touchPoints);
             }
         }
+        // Runs on a worker thread when the scheduler is on, so listeners must be thread safe.
         NeoForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
 
-        // 调试
-//        touchPoints.forEach(p -> DebugUtil.particle(level(), new Vec3(p.worldPos(axes)), p.cubeFace()));
-//        touchPoints.forEach(p -> {
-//            BlockPos blockPos = p.cubePointContext.blockPos();
-//            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()), p.cubeFace());
-//        });
-
         // 碰撞
-        Vec3 velocity = getDeltaMovement();
+        Vec3 velocity = rig.getDeltaMovement();
         if (collision) {
-            velocity = physicsEngine.motionByImpact(touchPoints, axes, velocity);
+            velocity = physicsEngine.motionByImpact(rig, touchPoints, axes, velocity);
         }
         // 阻力
         velocity = physicsEngine.decelerationByFriction(touchPoints, velocity);
         // 重力与旋转
-        velocity = physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f(), velocity.toVector3f());
+        velocity = physicsEngine.rotAndFallByGravity(rig, touchPoints, axes, force.toVector3f(), velocity.toVector3f());
         physicsEngine.velocityO = physicsEngine.velocity;
 
-        setDeltaMovement(velocity);
+        rig.setDeltaMovement(velocity);
+    }
 
-//        if (this instanceof Ztz99a) {
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).aimContext().position);
-//
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(2).worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(2).aimContext().position);
+    /**
+     * Applies a finished contact solve to the live entity.
+     * Must be called from world thread
+     */
+    void flushContacts(PhysicsRig rig) {
+        this.setPos(rig.x, rig.y, rig.z);
+        if (rig.getXRot() != this.getXRot()) {
+            this.setXRot(rig.getXRot());
+        }
+        if (rig.getYRot() != this.getYRot()) {
+            this.setYRot(rig.getYRot());
+        }
+        if (rig.getZRot() != this.getZRot()) {
+            this.setZRot(rig.getZRot());
+        }
+        this.setDeltaMovement(rig.getDeltaMovement());
+        this.setOnGround(rig.onGround());
+        for (int i = 0; i < rig.posRotUpdates; i++) {
+            triggerPosRotUpdate();
+        }
+        if (rig.impactVelocityDiff > 0.5) {
+            DamageSystem.impactHurt(rig.impactVelocityDiff, this);
+        }
 
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).weapons.get(2).getWeaponUnit().worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).weapons.get(2).getWeaponUnit().aimContext().position);
+        physicsEngine.applyPendingBreaks();
+    }
 
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getCurrentWeapon().get().getWeaponUnit().worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getCurrentWeapon().get().getWeaponUnit().aimContext().position);
+    /**
+     * Freezes this tick's physics inputs and hands the solve to the scheduler, or reports that
+     * this vehicle must solve synchronously this tick.
+     */
+    private boolean tryLaunchAsyncPhysics() {
+        if (mainCubeOBB == null || physicsTrace != null || level().isDebug()
+                || !CollisionProviders.providers().isEmpty()
+                || !VehiclePhysicsScheduler.available()) {
+            return false;
+        }
+        tickEnergy();
+        tickPower();
+        tickEngineSpeed();
+        applyVelocityDeadband();
+        physicsRig.capturePose(this);
+        physicsRig.bindWorld(pinnedSections);
+        planTravel(physicsRig, true);
+        collisionCursor = physicsRig.cursor;
+        Vec3 force = tickMove();
+        physicsRig.capturePose(this);
+        physicsEngine.captureState(engineStateSnapshot);
+        VehiclePhysicsJob job = new VehiclePhysicsJob(this, force);
+        physicsJob = job;
+        VehiclePhysicsScheduler.submit(job);
+        return true;
+    }
 
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).ammoSpawnPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOwnerViewPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOpticalSightPosition());
-//            DebugUtil.particle(level(), seats.get(0).partUnit.worldSeatPosition());
-//        }
+    //Async worker startup
+    public void runPhysicsSolve(VehiclePhysicsJob job) {
+        solveTravel(physicsRig);
+        if (!physicsRig.needsLiveWorld) {
+            solveContacts(physicsRig, job.force, false);
+        }
+    }
 
+    public void completePhysicsJob(VehiclePhysicsJob job) {
+        if (physicsJob != job) {
+            return;
+        }
+        physicsJob = null;
+        if (this.isRemoved()) {
+            pendingRecoils.clear();
+            return;
+        }
+        if (job.failed || physicsRig.needsLiveWorld || job.interfered()) {
+            physicsEngine.restoreState(engineStateSnapshot);
+            physicsRig.capturePose(this);
+            physicsRig.bindWorld(ChunkCollisionCache.of(this.level()));
+            collisionCursor = physicsRig.cursor;
+            planTravel(physicsRig, false);
+            solveTravel(physicsRig);
+            flushTravel(physicsRig);
+            this.pushEntities();
+            physicsRig.capturePose(this);
+            solveContacts(physicsRig, job.force, true);
+            flushContacts(physicsRig);
+        } else {
+            flushTravel(physicsRig);
+            Vec3 beforePush = this.getDeltaMovement();
+            this.pushEntities();
+            Vec3 afterPush = this.getDeltaMovement();
+            if (afterPush.x != beforePush.x || afterPush.y != beforePush.y
+                    || afterPush.z != beforePush.z) {
+                physicsEngine.restoreState(engineStateSnapshot);
+                physicsRig.capturePose(this);
+                physicsRig.bindWorld(ChunkCollisionCache.of(this.level()));
+                collisionCursor = physicsRig.cursor;
+                solveContacts(physicsRig, job.force, true);
+            }
+            flushContacts(physicsRig);
+        }
+        postMoveEvent();
+        finishTick(null);
+        drainPendingRecoils();
+    }
+
+    //Drops an in-flight solve without applying it
+    public void abandonPhysicsJob(VehiclePhysicsJob job) {
+        if (physicsJob != job) {
+            return;
+        }
+        physicsJob = null;
+        physicsEngine.restoreState(engineStateSnapshot);
+        drainPendingRecoils();
+    }
+
+    /**
+     * Fires weapon recoil into the physics state, now or at the barrier.
+     */
+    public void queueRecoil(WeaponUnit weaponUnit, float recoil) {
+        if (physicsJob != null) {
+            pendingRecoils.add(() -> physicsEngine.recoil(weaponUnit, recoil));
+        } else {
+            physicsEngine.recoil(weaponUnit, recoil);
+        }
+    }
+
+    private void drainPendingRecoils() {
+        if (pendingRecoils.isEmpty()) {
+            return;
+        }
+        for (int i = 0, size = pendingRecoils.size(); i < size; i++) {
+            pendingRecoils.get(i).run();
+        }
+        pendingRecoils.clear();
+    }
+
+    /**
+     * The snapshot cursor this tick's contacts were resolved through, or null before the first
+     * tick that found anything nearby.
+     */
+    @Nullable
+    public ChunkCollisionCache.Cursor collisionCursor() {
+        return collisionCursor;
+    }
+
+    /**
+     * The substep broadphase, already pointed at this level's snapshot cache. The tick's prepare
+     * covers the climb band, so the headroom check can query it instead of walking sections.
+     */
+    public SweptHull.Broadphase sweptBroadphase() {
+        return sweptBroadphase;
+    }
+
+    /** Whether the outer box fully contains the inner one. False when nothing was prepared. */
+    private static boolean covers(@Nullable AABB outer, AABB inner) {
+        return outer != null
+                && outer.minX <= inner.minX && outer.minY <= inner.minY && outer.minZ <= inner.minZ
+                && outer.maxX >= inner.maxX && outer.maxY >= inner.maxY && outer.maxZ >= inner.maxZ;
+    }
+
+    /**
+     * Opens a session per registered provider that wants this vehicle, so the sampling loop can
+     * consult them all in one pass.
+     */
+    private List<CollisionProvider.Session> openProviderSessions(AABB hullBounds) {
+        List<CollisionProvider> registered = CollisionProviders.providers();
+        if (registered.isEmpty()) {
+            return List.of();
+        }
+        List<CollisionProvider.Session> sessions = new ArrayList<>(registered.size());
+        for (int i = 0, size = registered.size(); i < size; i++) {
+            CollisionProvider.Session session = registered.get(i).begin(this, hullBounds);
+            if (session != null) {
+                sessions.add(session);
+            }
+        }
+        return sessions;
     }
 
     @Override
@@ -629,6 +1036,10 @@ public abstract class AbstractVehicle extends ContainerCraft
             return false;
         } else {
             if (!level().isClientSide()) {
+                // Being shot is the clearest possible sign that a parked vehicle's situation has
+                // changed. Wake it before the damage lands, so knockback and a wreck's collapse
+                // are solved rather than held in place by the harness.
+                VehicleHarness.wake(this);
                 this.level().broadcastDamageEvent(this, damageSource);
                 DamageSystem.hurt(damageSource, amount, this);
                 if (this.getHealth() <= 0) {
@@ -732,6 +1143,9 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.yRotO = this.yRot;
         this.zRotO = this.zRot;
         if (level().isClientSide()) {
+            if (VehicleHarness.clientFollow(this)) {
+                return;
+            }
             if (this.lerpSteps > 0) {
                 double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
                 double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
@@ -802,22 +1216,34 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @Override
     public List<OBB> getOBBs() {
-        return cachedOBBs;
+        return activeOBBs;
     }
 
-    @Override
-    public void updateOBBs() {
-        if (mainCubeOBB == null) {
+    /**
+     * Rebuilds the collision list when a part detaches or reattaches, so detached
+     * geometry stops colliding with the body it came off.
+     */
+    private void refreshActiveOBBs() {
+        boolean changed = false;
+        boolean anyDetached = false;
+        for (int i = 0; i < cubeDetached.length; i++) {
+            int part = cubePartIndex[i];
+            boolean detached = part >= 0 && partUnits.get(part).isDetached();
+            anyDetached |= detached;
+            if (cubeDetached[i] != detached) {
+                cubeDetached[i] = detached;
+                changed = true;
+            }
+        }
+        if (!changed) {
             return;
         }
-        List<VehicleCubeOBB> allCubeOBBS = new ArrayList<>(this.vehicleCubeOBBs);
-        for (PartUnit<?> partUnit : partUnits) {
-            allCubeOBBS.addAll(partUnit.getPartCubeOBBs());
+        if (!anyDetached) {
+            activeOBBs = cachedOBBs;
+            return;
         }
-        allCubeOBBS.forEach(cubeOBB -> cubeOBB.update(this));
-        mainCubeOBB.update(this);
-        List<OBB> obbs = new ArrayList<>(allCubeOBBS.size());
-        for (VehicleCubeOBB cubeOBB : this.vehicleCubeOBBs) {
+        List<OBB> obbs = new ArrayList<>(cachedOBBs.size());
+        for (VehicleCubeOBB cubeOBB : vehicleCubeOBBs) {
             obbs.add(cubeOBB.obb());
         }
         for (PartUnit<?> partUnit : partUnits) {
@@ -825,33 +1251,240 @@ public abstract class AbstractVehicle extends ContainerCraft
                 obbs.addAll(partUnit.getOBBs());
             }
         }
-        this.cachedOBBs = Collections.unmodifiableList(obbs);
+        activeOBBs = Collections.unmodifiableList(obbs);
+    }
+
+    /**
+     * This vehicle's frame and walkable geometry as of its last bounding box update. Never null,
+     * and a vehicle with nothing walkable reads as empty. Take it once per operation, do not hold
+     * it, since it is replaced rather than mutated.
+     */
+    public DeckSnapshot deckSnapshot() {
+        return deckSnapshot;
+    }
+
+    /** What a rider's feet find when they land on this hull. */
+    public SoundType deckSoundType() {
+        return SoundType.METAL;
+    }
+
+    /** Entities parented to this vehicle. */
+    public List<Entity> deckRiders() {
+        return deckRiders;
+    }
+
+    @Override
+    public void updateOBBs() {
+        if (mainCubeOBB == null) {
+            return;
+        }
+        if (allCubeOBBs == null) {
+            buildOBBIndex();
+        }
+        refreshActiveOBBs();
+        refreshGroupTransforms();
+
+        Quaternionf vehicleRotation = rotYXZShared();
+        int structureCubes = allCubeOBBs.size();
+        DeckSnapshot deck = deckSnapshotBuffers[deckSnapshotSlot];
+        float[] deckBoxes = deck.boxBuffer(structureCubes);
+        float[] landingBoxes = deckCubes > 0 ? deck.deckBoxBuffer(deckCubes) : deck.deckBoxes();
+        int landingCount = 0;
+        int boxCount = 0;
+        double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
+        for (int i = 0, size = structureCubes; i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : allCubeOBBs.get(i);
+            int group = cubeGroupIndex[i];
+            cubeOBB.update(this, vehicleRotation, groupOffset[group], groupRotation[group]);
+
+            // A detached part rides its own entity now. Keep posing it so nothing reads a stale
+            // pose, but leave it out of the hull's bounds and deck surfaces.
+            if (i < size && cubeDetached[i]) {
+                continue;
+            }
+
+            Vector3f center = cubeOBB.localCenter();
+            Vector3f extents = cubeOBB.obb().extents();
+            cubeOBB.localRotation().get(scratchLocalRot);
+            float rx = Math.abs(scratchLocalRot.m00) * extents.x + Math.abs(scratchLocalRot.m10) * extents.y + Math.abs(scratchLocalRot.m20) * extents.z;
+            float ry = Math.abs(scratchLocalRot.m01) * extents.x + Math.abs(scratchLocalRot.m11) * extents.y + Math.abs(scratchLocalRot.m21) * extents.z;
+            float rz = Math.abs(scratchLocalRot.m02) * extents.x + Math.abs(scratchLocalRot.m12) * extents.y + Math.abs(scratchLocalRot.m22) * extents.z;
+            if (i < size) {
+                int o = boxCount * 6;
+                deckBoxes[o] = center.x - rx;
+                deckBoxes[o + 1] = center.y - ry;
+                deckBoxes[o + 2] = center.z - rz;
+                deckBoxes[o + 3] = center.x + rx;
+                deckBoxes[o + 4] = center.y + ry;
+                deckBoxes[o + 5] = center.z + rz;
+                if (cubeOBB.isDeck() && landingCount < deckCubes) {
+                    System.arraycopy(deckBoxes, o, landingBoxes, landingCount * 6, 6);
+                    landingCount++;
+                }
+                boxCount++;
+            }
+            if (center.x - rx < minX) minX = center.x - rx;
+            if (center.y - ry < minY) minY = center.y - ry;
+            if (center.z - rz < minZ) minZ = center.z - rz;
+            if (center.x + rx > maxX) maxX = center.x + rx;
+            if (center.y + ry > maxY) maxY = center.y + ry;
+            if (center.z + rz > maxZ) maxZ = center.z + rz;
+        }
+        localMinX = minX; localMinY = minY; localMinZ = minZ;
+        localMaxX = maxX; localMaxY = maxY; localMaxZ = maxZ;
+        localBoundsValid = minX <= maxX;
+
+        setBoundingBox(makeBoundingBox());
+
+        deck.set(vehicleRotation, getYRot(),
+                getX() + centerOffset.x, getY() + centerOffset.y, getZ() + centerOffset.z,
+                boxCount, landingCount);
+        deckSnapshot = deck;
+        deckSnapshotSlot ^= 1;
+        boolean isCarrier = landingCount > 0;
+        if (isCarrier != carrierRegistered) {
+            CarrierDecks.setRegistered(this, isCarrier);
+            carrierRegistered = isCarrier;
+        }
+    }
+
+    /** Refreshes every cube's world pose after a pure translation. Used by the substep loop. */
+    private void translateOBBs(double dx, double dy, double dz) {
+        if (mainCubeOBB == null) {
+            return;
+        }
+        if (allCubeOBBs == null) {
+            updateOBBs();
+            return;
+        }
+        float fx = (float) dx;
+        float fy = (float) dy;
+        float fz = (float) dz;
+        for (int i = 0, size = allCubeOBBs.size(); i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : allCubeOBBs.get(i);
+            cubeOBB.translate(fx, fy, fz, dx, dy, dz);
+        }
+    }
+
+    /**
+     * Flattens body and part geometry once, and lays out the group forest in topological order.
+     */
+    private void buildOBBIndex() {
+        List<VehicleCubeOBB> cubes = new ArrayList<>(vehicleCubeOBBs);
+        for (PartUnit<?> partUnit : partUnits) {
+            cubes.addAll(partUnit.getPartCubeOBBs());
+        }
+        allCubeOBBs = List.copyOf(cubes);
+        cubePartIndex = new int[cubes.size()];
+        cubeDetached = new boolean[cubes.size()];
+        Arrays.fill(cubePartIndex, -1);
+        int cubeCursor = vehicleCubeOBBs.size();
+        for (int p = 0, parts = partUnits.size(); p < parts; p++) {
+            for (int c = partUnits.get(p).getPartCubeOBBs().size(); c > 0; c--) {
+                cubePartIndex[cubeCursor++] = p;
+            }
+        }
+        int declaredDeck = 0;
+        for (int i = 0, size = cubes.size(); i < size; i++) {
+            if (cubes.get(i).isDeck()) {
+                declaredDeck++;
+            }
+        }
+        deckCubes = declaredDeck;
+
+        List<OBB> obbs = new ArrayList<>(cubes.size());
+        for (VehicleCubeOBB cubeOBB : cubes) {
+            obbs.add(cubeOBB.obb());
+        }
+        cachedOBBs = Collections.unmodifiableList(obbs);
+        activeOBBs = cachedOBBs;
+
+        List<VehicleCubeGroup> order = new ArrayList<>();
+        Map<VehicleCubeGroup, Integer> indexOf = new IdentityHashMap<>();
+        order.add(null);
+        for (int i = 0, size = cubes.size(); i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : cubes.get(i);
+            indexGroupChain(cubeOBB.group, order, indexOf);
+        }
+
+        groupOrder = order.toArray(new VehicleCubeGroup[0]);
+        groupParent = new int[groupOrder.length];
+        groupOffset = new Vector3f[groupOrder.length];
+        groupRotation = new Quaternionf[groupOrder.length];
+        for (int i = 0; i < groupOrder.length; i++) {
+            VehicleCubeGroup group = groupOrder[i];
+            groupParent[i] = group == null || group.parent == null ? -1 : indexOf.get(group.parent);
+            groupOffset[i] = new Vector3f();
+            groupRotation[i] = new Quaternionf();
+        }
+
+        cubeGroupIndex = new int[cubes.size() + 1];
+        for (int i = 0, size = cubes.size(); i <= size; i++) {
+            VehicleCubeOBB cubeOBB = i == size ? mainCubeOBB : cubes.get(i);
+            cubeGroupIndex[i] = cubeOBB.group == null ? 0 : indexOf.get(cubeOBB.group);
+        }
+    }
+
+    /** Registers a group and every ancestor of it, parents before children. */
+    private static void indexGroupChain(VehicleCubeGroup group, List<VehicleCubeGroup> order, Map<VehicleCubeGroup, Integer> indexOf) {
+        if (group == null || indexOf.containsKey(group)) {
+            return;
+        }
+        indexGroupChain(group.parent, order, indexOf);
+        indexOf.put(group, order.size());
+        order.add(group);
+    }
+
+    /** Resolves every group's transform relative to the vehicle pivot in one forward sweep. */
+    private void refreshGroupTransforms() {
+        for (int i = 0; i < groupOrder.length; i++) {
+            VehicleCubeGroup group = groupOrder[i];
+            if (group == null) {
+                continue;
+            }
+            Vector3f offset = groupOffset[i];
+            Quaternionf rotation = groupRotation[i];
+            offset.set((float) group.pivot.x, (float) group.pivot.y, (float) group.pivot.z);
+            int parent = groupParent[i];
+            if (parent < 0) {
+                rotation.set(group.rotation);
+            } else {
+                groupRotation[parent].transform(offset);
+                offset.add(groupOffset[parent]);
+                groupRotation[parent].mul(group.rotation, rotation);
+            }
+        }
     }
 
     @Override
     protected AABB makeBoundingBox() {
-        if (remote || !dataInitialized) {
+        if (remote || !dataInitialized || !localBoundsValid) {
             return AABB.ofSize(position(), 1, 1, 1);
         }
-        List<OBB> vehicleOBBs = getOBBs();
-        if (vehicleOBBs.isEmpty()) {
-            return AABB.ofSize(position(), 1, 1, 1);
-        }
+        Quaternionf rotation = rotYXZShared();
+        Vector3f corner = new Vector3f();
         double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-        for (int i = 0, size = vehicleOBBs.size(); i <= size; i++) {
-            OBB obb = i == size ? mainCubeOBB.obb() : vehicleOBBs.get(i);
-            Vector3f[] vertices = obb.getVertices();
-            for (Vector3f v : vertices) {
-                if (v.x < minX) minX = v.x;
-                if (v.y < minY) minY = v.y;
-                if (v.z < minZ) minZ = v.z;
-                if (v.x > maxX) maxX = v.x;
-                if (v.y > maxY) maxY = v.y;
-                if (v.z > maxZ) maxZ = v.z;
-            }
+        for (int i = 0; i < 8; i++) {
+            corner.set(
+                    (float) ((i & 1) == 0 ? localMinX : localMaxX),
+                    (float) ((i & 2) == 0 ? localMinY : localMaxY),
+                    (float) ((i & 4) == 0 ? localMinZ : localMaxZ));
+            rotation.transform(corner);
+            if (corner.x < minX) minX = corner.x;
+            if (corner.y < minY) minY = corner.y;
+            if (corner.z < minZ) minZ = corner.z;
+            if (corner.x > maxX) maxX = corner.x;
+            if (corner.y > maxY) maxY = corner.y;
+            if (corner.z > maxZ) maxZ = corner.z;
         }
-        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+        double originX = getX() + centerOffset.x;
+        double originY = getY() + centerOffset.y;
+        double originZ = getZ() + centerOffset.z;
+        return new AABB(
+                minX + originX, minY + originY, minZ + originZ,
+                maxX + originX, maxY + originY, maxZ + originZ);
     }
 
     @Override
@@ -1339,11 +1972,21 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     public Quaternionf rotYXZ() {
-        Quaternionf q = new Quaternionf();
-        q.rotateY(Math.toRadians(-yRot))
-                .rotateX(Math.toRadians(xRot))
-                .rotateZ(Math.toRadians(zRot));
-        return q;
+        return new Quaternionf(rotYXZShared());
+    }
+
+    /** The composed rotation without the defensive copy. Read-only; shared until a rotation field changes. */
+    private Quaternionf rotYXZShared() {
+        if (yRot != cachedRotYXZYaw || xRot != cachedRotYXZPitch || zRot != cachedRotYXZRoll) {
+            cachedRotYXZ.identity()
+                    .rotateY(Math.toRadians(-yRot))
+                    .rotateX(Math.toRadians(xRot))
+                    .rotateZ(Math.toRadians(zRot));
+            cachedRotYXZYaw = yRot;
+            cachedRotYXZPitch = xRot;
+            cachedRotYXZRoll = zRot;
+        }
+        return cachedRotYXZ;
     }
 
     public Vec3 position(float partialTick) {
@@ -1400,7 +2043,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public void setEnergy(float amount) {
         entityData.set(ENERGY, amount);
-        physicsEngine.physicsInfo.mass = curbWeight + amount;
+        physicsEngine.mass = curbWeight + amount;
     }
 
     public float addEnergy(float amount) {
@@ -1495,6 +2138,9 @@ public abstract class AbstractVehicle extends ContainerCraft
             return;
         }
         if (pEntity instanceof AbstractVehicle vehicle) {
+            if (carriedBy(this, vehicle) || carriedBy(vehicle, this)) {
+                return;
+            }
             VehicleCubeOBB bodyCube = vehicle.getMainCubeOBB();
             if (!OBB.isColliding(bodyCube.obb(), this.getMainCubeOBB().obb())) {
                 return;
@@ -1519,8 +2165,8 @@ public abstract class AbstractVehicle extends ContainerCraft
             double relativeNormalSpeed = otherVelocity.subtract(thisVelocity).dot(normal);
             double separationSpeed = 0.01;
             if (relativeNormalSpeed < separationSpeed) {
-                double thisMass = Math.max(this.physicsEngine.physicsInfo.mass, 1.0E-3);
-                double otherMass = Math.max(vehicle.physicsEngine.physicsInfo.mass, 1.0E-3);
+                double thisMass = Math.max(this.physicsEngine.mass, 1.0E-3);
+                double otherMass = Math.max(vehicle.physicsEngine.mass, 1.0E-3);
                 double velocityChange = separationSpeed - relativeNormalSpeed;
                 double totalMass = thisMass + otherMass;
                 Vec3 thisPush = normal.scale(-velocityChange * otherMass / totalMass);
@@ -1531,22 +2177,50 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
     }
 
+    /** Whether rider is being held up by carrier's deck right now. */
+    private static boolean carriedBy(AbstractVehicle rider, AbstractVehicle carrier) {
+        if (VehicleHarness.carrierOf(rider) == carrier) {
+            return true;
+        }
+        CarrierLink link = rider.carrierLink();
+        return link.carrier() == carrier && link.supported();
+    }
+
     public void support(Entity pEntity) {
         if (pEntity.noPhysics || this.noPhysics || !collision) {
             return;
         }
+        DeckAttachment attachment = VehicleParenting.attachmentOf(pEntity);
+        if (attachment != null && attachment.vehicle() == this && attachment.gripped()) {
+            return;
+        }
         boolean carried = false;
+        List<OBB> obbs = getOBBs();
         for (int pass = 0; pass < SUPPORT_RESOLVE_PASSES; pass++) {
             boolean resolvedAny = false;
-            for (OBB obb : getOBBs()) {
+            for (int i = 0, size = obbs.size(); i < size; i++) {
+                OBB obb = obbs.get(i);
                 AABB entityAABB = pEntity.getBoundingBox();
-                if (!OBB.isColliding(obb, entityAABB)) {
+                Vector3f cubeCentre = obb.center();
+                double offX = (entityAABB.minX + entityAABB.maxX) * 0.5 - cubeCentre.x;
+                double offY = (entityAABB.minY + entityAABB.maxY) * 0.5 - cubeCentre.y;
+                double offZ = (entityAABB.minZ + entityAABB.maxZ) * 0.5 - cubeCentre.z;
+                double entityHalfX = (entityAABB.maxX - entityAABB.minX) * 0.5;
+                double entityHalfY = (entityAABB.maxY - entityAABB.minY) * 0.5;
+                double entityHalfZ = (entityAABB.maxZ - entityAABB.minZ) * 0.5;
+                double reach = obb.extents().length() + Math.sqrt(entityHalfX * entityHalfX
+                        + entityHalfY * entityHalfY + entityHalfZ * entityHalfZ);
+                if (offX * offX + offY * offY + offZ * offZ > reach * reach) {
                     continue;
                 }
-                Vec3 mtv = new Vec3(obb.calculateMTV(entityAABB));
-                if (mtv.lengthSqr() <= 0) {
+                float depth = OBB.mtv(supportFrame.set(obb.rotation()),
+                        cubeCentre.x, cubeCentre.y, cubeCentre.z, obb.extents(),
+                        entityAABB.minX, entityAABB.minY, entityAABB.minZ,
+                        entityAABB.maxX, entityAABB.maxY, entityAABB.maxZ, supportMtv);
+                if (depth <= 0) {
                     continue;
                 }
+                Vec3 mtv = new Vec3(supportMtv.x, supportMtv.y, supportMtv.z);
                 if (mtv.y < 0) {
                     Vec3 direction = pEntity.position().subtract(this.position()).normalize();
                     direction = direction.scale(0.2f);
@@ -1592,9 +2266,11 @@ public abstract class AbstractVehicle extends ContainerCraft
                 currPos.z + offset.z - worldPos.z);
     }
 
-    private void supportEntities() {
+    /** Carries the given candidates through one substep. */
+    private void supportEntities(List<Entity> candidates) {
         boolean clientSide = this.level().isClientSide();
-        for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), EntitySelector.pushableBy(this))) {
+        for (int i = 0, size = candidates.size(); i < size; i++) {
+            Entity entity = candidates.get(i);
             if (entity instanceof AbstractVehicle || entity.isPassengerOfSameVehicle(this)) {
                 continue;
             }
@@ -1606,12 +2282,222 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
 
+    /** How finely to slice this tick's movement. */
     private int collisionSubsteps(Vec3 movement) {
         Vector3f extents = mainCubeOBB.obb().extents();
         float radius = extents.length();
         double tipDisplacement = movement.length() + Math.abs(physicsEngine.rotV) * radius;
-        double thinnest = 2.0 * Math.min(extents.x, Math.min(extents.y, extents.z));
-        return Mth.clamp(Mth.ceil(tipDisplacement / Math.max(0.5, thinnest)), 1, MAX_COLLISION_SUBSTEPS);
+        return Mth.clamp(Mth.ceil(tipDisplacement / SAFE_STEP), 1, MAX_COLLISION_SUBSTEPS);
+    }
+
+    private final BoxBuffer turnBoxes = new BoxBuffer();
+    private final OBB turnTrialHull = new OBB(new Vector3f(), new Vector3f(), new Quaternionf());
+    private final Quaternionf turnSpin = new Quaternionf();
+
+    /**
+     * Turns the hull by the given degrees, but only as far as the world allows; rams whatever refuses.
+     * @return the rotation actually applied, in degrees
+     */
+    public float turnBy(float degrees) {
+        if (degrees == 0) {
+            return 0;
+        }
+        if (!collision || mainCubeOBB == null) {
+            this.setYRot(this.getYRot() + degrees);
+            return degrees;
+        }
+        OBB obb = mainCubeOBB.obb();
+        double radius = obb.extents().length();
+        double tipSwing = Math.toRadians(Math.abs(degrees)) * radius;
+        turnBoxes.clear();
+        AABB bounds = getBoundingBox().inflate(Math.max(1.0, tipSwing + 0.5));
+        ChunkCollisionCache cache = ChunkCollisionCache.of(this.level());
+        boolean deckNear = carrierLink.active();
+        if (!deckNear && !covers(preparedBounds, bounds) && !cache.prepare(this.level(), bounds)) {
+            this.setYRot(this.getYRot() + degrees);
+            return degrees;
+        }
+        cache.collectBoxes(bounds, turnBoxes);
+        if (turnBoxes.isEmpty() && !deckNear) {
+            this.setYRot(this.getYRot() + degrees);
+            return degrees;
+        }
+
+        turnSpin.rotationY((float) Math.toRadians(-degrees));
+        turnTrialHull.extents().set(obb.extents());
+        turnSpin.mul(obb.rotation(), turnTrialHull.rotation());
+        turnTrialHull.center().set(obb.center())
+                .sub((float) getX(), (float) getY(), (float) getZ());
+        turnSpin.transform(turnTrialHull.center())
+                .add((float) getX(), (float) getY(), (float) getZ());
+        OBB trial = SweptHull.climbHull(turnTrialHull, sweepSkirt(), sweepHull);
+        int hit = SweptHull.firstOverlappingBox(trial, turnBoxes);
+        if (hit < 0) {
+            if (deckNear && carrierLink.overlaps(trial)) {
+                return 0;
+            }
+            this.setYRot(this.getYRot() + degrees);
+            return degrees;
+        }
+        double tipSpeed = Math.toRadians(Math.abs(degrees)) * radius;
+        physicsEngine.ramByRotation(turnBoxes.get(hit), tipSpeed);
+        return 0;
+    }
+
+    private static boolean horizontal(Vec3 step) {
+        return step.x != 0 || step.z != 0;
+    }
+
+    /** One sweep cast against world boxes and carrier decks. */
+    private double castToi(OBB hull, BoxBuffer near, double moveX, double moveY, double moveZ,
+                           @Nullable SweptHull.Probe probe, OBB.SatFrame frame) {
+        double toi = SweptHull.timeOfImpact(hull, near, moveX, moveY, moveZ, probe, frame);
+        if (carrierLink.active()) {
+            toi = Math.min(toi, carrierLink.timeOfImpact(hull, moveX, moveY, moveZ));
+        }
+        return toi;
+    }
+
+    /** Time of impact for climb headroom check. */
+    public double climbToi(OBB hull, BoxBuffer near, double lift, OBB.SatFrame frame) {
+        return castToi(hull, near, 0, lift, 0, null, frame);
+    }
+
+    /** This tick's carrier link. */
+    public CarrierLink carrierLink() {
+        return carrierLink;
+    }
+
+    // ---------------------------------------------------------------- harness state
+
+    @Nullable
+    public VehicleHarness harness() {
+        return harness;
+    }
+
+    public void setHarness(@Nullable VehicleHarness harness) {
+        this.harness = harness;
+    }
+
+    public int harnessDwell() {
+        return harnessDwell;
+    }
+
+    public void setHarnessDwell(int ticks) {
+        this.harnessDwell = ticks;
+    }
+
+    /** Vehicles asleep on this one. */
+    public List<AbstractVehicle> harnessedVehicles() {
+        return harnessedVehicles;
+    }
+
+    /** Entity id of the carrier this vehicle is asleep on, or -1. */
+    public int harnessCarrierId() {
+        return entityData.get(HARNESS_CARRIER);
+    }
+
+    public void setHarnessCarrierId(int id) {
+        entityData.set(HARNESS_CARRIER, id);
+    }
+
+    private double sweptLegX, sweptLegZ;
+
+    /** Casts horizontal movement as two per-axis legs. */
+    private void sweepHorizontal(OBB hull, BoxBuffer near, double moveX, double moveZ,
+                                 @Nullable SweptHull.Probe probe) {
+        if (Math.abs(moveX) >= Math.abs(moveZ)) {
+            sweepLegX(hull, near, moveX, probe);
+            sweepLegZ(hull, near, moveZ, null);
+        } else {
+            sweepLegZ(hull, near, moveZ, probe);
+            sweepLegX(hull, near, moveX, null);
+        }
+    }
+
+    private void sweepLegX(OBB hull, BoxBuffer near, double moveX,
+                           @Nullable SweptHull.Probe probe) {
+        sweptLegX = 0;
+        if (moveX != 0) {
+            sweptLegX = moveX * castToi(hull, near, moveX, 0, 0, probe, sweepFrame);
+            hull.center().x += (float) sweptLegX;
+        }
+    }
+
+    private void sweepLegZ(OBB hull, BoxBuffer near, double moveZ,
+                           @Nullable SweptHull.Probe probe) {
+        sweptLegZ = 0;
+        if (moveZ != 0) {
+            sweptLegZ = moveZ * castToi(hull, near, 0, 0, moveZ, probe, sweepFrame);
+            hull.center().z += (float) sweptLegZ;
+        }
+    }
+
+    private static final int STEP_UP_ITERATIONS = 4;
+
+    /** Retries a clipped horizontal step with the hull raised, returning the smallest lift that helps. */
+    private double stepUp(OBB hull, BoxBuffer near, float baseX, float baseY, float baseZ,
+                          double moveX, double moveZ, double baseGain) {
+        double stepLen = Math.sqrt(moveX * moveX + moveZ * moveZ);
+        double budget = Math.min(maxUpStep(), stepLen * physicsEngine.climbGradient);
+        if (budget <= 1.0e-4) {
+            return 0;
+        }
+        hull.center().set(baseX, baseY, baseZ);
+        budget *= castToi(hull, near, 0, budget, 0, null, sweepFrame);
+        if (budget <= 1.0e-4) {
+            return 0;
+        }
+        hull.center().set(baseX, (float) (baseY + budget), baseZ);
+        sweepHorizontal(hull, near, moveX, moveZ, null);
+        double raisedGain = Math.abs(sweptLegX) + Math.abs(sweptLegZ);
+        if (raisedGain <= baseGain + 1.0e-7) {
+            return 0;
+        }
+        double bestX = sweptLegX;
+        double bestZ = sweptLegZ;
+        double lo = 0;
+        double hi = budget;
+        for (int i = 0; i < STEP_UP_ITERATIONS; i++) {
+            double mid = (lo + hi) * 0.5;
+            hull.center().set(baseX, (float) (baseY + mid), baseZ);
+            sweepHorizontal(hull, near, moveX, moveZ, null);
+            if (Math.abs(sweptLegX) + Math.abs(sweptLegZ) >= raisedGain - 1.0e-7) {
+                hi = mid;
+                bestX = sweptLegX;
+                bestZ = sweptLegZ;
+            } else {
+                lo = mid;
+            }
+        }
+        sweptLegX = bestX;
+        sweptLegZ = bestZ;
+        return hi;
+    }
+
+    private static final double MAX_TICK_DISPLACEMENT = MAX_COLLISION_SUBSTEPS * SAFE_STEP;
+
+    private static final int OVERSPEED_LOG_INTERVAL = 100;
+
+    private int overspeedLogTick = -OVERSPEED_LOG_INTERVAL;
+
+    /** Caps this tick's movement at what the substep loop can actually slice safely. */
+    private Vec3 clampToSweepBudget(Vec3 movement) {
+        double length = movement.length();
+        if (length <= MAX_TICK_DISPLACEMENT || length <= 1.0e-9) {
+            return movement;
+        }
+        if (tickCount - overspeedLogTick >= OVERSPEED_LOG_INTERVAL) {
+            overspeedLogTick = tickCount;
+            YwzjVehicle.LOGGER.warn(
+                    "{} #{} asked to move {} blocks in one tick; clamped to {} so collision"
+                            + " substeps stay under {} blocks. Velocity is {} — this usually means"
+                            + " nothing is cancelling its fall.",
+                    getType().toShortString(), getId(), String.format(Locale.ROOT, "%.2f", length),
+                    String.format(Locale.ROOT, "%.2f", MAX_TICK_DISPLACEMENT), SAFE_STEP,
+                    getDeltaMovement());
+        }
+        return movement.scale(MAX_TICK_DISPLACEMENT / length);
     }
 
     public void impact(Entity entity) {
@@ -1656,7 +2542,40 @@ public abstract class AbstractVehicle extends ContainerCraft
         return 1.0F;
     }
 
+    /** Hull-local Y of the underside swept against the world. */
+    public double sweepSkirt() {
+        return java.lang.Math.min(mainCubeOBB.climbSkirt(),
+                -mainCubeOBB.obb().extents().y + maxUpStep() + SWEEP_STEP_MARGIN);
+    }
+
+    @Nullable
+    public PhysicsTrace physicsTrace() {
+        return physicsTrace;
+    }
+
+    public void setPhysicsTrace(@Nullable PhysicsTrace physicsTrace) {
+        this.physicsTrace = physicsTrace;
+    }
+
     public void aiStep() {
+        applyVelocityDeadband();
+        this.level().getProfiler().push("travel");
+        physicsRig.capturePose(this);
+        physicsRig.bindWorld(ChunkCollisionCache.of(this.level()));
+        planTravel(physicsRig, false);
+        solveTravel(physicsRig);
+        flushTravel(physicsRig);
+        this.level().getProfiler().pop();
+
+        this.level().getProfiler().push("push");
+        {
+            this.pushEntities();
+        }
+        this.level().getProfiler().pop();
+    }
+
+    /** Apply velocity deadband before physics. */
+    private void applyVelocityDeadband() {
         Vec3 v = this.getDeltaMovement();
         double dx = v.x;
         double dy = v.y;
@@ -1671,27 +2590,122 @@ public abstract class AbstractVehicle extends ContainerCraft
             dz = 0.0D;
         }
         this.setDeltaMovement(dx, dy, dz);
+    }
 
-        this.level().getProfiler().push("travel");
-        {
-            Vec3 movement = this.getDeltaMovement();
-            int substeps = collisionSubsteps(movement);
-            Vec3 stepMovement = substeps > 1 ? movement.scale(1.0 / substeps) : movement;
-            for (int step = 0; step < substeps; step++) {
-                this.move(MoverType.SELF, stepMovement);
-                this.updateOBBs();
-                if (step < substeps - 1) {
-                    this.supportEntities();
-                }
+    /** Prepare sections and decide how finely to slice movement. */
+    private void planTravel(PhysicsRig rig, boolean pin) {
+        Vec3 movement = this.getDeltaMovement();
+        ChunkCollisionCache cache = ChunkCollisionCache.of(this.level());
+        boolean moving = movement.lengthSqr() > 1.0e-8;
+        boolean prepare = !this.level().isClientSide() || (collision && moving);
+        AABB gather = getBoundingBox().expandTowards(movement)
+                .expandTowards(0, maxUpStep(), 0).inflate(SAMPLE_GATE_MARGIN);
+        boolean anySolidNear = false;
+        if (prepare) {
+            anySolidNear = pin
+                    ? cache.prepareAndPin(this.level(), gather, pinnedSections)
+                    : cache.prepare(this.level(), gather);
+            preparedBounds = gather;
+        } else {
+            preparedBounds = null;
+            if (pin) {
+                pinnedSections.clear();
             }
         }
-        this.level().getProfiler().pop();
-
-        this.level().getProfiler().push("push");
-        {
-            this.pushEntities();
+        tickAnySolidNearby = anySolidNear;
+        boolean deckNear = carrierLink.refresh(this, gather);
+        sweptBroadphase.init(rig.sections);
+        boolean swept = collision && moving
+                && (deckNear || (anySolidNear && ChunkCollisionCache.anyBoxIn(rig.sections,
+                        getBoundingBox().expandTowards(movement).inflate(1.0))));
+        if (swept) {
+            movement = clampToSweepBudget(movement);
+            sweepFrame.set(mainCubeOBB.obb().rotation());
         }
-        this.level().getProfiler().pop();
+        rig.travelMovement = movement;
+        rig.swept = swept;
+        rig.substeps = swept ? collisionSubsteps(movement) : 1;
+        rig.carried = rig.substeps > 1
+                ? this.level().getEntities(this, getBoundingBox().expandTowards(movement),
+                        EntitySelector.pushableBy(this))
+                : List.of();
+    }
+
+    /** The substep sweep. Worker-safe; reads prepared snapshots and records each slice. */
+    void solveTravel(PhysicsRig rig) {
+        boolean swept = rig.swept;
+        int substeps = rig.substeps;
+        Vec3 stepMovement = substeps > 1 ? rig.travelMovement.scale(1.0 / substeps) : rig.travelMovement;
+        PhysicsTrace trace = physicsTrace != null && physicsTrace.isRecording()
+                ? physicsTrace : null;
+        SweptHull.Probe probe = trace != null ? trace.probe() : null;
+        for (int step = 0; step < substeps; step++) {
+            Vec3 clipped = stepMovement;
+            if (swept) {
+                OBB hull = SweptHull.climbHull(rig.hull, sweepSkirt(), sweepHull);
+                boolean sideways = horizontal(stepMovement);
+                BoxBuffer near = sweptBroadphase.near(hull, stepMovement.x,
+                        stepMovement.y + (sideways ? maxUpStep() : 0), stepMovement.z);
+                double stepY = stepMovement.y;
+                if (stepY != 0) {
+                    stepY *= castToi(hull, near, 0, stepY, 0,
+                            sideways ? null : probe, sweepFrame);
+                }
+                double movedX = 0;
+                double movedZ = 0;
+                double stepUpLift = 0;
+                if (sideways) {
+                    hull.center().y += (float) stepY;
+                    float baseX = hull.center().x;
+                    float baseY = hull.center().y;
+                    float baseZ = hull.center().z;
+                    sweepHorizontal(hull, near, stepMovement.x, stepMovement.z, probe);
+                    movedX = sweptLegX;
+                    movedZ = sweptLegZ;
+                    double got = Math.abs(movedX) + Math.abs(movedZ);
+                    double wanted = Math.abs(stepMovement.x) + Math.abs(stepMovement.z);
+                    if (got < wanted - 1.0e-7 && rig.onGround()) {
+                        stepUpLift = stepUp(hull, near, baseX, baseY, baseZ,
+                                stepMovement.x, stepMovement.z, got);
+                        if (stepUpLift > 0) {
+                            movedX = sweptLegX;
+                            movedZ = sweptLegZ;
+                            if (trace != null) {
+                                trace.add(PhysicsTrace.Source.STEP_UP, stepUpLift);
+                            }
+                        }
+                    }
+                }
+                clipped = new Vec3(movedX, stepY + stepUpLift, movedZ);
+            } else if (probe != null) {
+                probe.reset();
+            }
+            rig.move(clipped.x, clipped.y, clipped.z);
+            if (trace != null) {
+                if (swept) {
+                    OBB ended = SweptHull.climbHull(rig.hull, sweepSkirt(), sweepHull);
+                    SweptHull.measurePenetration(ended,
+                            sweptBroadphase.near(ended, 0, 0, 0), probe);
+                }
+                trace.sweep(this, rig, step, substeps, stepMovement);
+            }
+        }
+    }
+
+    /** Apply each recorded slice to the entity. Tick thread only. */
+    void flushTravel(PhysicsRig rig) {
+        var moves = rig.substepMoves;
+        int steps = moves.size() / 3;
+        for (int step = 0; step < steps; step++) {
+            double dx = moves.getDouble(step * 3);
+            double dy = moves.getDouble(step * 3 + 1);
+            double dz = moves.getDouble(step * 3 + 2);
+            this.move(MoverType.SELF, new Vec3(dx, dy, dz));
+            this.translateOBBs(dx, dy, dz);
+            if (step < steps - 1) {
+                this.supportEntities(rig.carried);
+            }
+        }
     }
 
     public static class Seat {

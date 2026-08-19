@@ -82,9 +82,9 @@ public class VehiclePart extends AbstractVehicle {
         cube.depth = sourceCube.depth;
         this.vehicleCubeOBBs = new ArrayList<>(List.of(cube));
         this.mainCubeOBB = cube;
-        this.physicsEngine.physicsInfo.mass = 1;
-        this.physicsEngine.physicsInfo.friction = 0.01f;
-        this.physicsEngine.physicsInfo.center = new Vec3(0, halfH, 0);
+        this.physicsEngine.mass = 1;
+        this.physicsEngine.friction = 0.01f;
+        this.physicsEngine.center = new Vec3(0, halfH, 0);
         this.defenseStats = partUnit.getDefenseStats();
     }
 
