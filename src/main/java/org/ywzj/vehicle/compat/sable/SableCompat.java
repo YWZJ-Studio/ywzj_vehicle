@@ -40,7 +40,7 @@ public class SableCompat {
         IS_LOADED = ModList.get().isLoaded(MOD_ID);
         if (IS_LOADED) {
             SubLevelRadarManager.init();
-            // Only touched when Sable is present, so its classes are never resolved otherwise.
+            // Only register when Sable is present to avoid classloading.
             CollisionProviders.register(new SableCollisionProvider());
         }
     }
@@ -60,12 +60,7 @@ public class SableCompat {
 }
 
 /**
- * Contributes contacts against Sable sub-level blocks, and carries the vehicle along with the
- * sub-level it is resting on.
- * <p>
- * Was a {@code VehicleCollectCollisionEvent} listener that re-walked every hull sample point and
- * re-transformed it into world space. It now shares the core sampling pass. The tracked sub-level
- * lives in the session rather than the provider, so several vehicles can be sampled at once.
+ * Contributes contacts against Sable sub-level blocks; carries the vehicle with its supporting sub-level.
  */
 class SableCollisionProvider implements CollisionProvider {
 
@@ -80,8 +75,7 @@ class SableCollisionProvider implements CollisionProvider {
         ChunkCollisionCache cache = ChunkCollisionCache.of(level);
         for (SubLevel subLevel : Sable.HELPER.getAllIntersecting(level, bounds)) {
             // A sub-level's blocks live in the host level at its plot coordinates, so pulling the
-            // hull's bound back through the pose gives the region of ordinary blocks to look at —
-            // and the ordinary block snapshot cache can then answer for them.
+            // hull's bound back through the pose gives ordinary blocks the snapshot cache can answer for.
             AABB localBounds = transformBounds(subLevel.logicalPose(), hullBounds, true);
             // begin() runs on the tick thread, which is the only place chunk data may be read.
             // Everything the session does afterwards reads finished snapshots.
@@ -111,11 +105,7 @@ class SableCollisionProvider implements CollisionProvider {
         }
 
         /**
-         * Merged block boxes from each sub-level's own region, pushed forward through its pose.
-         * <p>
-         * A rotated sub-level has no exact axis-aligned form, so each box is widened to its
-         * bound — which is what {@link #contactAt} is for. For the flat decks these are usually
-         * used as, the transform is a translation and the boxes come out exact.
+         * Merged block boxes from each sub-level, transformed to world space.
          */
         @Override
         public boolean collectBoxes(AABB bounds, List<AABB> out) {
@@ -141,8 +131,7 @@ class SableCollisionProvider implements CollisionProvider {
             Vec3 worldPos = new Vec3(pointPos.x, pointPos.y, pointPos.z);
             for (int i = 0, size = regions.size(); i < size; i++) {
                 SubLevel subLevel = regions.get(i).subLevel();
-                // The pose transform is defined everywhere, so without this a distant sub-level
-                // could map an unrelated point into its own blocks and claim a contact.
+                // Boundary check prevents distant sub-levels from false positives.
                 if (!subLevel.boundingBox().contains(worldPos.x, worldPos.y, worldPos.z)) {
                     continue;
                 }

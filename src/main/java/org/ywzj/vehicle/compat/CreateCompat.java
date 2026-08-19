@@ -26,7 +26,7 @@ public class CreateCompat {
     public static void init() {
         IS_LOADED = ModList.get().isLoaded(MOD_ID);
         if (IS_LOADED) {
-            // Only touched when Create is present, so its classes are never resolved otherwise.
+            // Only register when Create is present to avoid classloading.
             CollisionProviders.register(new CreateCollisionProvider());
         }
     }
@@ -39,10 +39,6 @@ public class CreateCompat {
 
 /**
  * Contributes contacts against Create contraption colliders.
- * <p>
- * Was a {@code VehicleCollectCollisionEvent} listener that re-walked every hull sample point and
- * re-transformed it into world space. It now describes its colliders as boxes, so the core only
- * generates points where a contraption is genuinely under the hull.
  */
 class CreateCollisionProvider implements CollisionProvider {
 
@@ -65,13 +61,7 @@ class CreateCollisionProvider implements CollisionProvider {
     }
 
     /**
-     * One contraption's colliders, kept next to the entity that positions them.
-     * <p>
-     * Create stores {@code getSimplifiedEntityColliders()} in <b>contraption-local</b> space —
-     * that is why every one of Create's own callers runs {@code toLocalVector} before testing
-     * against them. The previous version compared raw world positions to them directly, so the
-     * test could only ever pass for a contraption parked at world origin and vehicles drove
-     * straight through contraptions everywhere else. Both sides of this class transform now.
+     * One contraption's colliders with the entity that positions them.
      */
     record Contraption(AbstractContraptionEntity entity, CollisionList colliders) {}
 
@@ -82,9 +72,7 @@ class CreateCollisionProvider implements CollisionProvider {
             Vec3 zero = new Vec3(0, 0, 0);
             for (Contraption contraption : contraptions) {
                 AbstractContraptionEntity entity = contraption.entity();
-                // toGlobalVector is affine, so subtracting its image of the origin leaves the
-                // rotation alone. Four calls per contraption, then pure arithmetic per collider,
-                // instead of eight transforms each.
+                // Affine property: extract rotation from origin difference; four calls instead of eight.
                 Vec3 origin = entity.toGlobalVector(zero, 1.0F);
                 Vec3 axisX = entity.toGlobalVector(new Vec3(1, 0, 0), 1.0F).subtract(origin);
                 Vec3 axisY = entity.toGlobalVector(new Vec3(0, 1, 0), 1.0F).subtract(origin);

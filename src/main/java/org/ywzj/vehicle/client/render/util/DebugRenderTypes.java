@@ -10,18 +10,14 @@ import java.util.OptionalDouble;
 
 /**
  * Render types for debug overlays.
- * <p>
- * Subclasses {@link RenderType} purely to reach {@code create} and the state shards, which are
- * protected. Nothing is ever instantiated.
+ * Subclasses RenderType only to access protected shader and state constants.
  */
 @OnlyIn(Dist.CLIENT)
 public final class DebugRenderTypes extends RenderType {
 
     /**
-     * Lines that ignore the depth buffer, so geometry buried inside terrain stays visible.
-     * <p>
-     * The stock {@link RenderType#lines()} depth-tests, which for a collision overlay hides
-     * exactly the thing you want to inspect — the baked boxes underneath the surface.
+     * Lines that ignore the depth buffer so boxes buried under terrain stay visible.
+     * The stock line render type depth-tests, hiding what a collision overlay needs to show.
      */
     public static final RenderType LINES_NO_DEPTH = create(
             "ywzj_lines_no_depth",

@@ -5,6 +5,10 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.List;
 
+/**
+ * Fired after a vehicle's contact points have been sampled, before the impact solve consumes
+ * them. Listeners may inspect or mutate the list.
+ */
 public class VehicleCollectCollisionEvent extends VehicleEvent {
 
     private final List<VehicleCubeOBB.CubePoint> touchPoints;

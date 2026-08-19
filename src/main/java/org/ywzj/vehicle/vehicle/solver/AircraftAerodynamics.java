@@ -4,27 +4,8 @@ import org.joml.Vector3f;
 
 /**
  * Arcade flight response for rotary- and fixed-wing vehicles: attitude is driven, not solved.
- * <p>
- * The contact solver owns translation and impacts for every vehicle, but an aircraft's attitude
- * must not come out of it. Pitch and roll that emerge from contact torque feel floaty and fight
- * the pilot, which is why flight simulators take attitude from the flight model and why Superb
- * Warfare — whose aircraft feel is the target here — drives orientation directly and lerps it.
- * <p>
- * Reading that mod's flight code, the gap between it and a physically-derived model turns out to
- * be narrow and to sit almost entirely in three places, all of them here:
- * <ol>
- *   <li><b>Drag is anisotropic.</b> An aircraft slips cheaply along its nose and expensively
- *       across it. Isotropic drag is what makes a helicopter feel like it is sliding on ice
- *       regardless of where it points; this is the single biggest contributor to feel.</li>
- *   <li><b>Pitch converts to acceleration, scaled by current speed.</b> Diving trades height for
- *       speed and climbing trades it back, rather than pitch being a purely visual attitude.</li>
- *   <li><b>Control authority ramps with how long the input is held</b>, so a tap nudges and a hold
- *       commits. Without it, roll input is twitchy at exactly the moment precision matters.</li>
- * </ol>
- * Deliberately not a lift/drag/angle-of-attack model. That is more correct and reads worse: the
- * goal is a machine that goes where it is pointed, with enough inertia to feel heavy.
- * <p>
- * MC-free, so it can be driven directly from a test harness.
+ * Contact solver owns translation and impacts; flight model drives orientation. Implements
+ * anisotropic drag, speed-coupled pitch, and control authority ramping. Not a lift/drag model.
  */
 public final class AircraftAerodynamics {
 
@@ -35,9 +16,8 @@ public final class AircraftAerodynamics {
     public float speedDrag = 0.015f;
 
     /**
-     * Extra drag retained when travelling along the nose rather than across it. This is the
-     * anisotropy: at full alignment the aircraft keeps {@code baseDrag + alignmentBonus} of its
-     * speed, sideways only {@code baseDrag}.
+     * Extra drag retained when travelling along the nose rather than across it; the difference
+     * between flying along the fuselage and sliding across it.
      */
     public float alignmentBonus = 0.02f;
 
@@ -47,14 +27,14 @@ public final class AircraftAerodynamics {
     public float minDrag = 0.01f;
     public float maxDrag = 0.99f;
 
-    /**
-     * Acceleration along the nose per unit of speed, at full pitch. Diving accelerates, climbing
-     * decelerates. Scaled by speed so it trades energy rather than manufacturing it.
-     */
+    /** Acceleration along the nose per unit of speed at full pitch; diving trades height for speed. */
     public float pitchCoupling = 0.035f;
 
-    /** Pitch, in degrees, at which {@link #pitchCoupling} is fully applied. */
-    public float pitchCouplingFull = 15.0f;
+    /**
+     * Pitch in degrees at which pitchCoupling is fully applied. Small value keeps low-amplitude
+     * corrections small while approaching Superb Warfare's behavior across the 5-15° band.
+     */
+    public float pitchCouplingFull = 5.0f;
 
     /** Per-tick roll retained with no input: an aircraft rolls level on its own. */
     public float rollCentring = 0.99f;
@@ -66,29 +46,37 @@ public final class AircraftAerodynamics {
     public int authorityRampTicks = 7;
 
     /**
-     * Most a tilted rotor's thrust is scaled up by, to make up the vertical component it loses.
-     * A helicopter moves by tilting its disc, which points thrust away from vertical — so without
-     * this, going anywhere costs altitude and the pilot has to ride the collective constantly. The
-     * cap stops a near-inverted machine generating absurd thrust.
+     * Maximum scale of rotor thrust to compensate for tilt; prevents a near-inverted machine from
+     * generating absurd lift and avoids requiring constant collective input to translate.
      */
     public float maxTiltCompensation = 1.6f;
 
-    /** Below this much of the rotor still pointing up, compensation gives up rather than diverge. */
+    /** Below this vertical component of the rotor axis, tilt compensation clamps to avoid divergence. */
     public float minTiltCosine = 0.35f;
 
-    /** Collective added per tick while sinking with no pilot input, as a fraction of full range. */
+    /**
+     * Scale of disc tilt relative to airframe tilt. Helicopter acceleration without this is
+     * gravity times tan(tilt), which at this mod's gravity would halve the speed Superb Warfare
+     * reaches with the same lean. Applies to horizontal thrust only; vertical is untouched.
+     */
+    public float discTiltGain = 1.8f;
+
+    /** Maximum collective change per tick for altitude hold, as a fraction of full range. */
     public float altitudeHoldRate = 0.006f;
 
-    /** Vertical speed inside which altitude hold does nothing, so it cannot hunt. */
-    public float altitudeHoldDeadband = 0.02f;
+    /**
+     * Collective correction per unit vertical speed, as a fraction of full range. Proportional
+     * control rather than fixed step to converge; high gain causes oscillation above 0.4.
+     */
+    public float altitudeHoldGain = 0.12f;
 
     /**
-     * Fraction of sideways velocity a winged aircraft sheds per tick.
-     * <p>
-     * Fixed-wing already varies its drag with angle of attack, which covers the pitch plane. It
-     * has nothing for sideslip, so a plane can drift across its own fuselage as cheaply as it
-     * flies along it — the same skating that anisotropic drag fixes for helicopters, one axis over.
+     * Vertical speed band inside which altitude hold does nothing. Float-noise guard that prevents
+     * proportional correction from converging to the edge.
      */
+    public float altitudeHoldDeadband = 0.0002f;
+
+    /** Fraction of lateral velocity shed per tick; prevents fixed-wing from drifting sideways cheaply. */
     public float sideslipDrag = 0.15f;
 
     private int heldTicks;
@@ -96,8 +84,9 @@ public final class AircraftAerodynamics {
     private final Vector3f facing = new Vector3f();
 
     /**
-     * Control authority for an input held this many ticks. A tap nudges, a hold commits — which is
-     * what stops roll being twitchy at low deflection without making it sluggish at high.
+     * Control authority for an input held this many ticks. A tap nudges, hold commits.
+     * @param held whether the input is currently pressed
+     * @return authority as a fraction 0 to 1
      */
     public float authority(boolean held) {
         heldTicks = held ? Math.min(heldTicks + 1, authorityRampTicks) : 0;
@@ -109,21 +98,18 @@ public final class AircraftAerodynamics {
     }
 
     /**
-     * Applies drag and the pitch/speed trade to a velocity, in place.
-     *
+     * Applies drag and pitch-speed coupling to a velocity in place.
      * @param velocity blocks per tick, modified in place
-     * @param yawDeg   where the nose points
-     * @param pitchDeg positive is nose-down, matching Minecraft's convention
-     * @param onGround suppresses the pitch trade, since a grounded aircraft is not flying
+     * @param yawDeg facing direction
+     * @param pitchDeg positive nose-down
+     * @param onGround suppresses pitch coupling
      */
     public void applyToVelocity(Vector3f velocity, float yawDeg, float pitchDeg, boolean onGround) {
         float yaw = (float) Math.toRadians(-yawDeg);
         facing.set((float) -Math.sin(yaw), 0, (float) Math.cos(yaw));
 
         float horizontal = (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        // How much of the motion is along the nose, 1 either way down the fuselage and 0 across
-        // it. Using |cos| rather than the angle keeps flying backwards as cheap as forwards, which
-        // matters for helicopters, and costs no trigonometry.
+        // Motion along nose vs across it; using absolute cosine keeps backwards flight as cheap as forward.
         float alignment = horizontal > 1.0e-4f
                 ? Math.abs((velocity.x * facing.x + velocity.z * facing.z) / horizontal)
                 : 1.0f;
@@ -132,10 +118,12 @@ public final class AircraftAerodynamics {
             float pitchFactor = clamp(pitchDeg / pitchCouplingFull, -1, 1);
             float speed = velocity.length();
             float trade = pitchCoupling * pitchFactor * speed;
-            velocity.add(facing.x * trade, 0, facing.z * trade);
-            // Diving buys speed from height and climbing sells it back. Applying the vertical part
-            // through the same term is what stops a climb being free.
-            velocity.y -= trade * pitchFactor * 0.5f;
+            // Along the nose, not the floor; vertical cost is sin(pitch).
+            float pitchRad = (float) Math.toRadians(pitchDeg);
+            float sinPitch = (float) Math.sin(pitchRad);
+            float cosPitch = (float) Math.cos(pitchRad);
+            velocity.add(facing.x * trade * cosPitch, 0, facing.z * trade * cosPitch);
+            velocity.y -= trade * sinPitch;
         }
 
         float drag = clamp(baseDrag - speedDrag * velocity.length() + alignmentBonus * alignment,
@@ -145,11 +133,7 @@ public final class AircraftAerodynamics {
         velocity.y *= verticalDrag;
     }
 
-    /**
-     * Rolls level over time, and flattens onto the ground when there.
-     *
-     * @return the new roll
-     */
+    /** Rolls level over time, and flattens onto the ground when there. */
     public float settleRoll(float rollDeg, boolean rollInput, boolean onGround) {
         if (onGround) {
             return rollDeg * groundLevelling;
@@ -162,23 +146,16 @@ public final class AircraftAerodynamics {
         return onGround ? pitchDeg * groundLevelling : pitchDeg;
     }
 
-    /**
-     * Velocity to remove along the aircraft's lateral axis this tick, given how fast it is
-     * sliding sideways. Apply along the body's right axis.
-     */
+    /** Lateral velocity to bleed per tick. Apply along the aircraft's right axis. */
     public float sideslipBleed(float lateralVelocity) {
         return lateralVelocity * sideslipDrag;
     }
 
     /**
-     * How much to scale rotor thrust so that tilting the disc does not cost altitude.
-     * <p>
-     * Thrust acts along the machine's own up axis, so at a tilt of θ only cos θ of it holds the
-     * aircraft up. Dividing by that restores the vertical component and lets a helicopter
-     * translate at a constant height — which is the difference between a machine that flies and
-     * one that sinks every time the pilot asks it to go somewhere.
-     *
-     * @param upY vertical component of the vehicle's up axis, i.e. cos of its tilt
+     * Scale to restore vertical thrust when the rotor is tilted. Thrust acts along the machine's
+     * up axis, so tilt costs vertical component; restoring it lets the helicopter translate at
+     * constant height.
+     * @param upY vertical component of vehicle's up axis
      */
     public float liftTiltCompensation(float upY) {
         if (upY <= minTiltCosine) {
@@ -188,34 +165,25 @@ public final class AircraftAerodynamics {
     }
 
     /**
-     * Collective correction to hold altitude, as a fraction of full collective range.
-     * <p>
-     * Superb Warfare's helicopters do this whenever the pilot is not touching the collective, and
-     * it is most of why theirs hold height through a manoeuvre. Deadbanded so it settles instead
-     * of hunting around zero.
-     *
-     * @return positive to raise collective, negative to lower it, zero inside the deadband
+     * Collective correction to hold altitude, as a fraction of full range. Deadbanded to prevent
+     * hunting. Must be sampled after gravity if measuring the velocity before gravity causes a
+     * permanent sink of one tick.
+     * @param verticalVelocity vertical velocity after gravity
+     * @return collective adjustment, zero inside deadband
      */
     public float altitudeHoldDelta(float verticalVelocity) {
-        if (verticalVelocity < -altitudeHoldDeadband) {
-            return altitudeHoldRate;
+        if (Math.abs(verticalVelocity) <= altitudeHoldDeadband) {
+            return 0;
         }
-        if (verticalVelocity > altitudeHoldDeadband) {
-            return -altitudeHoldRate;
-        }
-        return 0;
+        return clamp(-verticalVelocity * altitudeHoldGain, -altitudeHoldRate, altitudeHoldRate);
     }
 
     /**
-     * Attitude the running gear implies, for a grounded aircraft.
-     * <p>
-     * Lifted from Superb Warfare's terrain compaction: probe the gear points, take the height of
-     * each above the surface, and lean the aircraft toward the slope. Kinematic on purpose — a
-     * parked aircraft should sit on the terrain, not negotiate with a solver about it.
-     *
-     * @param frontDrop  how far the forward gear is above its surface
-     * @param rearDrop   how far the rear gear is above its surface
-     * @param wheelbase  distance between them, along the fuselage
+     * Pitch for a grounded aircraft derived from gear heights. Kinematic attitude adjustment based
+     * on terrain slope, not a solver.
+     * @param frontDrop height of forward gear above surface
+     * @param rearDrop height of rear gear above surface
+     * @param wheelbase distance between gear along fuselage
      * @return target pitch in degrees, positive nose-down
      */
     public static float terrainPitch(float frontDrop, float rearDrop, float wheelbase) {

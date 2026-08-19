@@ -34,6 +34,25 @@ public class ModRenderTypes extends RenderType {
                 state);
     });
 
+    private static final Function<ResourceLocation, RenderType> MUZZLE_FLASH_MESH = Util.memoize((location) -> {
+        RenderStateShard.TextureStateShard shard = new RenderStateShard.TextureStateShard(location, false, false);
+        RenderType.CompositeState state = RenderType.CompositeState.builder()
+                .setTextureState(shard)
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setOverlayState(OVERLAY)
+                .setWriteMaskState(COLOR_WRITE)
+                .createCompositeState(false);
+        return RenderType.create("ywzj_vehicle:muzzle_flash_mesh",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.TRIANGLES,
+                256,
+                true,
+                false,
+                state);
+    });
+
     private static final Function<ResourceLocation, RenderType> CUBE_TRANSPARENT = Util.memoize((location) -> {
         RenderStateShard.TextureStateShard shard = new RenderStateShard.TextureStateShard(location, false, false);
         RenderType.CompositeState state = RenderType.CompositeState.builder()
@@ -76,6 +95,10 @@ public class ModRenderTypes extends RenderType {
 
     public static RenderType muzzleFlash(ResourceLocation texture) {
         return MUZZLE_FLASH.apply(texture);
+    }
+
+    public static RenderType muzzleFlashMesh(ResourceLocation texture) {
+        return MUZZLE_FLASH_MESH.apply(texture);
     }
 
     public static RenderType cubeTransparent(ResourceLocation texture) {

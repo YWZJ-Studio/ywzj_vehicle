@@ -49,6 +49,16 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     protected final List<VehicleCubeOBB> vehicleBodyOBBs = new ArrayList<>();
     protected final Map<BedrockBone, VehicleCubeGroup> vehiclePartGroups = new HashMap<>();
 
+    /** The bone name that declares landing surface, and the prefix form for several of them. */
+    private static final String DECK_BONE = "deck";
+    private static final String DECK_BONE_PREFIX = "deck_";
+
+    /** Bones declared as deck; resolved once per model. */
+    private final Set<BedrockBone> deckBones = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    /** Whether this model declares any deck geometry. */
+    private boolean hasDeckGeometry;
+
     public BaseVehicleData() {}
 
     public AbstractVehicle construct(Level level, Vec3 position, float xRot, float yRot) {
@@ -182,27 +192,57 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     }
 
     private void buildOBBs(BedrockModel model) {
+        collectDeckBones(model);
         for (Map.Entry<String, BedrockBone> boneEntry : model.getBoneMap().entrySet()) {
             BedrockBone bone = boneEntry.getValue();
             // 车体单独构建
             if (boneEntry.getKey().equals("vehicle_body")) {
                 VehicleCubeGroup group = new VehicleCubeGroup(null, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
-                buildVehicleBodyOBBs(bone, group);
+                buildVehicleBodyOBBs(bone, group, deckBones.contains(bone));
             } else if (!boneEntry.getKey().equals("main_structure")) {
                 // 从基岩模型最外层的各组构建
                 if (bone.parent != null && bone.parent.parent == null) {
                     VehicleCubeGroup group = new VehicleCubeGroup(null, bone.rotation, new Vec3(bone.x / 16, bone.y / 16, bone.z / 16));
-                    buildPartUnitsOBBs(bone, group, new HashSet<>(model.getBoneMap().values()));
+                    buildPartUnitsOBBs(bone, group, new HashSet<>(model.getBoneMap().values()),
+                            deckBones.contains(bone));
                 }
             }
         }
     }
 
-    private void buildVehicleBodyOBBs(BedrockBone bone, VehicleCubeGroup group) {
-        bone.cubes.forEach(cube -> vehicleBodyOBBs.add(VehicleCubeOBB.init(group, cube)));
+    /**
+     * Finds bones declared as deck, including all descendants.
+     */
+    private void collectDeckBones(BedrockModel model) {
+        deckBones.clear();
+        for (Map.Entry<String, BedrockBone> boneEntry : model.getBoneMap().entrySet()) {
+            String name = boneEntry.getKey();
+            if (name == null) {
+                continue;
+            }
+            String lower = name.toLowerCase(Locale.ROOT);
+            if (lower.equals(DECK_BONE) || lower.startsWith(DECK_BONE_PREFIX)) {
+                markDeckSubtree(boneEntry.getValue());
+            }
+        }
+    }
+
+    private void markDeckSubtree(BedrockBone bone) {
+        if (bone == null || !deckBones.add(bone)) {
+            return;
+        }
+        for (BedrockBone child : bone.getChildren()) {
+            markDeckSubtree(child);
+        }
+    }
+
+    private void buildVehicleBodyOBBs(BedrockBone bone, VehicleCubeGroup group, boolean deck) {
+        boolean cubesAreDeck = deck || deckBones.contains(bone);
+        hasDeckGeometry |= cubesAreDeck && !bone.cubes.isEmpty();
+        bone.cubes.forEach(cube -> vehicleBodyOBBs.add(VehicleCubeOBB.init(group, cube, cubesAreDeck)));
         bone.getChildren().forEach(child -> {
             VehicleCubeGroup childGroup = new VehicleCubeGroup(group, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
-            buildVehicleBodyOBBs(child, childGroup);
+            buildVehicleBodyOBBs(child, childGroup, cubesAreDeck);
         });
     }
 
@@ -256,14 +296,21 @@ public class BaseVehicleData<T extends AbstractVehicle> {
      * 每个结构OBB组持有其Bone以及匿名子Bone下所有的块
      */
     public void buildPartUnitsOBBs(BedrockBone bone, VehicleCubeGroup group, Set<BedrockBone> namedBones) {
+        buildPartUnitsOBBs(bone, group, namedBones, deckBones.contains(bone));
+    }
+
+    public void buildPartUnitsOBBs(BedrockBone bone, VehicleCubeGroup group, Set<BedrockBone> namedBones,
+                                   boolean deck) {
         if (bone == null) {
             return;
         }
-        bone.cubes.forEach(cube -> VehicleCubeOBB.init(group, cube));
+        boolean cubesAreDeck = deck || deckBones.contains(bone);
+        hasDeckGeometry |= cubesAreDeck && !bone.cubes.isEmpty();
+        bone.cubes.forEach(cube -> VehicleCubeOBB.init(group, cube, cubesAreDeck));
         vehiclePartGroups.put(bone, group);
         bone.getChildren().forEach(child -> {
             VehicleCubeGroup childGroup = new VehicleCubeGroup(group, child.rotation, new Vec3(child.x / 16, child.y / 16, child.z / 16));
-            buildPartUnitsOBBs(child, childGroup, namedBones);
+            buildPartUnitsOBBs(child, childGroup, namedBones, cubesAreDeck);
             // 合并匿名组的块
             if (!namedBones.contains(child)) {
                 childGroup.cubeOBBs.forEach(group::addCubeOBB);
@@ -296,6 +343,11 @@ public class BaseVehicleData<T extends AbstractVehicle> {
     public VehicleStructOBBs getVehicleStructObbs() {
         var obbs = vehicleBodyOBBs.stream().map(VehicleCubeOBB::new).toList();
         return new VehicleStructOBBs(obbs, new VehicleCubeOBB(mainCubeOBB));
+    }
+
+    /** Whether this model declares a deck, meaning vehicles of this type can be landed on. */
+    public boolean hasDeckGeometry() {
+        return hasDeckGeometry;
     }
 
     public ResourceLocation getVehicleId() {

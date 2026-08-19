@@ -14,10 +14,8 @@ import org.ywzj.vehicle.vehicle.collision.ChunkCollisionCache;
 
 /**
  * Invalidates the vehicle collision snapshot for a section whenever its block data changes.
- * <p>
- * Hooked here rather than on the NeoForge block events because those only cover player-driven
- * placement and breaking. Everything that actually mutates chunk storage — pistons, explosions,
- * fluid spread, {@code /setblock}, world gen writes — funnels through this method.
+ * Hooked here rather than NeoForge block events because those only cover player-driven changes;
+ * pistons, explosions, fluid spread, and world gen writes funnel through this method.
  */
 @Mixin(LevelChunk.class)
 public abstract class LevelChunkCollisionMixin {

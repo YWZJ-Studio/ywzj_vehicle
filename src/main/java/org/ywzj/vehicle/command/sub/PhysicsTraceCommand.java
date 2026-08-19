@@ -20,10 +20,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Records and reports {@link PhysicsTrace}, for working out why a vehicle will not sit still.
- * <p>
- * Targets whatever the player is riding, or the nearest vehicle otherwise, so the usual sequence
- * is: park the thing, {@code start}, watch it misbehave for a few seconds, {@code report}.
+ * Records and reports PhysicsTrace to diagnose why a vehicle will not sit still. Targets the
+ * ridden vehicle or the nearest one. Typical sequence: park, start, watch, report.
  */
 public class PhysicsTraceCommand {
 
@@ -114,7 +112,7 @@ public class PhysicsTraceCommand {
         return trace;
     }
 
-    /** The vehicle being ridden, or the nearest one, so this works whether driving or watching. */
+    /** The ridden vehicle or the nearest one. Works whether driving or watching. */
     private static AbstractVehicle target(CommandContext<CommandSourceStack> context)
             throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();

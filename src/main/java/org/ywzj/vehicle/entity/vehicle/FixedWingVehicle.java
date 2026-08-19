@@ -358,7 +358,7 @@ public class FixedWingVehicle extends AbstractVehicle
             double al = airSpeed.length();
             if (controlUnit.leftYaw || controlUnit.rightYaw) {
                 float k = (float) (al / 1.4);
-                setYRot(getYRot() + (controlUnit.leftYaw ? -k : k));
+                turnBy(controlUnit.leftYaw ? -k : k);
                 forwardDirection = getLookAngle();
                 airSpeed = forwardDirection.scale(Math.max(0, al - 0.0001));
             }
@@ -389,9 +389,7 @@ public class FixedWingVehicle extends AbstractVehicle
         double f = al * al * k;
         airSpeed = airSpeed.normalize().scale(al - f / mass);
         if (AllConfigs.common.arcadeFlightModel.get()) {
-            // Sideslip. The drag above varies with angle of attack, so the pitch plane is covered,
-            // but nothing costs the aircraft anything for sliding across its own fuselage — which
-            // is what lets a plane mush sideways through a turn instead of carving it.
+            // Sideslip drag prevents the plane from drifting sideways as cheaply as it flies forward.
             Vec3 right = relativeRotDirection(new Vec3(1, 0, 0), false);
             double lateral = airSpeed.dot(right);
             airSpeed = airSpeed.subtract(right.scale(aerodynamics.sideslipBleed((float) lateral)));

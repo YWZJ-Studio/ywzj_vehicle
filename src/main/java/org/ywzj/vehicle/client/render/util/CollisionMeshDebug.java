@@ -21,23 +21,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Turns the baked {@link SectionCollision} snapshots into something drawable, for the collision
- * debug overlay.
- * <p>
- * The greedy merge lives in {@link SectionCollision} itself and is what the collision query
- * consumes, so the overlay draws the same boxes physics collides against rather than a parallel
- * reconstruction of them.
+ * Converts collision snapshots into drawable geometry for the debug overlay.
+ * Draws the merged boxes physics actually queries, not a parallel reconstruction.
  */
 @OnlyIn(Dist.CLIENT)
 public final class CollisionMeshDebug {
 
     /**
-     * A merged run of collision geometry, in world coordinates. Sub-block now that boxes follow
-     * real collision shapes, so a slab floor draws half a block tall.
+     * A merged box of collision geometry in world coordinates.
+     * Boxes follow real collision shapes; slabs draw at half block height.
      */
     public record MeshBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
 
-        /** Whether this box reaches into a block cell at all — it no longer has to fill one. */
+        /** Whether this box reaches into a block cell. */
         public boolean containsBlock(int x, int y, int z) {
             return maxX > x && minX < x + 1 && maxY > y && minY < y + 1 && maxZ > z && minZ < z + 1;
         }
@@ -50,9 +46,8 @@ public final class CollisionMeshDebug {
     private CollisionMeshDebug() {}
 
     /**
-     * Collects the baked sections within {@code sectionRadius} of a block position that actually
-     * hold geometry. Sections the cache never prepared, and sections it proved empty, are omitted
-     * — an absent box is itself the information that nothing was baked there.
+     * Collects baked sections within radius of a position that hold geometry.
+     * Sections the cache never prepared and empty sections are omitted.
      */
     public static List<SectionMesh> meshesAround(Level level, BlockPos around, int sectionRadius) {
         ChunkCollisionCache cache = ChunkCollisionCache.of(level);
@@ -95,12 +90,8 @@ public final class CollisionMeshDebug {
     }
 
     /**
-     * Block positions currently registering a contact against any nearby vehicle, packed with
-     * {@link BlockPos#asLong}.
-     * <p>
-     * Runs whichever query is configured — inverted or grid — so the highlight shows what the
-     * physics is genuinely reacting to. Recomputed client-side rather than synced, so there is no
-     * round trip and no interpolation lag against the boxes it is highlighting.
+     * Block positions registering a contact against any nearby vehicle.
+     * Runs the configured query so the highlight shows what physics genuinely reacts to.
      */
     public static LongSet contactedBlocks(Level level, List<AbstractVehicle> vehicles) {
         LongSet contacted = new LongOpenHashSet();
@@ -123,7 +114,7 @@ public final class CollisionMeshDebug {
                 boxes.clear();
                 contacts.clear();
                 cache.collectBoxes(vehicle.getBoundingBox().inflate(2.0), boxes);
-                ContactSynthesis.collect(mainCubeOBB, axes, boxes,
+                ContactSynthesis.collect(mainCubeOBB, mainCubeOBB.obb(), axes, boxes,
                         ContactSynthesis.blocks(cursor), contacts);
                 for (VehicleCubeOBB.CubePoint contact : contacts) {
                     net.minecraft.world.phys.Vec3 blockPos = contact.cubePointContext.blockPos();
@@ -145,7 +136,7 @@ public final class CollisionMeshDebug {
         return contacted;
     }
 
-    /** Kept for the overlay toggle; merged boxes are now cached on the snapshots themselves. */
+    /** Kept for the overlay toggle; merged boxes are cached on snapshots. */
     public static void clear() {}
 
 }

@@ -367,6 +367,106 @@ public class VectorUtil {
         return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
     }
 
+    private static float cross(float x1, float y1, float x2, float y2, float x3, float y3) {
+        return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+    }
+
+    /**
+     * Convex hull over scratch arrays, returning vertex indices instead of points.
+     */
+    public static int convexHullIndices(float[] xs, float[] ys, int n, int[] sorted, int[] out) {
+        if (n <= 0) {
+            return 0;
+        }
+        if (n == 1) {
+            out[0] = 0;
+            return 1;
+        }
+        for (int i = 0; i < n; i++) {
+            sorted[i] = i;
+        }
+        // Insertion sort by (x, then y): n is contact-count sized, and face-by-face generation
+        // hands the points over nearly ordered already.
+        for (int i = 1; i < n; i++) {
+            int idx = sorted[i];
+            float x = xs[idx];
+            float y = ys[idx];
+            int j = i - 1;
+            while (j >= 0 && (xs[sorted[j]] > x || (xs[sorted[j]] == x && ys[sorted[j]] > y))) {
+                sorted[j + 1] = sorted[j];
+                j--;
+            }
+            sorted[j + 1] = idx;
+        }
+        int k = 0;
+        for (int i = 0; i < n; i++) {
+            int idx = sorted[i];
+            while (k >= 2 && cross(xs[out[k - 2]], ys[out[k - 2]],
+                    xs[out[k - 1]], ys[out[k - 1]], xs[idx], ys[idx]) <= 0) {
+                k--;
+            }
+            out[k++] = idx;
+        }
+        int lower = k + 1;
+        for (int i = n - 2; i >= 0; i--) {
+            int idx = sorted[i];
+            while (k >= lower && cross(xs[out[k - 2]], ys[out[k - 2]],
+                    xs[out[k - 1]], ys[out[k - 1]], xs[idx], ys[idx]) <= 0) {
+                k--;
+            }
+            out[k++] = idx;
+        }
+        // The chain closes back on its first vertex; the repeat is not part of the hull.
+        return k - 1;
+    }
+
+    /**
+     * Point-in-polygon test against an indexed hull, including its two-point degenerate case.
+     */
+    public static boolean isPointInPolygonIndexed(float px, float py, float[] xs, float[] ys,
+                                                  int[] hull, int hullSize) {
+        if (hullSize == 2) {
+            float ax = xs[hull[0]];
+            float ay = ys[hull[0]];
+            float bx = xs[hull[1]];
+            float by = ys[hull[1]];
+            float cross = (py - ay) * (bx - ax) - (px - ax) * (by - ay);
+            if (Math.abs(cross) > 1e-6) {
+                return false;
+            }
+            float dot = (px - ax) * (bx - ax) + (py - ay) * (by - ay);
+            if (dot < 0) {
+                return false;
+            }
+            float lenSq = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
+            return !(dot > lenSq);
+        }
+        boolean inside = false;
+        for (int i = 0, j = hullSize - 1; i < hullSize; j = i++) {
+            float viX = xs[hull[i]];
+            float viY = ys[hull[i]];
+            float vjX = xs[hull[j]];
+            float vjY = ys[hull[j]];
+            if (((viY > py) != (vjY > py))
+                    && (px < (vjX - viX) * (py - viY) / (vjY - viY) + viX)) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
+
+    /** Distance from point to line segment; primitive version. */
+    public static float pointToSegmentDist(float px, float py,
+                                           float ax, float ay, float bx, float by) {
+        float abX = bx - ax;
+        float abY = by - ay;
+        float t = ((px - ax) * abX + (py - ay) * abY) / (abX * abX + abY * abY);
+        t = Math.clamp(t, 0, 1);
+        float dx = px - (ax + t * abX);
+        float dy = py - (ay + t * abY);
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
     /**
      * 点是否在闭包内
      */

@@ -5,20 +5,8 @@ import net.minecraft.world.phys.AABB;
 import java.util.List;
 
 /**
- * A reusable list of world-space boxes held as primitives rather than {@link AABB} objects.
- * <p>
- * {@code AABB} is immutable, so every box the broad phase reports has to be a fresh object, and
- * those objects go straight into a list — which means they escape, and escape analysis cannot
- * elide them the way it does the short-lived vectors inside a collision test. Two call sites per
- * vehicle per tick each produce one per merged box, so a vehicle sitting on terrain turns over
- * hundreds of 64-byte objects a tick for data that never changes shape and is read a handful of
- * times before being thrown away.
- * <p>
- * Six doubles per box in one array, reused across ticks, removes all of it and reads sequentially
- * while it is at it — the sweep walks the whole set up to eight times per substep, so locality is
- * worth as much here as the allocation.
- * <p>
- * Not thread-safe and not meant to be: one per vehicle, cleared and refilled by its owner.
+ * Holds world-space boxes as six doubles per box in a single array, reused across ticks.
+ * Avoids allocation pressure from immutable AABB objects and improves cache locality.
  */
 public final class BoxBuffer {
 
@@ -50,8 +38,7 @@ public final class BoxBuffer {
     public void add(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
         int base = count * STRIDE;
         if (base + STRIDE > data.length) {
-            // Growth is amortised and the buffer is reused, so after the first few ticks a vehicle
-            // never resizes again — the steady state really is zero allocation, not less of it.
+            // Growth is amortised; after the first few ticks a vehicle never resizes again.
             double[] grown = new double[Math.max(data.length * 2, base + STRIDE)];
             System.arraycopy(data, 0, grown, 0, data.length);
             data = grown;
@@ -69,7 +56,7 @@ public final class BoxBuffer {
         add(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 
-    /** Bridge for {@code CollisionProvider}, whose public API hands back real {@link AABB}s. */
+    /** Adds all boxes from a list, converting from AABB objects to primitives. */
     public void addAll(List<AABB> boxes) {
         for (int i = 0, size = boxes.size(); i < size; i++) {
             add(boxes.get(i));
@@ -100,7 +87,7 @@ public final class BoxBuffer {
         return data[i * STRIDE + 5];
     }
 
-    /** Materialises one box. For diagnostics and the debug overlay — not for the physics loops. */
+    /** Materialises one box as an AABB object; for diagnostics and debug only, not for physics. */
     public AABB get(int i) {
         int base = i * STRIDE;
         return new AABB(data[base], data[base + 1], data[base + 2],

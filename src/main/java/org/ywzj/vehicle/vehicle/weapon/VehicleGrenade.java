@@ -49,7 +49,7 @@ public class VehicleGrenade extends AbstractVehicleWeapon<VehicleGrenadeWeaponDa
                         data.getVelocity(), data.getInaccuracy(), owner);
                 vehicle.level().addFreshEntity(entity);
             }
-            vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
+            vehicle.queueRecoil(getWeaponUnit(), data.getRecoil());
         }
         return true;
     }

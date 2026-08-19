@@ -19,21 +19,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Immutable collision snapshot of one 16³ chunk section.
- * <p>
- * The point of copying the data out instead of reading the live section is threading.
- * {@link net.minecraft.world.level.chunk.PalettedContainer} guards writes with
- * {@code acquire()}/{@code release()} and a {@code ThreadingDetector}; reading a palette off
- * the tick thread races with any block update. A snapshot is built once on the tick thread
- * (see {@link ChunkCollisionCache#prepare}) and is thereafter read-only, so any number of
- * threads may query it without locking.
- * <p>
- * Occupancy follows each state's <em>collision shape</em>, not {@code isSolid()}. That matters
- * because the query is box-vs-box: a slab really is half a cell tall, a carpet really is one
- * sixteenth, and a vehicle now rides at the height its wheels are actually resting at instead of
- * at the top of whatever cell the geometry happened to live in.
- * <p>
- * Snapshots are never mutated. Invalidation replaces the whole object.
+ * Immutable collision snapshot of one 16x16x16 chunk section, copied once on the tick thread
+ * to enable concurrent access by physics threads. Occupancy follows collision shapes, not solid
+ * blocks, so vehicles rest at their actual wheel heights.
  */
 public abstract sealed class SectionCollision {
 
@@ -43,23 +31,18 @@ public abstract sealed class SectionCollision {
     public static final SectionCollision EMPTY = new Empty();
 
     /**
-     * Game time this snapshot was last asked for, used for age-based eviction. Written from
-     * whichever thread queried it; races are benign because the value is only a hint and an
-     * {@code int} write cannot tear.
+     * Game time this snapshot was last asked for, used for age-based eviction.
      */
     volatile int lastUseTick;
 
     /**
-     * The block state colliding at a cell, or {@code null} if that cell holds nothing with a
-     * collision shape. {@code localIndex} is {@code (y << 8) | (z << 4) | x} with each coordinate
-     * in [0, 16).
+     * The block state colliding at a cell, or null if empty. Local index is (y << 8) | (z << 4) | x.
      */
     @Nullable
     public abstract BlockState collisionAt(int localIndex);
 
     /**
-     * The cell's collision boxes, packed cell-relative (see {@link #packBox}), or {@code null}
-     * when the cell holds nothing. {@link #FULL_CUBE} for an ordinary whole block.
+     * The cell's collision boxes, packed cell-relative, or null when empty. FULL_CUBE for a whole block.
      */
     @Nullable
     abstract long[] boxesAt(int localIndex);
@@ -75,11 +58,8 @@ public abstract sealed class SectionCollision {
     }
 
     /**
-     * Height of the tallest collision box in a cell, in blocks above the cell floor. {@code 1.0}
-     * for a whole block, {@code 0.5} for a bottom slab, {@code 1.5} for a fence.
-     * <p>
-     * This is what "how high is the thing I am standing on?" means, and it is what
-     * {@code PhysicsEngine.climb} steps up to. Zero when the cell holds nothing.
+     * Height of the tallest collision box in a cell in blocks above the floor. 1.0 for a whole
+     * block, 0.5 for a bottom slab, 1.5 for a fence, 0 when empty.
      */
     public double collisionTop(int localIndex) {
         long[] boxes = boxesAt(localIndex);
@@ -93,7 +73,7 @@ public abstract sealed class SectionCollision {
         return top / 16.0;
     }
 
-    /** How this section was stored. For the debug overlay and for diagnosing memory use. */
+    /** How this section was stored, for debugging memory use. */
     public Kind kind() {
         return this instanceof Uniform ? Kind.UNIFORM
                 : this instanceof ByteIndexed ? Kind.BYTE_INDEXED
@@ -118,14 +98,8 @@ public abstract sealed class SectionCollision {
     // ------------------------------------------------------------------------------------------
 
     /**
-     * Boxes are packed one per {@code long} in sixteenths of a block: min in bits 0-29 and size in
-     * bits 30-59, ten bits per axis. Sixteenths because that is the grid nearly every vanilla
-     * collision shape is authored on; the few that are not round outward, which grows a box by at
-     * most a thirty-second of a block and can therefore only ever add a contact the exact shape
-     * would have had at a slightly different position — never remove one.
-     * <p>
-     * Ten bits covers a merged run of sixteen cells (256 sixteenths) with room to spare for shapes
-     * that overhang their cell, like a fence at 24.
+     * Boxes are packed one per long in sixteenths of a block: min in bits 0-29, size in bits
+     * 30-59, ten bits per axis. Covers merged runs of up to 256 sixteenths (16 cells).
      */
     private static final int COORD_BITS = 10;
     private static final long COORD_MASK = (1L << COORD_BITS) - 1;
@@ -163,10 +137,8 @@ public abstract sealed class SectionCollision {
     public static double boxSizeZ(long packed) { return rawSize(packed, 2) / 16.0; }
 
     /**
-     * Collision boxes for a state, packed cell-relative, cached forever.
-     * <p>
-     * Block states are canonical and finite, so this converges after a few seconds of play and
-     * every later snapshot resolves a shape with one map lookup.
+     * Collision boxes for a state, packed cell-relative, cached forever. Block states are
+     * canonical, so every later snapshot resolves a shape with one map lookup.
      */
     private static final Map<BlockState, long[]> SHAPE_BOXES = new ConcurrentHashMap<>();
 
@@ -178,15 +150,12 @@ public abstract sealed class SectionCollision {
         if (state.isAir()) {
             return NO_COLLISION;
         }
-        // A dynamic-shape block resolves its shape from the world — a moving piston reads its
-        // block entity — so there is nothing state-derived to bake. Treating it as a whole block
-        // is exactly what the old isSolid() test did for every one of them, so this is
-        // conservative in the same direction the previous behaviour already was.
+        // Dynamic-shape blocks (like moving pistons) resolve from the world, so treat as full blocks.
+        // This matches the old isSolid behavior.
         if (state.getBlock().hasDynamicShape()) {
             return FULL_CUBE;
         }
-        // For a cached state this is a field read: BlockStateBase.Cache precomputes the shape
-        // against EmptyBlockGetter at BlockPos.ZERO, which is exactly what is being asked for.
+        // Cached shapes are precomputed by BlockStateBase.Cache at ZERO, which is this query.
         VoxelShape shape = state.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
         if (shape.isEmpty()) {
             return NO_COLLISION;
@@ -225,19 +194,14 @@ public abstract sealed class SectionCollision {
     // ------------------------------------------------------------------------------------------
 
     /**
-     * Above this the merge gives up on shapes and falls back to whole cells, which the
-     * checkerboard worst case bounds at exactly this many — so a snapshot's box list can never
-     * cost more than it did before shapes existed. Only a section packed with unmergeable detail,
-     * thousands of fences, reaches it, and there the exact shapes are not worth the memory.
+     * Above this the merge gives up on shapes and falls back to whole cells. Bounds a snapshot's
+     * box list to the cost before shapes existed.
      */
     private static final int MAX_BOXES = 2048;
 
     /**
      * Solid geometry greedy-merged into as few boxes as possible, packed section-relative in
-     * sixteenths.
-     * <p>
-     * Built on first use and cached. Derived purely from immutable data, so the lazy init races
-     * benignly — two threads may both compute it and one result is discarded.
+     * sixteenths. Cached after first use; lazy init races are benign.
      */
     public long[] collisionBoxes() {
         long[] boxes = merged;
@@ -251,16 +215,37 @@ public abstract sealed class SectionCollision {
     private volatile long[] merged;
 
     /**
-     * Three-axis greedy merge: extend a run along X, widen it along Z while whole rows match,
-     * then raise it along Y while whole slabs match. Covers every occupied cell exactly once.
-     * <p>
-     * Two cells only merge when their shapes are identical, and a run only extends along an axis
-     * the shape spans end to end — so a floor of slabs collapses to one flat box per plane, a row
-     * of stairs collapses to two boxes running its length, and a fence post stays a post. Merging
-     * a half-height shape along Y, or a fence post along X, would invent geometry that is not
-     * there, which is the one thing a broad phase must never do.
+     * Box count below which a per-section tree is not built. A linear pass over a few dozen
+     * boxes with a bounds test beats walking a hierarchy.
+     */
+    private static final int TREE_THRESHOLD = 64;
+
+    private volatile DynamicTree tree;
+
+    /**
+     * A BVH over collision boxes in section-relative coordinates, null when the section holds
+     * too few boxes. Built once per snapshot and shared by all vehicles over this section.
+     */
+    @Nullable
+    public DynamicTree collisionTree() {
+        long[] boxes = collisionBoxes();
+        if (boxes.length < TREE_THRESHOLD) {
+            return null;
+        }
+        DynamicTree built = tree;
+        if (built == null) {
+            built = new DynamicTree(boxes.length);
+            built.build(boxes);
+            tree = built;
+        }
+        return built;
+    }
+
+    /**
+     * Three-axis greedy merge: extend along X, widen along Z, raise along Y. Covers every
+     * occupied cell exactly once. Two cells only merge when shapes are identical.
      *
-     * @param wholeCells treat every occupied cell as a full block, the pre-shape behaviour
+     * @param wholeCells treat every occupied cell as a full block
      */
     private long[] merge(boolean wholeCells) {
         boolean[] used = new boolean[SECTION_SIZE];
@@ -306,8 +291,8 @@ public abstract sealed class SectionCollision {
                         if (count == out.length) {
                             out = Arrays.copyOf(out, count * 2);
                         }
-                        // A run only ever extends along an axis the shape spans, so on that axis
-                        // the box already measures a full 16 and the extension is exact.
+                        // A run only extends along axes where the shape spans the cell, so the
+                        // box measures full width and the extension is exact.
                         out[count++] = packBox(
                                 x * 16 + rawMin(box, 0),
                                 y * 16 + rawMin(box, 1),
@@ -325,7 +310,7 @@ public abstract sealed class SectionCollision {
         return count == out.length ? out : Arrays.copyOf(out, count);
     }
 
-    /** True when every box in a shape runs the full width of its cell along {@code axis}. */
+    /** True when every box in a shape runs the full width of its cell along the axis. */
     private static boolean spans(long[] shape, int axis) {
         for (long box : shape) {
             if (rawMin(box, axis) != 0 || rawSize(box, axis) != 16) {
@@ -343,9 +328,7 @@ public abstract sealed class SectionCollision {
     }
 
     /**
-     * Reference equality first, which hits whenever the two cells share a palette entry or are
-     * both whole blocks. The content compare only runs for two different states that happen to
-     * have the same shape, where it buys a merge that would otherwise be missed.
+     * Reference equality first (hits for palette entries and full blocks), then content compare.
      */
     private static boolean sameShape(long[] a, long[] b) {
         return a == b || Arrays.equals(a, b);
@@ -378,33 +361,29 @@ public abstract sealed class SectionCollision {
     // ------------------------------------------------------------------------------------------
 
     /**
-     * Copies a section's collision geometry out on the tick thread.
-     * <p>
-     * The two early exits carry the cost of this whole design. {@code hasOnlyAir()} is a
-     * counter read, and {@code maybeHas} scans the section's <em>palette</em> — a handful of
-     * entries — not its 4096 cells. A section whose palette contains nothing that collides
-     * provably contains no collision, so air, water and foliage sections resolve to {@link #EMPTY}
-     * without a single cell read and without allocating. Only sections that genuinely hold
-     * geometry pay the full scan, and they pay it once.
+     * Copies a section's collision geometry out on the tick thread. Early exits for air sections
+     * and sections with no colliding blocks; only geometry-bearing sections are scanned.
      */
     public static SectionCollision snapshot(@Nullable LevelChunkSection section) {
         if (section == null || section.hasOnlyAir() || !section.maybeHas(SectionCollision::mayCollide)) {
             return EMPTY;
         }
 
-        short[] index = new short[SECTION_SIZE];
+        // Use byte index for up to 255 states, upgrade to short for 256+.
+        byte[] narrow = new byte[SECTION_SIZE];
+        short[] wide = null;
         List<BlockState> palette = new ArrayList<>();
         List<long[]> paletteBoxes = new ArrayList<>();
         Reference2IntMap<BlockState> ids = new Reference2IntOpenHashMap<>();
-        // Block states are canonical instances, so reference identity is a valid and cheap key.
-        // A negative id memoises "this state does not collide", so water is resolved once.
+        // Block states are canonical, so reference identity is a valid key.
+        // Negative id memoizes non-colliding states.
         ids.defaultReturnValue(0);
         int cells = 0;
 
         for (int i = 0; i < SECTION_SIZE; i++) {
             BlockState state = section.getBlockState(i & 15, i >> 8, (i >> 4) & 15);
             if (state.isAir()) {
-                // A field read, ahead of the hash lookup, for the cell most cells are.
+                // Fast path: air is the common case.
                 continue;
             }
             int id = ids.getInt(state);
@@ -421,14 +400,23 @@ public abstract sealed class SectionCollision {
                 paletteBoxes.add(boxes);
                 id = palette.size();
                 ids.put(state, id);
+                if (id > 255 && wide == null) {
+                    wide = new short[SECTION_SIZE];
+                    for (int j = 0; j < SECTION_SIZE; j++) {
+                        wide[j] = (short) (narrow[j] & 0xFF);
+                    }
+                }
             }
             cells++;
-            index[i] = (short) id;
+            if (wide != null) {
+                wide[i] = (short) id;
+            } else {
+                narrow[i] = (byte) id;
+            }
         }
 
         if (cells == 0) {
-            // maybeHas is allowed to be conservative (a GlobalPalette always answers true, and
-            // a palette can retain entries no cell uses any more), so this is reachable.
+            // maybeHas may be conservative, so no collision is reachable.
             return EMPTY;
         }
         long[][] boxTable = paletteBoxes.toArray(new long[0][]);
@@ -436,14 +424,10 @@ public abstract sealed class SectionCollision {
             return new Uniform(palette.get(0), boxTable[0]);
         }
         BlockState[] states = palette.toArray(new BlockState[0]);
-        if (states.length <= 255) {
-            byte[] narrow = new byte[SECTION_SIZE];
-            for (int i = 0; i < SECTION_SIZE; i++) {
-                narrow[i] = (byte) index[i];
-            }
-            return new ByteIndexed(states, boxTable, narrow);
+        if (wide != null) {
+            return new ShortIndexed(states, boxTable, wide);
         }
-        return new ShortIndexed(states, boxTable, index);
+        return new ByteIndexed(states, boxTable, narrow);
     }
 
     private static boolean mayCollide(BlockState state) {
@@ -469,7 +453,7 @@ public abstract sealed class SectionCollision {
 
     }
 
-    /** Every cell is the same state — deep stone, a filled section of one material. */
+    /** Every cell is the same state, like deep stone or a filled section of one material. */
     private static final class Uniform extends SectionCollision {
 
         private final BlockState state;
@@ -529,7 +513,7 @@ public abstract sealed class SectionCollision {
 
     }
 
-    /** Fallback for a section with 256+ distinct colliding states. Vanishingly rare. */
+    /** Fallback for a section with 256+ distinct colliding states. */
     private static final class ShortIndexed extends SectionCollision {
 
         private final BlockState[] palette;

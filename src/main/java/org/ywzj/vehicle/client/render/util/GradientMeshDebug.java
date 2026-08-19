@@ -15,29 +15,20 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The ground as the climb logic reads it: a height field, and per cell the verdict on whether a
- * vehicle could drive off it.
- * <p>
- * The collision overlay next door draws the boxes physics collides against, which answers "what is
- * there". This answers the question that has actually been causing bugs — <em>what does the vehicle
- * think it can do about what is there</em> — because the two have repeatedly disagreed. A one-block
- * staircase and a two-block riser are the same green boxes; only the verdict tells them apart. Two
- * separate defects came down to terrain the vehicle was standing on being read as a wall, and
- * neither was visible in a box view.
- * <p>
- * Sampled from the same {@link ChunkCollisionCache} boxes physics queries, so the surface heights
- * are the merged collision geometry and a slab reads as half a block, not a whole one.
+ * The ground as the climb logic reads it: surface height per column and traversability verdict.
+ * A one-block staircase and two-block riser show as identical collision boxes but different verdicts.
+ * Heights are sampled from the collision cache, so slabs read as half a block.
  */
 @OnlyIn(Dist.CLIENT)
 public final class GradientMeshDebug {
 
-    /** Rise below which a cell is flat rather than a step, in blocks. */
+    /** Rise threshold below which a cell is flat rather than a step, in blocks. */
     private static final double FLAT = 0.05;
 
-    /** How far above the reference height a surface can be and still count as ground to drive on. */
+    /** Distance above reference height where a surface still counts as ground. */
     private static final double CEILING = 3.0;
 
-    /** How far below to look before giving up on a column — beyond this it is a drop, not ground. */
+    /** Maximum search depth below reference height before giving up on finding ground. */
     private static final double FLOOR = 8.0;
 
     public enum Verdict {
@@ -46,20 +37,19 @@ public final class GradientMeshDebug {
         FLAT,
         /** A step the vehicle can ride up. How steep is carried separately, in the rise. */
         SLOPE,
-        /** Taller than {@code maxUpStep}: climb refuses it and the sweep stops the hull. */
+        /** Taller than maxUpStep; climb refuses it. */
         WALL
 
     }
 
     /**
-     * @param top   world Y of the drivable surface in this column
-     * @param rise  tallest upward step to a neighbouring column, in blocks
+     * @param top the drivable surface height
+     * @param rise tallest upward step to a neighbouring column
      */
     public record Cell(int x, int z, double top, double rise, Verdict verdict) {}
 
     /**
-     * @param sweepHull the hull actually swept against the world — everything below it is skirt
-     *                  the vehicle rides over. Terrain poking into this box is what stops it.
+     * @param sweepHull the hull swept against the world; everything below is skirt the vehicle rides over
      */
     public record Field(List<Cell> cells, OBB sweepHull, double maxUpStep, double climbGradient) {}
 
@@ -85,9 +75,7 @@ public final class GradientMeshDebug {
         List<AABB> boxes = new ArrayList<>();
         cache.collectBoxes(region, boxes);
 
-        // Surface height per column, NaN where nothing was found. Built as a flat array first
-        // because the verdict for a cell depends on its neighbours, which do not exist yet while
-        // the heights are still being gathered.
+        // Build heights as a flat array first; verdicts depend on neighbours' heights.
         double[] tops = new double[span * span];
         Arrays.fill(tops, Double.NaN);
         for (AABB box : boxes) {
@@ -116,10 +104,7 @@ public final class GradientMeshDebug {
                 if (Double.isNaN(top)) {
                     continue;
                 }
-                // Rise to the neighbours, upward only — driving off a ledge is never blocked, so a
-                // drop is not something the vehicle needs warning about. Marking the low cell
-                // rather than the high one is deliberate: the verdict answers "can I leave here",
-                // which is the question asked by a vehicle standing on it.
+                // Rise to neighbours, upward only; the verdict marks the low cell asking "can I leave here".
                 double rise = 0;
                 rise = Math.max(rise, step(tops, lx - 1, lz, span, top));
                 rise = Math.max(rise, step(tops, lx + 1, lz, span, top));

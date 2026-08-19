@@ -216,19 +216,19 @@ public class RotaryWingVehicle extends AbstractVehicle
         // 高度越高，空气越稀薄，发动机出力与桨叶效率都会降低，约定在64格高的海平面以下才可达到满效率
         double scaleAir = position().y < 64 ? 1 : Math.pow(Math.max(0, ceiling - position().y), 0.2) / Math.pow(ceiling - 64, 0.2);
         // 螺旋桨方向的力
-        double tiltCompensation = AllConfigs.common.arcadeFlightModel.get()
-                ? aerodynamics.liftTiltCompensation((float) vP.y)
-                : 1.0;
+        boolean arcade = AllConfigs.common.arcadeFlightModel.get();
+        double tiltCompensation = arcade ? aerodynamics.liftTiltCompensation((float) vP.y) : 1.0;
         Vec3 force = vP.scale(scale * scaleAir * mainRotorForce * tiltCompensation);
         // 桨叶水平方向的空速带来升力
         double dVH = Math.sqrt(Math.pow(airSpeed.length(), 2) - Math.pow(dVV, 2));
-        force.add(vP.scale(dVH * scaleAir * 0.005f));
+        force = force.add(vP.scale(dVH * scaleAir * 0.005f));
+        if (arcade) {
+            float gain = aerodynamics.discTiltGain;
+            force = new Vec3(force.x * gain, force.y, force.z * gain);
+        }
         airSpeed = airSpeed.add(force);
         if (AllConfigs.common.arcadeFlightModel.get()) {
-            // Drag along the nose is cheap and drag across it is expensive, so the machine tracks
-            // where it is pointed rather than sliding. Isotropic drag is the single biggest reason
-            // a helicopter reads as skating; this is the same shape Superb Warfare uses.
-            org.joml.Vector3f v = airSpeed.toVector3f();
+           Vector3f v = airSpeed.toVector3f();
             aerodynamics.applyToVelocity(v, getYRot(), getXRot(), onGround());
             airSpeed = new Vec3(v);
         } else {
@@ -242,9 +242,8 @@ public class RotaryWingVehicle extends AbstractVehicle
         this.setDeltaMovement(airSpeed);
 
         if (hoverMode) {
-            // Deliberately no longer forces the nose level. Hover mode is an altitude hold, not an
-            // attitude hold, and pinning pitch to zero is what made the machine feel bolted
-            // upright: the pilot tilts to go somewhere and it immediately argues back.
+            // Hover mode holds altitude, not attitude. Forcing pitch to zero
+            // made the machine feel bolted upright.
             controlUnit.yRot = getYRot();
             double vy = airSpeed.y - physicsEngine.G;
             if (vy > 0.01) {
@@ -252,12 +251,11 @@ public class RotaryWingVehicle extends AbstractVehicle
             } else if (vy < -0.01) {
                 setCollectivePitch(Mth.clamp(getCollectivePitch() + 1f, 0f, 100f));
             }
-        } else if (AllConfigs.common.arcadeFlightModel.get()
-                && !controlUnit.up && !controlUnit.down && !onGround()) {
-            // Hands off the collective: trim it to hold height. Tilt compensation above covers the
-            // thrust a lean costs, and this covers everything else — gusts of drag, a heavy load,
-            // bleeding speed in a turn — so going somewhere does not mean sinking.
-            float delta = aerodynamics.altitudeHoldDelta((float) airSpeed.y);
+        } else if (arcade && !controlUnit.up && !controlUnit.down && !onGround()) {
+            // Hands off collective: trim to hold height. PhysicsEngine subtracts one tick of gravity
+            // after tickMove, so airSpeed.y here is velocity before the fall; trimming it to zero
+            // prevents a permanent sink of one tick of gravity.
+            float delta = aerodynamics.altitudeHoldDelta((float) (airSpeed.y - physicsEngine.G));
             if (delta != 0) {
                 setCollectivePitch(Mth.clamp(getCollectivePitch() + delta * 100f, 0f, 100f));
             }
@@ -326,8 +324,7 @@ public class RotaryWingVehicle extends AbstractVehicle
         }
 
         if (!(controlUnit.left || controlUnit.right) && AllConfigs.common.arcadeFlightModel.get()) {
-            // Bleed the bank off slowly rather than driving it to zero. A helicopter that snaps
-            // level the instant the stick centres cannot hold a turn, and reads as upright.
+            // Bleed bank off slowly; snapping level instantly prevents holding a turn.
             this.setZRot(aerodynamics.settleRoll(this.getZRot(), false, onGround()));
             zRotSpeed = 0;
         } else if (!(controlUnit.left || controlUnit.right)) {

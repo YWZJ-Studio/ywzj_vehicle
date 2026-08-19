@@ -4,6 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockMo
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.resource.pojo.BedrockModelPOJO;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakedBedrockModel;
+import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakedBoneDefinition;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.baked.BakerOptions;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BakedModelInstance;
 import com.github.mcmodderanchor.simplebedrockmodel.v2.common.model.runtime.BoneState;
@@ -30,8 +31,9 @@ public class VehicleBedrockModel extends BedrockModel {
     private final BakedBedrockModel bakedModel;
     private final BakedModelInstance defaultModelInstance;
     private final List<BakedSpecialBoneEntry> bakedSpecialBoneEntries;
+    private final boolean hasMeshGeometry;
 
-    public record BakedSpecialBoneEntry(int boneIndex, SpecialBoneEffect effect) {}
+    public record BakedSpecialBoneEntry(int boneIndex, SpecialBoneEffect effect, boolean hasQuads, boolean hasVertices) {}
 
     public VehicleBedrockModel(BedrockModelPOJO pojo, List<SpecialBoneEffect> specialBoneEffects) {
         this(pojo, specialBoneEffects, null);
@@ -69,16 +71,21 @@ public class VehicleBedrockModel extends BedrockModel {
             this.bakedModel = BakedBedrockModel.bake(pojo, options);
             this.defaultModelInstance = this.bakedModel.createInstance();
             this.bakedSpecialBoneEntries = new ArrayList<>();
+            BakedBoneDefinition[] bakedBones = this.bakedModel.bones();
             for (SpecialBoneEffect effect : specialBoneMap.values()) {
                 int boneIndex = bakedModel.getIndex(effect.bone);
                 if (boneIndex >= 0) {
-                    bakedSpecialBoneEntries.add(new BakedSpecialBoneEntry(boneIndex, effect));
+                    BakedBoneDefinition definition = bakedBones[boneIndex];
+                    bakedSpecialBoneEntries.add(new BakedSpecialBoneEntry(boneIndex, effect,
+                            definition.hasQuadsInTree(), definition.hasVerticesInTree()));
                 }
             }
+            this.hasMeshGeometry = this.bakedModel.meshChunks().length > 0;
         } else {
             this.bakedModel = null;
             this.defaultModelInstance = null;
             this.bakedSpecialBoneEntries = List.of();
+            this.hasMeshGeometry = false;
         }
     }
 
@@ -96,22 +103,23 @@ public class VehicleBedrockModel extends BedrockModel {
 
     @OnlyIn(Dist.CLIENT)
     public void renderToBuffer(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
-        setSpecialBoneVisible(defaultModelInstance, false);
-        defaultModelInstance.renderToBuffer(poseStack, bufferSource,
-                RenderType.entityCutout(texture),
-                BedrockModelRenderTypes.polyMeshCutout(texture),
-                packedLight,
-                OverlayTexture.NO_OVERLAY);
+        renderToBuffer(defaultModelInstance, poseStack, bufferSource, texture, packedLight);
     }
 
     @OnlyIn(Dist.CLIENT)
     public void renderToBuffer(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
         setSpecialBoneVisible(instance, false);
-        instance.renderToBuffer(poseStack, bufferSource,
-                RenderType.entityCutout(texture),
-                BedrockModelRenderTypes.polyMeshCutout(texture),
-                packedLight,
-                OverlayTexture.NO_OVERLAY);
+        RenderType quadType = RenderType.entityCutout(texture);
+        if (hasMeshGeometry) {
+            instance.renderToBuffer(poseStack, bufferSource,
+                    quadType,
+                    BedrockModelRenderTypes.polyMeshCutout(texture),
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY);
+            return;
+        }
+        bakedModel.renderBoneTree(instance, poseStack, bufferSource.getBuffer(quadType),
+                packedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F, true);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -133,7 +141,7 @@ public class VehicleBedrockModel extends BedrockModel {
             switch (entry.effect.type) {
                 case MUZZLE_FLASH -> {
                     quadType = ModRenderTypes.muzzleFlash(entry.effect.texture);
-                    meshType = ModRenderTypes.muzzleFlash(entry.effect.texture);
+                    meshType = ModRenderTypes.muzzleFlashMesh(entry.effect.texture);
                 }
                 case TRANSPARENT, COCKPIT -> {
                     quadType = ModRenderTypes.cubeTransparent(entry.effect.texture);
@@ -147,8 +155,14 @@ public class VehicleBedrockModel extends BedrockModel {
             if (bone == null) {
                 continue;
             }
-            instance.renderSingleBone(poseStack, entry.boneIndex, source, quadType, meshType, packedLight,
-                    packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, false);
+            if (entry.hasQuads) {
+                instance.renderSingleBonePass(poseStack, entry.boneIndex, source.getBuffer(quadType), packedLight,
+                        packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, true, false);
+            }
+            if (entry.hasVertices) {
+                instance.renderSingleBonePass(poseStack, entry.boneIndex, source.getBuffer(meshType), packedLight,
+                        packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, false, false);
+            }
         }
     }
 

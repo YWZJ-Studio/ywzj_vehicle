@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle.collision;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.Mth;
@@ -11,36 +12,50 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.StampedLock;
 
 /**
- * Per-level cache of {@link SectionCollision} snapshots, so vehicle physics can ask what geometry
- * is where without touching a live {@code PalettedContainer}.
- * <p>
- * Split into two phases on purpose:
- * <ul>
- *   <li>{@link #prepare} runs on the tick thread. It reads chunk data, builds any missing
- *       snapshots, and answers the broad-phase question "could anything here collide at all?"</li>
- *   <li>{@link #collectBoxes} and {@link Cursor} read only finished snapshots. No locks, no chunk
- *       access, no palette access — safe to call from a worker thread once {@code prepare} has
- *       returned.</li>
- * </ul>
- * That split is what lets vehicle physics move off the tick thread later: the only step that
- * must stay on it is {@code prepare}.
- * <p>
- * Snapshots are invalidated by {@link #invalidate}, driven from a {@code LevelChunk.setBlockState}
- * mixin plus chunk load/unload events. Invalidation removes the entry outright, so a snapshot
- * object is never mutated and a reader mid-query always sees a self-consistent section.
+ * Per-level cache of SectionCollision snapshots, so vehicle physics can ask what geometry is
+ * where without touching a live PalettedContainer. Split into two phases: prepare() runs on the
+ * tick thread and builds snapshots; collectBoxes(), anyBoxIn(), and Cursor read only finished
+ * snapshots and are safe from worker threads. Snapshots are invalidated by invalidate(), driven
+ * from a LevelChunk.setBlockState mixin plus chunk load/unload events. Pinning captures snapshot
+ * references into a PinnedSections on the tick thread, making a solve deterministic off-thread.
  */
-public final class ChunkCollisionCache {
+public final class ChunkCollisionCache implements SectionSource {
 
     /**
-     * Soft cap on retained snapshots. A mixed section costs ~4KB for its cell index plus its
-     * merged boxes, which for ordinary terrain run to a few hundred — call it 8KB a section, so
-     * roughly 16MB per level if every retained section is mixed.
+     * A frozen view over the sections one vehicle's physics may touch this tick.
+     * Filled by prepareAndPin() on the tick thread, read by the solve wherever it runs.
+     * Holds references only; SectionCollision is immutable, so the fill costs nothing to keep.
+     * Reused per vehicle; never shared.
+     */
+    public static final class PinnedSections implements SectionSource {
+
+        private final Long2ObjectOpenHashMap<SectionCollision> pinned =
+                new Long2ObjectOpenHashMap<>();
+
+        @Override
+        @Nullable
+        public SectionCollision section(long key) {
+            return pinned.get(key);
+        }
+
+        public void clear() {
+            pinned.clear();
+        }
+
+        void pin(long key, SectionCollision snapshot) {
+            pinned.put(key, snapshot);
+        }
+
+    }
+
+    /**
+     * Soft cap on retained snapshots; roughly 16MB per level assuming mixed sections cost 8KB each.
      */
     private static final int MAX_SECTIONS = 2048;
 
@@ -49,8 +64,17 @@ public final class ChunkCollisionCache {
 
     private static final Map<Level, ChunkCollisionCache> CACHES = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<Long, SectionCollision> sections = new ConcurrentHashMap<>();
+    private final Long2ObjectOpenHashMap<SectionCollision> sections = new Long2ObjectOpenHashMap<>();
+    private final StampedLock sectionsLock = new StampedLock();
     private volatile int tick;
+
+    /**
+     * Per-thread traversal scratch for the per-section trees. The trees are shared across every
+     * vehicle over a section, so the scratch cannot live on them; per thread keeps concurrent
+     * readers safe when physics runs on worker threads.
+     */
+    private static final ThreadLocal<DynamicTree.QueryScratch> QUERY_SCRATCH =
+            ThreadLocal.withInitial(DynamicTree.QueryScratch::new);
 
     private ChunkCollisionCache() {}
 
@@ -63,11 +87,55 @@ public final class ChunkCollisionCache {
         CACHES.remove(level);
     }
 
+    /** The live view of this cache, for queries that can and should see current data. */
+    @Override
+    @Nullable
+    public SectionCollision section(long key) {
+        return read(key);
+    }
+
+    private SectionCollision read(long key) {
+        long stamp = sectionsLock.tryOptimisticRead();
+        SectionCollision snapshot;
+        try {
+            snapshot = sections.get(key);
+        } catch (RuntimeException raced) {
+            // A probe over a table mid-rehash can trip a bounds check when the mask and key
+            // array are read torn. Transient; fall through to the locked retry.
+            snapshot = null;
+            stamp = 0;
+        }
+        if (!sectionsLock.validate(stamp)) {
+            stamp = sectionsLock.readLock();
+            try {
+                snapshot = sections.get(key);
+            } finally {
+                sectionsLock.unlockRead(stamp);
+            }
+        }
+        return snapshot;
+    }
+
+    private void write(long key, SectionCollision snapshot) {
+        long stamp = sectionsLock.writeLock();
+        try {
+            sections.put(key, snapshot);
+        } finally {
+            sectionsLock.unlockWrite(stamp);
+        }
+    }
+
     /** Drops the snapshot covering a changed block. Cheap enough for every block update. */
     public static void invalidate(Level level, BlockPos pos) {
         ChunkCollisionCache cache = CACHES.get(level);
-        if (cache != null) {
+        if (cache == null) {
+            return;
+        }
+        long stamp = cache.sectionsLock.writeLock();
+        try {
             cache.sections.remove(SectionPos.asLong(pos));
+        } finally {
+            cache.sectionsLock.unlockWrite(stamp);
         }
     }
 
@@ -77,23 +145,36 @@ public final class ChunkCollisionCache {
         if (cache == null) {
             return;
         }
-        cache.sections.keySet().removeIf(key ->
-                SectionPos.x(key) == chunkPos.x && SectionPos.z(key) == chunkPos.z);
+        long stamp = cache.sectionsLock.writeLock();
+        try {
+            cache.sections.keySet().removeIf((long key) ->
+                    SectionPos.x(key) == chunkPos.x && SectionPos.z(key) == chunkPos.z);
+        } finally {
+            cache.sectionsLock.unlockWrite(stamp);
+        }
     }
 
     /**
-     * Tick-thread only. Ensures every section overlapping {@code bounds} has a snapshot, and
-     * reports whether any of them could produce a contact.
-     * <p>
-     * A {@code false} return is exact, not a heuristic: it means every overlapping section was
-     * proven to hold nothing with a collision shape, so the query would have produced an empty
-     * contact list. Callers may skip it entirely — that is the whole win for aircraft and ships,
-     * which spend nearly all their time over sections that contain nothing to hit.
+     * Tick-thread only. Ensures every section overlapping bounds has a snapshot; reports whether
+     * any could produce a contact. A false return is exact: every overlapping section holds no
+     * collision shapes, so the query would be empty. Aircraft and ships skip this when over empty sections.
      */
     public boolean prepare(Level level, AABB bounds) {
+        return prepareAndPin(level, bounds, null);
+    }
+
+    /**
+     * Like prepare(), and additionally pins the region's snapshots into pin. Tick-thread only.
+     * The pin replaces whatever the view held before, so re-pinning each tick never accumulates
+     * stale sections. Empty snapshots are pinned too, keeping the view honest about its coverage.
+     */
+    public boolean prepareAndPin(Level level, AABB bounds, @Nullable PinnedSections pin) {
+        if (pin != null) {
+            pin.clear();
+        }
         if (level.isDebug()) {
-            // Debug worlds synthesise block states rather than storing them; snapshotting them
-            // would be wrong. Report "maybe solid" so the caller falls back to live reads.
+            // Debug worlds synthesize block states rather than storing them. Report true
+            // so the caller falls back to live reads.
             return true;
         }
         this.tick = (int) level.getGameTime();
@@ -111,13 +192,16 @@ public final class ChunkCollisionCache {
                 ChunkAccess chunk = level.getChunkSource().getChunkNow(sectionX, sectionZ);
                 for (int sectionY = minSectionY; sectionY <= maxSectionY; sectionY++) {
                     long key = SectionPos.asLong(sectionX, sectionY, sectionZ);
-                    SectionCollision snapshot = sections.get(key);
+                    SectionCollision snapshot = read(key);
                     if (snapshot == null) {
                         snapshot = build(chunk, sectionY);
-                        sections.put(key, snapshot);
+                        write(key, snapshot);
                     }
                     snapshot.lastUseTick = tick;
                     anySolid |= !snapshot.isEmpty();
+                    if (pin != null) {
+                        pin.pin(key, snapshot);
+                    }
                 }
             }
         }
@@ -129,12 +213,9 @@ public final class ChunkCollisionCache {
     }
 
     /**
-     * Unloaded chunks are treated as empty rather than being force-loaded.
-     * <p>
-     * This is a deliberate departure from {@code Level.getBlockState}, which loads and if
-     * necessary generates the chunk. Driving world generation from a physics inner loop is a
-     * latent hitch, and it cannot be done off the tick thread at all. A vehicle hull reaching
-     * into unloaded terrain now passes through it instead of stalling the server.
+     * Unloaded chunks are treated as empty rather than force-loaded. Level.getBlockState loads
+     * and generates chunks, but driving world generation from physics is a latent hitch that
+     * cannot run off-thread. Hulls reaching into unloaded terrain pass through instead of stalling.
      */
     private static SectionCollision build(@Nullable ChunkAccess chunk, int sectionY) {
         if (chunk == null) {
@@ -150,37 +231,37 @@ public final class ChunkCollisionCache {
 
     private void evict() {
         int cutoff = tick - RETAIN_TICKS;
-        Iterator<Map.Entry<Long, SectionCollision>> iterator = sections.entrySet().iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getValue().lastUseTick < cutoff) {
-                iterator.remove();
+        long stamp = sectionsLock.writeLock();
+        try {
+            sections.values().removeIf(snapshot -> snapshot.lastUseTick < cutoff);
+            if (sections.size() > MAX_SECTIONS) {
+                // All sections are in active use. Drop everything; rebuilds lazily.
+                sections.clear();
             }
-        }
-        if (sections.size() > MAX_SECTIONS) {
-            // Everything is in active use by something far larger than the budget assumed.
-            // Dropping it all is better than growing without bound; it rebuilds lazily.
-            sections.clear();
+        } finally {
+            sectionsLock.unlockWrite(stamp);
         }
     }
 
     /**
-     * A read cursor over prepared snapshots.
-     * <p>
-     * Holds the last section it resolved, which matters because hull sample points are
-     * generated face by face and consecutive points nearly always fall in the same section —
-     * so the map lookup collapses to a {@code long} compare for most queries.
-     * <p>
-     * Not thread-safe by itself: give each thread (or each vehicle) its own.
+     * A read cursor over prepared snapshots. Memoizes the last section since consecutive hull
+     * sample points nearly always fall in the same section, collapsing the map lookup to a
+     * long compare for most queries. Not thread-safe; give each thread or vehicle its own.
      */
-    public final class Cursor {
+    public static final class Cursor {
 
+        private final SectionSource source;
         private long lastKey = Long.MIN_VALUE;
         private SectionCollision lastSection = SectionCollision.EMPTY;
+
+        Cursor(SectionSource source) {
+            this.source = source;
+        }
 
         private SectionCollision resolve(int x, int y, int z) {
             long key = SectionPos.asLong(x >> 4, y >> 4, z >> 4);
             if (key != lastKey) {
-                SectionCollision snapshot = sections.get(key);
+                SectionCollision snapshot = source.section(key);
                 lastSection = snapshot == null ? SectionCollision.EMPTY : snapshot;
                 lastKey = key;
             }
@@ -188,11 +269,8 @@ public final class ChunkCollisionCache {
         }
 
         /**
-         * The colliding block state at a block position, or {@code null} if nothing there has a
-         * collision shape.
-         * <p>
-         * Reads prepared snapshots only, so this is safe off the tick thread. A section that
-         * was never prepared reads as empty.
+         * The colliding block state at a block position, or null if nothing there has a
+         * collision shape. Reads prepared snapshots only, safe off-thread; unprepared sections read as empty.
          */
         @Nullable
         public BlockState collisionAt(int x, int y, int z) {
@@ -200,8 +278,8 @@ public final class ChunkCollisionCache {
         }
 
         /**
-         * World-space height of the tallest collision box in a block cell, so a caller stepping
-         * onto it knows how far up "on top" is. Equal to {@code y} when the cell holds nothing.
+         * World-space height of the tallest collision box in a block cell. Equal to y when
+         * the cell holds nothing.
          */
         public double collisionTop(int x, int y, int z) {
             return y + resolve(x, y, z).collisionTop(SectionCollision.cellIndex(x & 15, y & 15, z & 15));
@@ -216,38 +294,24 @@ public final class ChunkCollisionCache {
     }
 
     public Cursor cursor() {
-        return new Cursor();
+        return new Cursor(this);
+    }
+
+    /** A cursor over an arbitrary source, such as a PinnedSections view for an off-thread solve. */
+    public static Cursor cursorOver(SectionSource source) {
+        return new Cursor(source);
     }
 
     /**
-     * Collects the merged collision boxes overlapping {@code bounds} into {@code out}, in world
-     * coordinates. The broad phase for the inverted query.
-     * <p>
-     * Reads prepared snapshots only, so this is safe off the tick thread. Sections that were
-     * never prepared, or that were proven empty, contribute nothing — an empty result means the
-     * hull has nothing to collide with.
+     * Whether any collision box intersects bounds, stopping at the first found. Faster than
+     * gathering all boxes in the region for common cases like open sky or level ground.
      */
-    /**
-     * As {@link #collectBoxes(AABB, List)}, but writing primitives into a reusable buffer.
-     * <p>
-     * This is the form physics should use. The {@link AABB} overload has to allocate one immutable
-     * object per merged box, and they go straight into a list, so they escape and no amount of JIT
-     * cleverness removes them. A vehicle sitting on terrain runs this twice a tick.
-     */
-    public void collectBoxes(AABB bounds, BoxBuffer out) {
-        forEachBox(bounds, out::add);
+    public boolean anyBoxIn(AABB bounds) {
+        return anyBoxIn(this, bounds);
     }
 
-    public void collectBoxes(AABB bounds, List<AABB> out) {
-        forEachBox(bounds, (x0, y0, z0, x1, y1, z1) -> out.add(new AABB(x0, y0, z0, x1, y1, z1)));
-    }
-
-    /** Receives each merged box as primitives. */
-    private interface BoxSink {
-        void accept(double minX, double minY, double minZ, double maxX, double maxY, double maxZ);
-    }
-
-    private void forEachBox(AABB bounds, BoxSink out) {
+    /** Like anyBoxIn(AABB), resolving sections through source. */
+    public static boolean anyBoxIn(SectionSource source, AABB bounds) {
         int minSectionX = SectionPos.blockToSectionCoord(Mth.floor(bounds.minX));
         int minSectionY = SectionPos.blockToSectionCoord(Mth.floor(bounds.minY));
         int minSectionZ = SectionPos.blockToSectionCoord(Mth.floor(bounds.minZ));
@@ -258,7 +322,7 @@ public final class ChunkCollisionCache {
         for (int sectionX = minSectionX; sectionX <= maxSectionX; sectionX++) {
             for (int sectionY = minSectionY; sectionY <= maxSectionY; sectionY++) {
                 for (int sectionZ = minSectionZ; sectionZ <= maxSectionZ; sectionZ++) {
-                    SectionCollision snapshot = sections.get(SectionPos.asLong(sectionX, sectionY, sectionZ));
+                    SectionCollision snapshot = source.section(SectionPos.asLong(sectionX, sectionY, sectionZ));
                     if (snapshot == null || snapshot.isEmpty()) {
                         continue;
                     }
@@ -269,15 +333,99 @@ public final class ChunkCollisionCache {
                         double x0 = originX + SectionCollision.boxMinX(packed);
                         double y0 = originY + SectionCollision.boxMinY(packed);
                         double z0 = originZ + SectionCollision.boxMinZ(packed);
-                        double x1 = x0 + SectionCollision.boxSizeX(packed);
-                        double y1 = y0 + SectionCollision.boxSizeY(packed);
-                        double z1 = z0 + SectionCollision.boxSizeZ(packed);
-                        if (x1 <= bounds.minX || x0 >= bounds.maxX
-                                || y1 <= bounds.minY || y0 >= bounds.maxY
-                                || z1 <= bounds.minZ || z0 >= bounds.maxZ) {
-                            continue;
+                        if (x0 + SectionCollision.boxSizeX(packed) > bounds.minX && x0 < bounds.maxX
+                                && y0 + SectionCollision.boxSizeY(packed) > bounds.minY && y0 < bounds.maxY
+                                && z0 + SectionCollision.boxSizeZ(packed) > bounds.minZ && z0 < bounds.maxZ) {
+                            return true;
                         }
-                        out.accept(x0, y0, z0, x1, y1, z1);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Collects the merged collision boxes overlapping bounds into out, in world coordinates.
+     * The broad phase for the inverted query. Reads prepared snapshots only, safe off-thread;
+     * unprepared or empty sections contribute nothing. This form is preferred; AABB overload
+     * allocates one object per box.
+     */
+    public void collectBoxes(AABB bounds, BoxBuffer out) {
+        forEachBox(this, bounds.minX, bounds.minY, bounds.minZ,
+                bounds.maxX, bounds.maxY, bounds.maxZ, out::add);
+    }
+
+    /** Like above but with primitive bounds; per-substep query allocates nothing. */
+    public void collectBoxes(double minX, double minY, double minZ,
+                             double maxX, double maxY, double maxZ, BoxBuffer out) {
+        forEachBox(this, minX, minY, minZ, maxX, maxY, maxZ, out::add);
+    }
+
+    public void collectBoxes(AABB bounds, List<AABB> out) {
+        forEachBox(this, bounds.minX, bounds.minY, bounds.minZ,
+                bounds.maxX, bounds.maxY, bounds.maxZ,
+                (x0, y0, z0, x1, y1, z1) -> out.add(new AABB(x0, y0, z0, x1, y1, z1)));
+    }
+
+    /** Like collectBoxes(AABB, BoxBuffer), resolving sections through source. */
+    public static void collectBoxes(SectionSource source, AABB bounds, BoxBuffer out) {
+        forEachBox(source, bounds.minX, bounds.minY, bounds.minZ,
+                bounds.maxX, bounds.maxY, bounds.maxZ, out::add);
+    }
+
+    /** Primitive-bounds form over an arbitrary source; for the substep broadphase. */
+    public static void collectBoxes(SectionSource source, double minX, double minY, double minZ,
+                                    double maxX, double maxY, double maxZ, BoxBuffer out) {
+        forEachBox(source, minX, minY, minZ, maxX, maxY, maxZ, out::add);
+    }
+
+    /** Receives each merged box as primitives. */
+    private interface BoxSink {
+        void accept(double minX, double minY, double minZ, double maxX, double maxY, double maxZ);
+    }
+
+    private static void forEachBox(SectionSource source,
+                                   double boundsMinX, double boundsMinY, double boundsMinZ,
+                                   double boundsMaxX, double boundsMaxY, double boundsMaxZ, BoxSink out) {
+        int minSectionX = SectionPos.blockToSectionCoord(Mth.floor(boundsMinX));
+        int minSectionY = SectionPos.blockToSectionCoord(Mth.floor(boundsMinY));
+        int minSectionZ = SectionPos.blockToSectionCoord(Mth.floor(boundsMinZ));
+        int maxSectionX = SectionPos.blockToSectionCoord(Mth.floor(boundsMaxX));
+        int maxSectionY = SectionPos.blockToSectionCoord(Mth.floor(boundsMaxY));
+        int maxSectionZ = SectionPos.blockToSectionCoord(Mth.floor(boundsMaxZ));
+
+        DynamicTree.QueryScratch scratch = null;
+        for (int sectionX = minSectionX; sectionX <= maxSectionX; sectionX++) {
+            for (int sectionY = minSectionY; sectionY <= maxSectionY; sectionY++) {
+                for (int sectionZ = minSectionZ; sectionZ <= maxSectionZ; sectionZ++) {
+                    SectionCollision snapshot = source.section(SectionPos.asLong(sectionX, sectionY, sectionZ));
+                    if (snapshot == null || snapshot.isEmpty()) {
+                        continue;
+                    }
+                    int originX = SectionPos.sectionToBlockCoord(sectionX);
+                    int originY = SectionPos.sectionToBlockCoord(sectionY);
+                    int originZ = SectionPos.sectionToBlockCoord(sectionZ);
+                    long[] boxes = snapshot.collisionBoxes();
+                    DynamicTree tree = snapshot.collisionTree();
+                    if (tree != null) {
+                        if (scratch == null) {
+                            scratch = QUERY_SCRATCH.get();
+                        }
+                        int count = tree.query(scratch,
+                                boundsMinX - originX, boundsMinY - originY, boundsMinZ - originZ,
+                                boundsMaxX - originX, boundsMaxY - originY, boundsMaxZ - originZ);
+                        for (int i = 0; i < count; i++) {
+                            emitBox(boundsMinX, boundsMinY, boundsMinZ,
+                                    boundsMaxX, boundsMaxY, boundsMaxZ,
+                                    out, boxes[scratch.result(i)], originX, originY, originZ);
+                        }
+                    } else {
+                        for (long packed : boxes) {
+                            emitBox(boundsMinX, boundsMinY, boundsMinZ,
+                                    boundsMaxX, boundsMaxY, boundsMaxZ,
+                                    out, packed, originX, originY, originZ);
+                        }
                     }
                 }
             }
@@ -285,26 +433,54 @@ public final class ChunkCollisionCache {
     }
 
     /**
-     * The snapshot for a section, or {@code null} if it was never prepared. For the debug
-     * overlay — physics should go through a {@link Cursor}.
+     * Unpacks one merged box to world coordinates and hands it over if it genuinely intersects.
+     * The exact test remains even behind a tree query, whose fattened proxies may return boxes
+     * outside the bound. This preserves the strictly-exclusive filter callers depend on.
+     */
+    private static void emitBox(double boundsMinX, double boundsMinY, double boundsMinZ,
+                                double boundsMaxX, double boundsMaxY, double boundsMaxZ,
+                                BoxSink out, long packed,
+                                int originX, int originY, int originZ) {
+        double x0 = originX + SectionCollision.boxMinX(packed);
+        double y0 = originY + SectionCollision.boxMinY(packed);
+        double z0 = originZ + SectionCollision.boxMinZ(packed);
+        double x1 = x0 + SectionCollision.boxSizeX(packed);
+        double y1 = y0 + SectionCollision.boxSizeY(packed);
+        double z1 = z0 + SectionCollision.boxSizeZ(packed);
+        if (x1 <= boundsMinX || x0 >= boundsMaxX
+                || y1 <= boundsMinY || y0 >= boundsMaxY
+                || z1 <= boundsMinZ || z0 >= boundsMaxZ) {
+            return;
+        }
+        out.accept(x0, y0, z0, x1, y1, z1);
+    }
+
+    /**
+     * The snapshot for a section, or null if never prepared. For the debug overlay; physics
+     * should go through a Cursor.
      */
     @Nullable
     public SectionCollision snapshotAt(long sectionKey) {
-        return sections.get(sectionKey);
+        return read(sectionKey);
     }
 
-    /** Number of retained snapshots, for the debug overlay's readout. */
+    /** Number of retained snapshots; for debug overlay readout. */
     public int cachedSectionCount() {
         return sections.size();
     }
 
-    /** Approximate retained bytes across all snapshots, for the debug overlay's readout. */
+    /** Approximate retained bytes across all snapshots; for debug overlay readout. */
     public long footprint() {
-        long total = 0;
-        for (SectionCollision snapshot : sections.values()) {
-            total += snapshot.footprint();
+        long stamp = sectionsLock.readLock();
+        try {
+            long total = 0;
+            for (SectionCollision snapshot : sections.values()) {
+                total += snapshot.footprint();
+            }
+            return total;
+        } finally {
+            sectionsLock.unlockRead(stamp);
         }
-        return total;
     }
 
 }

@@ -13,42 +13,22 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import java.util.List;
 
 /**
- * Builds contact points from real geometry instead of a fixed hull sampling grid.
- * <p>
- * The grid approach asks "is there something under each of my N surface points?", so it costs
- * O(hull surface area) whether or not anything is nearby. This asks the opposite question —
- * "which boxes overlap my hull?" — and only then generates contact points, over the area that
- * actually touches. Cost becomes O(contact area).
- * <p>
- * Contacts are still {@link VehicleCubeOBB.CubePoint}s carrying a face and a hull-local position,
- * because {@code PhysicsEngine} reasons in those terms: it cancels velocity per face, and builds
- * its support polygon from local positions. The change is where the points come from, not what
- * they are.
- * <p>
- * <b>Why a small grid per contact rather than one point per box.</b> The support polygon in
- * {@code rotAndFallByGravity} is the convex hull of the contact positions. A hull resting on one
- * large merged ground box would collapse to a single contact and tip over instantly. Sampling the
- * overlap footprint preserves its extent, which is the property the polygon actually needs.
- * <p>
- * <b>Where the boxes come from is not this class's business.</b> World blocks arrive from
- * {@link ChunkCollisionCache#collectBoxes}; a {@link CollisionProvider} contributes its own the
- * same way. Both go through the same footprint sampling and the same verification, so a
- * contraption deck and a stone floor produce contacts that {@code PhysicsEngine} cannot tell
- * apart — which is the point.
+ * Builds contact points from real geometry instead of a fixed hull sampling grid,
+ * generating contacts only over the area that actually touches rather than at every point on
+ * the hull's surface. Contacts are still carried as hull-local positions and face IDs,
+ * with multiple samples per box to preserve the contact footprint's extent in the support polygon.
  */
 public final class ContactSynthesis {
 
     /**
-     * Samples per tangent axis across one contact footprint, so a box contributes at most 16
-     * contacts. Enough to carry the footprint's extent into the support polygon; small enough
-     * that a hull flat on the ground produces tens of contacts instead of hundreds.
+     * Samples per axis across one contact footprint; a box contributes at most 16 contacts.
      */
     private static final int MAX_SAMPLES_PER_AXIS = 4;
 
-    /** Matches the outward offset {@code VehicleCubeOBB.initCubePoints} places its points at. */
+    /** Outward offset applied to contact points on the hull face. */
     private static final float FACE_OFFSET = 0.001f;
 
-    /** Matches the tangential overshoot the sampling grid used, so edge coverage is unchanged. */
+    /** Tangential margin for footprint sampling to match the grid's edge coverage. */
     private static final float FACE_GAP = 0.1f;
 
     /**
@@ -57,22 +37,25 @@ public final class ContactSynthesis {
      */
     private static final int OWNER_SEARCH_DEPTH = 3;
 
+    /**
+     * Speculative contact margin in blocks. Contacts are generated before geometric overlap
+     * to prevent the sweep and contact phase from deadlocking when a hull is held just clear
+     * of the ground; sized to cover the gap the sweep deliberately introduces.
+     */
+    public static final double CONTACT_MARGIN = 0.05;
+
     private ContactSynthesis() {}
 
     /**
      * Fills in what a candidate contact touched, or reports that it touched nothing.
-     * <p>
-     * Called once per generated point, after the point has been proven to lie inside the box it
-     * came from. A resolver may still reject: a provider's boxes are allowed to be conservative,
-     * and this is where that slack is taken back out.
+     * Called once per generated point after it has been proven to lie inside the box.
      */
     @FunctionalInterface
     public interface ContactResolver {
 
         /**
-         * @param worldPos the candidate position. Owned by the caller and reused — read it, do
-         *                 not retain it.
-         * @return true to keep the point, having filled in its {@code cubePointContext}
+         * @param worldPos the candidate position, owned by the caller and reused, so do not retain it
+         * @return true to keep the point, having filled in its cubePointContext
          */
         boolean resolve(VehicleCubeOBB.CubePoint point, Vector3f worldPos, AABB box);
 
@@ -94,8 +77,7 @@ public final class ContactSynthesis {
                 if (state == null) {
                     continue;
                 }
-                // Same value as Vec3.atBottomCenterOf(BlockPos.containing(worldPos))
-                point.cubePointContext.setBlockPos(new Vec3(blockX + 0.5, blockY, blockZ + 0.5));
+                point.cubePointContext.setWorldCell(blockX, blockY, blockZ);
                 point.cubePointContext.setBlockState(state);
                 point.cubePointContext.setSurfaceY(cursor.collisionTop(blockX, blockY, blockZ));
                 return true;
@@ -116,12 +98,14 @@ public final class ContactSynthesis {
         if (state == null) {
             blockY--;
             state = cursor.collisionAt(blockX, blockY, blockZ);
-            if (state == null || cursor.collisionTop(blockX, blockY, blockZ) <= worldPos.y) {
+            // Margin applies here too; a point held above the surface by the sweep would be
+            // judged as standing on nothing without it.
+            if (state == null
+                    || cursor.collisionTop(blockX, blockY, blockZ) + CONTACT_MARGIN <= worldPos.y) {
                 return false;
             }
         }
-        // Same value as Vec3.atBottomCenterOf(BlockPos.containing(worldPos))
-        context.setBlockPos(new Vec3(blockX + 0.5, blockY, blockZ + 0.5));
+        context.setWorldCell(blockX, blockY, blockZ);
         context.setBlockState(state);
         context.setSurfaceY(cursor.collisionTop(blockX, blockY, blockZ));
         return true;
@@ -129,9 +113,6 @@ public final class ContactSynthesis {
 
     /**
      * Resolves contacts against one provider session's own geometry.
-     * <p>
-     * The provider's boxes drove the broad phase; its {@code contactAt} is still what decides,
-     * so a session whose boxes are a loose bound over a rotated sub-level stays exact.
      */
     public static ContactResolver provider(CollisionProvider.Session session) {
         return (point, worldPos, box) -> {
@@ -139,7 +120,7 @@ public final class ContactSynthesis {
             if (contact == null) {
                 return false;
             }
-            point.cubePointContext.setBlockPos(contact.blockPos());
+            point.cubePointContext.setProviderCell(contact.blockPos());
             point.cubePointContext.setBlockState(contact.state());
             // Providers report a position and a state but no geometry, so downstream falls back
             // to estimating the surface from the state.
@@ -149,30 +130,30 @@ public final class ContactSynthesis {
     }
 
     /**
-     * Appends contacts between the hull and each candidate box to {@code out}.
-     *
-     * @param boxes    world-space collision boxes overlapping the hull's bound
+     * Appends contacts between the hull and each candidate box to out.
+     * @param boxes world-space collision boxes overlapping the hull's bound
      * @param resolver decides what, if anything, each generated point touched
      */
-    public static void collect(VehicleCubeOBB hull, Vector3f[] axes, List<AABB> boxes,
+    public static void collect(VehicleCubeOBB hull, OBB pose, Vector3f[] axes, List<AABB> boxes,
                                ContactResolver resolver, List<VehicleCubeOBB.CubePoint> out) {
         BoxBuffer buffer = new BoxBuffer(boxes.size());
         buffer.addAll(boxes);
-        collect(hull, axes, buffer, resolver, out);
+        collect(hull, pose, axes, buffer, resolver, out);
     }
 
     /**
-     * As {@link #collect(VehicleCubeOBB, Vector3f[], List, ContactResolver, List)}, reading boxes
-     * as primitives. The block path uses this; the list form remains for {@code CollisionProvider},
-     * whose public API hands back real {@link AABB}s.
+     * Reads boxes as primitives instead of AABB objects.
+     * @param pose the hull's OBB at the pose being sampled; a shadow copy whose centre may have
+     *             advanced by substeps while the live OBB has not
      */
-    public static void collect(VehicleCubeOBB hull, Vector3f[] axes, BoxBuffer boxes,
+    public static void collect(VehicleCubeOBB hull, OBB pose, Vector3f[] axes, BoxBuffer boxes,
                                ContactResolver resolver, List<VehicleCubeOBB.CubePoint> out) {
-        OBB obb = hull.obb();
+        OBB obb = pose;
         Vector3f extents = obb.extents();
         Vector3f localMin = new Vector3f();
         Vector3f localMax = new Vector3f();
         Vector3f corner = new Vector3f();
+        Vector3f cornerLocal = new Vector3f();
         Vector3f local = new Vector3f();
         float[] uSamples = new float[MAX_SAMPLES_PER_AXIS + 1];
         float[] vSamples = new float[MAX_SAMPLES_PER_AXIS + 1];
@@ -182,17 +163,20 @@ public final class ContactSynthesis {
         float skirtSample = (float) (hull.climbSkirt() + FACE_OFFSET);
 
         // Hoisted out of the loop: identical for every box, and building it per box was three
-        // quaternion transforms and four objects each time.
-        Matrix3f basis = obb.rotation().get(new Matrix3f());
+        // quaternion transforms and four objects each time. The frame also precomputes the
+        // absolute-term table once, so the per-box test below is bare arithmetic.
+        OBB.SatFrame frame = new OBB.SatFrame().set(obb.rotation());
         Vector3f centre = obb.center();
         for (int i = 0, size = boxes.size(); i < size; i++) {
-            double boxMinX = boxes.minX(i);
-            double boxMinY = boxes.minY(i);
-            double boxMinZ = boxes.minZ(i);
-            double boxMaxX = boxes.maxX(i);
-            double boxMaxY = boxes.maxY(i);
-            double boxMaxZ = boxes.maxZ(i);
-            if (!OBB.intersectsBox(basis, centre.x, centre.y, centre.z, extents,
+            // Grown by the speculative margin; a box the hull is about to rest on counts as touching.
+            // The true box is kept separate so the resolver can clamp the sample back into it.
+            double boxMinX = boxes.minX(i) - CONTACT_MARGIN;
+            double boxMinY = boxes.minY(i) - CONTACT_MARGIN;
+            double boxMinZ = boxes.minZ(i) - CONTACT_MARGIN;
+            double boxMaxX = boxes.maxX(i) + CONTACT_MARGIN;
+            double boxMaxY = boxes.maxY(i) + CONTACT_MARGIN;
+            double boxMaxZ = boxes.maxZ(i) + CONTACT_MARGIN;
+            if (!OBB.intersectsBox(frame, centre.x, centre.y, centre.z, extents,
                     boxMinX, boxMinY, boxMinZ, boxMaxX, boxMaxY, boxMaxZ)) {
                 continue;
             }
@@ -210,9 +194,10 @@ public final class ContactSynthesis {
                         (float) ((c & 1) == 0 ? boxMinX : boxMaxX),
                         (float) ((c & 2) == 0 ? boxMinY : boxMaxY),
                         (float) ((c & 4) == 0 ? boxMinZ : boxMaxZ));
-                Vector3f localCorner = obb.worldToLocal(corner, axes);
-                localMin.min(localCorner);
-                localMax.max(localCorner);
+                // Into the reused scratch. The allocating overload made sixteen vectors per box.
+                obb.worldToLocal(corner, axes, cornerLocal);
+                localMin.min(cornerLocal);
+                localMax.max(cornerLocal);
             }
 
             int face = contactFace(obb, box, axes);
@@ -266,12 +251,14 @@ public final class ContactSynthesis {
                     // the box directly is what makes the contact set a subset of the real
                     // geometry: a box that stops short of the face contributes nothing, where a
                     // cell-granular test would have accepted the whole cell it sits in.
-                    if (!contains(box, world)) {
+                    // Against the grown bounds, not the true box: a sample sitting in the gap the
+                    // sweep leaves above a surface is exactly the contact that has to survive.
+                    if (!contains(world, boxMinX, boxMinY, boxMinZ, boxMaxX, boxMaxY, boxMaxZ)) {
                         continue;
                     }
                     VehicleCubeOBB.CubePoint point =
                             new VehicleCubeOBB.CubePoint(hull, new Vector3f(local), FACES[face]);
-                    point.worldPos(axes);
+                    point.worldPos(obb, axes);
                     if (resolver.resolve(point, world, box)) {
                         out.add(point);
                     }
@@ -281,27 +268,20 @@ public final class ContactSynthesis {
     }
 
     /**
-     * Containment against a box the point is expected to be just inside of. The point sits
-     * {@link #FACE_OFFSET} beyond the hull's face, so a hull merely resting on a box — touching
-     * it with no penetration at all, which is what every stationary vehicle does — still lands
-     * inside.
-     * <p>
-     * <b>Half-open on the far face, like a block cell.</b> A block at y=64 occupies [64, 65), and
-     * a point at exactly 65.0 belongs to the air above it. Closing the interval instead put a
-     * contact on the top edge of every one-block step — and that edge sits above the skirt
-     * {@code motionByImpact} uses to decide what to drive over, so the step cancelled the
-     * vehicle's forward velocity and could never be climbed. The old cell test got this right for
-     * free by flooring the point; matching its convention is what keeps the two queries agreeing.
+     * Containment test against a box the point is expected to be just inside of.
+     * Half-open on the far face, like a block cell; a point at exactly the maximum boundary
+     * belongs to the adjacent cell, preserving agreement with the cell-based grid query.
      */
-    private static boolean contains(AABB box, Vector3f point) {
-        return point.x >= box.minX && point.x < box.maxX
-                && point.y >= box.minY && point.y < box.maxY
-                && point.z >= box.minZ && point.z < box.maxZ;
+    private static boolean contains(Vector3f point,
+                                    double minX, double minY, double minZ,
+                                    double maxX, double maxY, double maxZ) {
+        return point.x >= minX && point.x < maxX
+                && point.y >= minY && point.y < maxY
+                && point.z >= minZ && point.z < maxZ;
     }
 
     /**
-     * Indexed by {@code axis * 2 + (negative ? 1 : 0)}, matching the face conventions
-     * {@code initCubePoints} uses: +X is LEFT, +Y is TOP, +Z is FRONT.
+     * Indexed by axis * 2 + (negative ? 1 : 0), with faces ordered as LEFT, RIGHT, TOP, BOTTOM, FRONT, BACK.
      */
     private static final VehicleCubeOBB.CubeFace[] FACES = {
             VehicleCubeOBB.CubeFace.LEFT, VehicleCubeOBB.CubeFace.RIGHT,
@@ -310,18 +290,10 @@ public final class ContactSynthesis {
     };
 
     /**
-     * Picks the hull face a box is bearing on: the hull axis along which the two overlap least,
-     * since that is the direction the box is pressing from.
-     * <p>
-     * Deliberately not {@code OBB.calculateMTV}. That searches all fifteen separating axes, so it
-     * can return a face diagonal rather than one of the hull's own, and — more importantly — it
-     * treats zero overlap as separation and returns a zero vector. A vehicle resting on the
-     * ground penetrates it by nothing at all, which is precisely the case that has to work: an
-     * earlier revision fell back to "whichever way the box lies" there and picked FRONT for a
-     * pillar under the hull's corner, generating contacts on the wrong face and finding none.
-     * Restricting the search to the hull's three axes and keeping zero-overlap contacts fixes it.
-     *
-     * @return {@code axis * 2 + (negative ? 1 : 0)}
+     * Picks the hull face a box is bearing on; the hull axis with the least overlap is the
+     * direction of contact. Restricted to the hull's three axes to handle zero-overlap contacts
+     * where a vehicle rests on the ground with no penetration.
+     * @return axis * 2 + (negative ? 1 : 0)
      */
     private static int contactFace(OBB obb, AABB box, Vector3f[] axes) {
         Vector3f extents = obb.extents();
@@ -360,10 +332,9 @@ public final class ContactSynthesis {
     }
 
     /**
-     * Fills {@code out} with evenly spaced coordinates across the footprint, plus one extra at
-     * {@code extra} when that lies inside it. Pass {@link Float#NaN} for no extra.
-     *
-     * @return how many entries were written
+     * Fills out with evenly spaced coordinates across the footprint, plus one extra at the
+     * given position if it lies inside.
+     * @return the number of entries written
      */
     private static int axisSamples(float from, float to, float extra, float[] out) {
         int steps = sampleCount(to - from);

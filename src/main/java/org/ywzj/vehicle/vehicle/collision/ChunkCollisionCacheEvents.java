@@ -7,11 +7,8 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 
 /**
- * Lifecycle hooks for {@link ChunkCollisionCache}.
- * <p>
- * Per-block invalidation is handled by a {@code LevelChunk.setBlockState} mixin. These cover the
- * coarser events that mixin cannot see: a chunk whose storage is swapped out from under a
- * cached section key, and a level going away entirely.
+ * Lifecycle hooks for ChunkCollisionCache. Per-block invalidation is handled by a
+ * LevelChunk.setBlockState mixin; these cover chunk and level load/unload events.
  */
 @EventBusSubscriber
 public final class ChunkCollisionCacheEvents {
@@ -20,8 +17,7 @@ public final class ChunkCollisionCacheEvents {
 
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
-        // A reloaded chunk reuses its section keys, so any snapshot left over from the previous
-        // residency has to go even though no setBlockState was observed for it.
+        // Reloaded chunks reuse their section keys, so stale snapshots must be cleared.
         if (event.getLevel() instanceof Level level) {
             ChunkCollisionCache.invalidateChunk(level, event.getChunk().getPos());
         }
@@ -38,6 +34,8 @@ public final class ChunkCollisionCacheEvents {
     public static void onLevelUnload(LevelEvent.Unload event) {
         if (event.getLevel() instanceof Level level) {
             ChunkCollisionCache.forget(level);
+            // Also clean up CarrierDecks; level lists holding vehicles keep everything alive.
+            org.ywzj.vehicle.vehicle.parenting.CarrierDecks.forget(level);
         }
     }
 

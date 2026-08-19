@@ -3,23 +3,9 @@ package org.ywzj.vehicle.vehicle.collision;
 import java.util.Arrays;
 
 /**
- * A bounding-volume hierarchy over boxes, for asking "what is near this" without touching them all.
- * <p>
- * After Box3D's {@code src/dynamic_tree.c} (MIT), written fresh. An AVL-balanced binary tree of
- * axis-aligned bounds: leaves are proxies, internal nodes bound their two children, so a query
- * descends only the branches that overlap and skips whole subtrees in one test.
- * <p>
- * <b>Why this is needed at carrier scale.</b> The broad phase currently walks every merged box in
- * the region — fine for a car spanning two sections, quadratic-feeling for a 300-block hull whose
- * bound covers hundreds. The cost of a query here is proportional to the number of boxes actually
- * near the hull rather than the number in its bounding volume, which is the difference between a
- * carrier costing what a carrier should and costing what its bounding box suggests.
- * <p>
- * Stored as parallel primitive arrays with a free list rather than node objects: the tree is
- * rebuilt or updated every tick, and one object per box is exactly the allocation pattern
- * {@link BoxBuffer} exists to avoid.
- * <p>
- * Not thread-safe for mutation. Queries are read-only and safe to run concurrently once built.
+ * A bounding-volume hierarchy over boxes for broad-phase queries that skip whole subtrees in one test.
+ * Implemented as an AVL-balanced binary tree stored in parallel primitive arrays, so querying
+ * allocates nothing per box.
  */
 public final class DynamicTree {
 
@@ -63,7 +49,7 @@ public final class DynamicTree {
         return a == null ? new int[size] : Arrays.copyOf(a, size);
     }
 
-    /** Links every unused slot into the free list, starting at {@code from}. */
+    /** Links every unused slot into the free list, starting at from. */
     private void resetFreeList(int from) {
         for (int i = from; i < capacity - 1; i++) {
             parent[i] = i + 1;
@@ -84,7 +70,7 @@ public final class DynamicTree {
         return nodeCount;
     }
 
-    /** Height of the tree, for checking the balancing actually works. */
+    /** Height of the tree. */
     public int treeHeight() {
         return root == NULL_NODE ? 0 : height[root];
     }
@@ -133,7 +119,6 @@ public final class DynamicTree {
         return proxy;
     }
 
-    // ---- insertion ----
 
     private void insertLeaf(int leaf) {
         if (root == NULL_NODE) {
@@ -142,9 +127,6 @@ public final class DynamicTree {
             return;
         }
 
-        // Descend by surface-area heuristic: at each step take the child whose bounds would grow
-        // least. Cheaper trees come from keeping the total surface area of internal nodes low,
-        // because that area is exactly the probability a random query has to descend into them.
         int index = root;
         while (height[index] > 0) {
             int c1 = child1[index];
@@ -208,10 +190,7 @@ public final class DynamicTree {
 
     /**
      * One AVL rotation if this node's children differ in height by more than one.
-     * <p>
-     * Without it, inserting boxes in scan order — which is exactly how a chunk section hands them
-     * over — degenerates the tree into a linked list and every query becomes the linear scan this
-     * class exists to replace.
+     * Without balancing, boxes inserted in scan order degenerate the tree into a linked list.
      */
     private int balance(int a) {
         if (height[a] < 2) {
@@ -229,7 +208,6 @@ public final class DynamicTree {
         return a;
     }
 
-    /** Promotes {@code heavy} above {@code a}, keeping whichever of its children is taller high. */
     private int rotate(int a, int heavy, int light) {
         int f = child1[heavy];
         int g = child2[heavy];
@@ -266,18 +244,14 @@ public final class DynamicTree {
         return heavy;
     }
 
-    // ---- queries ----
 
-    /** Receives the user data of every proxy whose bounds overlap the query. */
+    /** Called once per proxy overlapping the query with its user data. */
     public interface Visitor {
         void accept(int data);
     }
 
     /**
-     * Visits every proxy overlapping the given box.
-     * <p>
-     * Iterative with an explicit stack: recursion here would be a call per node on a hot path, and
-     * a pathological tree could overflow it.
+     * Visits every proxy overlapping the given box using an explicit stack to avoid recursion.
      */
     public void query(double qMinX, double qMinY, double qMinZ,
                       double qMaxX, double qMaxY, double qMaxZ, Visitor visitor) {
@@ -308,7 +282,60 @@ public final class DynamicTree {
 
     private int[] stackScratch = new int[64];
 
-    /** Fills {@code out} with the boxes from {@code source} whose proxies overlap the query. */
+    /**
+     * Reusable traversal stack and result buffer owned by the caller.
+     * Allows concurrent queries against the shared tree without allocations or corruption.
+     */
+    public static final class QueryScratch {
+
+        int[] stack = new int[64];
+        int[] out = new int[64];
+
+        /** Proxy user data from the last query result. */
+        public int result(int i) {
+            return out[i];
+        }
+
+    }
+
+    /**
+     * Collects every proxy overlapping the query into scratch and returns the count.
+     * Allocation-free after warm-up; safe to run concurrently provided each caller owns its scratch.
+     */
+    public int query(QueryScratch scratch, double qMinX, double qMinY, double qMinZ,
+                     double qMaxX, double qMaxY, double qMaxZ) {
+        if (root == NULL_NODE) {
+            return 0;
+        }
+        int[] stack = scratch.stack;
+        int[] out = scratch.out;
+        int top = 0;
+        int count = 0;
+        stack[top++] = root;
+        while (top > 0) {
+            int node = stack[--top];
+            if (maxX[node] < qMinX || minX[node] > qMaxX
+                    || maxY[node] < qMinY || minY[node] > qMaxY
+                    || maxZ[node] < qMinZ || minZ[node] > qMaxZ) {
+                continue;
+            }
+            if (height[node] == 0) {
+                if (count == out.length) {
+                    out = scratch.out = Arrays.copyOf(out, out.length * 2);
+                }
+                out[count++] = userData[node];
+                continue;
+            }
+            if (top + 2 > stack.length) {
+                stack = scratch.stack = Arrays.copyOf(stack, stack.length * 2);
+            }
+            stack[top++] = child1[node];
+            stack[top++] = child2[node];
+        }
+        return count;
+    }
+
+    /** Fills out with boxes from source whose proxies overlap the query. */
     public void query(BoxBuffer source, double qMinX, double qMinY, double qMinZ,
                       double qMaxX, double qMaxY, double qMaxZ, BoxBuffer out) {
         query(qMinX, qMinY, qMinZ, qMaxX, qMaxY, qMaxZ, i ->
@@ -316,12 +343,30 @@ public final class DynamicTree {
                         source.maxX(i), source.maxY(i), source.maxZ(i)));
     }
 
-    /** Builds a tree over every box in a buffer, with each proxy's data its index. */
+    /** Builds a tree over every box in the buffer, with each proxy's data as its index. */
     public void build(BoxBuffer boxes) {
         clear();
         for (int i = 0, n = boxes.size(); i < n; i++) {
             createProxy(boxes.minX(i), boxes.minY(i), boxes.minZ(i),
                     boxes.maxX(i), boxes.maxY(i), boxes.maxZ(i), i);
+        }
+    }
+
+    /**
+     * Builds a tree over a section snapshot's packed merged boxes in section-relative coordinates.
+     * Each proxy's data is its index into the packed array.
+     */
+    public void build(long[] packed) {
+        clear();
+        for (int i = 0; i < packed.length; i++) {
+            long box = packed[i];
+            double x0 = SectionCollision.boxMinX(box);
+            double y0 = SectionCollision.boxMinY(box);
+            double z0 = SectionCollision.boxMinZ(box);
+            createProxy(x0, y0, z0,
+                    x0 + SectionCollision.boxSizeX(box),
+                    y0 + SectionCollision.boxSizeY(box),
+                    z0 + SectionCollision.boxSizeZ(box), i);
         }
     }
 

@@ -19,25 +19,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Per-tick ledger of everything that moves a vehicle vertically, and who moved it.
- * <p>
- * Bouncing is hard to diagnose because a vehicle's height is written by half a dozen unrelated
- * pieces of code in the same tick — gravity, contact cancellation, the embedded-hull lift, the
- * step-up teleport, rotation about a support edge — and the only thing visible in-world is their
- * sum. Watching the sum tells you a vehicle is hopping; it never tells you which one launched it.
- * This records the individual contributions, so the answer is a table rather than a guess.
- * <p>
- * <b>Completeness is enforced, not assumed.</b> The position ledger closes against the vehicle's
- * actual movement over the tick: whatever no source claimed lands in {@link Source#MOVE}. A
- * {@code MOVE} figure that does not match the previous tick's velocity is itself the finding —
- * something outside this ledger moved the vehicle.
- * <p>
- * Attached only by command, and null on every vehicle otherwise, so an untraced vehicle pays a
- * null check per site.
+ * Per-tick ledger of everything that moves a vehicle vertically, and who moved it. Bouncing
+ * diagnosis requires tracking each contributor separately: gravity, contact cancellation,
+ * embedded-hull lift, step-up teleport, and rotation all write to the same height in one tick.
+ * The ledger closes against actual movement; Source.MOVE is whatever no source claimed.
  */
 public final class PhysicsTrace {
 
-    /** Ticks kept. Two minutes at 20Hz — long enough to see a period, short enough to hold. */
+    /** Ticks kept. Two minutes at 20Hz; long enough to see a period, short enough to hold. */
     public static final int MAX_TICKS = 2400;
 
     /** Substeps kept. A tick can produce up to sixteen, so this is a few thousand ticks' worth. */
@@ -53,8 +42,8 @@ public final class PhysicsTrace {
     private static final double STALL_TOI = 0.02;
 
     /**
-     * Upward movement in a single tick, while touching something, that counts as a launch rather
-     * than settling noise. Gravity is 0.0245 per tick, so this is under one tick of fall.
+     * Upward movement in one tick, while touching something, that counts as a launch rather than
+     * settling noise. Gravity is 0.0245 per tick, so this is under one tick of fall.
      */
     private static final double LAUNCH_THRESHOLD = 0.02;
 
@@ -63,7 +52,7 @@ public final class PhysicsTrace {
 
     public enum Source {
 
-        /** Contact velocity cancellation and bounce, everything {@code motionByImpact} did. */
+        // Contact velocity cancellation and bounce from impact.
         IMPACT(false),
         /** The lift given to a hull judged to be buried in geometry. */
         SUPPORT_LIFT(false),
@@ -76,13 +65,15 @@ public final class PhysicsTrace {
         /** Contact friction scaling the whole velocity vector, which tilts the vertical part. */
         FRICTION(false),
         /**
-         * Velocity written outside the physics stages — engine thrust, aiStep drag, mod compat.
-         * Derived, like {@link #MOVE}: it is whatever the tick's real velocity change was that
-         * none of the sources above claimed.
+         * Velocity written outside the physics stages: engine thrust, aiStep drag, mod compat.
+         * Derived like MOVE; it is whatever the tick's real velocity change was that none of
+         * the sources above claimed.
          */
         EXTERNAL(false),
-        /** {@code climb()}'s step-up teleport. */
+        /** climb()'s step-up teleport; the tick-level lift, measured from contacts. */
         CLIMB(true),
+        /** stepUp()'s lift; the substep-level retry of a clipped horizontal leg. */
+        STEP_UP(true),
         /** Position carried by rotating about a support edge. */
         ROTATION(true),
         /** Ordinary movement, plus anything no other source claimed. */
@@ -98,7 +89,7 @@ public final class PhysicsTrace {
     }
 
     /**
-     * @param bySource vertical contribution per {@link Source}, indexed by ordinal
+     * @param bySource vertical contribution per Source, indexed by ordinal
      */
     public record Sample(long gameTime, double y, double vy, double yDelta, double vyDelta,
                          boolean onGround, boolean supported, float xRot, float zRot, float rotV,
@@ -112,19 +103,14 @@ public final class PhysicsTrace {
     }
 
     /**
-     * One movement substep, and what the swept-hull backstop did about it.
-     * <p>
-     * The vertical ledger above answers "what lifted it". This answers a different question that
-     * the ledger cannot see at all: <em>did the hull end this substep inside a block, and if so,
-     * was the backstop even consulted?</em> Sampled per substep rather than per tick because a
-     * tick can take sixteen of them, and a hull that ends the tick clear may have passed through
-     * something in the middle of it.
+     * One movement substep and what the swept-hull backstop did about it. The vertical ledger
+     * answers "what lifted it"; this answers whether the hull ended inside a block and whether
+     * the backstop was consulted. Sampled per substep because a tick can take sixteen of them,
+     * and a hull clear at the end may have passed through geometry in the middle.
      *
-     * @param mx          the step the vehicle <em>asked</em> for, not the one it got; multiply
-     *                    by {@code toi} for what it was actually allowed. Recording the taken
-     *                    step alone hid a deadlock completely: with {@code toi} zero every row
-     *                    read as motionless, and nothing distinguished a parked vehicle from one
-     *                    with its throttle open being refused every block of movement.
+     * @param mx          the step the vehicle asked for, not the one it got; multiply by toi for
+     *                    what was actually allowed. Recording taken step alone hid a deadlock:
+     *                    with toi zero every row read as motionless.
      * @param toi         fraction of the substep actually taken
      * @param penetration deepest overlap with the world after the substep, in blocks
      */
@@ -140,7 +126,7 @@ public final class PhysicsTrace {
             return penetration >= PENETRATION_THRESHOLD;
         }
 
-        /** Asked to move and allowed essentially nothing — the signature of being wedged. */
+        /** Asked to move and allowed essentially nothing; the signature of being wedged. */
         public boolean stalled() {
             return Math.sqrt(mx * mx + my * my + mz * mz) > STALL_REQUEST && toi < STALL_TOI;
         }
@@ -153,7 +139,7 @@ public final class PhysicsTrace {
 
     /** Sources that can throw a vehicle upward off something it is already touching. */
     private static final Source[] LAUNCH_SOURCES =
-            {Source.CLIMB, Source.SUPPORT_LIFT, Source.CENTRE_KICK, Source.ROTATION};
+            {Source.CLIMB, Source.STEP_UP, Source.SUPPORT_LIFT, Source.CENTRE_KICK, Source.ROTATION};
 
     private final int vehicleId;
     private final String vehicleName;
@@ -224,10 +210,9 @@ public final class PhysicsTrace {
                 claimedVelocity += bySource[source.ordinal()];
             }
         }
-        // Closes both ledgers against what actually happened. Position normally resolves to the
-        // previous tick's velocity being applied and velocity to engine thrust; anything else
-        // landing here is a mover nothing in this file knows about, which is the point of
-        // deriving these two rather than declaring them.
+        // Close both ledgers against actual movement. Position normally resolves to the previous
+        // tick's velocity; velocity to engine thrust. Anything else is a mover this file does
+        // not know about, which is why these are derived rather than declared.
         bySource[Source.MOVE.ordinal()] += (y - startY) - claimedPosition;
         bySource[Source.EXTERNAL.ordinal()] += (vy - startVy) - claimedVelocity;
 
@@ -243,7 +228,7 @@ public final class PhysicsTrace {
         }
     }
 
-    /** Resets the "already attributed" running total, so {@link #remainder} can close a stage. */
+    /** Resets the "already attributed" running total, so remainder() can close a stage. */
     public void mark() {
         attributedSinceMark = 0;
     }
@@ -254,9 +239,8 @@ public final class PhysicsTrace {
     }
 
     /**
-     * Attributes to {@code source} whatever part of {@code total} has not already been claimed
-     * since the last {@link #mark()}. Lets a stage be measured as a whole while still crediting
-     * the individually interesting parts of it.
+     * Attributes to source whatever part of total has not already been claimed since the last
+     * mark(). Lets a stage be measured as a whole while still crediting individual parts.
      */
     public void remainder(Source source, double total) {
         add(source, total - attributedSinceMark);
@@ -272,28 +256,29 @@ public final class PhysicsTrace {
         blockingContacts = blocking;
     }
 
-    /** The probe to hand to {@link SweptHull}, so the sweep can report what it decided. */
+    /** The probe to hand to SweptHull, so the sweep can report what it decided. */
     public SweptHull.Probe probe() {
         return probe;
     }
 
     /**
-     * Records one movement substep. Call after the hull has been moved and its OBB refreshed, with
-     * {@link #probe()} still holding the sweep's answer and a penetration measurement.
+     * Records one movement substep. Call after the working hull is advanced, with probe()
+     * still holding the sweep's answer and penetration measurement. Pose comes from the rig,
+     * not the entity; the pipeline moves its shadow pose and flushes it afterwards.
      */
-    public void sweep(AbstractVehicle vehicle, int substep, int substeps, Vec3 requested) {
+    public void sweep(AbstractVehicle vehicle, PhysicsRig rig, int substep, int substeps, Vec3 requested) {
         if (!recording) {
             return;
         }
         AABB blocker = probe.blocker != null ? probe.blocker : probe.penetrator;
         Vec3 at = blocker != null ? blocker.getCenter() : Vec3.ZERO;
         sweeps.addLast(new Sweep(vehicle.level().getGameTime(), substep, substeps,
-                vehicle.getX(), vehicle.getY(), vehicle.getZ(),
+                rig.x, rig.y, rig.z,
                 requested.x, requested.y, requested.z,
                 probe.toi, probe.outcome, probe.boxes,
                 probe.penetration, probe.penetrationAxis.x, probe.penetrationAxis.y,
                 probe.penetrationAxis.z, at.x, at.y, at.z,
-                vehicle.getXRot(), vehicle.getYRot(), vehicle.getZRot(),
+                rig.getXRot(), rig.getYRot(), rig.getZRot(),
                 vehicle.physicsEngine.rotV));
         while (sweeps.size() > MAX_SWEEPS) {
             sweeps.removeFirst();
@@ -337,9 +322,7 @@ public final class PhysicsTrace {
         return up;
     }
 
-    /**
-     * A summary aimed at one question: is this vehicle settling, and if not, what is lifting it?
-     */
+    /** Answers one question: is this vehicle settling, and if not, what is lifting it? */
     public List<String> report() {
         List<String> lines = new ArrayList<>();
         if (samples.isEmpty()) {
@@ -396,7 +379,7 @@ public final class PhysicsTrace {
                 sum += length;
                 longest = Math.max(longest, length);
             }
-            // Repeated short hops read very differently from one long flight.
+            // Short hops and one long flight read very differently.
             lines.add(String.format(Locale.ROOT, "  airborne runs: %d, mean %.1f ticks, longest %d",
                     airborneRuns.size(), (double) sum / airborneRuns.size(), longest));
         }
@@ -434,13 +417,10 @@ public final class PhysicsTrace {
     }
 
     /**
-     * What the tunnelling backstop did, and how deep the hull got anyway.
-     * <p>
-     * Read {@code ALREADY_INSIDE} first. That outcome means the sweep declined to clip the step
-     * because the hull was overlapping before it began, so every guarantee about not ending up on
-     * the far side of a wall is off for that substep. A high share of it on a ramp is not a
-     * curiosity, it is the whole explanation: ramps keep the hull in permanent light overlap, which
-     * switches the backstop off precisely where the vehicle is moving fastest into geometry.
+     * What the tunnelling backstop did and how deep the hull got anyway. Read ALREADY_INSIDE
+     * first; that outcome means the sweep declined to clip the step because the hull was
+     * overlapping before it began. Ramps keep the hull in permanent light overlap, which
+     * switches the backstop off precisely where the vehicle is moving fastest.
      */
     private void appendSweeps(List<String> lines) {
         if (sweeps.isEmpty()) {
@@ -491,13 +471,14 @@ public final class PhysicsTrace {
             String note = switch (outcome) {
                 case ALREADY_INSIDE -> "  <-- backstop disabled, no tunnelling guarantee";
                 case NO_BOXES -> "  (nothing near the path)";
+                case NO_MOTION -> "  (substep carried no movement, nothing to cast)";
                 default -> "";
             };
             lines.add(String.format(Locale.ROOT, "    %-14s %5d (%2d%%)%s",
                     outcome, count, count * 100 / total, note));
         }
-        // Being wedged and being parked look identical in every other column, so it gets its own
-        // line. A long run here is not a slow vehicle, it is a vehicle that cannot move at all.
+        // Wedged and parked look identical elsewhere, so this gets its own line. A long run here
+        // is not a slow vehicle; it is a vehicle that cannot move at all.
         if (stalled > 0) {
             lines.add(String.format(Locale.ROOT,
                     "  STALLED substeps (asked to move, allowed none): %d (%d%%), longest run %d",
@@ -542,16 +523,15 @@ public final class PhysicsTrace {
                     source, stat.ticks(), stat.total(), stat.max()));
         }
         if (listed == 0) {
-            // Not the same as "no data": every source stayed at exactly zero all window, which
-            // for the position ledger means the vehicle never moved at all.
+            // Not the same as "no data": every source was zero the whole window; for position
+            // ledger, the vehicle never moved at all.
             lines.add("    (nothing moved it)");
         }
     }
 
     /**
-     * Writes one row per tick, every column, for looking at outside the game. The per-source
-     * columns are what make a period visible: a launch source that fires on a fixed cadence is a
-     * feedback loop, one that fires once is a landing.
+     * Writes one row per tick, every column, for analysis outside the game. Per-source columns
+     * make periods visible; a launch source that fires on a cadence is a feedback loop, once is a landing.
      */
     public Path dump(Path directory) throws IOException {
         Files.createDirectories(directory);
@@ -581,9 +561,8 @@ public final class PhysicsTrace {
     }
 
     /**
-     * One row per movement substep: pose, the step asked for, what the sweep allowed, and how far
-     * into the world the hull ended up. Sorting this by {@code penetration} descending goes
-     * straight to the frames that matter.
+     * One row per movement substep: pose, step asked for, sweep allowance, and hull penetration
+     * into the world. Sort by penetration descending to find frames that matter.
      */
     public Path dumpSweeps(Path directory) throws IOException {
         Files.createDirectories(directory);
@@ -615,7 +594,7 @@ public final class PhysicsTrace {
         return vehicleName + " #" + vehicleId;
     }
 
-    /** The trace attached to an entity, or null when it is not a vehicle or is not being traced. */
+    /** The trace attached to an entity, or null if it is not a vehicle or is not being traced. */
     public static PhysicsTrace of(Entity entity) {
         return entity instanceof AbstractVehicle vehicle ? vehicle.physicsTrace() : null;
     }

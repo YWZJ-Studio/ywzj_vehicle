@@ -33,22 +33,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Draws what {@link ChunkCollisionCache} actually baked, so the snapshot structure is visible
- * rather than inferred.
- * <p>
- * Three things are drawn:
- * <ul>
- *   <li><b>Section bounds</b> — a faint 16³ outline per baked section, tinted by how the section
- *       was stored. This is the "how it is built" view: which sections exist at all, and which
- *       collapsed to a single uniform state versus needing a per-cell index.</li>
- *   <li><b>Collision boxes</b> — the solid cells, greedy-merged. Green.</li>
- *   <li><b>Contacts</b> — any merged box holding a cell a vehicle is currently sampling into
- *       turns red.</li>
- *   <li><b>Gradient field</b> — see {@link GradientMeshDebug}. The boxes show what is there; this
- *       shows what the vehicle thinks it can do about it, which is where the bugs have been.</li>
- * </ul>
- * Sections the cache never prepared, and sections it proved empty, draw nothing at all — the
- * absence is the point, since that is the case the broad-phase gate skips for free.
+ * Draws collision cache snapshots in three overlays: section bounds tinted by storage class,
+ * collision boxes in green, and any box holding a vehicle contact in red.
+ * Sampled sections are drawn to see what the cache actually baked; absent sections are themselves
+ * the point, as they are skipped by the broad-phase gate.
  */
 @EventBusSubscriber(value = Dist.CLIENT)
 public final class CollisionMeshRenderer {
@@ -60,9 +48,8 @@ public final class CollisionMeshRenderer {
     private static final int GRADIENT_RADIUS = 8;
 
     /**
-     * What the toggle key shows. One binding cycling modes rather than one per overlay: the boxes
-     * and the gradient field answer different questions and are usually wanted separately, and
-     * drawing both at once is a lot of lines through the same space.
+     * Overlay mode cycled by the toggle key.
+     * Boxes and gradient are drawn separately; the binding cycles through all modes.
      */
     public enum Mode {
 
@@ -117,10 +104,8 @@ public final class CollisionMeshRenderer {
         if (mode == Mode.OFF) {
             return;
         }
-        // The client never runs tickPhysics, so nothing would have populated its cache and the
-        // overlay would draw an empty world. Prepare the region around the camera through the
-        // same entry point physics uses, which is also the honest thing to show: what you see is
-        // the result of a real prepare() call, not a parallel reimplementation of one.
+        // The client never runs tickPhysics; prepare the cache here so the overlay shows what
+        // physics actually sees rather than an empty world.
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
         Entity cameraEntity = minecraft.getCameraEntity();
@@ -181,13 +166,9 @@ public final class CollisionMeshRenderer {
     }
 
     /**
-     * Each column's drivable surface as a square at its own height, tinted by what the climb path
-     * would make of leaving it, plus the trimmed hull the sweep tests against.
-     * <p>
-     * The squares sit at real surface heights rather than on a flat plane, so a staircase draws as
-     * a staircase and the colour tells you whether the vehicle agrees it is one. Terrain drawn red
-     * next to the hull box, with the hull box clear of it, is the signature of the deadlock that
-     * pinned a vehicle for 244 substeps.
+     * Draws each column's drivable surface and the trimmed sweep hull.
+     * Column height is tinted by what the climb path verdicts, showing whether the vehicle
+     * agrees with what the terrain actually is.
      */
     private static void drawGradientField(PoseStack poseStack, VertexConsumer buffer,
                                           GradientMeshDebug.Field field) {
@@ -202,9 +183,7 @@ public final class CollisionMeshRenderer {
                     alpha = 0.95F;
                 }
                 case SLOPE -> {
-                    // Ramps green through amber as the step approaches the height climb refuses,
-                    // because the cost of a step is continuous even though the verdict is not: the
-                    // lift is capped by travel, so a taller step simply takes longer to get up.
+                    // Ramp green through amber as the step cost approaches the maximum rise.
                     float t = (float) Mth.clamp(cell.rise() / field.maxUpStep(), 0.0, 1.0);
                     red = t;
                     green = 1.0F;
@@ -227,7 +206,7 @@ public final class CollisionMeshRenderer {
         drawOBB(poseStack, buffer, field.sweepHull(), 0.3F, 0.6F, 1.0F, 0.9F);
     }
 
-    /** The 12 edges of a rotated box. {@code LevelRenderer} only knows how to outline an AABB. */
+    /** The 12 edges of a rotated box; LevelRenderer only outlines axis-aligned boxes. */
     private static void drawOBB(PoseStack poseStack, VertexConsumer buffer, OBB obb,
                                 float red, float green, float blue, float alpha) {
         Vector3f[] v = obb.getVertices();
@@ -267,9 +246,7 @@ public final class CollisionMeshRenderer {
     private static Frame lastFrame;
 
     /**
-     * Gathers the drawable set once per tick rather than once per frame. Resolving contacts means
-     * replaying a vehicle's whole sample loop, which at carrier scale is thousands of points —
-     * fine at 20Hz, not at frame rate.
+     * Gathers the drawable set once per tick to avoid recomputing contacts every frame.
      */
     private static Frame frameFor(ClientLevel level, BlockPos around) {
         long gameTime = level.getGameTime();
@@ -302,8 +279,7 @@ public final class CollisionMeshRenderer {
         Set<CollisionMeshDebug.MeshBox> touching = Collections.newSetFromMap(new IdentityHashMap<>());
         LongSet contacted = CollisionMeshDebug.contactedBlocks(level, vehicles);
         if (!contacted.isEmpty()) {
-            // Walk the contacts and find their box, not the boxes and scan their cells: a merged
-            // box can cover 4096 cells while contacts number in the tens.
+            // Walk contacts to find their boxes; contacts are few, merged boxes are many.
             for (long packed : contacted) {
                 BlockPos pos = BlockPos.of(packed);
                 for (CollisionMeshDebug.SectionMesh mesh : meshes) {
@@ -321,8 +297,7 @@ public final class CollisionMeshRenderer {
     }
 
     /**
-     * The section outline is tinted by storage class, which is the cheapest way to see the
-     * palette gate working: a section that collapsed to UNIFORM never had its cells read.
+     * Draws section outlines tinted by storage class to show the palette gate working.
      */
     private static void drawSectionBounds(PoseStack poseStack, VertexConsumer buffer,
                                           CollisionMeshDebug.SectionMesh mesh) {

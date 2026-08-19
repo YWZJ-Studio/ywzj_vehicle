@@ -1,15 +1,18 @@
 package org.ywzj.vehicle.vehicle.structure;
 
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 
 /**
@@ -19,17 +22,21 @@ public class VehicleCubeOBB {
 
     private static final int MAX_SAMPLES_PER_AXIS = 24;
 
-    /** How far outside its face a sample point sits, so a resting hull still registers. */
+    // How far outside its face a sample point sits for contact detection.
     public static final float POINT_OFFSET = 0.001f;
+    // Headroom above the step height, in blocks. Must stay above the speculative contact margin,
+    // or a contact generated before overlap reads as a wall instead of a step.
+    private static final double RIDE_STEP_MARGIN = 0.06;
 
     private final OBB obb;
     public VehicleCubeGroup group;
+    private boolean deck;
     private final List<CubePoint> cubePoints;
     private final List<CubePoint> attachedPoints = new ArrayList<>();
     private boolean pointsInitialized;
     private final Vector3f localCenter = new Vector3f();
     private final Quaternionf localRotation = new Quaternionf();
-    public HashMap<CubeFace, List<CubePoint>> cubePointsByFace = new HashMap<>();
+    public EnumMap<CubeFace, List<CubePoint>> cubePointsByFace = new EnumMap<>(CubeFace.class);
     public CubePoint bottomPoint;
     private Vec3 offset = Vec3.ZERO;
     public double x;
@@ -79,6 +86,7 @@ public class VehicleCubeOBB {
     public VehicleCubeOBB(VehicleCubeOBB origin) {
         this.obb = origin.obb.copy();
         this.group = origin.group;
+        this.deck = origin.deck;
         this.cubePoints = new ArrayList<>();
         this.initSpacing();
         this.offset = origin.offset;
@@ -91,10 +99,21 @@ public class VehicleCubeOBB {
     }
 
     public static VehicleCubeOBB init(VehicleCubeGroup group, BedrockCube cube) {
+        return init(group, cube, false);
+    }
+
+    public static VehicleCubeOBB init(VehicleCubeGroup group, BedrockCube cube, boolean deck) {
         OBB obb = new OBB(Vec3.ZERO.toVector3f(),
                 new Vector3f(cube.width() / 2, cube.height() / 2, cube.depth() / 2),
                 new Quaternionf(group.rotation));
-        return new VehicleCubeOBB(obb, group, cube);
+        VehicleCubeOBB cubeOBB = new VehicleCubeOBB(obb, group, cube);
+        cubeOBB.deck = deck;
+        return cubeOBB;
+    }
+
+    // Whether this cube is declared landing surface for other vehicles.
+    public boolean isDeck() {
+        return deck;
     }
 
     public void rebuild() {
@@ -110,8 +129,7 @@ public class VehicleCubeOBB {
     }
 
     /**
-     * Standalone refresh: walks the group's parent chain itself. Use the overload below
-     * when updating many cubes at once, so the chain walk and vehicle rotation are shared.
+     * Refreshes this cube's pose by walking the parent chain.
      */
     public void update(AbstractVehicle vehicle) {
         VehicleCubeGroup.GlobalTransform globalTransform = group.globalTransform();
@@ -120,11 +138,6 @@ public class VehicleCubeOBB {
 
     /**
      * Refreshes this cube's local and world pose.
-     * <p>
-     * {@code groupOffset} and {@code groupRotation} are the owning group's transform relative
-     * to the vehicle pivot, and {@code vehicleRotation} is {@link AbstractVehicle#rotYXZ()};
-     * the caller computes each of them once for the whole model rather than per cube. Both are
-     * only read, so the caller may reuse its own buffers across cubes.
      */
     public void update(AbstractVehicle vehicle, Quaternionf vehicleRotation, Vector3f groupOffset, Quaternionf groupRotation) {
         positionO = position;
@@ -150,15 +163,24 @@ public class VehicleCubeOBB {
         obb.setRotation(rotation);
     }
 
+    public void translate(float fx, float fy, float fz, double dx, double dy, double dz) {
+        positionO = position;
+        rotationO = rotation;
+        if (position != null) {
+            position = position.add(dx, dy, dz);
+        }
+        obb.center().add(fx, fy, fz);
+    }
+
     /**
-     * Centre of this cube in vehicle-local space. Read-only; owned by {@link #update}.
+     * Centre of this cube in vehicle-local space. Read-only
      */
     public Vector3f localCenter() {
         return localCenter;
     }
 
     /**
-     * Orientation of this cube in vehicle-local space. Read-only; owned by {@link #update}.
+     * Orientation of this cube in vehicle-local space. Read-only
      */
     public Quaternionf localRotation() {
         return localRotation;
@@ -169,7 +191,7 @@ public class VehicleCubeOBB {
     }
 
     /**
-     * Initialises sample spacing and the per-face table.
+     * Initializes sample spacing and the per-face table.
      */
     private void initSpacing() {
         float gap = 0.1f;
@@ -189,14 +211,7 @@ public class VehicleCubeOBB {
     }
 
     /**
-     * Divides span into equal segments, at most MAX_SAMPLES_PER_AXIS of them.
-     * At a fixed 1-block spacing the sample count grows with surface area
-     * an 8x3x10 tank needs ~460 points, but scales poory beyond that
-     * When span is at most MAX_SAMPLES_PER_AXIS this reduces to span / ceil(span), identical
-     * to the original, so existing small and mid-sized vehicles keep exactly
-     * the same sample point layout.
-     * For the time being should allow for much cheaper larger vehices.
-     * TODO: logarithmically scaled sample based on surface?
+     * Divides span into at most MAX_SAMPLES_PER_AXIS equal segments.
      */
     private static double spacing(double span) {
         double step = Math.max(1.0, span / MAX_SAMPLES_PER_AXIS);
@@ -204,29 +219,22 @@ public class VehicleCubeOBB {
     }
 
 
+
     /**
-     * Hull-local Y below which a contact on a side face is something to ride over rather than
-     * something to be stopped by — the vehicle's suspension, in effect. Above it, a side contact
-     * cancels the velocity pressing into it.
-     * <p>
-     * <b>Why two rows and not one.</b> {@code PhysicsEngine} used to test this inline as
-     * {@code -extents.y + spaceY}, but that was never the value it enforced. The sample grid puts
-     * its lowest row at {@code -extents.y - POINT_OFFSET} and steps by {@code spaceY}, so rows 0
-     * and 1 both fall below that threshold — row 1 by exactly {@code POINT_OFFSET} — and row 2 is
-     * the first that can block. No sample existed in between, so the difference never showed.
-     * <p>
-     * Contacts built from real geometry land wherever the geometry is, and they promptly found
-     * that empty band: a one-block step touches the hull about a block up, which is above the
-     * written threshold and below the real one, so vehicles stopped dead against steps they had
-     * always driven over. This is the band they actually had.
-     * <p>
-     * It scales with the hull because the grid did, which reads as bigger vehicles riding over
-     * bigger bumps. Note it exceeds {@link AbstractVehicle#maxUpStep()}: an obstacle between the
-     * two is neither blocked nor climbed in one go, and gets ploughed into. That gap predates the
-     * contact work.
+     * Height above the hull underside, in local coordinates, below which a contact is treated as
+     * something to ride over rather than something to stop against. Scales with the hull, so
+     * bigger vehicles ride over bigger bumps.
      */
     public double climbSkirt() {
         return -obb.extents().y - POINT_OFFSET + 2 * spaceY;
+    }
+
+    /**
+     * The climb skirt clamped to what this vehicle can actually step up. Anchored to the hull
+     * underside, never to a datum an obstacle can raise.
+     */
+    public double rideSkirt(double maxUpStep) {
+        return Math.min(climbSkirt(), -obb.extents().y + maxUpStep + RIDE_STEP_MARGIN);
     }
 
     private void ensurePoints() {
@@ -326,13 +334,7 @@ public class VehicleCubeOBB {
     }
 
     /**
-     * Sample points a part attached, as opposed to the ones {@link #initCubePoints} lays over the
-     * cube's own surface.
-     * <p>
-     * The distinction only matters to the inverted collision query, which asks which world boxes
-     * overlap the OBB rather than what is under each sample point. That answers for the surface
-     * and nothing else — a landing gear leg reaches a couple of blocks <em>below</em> the OBB, so
-     * no box pass can ever produce it. These are probed as points under either query.
+     * Sample points attached by parts, distinct from those initialized on the cube surface.
      */
     public List<CubePoint> attachedPoints() {
         return attachedPoints;
@@ -393,6 +395,14 @@ public class VehicleCubeOBB {
                     obbLocalPos, axes == null ? vehicleCubeOBB.obb.getAxes() : axes, worldPos);
         }
 
+
+        public Vector3f worldPos(OBB pose, Vector3f[] axes) {
+            if (worldPos == null) {
+                worldPos = new Vector3f();
+            }
+            return pose.localToWorld(obbLocalPos, axes, worldPos);
+        }
+
         public Vector3f cachedWorldPos() {
             return worldPos;
         }
@@ -405,16 +415,60 @@ public class VehicleCubeOBB {
 
     public static class CubePointContext {
 
-        private Vec3 blockPos;
+        public static final long NO_CELL = Long.MIN_VALUE;
+        private long cellPos = NO_CELL;
+        private boolean worldCell;
         private BlockState blockState;
         private double surfaceY = Double.NaN;
 
-        public Vec3 blockPos() {
-            return blockPos;
+        /** The contacted cell packed as a long, or NO_CELL if none. */
+        public long cellPos() {
+            return cellPos;
         }
 
-        public void setBlockPos(Vec3 blockPos) {
-            this.blockPos = blockPos;
+        /** True when a cell is set and it names a real block in this level. */
+        public boolean hasWorldCell() {
+            return worldCell && cellPos != NO_CELL;
+        }
+
+        public boolean hasCell() {
+            return cellPos != NO_CELL;
+        }
+
+        public int cellY() {
+            return BlockPos.getY(cellPos);
+        }
+
+        /** Records a contact against a real block in this level. */
+        public void setWorldCell(int x, int y, int z) {
+            this.cellPos = BlockPos.asLong(x, y, z);
+            this.worldCell = true;
+        }
+
+        /** Records a contact against provider geometry, which must never be written back to. */
+        public void setProviderCell(Vec3 blockPos) {
+            if (blockPos == null) {
+                clearCell();
+                return;
+            }
+            this.cellPos = BlockPos.asLong(
+                    Mth.floor(blockPos.x), Mth.floor(blockPos.y), Mth.floor(blockPos.z));
+            this.worldCell = false;
+        }
+
+        public void clearCell() {
+            this.cellPos = NO_CELL;
+            this.worldCell = false;
+        }
+
+
+        @Nullable
+        public Vec3 blockPos() {
+            if (cellPos == NO_CELL) {
+                return null;
+            }
+            return new Vec3(BlockPos.getX(cellPos) + 0.5, BlockPos.getY(cellPos),
+                    BlockPos.getZ(cellPos) + 0.5);
         }
 
         public BlockState blockState() {
@@ -426,14 +480,7 @@ public class VehicleCubeOBB {
         }
 
         /**
-         * World height of the top of the geometry this point is touching, or {@code NaN} when the
-         * source could not say.
-         * <p>
-         * This is the number "am I standing on a slab or a block?" actually wants. It used to be
-         * guessed downstream from the block state — {@code HALF} property present, so assume half
-         * a block — which is right for a bottom slab, wrong for a top slab, and wrong for stairs.
-         * A collision snapshot knows the real answer, so it reports it. Providers do not have
-         * geometry to report, so they leave it {@code NaN} and the old estimate still applies.
+         * World height of the top of the geometry this point is touching, or NaN if unknown.
          */
         public double surfaceY() {
             return surfaceY;

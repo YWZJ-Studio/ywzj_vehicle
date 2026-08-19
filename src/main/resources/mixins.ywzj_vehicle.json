@@ -30,6 +30,7 @@
     "common.LivingEntityMixin",
     "common.PlayerMixin",
     "common.ProjectileUtilMixin",
+    "common.ServerGamePacketListenerImplMixin",
     "common.TrackedEntityMixin",
     "create.ContraptionColliderMixin",
     "sable.AbstractVehicleSableMixin",

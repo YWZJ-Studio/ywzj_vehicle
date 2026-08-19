@@ -4,10 +4,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Registry of {@link CollisionProvider}s consulted during vehicle hull sampling.
- * <p>
- * Register during mod construction. Copy-on-write because the list is read every tick for every
- * vehicle — potentially from several threads once physics is parallelised — and written
+ * Registry of collision providers consulted during vehicle hull sampling. Register during mod
+ * construction. Uses copy-on-write since the list is read every tick per vehicle and written
  * essentially never.
  */
 public final class CollisionProviders {

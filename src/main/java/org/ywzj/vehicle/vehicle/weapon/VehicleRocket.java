@@ -33,7 +33,7 @@ public class VehicleRocket extends AbstractVehicleWeapon<VehicleRocketWeaponData
                     data.getInaccuracy(), this.getWeaponUnit().getOwner());
             rocketEntity.setDeltaMovement(rocketEntity.getLookAngle().scale(data.getVelocity()).add(vehicle.getDeltaMovement()));
             vehicle.level().addFreshEntity(rocketEntity);
-            vehicle.physicsEngine.recoil(getWeaponUnit(), data.getRecoil());
+            vehicle.queueRecoil(getWeaponUnit(), data.getRecoil());
         }
         return true;
     }
