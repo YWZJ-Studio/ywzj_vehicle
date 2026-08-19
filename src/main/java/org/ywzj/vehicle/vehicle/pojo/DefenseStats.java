@@ -10,4 +10,7 @@ public class DefenseStats {
     @SerializedName("impact_multiplier")
     public float impactMultiplier = 0.1f;
 
+    @SerializedName("damage_transfer_coefficient")
+    public float damageTransferCoefficient = 1f;
+
 }

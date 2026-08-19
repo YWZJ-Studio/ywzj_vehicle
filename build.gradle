@@ -75,7 +75,7 @@ repositories {
 
 dependencies {
     jarJar(implementation('org.ywzj:rhino:1.8.1'))
-    jarJar(implementation("com.github.mcmodderanchor:simplebedrockmodel:2.5.1-neoforge-mc1.21.1"))
+    jarJar(implementation("com.github.mcmodderanchor:simplebedrockmodel:2.5.1.1-neoforge-mc1.21.1"))
     compileOnly("com.maydaymemory:mae:1.1.2") {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'it.unimi.dsi', module: 'fastutil'

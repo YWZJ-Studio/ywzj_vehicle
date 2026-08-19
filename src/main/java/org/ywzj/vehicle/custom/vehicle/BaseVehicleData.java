@@ -4,6 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -158,6 +159,19 @@ public class BaseVehicleData<T extends AbstractVehicle> {
      * 为载具实例构造部件
      */
     public PartUnitsAndSeats createPartUnits(AbstractVehicle vehicle) {
+        return createBasePartUnits(vehicle);
+    }
+
+    public Optional<PartUnit<?>> copyPartUnit(AbstractVehicle owner, String partUnitId, CompoundTag state) {
+        PartUnit<?> partUnit = createBasePartUnits(owner).partUnitMap().get(partUnitId);
+        if (partUnit == null) {
+            return Optional.empty();
+        }
+        partUnit.deserializeNBT(owner.registryAccess(), state);
+        return Optional.of(partUnit);
+    }
+
+    private PartUnitsAndSeats createBasePartUnits(AbstractVehicle vehicle) {
         Map<String, PartUnit<?>> partUnitMap = new LinkedHashMap<>();
         List<AbstractVehicle.Seat> seats = new ArrayList<>();
         HashMap<VehicleCubeGroup, VehicleCubeGroup> vehicleCubeGroupCopy = vehicleCubeGroupsCopy();

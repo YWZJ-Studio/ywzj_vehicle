@@ -2,7 +2,6 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -14,11 +13,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ywzj.vehicle.all.AllConfigs;
+import org.ywzj.vehicle.all.AllItems;
+import org.ywzj.vehicle.all.AllKeys;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -31,6 +32,7 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +52,7 @@ public class VehicleOverlay implements LayeredDraw.Layer {
         if (!localVehiclePlayer.onVehicle()) {
             return;
         }
-        AbstractVehicle vehicle = localVehiclePlayer.getVehicle();
+        AbstractVehicle vehicle = localVehiclePlayer.vehicle;
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         renderCrew(guiGraphics, centerX, centerY, vehicle);
@@ -139,22 +141,30 @@ public class VehicleOverlay implements LayeredDraw.Layer {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
-            poseStack.translate((float) screenWidth / 2, screenHeight + 5, 0);
-            renderHealth(guiGraphics, 0, -20, 120, 10, vehicle, 1);
-            poseStack.scale(0.7f, 0.7f, 0.7f);
-            float fuelPercent = vehicle.getEnergy() / vehicle.energyInfo.energyCapacity * 100;
+            poseStack.translate((float) screenWidth / 2, screenHeight + 16, 0);
+            renderHealth(guiGraphics, 0, -20, 120, 5, vehicle, 1);
+            Font font = Minecraft.getInstance().font;
+            float energyCapacity = vehicle.energyInfo.energyCapacity;
+            float fuelPercent = energyCapacity > 0 ? vehicle.getEnergy() / energyCapacity * 100 : 0;
             float powerPercent = vehicle.getPower();
-            guiGraphics.drawString(Minecraft.getInstance().font,
-                    "FUEL:", 90, -40, Color.WHITE);
-            guiGraphics.drawString(Minecraft.getInstance().font,
-                    String.format("%.1f%%", fuelPercent),
-                    118, -40, fuelPercent < 5 ? Color.RED : Color.WHITE);
-            guiGraphics.drawString(Minecraft.getInstance().font,
-                    "POWER:",
-                    90, -30, Color.WHITE);
-            guiGraphics.drawString(Minecraft.getInstance().font,
-                    String.format("%.1f%%", powerPercent),
-                    124, -30, powerPercent < 30 ? Color.RED : Color.WHITE);
+            renderFuelAndPower(guiGraphics, font, fuelPercent, powerPercent);
+        }
+        poseStack.popPose();
+    }
+
+    private void renderFuelAndPower(GuiGraphics guiGraphics, Font font, float fuelPercent, float powerPercent) {
+        PoseStack poseStack = guiGraphics.pose();
+        String fuelText = String.format("FUEL %.1f%%", fuelPercent);
+        String powerText = String.format("POWER %.1f%%", powerPercent);
+        float scale = 0.4F;
+        poseStack.pushPose();
+        {
+            poseStack.translate(64, -29, 0);
+            poseStack.scale(scale, scale, 1);
+            guiGraphics.drawString(font, fuelText, 0, 0,
+                    fuelPercent < 5 ? Color.RED : Color.WHITE, true);
+            guiGraphics.drawString(font, powerText, 0, font.lineHeight,
+                    powerPercent < 30 ? Color.RED : Color.WHITE, true);
         }
         poseStack.popPose();
     }
@@ -199,68 +209,56 @@ public class VehicleOverlay implements LayeredDraw.Layer {
         if (showVehicleInfoDistance <= 0) {
             return;
         }
-        LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
-        float rot = 0;
-        if (localVehiclePlayer.onVehicle()) {
-            rot = localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.SCOPE ? LocalVehiclePlayer.CAMERA_UPWARD_ANGLE : 0;
-        }
-        Player player = localVehiclePlayer.getPlayer();
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        float xRot = camera.getXRot() - rot;
-        float yRot = camera.getYRot();
-        Vec3 start = camera.getPosition();
-        Vec3 end = start.add(VectorUtil
-                .rotToVec(xRot, yRot)
-                .normalize()
-                .scale(LocalVehiclePlayer.renderDistance()));
-        Entity entity = null;
-        Pair<Entity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);
-        if (hitResult != null) {
-            entity = hitResult.getLeft();
-            if (entity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
-                double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
-                if (distance > showVehicleInfoDistance) {
-                    return;
-                }
-                PoseStack poseStack = guiGraphics.pose();
-                poseStack.pushPose();
-                {
-                    AABB aabb = vehicle.getBoundingBox();
-                    Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
-                            Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
-                            Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
-                    Vec3 screenPos = VectorUtil.worldToScreen(pos);
-                    if (screenPos.z >= 0) {
-                        float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
-                        renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
-                    }
-                }
-                poseStack.popPose();
-                Vec3 eyePosition = player.getEyePosition();
-                PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
-                if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive()) {
-                    renderWeaponList(guiGraphics, weaponUnit);
-                } else if (partUnit instanceof DecorationUnit decorationUnit) {
-                    renderDecorationTips(guiGraphics, decorationUnit);
-                }
-            }
-        }
-        if (!VehicleHitIndicatorOverlay.events.isEmpty()) {
-            ServerHitVehicleEvent event = VehicleHitIndicatorOverlay.events.get(0);
-            Entity hitEntity = player.level().getEntity(event.entityId);
-            if (hitEntity == null || hitEntity == entity) {
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
+        AbstractVehicle vehicle = instance.lookAtVehicle;
+        PartUnit<?> partUnit = instance.lookAtPartUnit;
+        if (vehicle != null) {
+            double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(instance.lookAtVehicle.getEyePosition());
+            if (distance > showVehicleInfoDistance) {
                 return;
             }
-            if (hitEntity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
+            PoseStack poseStack = guiGraphics.pose();
+            poseStack.pushPose();
+            {
                 AABB aabb = vehicle.getBoundingBox();
                 Vec3 pos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                         Mth.lerp(partialTick, vehicle.yo, vehicle.getY()) + aabb.maxY - aabb.minY,
                         Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
                 Vec3 screenPos = VectorUtil.worldToScreen(pos);
                 if (screenPos.z >= 0) {
-                    double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(vehicle.getEyePosition());
+                    float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
+                    renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
+                    Item mainHandItem = player.getMainHandItem().getItem();
+                    if (partUnit != null && partUnit.getHealth() > 0
+                            && (AllKeys.INSPECT_VEHICLE.isDown() || mainHandItem == AllItems.REPAIR_TOOL.get() || mainHandItem == AllItems.MODDING_TOOL.get())) {
+                        renderPartHealth(guiGraphics, partUnit, partialTick, size);
+                    }
+                }
+            }
+            poseStack.popPose();
+            if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive()) {
+                renderWeaponList(guiGraphics, weaponUnit);
+            } else if (partUnit instanceof DecorationUnit decorationUnit) {
+                renderDecorationTips(guiGraphics, decorationUnit);
+            }
+        }
+        if (!VehicleHitIndicatorOverlay.events.isEmpty()) {
+            ServerHitVehicleEvent event = VehicleHitIndicatorOverlay.events.get(0);
+            Entity hitEntity = player.level().getEntity(event.entityId);
+            if (hitEntity == null || hitEntity == vehicle) {
+                return;
+            }
+            if (hitEntity instanceof AbstractVehicle hitVehicle && !hitVehicle.equals(player.getVehicle())) {
+                AABB aabb = hitVehicle.getBoundingBox();
+                Vec3 pos = new Vec3(Mth.lerp(partialTick, hitVehicle.xo, hitVehicle.getX()),
+                        Mth.lerp(partialTick, hitVehicle.yo, hitVehicle.getY()) + aabb.maxY - aabb.minY,
+                        Mth.lerp(partialTick, hitVehicle.zo, hitVehicle.getZ()));
+                Vec3 screenPos = VectorUtil.worldToScreen(pos);
+                if (screenPos.z >= 0) {
+                    double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(hitVehicle.getEyePosition());
                     float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * org.joml.Math.max((512 - distance) / 512, 0.1), 0.66, 1);
-                    VehicleOverlay.renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
+                    VehicleOverlay.renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, hitVehicle, size);
                 }
             }
         }
@@ -358,42 +356,72 @@ public class VehicleOverlay implements LayeredDraw.Layer {
     }
 
     public static void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight, AbstractVehicle vehicle, float size) {
+        int nameColor = Color.WHITE;
+        Team team = vehicle.getTeam();
+        if (team != null) {
+            Integer teamColor = team.getColor().getColor();
+            if (teamColor != null) {
+                nameColor = teamColor;
+            }
+        }
+        renderHealth(guiGraphics, x, y, barWidth, barHeight, vehicle.getDisplayName(), nameColor,
+                vehicle.getHealth(), vehicle.getMaxHealth(), vehicle.healthO, vehicle.hurtTick,
+                vehicle.isDestroyed(), size);
+    }
+
+    private static void renderPartHealth(GuiGraphics guiGraphics, PartUnit<?> partUnit, float partialTick, float size) {
+        int nameColor = Color.WHITE;
+        Team team = partUnit.getVehicle().getTeam();
+        if (team != null) {
+            Integer teamColor = team.getColor().getColor();
+            if (teamColor != null) {
+                nameColor = teamColor;
+            }
+        }
+        VehicleCubeOBB largestCube = partUnit.getLargestCube();
+        if (largestCube == null) {
+            return;
+        }
+        Vec3 position = largestCube.position;
+        if (position == null) {
+            position = new Vec3(largestCube.obb().center());
+        } else if (largestCube.positionO != null) {
+            position = largestCube.positionO.lerp(position, partialTick);
+        }
+        Vec3 screenPos = VectorUtil.worldToScreen(position);
+        if (screenPos.z < 0) {
+            return;
+        }
+        renderHealth(guiGraphics, screenPos.x, screenPos.y, 60, 4, partUnit.getName(), nameColor,
+                partUnit.getHealth(), partUnit.getMaxHealth(), partUnit.healthO, partUnit.hurtTick,
+                partUnit.isDestroyed(), size);
+    }
+
+    private static void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight,
+                                     Component name, int nameColor, float health, float maxHealth,
+                                     float healthO, int hurtTick, boolean destroyed, float size) {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
             Font font = Minecraft.getInstance().font;
-            int nameColor = Color.WHITE;
             float barHalfWidth = (float) barWidth / 2;
             float barHalfHeight = (float) barHeight / 2;
             poseStack.translate(x, y + barHalfHeight - 8, 0);
             poseStack.scale(size, size, size);
-            Team team = vehicle.getTeam();
-            if (team != null) {
-                Integer teamColor = team.getColor().getColor();
-                if (teamColor != null) {
-                    nameColor = teamColor;
-                }
-            }
-            guiGraphics.drawCenteredString(font, vehicle.getDisplayName(), 0, -14, nameColor);
+            guiGraphics.drawCenteredString(font, name, 0, -14, nameColor);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, barHalfWidth, barHalfHeight, -512, Color.BG_DARK);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth - 1, -barHalfHeight, -barHalfWidth, barHalfHeight, -512, Color.GRAY);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), barHalfWidth, -barHalfHeight, barHalfWidth + 1, barHalfHeight, -512, Color.GRAY);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight - 1, barHalfWidth, -barHalfHeight, -512, Color.GRAY);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, barHalfHeight, barHalfWidth, barHalfHeight + 1, -512, Color.GRAY);
 
-            float health = vehicle.getHealth();
-            float maxHealth = vehicle.getMaxHealth();
-            float uiHealth = vehicle.uiHealth;
-            int hurtTime = vehicle.hurtTime;
-
             float percent = maxHealth > 0 ? Math.max(0, Math.min(1, health / maxHealth)) : 0f;
-            float hurtT = Math.max(0f, Math.min(1f, hurtTime / 10f));
-            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, uiHealth / maxHealth)) : percent;
+            float hurtT = Math.max(0f, Math.min(1f, hurtTick / 10f));
+            float rawLastPercent = maxHealth > 0 ? Math.max(0, Math.min(1, healthO / maxHealth)) : percent;
             float lastPercent = Mth.lerp(hurtT, percent, rawLastPercent);
-            float healthDiff = uiHealth - health;
 
             int red, green;
-            if (vehicle.isDestroyed()) {
+            if (destroyed) {
                 red = 255;
                 green = 64;
             } else {
@@ -424,9 +452,10 @@ public class VehicleOverlay implements LayeredDraw.Layer {
                 String text = String.format("%.0f/%.0f", health, maxHealth);
                 poseStack.translate(0, -3.5, 0);
                 RenderHelper.drawCenteredString(guiGraphics, font, text, 0, 0, Color.WHITE);
+                float healthDiff = healthO - health;
                 if (healthDiff > 0) {
                     RenderHelper.drawCenteredString(guiGraphics, font, "-" + String.format("%.2f", healthDiff), barWidth / 2, 1 + barHeight, Color.RED);
-                } else if (healthDiff < 0 && !vehicle.isDestroyed()) {
+                } else if (healthDiff < 0 && !destroyed) {
                     RenderHelper.drawCenteredString(guiGraphics, font, "+" + String.format("%.2f", -healthDiff), barWidth / 2, 1 + barHeight, Color.GREEN);
                 }
             }

@@ -15,6 +15,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.client.component.ScrollableTextPanel;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -50,6 +51,7 @@ public class VehicleWeaponSelectScreen extends Screen {
     private float viewScale = 1;
     private float viewRotX;
     private float viewRotY;
+    private final ScrollableTextPanel descriptionPanel = new ScrollableTextPanel();
 
     public VehicleWeaponSelectScreen(AbstractVehicle vehicle, Screen parent) {
         super(Component.literal("Vehicle Weapon Select"));
@@ -70,9 +72,15 @@ public class VehicleWeaponSelectScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fill(0, 0, this.width, this.height, Color.BG_DARK);
         drawVehiclePreview(guiGraphics);
         if (weaponSelections.isEmpty()) {
+            descriptionPanel.clear();
             return;
         } else {
             drawWeaponSelectionList(guiGraphics, mouseX, mouseY);
@@ -185,6 +193,7 @@ public class VehicleWeaponSelectScreen extends Screen {
     private void drawSelectedWeaponDescription(GuiGraphics guiGraphics, WeaponSelectionEntry weaponSelection, int x, int y) {
         int currentIndex = weaponSelection.weaponUnit.getCurrentWeaponIndex();
         if (currentIndex < 0 || currentIndex >= weaponSelection.weaponUnit.weapons.size()) {
+            descriptionPanel.clear();
             return;
         }
         AbstractVehicleWeapon<?> weapon = weaponSelection.weaponUnit.proxyWeapon(weaponSelection.weaponUnit.weapons.get(currentIndex));
@@ -195,12 +204,14 @@ public class VehicleWeaponSelectScreen extends Screen {
                 .orElse(Component.translatable("screen.no_description"));
         int textX = x + DESCRIPTION_PADDING;
         int textY = y + DESCRIPTION_PADDING;
-        int maxWidth = WEAPON_LIST_WIDTH - DESCRIPTION_PADDING * 2;
-        var lines = font.split(description, maxWidth);
-        int maxLines = Math.max(0, (bottom() - textY - DESCRIPTION_PADDING) / 9);
-        for (int i = 0; i < Math.min(lines.size(), maxLines); i++) {
-            guiGraphics.drawString(font, lines.get(i), textX, textY + i * 9, Color.WHITE);
-        }
+        descriptionPanel.setBounds(
+                textX,
+                textY,
+                x + WEAPON_LIST_WIDTH - DESCRIPTION_PADDING,
+                bottom() - DESCRIPTION_PADDING
+        );
+        descriptionPanel.setContent(weapon.getData().getWeaponId(), description);
+        descriptionPanel.render(guiGraphics, font, Color.WHITE);
     }
 
     private void drawScrollBar(GuiGraphics guiGraphics, int x, int y, int bottom, int size, int scrollOffset) {
@@ -253,6 +264,9 @@ public class VehicleWeaponSelectScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        if (descriptionPanel.mouseScrolled(mouseX, mouseY, deltaY, font)) {
+            return true;
+        }
         if (mouseY >= topPos && mouseY <= bottom()) {
             if (mouseX >= leftPos && mouseX <= leftPos + WEAPON_SELECTION_LIST_WIDTH) {
                 if (weaponSelections.size() > visibleItems()) {

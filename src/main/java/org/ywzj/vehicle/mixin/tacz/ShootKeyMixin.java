@@ -6,6 +6,7 @@
 //import org.spongepowered.asm.mixin.injection.At;
 //import org.spongepowered.asm.mixin.injection.Inject;
 //import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+//import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 //import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 //
 //@Mixin(value = ShootKey.class, remap = false)
@@ -16,7 +17,8 @@
 //            at = @At(value = "HEAD"),
 //            cancellable = true)
 //    private static void autoShoot(ClientTickEvent.Post event, CallbackInfo ci) {
-//        if (LocalVehiclePlayer.instance.onVehicle()) {
+//        AbstractVehicle.Seat seat = LocalVehiclePlayer.instance.seat;
+//        if (seat != null && !seat.partUnit.getData().passengerCanUseItem()) {
 //            ci.cancel();
 //        }
 //    }

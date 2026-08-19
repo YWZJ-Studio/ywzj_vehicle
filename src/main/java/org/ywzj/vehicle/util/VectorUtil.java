@@ -165,6 +165,10 @@ public class VectorUtil {
     }
 
     public static PartUnit<?> hitPartUnit(Entity entity, Vec3 start, Vec3 end) {
+        return VectorUtil.hitPartUnit(entity, start, end, true);
+    }
+
+    public static PartUnit<?> hitPartUnit(Entity entity, Vec3 start, Vec3 end, boolean withDestroyed) {
         if (entity instanceof AbstractVehicle vehicle) {
             double minDistance = Double.MAX_VALUE;
             PartUnit<?> closestPartUnit = null;
@@ -182,6 +186,9 @@ public class VectorUtil {
                 }
             }
             for (PartUnit<?> partUnit : partUnits) {
+                if (!withDestroyed && partUnit.isDestroyed()) {
+                    continue;
+                }
                 HitOBB hitOBB = hitOBB(partUnit.getOBBs(), start, end);
                 if (hitOBB != null && hitOBB.distance < minDistance) {
                     minDistance = hitOBB.distance;
@@ -216,7 +223,7 @@ public class VectorUtil {
     }
 
     public record HitBone(String boneName, int attachmentBoneIndex, Vec3 offset, Quaternionf rotation, Vec3 position) {}
-    public static HitBone hitBone(AbstractVehicle vehicle, Vec3 start, Vec3 end) {
+    public static HitBone hitBone(AbstractVehicle vehicle, Vec3 start, Vec3 end, Vec3 forward) {
         BakedModelInstance modelInstance = vehicle.getModelInstance();
         Quaternionf vehicleRotation = vehicle.rotYXZ();
         Vector3f root = vehicle.centerOffset.toVector3f();
@@ -237,7 +244,7 @@ public class VectorUtil {
         }
         Quaternionf rotation = new Quaternionf();
         if (rayTraceResult.attachmentNormal() != null) {
-            rotation.rotationTo(new Vector3f(0.0F, 0.0F, 1.0F), rayTraceResult.attachmentNormal().toVector3f());
+            rotation.rotationTo(forward.toVector3f(), rayTraceResult.attachmentNormal().toVector3f());
         }
         return new HitBone(
                 boneName,

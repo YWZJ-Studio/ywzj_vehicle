@@ -1,6 +1,5 @@
 package org.ywzj.vehicle.client.handler;
 
-import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -12,6 +11,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
+import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 
@@ -33,20 +33,30 @@ public class FirstPersonHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRenderOverlay(RenderHandEvent event) {
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        if (player == null || !player.isAlive()) {
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
+        if (player == null) {
             return;
         }
-        if (mc.options.getCameraType() == CameraType.FIRST_PERSON
-                && player.getVehicle() instanceof AbstractVehicle) {
-            event.setCanceled(true);
+        if (instance.onVehicle()) {
+            if (instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON) {
+                event.setCanceled(true);
+            } else {
+                AbstractVehicle.Seat seat = LocalVehiclePlayer.instance.seat;
+                if (seat != null && !seat.partUnit.getData().passengerCanUseItem()) {
+                    event.setCanceled(true);
+                }
+            }
         }
     }
 
     @SubscribeEvent
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
         LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
+        Player player = localVehiclePlayer.getPlayer();
+        if (player == null) {
+            return;
+        }
         if (localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.SCOPE
                 || localVehiclePlayer.viewType == LocalVehiclePlayer.ViewType.OPERATOR
                 || localVehiclePlayer.playerLerpSteps > 0) {
@@ -55,7 +65,7 @@ public class FirstPersonHandler {
             event.setYaw(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY));
             event.setRoll(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ));
         }
-        if (!localVehiclePlayer.getPlayer().isSpectator()) {
+        if (!player.isSpectator()) {
             shake(event);
         }
     }
@@ -140,9 +150,10 @@ public class FirstPersonHandler {
             currentRollShake = 0.0;
             return;
         }
-        event.setYaw((float) (event.getYaw() + currentYawShake));
-        event.setPitch((float) (event.getPitch() + currentPitchShake));
-        event.setRoll((float) (event.getRoll() + currentRollShake));
+        double shakeMultiplier = AllConfigs.common.cameraShakeMultiplier.get();
+        event.setYaw((float) (event.getYaw() + currentYawShake * shakeMultiplier));
+        event.setPitch((float) (event.getPitch() + currentPitchShake * shakeMultiplier));
+        event.setRoll((float) (event.getRoll() + currentRollShake * shakeMultiplier));
     }
 
     public static double getCurrentYawShake() {

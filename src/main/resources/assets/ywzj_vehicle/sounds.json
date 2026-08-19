@@ -82,6 +82,14 @@
     "sounds": ["ywzj_vehicle:misc/turret_turn_servo_v"],
     "subtitle": "ywzj_vehicle.sounds.turret_turn_servo_v"
   },
+  "parachute_open": {
+    "sounds": ["ywzj_vehicle:item/parachute_open"],
+    "subtitle": "subtitles.ywzj_vehicle.parachute_open"
+  },
+  "parachute_down": {
+    "sounds": ["ywzj_vehicle:item/parachute_down"],
+    "subtitle": "subtitles.ywzj_vehicle.parachute_down"
+  },
   "select_weapon": {
     "sounds": ["ywzj_vehicle:misc/select_weapon"],
     "subtitle": "ywzj_vehicle.sounds.select_weapon"

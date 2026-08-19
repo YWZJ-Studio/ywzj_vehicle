@@ -51,6 +51,33 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     @SerializedName("homing_mode")
     private HomingMode homingMode = HomingMode.INFRARED;
 
+    @SerializedName("preset_cruise_altitude")
+    private float presetCruiseAltitude = 512f;
+
+    @SerializedName("preset_max_ascent_lead")
+    private float presetMaxAscentLead = 64f;
+
+    @SerializedName("preset_ascent_radius")
+    private float presetAscentRadius = 24f;
+
+    @SerializedName("preset_dive_radius")
+    private float presetDiveRadius = 24f;
+
+    @SerializedName("preset_dive_altitude_factor")
+    private float presetDiveAltitudeFactor = 0.75f;
+
+    @SerializedName("preset_dive_lead_factor")
+    private float presetDiveLeadFactor = 1.5f;
+
+    @SerializedName("preset_cruise_altitude_gain")
+    private float presetCruiseAltitudeGain = 0.002f;
+
+    @SerializedName("preset_cruise_vertical_damping")
+    private float presetCruiseVerticalDamping = 0.05f;
+
+    @SerializedName("preset_cruise_max_vertical_component")
+    private float presetCruiseMaxVerticalComponent = 0.5f;
+
     public float getXRotMax() {
         return xRotMax;
     }
@@ -109,6 +136,42 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
 
     public HomingMode getHomingMode() {
         return homingMode;
+    }
+
+    public float getPresetCruiseAltitude() {
+        return presetCruiseAltitude;
+    }
+
+    public float getPresetMaxAscentLead() {
+        return presetMaxAscentLead;
+    }
+
+    public float getPresetAscentRadius() {
+        return presetAscentRadius;
+    }
+
+    public float getPresetDiveRadius() {
+        return presetDiveRadius;
+    }
+
+    public float getPresetDiveAltitudeFactor() {
+        return presetDiveAltitudeFactor;
+    }
+
+    public float getPresetDiveLeadFactor() {
+        return presetDiveLeadFactor;
+    }
+
+    public float getPresetCruiseAltitudeGain() {
+        return presetCruiseAltitudeGain;
+    }
+
+    public float getPresetCruiseVerticalDamping() {
+        return presetCruiseVerticalDamping;
+    }
+
+    public float getPresetCruiseMaxVerticalComponent() {
+        return presetCruiseMaxVerticalComponent;
     }
 
     public enum Guidance {

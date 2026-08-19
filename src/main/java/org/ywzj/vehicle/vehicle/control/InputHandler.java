@@ -16,10 +16,8 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
-import org.ywzj.vehicle.network.message.ClientVehicleAction;
-import org.ywzj.vehicle.network.message.ClientVehicleChangeSeat;
-import org.ywzj.vehicle.network.message.ClientVehicleMoveControl;
-import org.ywzj.vehicle.network.message.ClientVehicleSwitchWeapon;
+import org.ywzj.vehicle.item.ParachutePackItem;
+import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
@@ -64,7 +62,7 @@ public class InputHandler {
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (action == GLFW.GLFW_PRESS) {
             if (instance.onVehicle()) {
-                AbstractVehicle vehicle = instance.getVehicle();
+                AbstractVehicle vehicle = instance.vehicle;
                 WeaponUnit weaponUnit = instance.getWeaponUnit();
                 if (matchesKey(SWITCH_VIEW, key, scanCode)) {
                     instance.switchViewType(null);
@@ -87,6 +85,10 @@ public class InputHandler {
                 } else if (matchesKey(FIRE_CONTROL_LOCK, key, scanCode)) {
                     if (weaponUnit != null) {
                         weaponUnit.fireControlLock();
+                    }
+                } else if (matchesKey(PRESET_COORDINATE_INPUT, key, scanCode)) {
+                    if (weaponUnit != null) {
+                        weaponUnit.getCurrentWeapon().ifPresent(AbstractVehicleWeapon::openCoordinateInputScreen);
                     }
                 } else if (matchesKey(TOGGLE_HOVER_MODE, key, scanCode)) {
                     sendToggleHoverMode(vehicle);
@@ -135,6 +137,10 @@ public class InputHandler {
                         PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.MULTI, true));
                     }
                 }
+            } else {
+                if (matchesKey(OPEN_PARACHUTE, key, scanCode) && ParachutePackItem.canOpen(player)) {
+                    PacketDistributor.sendToServer(new ClientOpenParachute());
+                }
             }
         } else if (action == GLFW.GLFW_RELEASE) {
             if (instance.onVehicle()) {
@@ -155,7 +161,7 @@ public class InputHandler {
         }
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (instance.onVehicle() && MAGNIFICATION_CHANGE.isDown() && instance.onVehicleTickCount > 5) {
-            AbstractVehicle vehicle = instance.getVehicle();
+            AbstractVehicle vehicle = instance.vehicle;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit weaponUnit) {
                 if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                     weaponUnit.switchZoom();
@@ -250,11 +256,13 @@ public class InputHandler {
                     controlUnit.yRot = controlRot.y;
                     controlXRotO = controlUnit.xRot;
                     controlYRotO = controlUnit.yRot;
-                    playerXRotO = player.getXRot();
-                    playerYRotO = player.getYRot();
                 }
                 vehicle.controlUnit.update(controlUnit);
                 sendControl(vehicle, controlUnit);
+            }
+            if (!freeCamera) {
+                playerXRotO = player.getXRot();
+                playerYRotO = player.getYRot();
             }
             handleShoot(vehicle, player);
         }
@@ -268,7 +276,7 @@ public class InputHandler {
             return;
         }
         if (LocalVehiclePlayer.instance.onVehicle()) {
-            AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+            AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
             boolean previous = event.getScrollDeltaY() < 0;
             if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
                 PacketDistributor.sendToServer(new ClientVehicleSwitchWeapon(vehicle.getId(), ClientVehicleSwitchWeapon.WeaponSwitchType.PRIMARY, previous));

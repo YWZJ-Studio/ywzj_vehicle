@@ -40,8 +40,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllDamageTypes;
 import org.ywzj.vehicle.client.handler.FirstPersonHandler;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleExplosion;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.vehicle.structure.OBB;
 
 import java.util.*;
 
@@ -52,6 +54,8 @@ public class VehicleExplosion {
     private static final int RAYS_PER_EXPLOSION_SLICE = 5120;
     private static final int MAX_BLOCKS_PER_TICK = 2048;
     private static final int BLOCKS_PER_EXPLOSION_SLICE = 5120;
+    private static final float VEHICLE_BODY_EXPLOSION_RESISTANCE = 8;
+    private static final double VEHICLE_BODY_INTERSECTION_EPSILON = 1.0E-4;
     private static final Map<ServerLevel, Deque<LargeExplosion>> PENDING_LARGE = new HashMap<>();
     private final Level level;
     private final Entity source;
@@ -84,7 +88,9 @@ public class VehicleExplosion {
         this.destroyBlocks = destroyBlocks && AllConfigs.common.canDestroyBlock.get();
         this.dropBlocks = dropBlocks && AllConfigs.common.explosionDropBlock.get();
         this.damageSource = AllDamageTypes.Sources.explosion(level.registryAccess(), entity, source, position);
-        this.damageCalculator = new EntityBasedExplosionDamageCalculator(source);
+        this.damageCalculator = source == null
+                ? new ExplosionDamageCalculator()
+                : new EntityBasedExplosionDamageCalculator(source);
     }
 
     public void explode() {
@@ -112,7 +118,7 @@ public class VehicleExplosion {
                     } else {
                         ObjectArrayList<BlockPos> affectedBlocks = collectAffectedBlocks(vanillaExplosion);
                         if (!affectedBlocks.isEmpty()) {
-                            destroyBlocksImmediately(vanillaExplosion, affectedBlocks);
+                            destroyBlocksImmediately(vanillaExplosion, affectedBlocks, collectVehicleBodies(level, x, y, z, radius));
                         }
                     }
                 }
@@ -130,18 +136,107 @@ public class VehicleExplosion {
         return task.finish(level.random);
     }
 
-    private void destroyBlocksImmediately(Explosion vanillaExplosion, ObjectArrayList<BlockPos> affectedBlocks) {
+    private void destroyBlocksImmediately(Explosion vanillaExplosion, ObjectArrayList<BlockPos> affectedBlocks,
+                                          List<OBB> vehicleBodies) {
         ObjectArrayList<Pair<ItemStack, BlockPos>> dropsBuffer = new ObjectArrayList<>();
         for (BlockPos pos : affectedBlocks) {
+            if (isBlockDestructionBlockedByVehicle(vehicleBodies, x, y, z, radius, pos)) {
+                continue;
+            }
             destroyOneBlock(level, source, radius, dropBlocks, vanillaExplosion, pos, dropsBuffer);
         }
         flushDrops(level, dropsBuffer);
     }
 
     private void enqueueLargeExplosion(ServerLevel serverLevel, Explosion vanillaExplosion) {
+        List<OBB> vehicleBodies = collectVehicleBodies(level, x, y, z, radius);
         PENDING_LARGE.computeIfAbsent(serverLevel, ignored -> new ArrayDeque<>())
                 .addLast(new LargeExplosion(serverLevel, vanillaExplosion, source, radius, dropBlocks,
-                        x, y, z, damageCalculator));
+                        x, y, z, damageCalculator, vehicleBodies));
+    }
+
+    private static List<OBB> collectVehicleBodies(Level level, double x, double y, double z, float radius) {
+        List<OBB> bodies = new ArrayList<>();
+        AABB searchArea = new AABB(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius);
+        for (AbstractVehicle vehicle : level.getEntitiesOfClass(AbstractVehicle.class, searchArea)) {
+            vehicle.getOBBs().stream()
+                    .map(OBB::copy)
+                    .forEach(bodies::add);
+        }
+        return bodies;
+    }
+
+    private static boolean isBlockDestructionBlockedByVehicle(List<OBB> bodies, double x, double y, double z, float radius, BlockPos blockPos) {
+        if (bodies.isEmpty()) {
+            return false;
+        }
+        Vec3 blockCenter = Vec3.atCenterOf(blockPos);
+        double bodyThickness = getVehicleBodyThickness(bodies, new Vec3(x, y, z), blockCenter);
+        if (bodyThickness <= 0) {
+            return false;
+        }
+        float resistance = (float) (VEHICLE_BODY_EXPLOSION_RESISTANCE * bodyThickness);
+        float energyTransmission = Math.max(0.0F,
+                1.0F - resistance / maximumRayEnergy(radius));
+        double effectiveReach = radius * energyTransmission;
+        return blockCenter.distanceToSqr(x, y, z) > effectiveReach * effectiveReach;
+    }
+
+    private static double getVehicleBodyThickness(List<OBB> bodies, Vec3 start, Vec3 end) {
+        Vec3 ray = end.subtract(start);
+        double rayLength = ray.length();
+        if (rayLength < 1.0E-6) {
+            return 0;
+        }
+        double totalThickness = 0;
+        for (OBB body : bodies) {
+            var axes = body.getAxes();
+            var center = body.center();
+            var extents = body.extents();
+            double relativeX = start.x - center.x;
+            double relativeY = start.y - center.y;
+            double relativeZ = start.z - center.z;
+            double enter = 0;
+            double exit = 1;
+            boolean intersects = true;
+            for (int axisIndex = 0; axisIndex < 3; axisIndex++) {
+                var axis = axes[axisIndex];
+                double origin = relativeX * axis.x + relativeY * axis.y + relativeZ * axis.z;
+                double direction = ray.x * axis.x + ray.y * axis.y + ray.z * axis.z;
+                double extent = extents.get(axisIndex) + VEHICLE_BODY_INTERSECTION_EPSILON;
+                if (Math.abs(direction) < 1.0E-7) {
+                    if (origin < -extent || origin > extent) {
+                        intersects = false;
+                        break;
+                    }
+                    continue;
+                }
+                double near = (-extent - origin) / direction;
+                double far = (extent - origin) / direction;
+                if (near > far) {
+                    double swap = near;
+                    near = far;
+                    far = swap;
+                }
+                enter = Math.max(enter, near);
+                exit = Math.min(exit, far);
+                if (enter > exit) {
+                    intersects = false;
+                    break;
+                }
+            }
+            if (intersects) {
+                double thickness = (exit - enter) * rayLength;
+                if (thickness > 0.01) {
+                    totalThickness += thickness;
+                }
+            }
+        }
+        return totalThickness;
+    }
+
+    private static float maximumRayEnergy(float radius) {
+        return radius > BATCHED_DESTRUCTION_RADIUS_THRESHOLD ? radius * 5.0F : radius * 1.3F;
     }
 
     public static void tick(ServerLevel level) {
@@ -213,8 +308,13 @@ public class VehicleExplosion {
             }
             return;
         }
-        if (block == Blocks.GRASS_BLOCK || block == Blocks.TALL_GRASS
-                || block == Blocks.FERN || block == Blocks.LARGE_FERN) {
+        if (block == Blocks.GRASS_BLOCK) {
+            level.setBlock(pos, Blocks.COARSE_DIRT.defaultBlockState(), 3);
+        } else if (block == Blocks.SHORT_GRASS
+                || block == Blocks.TALL_GRASS
+                || block == Blocks.FERN
+                || block == Blocks.LARGE_FERN
+                || state.is(BlockTags.FLOWERS)) {
             level.setBlock(pos, Blocks.DEAD_BUSH.defaultBlockState(), 3);
         } else if (block == Blocks.SAND || block == Blocks.RED_SAND) {
             if (hasStoneNeighbor(level, pos)) {
@@ -659,6 +759,7 @@ public class VehicleExplosion {
         private final Level level;
         private final Explosion vanillaExplosion;
         private final ExplosionDamageCalculator damageCalculator;
+        private final List<OBB> vehicleBodies;
         private final double x, y, z;
         private final float radius;
         private final float destroyRadius;
@@ -670,10 +771,11 @@ public class VehicleExplosion {
         private int flushCursor;
 
         private SphericalCollectionTask(Level level, Explosion vanillaExplosion, ExplosionDamageCalculator damageCalculator,
-                                        double x, double y, double z, float radius) {
+                                        double x, double y, double z, float radius, List<OBB> vehicleBodies) {
             this.level = level;
             this.vanillaExplosion = vanillaExplosion;
             this.damageCalculator = damageCalculator;
+            this.vehicleBodies = vehicleBodies;
             this.x = x;
             this.y = y;
             this.z = z;
@@ -766,6 +868,11 @@ public class VehicleExplosion {
             int size = pendingBlocks.size();
             while (processed < blockLimit && flushCursor < size) {
                 BlockPos pos = pendingBlocks.get(flushCursor);
+                if (isBlockDestructionBlockedByVehicle(vehicleBodies, x, y, z, radius, pos)) {
+                    flushCursor++;
+                    processed++;
+                    continue;
+                }
                 double dx = pos.getX() + 0.5 - x;
                 double dy = pos.getY() + 0.5 - y;
                 double dz = pos.getZ() + 0.5 - z;
@@ -821,13 +928,15 @@ public class VehicleExplosion {
         private int lastBlocksProcessed;
 
         private LargeExplosion(ServerLevel level, Explosion vanillaExplosion, Entity source, float radius, boolean dropBlocks,
-                               double x, double y, double z, ExplosionDamageCalculator damageCalculator) {
+                               double x, double y, double z, ExplosionDamageCalculator damageCalculator,
+                               List<OBB> vehicleBodies) {
             this.level = level;
             this.vanillaExplosion = vanillaExplosion;
             this.source = source;
             this.radius = radius;
             this.dropBlocks = dropBlocks;
-            this.collectionTask = new SphericalCollectionTask(level, vanillaExplosion, damageCalculator, x, y, z, radius);
+            this.collectionTask = new SphericalCollectionTask(level, vanillaExplosion, damageCalculator,
+                    x, y, z, radius, vehicleBodies);
         }
 
         private int processRaysAndExecute(int rayLimit, int blockLimit) {

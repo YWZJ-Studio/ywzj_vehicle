@@ -1,5 +1,6 @@
 package org.ywzj.vehicle.vehicle;
 
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -10,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -62,6 +64,8 @@ public class LocalVehiclePlayer {
     public AbstractVehicle vehicle;
     public ViewType viewType = ViewType.THIRD_PERSON;
     public int onVehicleTickCount;
+    public AbstractVehicle lookAtVehicle;
+    public PartUnit<?> lookAtPartUnit;
     public ConcurrentHashMap<Integer, ServerEntity> serverEntities = new ConcurrentHashMap<>();
     public ConcurrentHashMap<MissileEntity, Integer> missiles = new ConcurrentHashMap<>();
     static {
@@ -80,20 +84,44 @@ public class LocalVehiclePlayer {
         return vehicle instanceof AbstractVehicle;
     }
 
-    public AbstractVehicle getVehicle() {
-        return vehicle;
-    }
-
     public static double renderDistance() {
         return Minecraft.getInstance().options.renderDistance().get() * 16;
     }
 
     public void tick() {
+        tickLookAt();
         tickOverload();
         tickRemote();
         tickLerp();
         tickAim();
         checkState();
+    }
+
+    private void tickLookAt() {
+        Player player = getPlayer();
+        float rot = 0;
+        if (onVehicle()) {
+            rot = viewType != LocalVehiclePlayer.ViewType.SCOPE ? LocalVehiclePlayer.CAMERA_UPWARD_ANGLE : 0;
+        }
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        float xRot = camera.getXRot() - rot;
+        float yRot = camera.getYRot();
+        Vec3 start = camera.getPosition();
+        Vec3 end = start.add(VectorUtil
+                .rotToVec(xRot, yRot)
+                .normalize()
+                .scale(LocalVehiclePlayer.renderDistance()));
+        Pair<Entity, Vec3> hitResult = VectorUtil.hitObbPosition(player, start, end);
+        if (hitResult != null) {
+            Entity entity = hitResult.getLeft();
+            if (entity instanceof AbstractVehicle vehicle && !vehicle.equals(player.getVehicle())) {
+                lookAtVehicle = vehicle;
+                lookAtPartUnit = VectorUtil.hitPartUnit(lookAtVehicle, start, end);
+            }
+        } else {
+            lookAtVehicle = null;
+            lookAtPartUnit = null;
+        }
     }
 
     private void tickOverload() {
@@ -120,7 +148,7 @@ public class LocalVehiclePlayer {
                 }
             }
         }
-        AbstractVehicle vehicle = getVehicle();
+        AbstractVehicle vehicle = this.vehicle;
         if (vehicle == null || vehicle.uav || vehicle.onGround()) {
             endureTick = 0;
             currentG = 1;
@@ -184,7 +212,7 @@ public class LocalVehiclePlayer {
         if (!onVehicle()) {
             return;
         }
-        AbstractVehicle vehicle = getVehicle();
+        AbstractVehicle vehicle = this.vehicle;
         vehicle.getPartUnits().forEach(partUnit -> {
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 weaponUnit.tickHit();
@@ -263,8 +291,8 @@ public class LocalVehiclePlayer {
             return;
         }
         try {
-            AbstractVehicle vehicle = getVehicle();
-            PartUnit<?> partUnit = getVehicle().getOwnOperatorUnit(getPlayer());
+            AbstractVehicle vehicle = this.vehicle;
+            PartUnit<?> partUnit = this.vehicle.getOwnOperatorUnit(getPlayer());
             if (partUnit instanceof WeaponUnit weaponUnit) {
                 if (toViewType == null) {
                     if (viewType == ViewType.THIRD_PERSON) {
@@ -365,7 +393,7 @@ public class LocalVehiclePlayer {
                 pXRot = 0;
             }
         }
-        AbstractVehicle vehicle = getVehicle();
+        AbstractVehicle vehicle = this.vehicle;
         if (vehicle.getOwnOperatorUnit(getPlayer()) instanceof WeaponUnit weaponUnit) {
             if (viewType == LocalVehiclePlayer.ViewType.SCOPE) {
                 if (!mouseTurnedAfterScope && (Math.abs(pXRot) >= 0.5 || Math.abs(pYRot) >= 0.5)) {
@@ -541,7 +569,7 @@ public class LocalVehiclePlayer {
             onVehicleTickCount = 0;
         }
         Player player = getPlayer();
-        AbstractVehicle vehicle = getVehicle();
+        AbstractVehicle vehicle = this.vehicle;
         WeaponUnit weaponUnit = null;
         if (vehicle != null && vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit ownWeaponUnit) {
             weaponUnit = ownWeaponUnit;
@@ -610,7 +638,7 @@ public class LocalVehiclePlayer {
     }
 
     public Vec3 viewOrigin() {
-        AbstractVehicle vehicle = getVehicle();
+        AbstractVehicle vehicle = this.vehicle;
         if (vehicle != null && vehicle.getDetachedBodyAnchor(getPlayer()) != null) {
             return vehicle.position();
         }

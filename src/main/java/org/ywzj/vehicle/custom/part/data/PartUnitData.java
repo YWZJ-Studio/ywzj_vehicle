@@ -4,6 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
 import org.ywzj.vehicle.vehicle.pojo.PassengerPose;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
@@ -18,11 +19,17 @@ public class PartUnitData {
 
     protected final String id;
     protected String name;
+    protected float maxHealth;
+    protected DefenseStats defenseStats = new DefenseStats();
+    protected String renderBone;
     protected String structureBone;
+    protected boolean detachable;
     protected boolean isSeat;
     protected float seatRot;
     protected Vec3 seatOffset = Vec3.ZERO;
+    protected Vec3 dismountOffset;
     protected PassengerPose passengerPose;
+    protected boolean passengerCanUseItem;
     protected Vec3 ownerViewOffset = null;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected boolean renderModel;
@@ -43,11 +50,17 @@ public class PartUnitData {
     public PartUnitData(PartUnitPojo pojo) {
         this.id = pojo.id;
         this.name = pojo.name;
+        this.maxHealth = pojo.maxHealth;
+        this.defenseStats = pojo.defenseStats;
+        this.renderBone = pojo.renderBone;
         this.structureBone = pojo.structureBone;
+        this.detachable = pojo.detachable;
         this.isSeat = pojo.isSeat;
         this.seatRot = pojo.seatRot;
         this.seatOffset = pojo.seatOffset;
+        this.dismountOffset = pojo.dismountOffset;
         this.passengerPose = pojo.passengerPose;
+        this.passengerCanUseItem = pojo.passengerCanUseItem;
         this.ownerViewOffset = pojo.ownerViewOffset;
         this.renderModel = pojo.renderModel;
         this.displayId = pojo.displayId;
@@ -104,8 +117,32 @@ public class PartUnitData {
         return name;
     }
 
+    public float getMaxHealth() {
+        return maxHealth;
+    }
+
+    public void setMaxHealth(float maxHealth) {
+        this.maxHealth = maxHealth;
+    }
+
+    public DefenseStats getDefenseStats() {
+        return defenseStats;
+    }
+
+    public String getRenderBone() {
+        return renderBone;
+    }
+
+    public void setRenderBone(String renderBone) {
+        this.renderBone = renderBone;
+    }
+
     public String getStructureBone() {
         return structureBone;
+    }
+
+    public boolean isDetachable() {
+        return detachable;
     }
 
     public boolean isSeat() {
@@ -120,11 +157,19 @@ public class PartUnitData {
         return seatOffset;
     }
 
+    public Vec3 getDismountOffset() {
+        return dismountOffset;
+    }
+
     public PassengerPose getPassengerPose() {
         if (passengerPose == null) {
             return null;
         }
         return new PassengerPose(passengerPose);
+    }
+
+    public boolean passengerCanUseItem() {
+        return passengerCanUseItem;
     }
 
     public Vec3 getOwnerViewOffset() {

@@ -7,6 +7,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
+import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
+import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -40,8 +44,7 @@ public class CoordinateInputScreen extends Screen {
         yInput = addCoordinateInput(inputX, top + 63, "screen.coordinate_input.y", initialPosition.y);
         zInput = addCoordinateInput(inputX, top + 91, "screen.coordinate_input.z", initialPosition.z);
 
-        confirmButton = addRenderableWidget(Button.builder(
-                        Component.translatable("screen.coordinate_input.confirm"), button -> confirm())
+        confirmButton = addRenderableWidget(Button.builder(Component.translatable("screen.coordinate_input.confirm"), button -> confirm())
                 .bounds(left + 23, top + 127, 98, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), button -> onClose())
@@ -49,7 +52,7 @@ public class CoordinateInputScreen extends Screen {
                 .build());
 
         updateInputState();
-        setInitialFocus(xInput);
+        setFocused(null);
     }
 
     private EditBox addCoordinateInput(int x, int y, String narrationKey, double initialValue) {
@@ -67,9 +70,47 @@ public class CoordinateInputScreen extends Screen {
         xInput.setTextColor(xValid ? 0xE0E0E0 : 0xFF5555);
         yInput.setTextColor(yValid ? 0xE0E0E0 : 0xFF5555);
         zInput.setTextColor(zValid ? 0xE0E0E0 : 0xFF5555);
+        boolean allValid = xValid && yValid && zValid;
         if (confirmButton != null) {
-            confirmButton.active = xValid && yValid && zValid;
+            confirmButton.active = allValid;
         }
+        if (allValid) {
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+            if (instance.onVehicle() && instance.seat.partUnit instanceof WeaponUnit weaponUnit) {
+                Vec3 targetPosition = new Vec3(
+                        Double.parseDouble(xInput.getValue()),
+                        Double.parseDouble(yInput.getValue()),
+                        Double.parseDouble(zInput.getValue())
+                );
+                Vec3 position = targetPosition;
+                var currentWeapon = weaponUnit.getCurrentWeapon().orElse(null);
+                if (currentWeapon instanceof VehicleMissile vehicleMissile
+                        && vehicleMissile.getData().getGuidance() == VehicleMissileWeaponData.Guidance.PRESET) {
+                    position = calculatePresetAscentEnd(vehicleMissile, targetPosition);
+                }
+                instance.thirdPersonCameraAimAt(position, instance.vehicle);
+            }
+        }
+    }
+
+    private Vec3 calculatePresetAscentEnd(VehicleMissile vehicleMissile, Vec3 targetPosition) {
+        Vec3 launchPosition = vehicleMissile.getWeaponUnit().aimContext().from;
+        Vec3 horizontalToTarget = new Vec3(
+                targetPosition.x - launchPosition.x,
+                0,
+                targetPosition.z - launchPosition.z
+        );
+        double horizontalDistance = horizontalToTarget.length();
+        Vec3 forward = horizontalDistance > 1.0E-6
+                ? horizontalToTarget.scale(1 / horizontalDistance)
+                : Vec3.ZERO;
+        VehicleMissileWeaponData data = vehicleMissile.getData();
+        double ascentLead = Math.min(data.getPresetMaxAscentLead(), horizontalDistance * 0.25);
+        return new Vec3(
+                launchPosition.x + forward.x * ascentLead,
+                launchPosition.y + data.getPresetCruiseAltitude(),
+                launchPosition.z + forward.z * ascentLead
+        );
     }
 
     private boolean isValidCoordinate(String value) {
@@ -104,15 +145,21 @@ public class CoordinateInputScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - PANEL_HEIGHT) / 2;
-        guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xD0101010);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(font, title, width / 2, top + 12, 0xFFFFFF);
         guiGraphics.drawString(font, Component.literal("X"), left + 31, top + 41, 0xE0E0E0);
         guiGraphics.drawString(font, Component.literal("Y"), left + 31, top + 69, 0xE0E0E0);
         guiGraphics.drawString(font, Component.literal("Z"), left + 31, top + 97, 0xE0E0E0);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        int left = (width - PANEL_WIDTH) / 2;
+        int top = (height - PANEL_HEIGHT) / 2;
+        guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xD0101010);
     }
 
     @Override

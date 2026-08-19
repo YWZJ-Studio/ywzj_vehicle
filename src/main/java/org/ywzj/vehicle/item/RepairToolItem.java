@@ -95,17 +95,17 @@ public class RepairToolItem extends VehicleItem {
                         Vec3 pos = hitResult.getLocation();
                         pLevel.addParticle(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 0, 0, 0);
                     } else {
-                        float h = Math.min(vehicle.getHealth() + 2.0f, vehicle.getMaxHealth());
-                        vehicle.setHealth(h);
+                        vehicle.setHealth(Math.min(vehicle.getHealth() + vehicle.getMaxHealth() / 100, vehicle.getMaxHealth()));
+                        vehicle.getPartUnits().forEach(partUnit ->
+                                partUnit.setHealth(Math.min(partUnit.getHealth() + partUnit.getMaxHealth() / 10, partUnit.getMaxHealth())));
                     }
                 } else if (hitResult.getEntity() instanceof LivingEntity livingEntity) {
                     livingEntity.hurt(pLevel.damageSources().playerAttack((Player) pLivingEntity), 2.0F);
                     livingEntity.igniteForSeconds(3);
                 }
             }
-            pStack.hurtAndBreak(2, pLivingEntity, EquipmentSlot.MAINHAND);
+            pStack.hurtAndBreak(1, pLivingEntity, EquipmentSlot.MAINHAND);
         }
-
     }
 
     @Override

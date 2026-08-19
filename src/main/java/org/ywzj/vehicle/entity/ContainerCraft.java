@@ -41,8 +41,8 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     protected double lerpZ;
     protected int lerpSteps;
     protected final NonNullList<ItemStack> items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-    public float uiHealth = -1;
-    public int hurtTime = 0;
+    public float healthO = -1;
+    public int hurtTick = 0;
 
     protected ContainerCraft(EntityType<? extends Entity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -83,15 +83,21 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide()) {
-            if (hurtTime > 0) {
-                hurtTime--;
-                if (hurtTime <= 0) {
-                    uiHealth = this.getHealth();
-                }
-            } else if (uiHealth != this.getHealth()) {
-                hurtTime = 10;
+        tickHurt();
+    }
+
+    protected void tickHurt() {
+        if (healthO == -1) {
+            healthO = getHealth();
+            return;
+        }
+        if (hurtTick > 0) {
+            hurtTick--;
+            if (hurtTick <= 0) {
+                healthO = getHealth();
             }
+        } else if (healthO != getHealth()) {
+            hurtTick = 10;
         }
     }
 

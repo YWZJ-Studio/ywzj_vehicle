@@ -40,36 +40,31 @@ public class CcipUtil {
         return null;
     }
 
-    public static Vec3 computeCcipRocket(Level level, Vec3 startPos, Vec3 startVelocity, float thrust, float mass, float motorBurnTime, float friction) {
-        double x = startPos.x;
-        double y = startPos.y;
-        double z = startPos.z;
-        double vx = startVelocity.x;
-        double vy = startVelocity.y;
-        double vz = startVelocity.z;
-        double g = PhysicsEngine.G;
-        for (int tick = 0; tick < MAX_TICKS; tick++) {
-            double speed = Math.sqrt(vx * vx + vy * vy + vz * vz);
-            if (tick <= motorBurnTime && speed > 0) {
-                double acceleration = thrust / mass;
-                vx += acceleration * (vx / speed);
-                vy += acceleration * (vy / speed);
-                vz += acceleration * (vz / speed);
+    public static Vec3 computeCcipRocket(Level level, Entity entity, Vec3 startPos, Vec3 startVelocity,
+                                         Vec3 thrustDirection, float thrust, float mass, float motorBurnTime,
+                                         float friction, int life) {
+        Vec3 position = startPos;
+        Vec3 velocity = startVelocity;
+        Vec3 lookDirection = thrustDirection.normalize();
+        int maxTicks = Math.min(MAX_TICKS, life + 1);
+        for (int tickCount = 1; tickCount <= maxTicks; tickCount++) {
+            if (tickCount <= motorBurnTime) {
+                velocity = velocity.add(lookDirection.scale(thrust / mass));
             }
-            if (speed > 0) {
-                double dragFactor = friction * speed;
-                vx -= dragFactor * vx;
-                vy -= dragFactor * vy;
-                vz -= dragFactor * vz;
+            double speedSqr = velocity.lengthSqr();
+            if (speedSqr > 0) {
+                Vec3 drag = velocity.normalize().scale(-friction * speedSqr);
+                velocity = velocity.add(drag);
             }
-            vy -= g;
-            x += vx;
-            y += vy;
-            z += vz;
-            int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(x), (int) Math.floor(z));
-            if (y <= groundY) {
-                return new Vec3(x, groundY, z);
+            velocity = velocity.subtract(0, PhysicsEngine.G, 0);
+
+            Vec3 nextPosition = position.add(velocity);
+            Vec3 hitCheckEnd = nextPosition.add(velocity);
+            HitResult result = level.clip(new ClipContext(nextPosition, hitCheckEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
+            if (result.getType() != HitResult.Type.MISS) {
+                return result.getLocation();
             }
+            position = nextPosition;
         }
         return null;
     }

@@ -114,6 +114,23 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         );
     }
 
+    public static AABB toAABB(List<OBB> obbs) {
+        double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
+        for (OBB obb : obbs) {
+            Vector3f[] vertices = obb.getVertices();
+            for (Vector3f v : vertices) {
+                if (v.x < minX) minX = v.x;
+                if (v.y < minY) minY = v.y;
+                if (v.z < minZ) minZ = v.z;
+                if (v.x > maxX) maxX = v.x;
+                if (v.y > maxY) maxY = v.y;
+                if (v.z > maxZ) maxZ = v.z;
+            }
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
     public record CubeOBB(BedrockBone bone, BedrockCube cube, OBB obb) {}
 
     public static List<CubeOBB> getOBBsFromBone(BedrockBone bone, AbstractVehicle vehicle, HashSet<BedrockBone> namedBones) {

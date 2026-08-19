@@ -6,7 +6,9 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.entity.misc.ParagliderCanopy;
 import org.ywzj.vehicle.entity.misc.RadarMarkerEntity;
+import org.ywzj.vehicle.entity.misc.VehiclePart;
 import org.ywzj.vehicle.entity.vehicle.*;
 import org.ywzj.vehicle.entity.vehicle.custom.*;
 import org.ywzj.vehicle.entity.weapon.*;
@@ -14,6 +16,16 @@ import org.ywzj.vehicle.entity.weapon.*;
 public class AllEntities {
 
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE, YwzjVehicle.MOD_ID);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ParagliderCanopy>> PARAGLIDER_CANOPY = ENTITIES.register("paraglider_canopy",
+            () -> EntityType.Builder.of(ParagliderCanopy::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .sized(1F, 1F)
+                    .clientTrackingRange(32)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("paraglider_canopy"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<BulletEntity>> BULLET = ENTITIES.register("bullet",
             () -> EntityType.Builder.<BulletEntity>of(BulletEntity::new, MobCategory.MISC)
@@ -61,7 +73,7 @@ public class AllEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<SmokeGrenadeEntity>> SMOKE_GRENADE = ENTITIES.register("smoke_grenade",
             () -> EntityType.Builder.<SmokeGrenadeEntity>of(SmokeGrenadeEntity::new, MobCategory.MISC)
-            .setShouldReceiveVelocityUpdates(true)
+            .setShouldReceiveVelocityUpdates(false)
             .setTrackingRange(16)
             .setUpdateInterval(1)
             .sized(0.3f, 0.3f)
@@ -71,7 +83,7 @@ public class AllEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<ActiveProtectionGrenadeEntity>> APS_GRENADE = ENTITIES.register("aps_grenade",
             () -> EntityType.Builder.<ActiveProtectionGrenadeEntity>of(ActiveProtectionGrenadeEntity::new, MobCategory.MISC)
-                    .setShouldReceiveVelocityUpdates(true)
+                    .setShouldReceiveVelocityUpdates(false)
                     .setTrackingRange(16)
                     .setUpdateInterval(1)
                     .sized(1f, 1f)
@@ -81,7 +93,7 @@ public class AllEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<FragGrenadeEntity>> FRAG_GRENADE = ENTITIES.register("frag_grenade",
             () -> EntityType.Builder.<FragGrenadeEntity>of(FragGrenadeEntity::new, MobCategory.MISC)
-                    .setShouldReceiveVelocityUpdates(true)
+                    .setShouldReceiveVelocityUpdates(false)
                     .setTrackingRange(16)
                     .setUpdateInterval(1)
                     .sized(0.3f, 0.3f)
@@ -98,6 +110,14 @@ public class AllEntities {
                     .updateInterval(1)
                     .setShouldReceiveVelocityUpdates(false)
                     .build("decoy_flare"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<VehiclePart>> VEHICLE_PART = ENTITIES.register("vehicle_part",
+            () -> EntityType.Builder.of(VehiclePart::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(32)
+                    .build("vehicle_part"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<NoneVehicle>> NONE_VEHICLE = ENTITIES.register("none_vehicle",
             () -> EntityType.Builder.of(NoneVehicle::new, MobCategory.MISC)

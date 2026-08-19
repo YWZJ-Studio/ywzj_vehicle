@@ -103,7 +103,7 @@ public class ServerHitVehicleEvent implements CustomPacketPayload {
                 if (!display.getModel().hasBakedModel()) {
                     return;
                 }
-                VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end);
+                VectorUtil.HitBone hitBone = VectorUtil.hitBone(vehicle, start, end, new Vec3(0, 1, 0));
                 if (hitBone != null) {
                     Vec3 hitPos = hitBone.position();
                     vehicle.level().addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.0F),

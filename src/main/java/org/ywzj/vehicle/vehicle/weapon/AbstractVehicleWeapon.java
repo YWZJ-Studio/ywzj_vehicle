@@ -16,6 +16,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.all.AllItems;
+import org.ywzj.vehicle.all.AllKeys;
 import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
@@ -127,6 +128,21 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     @OnlyIn(Dist.CLIENT)
+    public void openCoordinateInputScreen() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null
+                || weaponUnit.getFireControlSensorType() != WeaponUnitData.FireControlSensorType.LOC) {
+            return;
+        }
+        Vec3 initialTarget = targetLocation != null ? targetLocation : currentAimHitPosition();
+        minecraft.setScreen(new CoordinateInputScreen(initialTarget, position -> {
+            if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.LOC) {
+                targetLocation = position;
+            }
+        }));
+    }
+
+    @OnlyIn(Dist.CLIENT)
     protected boolean preClientShoot() {
         Minecraft minecraft = Minecraft.getInstance();
         WeaponUnit parentWeaponUnit = weaponUnit.getParentWeaponUnit();
@@ -138,20 +154,10 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
             }
         }
         if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.LOC && targetLocation == null) {
-            if (minecraft.screen != null || isCoolingDown() || !hasAmmo()) {
-                return false;
+            if (minecraft.player != null) {
+                Component tips = Component.translatable("tips.preset_coordinate_required", AllKeys.PRESET_COORDINATE_INPUT.getTranslatedKeyMessage());
+                minecraft.player.displayClientMessage(tips, true);
             }
-            minecraft.setScreen(new CoordinateInputScreen(currentAimHitPosition(), position -> {
-                if (weaponUnit.getFireControlSensorType() != WeaponUnitData.FireControlSensorType.LOC) {
-                    return;
-                }
-                targetLocation = position;
-                try {
-                    doClientShoot();
-                } finally {
-                    targetLocation = null;
-                }
-            }));
             return false;
         }
         return true;
@@ -253,7 +259,8 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         }
         float recoil = data.getRecoil();
         float caliber = data.getCaliber();
-        float scale = caliber / 20;
+        float scaleDivisor = 20f + 30f * caliber / 1000f;
+        float scale = caliber / scaleDivisor;
         for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
             for (int i = 0; i < 3 * recoil + 1; i++) {
                 double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;

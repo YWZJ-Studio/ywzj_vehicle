@@ -19,9 +19,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.apache.commons.lang3.StringUtils;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
+import org.ywzj.vehicle.client.component.ScrollableTextPanel;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -59,6 +59,7 @@ public class MachineMaxScreen extends Screen {
     private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
     private final MachineMaxBlockEntity machineMaxBlockEntity;
     private AbstractVehicle vehicle;
+    private final ScrollableTextPanel descriptionPanel = new ScrollableTextPanel();
 
     public MachineMaxScreen(MachineMaxBlockEntity machineMaxBlockEntity) {
         super(Component.literal("Machine Max"));
@@ -100,16 +101,20 @@ public class MachineMaxScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        if (!this.hoveredStack.isEmpty()) {
+            guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         drawMainBackground(guiGraphics);
         drawVehicleList(guiGraphics, mouseX, mouseY);
         drawPreviewPanel(guiGraphics);
         drawProgressBar(guiGraphics);
         drawReceipt(guiGraphics, mouseX, mouseY);
-        if (!this.hoveredStack.isEmpty()) {
-            guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
-        }
     }
 
     private void drawMainBackground(GuiGraphics guiGraphics) {
@@ -224,10 +229,12 @@ public class MachineMaxScreen extends Screen {
         guiGraphics.fill(x, y, x + 110, y + 90, Color.BG_PREVIEW);
 
         if (selectedIndex < 0 || selectedIndex >= filteredVehicleList.size()) {
+            descriptionPanel.clear();
             return;
         }
 
         if (vehicle == null) {
+            descriptionPanel.clear();
             return;
         }
 
@@ -262,22 +269,14 @@ public class MachineMaxScreen extends Screen {
         Optional<BaseDisplay> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
         if (vehicleDisplayOptional.isPresent()) {
             BaseDisplay vehicleDisplay = vehicleDisplayOptional.get();
-            // 介绍
-            poseStack.pushPose();
-            {
-                int maxWidth = (int) ((imageWidth - ITEM_WIDTH - 35) / 1.6f);
-                poseStack.translate(x + 116, topPos + 20, 0);
-                poseStack.scale(0.95f, 0.95f, 0.95f);
-                if (!StringUtils.isEmpty(vehicleDisplay.getDescription())) {
-                    var lines = font.split(Component.translatable(vehicleDisplay.getDescription()), maxWidth);
-                    for (int i = 0; i < lines.size(); i++) {
-                        guiGraphics.drawString(font, lines.get(i), 0, i * 9, Color.WHITE);
-                    }
-                } else {
-                    guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, Color.WHITE);
-                }
-            }
-            poseStack.popPose();
+            Component description = vehicleDisplay.getDescription() == null || vehicleDisplay.getDescription().isBlank()
+                    ? Component.translatable("screen.no_description")
+                    : Component.translatable(vehicleDisplay.getDescription());
+            descriptionPanel.setBounds(x + 116, topPos + 20, leftPos + imageWidth - 10, topPos + 130);
+            descriptionPanel.setContent(vehicle.getDisplayId(), description);
+            descriptionPanel.render(guiGraphics, font, Color.WHITE);
+        } else {
+            descriptionPanel.clear();
         }
         if (machineMaxBlockEntity.hasProduct()) {
             guiGraphics.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, Color.WHITE);
@@ -350,12 +349,20 @@ public class MachineMaxScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (filteredVehicleList.size() > VISIBLE_ITEMS) {
+        if (descriptionPanel.mouseScrolled(mouseX, mouseY, deltaY, font)) {
+            return true;
+        }
+        int listX = leftPos + 10;
+        int listY = topPos + 10 + ITEM_HEIGHT;
+        if (mouseX >= listX && mouseX < listX + ITEM_WIDTH
+                && mouseY >= listY && mouseY < listY + VISIBLE_ITEMS * ITEM_HEIGHT
+                && filteredVehicleList.size() > VISIBLE_ITEMS) {
             scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(deltaY),
                     0,
                     filteredVehicleList.size() - VISIBLE_ITEMS);
+            return true;
         }
-        return true;
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     private void onVehicleSelected(BaseVehicleData<?> vehicleData) {

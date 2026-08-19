@@ -14,6 +14,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.client.component.ScrollableTextPanel;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -35,6 +36,7 @@ public class DecorationSelectScreen extends Screen {
     private ResourceLocation selectedDisplayId;
     private int scrollOffset = 0;
     private int selectedIndex = -1;
+    private final ScrollableTextPanel descriptionPanel = new ScrollableTextPanel();
     private int leftPos;
     private int topPos;
     private final List<ResourceLocation> decorationDisplayIds;
@@ -64,8 +66,12 @@ public class DecorationSelectScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         drawDisplayList(guiGraphics, mouseX, mouseY);
         drawPreview(guiGraphics);
     }
@@ -76,6 +82,8 @@ public class DecorationSelectScreen extends Screen {
                 .toList();
         this.scrollOffset = 0;
         this.selectedIndex = -1;
+        this.selectedDisplayId = null;
+        this.descriptionPanel.clear();
     }
 
     private void drawDisplayList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -144,10 +152,12 @@ public class DecorationSelectScreen extends Screen {
 
     private void drawPreview(GuiGraphics guiGraphics) {
         if (selectedDisplayId == null) {
+            descriptionPanel.clear();
             return;
         }
         Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(selectedDisplayId);
         if (displayOptional.isEmpty() || displayOptional.get().getModel() == null) {
+            descriptionPanel.clear();
             return;
         }
 
@@ -170,26 +180,15 @@ public class DecorationSelectScreen extends Screen {
             model.renderSpecialBones(poseStack, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY);
         }
         poseStack.popPose();
-        poseStack.pushPose();
-        {
-            // 装饰名
-            guiGraphics.drawCenteredString(this.font, selectedDisplayId.getPath(), previewX, previewY + 40, Color.WHITE);
-            // 介绍
-            int padding = 10;
-            int x1 = width / 2;
-            int x2 = width - 20;
-            int maxWidth = (int) ((x2 - x1 + 2 * padding) / 1.03f);
-            poseStack.translate((float) width / 2, (float) height / 2, 0);
-            if (display.getDescription() != null) {
-                var lines = font.split(Component.translatable(display.getDescription()), maxWidth);
-                for (int i = 0; i < lines.size(); i++) {
-                    guiGraphics.drawString(font, lines.get(i), 0, i * 9, Color.WHITE);
-                }
-            } else {
-                guiGraphics.drawString(font, Component.translatable("screen.no_description"), 0, 0, Color.WHITE);
-            }
-        }
-        poseStack.popPose();
+        guiGraphics.drawCenteredString(this.font, selectedDisplayId.getPath(), previewX, previewY + 40, Color.WHITE);
+        int descriptionLeft = width / 2;
+        int descriptionTop = height / 2;
+        descriptionPanel.setBounds(descriptionLeft, descriptionTop, width - 20, height - 10);
+        Component description = display.getDescription() == null
+                ? Component.translatable("screen.no_description")
+                : Component.translatable(display.getDescription());
+        descriptionPanel.setContent(selectedDisplayId, description);
+        descriptionPanel.render(guiGraphics, font, Color.WHITE);
     }
 
     @Override
@@ -210,8 +209,13 @@ public class DecorationSelectScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollDeltaX, double scrollDeltaY) {
+        if (descriptionPanel.mouseScrolled(mouseX, mouseY, scrollDeltaY, font)) {
+            return true;
+        }
         int totalRows = (int) Math.ceil((double) filteredDecorationDisplayIds.size() / COLUMNS);
-        if (totalRows > VISIBLE_ROWS) {
+        if (mouseX >= leftPos && mouseX < leftPos + GRID_WIDTH
+                && mouseY >= topPos && mouseY < topPos + GRID_HEIGHT
+                && totalRows > VISIBLE_ROWS) {
             int maxScrollOffset = totalRows - VISIBLE_ROWS;
             scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(scrollDeltaY), 0, maxScrollOffset);
             return true;

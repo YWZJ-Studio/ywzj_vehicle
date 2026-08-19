@@ -9,13 +9,13 @@
     "client.ClientChunkCacheMixin",
     "client.ClientLevelUnloadMixin",
     "client.ClientPacketListenerMixin",
-    "client.EntityRenderDispatcherMixin",
     "client.HumanoidModelMixin",
     "client.LevelRendererMixin",
     "client.LevelRendererOriginMixin",
     "client.LivingEntityRendererMixin",
     "client.MinecraftMixin",
     "client.MouseHandlerMixin",
+    "client.PlayerRendererMixin",
     "client.PostChainMixin"
   ],
   "injectors": {

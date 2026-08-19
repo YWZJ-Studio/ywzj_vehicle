@@ -29,6 +29,8 @@
             "id": "turret",
             "name": "turret",
             "type": "ywzj_vehicle:weapon",
+            "max_health": 1000,
+            "render_bone": "turret",
             "structure_bone": "turret",
             "seat_offset": [-0.5, 1.7, 0.375],
             "rot_info": {
@@ -86,6 +88,8 @@
             "id": "anti_aircraft_machine_gun",
             "name": "anti_aircraft_machine_gun",
             "type": "ywzj_vehicle:weapon",
+            "max_health": 200,
+            "render_bone": "mg",
             "structure_bone": "anti_aircraft_machine_gun",
             "seat_offset": [0.5, 1.7, 0.275],
             "operator_on_weapon_unit": false,

@@ -46,7 +46,7 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
         if (!LocalVehiclePlayer.instance.onVehicle() || LocalVehiclePlayer.instance.viewType != LocalVehiclePlayer.ViewType.SCOPE) {
             return;
         }
-        AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+        AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
         // 准心
         renderCrosshair(guiGraphics, partialTick, vehicle);
         // 射界
@@ -95,7 +95,7 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                     rot = lerpZRotDiff(rotatableUnit, vehicle, partialTick);
                 }
                 for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
-                    renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, color);
+                    renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, partUnit.isDestroyed() ? Color.RED : color);
                 }
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
@@ -330,7 +330,7 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
     }
 
     private static void radarInfo(GuiGraphics guiGraphics, PoseStack poseStack, RadarUnit.DetectedObject detectedObject) {
-        AbstractVehicle vehicle = LocalVehiclePlayer.instance.getVehicle();
+        AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
         if (vehicle == null) {
             return;
         }

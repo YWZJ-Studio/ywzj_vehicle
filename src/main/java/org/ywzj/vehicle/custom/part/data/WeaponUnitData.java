@@ -11,9 +11,7 @@ import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class WeaponUnitData extends RotatableUnitData {
 
@@ -185,11 +183,12 @@ public class WeaponUnitData extends RotatableUnitData {
         // 若未配置炮闩数据，则从结构模型中推算
         if (this.bolts == null || this.bolts.isEmpty()) {
             this.bolts = new ArrayList<>();
-            buildBolts(xTurnBone, xTurnBone, Vec3.ZERO);
+            Set<BedrockBone> namedBones = new HashSet<>(model.getBoneMap().values());
+            buildBolts(xTurnBone, xTurnBone, Vec3.ZERO, namedBones);
         }
     }
 
-    private void buildBolts(BedrockBone xTurnBone, BedrockBone barrelBone, Vec3 offset) {
+    private void buildBolts(BedrockBone xTurnBone, BedrockBone barrelBone, Vec3 offset, Set<BedrockBone> namedBones) {
         for (BedrockCube cube : barrelBone.cubes) {
             // 使用单个Cube来描述一根炮管
             // 以Cube的Z轴正方向作为炮管轴线，起始端对应炮闩位置，终止端对应炮口位置，Cube在该方向上的整体长度即为炮管长度。
@@ -208,7 +207,10 @@ public class WeaponUnitData extends RotatableUnitData {
             }
         }
         for (BedrockBone child : barrelBone.getChildren()) {
-            buildBolts(xTurnBone, child, offset.add(child.x / 16, child.y / 16, child.z / 16));
+            if (namedBones.contains(child)) {
+                continue;
+            }
+            buildBolts(xTurnBone, child, offset.add(child.x / 16, child.y / 16, child.z / 16), namedBones);
         }
     }
 
