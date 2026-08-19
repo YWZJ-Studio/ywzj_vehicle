@@ -474,12 +474,12 @@ public class LocalVehiclePlayer {
 
     public Vec3 scopeAimWeaponHit(WeaponUnit weaponUnit) {
         Vec3 hitPosition = weaponUnit.aimHitPosition();
-        Vec3 boltPosition = weaponUnit.worldCurrentBoltPosition();
+        Vec3 pivotPosition = weaponUnit.worldPivotPosition();
         Vec3 cameraPosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR
                 ? weaponUnit.worldOpticalSightPosition(1.0F)
                 : weaponUnit.worldOwnerViewPosition(1.0F);
-        if (hitPosition.distanceTo(boltPosition) < 128) {
-            cameraAimAt(cameraPosition, hitPosition.subtract(boltPosition).normalize().scale(128).add(boltPosition));
+        if (hitPosition.distanceTo(pivotPosition) < 128) {
+            cameraAimAt(cameraPosition, hitPosition.subtract(pivotPosition).normalize().scale(128).add(pivotPosition));
         } else {
             cameraAimAt(cameraPosition, hitPosition);
         }

@@ -26,7 +26,6 @@ import java.util.Locale;
 public class DecorationSettingsScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/decoration_settings.html";
-
     private final DecorationUnit decorationUnit;
     private Document document;
     private Element scaleInput;
@@ -301,6 +300,11 @@ public class DecorationSettingsScreen extends ApricityScreen {
     }
 
     private void updateRenderState() {
+        if (sliderDragging) {
+            decorationUnit.selfXRot = readInputValue(xRotationInput, decorationUnit.selfXRot);
+            decorationUnit.selfYRot = readInputValue(yRotationInput, decorationUnit.selfYRot);
+            decorationUnit.selfZRot = readInputValue(zRotationInput, decorationUnit.selfZRot);
+        }
         if (!renderStateInitialized) {
             renderScale = decorationUnit.scale;
             renderXRotation = decorationUnit.selfXRot;
@@ -321,6 +325,13 @@ public class DecorationSettingsScreen extends ApricityScreen {
                 Mth.lerp(alpha, (float) renderOffset.x, (float) target.x),
                 Mth.lerp(alpha, (float) renderOffset.y, (float) target.y),
                 Mth.lerp(alpha, (float) renderOffset.z, (float) target.z));
+    }
+
+    private float readInputValue(Element input, float fallback) {
+        if (input == null) {
+            return fallback;
+        }
+        return roundToHundredth(parseSafe(input.getValue(), fallback));
     }
 
     private float interpolationAlpha() {
@@ -444,4 +455,5 @@ public class DecorationSettingsScreen extends ApricityScreen {
         private double centerX() { return (left + right) / 2; }
         private double centerY() { return (top + bottom) / 2; }
     }
+
 }

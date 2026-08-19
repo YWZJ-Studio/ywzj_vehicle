@@ -143,7 +143,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private void initMissile(VehicleMissileWeaponData data) {
-        this.caliber = data.getCaliber() < 40 ? 150 : data.getCaliber();
+        this.caliber = data.getCaliber() < 40 ? 200 : data.getCaliber();
         this.seekerFov = data.getSeekerFov();
         this.mass = data.getMass();
         this.thrust = data.getThrust();
@@ -415,7 +415,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             double dist = step.length();
             int segments = (int) (dist / 0.5);
             Vec3 dir = step.normalize();
-            if (caliber >= 150) {
+            if (caliber > 152) {
                 float size = 0.2f * (float) Math.pow(5, caliber / 2250f);
                 for (int i = 0; i <= segments; i++) {
                     double x = this.random.triangle(0, 0.1f * size * size);
@@ -475,7 +475,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private List<Entity> detectTargets() {
-        return Radar.detectTargets(this, this.position(), activeRadarActivationRange,
+        return Radar.detectTargets(this, this.position(), activeRadarActivationRange, false,
                 entityPos -> Math.toDegrees(VectorUtil.angleBetween(this.getLookAngle(), entityPos.subtract(this.position()))) <= seekerFov);
     }
 

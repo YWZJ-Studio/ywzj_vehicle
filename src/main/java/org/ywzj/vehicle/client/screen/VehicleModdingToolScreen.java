@@ -36,7 +36,6 @@ import java.util.Optional;
 public class VehicleModdingToolScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/vehicle_modding_tool.html";
-
     private final AbstractVehicle vehicle;
     private final List<ResourceLocation> variableDisplayIds = new ArrayList<>();
     private final List<DisplayEntry> displayEntries = new ArrayList<>();
@@ -372,4 +371,5 @@ public class VehicleModdingToolScreen extends ApricityScreen {
         private double centerX() { return (left + right) / 2; }
         private double centerY() { return (top + bottom) / 2; }
     }
+
 }

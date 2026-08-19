@@ -69,7 +69,7 @@ public class Radar {
         return scannedEntities;
     }
 
-    public static List<Entity> detectTargets(Entity radarOwner, Vec3 worldRadarPosition, double maxScanDistance, Function<Vec3, Boolean> check) {
+    public static List<Entity> detectTargets(Entity radarOwner, Vec3 worldRadarPosition, double maxScanDistance, boolean antiGround, Function<Vec3, Boolean> check) {
         Level level = radarOwner.level();
         List<Entity> detectedEntities = new ArrayList<>();
         List<TargetObstruction> targetObstructions = new ArrayList<>();
@@ -98,10 +98,12 @@ public class Radar {
                 continue;
             }
             // 背景无回波
-            Vec3 entityPos = entity.position();
-            Vec3 checkPos = entityPos.add(entityPos.subtract(worldRadarPosition).normalize().scale(128));
-            if (checkPos.y < radarOwner.level().getHeight(Heightmap.Types.MOTION_BLOCKING, radarOwner.getBlockX(), radarOwner.getBlockZ())) {
-                continue;
+            if (!antiGround) {
+                Vec3 entityPos = entity.position();
+                Vec3 checkPos = entityPos.add(entityPos.subtract(worldRadarPosition).normalize().scale(128));
+                if (checkPos.y < radarOwner.level().getHeight(Heightmap.Types.MOTION_BLOCKING, radarOwner.getBlockX(), radarOwner.getBlockZ())) {
+                    continue;
+                }
             }
             detectedEntities.add(entity);
             if (entity instanceof TargetObstruction targetObstruction) {

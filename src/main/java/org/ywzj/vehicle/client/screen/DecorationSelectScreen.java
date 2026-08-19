@@ -30,10 +30,8 @@ import java.util.Locale;
 public class DecorationSelectScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/decoration_select.html";
-
     private final List<ResourceLocation> decorationDisplayIds;
     private final List<DecorationEntry> decorationEntries = new ArrayList<>();
-
     private Document document;
     private Element searchInput;
     private Element decorationCount;
@@ -44,7 +42,6 @@ public class DecorationSelectScreen extends ApricityScreen {
     private Element previewAnchor;
     private Element description;
     private Element closeButton;
-
     private String filter = "";
     private String appliedQuery;
     private ResourceLocation selectedDisplayId;
@@ -547,4 +544,5 @@ public class DecorationSelectScreen extends ApricityScreen {
             return centerY() + height() * 0.08;
         }
     }
+
 }

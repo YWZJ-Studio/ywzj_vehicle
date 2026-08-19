@@ -26,7 +26,6 @@ import java.util.Locale;
 public class FigureBoxScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/figure_box.html";
-
     private final FigureBoxBlockEntity figureBoxBlockEntity;
     private Document document;
     private Element openInput;
@@ -43,27 +42,14 @@ public class FigureBoxScreen extends ApricityScreen {
     private int serverUpdateCooldown;
     private boolean sliderDragging;
     private float scaleInputValue = 1;
-    private float scaleO;
-    private float scale;
     private float xShiftInputValue;
-    private float xShiftO;
-    private float xShift;
     private float yShiftInputValue;
-    private float yShiftO;
-    private float yShift;
     private float zShiftInputValue;
-    private float zShiftO;
-    private float zShift;
     private float xRotationInputValue;
-    private float xRotationO;
-    private float xRotation;
     private float yRotationInputValue;
-    private float yRotationO;
-    private float yRotation;
     private float zRotationInputValue;
-    private float zRotationO;
-    private float zRotation;
     private Bounds previewBounds;
+    private long lastRangeValueUpdateNanos;
 
     public FigureBoxScreen(FigureBoxBlockEntity figureBoxBlockEntity) {
         super(TEMPLATE);
@@ -125,6 +111,7 @@ public class FigureBoxScreen extends ApricityScreen {
             return;
         }
         input.setValue(format(initial));
+        consumer.accept(initial);
         updateRangeValue(input, true);
         input.addEventListener("input", event -> applyNumber(input, consumer, false));
         input.addEventListener("change", event -> applyNumber(input, consumer, true));
@@ -160,15 +147,13 @@ public class FigureBoxScreen extends ApricityScreen {
         if (valueInput != null) {
             String text = String.format(Locale.ROOT, "%.2f", parseSafe(input.getValue(), 0));
             long now = System.nanoTime();
-//            if (!force && (now - lastRangeValueUpdateNanos) < 33_000_000L) {
-//                return;
-//            }
-//            if (text.equals(valueInput.getValue())) {
-//                lastRangeValueUpdateNanos = now;
-//                return;
-//            }
-            valueInput.setValue(text);
-//            lastRangeValueUpdateNanos = now;
+            if (!force && now - lastRangeValueUpdateNanos < 33_000_000L) {
+                return;
+            }
+            if (!text.equals(valueInput.getValue())) {
+                valueInput.setValue(text);
+            }
+            lastRangeValueUpdateNanos = now;
         }
     }
 
@@ -199,20 +184,6 @@ public class FigureBoxScreen extends ApricityScreen {
     public void tick() {
         super.tick();
         previewBounds = readPreviewBounds();
-        scaleO = scale;
-        xShiftO = xShift;
-        yShiftO = yShift;
-        zShiftO = zShift;
-        xRotationO = xRotation;
-        yRotationO = yRotation;
-        zRotationO = zRotation;
-        scale = scaleInputValue;
-        xShift = xShiftInputValue;
-        yShift = yShiftInputValue;
-        zShift = zShiftInputValue;
-        xRotation = xRotationInputValue;
-        yRotation = yRotationInputValue;
-        zRotation = zRotationInputValue;
         if (serverUpdatePending) {
             if (serverUpdateCooldown > 0) {
                 serverUpdateCooldown--;
@@ -244,13 +215,13 @@ public class FigureBoxScreen extends ApricityScreen {
         ClientFigureBoxUpdate update = new ClientFigureBoxUpdate();
         update.blockPos = figureBoxBlockEntity.getBlockPos();
         update.open = figureBoxBlockEntity.open;
-        update.scale = figureBoxBlockEntity.scale;
-        update.xShift = figureBoxBlockEntity.xShift;
-        update.yShift = figureBoxBlockEntity.yShift;
-        update.zShift = figureBoxBlockEntity.zShift;
-        update.xRot = figureBoxBlockEntity.xRot;
-        update.yRot = figureBoxBlockEntity.yRot;
-        update.zRot = figureBoxBlockEntity.zRot;
+        update.scale = scaleInputValue;
+        update.xShift = xShiftInputValue;
+        update.yShift = yShiftInputValue;
+        update.zShift = zShiftInputValue;
+        update.xRot = xRotationInputValue;
+        update.yRot = yRotationInputValue;
+        update.zRot = zRotationInputValue;
         Channel.CHANNEL.sendToServer(update);
     }
 
@@ -323,13 +294,30 @@ public class FigureBoxScreen extends ApricityScreen {
     }
 
     private void updateRenderState(float partialTick) {
-        figureBoxBlockEntity.scale = Mth.lerp(partialTick, scaleO, scale);
-        figureBoxBlockEntity.xShift = Mth.lerp(partialTick, xShiftO, xShift);
-        figureBoxBlockEntity.yShift = Mth.lerp(partialTick, yShiftO, yShift);
-        figureBoxBlockEntity.zShift = Mth.lerp(partialTick, zShiftO, zShift);
-        figureBoxBlockEntity.xRot = Mth.rotLerp(partialTick, xRotationO, xRotation);
-        figureBoxBlockEntity.yRot = Mth.rotLerp(partialTick, yRotationO, yRotation);
-        figureBoxBlockEntity.zRot = Mth.rotLerp(partialTick, zRotationO, zRotation);
+        if (sliderDragging) {
+            xRotationInputValue = readInputValue(xRotationInput, xRotationInputValue);
+            yRotationInputValue = readInputValue(yRotationInput, yRotationInputValue);
+            zRotationInputValue = readInputValue(zRotationInput, zRotationInputValue);
+            figureBoxBlockEntity.scale = scaleInputValue;
+            figureBoxBlockEntity.xShift = xShiftInputValue;
+            figureBoxBlockEntity.yShift = yShiftInputValue;
+            figureBoxBlockEntity.zShift = zShiftInputValue;
+            figureBoxBlockEntity.xRot = xRotationInputValue;
+            figureBoxBlockEntity.yRot = yRotationInputValue;
+            figureBoxBlockEntity.zRot = zRotationInputValue;
+            return;
+        }
+        figureBoxBlockEntity.scale = Mth.lerp(partialTick, figureBoxBlockEntity.scale, scaleInputValue);
+        figureBoxBlockEntity.xShift = Mth.lerp(partialTick, figureBoxBlockEntity.xShift, xShiftInputValue);
+        figureBoxBlockEntity.yShift = Mth.lerp(partialTick, figureBoxBlockEntity.yShift, yShiftInputValue);
+        figureBoxBlockEntity.zShift = Mth.lerp(partialTick, figureBoxBlockEntity.zShift, zShiftInputValue);
+        figureBoxBlockEntity.xRot = Mth.rotLerp(partialTick, figureBoxBlockEntity.xRot, xRotationInputValue);
+        figureBoxBlockEntity.yRot = Mth.rotLerp(partialTick, figureBoxBlockEntity.yRot, yRotationInputValue);
+        figureBoxBlockEntity.zRot = Mth.rotLerp(partialTick, figureBoxBlockEntity.zRot, zRotationInputValue);
+    }
+
+    private float readInputValue(Element input, float fallback) {
+        return input == null ? fallback : roundToHundredth(parseSafe(input.getValue(), fallback));
     }
 
     @Override
@@ -370,4 +358,5 @@ public class FigureBoxScreen extends ApricityScreen {
     }
 
     private record Bounds(double left, double top, double right, double bottom) {}
+
 }

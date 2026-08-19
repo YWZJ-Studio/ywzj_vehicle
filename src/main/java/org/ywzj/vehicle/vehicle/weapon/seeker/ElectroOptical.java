@@ -19,7 +19,7 @@ public class ElectroOptical {
 
     public static Entity checkTarget(WeaponUnit weaponUnit, Entity target) {
         Vec3 checkStart = weaponUnit.worldPivotPosition();
-        Vec3 checkEnd = target.position();
+        Vec3 checkEnd = target.getBoundingBox().getCenter();
         Level level = target.level();
         AbstractVehicle vehicle = weaponUnit.getVehicle();
         BlockHitResult result = level.clip(new ClipContext(checkStart, checkEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));

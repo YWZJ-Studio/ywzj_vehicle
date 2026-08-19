@@ -37,13 +37,11 @@ import java.util.*;
 public class MachineMaxScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/machine_max.html";
-
     private final MachineMaxBlockEntity machine;
     private final List<BaseVehicleData<?>> allVehicles;
     private final List<BaseVehicleData<?>> visibleVehicles = new ArrayList<>();
     private final List<Element> vehicleEntries = new ArrayList<>();
     private final List<MaterialRequirementView> materialRequirementViews = new ArrayList<>();
-
     private Document document;
     private Element searchInput;
     private Element vehicleCount;

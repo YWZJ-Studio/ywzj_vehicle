@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
+import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -128,7 +129,7 @@ public class VectorUtil {
             }
             return result;
         }
-        return entity == null ? null : new EntityHitResult(entity);
+        return entity == null ? null : new EntityHitResult(entity instanceof PartEntity<?> partEntity ? partEntity.getParent() : entity);
     }
 
     public static Pair<Entity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {

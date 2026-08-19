@@ -36,7 +36,6 @@ import java.util.Optional;
 public class VehicleWeaponSelectScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/vehicle_weapon_select.html";
-
     private final AbstractVehicle vehicle;
     private final Screen parent;
     private final List<WeaponSelectionEntry> weaponSelections = new ArrayList<>();
@@ -378,4 +377,5 @@ public class VehicleWeaponSelectScreen extends ApricityScreen {
         private double centerX() { return (left + right) / 2; }
         private double centerY() { return (top + bottom) / 2; }
     }
+
 }

@@ -87,18 +87,15 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                     continue;
                 }
                 int color = partUnit.getOwner() == player ? Color.BLUE : Color.GREEN;
-                float rot = 0;
-                if (partUnit instanceof RotatableUnit<?> rotatableUnit) {
-                    rot = lerpZRotDiff(rotatableUnit, vehicle, partialTick);
-                }
                 for (VehicleCubeOBB partCubeOBB : partUnit.getPartCubeOBBs()) {
-                    renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, partUnit.isDestroyed() ? Color.RED : color);
+                    renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, lerpZRotDiff(partCubeOBB, vehicle, partialTick),
+                            poseStack, guiGraphics, partialTick, partUnit.isDestroyed() ? Color.RED : color);
                 }
                 if (partUnit instanceof WeaponUnit weaponUnit) {
                     for (WeaponUnit subWeaponUnit : weaponUnit.getSubWeaponUnits()) {
                         for (VehicleCubeOBB partCubeOBB : subWeaponUnit.getPartCubeOBBs()) {
-                            rot = lerpZRotDiff(partCubeOBB, vehicle, partialTick);
-                            renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, rot, poseStack, guiGraphics, partialTick, color);
+                            renderCubeOBB(partCubeOBB, vehiclePos, axisX, axisZ, lerpZRotDiff(partCubeOBB, vehicle, partialTick),
+                                    poseStack, guiGraphics, partialTick, color);
                         }
                     }
                 }
@@ -117,7 +114,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         poseStack.pushPose();
         {
             poseStack.translate(offsetX, offsetZ, 0f);
-            poseStack.mulPose(Axis.ZP.rotationDegrees((float) (rot - Math.toDegrees(cubeOBB.group.baseRotation.getEulerAnglesYXZ(new Vector3f()).y))));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(rot));
             int hw = (int) (cubeOBB.width * 5.0);
             int hd = (int) (cubeOBB.depth * 5.0);
             drawRectByCorner(guiGraphics, -hw, hw, -hd, hd, color, 1);
@@ -284,7 +281,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
             if (sensorType == WeaponUnitData.FireControlSensorType.RF && mainRadarUnit.getLockedEntity() != null) {
                 RadarUnit.DetectedObject detectedObject = weaponUnit.getMainRadarUnit().getDetectedEntities().get(mainRadarUnit.getLockedEntity().getId());
                 if (detectedObject != null) {
-                    Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.entity.position());
+                    Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.entity.getBoundingBox().getCenter());
                     if (screenPos.z >= 0) {
                         PoseStack poseStack = guiGraphics.pose();
                         poseStack.pushPose();
