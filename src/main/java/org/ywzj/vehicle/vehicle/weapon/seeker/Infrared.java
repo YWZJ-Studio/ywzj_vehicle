@@ -27,17 +27,17 @@ public class Infrared {
     public static Entity checkTarget(WeaponUnit weaponUnit, Entity target) {
         Optional<AbstractVehicleWeapon<?>> weaponOptional = weaponUnit.getCurrentWeapon();
         Vec3 checkStart = weaponUnit.worldPivotPosition();
+        Vec3 checkEnd = target.getBoundingBox().getCenter();
         if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
             weaponUnit = missile.getWeaponUnit();
             // 目标是否仍在锁定框内
             checkStart = missile.getWeaponUnit().worldPivotPosition();
-            Vec3 vLock = target.getBoundingBox().getCenter().subtract(checkStart);
+            Vec3 vLock = checkEnd.subtract(checkStart);
             Vec3 vAim = weaponUnit.worldVec();
             if (Math.toDegrees(VectorUtil.angleBetween(vLock, vAim)) > missile.getData().getSeekerFov()) {
                 return null;
             }
         }
-        Vec3 checkEnd = target.position();
         Level level = target.level();
         AbstractVehicle vehicle = weaponUnit.getVehicle();
         BlockHitResult result = level.clip(new ClipContext(checkStart, checkEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, vehicle));

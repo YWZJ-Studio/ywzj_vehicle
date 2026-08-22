@@ -136,7 +136,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private void initMissile(VehicleMissileWeaponData data) {
-        this.caliber = data.getCaliber() < 40 ? 150 : data.getCaliber();
+        this.caliber = data.getCaliber() < 40 ? 200 : data.getCaliber();
         this.seekerFov = data.getSeekerFov();
         this.mass = data.getMass();
         this.thrust = data.getThrust();
@@ -408,8 +408,10 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             double dist = step.length();
             int segments = (int) (dist / 0.5);
             Vec3 dir = step.normalize();
-            if (caliber >= 150) {
-                float size = 0.2f * (float) Math.pow(5, caliber / 2250f);
+            if (caliber > 152) {
+                float scale = caliber / 2250f;
+                float lifeScale = 1 - (float) Math.pow(1 - Mth.clamp(scale, 0, 1), 3);
+                float size = 0.2f * (float) Math.pow(5, scale);
                 for (int i = 0; i <= segments; i++) {
                     double x = this.random.triangle(0, 0.1f * size * size);
                     double y = this.random.triangle(0, 0.1f * size * size);
@@ -418,8 +420,8 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                     level().addParticle(new SmokeCloudOption(false,
                                     0.9f, 0.9f, 0.9f,
                                     0.6f, 0.6f, 0.6f,
-                                    0.8f, 0.3f, 1200,
-                                    size, 3 * size, 0.01f), true,
+                                    0.8f, 0f, (int) (1200 * lifeScale),
+                                    size, 3 * size, 0.005f), true,
                             particlePos.x, particlePos.y, particlePos.z,
                             x, y, z);
                 }
@@ -468,7 +470,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     }
 
     private List<Entity> detectTargets() {
-        return Radar.detectTargets(this, this.position(), activeRadarActivationRange,
+        return Radar.detectTargets(this, this.position(), activeRadarActivationRange, false,
                 entityPos -> Math.toDegrees(VectorUtil.angleBetween(this.getLookAngle(), entityPos.subtract(this.position()))) <= seekerFov);
     }
 

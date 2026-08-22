@@ -4,6 +4,10 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import com.sighs.apricityui.init.Document;
+import com.sighs.apricityui.init.Element;
+import com.sighs.apricityui.render.Drawer;
+import com.sighs.apricityui.screen.ApricityScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,15 +17,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import org.joml.Matrix4f;
-import org.ywzj.vehicle.client.component.ScrollableTextPanel;
-import org.ywzj.vehicle.client.render.util.Color;
+import org.lwjgl.opengl.GL11;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.network.message.ClientVehicleSelectPartWeapon;
-import org.ywzj.vehicle.util.RenderHelper;
+import org.ywzj.vehicle.util.AuiTextHelper;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -29,63 +31,68 @@ import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class VehicleWeaponSelectScreen extends Screen {
+public class VehicleWeaponSelectScreen extends ApricityScreen {
 
-    private static final int ITEM_HEIGHT = 20;
-    private static final int WEAPON_SELECTION_LIST_WIDTH = 170;
-    private static final int WEAPON_LIST_WIDTH = 220;
-    private static final int WEAPON_LIST_VISIBLE_ITEMS = 4;
-    private static final int DESCRIPTION_PADDING = 4;
-    private static final int BOTTOM_PADDING = 18;
+    private static final String TEMPLATE = "screens/vehicle_weapon_select.html";
     private final AbstractVehicle vehicle;
     private final Screen parent;
     private final List<WeaponSelectionEntry> weaponSelections = new ArrayList<>();
-    private int leftPos;
-    private int topPos;
-    private int weaponSelectionScrollOffset;
-    private int weaponScrollOffset;
+    private Document document;
+    private Element selectionList;
+    private Element selectionEmpty;
+    private Element weaponList;
+    private Element weaponEmpty;
+    private Element selectedPartName;
+    private Element selectedWeaponDescription;
+    private Element previewAnchor;
+    private Element closeButton;
     private int selectedWeaponSelectionIndex;
+    private int selectedWeaponIndex = -1;
     private float viewShiftX;
     private float viewShiftY;
     private float viewScale = 1;
     private float viewRotX;
     private float viewRotY;
-    private final ScrollableTextPanel descriptionPanel = new ScrollableTextPanel();
+    private boolean previewDragging;
 
     public VehicleWeaponSelectScreen(AbstractVehicle vehicle, Screen parent) {
-        super(Component.literal("Vehicle Weapon Select"));
+        super(TEMPLATE);
         this.vehicle = vehicle;
         this.parent = parent;
         this.viewRotX = 180 - vehicle.getXRot();
         this.viewRotY = 180 + LocalVehiclePlayer.instance.getPlayer().getYRot();
         refreshWeaponSelections();
         this.selectedWeaponSelectionIndex = weaponSelections.isEmpty() ? -1 : 0;
+        setPauseGame(false);
+        setShowDefaultBackground(false);
     }
 
     @Override
     protected void init() {
-        this.leftPos = (this.width - WEAPON_SELECTION_LIST_WIDTH - WEAPON_LIST_WIDTH - 16) / 2;
-        this.topPos = this.height / 2 - 32;
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.fill(0, 0, this.width, this.height, Color.BG_DARK);
-        drawVehiclePreview(guiGraphics);
-        if (weaponSelections.isEmpty()) {
-            descriptionPanel.clear();
+        super.init();
+        document = getLinkedDocument();
+        if (document == null) {
             return;
-        } else {
-            drawWeaponSelectionList(guiGraphics, mouseX, mouseY);
-            drawWeaponList(guiGraphics, mouseX, mouseY);
         }
+        selectionList = element("weapon-selection-list");
+        selectionEmpty = element("weapon-selection-empty");
+        weaponList = element("weapon-list");
+        weaponEmpty = element("weapon-list-empty");
+        selectedPartName = element("selected-part-name");
+        selectedWeaponDescription = element("selected-weapon-description");
+        previewAnchor = element("weapon-vehicle-preview");
+        closeButton = element("close-button");
+        if (closeButton != null) {
+            closeButton.addEventListener("click", event -> onClose());
+        }
+        buildSelectionList();
+        refreshWeaponPanel();
+    }
+
+    private Element element(String id) {
+        return document.getElementById(id);
     }
 
     private void refreshWeaponSelections() {
@@ -97,215 +104,251 @@ public class VehicleWeaponSelectScreen extends Screen {
         }
     }
 
-    private void drawWeaponSelectionList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(font, Component.translatable("screen.vehicle_weapon_select.weapon_selections"), leftPos, topPos - 12, Color.GRAY);
-        guiGraphics.fill(leftPos, topPos, leftPos + WEAPON_SELECTION_LIST_WIDTH, bottom(), Color.BG_LIST);
-        int visibleItems = visibleItems();
-        int end = Math.min(weaponSelectionScrollOffset + visibleItems, weaponSelections.size());
-        for (int index = weaponSelectionScrollOffset; index < end; index++) {
-            WeaponSelectionEntry entry = weaponSelections.get(index);
-            int itemY = topPos + (index - weaponSelectionScrollOffset) * ITEM_HEIGHT;
-            boolean hovered = mouseX >= leftPos + 2 && mouseX <= leftPos + WEAPON_SELECTION_LIST_WIDTH - 6 && mouseY >= itemY + 1 && mouseY <= itemY + ITEM_HEIGHT - 1;
-            boolean selected = index == selectedWeaponSelectionIndex;
-            int bgColor = selected ? Color.ITEM_SELECTED : (hovered ? Color.ITEM_HOVERED : Color.ITEM_NORMAL);
-            guiGraphics.fill(leftPos + 2, itemY + 1, leftPos + WEAPON_SELECTION_LIST_WIDTH - 6, itemY + ITEM_HEIGHT - 1, bgColor);
-            String progress = (entry.weaponUnit.getCurrentWeaponIndex() + 1) + "/" + entry.weaponUnit.weapons.size();
-            guiGraphics.drawString(font, entry.weaponUnit.getName(), leftPos + 8, itemY + 6, Color.WHITE);
-            guiGraphics.drawString(font, progress, leftPos + WEAPON_SELECTION_LIST_WIDTH - 8 - font.width(progress), itemY + 6, Color.WHITE);
+    private void buildSelectionList() {
+        if (selectionList == null) {
+            return;
         }
-        drawScrollBar(guiGraphics, leftPos + WEAPON_SELECTION_LIST_WIDTH - 4, topPos, bottom(), weaponSelections.size(), weaponSelectionScrollOffset);
+        selectionList.setTextContent("");
+        for (int index = 0; index < weaponSelections.size(); index++) {
+            WeaponSelectionEntry selection = weaponSelections.get(index);
+            Element entry = document.createElement("div");
+            entry.setClassName("weapon-entry");
+            entry.setAttribute("role", "button");
+            entry.setAttribute("tabindex", "0");
+            Element name = document.createElement("span");
+            name.setClassName("weapon-entry-name");
+            name.setTextContent(selection.weaponUnit.getName().getString());
+            Element count = document.createElement("span");
+            count.setClassName("weapon-entry-count");
+            count.setTextContent((selection.weaponUnit.getCurrentWeaponIndex() + 1) + "/" + selection.weaponUnit.weapons.size());
+            entry.appendChild(name);
+            entry.appendChild(count);
+            int selectionIndex = index;
+            entry.addEventListener("click", event -> selectWeaponSelection(selectionIndex, true));
+            selectionList.appendChild(entry);
+        }
+        setHidden(selectionEmpty, !weaponSelections.isEmpty());
     }
 
-    private void drawVehiclePreview(GuiGraphics guiGraphics) {
-        double length = vehicle.getStructureLength();
-        float scale = (float) (1 / Math.max(length, 3) * 196) * this.viewScale;
-        PoseStack poseStack = guiGraphics.pose();
+    private void selectWeaponSelection(int index, boolean playSound) {
+        if (index < 0 || index >= weaponSelections.size()) {
+            return;
+        }
+        selectedWeaponSelectionIndex = index;
+        selectedWeaponIndex = weaponSelections.get(index).weaponUnit.getCurrentWeaponIndex();
+        refreshWeaponPanel();
+        if (playSound) {
+            playClickSound();
+        }
+    }
+
+    private void refreshWeaponPanel() {
+        refreshSelectionClasses();
+        if (selectedWeaponSelection() == null) {
+            setText(selectedPartName, Component.translatable("screen.vehicle_weapon_select.select_part").getString());
+            setDescriptionText(Component.translatable("screen.no_description").getString());
+            if (weaponList != null) {
+                weaponList.setTextContent("");
+            }
+            setHidden(weaponEmpty, false);
+            return;
+        }
+        WeaponSelectionEntry selection = selectedWeaponSelection();
+        selectedWeaponIndex = selection.weaponUnit.getCurrentWeaponIndex();
+        setText(selectedPartName, selection.weaponUnit.getName().getString());
+        buildWeaponList(selection);
+        updateWeaponDescription(selection);
+    }
+
+    private void refreshSelectionClasses() {
+        if (selectionList == null) {
+            return;
+        }
+        List<Element> entries = selectionList.getChildren();
+        for (int index = 0; index < entries.size(); index++) {
+            entries.get(index).setClassName(index == selectedWeaponSelectionIndex
+                    ? "weapon-entry active" : "weapon-entry");
+            document.markDirty(entries.get(index), Drawer.RELAYOUT | Drawer.REPAINT);
+        }
+    }
+
+    private void buildWeaponList(WeaponSelectionEntry selection) {
+        if (weaponList == null) {
+            return;
+        }
+        weaponList.setTextContent("");
+        for (int index = 0; index < selection.weaponUnit.weapons.size(); index++) {
+            AbstractVehicleWeapon<?> weapon = selection.weaponUnit.proxyWeapon(selection.weaponUnit.weapons.get(index));
+            Element entry = document.createElement("div");
+            entry.setClassName(index == selectedWeaponIndex
+                    ? "weapon-entry active" : "weapon-entry");
+            entry.setAttribute("role", "button");
+            entry.setTextContent(weapon.getDisplayName().getString());
+            int weaponIndex = index;
+            entry.addEventListener("click", event -> onWeaponSelected(selection, weaponIndex));
+            weaponList.appendChild(entry);
+        }
+        setHidden(weaponEmpty, !selection.weaponUnit.weapons.isEmpty());
+    }
+
+    private void onWeaponSelected(WeaponSelectionEntry selection, int weaponIndex) {
+        selectedWeaponIndex = weaponIndex;
+        buildWeaponList(selection);
+        updateWeaponDescription(selection);
+        PacketDistributor.sendToServer(new ClientVehicleSelectPartWeapon(vehicle.getId(), selection.partUnitIndex, weaponIndex));
+        playClickSound();
+    }
+
+    private void updateWeaponDescription(WeaponSelectionEntry selection) {
+        int currentIndex = selectedWeaponIndex >= 0 && selectedWeaponIndex < selection.weaponUnit.weapons.size()
+                ? selectedWeaponIndex : selection.weaponUnit.getCurrentWeaponIndex();
+        if (currentIndex < 0 || currentIndex >= selection.weaponUnit.weapons.size()) {
+            setDescriptionText(Component.translatable("screen.no_description").getString());
+            return;
+        }
+        AbstractVehicleWeapon<?> weapon = selection.weaponUnit.proxyWeapon(selection.weaponUnit.weapons.get(currentIndex));
+        Optional<String> description = ClientAssetsManager.INSTANCE.getWeaponDisplay(weapon.getData().getWeaponId())
+                .map(BaseDisplay::getDescription)
+                .filter(text -> text != null && !text.isBlank());
+        setDescriptionText(Component.translatable(description.orElse("screen.no_description")).getString());
+    }
+
+    private WeaponSelectionEntry selectedWeaponSelection() {
+        return selectedWeaponSelectionIndex >= 0 && selectedWeaponSelectionIndex < weaponSelections.size()
+                ? weaponSelections.get(selectedWeaponSelectionIndex) : null;
+    }
+
+    private void setText(Element element, String text) {
+        if (element != null) {
+            element.setTextContent(text);
+        }
+    }
+
+    private void setDescriptionText(String text) {
+        AuiTextHelper.setDescription(selectedWeaponDescription, text);
+    }
+
+    private void setHidden(Element element, boolean hidden) {
+        if (element != null) {
+            element.setClassName(hidden ? "empty-state hidden" : "empty-state");
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        renderVehiclePreview(graphics);
+    }
+
+    private void renderVehiclePreview(GuiGraphics graphics) {
+        Bounds bounds = getPreviewBounds();
+        if (bounds == null) {
+            return;
+        }
+        double scale = Math.min(bounds.width(), bounds.height()) * 1.5 / Math.max(vehicle.getStructureLength(), 3) * viewScale;
+        graphics.enableScissor((int) bounds.left, (int) bounds.top, (int) Math.ceil(bounds.right), (int) Math.ceil(bounds.bottom));
+        boolean scissorEnabled = true;
+        PoseStack poseStack = graphics.pose();
         poseStack.pushPose();
-        {
-            poseStack.translate((double) width / 2 + viewShiftX, Math.max(50, topPos / 2.0 + 20) + viewShiftY, 512);
-            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
+        try {
+            poseStack.translate((float) bounds.centerX() + viewShiftX, (float) bounds.centerY() + viewShiftY, 512);
+            poseStack.scale((float) scale, (float) scale, (float) -scale);
             poseStack.mulPose(Axis.XP.rotationDegrees(viewRotX));
             poseStack.mulPose(Axis.YP.rotationDegrees(viewRotY));
+            Vec3 centerOffset = vehicle.getBoundingBox().getCenter().subtract(vehicle.position());
+            poseStack.translate((float) -centerOffset.x, (float) -centerOffset.y, (float) -centerOffset.z);
             EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
             dispatcher.setRenderShadow(false);
             Lighting.setupForEntityInInventory();
-            RenderSystem.runAsFancy(() -> {
-                dispatcher.render(
-                        vehicle,
-                        0, 0, 0,
-                        0,
-                        1.0F,
-                        poseStack,
-                        guiGraphics.bufferSource(),
-                        15728880
-                );
-                WeaponSelectionEntry weaponSelection = selectedWeaponSelection();
-                if (weaponSelection != null) {
-                    Vec3 arrowPosition = weaponSelection.weaponUnit.aimContext().from.subtract(vehicle.position());
-                    poseStack.pushPose();
-                    poseStack.translate(arrowPosition.x, arrowPosition.y, arrowPosition.z);
-                    RenderHelper.renderArrow3D(poseStack, guiGraphics.bufferSource(), 0.15f, 0.3f, 0, 255, 0, 255);
-                    poseStack.popPose();
-                }
-            });
+            RenderSystem.runAsFancy(() ->
+                    dispatcher.render(vehicle, 0, 0, 0, 0, 1.0F, poseStack, graphics.bufferSource(), 15728880));
+            graphics.flush();
+            graphics.disableScissor();
+            scissorEnabled = false;
+            RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, false);
+            renderSelectedWeaponArrow(poseStack, graphics);
+            graphics.flush();
+        } finally {
+            dispatcherResetShadow();
+            Lighting.setupFor3DItems();
+            poseStack.popPose();
+            if (scissorEnabled) {
+                graphics.disableScissor();
+            }
         }
+    }
+
+    private void renderSelectedWeaponArrow(PoseStack poseStack, GuiGraphics graphics) {
+        WeaponSelectionEntry selection = selectedWeaponSelection();
+        if (selection == null) {
+            return;
+        }
+        Vec3 arrowPosition = selection.weaponUnit.aimContext().from.subtract(vehicle.position());
+        poseStack.pushPose();
+        poseStack.translate(arrowPosition.x, arrowPosition.y, arrowPosition.z);
+        org.ywzj.vehicle.util.RenderHelper.renderArrow3D(
+                poseStack, graphics.bufferSource(), 0.15f, 0.3f, 0, 255, 0, 255);
         poseStack.popPose();
     }
 
-    private void drawWeaponList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        WeaponSelectionEntry weaponSelection = selectedWeaponSelection();
-        if (weaponSelection == null) {
-            return;
+    private void dispatcherResetShadow() {
+        Minecraft.getInstance().getEntityRenderDispatcher().setRenderShadow(true);
+    }
+
+    private Bounds getPreviewBounds() {
+        if (previewAnchor == null || document == null) {
+            return null;
         }
-        int x = leftPos + WEAPON_SELECTION_LIST_WIDTH + 16;
-        int weaponListBottom = weaponListBottom();
-        int descriptionTop = weaponListBottom + 4;
-        guiGraphics.drawString(font, weaponSelection.weaponUnit.getName(), x, topPos - 12, Color.GRAY);
-        guiGraphics.fill(x, topPos, x + WEAPON_LIST_WIDTH, bottom(), Color.BG_LIST);
-        guiGraphics.fill(x, descriptionTop, x + WEAPON_LIST_WIDTH, bottom(), Color.BG_PREVIEW);
-        int visibleItems = weaponListVisibleItems();
-        int end = Math.min(weaponScrollOffset + visibleItems, weaponSelection.weaponUnit.weapons.size());
-        for (int index = weaponScrollOffset; index < end; index++) {
-            int itemY = topPos + (index - weaponScrollOffset) * ITEM_HEIGHT;
-            boolean hovered = mouseX >= x + 2 && mouseX <= x + WEAPON_LIST_WIDTH - 6 && mouseY >= itemY + 1 && mouseY <= itemY + ITEM_HEIGHT - 1;
-            boolean selected = index == weaponSelection.weaponUnit.getCurrentWeaponIndex();
-            int bgColor = selected ? Color.ITEM_SELECTED : (hovered ? Color.ITEM_HOVERED : Color.ITEM_NORMAL);
-            AbstractVehicleWeapon<?> weapon = weaponSelection.weaponUnit.proxyWeapon(weaponSelection.weaponUnit.weapons.get(index));
-            guiGraphics.fill(x + 2, itemY + 1, x + WEAPON_LIST_WIDTH - 6, itemY + ITEM_HEIGHT - 1, bgColor);
-            guiGraphics.drawString(font, weapon.getDisplayName(), x + 8, itemY + 6, Color.WHITE);
+        Element.DOMRect rect = previewAnchor.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+            return null;
         }
-        drawScrollBar(guiGraphics, x + WEAPON_LIST_WIDTH - 4, topPos, weaponListBottom + 4, weaponSelection.weaponUnit.weapons.size(), weaponScrollOffset);
-        drawSelectedWeaponDescription(guiGraphics, weaponSelection, x, descriptionTop);
+        double scale = document.getViewport().renderScale();
+        return new Bounds(rect.x * scale, rect.y * scale, (rect.x + rect.width) * scale, (rect.y + rect.height) * scale);
     }
 
-    private int visibleItems() {
-        return Math.max(1, (bottom() - topPos) / ITEM_HEIGHT);
-    }
-
-    private int weaponListVisibleItems() {
-        return Math.max(1, Math.min(WEAPON_LIST_VISIBLE_ITEMS, (bottom() - topPos) / ITEM_HEIGHT));
-    }
-
-    private int weaponListBottom() {
-        return topPos + weaponListVisibleItems() * ITEM_HEIGHT;
-    }
-
-    private void drawSelectedWeaponDescription(GuiGraphics guiGraphics, WeaponSelectionEntry weaponSelection, int x, int y) {
-        int currentIndex = weaponSelection.weaponUnit.getCurrentWeaponIndex();
-        if (currentIndex < 0 || currentIndex >= weaponSelection.weaponUnit.weapons.size()) {
-            descriptionPanel.clear();
-            return;
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        Bounds bounds = getPreviewBounds();
+        if (bounds != null && bounds.contains(mouseX, mouseY)) {
+            viewScale = Mth.clamp(viewScale * (float) Math.pow(1.1, deltaY), 0.1f, 10.0f);
+            return true;
         }
-        AbstractVehicleWeapon<?> weapon = weaponSelection.weaponUnit.proxyWeapon(weaponSelection.weaponUnit.weapons.get(currentIndex));
-        Component description = ClientAssetsManager.INSTANCE.getWeaponDisplay(weapon.getData().getWeaponId())
-                .map(BaseDisplay::getDescription)
-                .filter(text -> !text.isBlank())
-                .map(Component::translatable)
-                .orElse(Component.translatable("screen.no_description"));
-        int textX = x + DESCRIPTION_PADDING;
-        int textY = y + DESCRIPTION_PADDING;
-        descriptionPanel.setBounds(
-                textX,
-                textY,
-                x + WEAPON_LIST_WIDTH - DESCRIPTION_PADDING,
-                bottom() - DESCRIPTION_PADDING
-        );
-        descriptionPanel.setContent(weapon.getData().getWeaponId(), description);
-        descriptionPanel.render(guiGraphics, font, Color.WHITE);
-    }
-
-    private void drawScrollBar(GuiGraphics guiGraphics, int x, int y, int bottom, int size, int scrollOffset) {
-        int barWidth = 6;
-        int barHeight = bottom - y;
-        int visibleItems = Math.max(1, barHeight / ITEM_HEIGHT);
-        guiGraphics.fill(x, y, x + barWidth, y + barHeight, Color.SCROLLBAR_TRACK);
-        if (size <= visibleItems) {
-            return;
-        }
-        int knobHeight = Math.max(12, barHeight * visibleItems / size);
-        int movable = barHeight - knobHeight;
-        int maxScroll = size - visibleItems;
-        int knobY = y + (int) (movable * (scrollOffset / (float) maxScroll));
-        guiGraphics.fill(x, knobY, x + barWidth, knobY + knobHeight, Color.SCROLLBAR_KNOB);
-    }
-
-    private int bottom() {
-        return this.height - BOTTOM_PADDING;
+        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (super.mouseClicked(mouseX, mouseY, button)) {
+        Bounds bounds = getPreviewBounds();
+        if ((button == 0 || button == 1) && bounds != null && bounds.contains(mouseX, mouseY)) {
+            previewDragging = true;
             return true;
-        }
-        if (button == 0 && !weaponSelections.isEmpty()) {
-            if (mouseX >= leftPos && mouseX <= leftPos + WEAPON_SELECTION_LIST_WIDTH - 5 && mouseY >= topPos && mouseY <= bottom()) {
-                int clickedIndex = weaponSelectionScrollOffset + ((int) (mouseY - topPos) / ITEM_HEIGHT);
-                if (clickedIndex >= 0 && clickedIndex < weaponSelections.size()) {
-                    selectedWeaponSelectionIndex = clickedIndex;
-                    weaponScrollOffset = 0;
-                    playClickSound();
-                    return true;
-                }
-            }
-            WeaponSelectionEntry weaponSelection = selectedWeaponSelection();
-            int weaponListX = leftPos + WEAPON_SELECTION_LIST_WIDTH + 16;
-            if (weaponSelection != null && mouseX >= weaponListX && mouseX <= weaponListX + WEAPON_LIST_WIDTH - 5 && mouseY >= topPos && mouseY <= weaponListBottom()) {
-                int clickedIndex = weaponScrollOffset + ((int) (mouseY - topPos) / ITEM_HEIGHT);
-                if (clickedIndex >= 0 && clickedIndex < weaponSelection.weaponUnit.weapons.size()) {
-                    PacketDistributor.sendToServer(new ClientVehicleSelectPartWeapon(vehicle.getId(), weaponSelection.partUnitIndex, clickedIndex));
-                    playClickSound();
-                    return true;
-                }
-            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (descriptionPanel.mouseScrolled(mouseX, mouseY, deltaY, font)) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (previewDragging && button == 0) {
+            viewRotY += (float) dragX;
+            viewRotX += (float) dragY;
             return true;
         }
-        if (mouseY >= topPos && mouseY <= bottom()) {
-            if (mouseX >= leftPos && mouseX <= leftPos + WEAPON_SELECTION_LIST_WIDTH) {
-                if (weaponSelections.size() > visibleItems()) {
-                    weaponSelectionScrollOffset = (int) Mth.clamp(weaponSelectionScrollOffset - Math.signum(deltaY), 0, weaponSelections.size() - visibleItems());
-                    return true;
-                }
-            }
-            WeaponSelectionEntry weaponSelection = selectedWeaponSelection();
-            int weaponListX = leftPos + WEAPON_SELECTION_LIST_WIDTH + 16;
-            int weaponListVisibleItems = weaponListVisibleItems();
-            if (weaponSelection != null && mouseX >= weaponListX && mouseX <= weaponListX + WEAPON_LIST_WIDTH && mouseY <= weaponListBottom() && weaponSelection.weaponUnit.weapons.size() > weaponListVisibleItems) {
-                weaponScrollOffset = (int) Mth.clamp(weaponScrollOffset - Math.signum(deltaY), 0, weaponSelection.weaponUnit.weapons.size() - weaponListVisibleItems);
-                return true;
-            }
+        if (previewDragging && button == 1) {
+            viewShiftX += (float) dragX;
+            viewShiftY += (float) dragY;
+            return true;
         }
-        if (deltaY > 0) {
-            this.viewScale *= 1.1f;
-        } else if (deltaY < 0) {
-            this.viewScale *= 0.9f;
-        }
-        this.viewScale = Math.max(0.1f, Math.min(this.viewScale, 10.0f));
-        return true;
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        boolean handled = super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-        if (!handled) {
-            if (button == 0) {
-                this.viewRotY += (float) dragX;
-                this.viewRotX += (float) dragY;
-                return true;
-            } else if (button == 1) {
-                this.viewShiftX += (float) dragX;
-                this.viewShiftY += (float) dragY;
-                return true;
-            }
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (previewDragging && (button == 0 || button == 1)) {
+            previewDragging = false;
+            return true;
         }
-        return handled;
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
@@ -314,26 +357,23 @@ public class VehicleWeaponSelectScreen extends Screen {
     }
 
     @Override
-    public boolean shouldCloseOnEsc() {
-        return true;
-    }
+    public boolean shouldCloseOnEsc() { return true; }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    private WeaponSelectionEntry selectedWeaponSelection() {
-        if (selectedWeaponSelectionIndex >= 0 && selectedWeaponSelectionIndex < weaponSelections.size()) {
-            return weaponSelections.get(selectedWeaponSelectionIndex);
-        }
-        return null;
-    }
+    public boolean isPauseScreen() { return false; }
 
     private void playClickSound() {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
     private record WeaponSelectionEntry(int partUnitIndex, WeaponUnit weaponUnit) {}
+
+    private record Bounds(double left, double top, double right, double bottom) {
+        private boolean contains(double x, double y) { return x >= left && x <= right && y >= top && y <= bottom; }
+        private double width() { return right - left; }
+        private double height() { return bottom - top; }
+        private double centerX() { return (left + right) / 2; }
+        private double centerY() { return (top + bottom) / 2; }
+    }
 
 }

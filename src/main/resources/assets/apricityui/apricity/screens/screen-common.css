@@ -1,0 +1,215 @@
+/* Shared readability and glass treatment for the vehicle AUI screens. */
+.ore-theme {
+    --ore-canvas: transparent;
+    --ore-surface: rgba(72, 73, 74, 0.80);
+    --ore-surface-deep: rgba(49, 50, 51, 0.82);
+    --ore-surface-soft: rgba(208, 209, 212, 0.88);
+    --ore-font-sm: 15px;
+    --ore-font-md: 19px;
+    --ore-font-lg: 24px;
+    --ore-font-xl: 34px;
+}
+
+body.ore-theme {
+    background: var(--ore-canvas);
+}
+
+.ore-theme .navbar {
+    min-height: 42px;
+    background: rgba(230, 232, 235, 0.84);
+}
+
+body.ore-theme.decoration-screen .navbar-brand,
+body.ore-theme.decoration-settings-screen .navbar-brand,
+body.ore-theme.figure-screen .navbar-brand,
+body.ore-theme.modding-screen .navbar-brand,
+body.ore-theme.weapon-screen .navbar-brand {
+    font-size: 22px;
+}
+
+body.ore-theme.machine-screen .navbar-brand {
+    font-size: 19px;
+}
+
+.ore-theme .card,
+.ore-theme .panel {
+    background: var(--ore-surface);
+}
+
+.ore-theme .card-header,
+.ore-theme .panel-header {
+    min-height: 32px;
+    background: var(--ore-surface-deep);
+    font-size: 13px;
+}
+
+.ore-theme .card-footer,
+.ore-theme .panel-footer {
+    background: rgba(58, 59, 61, 0.78);
+}
+
+.ore-theme .form-input,
+.ore-theme .form-select,
+.ore-theme .form-textarea {
+    background: var(--ore-surface-deep);
+}
+
+.ore-theme .list-group-item {
+    background: var(--ore-surface);
+}
+
+.ore-theme .list-group-item:hover {
+    background: rgba(86, 88, 91, 0.88);
+}
+
+.ore-theme .progress {
+    background: rgba(37, 38, 40, 0.72);
+}
+
+.ore-theme .badge {
+    font-size: 14px;
+}
+
+.ore-theme .empty-state {
+    font-size: 12px;
+}
+
+.ore-theme .preview-panel {
+    background: rgba(37, 38, 40, 0.58);
+}
+
+.ore-theme .preview-panel .card-body {
+    background: transparent;
+}
+
+.ore-theme .preview-viewport {
+    background: rgba(48, 49, 51, 0.35);
+}
+
+.ore-theme .preview-axis-x,
+.ore-theme .preview-axis-y {
+    background: rgba(62, 64, 67, 0.72);
+}
+
+.ore-theme .close-button,
+.ore-theme #close-button {
+    width: 34px;
+    height: 32px;
+    min-height: 32px;
+    padding: 3px 7px 6px;
+    font-size: 17px;
+    flex-basis: 34px;
+}
+
+.ore-theme .form-input {
+    font-size: 12px;
+}
+
+.ore-theme .vehicle-entry-name,
+.ore-theme .display-entry,
+.ore-theme .weapon-entry {
+    font-size: 19px;
+}
+
+.ore-theme .vehicle-entry-code,
+.ore-theme .weapon-entry-count,
+.ore-theme .progress-copy,
+.ore-theme .smoke-title {
+    font-size: 14px;
+}
+
+.ore-theme #selected-vehicle-name,
+.ore-theme #selected-decoration-name,
+.ore-theme #selected-display-name {
+    font-size: 22px;
+}
+
+.ore-theme .profile-description,
+.ore-theme #vehicle-description,
+.ore-theme .description-panel .card-body {
+    font-family: "Noto Sans SC", "Segoe UI", OreRegular, sans-serif;
+    font-weight: bold;
+}
+
+.ore-theme .profile-description,
+.ore-theme #vehicle-description,
+.ore-theme .description-panel .card-body,
+.ore-theme .setting-label,
+.ore-theme .smoke-row,
+.ore-theme .check-row {
+    font-size: 17px;
+}
+
+.ore-theme .section-label,
+.ore-theme .product-note {
+    font-size: 14px;
+}
+
+.ore-theme .material-name {
+    font-size: 18px;
+}
+
+.ore-theme .material-options,
+.ore-theme .machine-title-code {
+    font-size: 11px;
+}
+
+.ore-theme .material-count {
+    font-size: 17px;
+}
+
+.ore-theme .craft-button,
+.ore-theme .button-row .button,
+.ore-theme .profile-actions .button {
+    min-height: 38px;
+    font-size: 14px;
+}
+
+.ore-theme .setting-input {
+    font-size: 17px;
+}
+
+.ore-theme .range-value-input {
+    font-size: 17px;
+}
+
+.ore-theme .smoke-value-input {
+    font-size: 14px;
+}
+
+.ore-theme .decoration-grid {
+    background: rgba(45, 46, 48, 0.68);
+}
+
+.ore-theme .decoration-entry,
+.ore-theme .material-row {
+    background: rgba(59, 60, 62, 0.80);
+}
+
+.ore-theme .display-entry,
+.ore-theme .weapon-entry {
+    background: rgba(54, 55, 57, 0.80);
+}
+
+.ore-theme .decoration-entry:hover,
+.ore-theme .decoration-entry:focus {
+    background: rgba(75, 76, 79, 0.88);
+}
+
+.ore-theme .display-entry:hover,
+.ore-theme .display-entry:focus,
+.ore-theme .weapon-entry:hover,
+.ore-theme .weapon-entry:focus {
+    background: rgba(74, 75, 78, 0.88);
+}
+
+.ore-theme .decoration-entry.active,
+.ore-theme .display-entry.active,
+.ore-theme .weapon-entry.active {
+    background: rgba(81, 74, 53, 0.86);
+}
+
+.ore-theme .profile-description,
+.ore-theme .smoke-controls {
+    background: rgba(52, 53, 55, 0.76);
+}

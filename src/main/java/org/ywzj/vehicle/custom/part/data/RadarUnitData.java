@@ -5,6 +5,7 @@ public class RadarUnitData extends RotatableUnitData {
     protected String radarType;
     protected float scanSectorAngle;
     protected float maxScanDistance;
+    protected boolean antiGround;
     protected boolean uiHide;
 
     public RadarUnitData(String id) {
@@ -16,6 +17,7 @@ public class RadarUnitData extends RotatableUnitData {
         this.radarType = pojo.radarType;
         this.scanSectorAngle = pojo.scanSectorAngle;
         this.maxScanDistance = pojo.maxScanDistance;
+        this.antiGround = pojo.antiGround;
         this.uiHide = pojo.uiHide;
     }
 
@@ -29,6 +31,10 @@ public class RadarUnitData extends RotatableUnitData {
 
     public float getMaxScanDistance() {
         return maxScanDistance;
+    }
+
+    public boolean isAntiGround() {
+        return antiGround;
     }
 
     public boolean isUiHide() {

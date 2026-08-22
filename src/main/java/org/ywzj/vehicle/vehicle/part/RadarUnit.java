@@ -147,7 +147,7 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
         if (LocalVehiclePlayer.instance.getPlayer() != parentPartUnit.getOwner()) {
             return;
         }
-        List<Entity> entities = Radar.detectTargets(vehicle, worldRadarPosition(), maxScanDistance, entityPos -> {
+        List<Entity> entities = Radar.detectTargets(vehicle, worldRadarPosition(), maxScanDistance, isAntiGround(), entityPos -> {
             Vec2 aimRot = aimRot(entityPos);
             return !(aimRot.y < yRotMin) && !(aimRot.y > yRotMax)
                     && !(Math.abs(aimRot.y - yRot) > yRotSpeed / 2)
@@ -255,6 +255,10 @@ public class RadarUnit extends RotatableUnit<RadarUnitData> {
             clientRadarAction.toEntityId = lockedEntity == null ? -1 : lockedEntity.getId();
             PacketDistributor.sendToServer(clientRadarAction);
         }
+    }
+
+    public boolean isAntiGround() {
+        return data.isAntiGround();
     }
 
     public boolean isUiHide() {

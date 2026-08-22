@@ -4,13 +4,15 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import com.sighs.apricityui.init.Document;
+import com.sighs.apricityui.init.Element;
+import com.sighs.apricityui.render.Drawer;
+import com.sighs.apricityui.screen.ApricityScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -18,385 +20,664 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import org.joml.Matrix4f;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
-import org.ywzj.vehicle.client.component.ScrollableTextPanel;
-import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.network.message.ClientMachineMaxAction;
 import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
 import org.ywzj.vehicle.recipe.VehiclePrintingRecipe;
+import org.ywzj.vehicle.util.AuiTextHelper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-public class MachineMaxScreen extends Screen {
+public class MachineMaxScreen extends ApricityScreen {
 
-    private static final int ITEM_HEIGHT = 18;
-    private static final int ITEM_WIDTH = 130;
-    private static final int VISIBLE_ITEMS = 10;
-    private int imageWidth;
-    private int imageHeight;
-    private int leftPos;
-    private int topPos;
-    private int scrollOffset = 0;
-    private static int selectedIndex = -1;
-    private static String filter = "";
-    public int tickCount;
-    private ItemStack hoveredStack = ItemStack.EMPTY;
-    private Button printingButton;
-    private final List<Map.Entry<ResourceLocation, BaseVehicleData>> vehicleList =
-            new ArrayList<>(CommonAssetsManager.vehicleDataManager().getVehicleData().entrySet().stream()
-                    .filter(vehicleData -> !vehicleData.getValue().isExperimental())
-                    .toList());
-    private List<Map.Entry<ResourceLocation, BaseVehicleData>> filteredVehicleList = new ArrayList<>();
-    private final MachineMaxBlockEntity machineMaxBlockEntity;
-    private AbstractVehicle vehicle;
-    private final ScrollableTextPanel descriptionPanel = new ScrollableTextPanel();
+    private static final String TEMPLATE = "screens/machine_max.html";
+    private final MachineMaxBlockEntity machine;
+    private final List<BaseVehicleData<?>> allVehicles;
+    private final List<BaseVehicleData<?>> visibleVehicles = new ArrayList<>();
+    private final List<Element> vehicleEntries = new ArrayList<>();
+    private final List<MaterialRequirementView> materialRequirementViews = new ArrayList<>();
+    private Document document;
+    private Element searchInput;
+    private Element vehicleCount;
+    private Element vehicleList;
+    private Element vehicleListEmpty;
+    private Element selectedVehicleName;
+    private Element selectedVehicleId;
+    private Element previewAnchor;
+    private Element description;
+    private Element requirements;
+    private Element requirementsEmpty;
+    private Element progressBar;
+    private Element progressLabel;
+    private Element progressValue;
+    private Element productNote;
+    private Element craftButton;
+    private Element closeButton;
 
-    public MachineMaxScreen(MachineMaxBlockEntity machineMaxBlockEntity) {
-        super(Component.literal("Machine Max"));
-        this.machineMaxBlockEntity = machineMaxBlockEntity;
+    private String filter = "";
+    private String appliedQuery;
+    private int selectedIndex = -1;
+    private BaseVehicleData<?> selectedVehicleData;
+    private AbstractVehicle previewVehicle;
+    private boolean selectedVehicleHasRecipe;
+    private double previewZoom = 1.0;
+    private double previewPanX;
+    private double previewPanY;
+    private float previewRotationX = 165.0F;
+    private float previewRotationY;
+    private boolean previewDragging;
+    private int previewDragButton = -1;
+    private int lastProgress = -1;
+    private MachineState lastMachineState;
+    private boolean vehicleDetailsDirty;
+
+    public MachineMaxScreen(MachineMaxBlockEntity machine) {
+        super(TEMPLATE);
+        this.machine = machine;
+        this.allVehicles = new ArrayList<>();
+        CommonAssetsManager.vehicleDataManager().getVehicleData().values().forEach(vehicle -> {
+            BaseVehicleData<?> vehicleData = (BaseVehicleData<?>) vehicle;
+            if (!vehicleData.isExperimental()) {
+                allVehicles.add(vehicleData);
+            }
+        });
+        allVehicles.sort((left, right) -> left.getName().getString().compareToIgnoreCase(right.getName().getString()));
+        setPauseGame(false);
+        setShowDefaultBackground(false);
     }
 
     @Override
     protected void init() {
-        this.imageWidth = width - 10;
-        this.imageHeight = height - 10;
-        this.leftPos = (this.width - imageWidth) / 2;
-        this.topPos = (this.height - imageHeight) / 2;
-        int x = leftPos + 12;
-        int y = topPos + 11;
-        EditBox searchBox = new EditBox(this.font, x, y, ITEM_WIDTH - 2, ITEM_HEIGHT - 3, Component.literal("Search"));
-        searchBox.setResponder(this::updateFilteredList);
-        searchBox.setBordered(true);
-        searchBox.active = true;
-        searchBox.setTextColor(Color.WHITE);
-        this.addRenderableWidget(searchBox);
-        this.printingButton = Button.builder(Component.translatable("button.machine_max.printing"), button -> onCraft())
-                .pos(width - 60, topPos + 145)
-                .size(50, 20)
-                .build();
-        this.addRenderableWidget(printingButton);
-        searchBox.setValue(filter);
-        updateFilteredList(filter);
-        if (selectedIndex >= 0 && selectedIndex < filteredVehicleList.size()) {
-            onVehicleSelected(filteredVehicleList.get(selectedIndex).getValue());
+        appliedQuery = null;
+        vehicleDetailsDirty = true;
+        super.init();
+        document = getLinkedDocument();
+        if (document == null) {
+            return;
+        }
+
+        searchInput = element("vehicle-search");
+        vehicleCount = element("vehicle-count");
+        vehicleList = element("vehicle-list");
+        vehicleListEmpty = element("vehicle-list-empty");
+        selectedVehicleName = element("selected-vehicle-name");
+        selectedVehicleId = element("selected-vehicle-id");
+        previewAnchor = element("vehicle-preview");
+        description = element("vehicle-description");
+        requirements = element("vehicle-requirements");
+        requirementsEmpty = element("requirements-empty");
+        progressBar = element("vehicle-progress");
+        progressLabel = element("progress-label");
+        progressValue = element("progress-value");
+        productNote = element("product-note");
+        craftButton = element("craft-button");
+        closeButton = element("close-button");
+
+        buildVehicleCatalog();
+        if (searchInput != null) {
+            searchInput.setValue(filter);
+            searchInput.addEventListener("input", event -> applyFilter(searchInput.getValue()));
+            searchInput.addEventListener("change", event -> applyFilter(searchInput.getValue()));
+        }
+        if (craftButton != null) {
+            craftButton.addEventListener("click", event -> onCraft());
+        }
+        if (closeButton != null) {
+            closeButton.addEventListener("click", event -> onClose());
+        }
+
+        applyFilter(filter);
+        updateMachineState(true);
+    }
+
+    @Override
+    public void resize(Minecraft minecraft, int width, int height) {
+        appliedQuery = null;
+        vehicleDetailsDirty = true;
+        super.resize(minecraft, width, height);
+    }
+
+    private Element element(String id) {
+        return document.getElementById(id);
+    }
+
+    private void buildVehicleCatalog() {
+        if (vehicleList == null) {
+            return;
+        }
+
+        vehicleList.setTextContent("");
+        vehicleEntries.clear();
+        for (int index = 0; index < allVehicles.size(); index++) {
+            BaseVehicleData<?> vehicleData = allVehicles.get(index);
+            Element entry = document.createElement("div");
+            entry.setClassName("list-group-item vehicle-entry");
+
+            Element name = document.createElement("div");
+            name.setClassName("vehicle-entry-name");
+            name.setTextContent(vehicleData.getName().getString());
+
+            Element code = document.createElement("div");
+            code.setClassName("vehicle-entry-code");
+            code.setTextContent(vehicleData.getVehicleId().toString());
+
+            entry.appendChild(name);
+            entry.appendChild(code);
+            int catalogIndex = index;
+            entry.addEventListener("click", event -> selectCatalogVehicle(catalogIndex));
+            vehicleList.appendChild(entry);
+            vehicleEntries.add(entry);
+        }
+    }
+
+    private void applyFilter(String text) {
+        filter = text == null ? "" : text;
+        String query = filter.strip().toLowerCase(Locale.ROOT);
+        if (query.equals(appliedQuery)) {
+            return;
+        }
+        appliedQuery = query;
+        visibleVehicles.clear();
+
+        for (int index = 0; index < allVehicles.size(); index++) {
+            BaseVehicleData<?> vehicleData = allVehicles.get(index);
+            boolean visible = matches(vehicleData, query);
+            setVehicleEntryVisible(vehicleEntries.get(index), visible);
+            if (visible) {
+                visibleVehicles.add(vehicleData);
+            }
+        }
+
+        if (vehicleCount != null) {
+            vehicleCount.setTextContent(visibleVehicles.size() + "/" + allVehicles.size());
+        }
+        setHidden(vehicleListEmpty, !visibleVehicles.isEmpty());
+
+        int retainedIndex = selectedVehicleData == null ? -1 : visibleVehicles.indexOf(selectedVehicleData);
+        if (retainedIndex >= 0) {
+            selectedIndex = retainedIndex;
+            refreshEntrySelection();
+            if (vehicleDetailsDirty) {
+                updateVehicleDetails(selectedVehicleData);
+            }
+        } else if (!visibleVehicles.isEmpty()) {
+            selectVehicle(0, false);
+        } else {
+            clearSelection();
+        }
+        vehicleDetailsDirty = false;
+    }
+
+    private boolean matches(BaseVehicleData<?> vehicleData, String query) {
+        if (query.isEmpty()) {
+            return true;
+        }
+        return vehicleData.getName().getString().toLowerCase(Locale.ROOT).contains(query)
+                || vehicleData.getVehicleId().toString().toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    private void selectCatalogVehicle(int catalogIndex) {
+        BaseVehicleData<?> vehicleData = allVehicles.get(catalogIndex);
+        int visibleIndex = visibleVehicles.indexOf(vehicleData);
+        if (visibleIndex >= 0) {
+            selectVehicle(visibleIndex, true);
+        }
+    }
+
+    private void selectVehicle(int visibleIndex, boolean playSound) {
+        if (visibleIndex < 0 || visibleIndex >= visibleVehicles.size()) {
+            clearSelection();
+            return;
+        }
+
+        BaseVehicleData<?> vehicleData = visibleVehicles.get(visibleIndex);
+        boolean changed = selectedVehicleData != vehicleData;
+        selectedIndex = visibleIndex;
+        selectedVehicleData = vehicleData;
+        refreshEntrySelection();
+
+        if (changed) {
+            updateVehicleDetails(vehicleData);
+            if (playSound) {
+                Minecraft.getInstance().getSoundManager()
+                        .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+        }
+        updateMachineState(true);
+    }
+
+    private void refreshEntrySelection() {
+        for (int index = 0; index < allVehicles.size(); index++) {
+            boolean selected = allVehicles.get(index) == selectedVehicleData;
+            String className = selected
+                    ? "list-group-item vehicle-entry active"
+                    : "list-group-item vehicle-entry";
+            setVehicleEntryClass(vehicleEntries.get(index), className);
+        }
+    }
+
+    private void setVehicleEntryVisible(Element entry, boolean visible) {
+        entry.setInlineStyleProperty("display", visible ? "flex" : "none");
+        if (document != null) {
+            document.markDirty(entry, Drawer.RELAYOUT | Drawer.REPAINT);
+        }
+    }
+
+    private void setVehicleEntryClass(Element entry, String className) {
+        entry.setClassName(className);
+        if (document != null) {
+            document.markDirty(entry, Drawer.RELAYOUT | Drawer.REPAINT);
+        }
+    }
+
+    private void updateVehicleDetails(BaseVehicleData<?> vehicleData) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            clearSelection();
+            return;
+        }
+
+        resetPreviewTransform();
+        previewVehicle = vehicleData.construct(minecraft.level, Vec3.ZERO, 0, 0);
+        previewVehicle.initData();
+        previewVehicle.initDisplayData();
+
+        if (selectedVehicleName != null) {
+            selectedVehicleName.setTextContent(vehicleData.getName().getString());
+        }
+        if (selectedVehicleId != null) {
+            selectedVehicleId.setTextContent(vehicleData.getVehicleId().getPath());
+        }
+        if (description != null) {
+            String descriptionKey = ClientAssetsManager.INSTANCE.getVehicleDisplay(previewVehicle.getDisplayId())
+                    .map(BaseDisplay::getDescription)
+                    .filter(value -> value != null && !value.isBlank())
+                    .orElse("screen.no_description");
+            setDescriptionText(Component.translatable(descriptionKey).getString());
+        }
+
+        selectedVehicleHasRecipe = updateRequirements(vehicleData.getVehicleId());
+    }
+
+    private boolean updateRequirements(ResourceLocation vehicleId) {
+        if (requirements == null) {
+            return false;
+        }
+        requirements.setTextContent("");
+        materialRequirementViews.clear();
+
+        Optional<VehiclePrintingRecipe> recipe = findPrintingRecipe(vehicleId);
+        setHidden(requirementsEmpty, recipe.isPresent());
+        if (recipe.isEmpty()) {
+            return false;
+        }
+
+        for (VehiclePrintingIngredient input : recipe.get().getInputs()) {
+            ItemStack[] choices = input.ingredient().getItems();
+            if (choices.length > 0) {
+                requirements.appendChild(createMaterialRow(input, choices));
+            }
+        }
+        updateMaterialCounts();
+        return true;
+    }
+
+    private Optional<VehiclePrintingRecipe> findPrintingRecipe(ResourceLocation vehicleId) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return Optional.empty();
+        }
+        Optional<RecipeHolder<?>> recipe = minecraft.level.getRecipeManager().byKey(vehicleId);
+        return recipe.map(RecipeHolder::value)
+                .filter(VehiclePrintingRecipe.class::isInstance)
+                .map(VehiclePrintingRecipe.class::cast);
+    }
+
+    private Element createMaterialRow(VehiclePrintingIngredient input, ItemStack[] choices) {
+        Element row = document.createElement("div");
+        row.setClassName("material-row");
+
+        Element slot = document.createElement("slot");
+        slot.setClassName("requirement-slot");
+        slot.setAttribute("size", "36");
+
+        Element ingredient = document.createElement("ingredient");
+        ingredient.setAttribute("cycle-interval", "900");
+        ingredient.setTextContent(joinItemIds(choices));
+        slot.appendChild(ingredient);
+
+        Element copy = document.createElement("div");
+        copy.setClassName("material-copy");
+        Element name = document.createElement("div");
+        name.setClassName("material-name");
+        name.setTextContent(choices[0].getHoverName().getString());
+        copy.appendChild(name);
+
+        if (choices.length > 1) {
+            Element options = document.createElement("div");
+            options.setClassName("material-options");
+            options.setTextContent(Component.translatable("screen.machine_max.options", choices.length).getString());
+            copy.appendChild(options);
+        }
+
+        Element count = document.createElement("div");
+        count.setClassName("material-count");
+        int owned = countOwnedMaterial(input);
+        count.setTextContent(owned + "/" + input.count());
+
+        row.appendChild(slot);
+        row.appendChild(copy);
+        row.appendChild(count);
+        materialRequirementViews.add(new MaterialRequirementView(input, count, owned));
+        return row;
+    }
+
+    private void updateMaterialCounts() {
+        if (materialRequirementViews.isEmpty()) {
+            return;
+        }
+
+        for (MaterialRequirementView view : materialRequirementViews) {
+            int owned = countOwnedMaterial(view.input);
+            if (owned != view.shownOwned) {
+                view.count.setTextContent(owned + "/" + view.input.count());
+                if (document != null) {
+                    document.markDirty(view.count, Drawer.RELAYOUT | Drawer.REPAINT);
+                }
+                view.shownOwned = owned;
+            }
+        }
+    }
+
+    private int countOwnedMaterial(VehiclePrintingIngredient input) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return 0;
+        }
+
+        int owned = 0;
+        for (ItemStack stack : minecraft.player.getInventory().items) {
+            if (!stack.isEmpty() && input.ingredient().test(stack)) {
+                owned += stack.getCount();
+            }
+        }
+        return owned;
+    }
+
+    private String joinItemIds(ItemStack[] choices) {
+        Set<ResourceLocation> ids = new LinkedHashSet<>();
+        for (ItemStack choice : choices) {
+            ids.add(BuiltInRegistries.ITEM.getKey(choice.getItem()));
+        }
+        return ids.stream().map(ResourceLocation::toString).reduce((left, right) -> left + "|" + right).orElse("");
+    }
+
+    private void clearSelection() {
+        selectedIndex = -1;
+        selectedVehicleData = null;
+        previewVehicle = null;
+        resetPreviewTransform();
+        selectedVehicleHasRecipe = false;
+        refreshEntrySelection();
+        setText(selectedVehicleName, Component.translatable("screen.machine_max.preview").getString());
+        setText(selectedVehicleId, "--");
+        setDescriptionText(Component.translatable("screen.machine_max.select_vehicle").getString());
+        if (requirements != null) {
+            requirements.setTextContent("");
+        }
+        materialRequirementViews.clear();
+        setHidden(requirementsEmpty, false);
+        updateMachineState(true);
+    }
+
+    private void setText(Element element, String text) {
+        if (element != null) {
+            element.setTextContent(text);
+        }
+    }
+
+    private void setDescriptionText(String text) {
+        AuiTextHelper.setDescription(description, text);
+    }
+
+    private void setHidden(Element element, boolean hidden) {
+        if (element != null) {
+            element.setClassName(hidden ? "empty-state hidden" : "empty-state");
         }
     }
 
     @Override
     public void tick() {
-        if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
-            printingButton.active = false;
+        super.tick();
+        if (searchInput != null) {
+            String currentFilter = searchInput.getValue() == null ? "" : searchInput.getValue();
+            if (!filter.equals(currentFilter)) {
+                applyFilter(currentFilter);
+            }
         }
+        updateMaterialCounts();
+        updateMachineState(false);
+    }
+
+    private void updateMachineState(boolean force) {
+        int progress = Math.max(0, Math.min(100, Math.round(machine.progress * 100)));
+        MachineState state = resolveMachineState();
+        if (!force && progress == lastProgress && state == lastMachineState) {
+            return;
+        }
+        lastProgress = progress;
+        lastMachineState = state;
+
+        if (progressBar != null) {
+            progressBar.setInlineStyleProperty("width", progress + "%");
+        }
+        setText(progressLabel, state == MachineState.PRINTING
+                ? Component.translatable("screen.machine_max.progress.crafting", getCraftingVehicleName()).getString()
+                : Component.translatable("screen.machine_max.progress").getString());
+        setText(progressValue, progress + "%");
+
+        if (productNote != null) {
+            productNote.setTextContent(machine.hasProduct()
+                    ? Component.translatable("tips.machine_max_product").getString()
+                    : "");
+        }
+        if (craftButton != null) {
+            craftButton.setDisabled(state != MachineState.READY);
+        }
+    }
+
+    private String getCraftingVehicleName() {
+        ResourceLocation vehicleId = machine.craftingVehicleId;
+        if (vehicleId == null) {
+            return "--";
+        }
+        return CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId)
+                .map(vehicleData -> vehicleData.getName().getString())
+                .orElse(vehicleId.getPath());
+    }
+
+    private MachineState resolveMachineState() {
+        if (machine.hasProduct()) {
+            return MachineState.PRODUCT_READY;
+        }
+        if (machine.isCrafting()) {
+            return MachineState.PRINTING;
+        }
+        if (selectedVehicleData == null) {
+            return MachineState.NO_SELECTION;
+        }
+        if (!selectedVehicleHasRecipe) {
+            return MachineState.NO_RECIPE;
+        }
+        return MachineState.READY;
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        if (!this.hoveredStack.isEmpty()) {
-            guiGraphics.renderTooltip(this.font, this.hoveredStack, mouseX, mouseY);
-        }
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        drawMainBackground(guiGraphics);
-        drawVehicleList(guiGraphics, mouseX, mouseY);
-        drawPreviewPanel(guiGraphics);
-        drawProgressBar(guiGraphics);
-        drawReceipt(guiGraphics, mouseX, mouseY);
-    }
-
-    private void drawMainBackground(GuiGraphics guiGraphics) {
-        // 整体背景
-        guiGraphics.fill(
-                leftPos,
-                topPos,
-                leftPos + imageWidth,
-                topPos + imageHeight,
-                Color.BG_SCREEN
-        );
-        // 预览框背景
-        guiGraphics.fill(
-                leftPos + ITEM_WIDTH + 25,
-                topPos + 10,
-                leftPos + imageWidth - 10,
-                topPos + 130,
-                Color.BG_PANEL
-        );
-    }
-
-    private void updateFilteredList(String filter) {
-        MachineMaxScreen.filter = filter;
-        this.filteredVehicleList = vehicleList.stream()
-                .filter(entry -> entry.getValue().getName().getString().toLowerCase().contains(filter.toLowerCase()))
-                .toList();
-        this.scrollOffset = 0;
-        if (!this.filteredVehicleList.isEmpty()) {
-            onVehicleSelected(this.filteredVehicleList.get(0).getValue());
-        }
-    }
-
-    private void drawVehicleList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        int x = leftPos + 10;
-        int y = topPos + 10 + ITEM_HEIGHT;
-
-        guiGraphics.fill(x, y, x + ITEM_WIDTH, y + 180, Color.BG_LIST);
-
-        int start = scrollOffset;
-        int end = Math.min(start + VISIBLE_ITEMS, filteredVehicleList.size());
-
-        for (int i = start; i < end; i++) {
-            int itemY = y + (i - start) * ITEM_HEIGHT;
-
-            boolean hovered =
-                    mouseX >= x + 2 && mouseX <= x + 140 &&
-                            mouseY >= itemY + 2 && mouseY <= itemY + ITEM_HEIGHT - 2;
-
-            boolean selected = i == selectedIndex;
-
-            int bgColor;
-            if (selected) {
-                bgColor = Color.ITEM_SELECTED;
-            } else if (hovered) {
-                bgColor = Color.SCROLLBAR_TRACK;
-            } else {
-                bgColor = Color.ITEM_NORMAL;
-            }
-
-            guiGraphics.fill(
-                    x + 2,
-                    itemY + 2,
-                    x + ITEM_WIDTH,
-                    itemY + ITEM_HEIGHT - 2,
-                    bgColor
-            );
-
-            guiGraphics.drawString(
-                    font,
-                    filteredVehicleList.get(i).getValue().getName(),
-                    x + 6,
-                    itemY + 5,
-                    Color.WHITE
-            );
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        PreviewBounds bounds = getPreviewBounds();
+        if (previewVehicle == null || bounds == null || !bounds.contains(mouseX, mouseY)) {
+            return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
         }
 
-        drawScrollBar(guiGraphics, x + 90, y);
-    }
-
-    private void drawScrollBar(GuiGraphics guiGraphics, int x, int y) {
-        int barX = x + 44;
-        int barY = y;
-        int barWidth = 6;
-        int barHeight = VISIBLE_ITEMS * ITEM_HEIGHT;
-
-        guiGraphics.fill(barX, barY, barX + barWidth, barY + barHeight, Color.SCROLLBAR_TRACK);
-
-        if (filteredVehicleList.size() <= VISIBLE_ITEMS) {
-            return;
-        }
-
-        int knobHeight = Math.max(12,
-                barHeight * VISIBLE_ITEMS / filteredVehicleList.size());
-
-        int maxScroll = filteredVehicleList.size() - VISIBLE_ITEMS;
-        int movable = barHeight - knobHeight;
-        int knobY = barY + (int) (movable * (scrollOffset / (float) maxScroll));
-
-        guiGraphics.fill(
-                barX,
-                knobY,
-                barX + barWidth,
-                knobY + knobHeight,
-                Color.SCROLLBAR_KNOB
-        );
-    }
-
-    private void drawPreviewPanel(GuiGraphics guiGraphics) {
-        int x = leftPos + ITEM_WIDTH + 30;
-        int y = topPos + 15;
-
-        guiGraphics.fill(x, y, x + 110, y + 90, Color.BG_PREVIEW);
-
-        if (selectedIndex < 0 || selectedIndex >= filteredVehicleList.size()) {
-            descriptionPanel.clear();
-            return;
-        }
-
-        if (vehicle == null) {
-            descriptionPanel.clear();
-            return;
-        }
-
-        double length = vehicle.getStructureLength();
-        float scale = (float) (1 / Math.max(length, 3) * 100);
-
-        // 模型预览
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.translate(x + 55, y + 60, 512);
-            float rotation = (System.currentTimeMillis() % 10000) / 10000f * 360f;
-            poseStack.mulPose(Axis.XP.rotationDegrees(165));
-            poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
-            poseStack.last().pose().mul(new Matrix4f().scaling(scale, scale, -scale));
-            EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
-            dispatcher.setRenderShadow(false);
-            Lighting.setupForEntityInInventory();
-            RenderSystem.runAsFancy(() ->
-                    dispatcher.render(
-                            vehicle,
-                            0, 0, 0,
-                            vehicle.getYRot(),
-                            1.0F,
-                            poseStack,
-                            guiGraphics.bufferSource(),
-                            15728880
-                    )
-            );
-        }
-        poseStack.popPose();
-        Optional<VehicleDisplay<?, ?>> vehicleDisplayOptional = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId());
-        if (vehicleDisplayOptional.isPresent()) {
-            VehicleDisplay<?, ?> vehicleDisplay = vehicleDisplayOptional.get();
-            Component description = vehicleDisplay.getDescription() == null || vehicleDisplay.getDescription().isBlank()
-                    ? Component.translatable("screen.no_description")
-                    : Component.translatable(vehicleDisplay.getDescription());
-            descriptionPanel.setBounds(x + 116, topPos + 20, leftPos + imageWidth - 10, topPos + 130);
-            descriptionPanel.setContent(vehicle.getDisplayId(), description);
-            descriptionPanel.render(guiGraphics, font, Color.WHITE);
-        } else {
-            descriptionPanel.clear();
-        }
-        if (machineMaxBlockEntity.hasProduct()) {
-            guiGraphics.drawCenteredString(font, Component.translatable("tips.machine_max_product"), x + 55, topPos + 111, Color.WHITE);
-        }
-    }
-
-    private void drawProgressBar(GuiGraphics guiGraphics) {
-        int x = leftPos + ITEM_WIDTH + 30;
-        int y = topPos + 110;
-
-        guiGraphics.fill(x, y, x + 110, y + 10, Color.SCROLLBAR_TRACK);
-        guiGraphics.fill(x, y, x + (int) (110 * machineMaxBlockEntity.progress), y + 10, Color.GREEN);
-    }
-
-    private void drawReceipt(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        int x = leftPos + ITEM_WIDTH + 30;
-        int y = topPos + 140;
-        this.hoveredStack = ItemStack.EMPTY;
-        if (selectedIndex < 0 || selectedIndex >= filteredVehicleList.size()) {
-            return;
-        }
-        ResourceLocation vehicleId = filteredVehicleList.get(selectedIndex).getKey();
-        Optional<RecipeHolder<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleId);
-        if (!recipeOptional.isPresent()) {
-            guiGraphics.drawString(font, Component.translatable("tips.no_recipe"), x, y, Color.WHITE);
-            return;
-        }
-        recipeOptional.ifPresent(recipe -> {
-            if (recipe.value() instanceof VehiclePrintingRecipe vehicleRecipe) {
-                List<VehiclePrintingIngredient> inputs = vehicleRecipe.getInputs();
-                for (int index = 0; index < inputs.size(); index++) {
-                    int column = index / 5;
-                    int row = index % 5;
-                    int currentX = x + (column * 72);
-                    int currentY = y + (row * 16);
-                    VehiclePrintingIngredient input = inputs.get(index);
-                    if (input.ingredient().getItems().length > 0) {
-                        ItemStack stack = input.ingredient().getItems()[0];
-                        int count = input.count();
-                        guiGraphics.renderFakeItem(stack, currentX, currentY);
-                        String text = " * " + count;
-                        guiGraphics.drawString(font, text, currentX + 20, currentY + 4, Color.WHITE);
-                        if (mouseX >= currentX && mouseX <= currentX + 16 &&
-                                mouseY >= currentY && mouseY <= currentY + 16) {
-                            this.hoveredStack = stack;
-                        }
-                    }
-                }
-            }
-        });
+        double oldZoom = previewZoom;
+        previewZoom = Mth.clamp(previewZoom * Math.pow(1.15, deltaY), 0.35, 4.0);
+        double ratio = previewZoom / oldZoom;
+        double baseX = bounds.centerX();
+        double baseY = bounds.modelCenterY();
+        double modelCenterX = baseX + previewPanX;
+        double modelCenterY = baseY + previewPanY;
+        previewPanX = mouseX + (modelCenterX - mouseX) * ratio - baseX;
+        previewPanY = mouseY + (modelCenterY - mouseY) * ratio - baseY;
+        clampPreviewPan(bounds);
+        return true;
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            int x = leftPos + 10;
-            int y = topPos + 10 + ITEM_HEIGHT;
-            if (mouseX >= x && mouseX <= x + 140 && mouseY >= y && mouseY <= y + VISIBLE_ITEMS * ITEM_HEIGHT) {
-                int index = scrollOffset + ((int) mouseY - y) / ITEM_HEIGHT;
-                if (index >= 0 && index < filteredVehicleList.size()) {
-                    selectedIndex = index;
-                    onVehicleSelected(filteredVehicleList.get(index).getValue());
-                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                    return true;
-                }
-            }
+        PreviewBounds bounds = getPreviewBounds();
+        if ((button == 0 || button == 1) && previewVehicle != null && bounds != null && bounds.contains(mouseX, mouseY)) {
+            previewDragButton = button;
+            setPreviewDragging(true);
+            return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (descriptionPanel.mouseScrolled(mouseX, mouseY, deltaY, font)) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (previewDragging && button == previewDragButton && button == 0) {
+            previewRotationY -= (float) dragX;
+            previewRotationX -= (float) dragY;
             return true;
         }
-        int listX = leftPos + 10;
-        int listY = topPos + 10 + ITEM_HEIGHT;
-        if (mouseX >= listX && mouseX < listX + ITEM_WIDTH
-                && mouseY >= listY && mouseY < listY + VISIBLE_ITEMS * ITEM_HEIGHT
-                && filteredVehicleList.size() > VISIBLE_ITEMS) {
-            scrollOffset = (int) Mth.clamp(scrollOffset - Math.signum(deltaY),
-                    0,
-                    filteredVehicleList.size() - VISIBLE_ITEMS);
-            return true;
-        }
-        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
-    }
-
-    private void onVehicleSelected(BaseVehicleData<?> vehicleData) {
-        vehicle = vehicleData.construct(Minecraft.getInstance().level, Vec3.ZERO, 0, 0);
-        vehicle.initData();
-        vehicle.initDisplayData();
-        if (machineMaxBlockEntity.isCrafting() || machineMaxBlockEntity.hasProduct()) {
-            printingButton.active = false;
-        }
-        Optional<RecipeHolder<?>> recipeOptional = Minecraft.getInstance().level.getRecipeManager().byKey(vehicleData.getVehicleId());
-        if (!recipeOptional.isPresent()) {
-            printingButton.visible = false;
-            return;
-        }
-        printingButton.visible = true;
-    }
-
-    private void onCraft() {
-        ClientMachineMaxAction clientMachineMaxAction = new ClientMachineMaxAction();
-        if (selectedIndex >= 0 && selectedIndex < filteredVehicleList.size()) {
-            clientMachineMaxAction.craftingVehicleId = filteredVehicleList.get(selectedIndex).getKey();
-            if (clientMachineMaxAction.craftingVehicleId == null) {
-                return;
+        if (previewDragging && button == previewDragButton && button == 1) {
+            previewPanX += dragX;
+            previewPanY += dragY;
+            PreviewBounds bounds = getPreviewBounds();
+            if (bounds != null) {
+                clampPreviewPan(bounds);
             }
-            clientMachineMaxAction.blockPos = machineMaxBlockEntity.getBlockPos();
-            clientMachineMaxAction.action = ClientMachineMaxAction.Action.CRAFT;
-            PacketDistributor.sendToServer(clientMachineMaxAction);
-            machineMaxBlockEntity.clearPrintingPreview();
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (previewDragging && button == previewDragButton) {
+            previewDragButton = -1;
+            setPreviewDragging(false);
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private PreviewBounds getPreviewBounds() {
+        if (previewAnchor == null || document == null) {
+            return null;
+        }
+        Element.DOMRect rect = previewAnchor.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+            return null;
+        }
+        double viewportScale = document.getViewport().renderScale();
+        return new PreviewBounds(
+                rect.x * viewportScale,
+                rect.y * viewportScale,
+                (rect.x + rect.width) * viewportScale,
+                (rect.y + rect.height) * viewportScale
+        );
+    }
+
+    private void clampPreviewPan(PreviewBounds bounds) {
+        previewPanX = Mth.clamp(previewPanX, -bounds.width() * 0.45, bounds.width() * 0.45);
+        previewPanY = Mth.clamp(previewPanY, -bounds.height() * 0.45, bounds.height() * 0.45);
+    }
+
+    private void resetPreviewTransform() {
+        previewZoom = 1.0;
+        previewPanX = 0;
+        previewPanY = 0;
+        previewRotationX = 165.0F;
+        previewRotationY = 0;
+        previewDragButton = -1;
+        setPreviewDragging(false);
+    }
+
+    private void setPreviewDragging(boolean dragging) {
+        previewDragging = dragging;
+        if (previewAnchor != null) {
+            previewAnchor.setClassName(dragging ? "dragging" : "");
         }
     }
 
     @Override
-    public boolean shouldCloseOnEsc() {
-        return true;
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        renderVehiclePreview(graphics);
+    }
+
+    private void renderVehiclePreview(GuiGraphics graphics) {
+        if (previewVehicle == null || previewAnchor == null || document == null) {
+            return;
+        }
+
+        Element.DOMRect rect = previewAnchor.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+            return;
+        }
+
+        float viewportScale = (float) document.getViewport().renderScale();
+        double left = rect.x * viewportScale;
+        double top = rect.y * viewportScale;
+        double right = (rect.x + rect.width) * viewportScale;
+        double bottom = (rect.y + rect.height) * viewportScale;
+        double centerX = (left + right) / 2 + previewPanX;
+        double centerY = (top + bottom) / 2 + (bottom - top) * 0.08 + previewPanY;
+        double modelLength = Math.max(previewVehicle.getStructureLength(), 3);
+        float modelScale = (float) (Math.min(right - left, bottom - top) * 0.78 / modelLength * previewZoom);
+
+        graphics.enableScissor((int) Math.floor(left), (int) Math.floor(top),
+                (int) Math.ceil(right), (int) Math.ceil(bottom));
+        PoseStack poseStack = graphics.pose();
+        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        poseStack.pushPose();
+        try {
+            poseStack.translate((float) centerX, (float) centerY, 512);
+            poseStack.mulPose(Axis.XP.rotationDegrees(previewRotationX));
+            poseStack.mulPose(Axis.YP.rotationDegrees(previewRotationY));
+            poseStack.scale(modelScale, modelScale, -modelScale);
+
+            dispatcher.setRenderShadow(false);
+            Lighting.setupForEntityInInventory();
+            RenderSystem.runAsFancy(() -> dispatcher.render(previewVehicle, 0, 0, 0,
+                    previewVehicle.getYRot(), 1.0F, poseStack, graphics.bufferSource(), 15728880));
+            graphics.flush();
+        } finally {
+            dispatcher.setRenderShadow(true);
+            Lighting.setupFor3DItems();
+            poseStack.popPose();
+            graphics.disableScissor();
+        }
+    }
+
+    private void onCraft() {
+        if (resolveMachineState() != MachineState.READY || selectedIndex < 0 || selectedIndex >= visibleVehicles.size()) {
+            return;
+        }
+
+        ClientMachineMaxAction action = new ClientMachineMaxAction();
+        action.craftingVehicleId = visibleVehicles.get(selectedIndex).getVehicleId();
+        action.blockPos = machine.getBlockPos();
+        action.action = ClientMachineMaxAction.Action.CRAFT;
+        PacketDistributor.sendToServer(action);
+        machine.clearPrintingPreview();
     }
 
     @Override
@@ -404,4 +685,45 @@ public class MachineMaxScreen extends Screen {
         return false;
     }
 
+    private enum MachineState {
+        READY,
+        PRINTING,
+        PRODUCT_READY,
+        NO_RECIPE,
+        NO_SELECTION
+    }
+
+    private static final class MaterialRequirementView {
+        private final VehiclePrintingIngredient input;
+        private final Element count;
+        private int shownOwned = -1;
+
+        private MaterialRequirementView(VehiclePrintingIngredient input, Element count, int shownOwned) {
+            this.input = input;
+            this.count = count;
+            this.shownOwned = shownOwned;
+        }
+    }
+
+    private record PreviewBounds(double left, double top, double right, double bottom) {
+        private boolean contains(double x, double y) {
+            return x >= left && x <= right && y >= top && y <= bottom;
+        }
+
+        private double width() {
+            return right - left;
+        }
+
+        private double height() {
+            return bottom - top;
+        }
+
+        private double centerX() {
+            return (left + right) / 2;
+        }
+
+        private double modelCenterY() {
+            return (top + bottom) / 2 + height() * 0.08;
+        }
+    }
 }

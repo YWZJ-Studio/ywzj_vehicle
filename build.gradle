@@ -49,6 +49,9 @@ neoForge {
 
 repositories {
     mavenCentral()
+    flatDir {
+        dir 'libs'
+    }
     maven {
         url "https://cursemaven.com"
         content {
@@ -68,20 +71,39 @@ repositories {
             includeGroup "com.github.mcmodderanchor"
         }
     }
-    flatDir {
-        dir 'libs'
+    maven {
+        url = 'https://maven.sighs.cc/repository/maven-public/'
     }
 }
 
 dependencies {
-    jarJar(implementation('org.ywzj:rhino:1.8.1'))
-    jarJar(implementation("com.github.mcmodderanchor:simplebedrockmodel:2.5.1.1-neoforge-mc1.21.1"))
-    compileOnly("com.maydaymemory:mae:1.1.2") {
+    // JS支持
+    jarJar(implementation('org.ywzj:rhino:1.8.1')) {
+        version {
+            strictly '[1.8.1,)'
+            prefer '1.8.1'
+        }
+    }
+    additionalRuntimeClasspath 'org.ywzj:rhino:1.8.1'
+    // SBM
+    jarJar(implementation("com.github.mcmodderanchor:simplebedrockmodel:2.5.1.1-neoforge-mc1.21.1")) {
+        version {
+            strictly '[2.5.1.1-neoforge-mc1.21.1,)'
+            prefer '2.5.1.1-neoforge-mc1.21.1'
+        }
+    }
+    compileOnly('com.maydaymemory:mae:1.1.2') {
         exclude group: 'com.google.code.findbugs', module: 'jsr305'
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
-
+    // apricityui
+    jarJar(implementation 'com.sighs:ApricityUI-neoforge-1.21.1:1.2.3') {
+        version {
+            strictly '[1.2.3,)'
+            prefer '1.2.3'
+        }
+    }
     // spark
     implementation "curse.maven:spark-361579:6225208"
     // performance

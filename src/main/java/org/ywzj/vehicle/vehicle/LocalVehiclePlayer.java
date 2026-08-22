@@ -421,8 +421,7 @@ public class LocalVehiclePlayer {
                 }
                 pXRot *= 0.15f;
                 pYRot *= 0.15f;
-                float tx = Mth.abs(weaponUnit.getXAimRot() - weaponUnit.getXRot()) % 360 / weaponUnit.getXRotSpeed();
-                float vx = Math.min(weaponUnit.getXRotSpeed() / 16, weaponUnit.getXRotSpeed() / (tx * 10));
+                float vx = scopeAimSensitivity(weaponUnit.getXRotSpeed(), weaponUnit.getXAimRot() - weaponUnit.getXRot());
                 if ((pXRot > 0 && weaponUnit.getXAimRot() < weaponUnit.xRotMax - weaponUnit.xSelfRot) || (pXRot < 0 && weaponUnit.getXAimRot() > weaponUnit.xRotMin - weaponUnit.xSelfRot)) {
                     float rx = (float) (weaponUnit.getXAimRot() + pXRot * vx);
                     if (rx > 180) {
@@ -432,8 +431,7 @@ public class LocalVehiclePlayer {
                     }
                     weaponUnit.setXAimRot(rx);
                 }
-                float ty = Mth.abs(weaponUnit.getYAimRot() - weaponUnit.getYRot()) % 360 / weaponUnit.getYRotSpeed();
-                float vy = Math.min(weaponUnit.getYRotSpeed() / 16, weaponUnit.getYRotSpeed() / (ty * 10));
+                float vy = scopeAimSensitivity(weaponUnit.getYRotSpeed(), weaponUnit.getYAimRot() - weaponUnit.getYRot());
                 if ((pYRot > 0 && weaponUnit.getYAimRot() < weaponUnit.yRotMax - weaponUnit.ySelfRot) || (pYRot < 0 && weaponUnit.getYAimRot() > weaponUnit.yRotMin - weaponUnit.ySelfRot)) {
                     float ry = (float) (weaponUnit.getYAimRot() + pYRot * vy);
                     if (ry > 180) {
@@ -472,14 +470,23 @@ public class LocalVehiclePlayer {
         return true;
     }
 
+    private float scopeAimSensitivity(float rotationSpeed, float rotationError) {
+        if (rotationSpeed <= 0) {
+            return 0;
+        }
+        float effectiveSpeed = Math.max(rotationSpeed, 1);
+        float trackingTime = Mth.abs(Mth.wrapDegrees(rotationError)) / effectiveSpeed;
+        return Math.min(effectiveSpeed / 16, effectiveSpeed / Math.max(trackingTime * 10, 1));
+    }
+
     public Vec3 scopeAimWeaponHit(WeaponUnit weaponUnit) {
         Vec3 hitPosition = weaponUnit.aimHitPosition();
-        Vec3 boltPosition = weaponUnit.worldCurrentBoltPosition();
+        Vec3 pivotPosition = weaponUnit.worldPivotPosition();
         Vec3 cameraPosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR
                 ? weaponUnit.worldOpticalSightPosition(1.0F)
                 : weaponUnit.worldOwnerViewPosition(1.0F);
-        if (hitPosition.distanceTo(boltPosition) < 128) {
-            cameraAimAt(cameraPosition, hitPosition.subtract(boltPosition).normalize().scale(128).add(boltPosition));
+        if (hitPosition.distanceTo(pivotPosition) < 128) {
+            cameraAimAt(cameraPosition, hitPosition.subtract(pivotPosition).normalize().scale(128).add(pivotPosition));
         } else {
             cameraAimAt(cameraPosition, hitPosition);
         }

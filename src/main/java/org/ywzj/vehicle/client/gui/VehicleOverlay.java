@@ -230,7 +230,7 @@ public class VehicleOverlay implements LayeredDraw.Layer {
                     float size = (float) Mth.clamp((50 / VectorUtil.fov) * 0.5f * Math.max((512 - distance) / 512, 0.1), 0.66, 1);
                     renderHealth(guiGraphics, screenPos.x, screenPos.y, 90, 5, vehicle, size);
                     Item mainHandItem = player.getMainHandItem().getItem();
-                    if (partUnit != null && partUnit.getHealth() > 0
+                    if (partUnit != null && partUnit.getHealth() >= 0
                             && (AllKeys.INSPECT_VEHICLE.isDown() || mainHandItem == AllItems.REPAIR_TOOL.get() || mainHandItem == AllItems.MODDING_TOOL.get())) {
                         renderPartHealth(guiGraphics, partUnit, partialTick, size);
                     }

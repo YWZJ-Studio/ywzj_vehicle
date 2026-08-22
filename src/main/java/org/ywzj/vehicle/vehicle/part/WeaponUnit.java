@@ -294,6 +294,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                         agentWeaponUnit.setParentWeaponUnit(parent);
                     }
                     parent.addSubWeaponUnit(agentWeaponUnit);
+                    if (agentWeaponUnit.data.getWeapons().isEmpty()) {
+                        continue;
+                    }
                     VehicleWeaponAgent weaponAgent = new VehicleWeaponAgent(vehicle, agentWeaponUnit, index);
                     if (weaponInfo.secondary) {
                         secondaryWeapons.add(weaponAgent);
@@ -503,6 +506,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             aim(focusLockPos);
             return;
         }
+        VehicleMissile missileWeapon = null;
+        Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
+        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile vehicleMissile) {
+            missileWeapon = vehicleMissile;
+        }
         if (lockedEntity != null) {
             Vec3 center = lockedEntity.getBoundingBox().getCenter();
             // 武器站火控自动瞄准锁定目标
@@ -512,8 +520,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             switch (getFireControlSensorType()) {
                 case IR -> checkEntity = Infrared.checkTarget(this, lockedEntity);
                 case EO -> checkEntity = ElectroOptical.checkTarget(this, lockedEntity);
-                case RF -> checkEntity = Radar.checkTarget(vehicle, getRadarDetectedEntities().stream()
-                        .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
+                case RF -> {
+                    if (missileWeapon != null && missileWeapon.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
+                        checkEntity = getMainRadarUnit().getLockedEntity();
+                    } else {
+                        checkEntity = Radar.checkTarget(vehicle, getRadarDetectedEntities().stream()
+                                .map(detectedObject -> detectedObject.entity).toList(), lockedEntity);
+                    }
+                }
                 default -> {}
             }
             if (checkEntity != lockedEntity) {
@@ -547,28 +561,26 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         else if (isSeekerOn() && lockedEntity == null) {
             lockCoolingTick += 1;
             if (lockCoolingTick > 20) {
-                // 导弹
-                Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
-                if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile missile) {
+                if (missileWeapon != null) {
                     Entity entity = null;
                     // 红外
                     if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
-                        entity = Infrared.findTarget(missile.getWeaponUnit(), missile.getData().getSeekerFov());
+                        entity = Infrared.findTarget(missileWeapon.getWeaponUnit(), missileWeapon.getData().getSeekerFov());
                     }
                     // 雷达
                     else if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
                         // 主动雷达弹需雷达扫描目标
-                        if (missile.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
-                            entity = Radar.findTarget(getMainRadarUnit(), missile.getData().getSeekerFov(), this);
+                        if (missileWeapon.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.ACTIVE_RADAR) {
+                            entity = Radar.findTarget(getMainRadarUnit(), missileWeapon.getData().getSeekerFov(), this);
                         }
                         // 半主动雷达弹需雷达锁定目标
-                        else if (missile.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
+                        else if (missileWeapon.getData().getHomingMode() == VehicleMissileWeaponData.HomingMode.SEMI_ACTIVE_RADAR) {
                             entity = getMainRadarUnit().getLockedEntity();
                             if (entity != null) {
                                 Vec3 vLock = entity.getBoundingBox().getCenter().subtract(worldPivotPosition());
                                 Vec3 vAim = worldVec();
                                 double degree = Math.toDegrees(VectorUtil.angleBetween(vLock, vAim));
-                                if (degree > missile.getData().getSeekerFov()) {
+                                if (degree > missileWeapon.getData().getSeekerFov()) {
                                     entity = null;
                                 }
                             }

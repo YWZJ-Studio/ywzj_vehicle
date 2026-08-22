@@ -13,6 +13,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.entity.PartEntity;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.*;
 import org.ywzj.vehicle.api.entity.OBBEntity;
@@ -135,7 +136,7 @@ public class VectorUtil {
             }
             return result;
         }
-        return entity == null ? null : new EntityHitResult(entity);
+        return entity == null ? null : new EntityHitResult(entity instanceof PartEntity<?> partEntity ? partEntity.getParent() : entity);
     }
 
     public static Pair<Entity, Vec3> hitObbPosition(Entity shooter, Vec3 start, Vec3 end) {
