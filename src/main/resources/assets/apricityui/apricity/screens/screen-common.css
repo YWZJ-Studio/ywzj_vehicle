@@ -126,6 +126,13 @@ body.ore-theme.machine-screen .navbar-brand {
 
 .ore-theme .profile-description,
 .ore-theme #vehicle-description,
+.ore-theme .description-panel .card-body {
+    font-family: "Noto Sans SC", "Segoe UI", OreRegular, sans-serif;
+    font-weight: bold;
+}
+
+.ore-theme .profile-description,
+.ore-theme #vehicle-description,
 .ore-theme .description-panel .card-body,
 .ore-theme .setting-label,
 .ore-theme .smoke-row,

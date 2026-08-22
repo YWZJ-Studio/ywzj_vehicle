@@ -27,7 +27,7 @@ public class PhysicsInfo {
     public float radarCrossSection = 1f;
 
     @SerializedName("destroy_explosion_velocity")
-    public float destroyExplosionVelocity = 0.8f;
+    public float destroyExplosionVelocity = 0.5f;
 
     public PhysicsInfo copy() {
         PhysicsInfo copy = new PhysicsInfo();

@@ -24,6 +24,7 @@ import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleSelectPartWeapon;
+import org.ywzj.vehicle.util.AuiTextHelper;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -225,9 +226,7 @@ public class VehicleWeaponSelectScreen extends ApricityScreen {
     }
 
     private void setDescriptionText(String text) {
-        if (selectedWeaponDescription != null) {
-            selectedWeaponDescription.setTextContent(text);
-        }
+        AuiTextHelper.setDescription(selectedWeaponDescription, text);
     }
 
     private void setHidden(Element element, boolean hidden) {

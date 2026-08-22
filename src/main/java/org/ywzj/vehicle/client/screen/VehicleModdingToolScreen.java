@@ -25,6 +25,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
+import org.ywzj.vehicle.util.AuiTextHelper;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
@@ -275,7 +276,7 @@ public class VehicleModdingToolScreen extends ApricityScreen {
     }
 
     private void setText(Element element, String text) { if (element != null) element.setTextContent(text); }
-    private void setDescriptionText(String text) { if (description != null) description.setTextContent(text); }
+    private void setDescriptionText(String text) { AuiTextHelper.setDescription(description, text); }
     private void setHidden(Element element, boolean hidden) { if (element != null) element.setClassName(hidden ? "empty-state hidden" : "empty-state"); }
 
     @Override

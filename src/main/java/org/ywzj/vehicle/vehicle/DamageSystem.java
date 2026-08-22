@@ -44,10 +44,11 @@ public class DamageSystem {
         Vec3 hitPos = null;
         float caliber = 5.8f;
         if (damageSource.getDirectEntity() instanceof Projectile projectile) {
-            hitPartUnit = VectorUtil.hitPartUnit(vehicle, projectile.position(), projectile.position().add(projectile.getDeltaMovement()), false);
-            Vec3 closestHitPos = VectorUtil.closestHitObbPosition(vehicle, projectile.position(), projectile.position().add(projectile.getDeltaMovement()));
+            Vec3 position = projectile.position();
+            Vec3 closestHitPos = VectorUtil.closestHitObbPosition(vehicle, position, position.add(projectile.getDeltaMovement()));
             if (closestHitPos != null) {
                 hitPos = closestHitPos;
+                hitPartUnit = VectorUtil.hitPartUnit(vehicle, position, closestHitPos.add(closestHitPos.subtract(position).normalize().scale(0.1)), false);
             }
             if (damageSource.getDirectEntity() instanceof AmmoEntity ammoEntity) {
                 caliber = ammoEntity.getCaliber();

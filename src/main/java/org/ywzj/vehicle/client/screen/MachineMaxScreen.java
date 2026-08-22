@@ -31,6 +31,7 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.ClientMachineMaxAction;
 import org.ywzj.vehicle.recipe.VehiclePrintingIngredient;
 import org.ywzj.vehicle.recipe.VehiclePrintingRecipe;
+import org.ywzj.vehicle.util.AuiTextHelper;
 
 import java.util.*;
 
@@ -442,9 +443,7 @@ public class MachineMaxScreen extends ApricityScreen {
     }
 
     private void setDescriptionText(String text) {
-        if (description != null) {
-            description.setTextContent(text);
-        }
+        AuiTextHelper.setDescription(description, text);
     }
 
     private void setHidden(Element element, boolean hidden) {
