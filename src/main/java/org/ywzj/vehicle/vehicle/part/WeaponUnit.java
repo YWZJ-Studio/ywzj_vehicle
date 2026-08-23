@@ -242,33 +242,36 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public void combineAndInit(Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
         super.combineAndInit(partUnitsView, vehicle);
         int index = 0;
-        WeaponUnit parent = this;
+        WeaponUnit parentWeaponUnit = this;
         // 武器
         for (var weaponInfo : data.getWeapons()) {
             // 多弹种则构造VehicleMultiWeapons
             if (weaponInfo.ids != null && !weaponInfo.ids.isEmpty()) {
+                WeaponUnit subWeaponUnit = null;
+                if (weaponInfo.partUnitId != null && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit weaponUnit) {
+                    subWeaponUnit = weaponUnit;
+                }
                 List<AbstractVehicleWeapon<?>> multiWeapons = new ArrayList<>();
                 for (ResourceLocation id : weaponInfo.ids) {
                     VehicleWeaponIndex<?, ?> subIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(id).orElse(null);
                     if (subIndex != null) {
                         String subSaveId = weaponInfo.saveId + "_" + id.toString().replace(':', '_');
-                        AbstractVehicleWeapon<?> sub = subIndex.create(vehicle, parent, multiWeapons.size(), subSaveId);
+                        WeaponUnit weaponUnit = (subWeaponUnit != null && subWeaponUnit != parentWeaponUnit) ? subWeaponUnit : parentWeaponUnit;
+                        AbstractVehicleWeapon<?> sub = subIndex.create(vehicle, weaponUnit, multiWeapons.size(), subSaveId);
                         sub.defineSyncData(this.getSyncData());
                         multiWeapons.add(sub);
                     }
                 }
                 if (!multiWeapons.isEmpty()) {
                     VehicleMultiWeapons multiWeapon;
-                    if (weaponInfo.partUnitId != null
-                            && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
-                            && subWeaponUnit != parent) {
+                    if (subWeaponUnit != null && subWeaponUnit != parentWeaponUnit) {
                         if (subWeaponUnit.getParentWeaponUnit() == null) {
-                            subWeaponUnit.setParentWeaponUnit(parent);
+                            subWeaponUnit.setParentWeaponUnit(parentWeaponUnit);
                         }
-                        parent.addSubWeaponUnit(subWeaponUnit);
+                        parentWeaponUnit.addSubWeaponUnit(subWeaponUnit);
                         multiWeapon = new VehicleMultiWeapons(vehicle, subWeaponUnit, index, multiWeapons, weaponInfo.saveId);
                     } else {
-                        multiWeapon = new VehicleMultiWeapons(vehicle, parent, index, multiWeapons, weaponInfo.saveId);
+                        multiWeapon = new VehicleMultiWeapons(vehicle, parentWeaponUnit, index, multiWeapons, weaponInfo.saveId);
                     }
                     multiWeapon.defineSyncData(this.getSyncData());
                     if (weaponInfo.secondary) {
@@ -289,11 +292,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
             // 武器站加入武器列表
             else if (weaponInfo.id == null && weaponInfo.partUnitId != null) {
-                if (partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit && agentWeaponUnit != parent) {
+                if (partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit agentWeaponUnit && agentWeaponUnit != parentWeaponUnit) {
                     if (agentWeaponUnit.getParentWeaponUnit() == null) {
-                        agentWeaponUnit.setParentWeaponUnit(parent);
+                        agentWeaponUnit.setParentWeaponUnit(parentWeaponUnit);
                     }
-                    parent.addSubWeaponUnit(agentWeaponUnit);
+                    parentWeaponUnit.addSubWeaponUnit(agentWeaponUnit);
                     if (agentWeaponUnit.data.getWeapons().isEmpty()) {
                         continue;
                     }
@@ -321,14 +324,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                     AbstractVehicleWeapon<?> weapon;
                     if (weaponInfo.partUnitId != null
                             && partUnitsView.get(weaponInfo.partUnitId) instanceof WeaponUnit subWeaponUnit
-                            && subWeaponUnit != parent) {
+                            && subWeaponUnit != parentWeaponUnit) {
                         if (subWeaponUnit.getParentWeaponUnit() == null) {
-                            subWeaponUnit.setParentWeaponUnit(parent);
+                            subWeaponUnit.setParentWeaponUnit(parentWeaponUnit);
                         }
-                        parent.addSubWeaponUnit(subWeaponUnit);
+                        parentWeaponUnit.addSubWeaponUnit(subWeaponUnit);
                         weapon = vehicleWeaponIndex.create(vehicle, subWeaponUnit, index, weaponInfo.saveId);
                     } else {
-                        weapon = vehicleWeaponIndex.create(vehicle, parent, index, weaponInfo.saveId);
+                        weapon = vehicleWeaponIndex.create(vehicle, parentWeaponUnit, index, weaponInfo.saveId);
                     }
                     weapon.defineSyncData(this.getSyncData());
                     if (vehicleWeaponIndex.data().independent) {
@@ -508,8 +511,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
         VehicleMissile missileWeapon = null;
         Optional<AbstractVehicleWeapon<?>> weaponOptional = getCurrentWeapon();
-        if (weaponOptional.isPresent() && weaponOptional.get() instanceof VehicleMissile vehicleMissile) {
-            missileWeapon = vehicleMissile;
+        if (weaponOptional.isPresent()) {
+            AbstractVehicleWeapon<?> weapon = weaponOptional.get();
+            if (weapon instanceof VehicleMissile vehicleMissile) {
+                missileWeapon = vehicleMissile;
+            } else if (weapon instanceof VehicleMultiWeapons vehicleMultiWeapons
+                    && vehicleMultiWeapons.getSelectedWeapon() instanceof VehicleMissile vehicleMissile) {
+                missileWeapon = vehicleMissile;
+            }
         }
         if (lockedEntity != null) {
             Vec3 center = lockedEntity.getBoundingBox().getCenter();
