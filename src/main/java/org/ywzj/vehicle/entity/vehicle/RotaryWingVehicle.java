@@ -18,6 +18,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
@@ -400,6 +402,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
         float engineSpeed = getPower();
@@ -449,6 +452,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
         super.tickParticle();
         // 飞行扬尘效果

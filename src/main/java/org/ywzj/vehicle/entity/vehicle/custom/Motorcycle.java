@@ -6,6 +6,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
@@ -37,6 +39,7 @@ public class Motorcycle extends WheeledVehicle {
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
         trackLength += getDeltaMovement().length();
         if (trackLength >= 0.5) {

@@ -797,10 +797,6 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected void afterVehicleRot() {
         float dXRot = xRot - xRotO;
         float dYRot = yRot - yRotO;
-        float dZRot = zRot - zRotO;
-        if (dXRot != 0 || dYRot != 0) {
-            partUnits.forEach(partUnit -> partUnit.withVehicleRot(dXRot, dYRot, dZRot));
-        }
         if (level().isClientSide()) {
             Player player = LocalVehiclePlayer.instance.getPlayer();
             if (player.getVehicle() == this && (!driverXYRotControl || player != getDriver())) {

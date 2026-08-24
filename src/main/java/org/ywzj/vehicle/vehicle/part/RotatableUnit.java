@@ -135,6 +135,7 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
         if (isDestroyed() && !vehicle.isDestroyed() && vehicle.tickCount % 20 == 0) {
             ParticleUtil.spawnWreckageSmoke(vehicle.level(), OBB.toAABB(List.of(getLargestCube().obb())), 5);
@@ -145,27 +146,19 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         xRotO = xRot;
         yRotO = yRot;
         if ((!needPower || vehicle.hasPower()) && !isDestroyed()) {
-            float xDiff = Mth.wrapDegrees(xAimRot - xRot);
-            float yDiff = Mth.wrapDegrees(yAimRot - yRot);
-            if (Math.abs(xDiff) > xRotSpeed) {
-                xRot += Math.signum(xDiff) * xRotSpeed;
-            } else {
-                xRot = xAimRot;
-            }
+            xRot = Mth.approachDegrees(xRot, xAimRot, xRotSpeed);
             xRot = Mth.wrapDegrees(xRot);
-            xRot = Math.max(Math.min(xRot, xRotMax - xSelfRot), xRotMin - xSelfRot);
-            if (Math.abs(xRot - xRotO) > 180) {
-                xRotO += Math.signum(xRot - xRotO) * 360;
+            xRot = Mth.clamp(xRot, xRotMin - xSelfRot, xRotMax - xSelfRot);
+            float dXRot = xRot - xRotO;
+            if (Math.abs(dXRot) > 180) {
+                xRotO += Math.signum(dXRot) * 360;
             }
-            if (Math.abs(yDiff) > yRotSpeed) {
-                yRot += Math.signum(yDiff) * yRotSpeed;
-            } else {
-                yRot = yAimRot;
-            }
+            yRot = Mth.approachDegrees(yRot, yAimRot, yRotSpeed);
             yRot = Mth.wrapDegrees(yRot);
-            yRot = Math.max(Math.min(yRot, yRotMax - ySelfRot), yRotMin - ySelfRot);
-            if (Math.abs(yRot - yRotO) > 180) {
-                yRotO += Math.signum(yRot - yRotO) * 360;
+            yRot = Mth.clamp(yRot, yRotMin - ySelfRot, yRotMax - ySelfRot);
+            float dYRot = yRot - yRotO;
+            if (Math.abs(dYRot) > 180) {
+                yRotO += Math.signum(dYRot) * 360;
             }
         }
     }

@@ -384,10 +384,8 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
     private float lerpZRotDiff(RotatableUnit<?> rotatableUnit, AbstractVehicle vehicle, float partialTick) {
         float zRot = Mth.wrapDegrees(rotatableUnit.worldRot().y - vehicle.getYRot());
         float zRotO = Mth.wrapDegrees(rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.getYRot());
-        if (Math.abs(zRot - zRotO) > 180) {
-            zRotO += (zRotO - zRot) < 0 ? 360f : -360f;
-        }
-        return Mth.lerp(partialTick, zRotO, zRot);
+        float zRotDiff = Mth.wrapDegrees(zRot - zRotO);
+        return Mth.lerp(partialTick, zRot - zRotDiff, zRot);
     }
 
     private float lerpZRotDiff(VehicleCubeOBB cubeOBB, AbstractVehicle vehicle, float partialTick) {

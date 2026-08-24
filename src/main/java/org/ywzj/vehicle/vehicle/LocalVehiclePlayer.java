@@ -269,8 +269,9 @@ public class LocalVehiclePlayer {
             if (partUnit instanceof WeaponUnit weaponUnit
                     && weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.NONE) {
                 try {
-                    cameraAimRotZ = weaponUnit.worldZRot();
-                    Vec3 hitPosition = scopeAimWeaponHit(weaponUnit);
+                    cameraAimWith(weaponUnit);
+                    Vec3 hitPosition = weaponUnit.aimHitPosition();
+                    rangeFinding(hitPosition);
                     ClientVehicleAction control = new ClientVehicleAction();
                     control.vehicleEntityId = vehicle.getId();
                     control.partUnitIndex = weaponUnit.getIndex();
@@ -278,7 +279,6 @@ public class LocalVehiclePlayer {
                     control.yAimRot = weaponUnit.getYAimRot();
                     PacketDistributor.sendToServer(control);
                     weaponUnit.getSubWeaponUnits().forEach(subWeaponUnit -> subWeaponUnit.aim(hitPosition));
-                    rangeFinding(hitPosition);
                 } catch (Exception exception) {
                     exception.printStackTrace();
                 } finally {
@@ -441,6 +441,7 @@ public class LocalVehiclePlayer {
                     }
                     weaponUnit.setYAimRot(ry);
                 }
+                weaponUnit.updateWorldAimVec();
                 return true;
             }
         }
@@ -479,18 +480,12 @@ public class LocalVehiclePlayer {
         return Math.min(effectiveSpeed / 16, effectiveSpeed / Math.max(trackingTime * 10, 1));
     }
 
-    public Vec3 scopeAimWeaponHit(WeaponUnit weaponUnit) {
+    public void scopeAimWeaponHit(WeaponUnit weaponUnit) {
         Vec3 hitPosition = weaponUnit.aimHitPosition();
-        Vec3 pivotPosition = weaponUnit.worldPivotPosition();
         Vec3 cameraPosition = weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPERATOR
                 ? weaponUnit.worldOpticalSightPosition(1.0F)
                 : weaponUnit.worldOwnerViewPosition(1.0F);
-        if (hitPosition.distanceTo(pivotPosition) < 128) {
-            cameraAimAt(cameraPosition, hitPosition.subtract(pivotPosition).normalize().scale(128).add(pivotPosition));
-        } else {
-            cameraAimAt(cameraPosition, hitPosition);
-        }
-        return hitPosition;
+        cameraAimAt(cameraPosition, hitPosition);
     }
 
     public void cameraAimAt(Vec3 cameraPosition, Vec3 worldPos) {
@@ -522,6 +517,15 @@ public class LocalVehiclePlayer {
         Vec3 direction = cameraDirection(xRot);
         Vec3 end = start.add(direction.scale(renderDistance()));
         return VectorUtil.hitPosition(getPlayer(), start, end);
+    }
+
+    public void cameraAimWith(WeaponUnit weaponUnit) {
+        Vec2 rot = weaponUnit.worldRot();
+        cameraAimRotX = rot.x;
+        cameraAimRotY = rot.y;
+        cameraAimRotZ = weaponUnit.worldZRot();
+        getPlayer().setXRot(rot.x);
+        getPlayer().setYRot(rot.y);
     }
 
     public Vec3 cameraDirection(float upward) {

@@ -107,6 +107,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private final List<RadarUnit> radarUnits = new ArrayList<>();
     private boolean seekerOn;
     private int lockCoolingTick;
+    private Vec3 worldAimVec = Vec3.ZERO;
+    private Vec3 worldVec = Vec3.ZERO;
     // 第三人称准心样式
     public WeaponUnitData.CrosshairStyle crosshairStyle;
     // 是否仅渲染选中武器的部件模型
@@ -127,7 +129,6 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public SyncDataHolder<Integer> currentWeaponIndexHolder;
     private int currentSecondaryWeaponIndex = -1;
     public SyncDataHolder<Integer> currentSecondaryIndexHolder;
-    private int ignoreRemoteRotTick;
     public boolean rotByAim = true;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
@@ -444,19 +445,42 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    protected void tickRemoteRot() {
-        if (vehicle.level().isClientSide() && ignoreRemoteRotTick > 0) {
-            if (Math.abs(xRemoteAimRot - xAimRot) < 5 && Math.abs(yRemoteAimRot - yAimRot) < 5) {
-                ignoreRemoteRotTick -= 1;
-                return;
-            } else {
-                ignoreRemoteRotTick = 0;
+    protected void tickRot() {
+        super.tickRot();
+        // 武器站双向稳定系统
+        if (withStabilizer && getOwner() != null
+                && !isDestroyed() && (!needPower || vehicle.hasPower())
+                && VectorUtil.angleBetween(worldAimVec, worldVec) < Math.PI / 36) {
+            Vec2 aimLocalRot = worldVecToLocalRot(worldAimVec);
+            Vec2 currentLocalRot = worldVecToLocalRot(worldVec);
+            float targetXRot = Mth.approachDegrees(currentLocalRot.x, aimLocalRot.x, xRotSpeed);
+            float targetYRot = Mth.approachDegrees(currentLocalRot.y, aimLocalRot.y, yRotSpeed);
+            targetXRot = Mth.clamp(targetXRot, xRotMin - xSelfRot, xRotMax - xSelfRot);
+            targetYRot = Mth.clamp(targetYRot, yRotMin - ySelfRot, yRotMax - ySelfRot);
+            setXAimRot(targetXRot);
+            setYAimRot(targetYRot);
+            setXRot(targetXRot);
+            setYRot(targetYRot);
+            float dXRot = xRot - xRotO;
+            float dYRot = yRot - yRotO;
+            if (Math.abs(dXRot) > 180) {
+                xRotO += Math.signum(dXRot) * 360;
             }
+            if (Math.abs(dYRot) > 180) {
+                yRotO += Math.signum(dYRot) * 360;
+            }
+            updateRot();
         }
+        worldVec = worldVec();
+    }
+
+    @Override
+    protected void tickRemoteRot() {
         if (vehicle.level().isClientSide()
                 && (getOwner() != LocalVehiclePlayer.instance.getPlayer() || !rotByAim)) {
             xAimRot = xRemoteAimRot;
             yAimRot = yRemoteAimRot;
+            updateWorldAimVec();
         }
     }
 
@@ -754,68 +778,25 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
-    /**
-     * 武器站双向稳定系统
-     */
-    @Override
-    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {
-        if (isDestroyed()) {
-            return;
-        }
-        if (Math.abs(xAimRot - xRot) > 5 || Math.abs(yAimRot - yRot) > 5) {
-            return;
-        }
-        if (Math.abs(dVehicleXRot) > 0.01 || Math.abs(dVehicleYRot) > 0.01 || Math.abs(dVehicleZRot) > 0.01) {
-            if (getOwner() != null && (!needPower || vehicle.hasPower()) && withStabilizer) {
-                Quaternionf rotationO = new Quaternionf();
-                rotationO.rotateY(org.joml.Math.toRadians(-(vehicle.getYRot() - dVehicleYRot)))
-                        .rotateX(org.joml.Math.toRadians(vehicle.getXRot() - dVehicleXRot))
-                        .rotateZ(org.joml.Math.toRadians(vehicle.getZRot() - dVehicleZRot));
-                if (structureGroup != null) {
-                    rotationO.mul(structureGroup.baseRotation);
-                    if (structureGroup.parent != null) {
-                        rotationO.mul(structureGroup.parent.globalTransform().rotation());
-                    }
-                }
-                Vector3f localVec = VectorUtil.rotToVec(xRot, yRot).toVector3f();
-                Quaternionf relativeRot = baseRot().invert().mul(rotationO);
-                Vector3f targetVec = new Quaternionf(relativeRot).transform(localVec);
-                Vec2 targetRot = VectorUtil.vecToRot(new Vec3(targetVec));
-                float targetXRot = Mth.clamp(targetRot.x, xRotMin, xRotMax);
-                float targetYRot = Mth.clamp(targetRot.y, yRotMin, yRotMax);
-                setXRot(targetXRot);
-                setYRot(targetYRot);
-                if (Math.abs(xRot - xRotO) > 180) {
-                    xRotO += Math.signum(xRot - xRotO) * 360;
-                }
-                if (Math.abs(yRot - yRotO) > 180) {
-                    yRotO += Math.signum(yRot - yRotO) * 360;
-                }
-                updateRot();
-                if (vehicle.level().isClientSide()) {
-                    setXAimRot(targetXRot);
-                    setYAimRot(targetYRot);
-                    ignoreRemoteRotTick = 1;
-                }
-            }
-        }
-    }
-
     public void aim(Vec3 worldPos) {
         if (rotByAim) {
             Vec2 rot = aimRot(worldPos);
             rot = new Vec2(rot.x - xBarrelSelfRot, rot.y - yBarrelSelfRot);
             if (xAimRot != rot.x || yAimRot != rot.y) {
+                xAimRot = rot.x;
+                yAimRot = rot.y;
+                updateWorldAimVec();
                 if (vehicle.level().isClientSide()) {
                     ClientVehicleAction control = new ClientVehicleAction();
                     control.vehicleEntityId = vehicle.getId();
-                control.partUnitIndex = index;
-                control.xAimRot = rot.x;
-                control.yAimRot = rot.y;
-                PacketDistributor.sendToServer(control);
-            }
-            xAimRot = rot.x;
-            yAimRot = rot.y;
+                  control.partUnitIndex = index;
+                  control.xAimRot = rot.x;
+                  control.yAimRot = rot.y;
+                  PacketDistributor.sendToServer(control);
+              }
+              xAimRot = rot.x;
+              yAimRot = rot.y;
+              updateWorldAimVec();
             }
         }
         subWeaponUnits.forEach(weaponUnit -> weaponUnit.aim(worldPos));
@@ -1033,6 +1014,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             parentGroup = parentGroup.parent;
         }
         return new VehicleCubeGroup.GlobalTransform(new Vec3(globalPivot), globalRotation);
+    }
+
+    public void updateWorldAimVec() {
+        worldAimVec = worldVec(xAimRot, yAimRot);
     }
 
     public int getAmmoCapacity() {
@@ -1305,9 +1290,11 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-        super.deserializeNBT(provider, nbt);
-        this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
+      public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+          super.deserializeNBT(provider, nbt);
+          worldVec = worldVec();
+          worldAimVec = worldVec;
+          this.initWeapon(nbt.getInt("CurrentWeaponIndex"));
         CompoundTag weaponTag = nbt.getCompound("WeaponTag");
         this.indexedWeapons.forEach(weapon -> {
             if (weaponTag.contains(weapon.getSerializeId(), Tag.TAG_COMPOUND)) {

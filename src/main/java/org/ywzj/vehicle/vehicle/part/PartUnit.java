@@ -285,8 +285,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return new Quaternionf(group.rotation);
     }
 
-    public void withVehicleRot(float dVehicleXRot, float dVehicleYRot, float dVehicleZRot) {}
-
     public Component getName() {
         return name;
     }
@@ -451,6 +449,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
             if (partUnit instanceof RotatableUnit<?> rotatableUnit) {
                 rotatableUnit.setXAimRot(message.xAimRot);
                 rotatableUnit.setYAimRot(message.yAimRot);
+                if (rotatableUnit instanceof WeaponUnit weaponUnit) {
+                    weaponUnit.updateWorldAimVec();
+                }
             }
         }
     }
