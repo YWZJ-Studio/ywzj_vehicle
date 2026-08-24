@@ -145,24 +145,14 @@ public class RotatableUnit<T extends RotatableUnitData> extends PartUnit<T> {
         xRotO = xRot;
         yRotO = yRot;
         if ((!needPower || vehicle.hasPower()) && !isDestroyed()) {
-            float xDiff = Mth.wrapDegrees(xAimRot - xRot);
-            float yDiff = Mth.wrapDegrees(yAimRot - yRot);
-            if (Math.abs(xDiff) > xRotSpeed) {
-                xRot += Math.signum(xDiff) * xRotSpeed;
-            } else {
-                xRot = xAimRot;
-            }
+            xRot = Mth.approachDegrees(xRot, xAimRot, xRotSpeed);
             xRot = Mth.wrapDegrees(xRot);
             xRot = Mth.clamp(xRot, xRotMin - xSelfRot, xRotMax - xSelfRot);
             float dXRot = xRot - xRotO;
             if (Math.abs(dXRot) > 180) {
                 xRotO += Math.signum(dXRot) * 360;
             }
-            if (Math.abs(yDiff) > yRotSpeed) {
-                yRot += Math.signum(yDiff) * yRotSpeed;
-            } else {
-                yRot = yAimRot;
-            }
+            yRot = Mth.approachDegrees(yRot, yAimRot, yRotSpeed);
             yRot = Mth.wrapDegrees(yRot);
             yRot = Mth.clamp(yRot, yRotMin - ySelfRot, yRotMax - ySelfRot);
             float dYRot = yRot - yRotO;

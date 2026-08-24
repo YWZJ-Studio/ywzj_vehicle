@@ -450,10 +450,13 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         // 武器站双向稳定系统
         if (withStabilizer && getOwner() != null
                 && !isDestroyed() && (!needPower || vehicle.hasPower())
-                && VectorUtil.angleBetween(worldAimVec, worldVec) < Math.PI / 360) {
-            Vec2 targetRot = worldVecToLocalRot(worldAimVec);
-            float targetXRot = Mth.clamp(targetRot.x, xRotMin - xSelfRot, xRotMax - xSelfRot);
-            float targetYRot = Mth.clamp(targetRot.y, yRotMin - ySelfRot, yRotMax - ySelfRot);
+                && VectorUtil.angleBetween(worldAimVec, worldVec) < Math.PI / 36) {
+            Vec2 aimLocalRot = worldVecToLocalRot(worldAimVec);
+            Vec2 currentLocalRot = worldVecToLocalRot(worldVec);
+            float targetXRot = Mth.approachDegrees(currentLocalRot.x, aimLocalRot.x, xRotSpeed);
+            float targetYRot = Mth.approachDegrees(currentLocalRot.y, aimLocalRot.y, yRotSpeed);
+            targetXRot = Mth.clamp(targetXRot, xRotMin - xSelfRot, xRotMax - xSelfRot);
+            targetYRot = Mth.clamp(targetYRot, yRotMin - ySelfRot, yRotMax - ySelfRot);
             setXAimRot(targetXRot);
             setYAimRot(targetYRot);
             setXRot(targetXRot);
