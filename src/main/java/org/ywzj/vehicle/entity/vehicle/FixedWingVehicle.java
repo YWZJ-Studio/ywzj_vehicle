@@ -13,6 +13,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
@@ -470,6 +472,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
         boolean onGround = level().getBlockState(blockPosition().below()).isSolid();
@@ -570,6 +573,7 @@ public class FixedWingVehicle extends AbstractVehicle
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
         super.tickParticle();
         Vec3 airSpeed = getDeltaMovement();

@@ -201,6 +201,7 @@ public class TrackedVehicle extends AbstractVehicle
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
         if (getPower() == 5 && isEngineOn()) {
@@ -265,6 +266,7 @@ public class TrackedVehicle extends AbstractVehicle
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
         super.tickParticle();
         // 履带印

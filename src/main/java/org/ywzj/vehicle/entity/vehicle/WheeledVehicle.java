@@ -9,6 +9,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.animation.IAnimationEntity;
@@ -234,6 +236,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
         if (getPower() == 5 && isEngineOn()) {
@@ -294,6 +297,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickParticle() {
         super.tickParticle();
         // 履带印

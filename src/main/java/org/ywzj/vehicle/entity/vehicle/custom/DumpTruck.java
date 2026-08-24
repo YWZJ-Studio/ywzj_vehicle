@@ -7,6 +7,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -64,6 +66,7 @@ public class DumpTruck extends WheeledVehicle {
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
         RotatableUnit bed = (RotatableUnit) partUnits.get(1);
