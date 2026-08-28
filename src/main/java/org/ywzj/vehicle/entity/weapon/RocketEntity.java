@@ -1,5 +1,10 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
+import com.maydaymemory.mae.control.runner.AnimationContext;
+import com.maydaymemory.mae.control.runner.AnimationRunner;
+import com.maydaymemory.mae.control.runner.PlayingState;
+import com.maydaymemory.mae.control.runner.StopState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -17,6 +22,8 @@ import net.minecraftforge.network.PlayMessages;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleRocketWeaponData;
@@ -31,7 +38,9 @@ public class RocketEntity extends AmmoEntity {
     public float mass;
     public float thrust;
     public float motorBurnTime;
+    public Vec3 engineNozzleOffset;
     public float dragCoefficient;
+    public AnimationRunner animationRunner;
     private VehicleSound sound;
     private Vec3 particlePosO;
 
@@ -71,12 +80,21 @@ public class RocketEntity extends AmmoEntity {
         if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleRocketWeaponData data) {
             initRocket(data);
         }
+        InternalAssets assets = ClientAssetsManager.INSTANCE.getInternalAssets();
+        BedrockAnimation flameAnimation = assets.getRocketMotorFlameAnimation();
+        AnimationContext animContext = new AnimationContext(flameAnimation.getSpecifiedEndTimeS());
+        animationRunner = new AnimationRunner(flameAnimation, animContext);
+        animationRunner.setState(new PlayingState(System::nanoTime, StopState::new));
+        if (triggered) {
+            animContext.setProgress(flameAnimation.getSpecifiedEndTimeS());
+        }
     }
 
     private void initRocket(VehicleRocketWeaponData data) {
         this.mass = data.getMass();
         this.thrust = data.getThrust();
         this.motorBurnTime = data.getMotorBurnTime();
+        this.engineNozzleOffset = data.getEngineNozzleOffset();
         this.dragCoefficient = data.getDragCoefficient();
         this.damage = data.getDamage();
         this.explosion = data.getExplosion();
@@ -102,7 +120,7 @@ public class RocketEntity extends AmmoEntity {
     private void tickMove() {
         Vec3 velocity = this.getDeltaMovement();
         Vec3 lookDir = this.getLookAngle();
-        if (tickCount <= motorBurnTime) {
+        if (isMotorBurning()) {
             double acceleration = (this.thrust / this.mass);
             velocity = velocity.add(lookDir.scale(acceleration));
         }
@@ -132,8 +150,12 @@ public class RocketEntity extends AmmoEntity {
 
     @OnlyIn(Dist.CLIENT)
     public void tickParticle() {
-        if (tickCount <= motorBurnTime) {
-            Vec3 pos = this.position().add(this.getLookAngle().scale(-1));
+        if (isMotorBurning() && engineNozzleOffset != null) {
+            Vec3 previousPosition = new Vec3(this.xo, this.yo, this.zo);
+            Vec3 rotatedOffset = engineNozzleOffset
+                    .xRot(-this.xRotO * Mth.DEG_TO_RAD)
+                    .yRot(-this.yRotO * Mth.DEG_TO_RAD);
+            Vec3 pos = previousPosition.add(rotatedOffset);
             Vec3 posO = particlePosO == null ? pos : particlePosO;
             Vec3 step = pos.subtract(posO);
             double dist = step.length();
@@ -166,6 +188,10 @@ public class RocketEntity extends AmmoEntity {
     @Override
     public float getCaliber() {
         return 40f;
+    }
+
+    public boolean isMotorBurning() {
+        return tickCount <= motorBurnTime;
     }
 
 }

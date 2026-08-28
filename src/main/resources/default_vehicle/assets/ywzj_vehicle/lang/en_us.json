@@ -19,6 +19,7 @@
     "ywzj_vehicle.atv_coyoto": "Coyote",
     "ywzj_vehicle.atv_mrzr4": "MRZR4",
     "ywzj_vehicle.htf5980": "HTF5980",
+    "ywzj_vehicle.j36": "J-36",
 
     "entity.ywzj_vehicle.dump_truck": "Dump Truck",
     "entity.ywzj_vehicle.ztl11": "ZTL-11",
@@ -37,5 +38,6 @@
     "entity.ywzj_vehicle.rafale": "Rafale",
     "entity.ywzj_vehicle.atv_coyoto": "Coyote",
     "entity.ywzj_vehicle.atv_mrzr4": "MRZR4",
-    "entity.ywzj_vehicle.htf5980": "HTF5980"
+    "entity.ywzj_vehicle.htf5980": "HTF5980",
+    "entity.ywzj_vehicle.j36": "J-36"
 }

@@ -34,7 +34,9 @@ import org.ywzj.vehicle.client.render.entity.vehicle.Ztl11Renderer;
 import org.ywzj.vehicle.client.render.entity.weapon.AmmoEntityRenderer;
 import org.ywzj.vehicle.client.render.entity.weapon.BulletEntityRenderer;
 import org.ywzj.vehicle.client.render.entity.weapon.DecoyFlareEntityRenderer;
+import org.ywzj.vehicle.client.render.entity.weapon.RocketPropelledEntityRenderer;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.entity.weapon.AmmoEntity;
 import org.ywzj.vehicle.entity.weapon.GrenadeEntity;
 import org.ywzj.vehicle.particle.TrackParticle;
@@ -70,17 +72,17 @@ public class ClientSetupHandler {
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.BULLET.get(), BulletEntityRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROCKET.get(),
-                ctx -> new AmmoEntityRenderer<>(ctx, AmmoEntity::getWeaponId, "entity/rocket_57mm", "textures/entity/rocket_57mm.png")));
+                ctx -> new RocketPropelledEntityRenderer<>(ctx, AmmoEntity::getWeaponId, InternalAssets.ROCKET_57MM_MODEL, InternalAssets.ROCKET_57MM_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.AERIAL_BOMB.get(),
-                ctx -> new AmmoEntityRenderer<>(ctx, AmmoEntity::getWeaponId, "entity/aerial_bomb", "textures/entity/aerial_bomb.png")));
+                ctx -> new AmmoEntityRenderer<>(ctx, AmmoEntity::getWeaponId, InternalAssets.AERIAL_BOMB_MODEL, InternalAssets.AERIAL_BOMB_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.MISSILE.get(),
-                ctx -> new AmmoEntityRenderer<>(ctx, AmmoEntity::getWeaponId, "entity/missile_akd10", "textures/entity/missile_akd10.png")));
+                ctx -> new RocketPropelledEntityRenderer<>(ctx, AmmoEntity::getWeaponId, InternalAssets.MISSILE_AKD10_MODEL, InternalAssets.MISSILE_AKD10_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.SMOKE_GRENADE.get(),
-                ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, "entity/grenade_40mm", "textures/entity/grenade_40mm.png")));
+                ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, InternalAssets.GRENADE_40MM_MODEL, InternalAssets.GRENADE_40MM_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.APS_GRENADE.get(),
-                ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, "entity/grenade_40mm", "textures/entity/grenade_40mm.png")));
+                ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, InternalAssets.GRENADE_40MM_MODEL, InternalAssets.GRENADE_40MM_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FRAG_GRENADE.get(),
-                ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, "entity/grenade_40mm", "textures/entity/grenade_40mm.png")));
+                ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, InternalAssets.GRENADE_40MM_MODEL, InternalAssets.GRENADE_40MM_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));

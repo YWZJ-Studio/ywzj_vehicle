@@ -168,10 +168,10 @@ dependencies {
     // tacz
     modImplementation 'curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626'
     // apricityui
-    jarJar(modImplementation 'com.sighs:ApricityUI-forge-1.20.1:1.2.3') {
+    jarJar(modImplementation 'com.sighs:ApricityUI-forge-1.20.1:1.2.3.1') {
         version {
-            strictly '[1.2.3,)'
-            prefer '1.2.3'
+            strictly '[1.2.3.1,)'
+            prefer '1.2.3.1'
         }
     }
     // sbw

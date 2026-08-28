@@ -1,0 +1,41 @@
+{
+    "name": "j36_controller",
+    "script": "ywzj_vehicle:j36",
+    "parameters": {},
+    "switchable_animations": {
+        "weapon_bay": {
+            "part_id": "weapon_bay",
+            "animation": "weapon_bay"
+        },
+        "landing_gear": {
+            "part_id": "landing_gear",
+            "animation": "landing_gear"
+        },
+        "airbrake": {
+            "part_id": "airbrake",
+            "animation": "airbrake"
+        }
+    },
+    "state_machines": {},
+    "graph": {
+        "type": "merge",
+        "inputs": [
+            {
+                "type": "switchable_animation",
+                "ref": "weapon_bay"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "landing_gear"
+            },
+            {
+                "type": "switchable_animation",
+                "ref": "airbrake"
+            },
+            {
+                "type": "script",
+                "function": "updateBones"
+            }
+        ]
+    }
+}

@@ -8,7 +8,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.resource.RawResourceLoade
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +31,12 @@ public class BedrockModelLoader {
     @SubscribeEvent
     public static void onRegisterBedrockModelRenderers(RegisterBedrockModelEvent event) {
         // 通用模型直接走sbm自带的加载器
-        event.register(YwzjVehicle.modLocation("entity/basic_bullet"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLocation("entity/grenade_40mm"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLocation("entity/rocket_57mm"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLocation("entity/aerial_bomb"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLocation("entity/missile_akd10"), COMMON_LOADER);
-        event.register(YwzjVehicle.modLocation("block/machine_max_block"), COMMON_LOADER);
+        event.register(InternalAssets.BASIC_BULLET_MODEL, COMMON_LOADER);
+        event.register(InternalAssets.GRENADE_40MM_MODEL, COMMON_LOADER);
+        event.register(InternalAssets.ROCKET_57MM_MODEL, COMMON_LOADER);
+        event.register(InternalAssets.AERIAL_BOMB_MODEL, COMMON_LOADER);
+        event.register(InternalAssets.MISSILE_AKD10_MODEL, COMMON_LOADER);
+        event.register(InternalAssets.MACHINE_MAX_BLOCK_MODEL, COMMON_LOADER);
     }
 
     public static BedrockModel getModel(ResourceLocation location) {

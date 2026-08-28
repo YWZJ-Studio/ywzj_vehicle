@@ -65,7 +65,7 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
     private int lerpSteps;
     private boolean discard;
     protected boolean keepChunkLoaded = false;
-    private boolean triggered;
+    protected boolean triggered;
     private BakedModelInstance modelInstance;
     private AnimationRateLimiter<Pose> animationRateLimiter;
     public Pose lastPose;

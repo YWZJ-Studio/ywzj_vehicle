@@ -80,7 +80,7 @@ public class DecoyFlareEntity extends AmmoEntity implements TargetObstruction {
 
     @OnlyIn(Dist.CLIENT)
     private void tickParticle() {
-        Vec3 pos = position();
+        Vec3 pos = new Vec3(this.xo, this.yo, this.zo);
         int age = this.tickCount;
         if (age % 2 == 0) {
             level().addParticle(

@@ -25,6 +25,7 @@
     "seeker_fov": 30,
     "mass": 0.01,
     "thrust": 0.01,
+    "engine_nozzle_offset": [0, 0, -1.48],
     "motor_burn_time": 300,
     "drag_coefficient": 0.005,
     "max_g": 30,
