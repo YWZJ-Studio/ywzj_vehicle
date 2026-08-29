@@ -239,6 +239,16 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
+        Vec3 velocity = new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z);
+        if (velocity.length() > 0.1 && Math.sin(VectorUtil.angleBetween(velocity, getLookAngle())) > Math.sin(Math.PI / 10)) {
+            if (tireSquealSoundInstance == null) {
+                tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1f, 1f, 1f, true, 50, true, true, this.getId());
+                tireSquealSoundInstance.play();
+            }
+        } else if (tireSquealSoundInstance != null) {
+            tireSquealSoundInstance.stop();
+            tireSquealSoundInstance = null;
+        }
         if (getPower() == 5 && isEngineOn()) {
             SoundEvent engineStartSound = getEngineStartSound();
             if (engineStartSound != null) {
@@ -254,9 +264,10 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
             }
+            return;
         }
         float engineSpeed = getEngineSpeed();
-        if (engineSpeed == 60) {
+        if (engineSpeed <= 60) {
             if (engineRunSoundInstance != null) {
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
@@ -268,7 +279,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
                     engineIdleSoundInstance.play();
                 }
             }
-        } else if (engineSpeed > 60) {
+        } else {
             if (engineIdleSoundInstance != null) {
                 engineIdleSoundInstance.stop();
                 engineIdleSoundInstance = null;
@@ -283,16 +294,6 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             } else {
                 engineRunSoundInstance.setPitch(pitch);
             }
-        }
-        Vec3 velocity = new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z);
-        if (velocity.length() > 0.1 && Math.sin(VectorUtil.angleBetween(velocity, getLookAngle())) > Math.sin(Math.PI / 10)) {
-            if (tireSquealSoundInstance == null) {
-                tireSquealSoundInstance = new VehicleSound(AllSounds.TIRE_SQUEAL.get(), 1f, 1f, 1f, true, 50, true, true, this.getId());
-                tireSquealSoundInstance.play();
-            }
-        } else if (tireSquealSoundInstance != null) {
-            tireSquealSoundInstance.stop();
-            tireSquealSoundInstance = null;
         }
     }
 

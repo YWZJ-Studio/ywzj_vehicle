@@ -204,6 +204,23 @@ public class TrackedVehicle extends AbstractVehicle
     @OnlyIn(Dist.CLIENT)
     protected void tickSound() {
         super.tickSound();
+        Vec3 forwardDirection = new Vec3(axes()[2]);
+        Vec3 velocity = getDeltaMovement();
+        double speed = Math.abs(velocity.dot(forwardDirection));
+        if (speed > 0.01) {
+            if (trackRunSoundInstance == null) {
+                SoundEvent trackRunSound = getTrackRunSound();
+                if (trackRunSound != null) {
+                    trackRunSoundInstance = new VehicleSound(trackRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
+                    trackRunSoundInstance.play();
+                }
+            } else {
+                trackRunSoundInstance.setPitch((float) (maxSpeedForward - speed) / maxSpeedForward * 0.3f + 0.8f);
+            }
+        } else if (trackRunSoundInstance != null) {
+            trackRunSoundInstance.stop();
+            trackRunSoundInstance = null;
+        }
         if (getPower() == 5 && isEngineOn()) {
             SoundEvent engineStartSound = getEngineStartSound();
             if (engineStartSound != null) {
@@ -219,21 +236,7 @@ public class TrackedVehicle extends AbstractVehicle
                 engineRunSoundInstance.stop();
                 engineRunSoundInstance = null;
             }
-        }
-        double speed = getDeltaMovement().length();
-        if (speed > 0) {
-            if (trackRunSoundInstance == null) {
-                SoundEvent trackRunSound = getTrackRunSound();
-                if (trackRunSound != null) {
-                    trackRunSoundInstance = new VehicleSound(trackRunSound, 1f, viewInfo.soundDistance, 1f, true, 50, true, true, this.getId());
-                    trackRunSoundInstance.play();
-                }
-            } else {
-                trackRunSoundInstance.setPitch((float) (maxSpeedForward - speed) / maxSpeedForward * 0.3f + 0.8f);
-            }
-        } else if (trackRunSoundInstance != null) {
-            trackRunSoundInstance.stop();
-            trackRunSoundInstance = null;
+            return;
         }
         float engineSpeed = getEngineSpeed();
         if (engineSpeed <= 60) {

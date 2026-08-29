@@ -49,7 +49,7 @@ public class VehicleMissile extends AbstractVehicleWeapon<VehicleMissileWeaponDa
 
     @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
-        int coldLaunchTimeTick = getWeaponUnit().getRootParentWeaponUnit().getColdLaunchTimeTick();
+        int coldLaunchTimeTick = getWeaponUnit().getColdLaunchTimeTick();
         if (coldLaunchTimeTick > 0) {
             new Thread(() -> {
                 try {

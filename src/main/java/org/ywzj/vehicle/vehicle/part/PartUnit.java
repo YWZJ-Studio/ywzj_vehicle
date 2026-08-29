@@ -167,6 +167,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         }
     }
 
+    public void afterVehicleRot(float dXRot, float dYRot, float dZRot) {}
+
     public boolean onInteract(Player player, InteractionHand hand) {
         return true;
     }

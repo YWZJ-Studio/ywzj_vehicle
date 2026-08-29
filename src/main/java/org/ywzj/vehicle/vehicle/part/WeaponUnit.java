@@ -132,6 +132,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public boolean rotByAim = true;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
+    public int ignoreRemoteRotTick;
     private VehicleSound irTrackAlarmSound;
 
     public WeaponUnit(int index, AbstractVehicle vehicle, WeaponUnitData data) {
@@ -476,11 +477,28 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     protected void tickRemoteRot() {
-        if (vehicle.level().isClientSide()
-                && (getOwner() != LocalVehiclePlayer.instance.getPlayer() || !rotByAim)) {
+        if (!vehicle.level().isClientSide()) {
+            return;
+        }
+        if (ignoreRemoteRotTick > 0 && VectorUtil.angleBetween(worldVec(xRemoteAimRot, yRemoteAimRot), worldVec) < Math.PI / 36) {
+            ignoreRemoteRotTick -= 1;
+            return;
+        } else {
+            ignoreRemoteRotTick = 0;
+        }
+        if (getOwner() != LocalVehiclePlayer.instance.getPlayer() || !rotByAim) {
             xAimRot = xRemoteAimRot;
             yAimRot = yRemoteAimRot;
             updateWorldAimVec();
+        }
+    }
+
+    public void afterVehicleRot(float dXRot, float dYRot, float dZRot) {
+        if (!vehicle.level().isClientSide()) {
+            return;
+        }
+        if (Math.abs(dXRot) > 0.01 || Math.abs(dYRot) > 0.01 || Math.abs(dZRot) > 0.01) {
+            ignoreRemoteRotTick = 3;
         }
     }
 
