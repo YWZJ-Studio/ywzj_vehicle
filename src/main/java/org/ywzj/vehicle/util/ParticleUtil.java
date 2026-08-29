@@ -116,7 +116,7 @@ public final class ParticleUtil {
                 double bias = ((2 * Math.PI) / pointCount) * random.nextDouble();
                 double angle = (i * 2 * Math.PI) / pointCount;
                 double x = surface.getX() + radius * Math.cos(angle + bias) + random.nextDouble() * 0.5;
-                double y = surface.getY() + 2;
+                double y = surface.getY() + 1.3;
                 double z = surface.getZ() + radius * Math.sin(angle + bias) + random.nextDouble() * 0.5;
                 level.addParticle(WHITE_DUST, true, x, y, z, 0, 0, 0);
             }

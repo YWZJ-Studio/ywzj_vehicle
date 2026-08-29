@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.entity.weapon.DecoyFlareEntity;
 
 public class DecoyFlareEntityRenderer extends EntityRenderer<DecoyFlareEntity> {
@@ -77,7 +77,7 @@ public class DecoyFlareEntityRenderer extends EntityRenderer<DecoyFlareEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(DecoyFlareEntity pEntity) {
-        return YwzjVehicle.modLocation("textures/entity/decoy_flare.png");
+        return InternalAssets.DECOY_FLARE_TEXTURE;
     }
 
 }

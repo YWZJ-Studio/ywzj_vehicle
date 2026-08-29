@@ -12,13 +12,11 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.item.MachineMaxBlockItem;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 import javax.annotation.Nonnull;
-
-import static org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer.MACHINE_MAX_BLOCK_MODEL;
-import static org.ywzj.vehicle.client.render.entity.block.MachineMaxBlockRenderer.MACHINE_MAX_BLOCK_TEXTURE;
 
 public class MachineMaxBlockItemRenderer extends BlockEntityWithoutLevelRenderer {
 
@@ -29,7 +27,7 @@ public class MachineMaxBlockItemRenderer extends BlockEntityWithoutLevelRenderer
     @Override
     public void renderByItem(@Nonnull ItemStack itemStack, @Nonnull ItemDisplayContext transformType, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource bufferSource, int pPackedLight, int pPackedOverlay) {
         if (itemStack.getItem() instanceof MachineMaxBlockItem) {
-            BedrockModel machineMaxBlockModel = BedrockModelLoader.getModel(MACHINE_MAX_BLOCK_MODEL);
+            BedrockModel machineMaxBlockModel = BedrockModelLoader.getModel(InternalAssets.MACHINE_MAX_BLOCK_MODEL);
             poseStack.pushPose();
             {
                 if (transformType == ItemDisplayContext.FIXED) {
@@ -45,8 +43,8 @@ public class MachineMaxBlockItemRenderer extends BlockEntityWithoutLevelRenderer
                     poseStack.scale(0.5f, 0.5f, 0.5f);
                 }
                 machineMaxBlockModel.renderToBuffer(poseStack, bufferSource,
-                        RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE),
-                        BedrockModelRenderTypes.polyMeshCutout(MACHINE_MAX_BLOCK_TEXTURE),
+                        RenderType.entityCutout(InternalAssets.MACHINE_MAX_BLOCK_TEXTURE),
+                        BedrockModelRenderTypes.polyMeshCutout(InternalAssets.MACHINE_MAX_BLOCK_TEXTURE),
                         pPackedLight,
                         OverlayTexture.pack(0f, false)
                 );

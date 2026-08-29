@@ -17,19 +17,16 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBlockEntity> {
 
-    public static final ResourceLocation MACHINE_MAX_BLOCK_MODEL = YwzjVehicle.modLocation("block/machine_max_block");
-    public static final ResourceLocation MACHINE_MAX_BLOCK_TEXTURE = YwzjVehicle.modLocation("textures/block/machine_max_block.png");
     private static final float VEHICLE_MODEL_YAW = 135.0F;
     private static final float PRINTER_MODEL_UNITS_PER_BLOCK = 80.0F;
 
@@ -50,7 +47,7 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
         }
         poseStack.rotateAround(Axis.YP.rotationDegrees(yRot), 0, 0, 0);
 
-        BedrockModel machineMaxBlockModel = BedrockModelLoader.getModel(MACHINE_MAX_BLOCK_MODEL);
+        BedrockModel machineMaxBlockModel = BedrockModelLoader.getModel(InternalAssets.MACHINE_MAX_BLOCK_MODEL);
         BedrockBone boneX = machineMaxBlockModel.getBone("X");
         BedrockBone boneY = machineMaxBlockModel.getBone("Y");
         BedrockBone boneZ = machineMaxBlockModel.getBone("Z");
@@ -86,8 +83,8 @@ public class MachineMaxBlockRenderer implements BlockEntityRenderer<MachineMaxBl
 
         try {
             machineMaxBlockModel.renderToBuffer(poseStack, bufferSource,
-                    RenderType.entityCutout(MACHINE_MAX_BLOCK_TEXTURE),
-                    BedrockModelRenderTypes.polyMeshCutout(MACHINE_MAX_BLOCK_TEXTURE),
+                    RenderType.entityCutout(InternalAssets.MACHINE_MAX_BLOCK_TEXTURE),
+                    BedrockModelRenderTypes.polyMeshCutout(InternalAssets.MACHINE_MAX_BLOCK_TEXTURE),
                     packedLight,
                     OverlayTexture.pack(0f, false)
             );

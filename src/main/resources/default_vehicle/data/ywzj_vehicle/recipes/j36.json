@@ -1,0 +1,48 @@
+{
+    "type": "ywzj_vehicle:vehicle_printing",
+    "materials": [
+        {
+            "tag": "forge:ingots/iron",
+            "count": 192
+        },
+        {
+            "tag": "forge:ingots/copper",
+            "count": 128
+        },
+        {
+            "item": "minecraft:redstone",
+            "count": 96
+        },
+        {
+            "item": "minecraft:glass_pane",
+            "count": 24
+        },
+        {
+            "item": "minecraft:dispenser",
+            "count": 12
+        },
+        {
+            "item": "minecraft:diamond",
+            "count": 16
+        },
+        {
+            "item": "minecraft:gold_ingot",
+            "count": 48
+        },
+        {
+            "item": "minecraft:lapis_lazuli",
+            "count": 48
+        },
+        {
+            "item": "minecraft:netherite_scrap",
+            "count": 4
+        }
+    ],
+    "result": {
+        "item": "ywzj_vehicle:vehicle_spawn_item",
+        "nbt": {
+            "YwzjVehicleId": "ywzj_vehicle:j36"
+        }
+    },
+    "printingTime": 1800
+}

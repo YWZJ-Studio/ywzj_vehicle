@@ -8,7 +8,8 @@ public class AuiTextHelper {
         if (element == null) {
             return;
         }
-        element.setInnerHTML(escapeHtml(text).replace("-", "&#x2011;"));
+        String content = escapeHtml(text).replace("-", "&#x2011;");
+        element.setInnerHTML("<div class=\"description-scroll-content\">" + content + "</div>");
     }
 
     public static String escapeHtml(String text) {

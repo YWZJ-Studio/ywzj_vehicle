@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
 import org.ywzj.vehicle.item.DecorationItem;
 
@@ -57,7 +58,7 @@ public class DecorationItemRenderer extends BlockEntityWithoutLevelRenderer {
                         return;
                     }
                 }
-                VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(YwzjVehicle.modLocation("textures/item/decoration_item.png")));
+                VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(InternalAssets.DECORATION_ITEM_TEXTURE));
                 DECORATION_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay);
             }
             poseStack.popPose();

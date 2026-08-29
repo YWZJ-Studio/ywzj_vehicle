@@ -40,15 +40,15 @@ public class ParagliderCanopyRenderer extends EntityRenderer<ParagliderCanopy> {
         {
             float yaw = Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
             Entity owner = entity.getOwner();
-            if (!entity.isFalling() && owner instanceof LivingEntity living) {
-                Vec3 ownerPosition = living.getPosition(partialTick);
+            if (!entity.isFalling() && owner instanceof LivingEntity livingEntity) {
+                Vec3 ownerPosition = livingEntity.getPosition(partialTick);
                 Vec3 canopyPosition = entity.getPosition(partialTick);
                 poseStack.translate(
                         ownerPosition.x - canopyPosition.x,
-                        ownerPosition.y - canopyPosition.y,
+                        ownerPosition.y - canopyPosition.y - 0.1f,
                         ownerPosition.z - canopyPosition.z
                 );
-                yaw = Mth.rotLerp(partialTick, living.yHeadRotO, living.yHeadRot);
+                yaw = Mth.rotLerp(partialTick, livingEntity.yBodyRotO, livingEntity.yBodyRot);
             }
             poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
             modelInstance.renderToBuffer(

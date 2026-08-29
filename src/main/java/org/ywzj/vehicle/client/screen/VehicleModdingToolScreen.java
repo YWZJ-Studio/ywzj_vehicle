@@ -21,7 +21,6 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.network.message.ClientVehicleChangeDisplay;
 import org.ywzj.vehicle.util.AuiTextHelper;
@@ -205,12 +204,6 @@ public class VehicleModdingToolScreen extends ApricityScreen {
     }
 
     private void bindSmokeControls() {
-        if (!(vehicle instanceof FixedWingVehicle)) {
-            if (smokeControls != null) {
-                smokeControls.setClassName("smoke-controls hidden");
-            }
-            return;
-        }
         if (smokeControls != null) {
             smokeControls.setClassName("smoke-controls");
         }
@@ -264,7 +257,7 @@ public class VehicleModdingToolScreen extends ApricityScreen {
     }
 
     private void refreshSmokeSwatch() {
-        if (smokeSwatch == null || !(vehicle instanceof FixedWingVehicle)) return;
+        if (smokeSwatch == null) return;
         AllConfigs.CommonConfig common = AllConfigs.common;
         int color = (common.aerobaticSmokeR.get() << 16) | (common.aerobaticSmokeG.get() << 8) | common.aerobaticSmokeB.get();
         smokeSwatch.setInlineStyleProperty("background-color", String.format(Locale.ROOT, "#%06x", color));

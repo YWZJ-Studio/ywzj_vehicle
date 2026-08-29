@@ -4,6 +4,7 @@
     "damage": 100,
     "headshot_multiplier": 1.5,
     "inaccuracy": 0.05,
+    "engine_nozzle_offset": [0, 0, -0.37],
     "shoot_interval": 200,
     "max_capacity": 32,
     "reload": {

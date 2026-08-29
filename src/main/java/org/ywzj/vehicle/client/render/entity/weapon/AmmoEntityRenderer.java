@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
@@ -35,12 +34,12 @@ public class AmmoEntityRenderer<T extends AmmoEntity> extends EntityRenderer<T> 
 
     public AmmoEntityRenderer(EntityRendererProvider.Context pContext,
                               Function<T, ResourceLocation> weaponIdGetter,
-                              String defaultModelPath,
-                              String defaultTexturePath) {
+                              ResourceLocation defaultModel,
+                              ResourceLocation defaultTexture) {
         super(pContext);
         this.weaponIdGetter = weaponIdGetter;
-        this.defaultModel = YwzjVehicle.modLocation(defaultModelPath);
-        this.defaultTexture = YwzjVehicle.modLocation(defaultTexturePath);
+        this.defaultModel = defaultModel;
+        this.defaultTexture = defaultTexture;
     }
 
     @Override

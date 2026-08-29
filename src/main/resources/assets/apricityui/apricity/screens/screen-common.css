@@ -1,4 +1,9 @@
 /* Shared readability and glass treatment for the vehicle AUI screens. */
+html,
+body {
+    user-select: none;
+}
+
 .ore-theme {
     --ore-canvas: transparent;
     --ore-surface: rgba(72, 73, 74, 0.80);
@@ -76,6 +81,7 @@ body.ore-theme.machine-screen .navbar-brand {
 
 .ore-theme .preview-panel {
     background: rgba(37, 38, 40, 0.58);
+    user-select: none;
 }
 
 .ore-theme .preview-panel .card-body {
@@ -129,6 +135,13 @@ body.ore-theme.machine-screen .navbar-brand {
 .ore-theme .description-panel .card-body {
     font-family: "Noto Sans SC", "Segoe UI", OreRegular, sans-serif;
     font-weight: bold;
+}
+
+.ore-theme .description-scroll-content {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .ore-theme .profile-description,

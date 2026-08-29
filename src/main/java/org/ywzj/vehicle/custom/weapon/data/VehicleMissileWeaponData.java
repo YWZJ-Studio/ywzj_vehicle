@@ -31,7 +31,7 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     private float motorBurnTime = 300f;
 
     @SerializedName("engine_nozzle_offset")
-    private Vec3 engineNozzleOffset = new Vec3(0, 0, -2);
+    private Vec3 engineNozzleOffset = new Vec3(0, 0, -1);
 
     @SerializedName("drag_coefficient")
     private float dragCoefficient = 0.005f;

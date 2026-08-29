@@ -18,7 +18,7 @@
 				{
 					"name": "armorBody",
 					"parent": "bone",
-					"pivot": [0, 22, 3],
+					"pivot": [0, 24, 0],
 					"cubes": [
 						{
 							"origin": [-4, 11, 7],

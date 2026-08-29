@@ -14,14 +14,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.entity.weapon.BulletEntity;
 import org.ywzj.vehicle.resource.BedrockModelLoader;
 
 public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
-
-    public static final ResourceLocation DEFAULT_BULLET_MODEL = YwzjVehicle.modLocation("entity/basic_bullet");
-    public static final ResourceLocation DEFAULT_BULLET_TEXTURE = YwzjVehicle.modLocation("textures/entity/basic_bullet.png");
 
     public BulletEntityRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -29,7 +26,7 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
 
     @Override
     public void render(BulletEntity bullet, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        var model = BedrockModelLoader.getModel(DEFAULT_BULLET_MODEL);
+        var model = BedrockModelLoader.getModel(InternalAssets.BASIC_BULLET_MODEL);
         poseStack.pushPose();
         {
             float width = Math.min(0.04f * bullet.getCaliber() / 7.62f, 0.2f);
@@ -43,7 +40,7 @@ public class BulletEntityRenderer extends EntityRenderer<BulletEntity> {
             poseStack.scale(width, width, (float) trailLength);
             double bulletDistance = bulletPosition.distanceTo(bullet.getStartPos());
             if (bulletDistance > 1) {
-                RenderType type = RenderType.energySwirl(DEFAULT_BULLET_TEXTURE, 15, 15);
+                RenderType type = RenderType.energySwirl(InternalAssets.BASIC_BULLET_TEXTURE, 15, 15);
                 VertexConsumer builder = bufferSource.getBuffer(type);
                 model.renderToBuffer(poseStack, builder, packedLight, OverlayTexture.NO_OVERLAY, bullet.getTracerR(), bullet.getTracerG(), bullet.getTracerB(), 1);
             }

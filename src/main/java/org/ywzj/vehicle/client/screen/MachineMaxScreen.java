@@ -122,8 +122,6 @@ public class MachineMaxScreen extends ApricityScreen {
         buildVehicleCatalog();
         if (searchInput != null) {
             searchInput.setValue(filter);
-            searchInput.addEventListener("input", event -> applyFilter(searchInput.getValue()));
-            searchInput.addEventListener("change", event -> applyFilter(searchInput.getValue()));
         }
         if (craftButton != null) {
             craftButton.addEventListener("click", event -> onCraft());
