@@ -148,6 +148,13 @@ dependencies {
         exclude group: 'it.unimi.dsi', module: 'fastutil'
         exclude group: 'org.joml', module: 'joml'
     }
+    // apricityui
+    jarJar(modImplementation 'com.sighs:ApricityUI-forge-1.20.1:1.2.4') {
+        version {
+            strictly '[1.2.4,)'
+            prefer '1.2.4'
+        }
+    }
     // mixinextras
     compileOnly annotationProcessor('io.github.llamalad7:mixinextras-common:0.3.6')
     jarJar(modImplementation('io.github.llamalad7:mixinextras-forge:0.3.6')) {
@@ -167,13 +174,6 @@ dependencies {
     modLocalRuntime 'curse.maven:accelerated-rendering-1314021:8448250'
     // tacz
     modImplementation 'curse.maven:timeless-and-classics-zero-1028108:7401617-sources-7401626'
-    // apricityui
-    jarJar(modImplementation 'com.sighs:ApricityUI-forge-1.20.1:1.2.3.1') {
-        version {
-            strictly '[1.2.3.1,)'
-            prefer '1.2.3.1'
-        }
-    }
     // sbw
     modCompileOnly 'curse.maven:superb-warfare-1218165:7292685'
     modCompileOnly 'curse.maven:curios-309927:6418456'

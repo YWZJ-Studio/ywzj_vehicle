@@ -64,9 +64,7 @@ public class FirstPersonHandler {
                 event.setRoll(zRot);
             }
         }
-        if (!player.isSpectator()) {
-            shake(event);
-        }
+        shake(event);
     }
 
     public static void addExplosionShake(Vec3 pos, double explosionRadius) {
