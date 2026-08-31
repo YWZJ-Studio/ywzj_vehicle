@@ -65,9 +65,7 @@ public class FirstPersonHandler {
             event.setYaw(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotYO, localVehiclePlayer.cameraAimRotY));
             event.setRoll(Mth.lerp(partialTick, localVehiclePlayer.cameraAimRotZO, localVehiclePlayer.cameraAimRotZ));
         }
-        if (!player.isSpectator()) {
-            shake(event);
-        }
+        shake(event);
     }
 
     public static void addExplosionShake(Vec3 pos, double explosionRadius) {
