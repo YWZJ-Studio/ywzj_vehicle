@@ -72,6 +72,7 @@ public class ResourceScanner {
                                                               Class<T> dataClass) {
         Map<ResourceLocation, T> output = Maps.newHashMap();
         List<Future<ParsedResource<T>>> futures = new ArrayList<>();
+        pGson.getAdapter(dataClass);
         for (Map.Entry<ResourceLocation, Resource> entry : filetoidconverter.listMatchingResources(pResourceManager).entrySet()) {
             ResourceLocation resourcelocation = entry.getKey();
             ResourceLocation id = filetoidconverter.fileToId(resourcelocation);
