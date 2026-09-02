@@ -41,6 +41,6 @@ public class SyncDataSerializers {
             Vec3::equals
     );
 
-    private SyncDataSerializers(){}
+    private SyncDataSerializers() {}
 
 }

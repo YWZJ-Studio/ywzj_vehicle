@@ -204,7 +204,7 @@ public enum VehiclePackLoader implements RepositorySource {
         List<VehiclePack> vehiclePacks = new ArrayList<>();
         Set<String> namespaces = new HashSet<>();
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)){
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path entry : stream) {
                 try {
                     VehiclePack vehiclePack = null;

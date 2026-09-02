@@ -266,7 +266,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         deserializeDecorationUnitsData(buffer.readNbt());
         initDisplayData();
         int[] passengerIdsBySeat = new int[buffer.readInt()];
-        for(int index = 0; index < passengerIdsBySeat.length; index += 1) {
+        for (int index = 0; index < passengerIdsBySeat.length; index += 1) {
             passengerIdsBySeat[index] = buffer.readInt();
         }
         setSeats(passengerIdsBySeat);

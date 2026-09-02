@@ -140,7 +140,7 @@ public record OBB(Vector3f center, Vector3f extents, Quaternionf rotation) {
         List<CubeOBB> cubeOBBS = new ArrayList<>();
 
         Matrix4f globalMatrix = new Matrix4f();
-        for(BedrockBone parent = bone; parent != null; parent = parent.parent) {
+        for (BedrockBone parent = bone; parent != null; parent = parent.parent) {
             globalMatrix.scaleLocal(parent.xScale, parent.yScale, parent.zScale);
             globalMatrix.rotateLocal(parent.rotation);
             globalMatrix.translateLocal(parent.x / 16.0F, parent.y / 16.0F, parent.z / 16.0F);
