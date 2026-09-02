@@ -71,7 +71,7 @@ public class StructureModelManager extends SimplePreparableReloadListener<Map<Re
 
     private static Map<ResourceLocation, BedrockModel> parseIndexes(Map<ResourceLocation, JsonElement> map) {
         ImmutableMap.Builder<ResourceLocation, BedrockModel> builder = ImmutableMap.builder();
-        for (var entry : map.entrySet()){
+        for (var entry : map.entrySet()) {
             try {
                 var pojo = GsonUtil.GSON.fromJson(entry.getValue(), BedrockModelPOJO.class);
                 BedrockModel model = new BedrockModel(pojo);

@@ -35,15 +35,14 @@ public class ScriptManager extends SimplePreparableReloadListener<Map<ResourceLo
         Map<ResourceLocation, Script> output = Maps.newHashMap();
         try (Context ctx = ContextFactory.getGlobal().enterContext()) {
             ctx.setInterpretedMode(false);
-            for(Map.Entry<ResourceLocation, Resource> entry : filetoidconverter.listMatchingResources(manager).entrySet()) {
+            for (Map.Entry<ResourceLocation, Resource> entry : filetoidconverter.listMatchingResources(manager).entrySet()) {
                 ResourceLocation resourcelocation = entry.getKey();
-                ResourceLocation resourcelocation1 = filetoidconverter.fileToId(resourcelocation);
-
+                ResourceLocation id = filetoidconverter.fileToId(resourcelocation);
                 try (Reader reader = entry.getValue().openAsReader()) {
                     Script compiled = ctx.compileReader(reader, entry.getKey().toString(), 1, null);
-                    output.put(resourcelocation1, compiled);
+                    output.put(id, compiled);
                 } catch (IllegalArgumentException | IOException | JsonParseException jsonparseexception) {
-                    YwzjVehicle.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation1, resourcelocation, jsonparseexception);
+                    YwzjVehicle.LOGGER.error("Couldn't parse data file {} from {}", id, resourcelocation, jsonparseexception);
                 }
             }
         }

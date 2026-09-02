@@ -62,7 +62,7 @@ public class TrackParticle extends TextureSheetParticle {
             new Vector3f(1.0F, -1.0F, 0.0F)
         };
 
-        for(int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 4; ++i) {
             Vector3f vector3f = avector3f[i];
             vector3f.rotate(quaternionf);
             vector3f.mul(trackScalar);

@@ -17,7 +17,7 @@ public class ServerVehicleSeatsChange {
         this.vehicleEntityId = vehicle.getId();
         int size = vehicle.seats.size();
         this.passengerIdsBySeat = new int[size];
-        for(int i = 0; i < size; ++i) {
+        for (int i = 0; i < size; ++i) {
             this.passengerIdsBySeat[i] = vehicle.seats.get(i).passengerId;
         }
     }
@@ -26,7 +26,7 @@ public class ServerVehicleSeatsChange {
         ServerVehicleSeatsChange vehicleSeatsChange = new ServerVehicleSeatsChange();
         vehicleSeatsChange.vehicleEntityId = buf.readInt();
         vehicleSeatsChange.passengerIdsBySeat = new int[buf.readInt()];
-        for(int index = 0; index < vehicleSeatsChange.passengerIdsBySeat.length; index += 1) {
+        for (int index = 0; index < vehicleSeatsChange.passengerIdsBySeat.length; index += 1) {
             vehicleSeatsChange.passengerIdsBySeat[index] = buf.readInt();
         }
         return vehicleSeatsChange;

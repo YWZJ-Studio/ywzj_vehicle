@@ -2,8 +2,6 @@ package org.ywzj.vehicle.client.resource;
 
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -12,7 +10,6 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.NotNull;
-import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.util.ResourceScanner;
 
 import java.util.Map;
@@ -22,7 +19,7 @@ import java.util.Map;
  * 从资源包/数据包中读取json文件并解析为数据
  * @param <T> 数据类型
  */
-public class JsonDataManager<T> extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> {
+public class JsonDataManager<T> extends SimplePreparableReloadListener<Map<ResourceLocation, T>> {
 
     protected final Map<ResourceLocation, T> dataMap = Maps.newHashMap();
     private final Gson gson;
@@ -43,29 +40,14 @@ public class JsonDataManager<T> extends SimplePreparableReloadListener<Map<Resou
 
     @NotNull
     @Override
-    public Map<ResourceLocation, JsonElement> prepare(ResourceManager pResourceManager, ProfilerFiller pProfiler) {
-        return ResourceScanner.scanDirectory(pResourceManager, fileToIdConverter, this.gson);
+    public Map<ResourceLocation, T> prepare(ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+        return ResourceScanner.scanDirectory(pResourceManager, fileToIdConverter, gson, dataClass);
     }
 
     @Override
-    public void apply(Map<ResourceLocation, JsonElement> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
+    public void apply(Map<ResourceLocation, T> pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         dataMap.clear();
-        for (Map.Entry<ResourceLocation, JsonElement> entry : pObject.entrySet()) {
-            ResourceLocation id = entry.getKey();
-            JsonElement element = entry.getValue();
-            try {
-                T data = parseJson(element);
-                if (data != null) {
-                    dataMap.put(id, data);
-                }
-            } catch (JsonParseException | IllegalArgumentException e) {
-                YwzjVehicle.LOGGER.error(marker, "Failed to load data file {}", id, e);
-            }
-        }
-    }
-
-    protected T parseJson(JsonElement element) {
-        return gson.fromJson(element, getDataClass());
+        dataMap.putAll(pObject);
     }
 
     public Class<T> getDataClass() {
