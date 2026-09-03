@@ -3,8 +3,7 @@ package org.ywzj.vehicle.entity.weapon;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.animation.BedrockAnimation;
 import com.maydaymemory.mae.control.runner.AnimationContext;
 import com.maydaymemory.mae.control.runner.AnimationRunner;
-import com.maydaymemory.mae.control.runner.PlayingState;
-import com.maydaymemory.mae.control.runner.StopState;
+import com.maydaymemory.mae.control.runner.LoopingState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -145,10 +144,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         BedrockAnimation flameAnimation = assets.getRocketMotorFlameAnimation();
         AnimationContext animContext = new AnimationContext(flameAnimation.getSpecifiedEndTimeS());
         animationRunner = new AnimationRunner(flameAnimation, animContext);
-        animationRunner.setState(new PlayingState(System::nanoTime, StopState::new));
-        if (triggered) {
-            animContext.setProgress(flameAnimation.getSpecifiedEndTimeS());
-        }
+        animationRunner.setState(new LoopingState(System::nanoTime));
     }
 
     private void initMissile(VehicleMissileWeaponData data) {
@@ -409,7 +405,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (!isMotorBurning() || engineNozzleOffset == null) {
             return;
         }
-        Vec3 rotatedOffset = engineNozzleOffset
+        Vec3 rotatedOffset = engineNozzleOffset.add(0, 0, -caliber / 100f)
                 .xRot(-this.xRotO * Mth.DEG_TO_RAD)
                 .yRot(-this.yRotO * Mth.DEG_TO_RAD);
         Vec3 pos = new Vec3(this.xo, this.yo, this.zo).add(rotatedOffset);

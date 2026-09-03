@@ -82,9 +82,9 @@ public enum ClientAssetsManager {
     @OnlyIn(Dist.CLIENT)
     public void reload(ResourceManager resourceManager) {
         models.apply(models.prepare(resourceManager, null), null, null);
-        scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
         animations.apply(animations.prepare(resourceManager, null), null, null);
         animationControllerDefinitionManager.apply(animationControllerDefinitionManager.prepare(resourceManager, null), null, null);
+        scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
         vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
         weaponDisplayManager.apply(weaponDisplayManager.prepare(resourceManager, null), null, null);
         decorationDisplayManager.apply(decorationDisplayManager.prepare(resourceManager, null), null, null);

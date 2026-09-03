@@ -26,8 +26,11 @@ import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 public class VehicleDataManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IVehicleDataManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleDataManager");
+    private Map<ResourceLocation, BaseVehicleData> indexes = Map.of();
+    private Map<ResourceLocation, String> cache = Map.of();
 
     enum ClientCache implements IVehicleDataManager {
+
         INSTANCE;
         private Map<ResourceLocation, BaseVehicleData> indexes = Map.of();
 
@@ -41,16 +44,52 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
             return indexes;
         }
 
-        public void fromNetwork(Map<ResourceLocation, String> map) {
+        public void fromNetwork(Map<ResourceLocation, String> idAndData) {
             Map<ResourceLocation, JsonElement> jsonMap = new HashMap<>();
-            for (var entry : map.entrySet()) {
-                var ele = GsonUtil.GSON.fromJson(entry.getValue(), JsonElement.class);
-                if (ele != null) {
-                    jsonMap.put(entry.getKey(), ele);
+            for (var entry : idAndData.entrySet()) {
+                var element = GsonUtil.GSON.fromJson(entry.getValue(), JsonElement.class);
+                if (element != null) {
+                    jsonMap.put(entry.getKey(), element);
                 }
             }
             indexes = parseIndexes(jsonMap);
         }
+
+    }
+
+    @NotNull
+    @Override
+    public Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller profiler) {
+        var map = scanDirectory(manager, "vehicles", GsonUtil.GSON);
+        ImmutableMap.Builder<ResourceLocation, String> builder = ImmutableMap.builder();
+        for (var entry : map.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().toString());
+        }
+        cache = builder.build();
+        return map;
+    }
+
+    @Override
+    public void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager manager, ProfilerFiller profiler) {
+        indexes = parseIndexes(resources);
+    }
+
+    public static void fromNetwork(Map<ResourceLocation, String> map) {
+        ClientCache.INSTANCE.fromNetwork(map);
+    }
+
+    @Override
+    public Optional<BaseVehicleData> getVehicleData(ResourceLocation id) {
+        return Optional.ofNullable(indexes.get(id));
+    }
+
+    @Override
+    public Map<ResourceLocation, BaseVehicleData> getVehicleData() {
+        return indexes;
+    }
+
+    public Map<ResourceLocation, String> getCache() {
+        return cache;
     }
 
     private static Map<ResourceLocation, BaseVehicleData> parseIndexes(Map<ResourceLocation, JsonElement> jsonMap) {
@@ -86,44 +125,6 @@ public class VehicleDataManager extends SimplePreparableReloadListener<Map<Resou
             }
         }
         return builder.build();
-    }
-
-    private Map<ResourceLocation, String> cache = Map.of();
-    private Map<ResourceLocation, BaseVehicleData> indexes = Map.of();
-
-    @NotNull
-    @Override
-    public Map<ResourceLocation, JsonElement> prepare(ResourceManager manager, ProfilerFiller profiler) {
-        var map = scanDirectory(manager, "vehicles", GsonUtil.GSON);
-        ImmutableMap.Builder<ResourceLocation, String> builder = ImmutableMap.builder();
-        for (var entry : map.entrySet()) {
-            builder.put(entry.getKey(), entry.getValue().toString());
-        }
-        cache = builder.build();
-        return map;
-    }
-
-    @Override
-    public void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager manager, ProfilerFiller profiler) {
-        indexes = parseIndexes(resources);
-    }
-
-    public static void fromNetwork(Map<ResourceLocation, String> map) {
-        ClientCache.INSTANCE.fromNetwork(map);
-    }
-
-    @Override
-    public Optional<BaseVehicleData> getVehicleData(ResourceLocation id) {
-        return Optional.ofNullable(indexes.get(id));
-    }
-
-    @Override
-    public Map<ResourceLocation, BaseVehicleData> getVehicleData() {
-        return indexes;
-    }
-
-    public Map<ResourceLocation, String> getCache() {
-        return cache;
     }
 
 }

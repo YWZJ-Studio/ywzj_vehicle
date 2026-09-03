@@ -15,6 +15,12 @@ import org.ywzj.vehicle.api.custom.IVehicleDataManager;
 import org.ywzj.vehicle.api.custom.IVehicleWeaponManager;
 import org.ywzj.vehicle.network.SliceReassembler;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 @EventBusSubscriber
 public class CommonAssetsManager {
 
@@ -29,13 +35,9 @@ public class CommonAssetsManager {
         event.addListener(manager.structureModelManager);
         event.addListener(manager.vehicleWeaponManager);
         event.addListener(manager.vehicleDataManager);
-
         event.addListener((barrier, resourceManager, preparationProfiler,
-                           reloadProfiler, backgroundExecutor, gameExecutor) -> {
-            return barrier.wait(Void.TYPE).thenRunAsync(() -> {
-                        INSTANCE = manager;
-                    }, gameExecutor);
-        });
+                           reloadProfiler, backgroundExecutor, gameExecutor)
+                -> barrier.wait(Void.TYPE).thenRunAsync(() -> INSTANCE = manager, gameExecutor));
         // 首次加载时设置实例，避免重载步骤中无法访问前置的数据
         if (INSTANCE == null) {
             INSTANCE = manager;
@@ -66,9 +68,17 @@ public class CommonAssetsManager {
             buf.writeMap(INSTANCE.vehicleDataManager.getCache(),
                     FriendlyByteBuf::writeResourceLocation,
                     (b, s) -> b.writeUtf(s));
-            // 切片发送
+            byte[] data = new byte[buf.readableBytes()];
+            buf.getBytes(buf.readerIndex(), data);
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+                 GZIPOutputStream gzip = new GZIPOutputStream(output)) {
+                gzip.write(data);
+                gzip.finish();
+                buf = new FriendlyByteBuf(Unpooled.wrappedBuffer(output.toByteArray()));
+            } catch (IOException exception) {
+                throw new IllegalStateException("Failed to gzip common assets", exception);
+            }
             var packets = SliceReassembler.sliceData(buf);
-
             for (var packet : packets) {
                 if (event.getPlayer() != null) {
                     PacketDistributor.sendToPlayer(event.getPlayer(), packet);
@@ -79,18 +89,23 @@ public class CommonAssetsManager {
         }
     }
 
-    // 收到所有数据包后组装数据并重载
-    public static void fromNetwork(FriendlyByteBuf byteBuf) {
-         try {
-             var structureModelMap = byteBuf.readMap(FriendlyByteBuf::readResourceLocation, buf -> buf.readUtf());
-             var vehicleWeaponMap = byteBuf.readMap(FriendlyByteBuf::readResourceLocation, buf -> buf.readUtf());
-             var vehicleDataMap = byteBuf.readMap(FriendlyByteBuf::readResourceLocation, buf -> buf.readUtf());
-             StructureModelManager.fromNetwork(structureModelMap);
-             VehicleWeaponManager.fromNetwork(vehicleWeaponMap);
-             VehicleDataManager.fromNetwork(vehicleDataMap);
-         } catch (Exception exception) {
-             YwzjVehicle.LOGGER.error("Failed to read common assets from network", exception);
-         }
+    public static void fromNetwork(FriendlyByteBuf buf) {
+        try {
+            byte[] compressed = new byte[buf.readableBytes()];
+            buf.getBytes(buf.readerIndex(), compressed);
+            try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(compressed))) {
+                compressed = gzip.readAllBytes();
+            }
+            FriendlyByteBuf data = new FriendlyByteBuf(Unpooled.wrappedBuffer(compressed));
+            var structureModelMap = data.readMap(FriendlyByteBuf::readResourceLocation, byteBuf -> byteBuf.readUtf());
+            var vehicleWeaponMap = data.readMap(FriendlyByteBuf::readResourceLocation, byteBuf -> byteBuf.readUtf());
+            var vehicleDataMap = data.readMap(FriendlyByteBuf::readResourceLocation, byteBuf -> byteBuf.readUtf());
+            StructureModelManager.fromNetwork(structureModelMap);
+            VehicleWeaponManager.fromNetwork(vehicleWeaponMap);
+            VehicleDataManager.fromNetwork(vehicleDataMap);
+        } catch (Exception exception) {
+            YwzjVehicle.LOGGER.error("Failed to read common assets from network", exception);
+        }
     }
 
     public static IStructureModelManager structureModelManager() {
