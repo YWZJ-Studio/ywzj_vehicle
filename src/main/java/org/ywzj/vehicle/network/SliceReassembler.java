@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SliceReassembler {
+
     private static final Map<UUID, Collector> collectors = new ConcurrentHashMap<>();
     public static final int SLICE_SIZE = 256 * 1024; // 默认一个切片最大256KB
 
@@ -87,4 +88,5 @@ public class SliceReassembler {
             return buf;
         }
     }
+
 }

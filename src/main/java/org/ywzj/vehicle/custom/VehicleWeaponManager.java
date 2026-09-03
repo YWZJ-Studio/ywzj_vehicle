@@ -30,8 +30,11 @@ import static org.ywzj.vehicle.util.ResourceScanner.scanDirectory;
 public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> implements IVehicleWeaponManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("VehicleWeaponTypeManager");
+    private Map<ResourceLocation, VehicleWeaponIndex<?, ?>> indexes = Map.of();
+    private Map<ResourceLocation, String> cache = Map.of();
 
     enum ClientCache implements IVehicleWeaponManager {
+
         INSTANCE;
         private Map<ResourceLocation, VehicleWeaponIndex<?, ?>> indexes = Map.of();
 
@@ -45,21 +48,18 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
             return Optional.ofNullable(indexes.get(id));
         }
 
-        public void fromNetwork(Map<ResourceLocation, String> map) {
+        public void fromNetwork(Map<ResourceLocation, String> idAndData) {
             Map<ResourceLocation, JsonElement> jsonMap = new HashMap<>();
-            for (var entry : map.entrySet()) {
-                var ele = GsonUtil.GSON.fromJson(entry.getValue(), JsonElement.class);
-                if (ele != null) {
-                    jsonMap.put(entry.getKey(), ele);
+            for (var entry : idAndData.entrySet()) {
+                var element = GsonUtil.GSON.fromJson(entry.getValue(), JsonElement.class);
+                if (element != null) {
+                    jsonMap.put(entry.getKey(), element);
                 }
             }
-
             indexes = parseIndexes(jsonMap);
         }
-    }
 
-    private Map<ResourceLocation, String> cache = Map.of();
-    private Map<ResourceLocation, VehicleWeaponIndex<?, ?>> indexes = Map.of();
+    }
 
     @NotNull
     @Override
@@ -97,9 +97,7 @@ public class VehicleWeaponManager extends SimplePreparableReloadListener<Map<Res
     /**
      * 通用的武器数据解析方法，供apply和fromNetwork共用
      */
-    private static Map<ResourceLocation, VehicleWeaponIndex<?, ?>> parseIndexes(
-            Map<ResourceLocation, JsonElement> map
-    ) {
+    private static Map<ResourceLocation, VehicleWeaponIndex<?, ?>> parseIndexes(Map<ResourceLocation, JsonElement> map) {
         var registry = ModRegistries.VEHICLE_WEAPON_TYPE_SUPPLIER.get();
         if (registry == null) {
             YwzjVehicle.LOGGER.error(MARKER, "Failed to load vehicle weapon data: registry is null. Is the game in a broken state?");

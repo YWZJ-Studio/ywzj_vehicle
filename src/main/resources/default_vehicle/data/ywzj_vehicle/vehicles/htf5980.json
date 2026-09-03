@@ -59,7 +59,7 @@
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "missile",
             "cold_launch_time_tick": 15,
-            "cold_launch_velocity": [0, 1, 0],
+            "cold_launch_velocity": [0, 2, 0],
             "ammo_capacity": 1,
             "fire_control_sensor_type": "loc",
             "is_seat": false,

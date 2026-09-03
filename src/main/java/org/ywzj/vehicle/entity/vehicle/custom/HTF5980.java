@@ -1,12 +1,17 @@
 package org.ywzj.vehicle.entity.vehicle.custom;
 
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
 import org.ywzj.vehicle.vehicle.part.WeaponBayUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
+
+import java.util.List;
 
 public class HTF5980 extends WheeledVehicle {
 
@@ -53,6 +58,14 @@ public class HTF5980 extends WheeledVehicle {
             controlUnit.reset();
         }
         super.tickEngineSpeed();
+    }
+
+    @Override
+    public void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator) {
+        if (missile.getXRot() > -90) {
+            return;
+        }
+        super.shoot(partUnitIndex, weaponIndex, aimContexts, operator);
     }
 
 }
