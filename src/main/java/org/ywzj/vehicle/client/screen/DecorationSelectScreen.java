@@ -15,10 +15,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.network.message.ClientDecorationAction;
 import org.ywzj.vehicle.util.AuiTextHelper;
 

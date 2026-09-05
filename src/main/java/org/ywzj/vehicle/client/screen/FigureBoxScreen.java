@@ -14,10 +14,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.block.FigureBoxBlock;
 import org.ywzj.vehicle.blockentity.FigureBoxBlockEntity;
 import org.ywzj.vehicle.client.render.entity.block.FigureBoxBlockRenderer;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.ywzj.vehicle.network.message.ClientFigureBoxUpdate;
 
 import java.util.Locale;
