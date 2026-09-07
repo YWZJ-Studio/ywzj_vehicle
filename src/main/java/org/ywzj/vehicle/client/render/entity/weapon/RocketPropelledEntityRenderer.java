@@ -4,7 +4,6 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.client.renderer.BedrockMo
 import com.maydaymemory.mae.control.runner.AnimationRunner;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -71,9 +70,10 @@ public class RocketPropelledEntityRenderer<T extends AmmoEntity> extends AmmoEnt
             float scale = ammoEntity.getCaliber() / 1000;
             poseStack.scale(scale, scale, scale);
             flameModel.renderToBuffer(poseStack, bufferSource,
-                    RenderType.entityTranslucent(InternalAssets.ROCKET_MOTOR_FLAME_TEXTURE),
+                    RenderType.eyes(InternalAssets.ROCKET_MOTOR_FLAME_TEXTURE),
                     BedrockModelRenderTypes.polyMeshCutout(InternalAssets.ROCKET_MOTOR_FLAME_TEXTURE),
-                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                    packedLight,
+                    OverlayTexture.pack(0f, false));
         } finally {
             poseStack.popPose();
             flameModel.applyPose(flameModel.getBindPose());

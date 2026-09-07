@@ -39,9 +39,7 @@ public class DecoyFlareEntityRenderer extends EntityRenderer<DecoyFlareEntity> {
         float age = entity.tickCount + partialTick;
         float scale = 0.9f + (float) Math.sin(age * 0.5f) * 0.1f;
         poseStack.scale(scale, scale, scale);
-        VertexConsumer buffer = bufferSource.getBuffer(
-                RenderType.entityTranslucent(getTextureLocation(entity))
-        );
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityTranslucentEmissive(getTextureLocation(entity)));
         PoseStack.Pose pose = poseStack.last();
         int fullBright = LightTexture.FULL_BRIGHT;
         float r = 1.0f;
@@ -53,25 +51,25 @@ public class DecoyFlareEntityRenderer extends EntityRenderer<DecoyFlareEntity> {
                 .setUv(0.0f, 1.0f)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
-                .setNormal(pose, 0, 0, 1);
-        buffer.addVertex(pose.pose(), 0.5f, -0.5f, 0.0f)
-                .setColor(r, g, b, a)
-                .setUv(1.0f, 1.0f)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
-                .setNormal(pose, 0, 0, 1);
-        buffer.addVertex(pose.pose(), 0.5f, 0.5f, 0.0f)
-                .setColor(r, g, b, a)
-                .setUv(1.0f, 0.0f)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
-                .setNormal(pose, 0, 0, 1);
+                .setNormal(pose, 0, 0, -1);
         buffer.addVertex(pose.pose(), -0.5f, 0.5f, 0.0f)
                 .setColor(r, g, b, a)
                 .setUv(0.0f, 0.0f)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
-                .setNormal(pose, 0, 0, 1);
+                .setNormal(pose, 0, 0, -1);
+        buffer.addVertex(pose.pose(), 0.5f, 0.5f, 0.0f)
+                .setColor(r, g, b, a)
+                .setUv(1.0f, 0.0f)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
+                .setNormal(pose, 0, 0, -1);
+        buffer.addVertex(pose.pose(), 0.5f, -0.5f, 0.0f)
+                .setColor(r, g, b, a)
+                .setUv(1.0f, 1.0f)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setUv2(fullBright & 0xFFFF, fullBright >> 16 & 0xFFFF)
+                .setNormal(pose, 0, 0, -1);
         poseStack.popPose();
     }
 
