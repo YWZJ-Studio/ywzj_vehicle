@@ -291,6 +291,11 @@ public abstract class GrenadeEntity extends AmmoEntity {
         return pDistance < d0 * d0;
     }
 
+    @Override
+    protected double getDefaultGravity() {
+        return getGrenadeGravity();
+    }
+
     public float getGrenadeGravity() {
         return gravity;
     }
