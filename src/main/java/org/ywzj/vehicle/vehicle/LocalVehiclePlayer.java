@@ -520,7 +520,7 @@ public class LocalVehiclePlayer {
     }
 
     public void cameraAimWith(WeaponUnit weaponUnit) {
-        Vec2 rot = weaponUnit.worldRot();
+        Vec2 rot = weaponUnit.worldRot(weaponUnit.getXRot() + weaponUnit.xBarrelSelfRot, weaponUnit.getYRot() + weaponUnit.yBarrelSelfRot);
         cameraAimRotX = rot.x;
         cameraAimRotY = rot.y;
         cameraAimRotZ = weaponUnit.worldZRot();
