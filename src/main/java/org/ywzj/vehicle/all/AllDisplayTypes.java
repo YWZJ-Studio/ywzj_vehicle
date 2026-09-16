@@ -48,6 +48,15 @@ public class AllDisplayTypes {
             AnimationContextFactory.trackedVehicle()
     );
 
+    public static final DeferredHolder<VehicleDisplayType<?>, VehicleDisplayType<VesselVehicleDisplay>> VESSEL_VEHICLE = register(
+            "vessel_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, VehicleDisplayPojo.class);
+                return new VesselVehicleDisplay(pojo);
+            },
+            AnimationContextFactory.vesselVehicle()
+    );
+
     public static final DeferredHolder<VehicleDisplayType<?>, VehicleDisplayType<RotaryWingVehicleDisplay>> ROTARY_WING_VEHICLE = register(
             "rotary_wing_vehicle",
             json -> {

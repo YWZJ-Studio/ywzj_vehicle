@@ -728,7 +728,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (!level.isClientSide()) {
             return;
         }
-        if (mainCubeOBB != null && tickCount % 5 == 0) {
+        if (mainCubeOBB != null && tickCount % 5 == 0 && getDeltaMovement().length() > 0.01f) {
             ParticleUtil.spawnWaterSurfaceBubbles(level, random, mainCubeOBB);
         }
         if (isDestroyed()) {

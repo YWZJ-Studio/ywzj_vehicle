@@ -1,0 +1,76 @@
+{
+    "type": "ywzj_vehicle:vessel_vehicle",
+    "attributes": {
+        "brake_force": 0,
+        "forward_force": 0.03,
+        "backward_force": 0.01,
+        "max_speed_forward": 1,
+        "max_speed_backward": 0.5,
+        "turn_step": 0.3,
+        "max_turn": 3
+    },
+    "max_health": 200,
+    "protect_passenger": false,
+    "view_info": {
+        "third_person_center_offset": [0, 2, 0],
+        "third_person_distance": 6,
+        "sound_distance": 3
+    },
+    "energy_info": {
+        "energy_capacity": 1,
+        "energy_consumption_per_tick": 0.00001
+    },
+    "physics_info": {
+        "density": 0.2,
+        "liquid_damping": 0.1,
+        "center": [0, 0, -0.2]
+    },
+    "structure_model": "ywzj_vehicle:vehicle/assault_boat",
+    "parts": [
+        {
+            "id": "seat0",
+            "name": "seat0",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [0.4, 1.6, -1],
+            "owner_view_offset": [0.4, 1.6, -1],
+            "passenger_pose": {
+                "left_arm_rot_x": 0,
+                "left_leg_rot_x": 0,
+                "right_leg_rot_x": 0
+            }
+        },
+        {
+            "id": "seat1",
+            "name": "seat1",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-0.4, 1.1, -0.3],
+            "owner_view_offset": [-0.4, 1.1, -0.3]
+        },
+        {
+            "id": "seat2",
+            "name": "seat2",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [0.4, 1.1, -0.3],
+            "owner_view_offset": [0.4, 1.1, -0.3]
+        },
+        {
+            "id": "seat3",
+            "name": "seat3",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [-0.4, 1.1, 0.7],
+            "owner_view_offset": [-0.4, 1.1, 0.7]
+        },
+        {
+            "id": "seat4",
+            "name": "seat4",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [0.4, 1.1, 0.7],
+            "owner_view_offset": [0.4, 1.1, 0.7]
+        }
+    ]
+}

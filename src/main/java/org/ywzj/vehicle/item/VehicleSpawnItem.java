@@ -2,20 +2,20 @@ package org.ywzj.vehicle.item;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.item.VehicleSpawnItemRenderer;
@@ -62,27 +62,29 @@ public class VehicleSpawnItem extends Item {
     }
 
     @Override
-    public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack itemStack = player.getItemInHand(hand);
+        if (level.isClientSide()) {
+            return InteractionResultHolder.sidedSuccess(itemStack, true);
         }
-        Player player = context.getPlayer();
-        if (player == null) {
-            return InteractionResult.PASS;
+        HitResult hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY);
+        if (hitResult.getType() != HitResult.Type.BLOCK) {
+            return InteractionResultHolder.pass(itemStack);
         }
-        BlockPos blockPos = context.getClickedPos().above();
-        Vec3 position = new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-        ItemStack itemStack = player.getItemInHand(context.getHand());
         CompoundTag tag = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (!tag.contains(TAG_VEHICLE_ID)) {
+            return InteractionResultHolder.fail(itemStack);
+        }
         ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString(TAG_VEHICLE_ID));
         Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isPresent()) {
-            Entity vehicle = vehicleDataOptional.get().construct(level, position, 0, player.getYRot());
-            level.addFreshEntity(vehicle);
-            itemStack.shrink(1);
+            Entity vehicle = vehicleDataOptional.get().construct(level, hitResult.getLocation(), 0, player.getYRot());
+            if (level.addFreshEntity(vehicle)) {
+                itemStack.shrink(1);
+                return InteractionResultHolder.sidedSuccess(itemStack, false);
+            }
         }
-        return InteractionResult.SUCCESS;
+        return InteractionResultHolder.fail(itemStack);
     }
 
 }

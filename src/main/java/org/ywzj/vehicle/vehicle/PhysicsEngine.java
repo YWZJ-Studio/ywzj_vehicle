@@ -242,7 +242,7 @@ public class PhysicsEngine {
         Vector3f[] axes = obb.getAxes();
         Vector3f extents = obb.extents();
         int samplesX = buoyancySamples(extents.x * 2);
-        int samplesY = buoyancySamples(extents.y * 2);
+        int samplesY = 16;
         int samplesZ = buoyancySamples(extents.z * 2);
         int sampleCount = samplesX * samplesY * samplesZ;
         double physicsCubeVolume = physicsCube.volume();
@@ -277,6 +277,9 @@ public class PhysicsEngine {
         submergedRatio = (float) (displacedVolume / physicsCubeVolume);
         double damping = Mth.clamp(1 - physicsInfo.liquidDamping * submergedRatio, 0, 1);
         velocity = velocity.scale(damping);
+        if (buoyancyForce > 0) {
+            velocity = new Vec3(velocity.x, velocity.y * 0.5, velocity.z);
+        }
         velocity = velocity.add(0, buoyancyAcceleration, 0);
         this.velocity.set((float) velocity.x, (float) velocity.y, (float) velocity.z);
         return new Vec3(0, buoyancyForce, 0);
@@ -453,17 +456,24 @@ public class PhysicsEngine {
         if (submergedRatio <= 0) {
             return;
         }
-        rotV *= Mth.clamp(1 - submergedRatio * 0.2f, 0, 1);
+        // 浅吃水时仍保留足够的回正能力，同时在离水时连续衰减到零。
+        float liquidInfluence = Mth.sqrt(Mth.clamp(submergedRatio, 0, 1));
+        rotV *= 1 - liquidInfluence * 0.2f;
         if (rotV < 0.001f) {
             rotV = 0;
         }
-        float rightingStep = 1.5f * submergedRatio;
-        vehicle.setXRot(Mth.approachDegrees(vehicle.getXRot(), 0, rightingStep));
+        vehicle.setXRot(rightInLiquid(vehicle.getXRot(), liquidInfluence));
         if (lockZRot) {
             vehicle.setZRot(0);
         } else {
-            vehicle.setZRot(Mth.approachDegrees(vehicle.getZRot(), 0, rightingStep));
+            vehicle.setZRot(rightInLiquid(vehicle.getZRot(), liquidInfluence));
         }
+    }
+
+    private static float rightInLiquid(float angle, float liquidInfluence) {
+        // 大倾角快速回正，接近水平时减速；最小步长避免回正末段拖尾。
+        float rightingStep = Mth.clamp(Math.abs(Mth.wrapDegrees(angle)) * 0.2f, 1.5f, 6.0f) * liquidInfluence;
+        return Mth.approachDegrees(angle, 0, rightingStep);
     }
 
     /**

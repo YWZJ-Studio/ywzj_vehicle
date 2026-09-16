@@ -7,6 +7,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -129,7 +130,12 @@ public class AllEvents {
             ItemStack itemStack = event.getItemStack();
             Player player = event.getEntity();
             if (itemStack.getItem() instanceof VehicleItem vehicleItem) {
-                vehicleItem.interactEntity(itemStack, player, event.getTarget(), event.getHand());
+                InteractionResult result = vehicleItem.interactEntity(itemStack, player, event.getTarget(), event.getHand());
+                if (result != null && result != InteractionResult.PASS) {
+                    event.setCancellationResult(result);
+                    event.setCanceled(true);
+                    return;
+                }
             }
             if (event.getTarget() instanceof AbstractVehicle vehicle) {
                 Vec3 eyePosition = player.getEyePosition();

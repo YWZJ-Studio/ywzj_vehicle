@@ -166,6 +166,10 @@ public abstract class ContainerCraft extends Entity implements ContainerEntity, 
         }
     }
 
+    public float getContainerFillRate() {
+        return (float) this.items.stream().filter(itemStack -> !itemStack.isEmpty()).toList().size() / getContainerSize();
+    }
+
     @Override
     public int getContainerSize() {
         return 54;

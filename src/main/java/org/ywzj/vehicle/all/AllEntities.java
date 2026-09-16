@@ -153,6 +153,14 @@ public class AllEntities {
                     .clientTrackingRange(32)
                     .build("tracked_vehicle"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<VesselVehicle>> VESSEL_VEHICLE = ENTITIES.register("vessel_vehicle",
+            () -> EntityType.Builder.of(VesselVehicle::new, MobCategory.MISC)
+                    .noSummon()
+                    .sized(1f, 1f)
+                    .updateInterval(1)
+                    .clientTrackingRange(32)
+                    .build("vessel_vehicle"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<RotaryWingVehicle>> ROTARY_WING_VEHICLE = ENTITIES.register("rotary_wing_vehicle",
             () -> EntityType.Builder.of(RotaryWingVehicle::new, MobCategory.MISC)
                     .noSummon()

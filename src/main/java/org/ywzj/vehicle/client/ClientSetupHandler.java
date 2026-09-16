@@ -51,6 +51,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.VEHICLE_PART.get(), VehiclePartRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.WHEELED_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.TRACKED_VEHICLE.get(), VehicleRender::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.VESSEL_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROTARY_WING_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FIXED_WING_VEHICLE.get(), VehicleRender::new));
 

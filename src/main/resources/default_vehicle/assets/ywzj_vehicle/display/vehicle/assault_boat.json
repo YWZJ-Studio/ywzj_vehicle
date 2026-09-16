@@ -1,0 +1,12 @@
+{
+    "type": "ywzj_vehicle:vessel_vehicle",
+    "model": "ywzj_vehicle:entity/assault_boat",
+    "texture": "ywzj_vehicle:textures/entity/assault_boat.png",
+    "slot_texture": "ywzj_vehicle:textures/slot/assault_boat.png",
+    "animation_controller": "ywzj_vehicle:assault_boat_controller",
+    "sounds": {
+        "engine_idle": "ywzj_vehicle:boat_engine_idle",
+        "engine_run": "ywzj_vehicle:boat_engine_run"
+    },
+    "tab_index": 300
+}

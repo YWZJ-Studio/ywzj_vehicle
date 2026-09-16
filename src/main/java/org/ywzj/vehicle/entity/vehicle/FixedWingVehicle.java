@@ -350,7 +350,7 @@ public class FixedWingVehicle extends AbstractVehicle
         // 空速
         Vec3 airSpeed = getDeltaMovement();
         // 地面航行
-        if (onGround()) {
+        if (onGround) {
             double al = airSpeed.length();
             if (controlUnit.leftYaw || controlUnit.rightYaw) {
                 float k = (float) (al / 1.4);

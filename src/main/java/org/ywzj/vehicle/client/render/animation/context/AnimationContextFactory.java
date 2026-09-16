@@ -33,6 +33,10 @@ public interface AnimationContextFactory<E extends Entity, CTX extends EntityCon
         return TrackedVehicleContext::new;
     }
 
+    static AnimationContextFactory<VesselVehicle, VesselVehicleContext> vesselVehicle() {
+        return VesselVehicleContext::new;
+    }
+
     static AnimationContextFactory<RotaryWingVehicle, RotaryWingVehicleContext> rotaryWingVehicle() {
         return RotaryWingVehicleContext::new;
     }

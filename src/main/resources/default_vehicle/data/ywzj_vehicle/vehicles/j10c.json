@@ -26,7 +26,7 @@
     "max_health": 500,
     "view_info": {
         "third_person_center_offset": [0, 6, 0],
-        "third_person_distance": 20,
+        "third_person_distance": 16,
         "third_person_center_offset_zoomed": [0, 7, 0],
         "third_person_distance_zoomed": 4,
         "sound_distance": 8

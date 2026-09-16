@@ -41,6 +41,16 @@ public class AllVehicleDataTypes {
             }
     );
 
+    public static final DeferredHolder<VehicleDataType<?>, VehicleDataType<VesselVehicleData>> VESSEL_VEHICLE = register(
+            "vessel_vehicle",
+            json -> {
+                var pojo = GsonUtil.GSON.fromJson(json, VesselVehicleDataPojo.class);
+                VesselVehicleData vesselVehicleData = new VesselVehicleData();
+                vesselVehicleData.build(pojo);
+                return vesselVehicleData;
+            }
+    );
+
     public static final DeferredHolder<VehicleDataType<?>, VehicleDataType<RotaryWingVehicleData>> ROTARY_WING_VEHICLE = register(
             "rotary_wing_vehicle",
             json -> {

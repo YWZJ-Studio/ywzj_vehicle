@@ -1,0 +1,8 @@
+{
+    "name": "assault_boat_controller",
+    "script": "ywzj_vehicle:assault_boat",
+    "graph": {
+        "type": "script",
+        "function": "updateBones"
+    }
+}

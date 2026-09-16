@@ -178,6 +178,10 @@ public class VehicleContext<E extends AbstractVehicle> extends EntityContext<E> 
         return "";
     }
 
+    public double getContainerFillRate() {
+        return getEntity().getContainerFillRate();
+    }
+
     public int tickCount() {
         return getEntity().tickCount;
     }
