@@ -9,6 +9,12 @@
         "turn_acceleration": 1,
         "max_turn": 2
     },
+    "physics_info": {
+        "mass": 53750,
+        "friction": 107500,
+        "suspension_response": 4,
+        "can_destroy_block": true
+    },
     "max_health": 3000,
     "view_info": {
         "third_person_center_offset": [0, 3, 0],
@@ -16,12 +22,9 @@
         "sound_distance": 7
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001,
+        "energy_capacity": 1250,
+        "energy_consumption_per_tick": 0.003055556,
         "engine_particle_offsets": [[-2, 1.7, -2.5], [2, 1.7, -2.5]]
-    },
-    "physics_info": {
-        "can_destroy_block": true
     },
     "structure_model": "ywzj_vehicle:vehicle/ztz99a",
     "parts": [
@@ -111,6 +114,34 @@
             "type": "ywzj_vehicle:generic",
             "seat_offset": [0, 1.7, 1],
             "owner_view_offset": [0, 3.2, 0]
+        },
+        {
+            "id": "suspension_left",
+            "name": "suspension_left",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel_left",
+            "structure_bone": "suspension_left",
+            "is_seat": false,
+            "spring_stiffness": 752500,
+            "damping": 12900,
+            "rest_length": 0.1,
+            "max_compression": 0.1,
+            "max_extension": 0.1,
+            "max_droop": 0.1
+        },
+        {
+            "id": "suspension_right",
+            "name": "suspension_right",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel_right",
+            "structure_bone": "suspension_right",
+            "is_seat": false,
+            "spring_stiffness": 752500,
+            "damping": 12900,
+            "rest_length": 0.1,
+            "max_compression": 0.1,
+            "max_extension": 0.1,
+            "max_droop": 0.1
         }
     ]
 }

@@ -96,12 +96,7 @@ public class VehicleBedrockModel extends BedrockModel {
 
     @OnlyIn(Dist.CLIENT)
     public void renderToBuffer(PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
-        setSpecialBoneVisible(defaultModelInstance, false);
-        defaultModelInstance.renderToBuffer(poseStack, bufferSource,
-                RenderType.entityCutout(texture),
-                BedrockModelRenderTypes.polyMeshCutout(texture),
-                packedLight,
-                OverlayTexture.NO_OVERLAY);
+        renderToBuffer(defaultModelInstance, poseStack, bufferSource, texture, packedLight);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -121,29 +116,37 @@ public class VehicleBedrockModel extends BedrockModel {
 
     @OnlyIn(Dist.CLIENT)
     public void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource, ResourceLocation texture, int packedLight, int packedOverlay, List<BoneState> invisibleBones, boolean isLocalPlayerVehicle) {
+        renderSpecialBones(instance, poseStack, bufferSource, texture, packedLight, packedOverlay, invisibleBones, isLocalPlayerVehicle, -1);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void renderSpecialBones(BakedModelInstance instance, PoseStack poseStack, MultiBufferSource bufferSource,
+                                    ResourceLocation texture, int packedLight, int packedOverlay, List<BoneState> invisibleBones,
+                                    boolean isLocalPlayerVehicle, int rootIndex) {
         setSpecialBoneVisible(instance, true);
         if (invisibleBones != null) {
             invisibleBones.forEach(invisibleBone -> invisibleBone.visible = false);
         }
         for (BakedSpecialBoneEntry entry : bakedSpecialBoneEntries) {
+            if (!isVisible(instance, entry.boneIndex, rootIndex)) {
+                continue;
+            }
             if (entry.effect.type == SpecialBoneEffect.SpecialBoneEffectType.COCKPIT
                     && isLocalPlayerVehicle
                     && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR) {
                 continue;
             }
-            if (entry.effect.texture != null) {
-                texture = entry.effect.texture;
-            }
+            ResourceLocation effectTexture = entry.effect.texture != null ? entry.effect.texture : texture;
             RenderType quadType;
             RenderType meshType;
             switch (entry.effect.type) {
                 case MUZZLE_FLASH -> {
-                    quadType = ModRenderTypes.muzzleFlash(texture);
-                    meshType = ModRenderTypes.muzzleFlash(texture);
+                    quadType = ModRenderTypes.muzzleFlash(effectTexture);
+                    meshType = ModRenderTypes.muzzleFlash(effectTexture);
                 }
                 case TRANSPARENT, COCKPIT -> {
-                    quadType = ModRenderTypes.cubeTransparent(texture);
-                    meshType = ModRenderTypes.polyMeshTransparent(texture);
+                    quadType = ModRenderTypes.cubeTransparent(effectTexture);
+                    meshType = ModRenderTypes.polyMeshTransparent(effectTexture);
                 }
                 default -> {
                     continue;
@@ -156,6 +159,45 @@ public class VehicleBedrockModel extends BedrockModel {
             instance.renderSingleBone(poseStack, entry.boneIndex, bufferSource, quadType, meshType, packedLight,
                     packedOverlay, 1.0F, 1.0F, 1.0F, 1.0F, true);
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void renderPart(BakedModelInstance instance, int boneIndex, PoseStack poseStack,
+                           MultiBufferSource bufferSource, ResourceLocation texture, int packedLight) {
+        BoneState[] bones = instance.getBoneIndexes();
+        boolean[] visibility = new boolean[bones.length];
+        List<BoneState> hiddenBones = new ArrayList<>();
+        for (int i = 0; i < bones.length; i++) {
+            visibility[i] = bones[i].visible;
+            if (!visibility[i] && bones[i].index() != boneIndex) {
+                hiddenBones.add(bones[i]);
+            }
+        }
+        try {
+            instance.getBone(boneIndex).visible = true;
+            setSpecialBoneVisible(instance, false);
+            instance.renderSingleBone(poseStack, boneIndex, bufferSource,
+                    RenderType.entityCutout(texture), BedrockModelRenderTypes.polyMeshCutout(texture),
+                    packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1, false);
+            renderSpecialBones(instance, poseStack, bufferSource, texture, packedLight, OverlayTexture.NO_OVERLAY,
+                    hiddenBones, false, boneIndex);
+        } finally {
+            for (int i = 0; i < bones.length; i++) {
+                bones[i].visible = visibility[i];
+            }
+        }
+    }
+
+    private static boolean isVisible(BakedModelInstance instance, int index, int rootIndex) {
+        for (BoneState bone = instance.getBone(index); bone != null; bone = instance.getBone(bone.parentIndex())) {
+            if (!bone.visible) {
+                return false;
+            }
+            if (bone.index() == rootIndex) {
+                return true;
+            }
+        }
+        return rootIndex < 0;
     }
 
     private void setSpecialBoneVisible(BakedModelInstance instance, boolean visible) {

@@ -5,6 +5,9 @@ import org.ywzj.vehicle.vehicle.pojo.Explosion;
 
 public class VehicleAerialBombWeaponData extends BaseVehicleWeaponData {
 
+    @SerializedName("mass")
+    private float mass = 227f;
+
     @SerializedName("fuse_delay_tick")
     private int fuseDelayTick = 60;
 
@@ -15,7 +18,7 @@ public class VehicleAerialBombWeaponData extends BaseVehicleWeaponData {
     private boolean homing = false;
 
     @SerializedName("drag_coefficient")
-    private float dragCoefficient = 0.005f;
+    private float dragCoefficient = 1.135f;
 
     @SerializedName("max_g")
     private float maxG = 2.0f;
@@ -25,6 +28,10 @@ public class VehicleAerialBombWeaponData extends BaseVehicleWeaponData {
 
     @SerializedName("explosion")
     private Explosion explosion = new Explosion();
+
+    public float getMass() {
+        return mass;
+    }
 
     public int getFuseDelayTick() {
         return fuseDelayTick;

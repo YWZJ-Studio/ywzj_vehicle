@@ -28,13 +28,14 @@ public class VehicleAerialBomb extends AbstractVehicleWeapon<VehicleAerialBombWe
         WeaponUnit weaponUnit = getWeaponUnit().getRootParentWeaponUnit();
         for (AimContext aimContext : aimContexts) {
             AerialBombEntity entity = new AerialBombEntity(AllEntities.AERIAL_BOMB.get(), vehicle.level(), data.getWeaponId());
+            entity.mass = data.getMass();
             entity.explosion = data.getExplosion();
             entity.fuseDelayTick = data.getFuseDelayTick();
             entity.penetrationDepth = data.getPenetrationDepth();
+            entity.homing = data.isHoming();
             entity.dragCoefficient = data.getDragCoefficient();
             entity.maxG = data.getMaxG();
             entity.referenceSpeed = data.getReferenceSpeed();
-            entity.homing = data.isHoming();
             if (data.isHoming()) {
                 entity.weaponUnit = weaponUnit;
                 Entity lockedEntity = weaponUnit.getLockedEntity();

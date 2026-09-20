@@ -16,6 +16,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.api.event.HitVehicleEvent;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.AmmoEntity;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.structure.OBB;
@@ -137,7 +138,7 @@ public class DamageSystem {
 
     public static void impactHurt(double velocityDiff, AbstractVehicle vehicle) {
         velocityDiff *= 20;
-        float damage = (float) (0.5 * vehicle.physicsEngine.physicsInfo.mass * velocityDiff * velocityDiff * vehicle.defenseStats.impactMultiplier);
+        float damage = (float) (0.5 * (vehicle.physicsEngine.physicsInfo.mass / PhysicsHelper.KILOGRAMS_PER_TONNE) * velocityDiff * velocityDiff * vehicle.defenseStats.impactMultiplier);
         vehicle.hurt(AllDamageTypes.Sources.vehicleCollision(vehicle.level().registryAccess(), vehicle, vehicle.getDriver(), null), damage);
     }
 

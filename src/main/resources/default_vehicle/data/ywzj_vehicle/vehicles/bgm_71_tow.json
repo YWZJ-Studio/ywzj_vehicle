@@ -1,6 +1,10 @@
 {
     "type": "ywzj_vehicle:generic",
     "attributes": {},
+    "physics_info": {
+        "mass": 90,
+        "friction": 180
+    },
     "max_health": 50,
     "view_info": {
         "third_person_center_offset": [0, 2, 0],
@@ -10,8 +14,8 @@
         "sound_distance": 3
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001
+        "energy_capacity": 0,
+        "energy_consumption_per_tick": 0
     },
     "structure_model": "ywzj_vehicle:vehicle/bgm_71_tow",
     "parts": [

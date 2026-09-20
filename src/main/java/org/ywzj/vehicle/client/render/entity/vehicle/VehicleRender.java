@@ -91,11 +91,11 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
                 if (partUnit.isDetached()) {
                     continue;
                 }
-                partUnit.render(pPoseStack, bufferSource, pPackedLight);
+                partUnit.render(pPoseStack, bufferSource, modelLight, pPartialTick);
             }
             // 饰品
             for (DecorationUnit decorationUnit : vehicle.getDecorationUnits().values()) {
-                decorationUnit.render(pPoseStack, bufferSource, pPackedLight);
+                decorationUnit.render(pPoseStack, bufferSource, pPackedLight, pPartialTick);
             }
             // 弹孔
             for (BulletHoleParticle bulletHoleParticle : vehicle.getBulletHoleParticles()) {
@@ -169,7 +169,7 @@ public class VehicleRender<T extends AbstractVehicle> extends EntityRenderer<T> 
             }
             BoneState bone = modelInstance.getBone(renderBoneName);
             if (bone != null) {
-                bone.visible = !partUnit.isDetached();
+                bone.visible = !partUnit.isDetached() && !partUnit.rendersBone();
                 if (!bone.visible) {
                     invisibleBones.add(bone);
                 }

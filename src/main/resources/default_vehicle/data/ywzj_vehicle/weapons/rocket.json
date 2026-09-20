@@ -1,4 +1,7 @@
 {
+    "mass": 11.3,
+    "thrust": 4520,
+    "drag_coefficient": 0.0565,
     "type": "ywzj_vehicle:rocket",
     "name": "rocket",
     "damage": 100,

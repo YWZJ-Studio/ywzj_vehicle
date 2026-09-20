@@ -376,8 +376,9 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
+    @Override
     @OnlyIn(Dist.CLIENT)
-    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight, float partialTick) {
         weapons.forEach(weapon -> {
             AbstractVehicleWeapon<?> proxyWeapon = proxyWeapon(weapon);
             ClientAssetsManager.INSTANCE.getWeaponDisplay(proxyWeapon.getData().getWeaponId()).ifPresent(weaponDisplay -> {
@@ -851,7 +852,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 double releaseZ = releasePositions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
                 Vec3 releasePos = new Vec3(releaseX, releaseY, releaseZ).add(vehicle.getDeltaMovement());
                 if (vehicleWeapon instanceof VehicleAerialBomb bomb) {
-                    float dragCoefficient = bomb.getData().getDragCoefficient();
+                    float dragCoefficient = bomb.getData().getDragCoefficient() / bomb.getData().getMass();
                     aimHitPosition = CcipUtil.computeCcip(vehicle.level(), releasePos, vehicle.getDeltaMovement(), dragCoefficient);
                 } else if (vehicleWeapon instanceof VehicleRocket rocket) {
                     var data = rocket.getData();

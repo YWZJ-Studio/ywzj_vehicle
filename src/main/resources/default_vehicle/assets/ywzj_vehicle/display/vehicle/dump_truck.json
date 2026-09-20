@@ -5,6 +5,20 @@
     "slot_texture": "ywzj_vehicle:textures/slot/dump_truck.png",
     "animations": "ywzj_vehicle:entity/dump_truck.animation",
     "animation_controller": "ywzj_vehicle:dump_truck_controller",
+    "special_bone_effects": [
+        {
+            "bone": "door_left",
+            "type": "transparent"
+        },
+        {
+            "bone": "door_right",
+            "type": "transparent"
+        },
+        {
+            "bone": "window",
+            "type": "transparent"
+        }
+    ],
     "sounds": {
         "engine_start": "ywzj_vehicle:lav150_engine_start",
         "engine_idle": "ywzj_vehicle:truck_engine_idle",

@@ -19,14 +19,14 @@ import java.util.Map;
 public class FixedWingVehicleData extends BaseVehicleData<FixedWingVehicle> {
 
     public VehicleCubeOBB aerodynamicCubeOBB;
-    public float thrust = 0.02f;
+    public float thrust = 8000f;
     public float thrustK = 1.5f;
     public float ceiling = 512;
     public float xRotInputStep = 0.2f;
     public float yRotInputStep = 0.5f;
     public float zRotInputStep = 0.2f;
-    public float airDragKMin = 1f / 500;
-    public float airDragKMax = 4f / 500;
+    public float airDragKMin = 2f;
+    public float airDragKMax = 8f;
     public float liftToDragK = 6;
     public float angleOfAttackMin = -10f;
     public float angleOfAttackMax = 25f;

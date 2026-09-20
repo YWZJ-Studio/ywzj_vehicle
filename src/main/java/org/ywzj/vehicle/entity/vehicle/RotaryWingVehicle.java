@@ -31,6 +31,7 @@ import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.ParticleUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
 import org.ywzj.vehicle.vehicle.part.LandingGearUnit;
@@ -48,7 +49,7 @@ public class RotaryWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ROLL_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
-    public float mainRotorForce = 1.4f * physicsEngine.G * physicsEngine.physicsInfo.mass;
+    public float mainRotorForce = 1.4f * PhysicsHelper.GRAVITY * physicsEngine.physicsInfo.mass;
     public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;
@@ -215,11 +216,11 @@ public class RotaryWingVehicle extends AbstractVehicle
         Vec3 force = vP.scale(scale * scaleAir * mainRotorForce);
         // 桨叶水平方向的空速带来升力
         double dVH = Math.sqrt(Math.max(0, airSpeed.lengthSqr() - dVV * dVV));
-        force = force.add(vP.scale(dVH * scaleAir * 0.005f));
-        airSpeed = airSpeed.add(force);
+        force = force.add(vP.scale(dVH * scaleAir * 0.005f * curbWeight * PhysicsHelper.TICKS_PER_SECOND_SQUARED));
+        airSpeed = airSpeed.add(force.scale(PhysicsHelper.accelerationPerTick(1, physicsEngine.physicsInfo.mass)));
         double al = airSpeed.length();
         // 空气阻力
-        airSpeed = airSpeed.normalize().scale(al - al * physicsEngine.physicsInfo.friction / physicsEngine.physicsInfo.mass);
+        airSpeed = airSpeed.normalize().scale(al - al * PhysicsHelper.accelerationPerTick(physicsEngine.physicsInfo.friction, physicsEngine.physicsInfo.mass));
         if (airSpeed.length() >= maxAirSpeed) {
             airSpeed = airSpeed.normalize().scale(maxAirSpeed);
         }

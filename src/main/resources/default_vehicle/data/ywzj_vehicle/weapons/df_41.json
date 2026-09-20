@@ -21,11 +21,11 @@
         "radius": 64,
         "destroy_block": true
     },
-    "mass": 1,
-    "thrust": 0.2,
+    "mass": 80000,
+    "thrust": 6400000,
     "engine_nozzle_offset": [0, 0, -9],
     "motor_burn_time": 12000,
-    "drag_coefficient": 0.005,
+    "drag_coefficient": 400,
     "max_g": 8,
     "reference_speed": 5,
     "guidance": "PRESET"

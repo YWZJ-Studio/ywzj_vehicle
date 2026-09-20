@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.all.AllEntities;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleBedrockModel;
@@ -120,10 +119,7 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
             }
 
             super.render(vehicle, pEntityYaw, pPartialTick, pPoseStack, bufferSource, pPackedLight);
-            Vec3 root = new Vec3(0, 0, 0);
-            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.xRotO, vehicle.getXRot())), (float) root.x, (float) root.y, (float) root.z);
-            pPoseStack.rotateAround(Axis.ZP.rotationDegrees(Mth.lerp(pPartialTick, vehicle.zRotO, vehicle.getZRot())), (float) root.x, (float) root.y, (float) root.z);
+            VehicleRender.applyVehicleRotation(vehicle, pPartialTick, pPoseStack);
 
             var animationInstance = vehicle.getAnimationInstance();
             if (animationInstance != null) {
@@ -131,11 +127,17 @@ public class Ztl11Renderer extends EntityRenderer<Ztl11> {
                 animationInstance.tick();
                 modelInstance.applyPose(BLENDER.blend(modelInstance.getPose(), animationInstance.getCurrentPose()));
             }
+            // 悬挂接管轮组绘制，车体普通和特殊材质渲染都需要排除这些骨骼。
+            var invisibleBones = VehicleRender.applyDetachedPart(vehicle, modelInstance);
             model.renderToBuffer(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight);
-            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, null, modelLight, OverlayTexture.NO_OVERLAY, null, vehicle == LocalVehiclePlayer.instance.vehicle);
-            // 渲染部件
-            vehicle.getPartUnits().forEach(partUnit -> partUnit.render(pPoseStack, bufferSource, pPackedLight));
-            vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight));
+            model.renderSpecialBones(modelInstance, pPoseStack, bufferSource, display.getTexture(), modelLight, OverlayTexture.NO_OVERLAY, invisibleBones, vehicle == LocalVehiclePlayer.instance.vehicle);
+            // 使用已应用程序动画的模型实例，保留轮子的转向和自转。
+            for (PartUnit<?> partUnit : vehicle.getPartUnits()) {
+                if (!partUnit.isDetached()) {
+                    partUnit.render(pPoseStack, bufferSource, modelLight, pPartialTick);
+                }
+            }
+            vehicle.getDecorationUnits().values().forEach(decorationUnit -> decorationUnit.render(pPoseStack, bufferSource, pPackedLight, pPartialTick));
             // 渲染弹孔
             vehicle.getBulletHoleParticles().forEach(bulletHoleParticle -> bulletHoleParticle.renderOnVehicle(pPartialTick, pPoseStack, bufferSource, modelInstance));
             vehicle.lastRenderTime = System.currentTimeMillis();

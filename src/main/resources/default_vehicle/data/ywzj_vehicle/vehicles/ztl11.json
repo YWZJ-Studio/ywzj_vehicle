@@ -1,13 +1,20 @@
 {
     "type": "ywzj_vehicle:wheeled_vehicle",
     "attributes": {
-        "brake_force": 0.025,
-        "forward_force": 0.02,
-        "backward_force": 0.02,
+        "brake_force": 225000,
+        "forward_force": 180000,
+        "backward_force": 180000,
         "max_speed_forward": 0.8,
         "max_speed_backward": 0.2,
         "turn_step": 0.4,
         "max_turn": 2
+    },
+    "physics_info": {
+        "mass": 22500,
+        "friction": 45000,
+        "suspension_response": 1,
+        "density": 750,
+        "center": [0, -2, 0]
     },
     "max_health": 2000,
     "can_wade": true,
@@ -19,13 +26,9 @@
         "sound_distance": 3
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001,
+        "energy_capacity": 500,
+        "energy_consumption_per_tick": 0.000972222,
         "engine_particle_offsets": [[-1.6, 2, -2]]
-    },
-    "physics_info": {
-        "density": 0.75,
-        "center": [0, -4, 0]
     },
     "structure_model": "ywzj_vehicle:vehicle/ztl11",
     "parts": [
@@ -112,6 +115,110 @@
             "type": "ywzj_vehicle:generic",
             "seat_offset": [0.5, 1.8, 1.7],
             "owner_view_offset": [0, 3.5, 0]
+        },
+        {
+            "id": "suspension_wheel1",
+            "name": "suspension_wheel1",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel1",
+            "structure_bone": "wheel1",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel2",
+            "name": "suspension_wheel2",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel2",
+            "structure_bone": "wheel2",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel3",
+            "name": "suspension_wheel3",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel3",
+            "structure_bone": "wheel3",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel4",
+            "name": "suspension_wheel4",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel4",
+            "structure_bone": "wheel4",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel5",
+            "name": "suspension_wheel5",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel5",
+            "structure_bone": "wheel5",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel6",
+            "name": "suspension_wheel6",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel6",
+            "structure_bone": "wheel6",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel7",
+            "name": "suspension_wheel7",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel7",
+            "structure_bone": "wheel7",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel8",
+            "name": "suspension_wheel8",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel8",
+            "structure_bone": "wheel8",
+            "is_seat": false,
+            "spring_stiffness": 270000,
+            "damping": 4500,
+            "rest_length": 0.4,
+            "max_compression": 0.4,
+            "max_extension": 0.22
         }
     ]
 }

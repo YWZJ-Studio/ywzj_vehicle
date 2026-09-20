@@ -1,18 +1,24 @@
 {
     "type": "ywzj_vehicle:wheeled_vehicle",
     "attributes": {
-        "brake_force": 0.025,
-        "forward_force": 0.02,
-        "backward_force": 0.01,
+        "brake_force": 150000,
+        "forward_force": 120000,
+        "backward_force": 60000,
         "max_speed_forward": 0.8,
         "max_speed_backward": 0.2,
         "turn_step": 0.1,
         "max_turn": 2
     },
+    "physics_info": {
+        "mass": 15000,
+        "friction": 30000,
+        "suspension_response": 2,
+        "center": [0, -1, 0]
+    },
     "max_health": 500,
     "view_info": {
-        "third_person_center_offset": [0, 4, 0],
-        "third_person_distance": 7,
+        "third_person_center_offset": [0, 5, 0],
+        "third_person_distance": 10,
         "sound_distance": 3,
         "passenger_view_rot": {
             "rot_by_vehicle_in_third_person": false,
@@ -20,12 +26,9 @@
         }
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001,
+        "energy_capacity": 250,
+        "energy_consumption_per_tick": 0.000833333,
         "engine_particle_offsets": [[1.6, 3, 2]]
-    },
-    "physics_info": {
-        "center": [0, -4, 0]
     },
     "structure_model": "ywzj_vehicle:vehicle/dump_truck",
     "parts": [
@@ -75,6 +78,84 @@
             "type": "ywzj_vehicle:door",
             "structure_bone": "door_right",
             "is_seat": false
+        },
+        {
+            "id": "suspension_wheel3",
+            "name": "suspension_wheel3",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel3",
+            "structure_bone": "wheel3",
+            "is_seat": false,
+            "spring_stiffness": 180000,
+            "damping": 2000.1,
+            "rest_length": 0.6,
+            "max_compression": 0.6,
+            "max_extension": 0.28
+        },
+        {
+            "id": "suspension_wheel7",
+            "name": "suspension_wheel7",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel7",
+            "structure_bone": "wheel7",
+            "is_seat": false,
+            "spring_stiffness": 180000,
+            "damping": 2000.1,
+            "rest_length": 0.6,
+            "max_compression": 0.6,
+            "max_extension": 0.28
+        },
+        {
+            "id": "suspension_wheel2",
+            "name": "suspension_wheel2",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel2",
+            "structure_bone": "wheel2",
+            "is_seat": false,
+            "spring_stiffness": 180000,
+            "damping": 2000.1,
+            "rest_length": 0.6,
+            "max_compression": 0.6,
+            "max_extension": 0.28
+        },
+        {
+            "id": "suspension_wheel8",
+            "name": "suspension_wheel8",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel8",
+            "structure_bone": "wheel8",
+            "is_seat": false,
+            "spring_stiffness": 180000,
+            "damping": 2000.1,
+            "rest_length": 0.6,
+            "max_compression": 0.6,
+            "max_extension": 0.28
+        },
+        {
+            "id": "suspension_wheel4",
+            "name": "suspension_wheel4",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel4",
+            "structure_bone": "wheel4",
+            "is_seat": false,
+            "spring_stiffness": 180000,
+            "damping": 2000.1,
+            "rest_length": 0.6,
+            "max_compression": 0.6,
+            "max_extension": 0.28
+        },
+        {
+            "id": "suspension_wheel6",
+            "name": "suspension_wheel6",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel6",
+            "structure_bone": "wheel6",
+            "is_seat": false,
+            "spring_stiffness": 180000,
+            "damping": 2000.1,
+            "rest_length": 0.6,
+            "max_compression": 0.6,
+            "max_extension": 0.28
         }
     ]
 }

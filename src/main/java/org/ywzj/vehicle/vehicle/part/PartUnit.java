@@ -139,7 +139,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     public void onRemoved() {}
 
     @OnlyIn(Dist.CLIENT)
-    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {}
+    public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {}
 
     public void tick() {
         if (!this.getVehicle().level().isClientSide()) {
@@ -265,7 +265,8 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Vec3 worldPositionWithGroupRot(Vec3 offsetFromVehicle, VehicleCubeGroup group, float partialTick) {
         Vec3 rotatedOffset = group.globalTransform(offsetFromVehicle.subtract(group.pivotOffset), true,
-                        currentGroup -> getViewGroupRotation(currentGroup, partialTick))
+                        currentGroup -> getViewGroupRotation(currentGroup, partialTick),
+                        currentGroup -> currentGroup.offsetO.lerp(currentGroup.offset, partialTick))
                 .offset()
                 .subtract(vehicle.centerOffset);
         Vector3f worldOffset = vehicle.rotYXZ(partialTick).transform(rotatedOffset.toVector3f());
@@ -313,6 +314,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public String getRenderBoneName() {
         return renderBoneName;
+    }
+
+    public boolean rendersBone() {
+        return false;
     }
 
     public void setRenderBoneName(String renderBoneName) {
@@ -365,6 +370,16 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Vec3 getPivotOffset() {
         return pivotOffset;
+    }
+
+    public Vec3 getOffset() {
+        return structureGroup == null ? Vec3.ZERO : structureGroup.offset;
+    }
+
+    public void setOffset(Vec3 offset) {
+        if (structureGroup != null) {
+            structureGroup.offset = offset;
+        }
     }
 
     public void setPivotOffset(Vec3 pivotOffset) {

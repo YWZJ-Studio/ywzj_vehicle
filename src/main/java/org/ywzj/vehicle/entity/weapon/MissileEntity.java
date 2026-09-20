@@ -39,6 +39,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -266,13 +267,13 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (isMotorBurning()) {
             Vec3 lookDir = this.getLookAngle();
             // 推力
-            double acceleration = (this.thrust / this.mass);
+            double acceleration = (PhysicsHelper.accelerationPerTick(this.thrust, this.mass));
             velocity = velocity.add(lookDir.scale(acceleration));
         }
         // 空气阻力
         double speedSqr = velocity.lengthSqr();
         if (speedSqr > 0) {
-            Vec3 drag = velocity.normalize().scale(-dragCoefficient * speedSqr);
+            Vec3 drag = velocity.normalize().scale(-PhysicsHelper.dragAccelerationPerTick(dragCoefficient, mass, speedSqr));
             velocity = velocity.add(drag);
         }
         // 重力
@@ -588,11 +589,11 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
             if (simulatedTickCount >= coldLaunchTimeTick) {
                 if (motorTick <= motorBurnTime) {
                     Vec3 lookDirection = VectorUtil.rotToVec(simulatedRotation.x, simulatedRotation.y);
-                    simulatedVelocity = simulatedVelocity.add(lookDirection.scale(this.thrust / this.mass));
+                    simulatedVelocity = simulatedVelocity.add(lookDirection.scale(PhysicsHelper.accelerationPerTick(this.thrust, this.mass)));
                 }
                 double speedSqr = simulatedVelocity.lengthSqr();
                 if (speedSqr > 0) {
-                    Vec3 drag = simulatedVelocity.normalize().scale(-dragCoefficient * speedSqr);
+                    Vec3 drag = simulatedVelocity.normalize().scale(-PhysicsHelper.dragAccelerationPerTick(dragCoefficient, mass, speedSqr));
                     simulatedVelocity = simulatedVelocity.add(drag);
                 }
             }
@@ -687,7 +688,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (missileSpeed <= 1.0E-6 || toIntercept.lengthSqr() <= 1.0E-6) {
             return null;
         }
-        double acceleration = (this.thrust / this.mass);
+        double acceleration = (PhysicsHelper.accelerationPerTick(this.thrust, this.mass));
         Vec3 targetDir = toIntercept.normalize();
         double dot = missileVel.dot(targetDir);
         double magSq = missileSpeed * missileSpeed;

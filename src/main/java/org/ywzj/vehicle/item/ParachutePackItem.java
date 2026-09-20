@@ -77,20 +77,28 @@ public class ParachutePackItem extends ArmorItem {
     }
 
     public static void open(ServerPlayer player) {
-        if (!canOpen(player)) {
-            return;
+        open((LivingEntity) player);
+    }
+
+    @Nullable
+    public static ParagliderCanopy open(LivingEntity entity) {
+        if (entity.level().isClientSide || !canOpen(entity)) {
+            return null;
         }
-        ItemStack stack = player.getItemBySlot(EquipmentSlot.CHEST);
+        ItemStack stack = entity.getItemBySlot(EquipmentSlot.CHEST);
+        ParagliderCanopy canopy = new ParagliderCanopy(AllEntities.PARAGLIDER_CANOPY.get(), entity.level());
+        canopy.equipWithPack(entity);
         CompoundTag tag = getCustomData(stack);
         tag.putBoolean(OPEN_TAG, true);
-        stack.setDamageValue(1);
-        player.startFallFlying();
-        player.fallDistance = 0;
-        ParagliderCanopy canopy = new ParagliderCanopy(AllEntities.PARAGLIDER_CANOPY.get(), player.level());
-        canopy.equip(player);
         tag.putInt(CANOPY_ID_TAG, canopy.getId());
         setCustomData(stack, tag);
-        player.level().playSound(null, player, AllSounds.PARACHUTE_OPEN.get(), SoundSource.PLAYERS, 3F, 1F);
+        stack.setDamageValue(1);
+        if (entity instanceof ServerPlayer player) {
+            player.startFallFlying();
+        }
+        entity.fallDistance = 0;
+        entity.level().playSound(null, entity, AllSounds.PARACHUTE_OPEN.get(), SoundSource.PLAYERS, 3F, 1F);
+        return canopy;
     }
 
     public static boolean isOpen(ItemStack stack) {
@@ -148,7 +156,10 @@ public class ParachutePackItem extends ArmorItem {
         player.hurtMarked = true;
     }
 
-    private static void close(ItemStack stack, ServerPlayer player, boolean landed) {
+    public static void close(ItemStack stack, LivingEntity player, boolean landed) {
+        if (player.level().isClientSide || !isOpen(stack)) {
+            return;
+        }
         CompoundTag tag = getCustomData(stack);
         Entity canopy = player.level().getEntity(tag.getInt(CANOPY_ID_TAG));
         if (canopy instanceof ParagliderCanopy paragliderCanopy) {

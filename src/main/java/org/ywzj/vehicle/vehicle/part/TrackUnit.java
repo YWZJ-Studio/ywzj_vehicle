@@ -22,17 +22,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 
-public class TrackUnit extends PartUnit<TrackUnitData> {
+public class TrackUnit extends SuspensionUnit<TrackUnitData> {
 
     private static final double MAX_FRAME_SECONDS = 0.25;
     private static final double CURVE_SAMPLES_PER_METER = 16.0;
     private final List<TrackPath> tracks;
+    private final List<Vec3> supportOffsets;
     private long lastRenderNanos;
 
     public TrackUnit(int index, AbstractVehicle vehicle, TrackUnitData data) {
         super(index, vehicle, data);
         this.tracks = createPaths(data.getTracks());
-        this.partCubeOBBs = new ArrayList<>();
+        this.supportOffsets = data.getSupportOffsets();
+    }
+
+    @Override
+    protected boolean isActive() {
+        return super.isActive() && !supportOffsets.isEmpty();
+    }
+
+    @Override
+    protected List<Vec3> getSupportOffsets() {
+        return supportOffsets;
     }
 
     private static List<TrackPath> createPaths(List<List<Vec3>> rawTracks) {
@@ -44,8 +55,8 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        if (tracks.isEmpty()) {
+    public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
+        if (isDetached() || tracks.isEmpty()) {
             return;
         }
         TrackedVehicleDisplay display = getTrackedVehicleDisplay();
@@ -64,9 +75,21 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
         advanceAnimation();
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutout(texture));
         int modelLight = vehicle.isDestroyed() ? 64 : packedLight;
-        for (TrackPath track : tracks) {
-            renderTrack(track, model, poseStack, buffer, modelLight);
+        poseStack.pushPose();
+        try {
+            Vec3 offset = getVisualOffset(partialTick);
+            poseStack.translate(offset.x, offset.y, offset.z);
+            for (TrackPath track : tracks) {
+                renderTrack(track, model, poseStack, buffer, modelLight);
+            }
+        } finally {
+            poseStack.popPose();
         }
+    }
+
+    @Override
+    public boolean rendersBone() {
+        return false;
     }
 
     @OnlyIn(Dist.CLIENT)

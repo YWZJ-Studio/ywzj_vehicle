@@ -145,7 +145,7 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight, float partialTick) {
         Optional<BaseDisplay> decorationDisplayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(displayId);
         if (decorationDisplayOptional.isEmpty()) {
             return;

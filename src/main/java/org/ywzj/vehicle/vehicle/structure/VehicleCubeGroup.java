@@ -17,10 +17,13 @@ public class VehicleCubeGroup {
     // 组旋转的实际值
     public Quaternionf rotation;
     public Quaternionf rotationO;
-    // 相对于父组枢轴
+    // 相对于父组的枢轴
     public Vec3 pivot;
-    // 相对于载具枢轴
+    // 相对于载具枢轴的偏移
     public Vec3 pivotOffset;
+    // 相对于父组的枢轴的偏移
+    public Vec3 offset = Vec3.ZERO;
+    public Vec3 offsetO = Vec3.ZERO;
     public List<VehicleCubeOBB> cubeOBBs = new ArrayList<>();
 
     public record GlobalTransform(Vec3 offset, Quaternionf rotation) {}
@@ -50,19 +53,22 @@ public class VehicleCubeGroup {
     }
 
     public VehicleCubeGroup.GlobalTransform globalTransform(Vec3 offset, boolean withSelfRotation) {
-        return globalTransform(offset, withSelfRotation, group -> group.rotation);
+        return globalTransform(offset, withSelfRotation, group -> group.rotation, group -> group.offset);
     }
 
-    public VehicleCubeGroup.GlobalTransform globalTransform(Vec3 offset, boolean withSelfRotation, Function<VehicleCubeGroup, Quaternionf> rotationProvider) {
+    public VehicleCubeGroup.GlobalTransform globalTransform(Vec3 offset, boolean withSelfRotation,
+                                                            Function<VehicleCubeGroup, Quaternionf> rotationProvider,
+                                                            Function<VehicleCubeGroup, Vec3> offsetProvider) {
         Quaternionf selfRotation = rotationProvider.apply(this);
         Quaternionf globalRotation = new Quaternionf(selfRotation);
-        Vector3f globalPivot = pivot.toVector3f()
+        Vector3f globalPivot = pivot.add(offsetProvider.apply(this)).toVector3f()
                 .add(withSelfRotation ? selfRotation.transform(offset.toVector3f()) : offset.toVector3f());
         VehicleCubeGroup parentGroup = parent;
         while (parentGroup != null) {
             Quaternionf parentRotation = rotationProvider.apply(parentGroup);
             parentRotation.transform(globalPivot);
-            globalPivot.add((float) parentGroup.pivot.x, (float) parentGroup.pivot.y, (float) parentGroup.pivot.z);
+            Vec3 parentPivot = parentGroup.pivot.add(offsetProvider.apply(parentGroup));
+            globalPivot.add((float) parentPivot.x, (float) parentPivot.y, (float) parentPivot.z);
             globalRotation.premul(parentRotation);
             parentGroup = parentGroup.parent;
         }

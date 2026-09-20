@@ -26,7 +26,7 @@ public class FuelTankItem extends VehicleItem {
         if (!player.level().isClientSide && hand == InteractionHand.MAIN_HAND) {
             if (target instanceof AbstractVehicle vehicle) {
                 int amount = stack.getMaxDamage() - stack.getDamageValue();
-                amount = (int) (vehicle.addEnergy((float) amount / 1000) * 1000);
+                amount = (int) vehicle.addEnergy(amount);
                 ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(stack, amount);
                 return InteractionResult.SUCCESS;
             }

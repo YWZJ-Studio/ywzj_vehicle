@@ -21,6 +21,7 @@ import org.ywzj.vehicle.all.AllSounds;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
@@ -29,6 +30,7 @@ import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
 public class AerialBombEntity extends AmmoEntity {
 
+    public float mass;
     public int fuseDelayTick;
     public float penetrationDepth;
     public boolean homing;
@@ -79,7 +81,7 @@ public class AerialBombEntity extends AmmoEntity {
             // 空气阻力
             double speedSqr = motion.lengthSqr();
             if (speedSqr > 0) {
-                Vec3 drag = motion.normalize().scale(-dragCoefficient * speedSqr);
+                Vec3 drag = motion.normalize().scale(-PhysicsHelper.dragAccelerationPerTick(dragCoefficient, mass, speedSqr));
                 motion = motion.add(drag);
             }
             this.setDeltaMovement(motion);

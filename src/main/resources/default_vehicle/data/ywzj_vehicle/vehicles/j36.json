@@ -1,14 +1,14 @@
 {
     "type": "ywzj_vehicle:fixed_wing_vehicle",
     "attributes": {
-        "thrust": 0.02,
-        "thrust_k": 1.4,
+        "thrust": 300000,
+        "thrust_k": 1.5,
         "ceiling": 512,
         "x_rot_input_step": 0.4,
         "y_rot_input_step": 0.5,
         "z_rot_input_step": 0.2,
-        "air_drag_k_min": 0.002,
-        "air_drag_k_max": 0.008,
+        "air_drag_k_min": 80,
+        "air_drag_k_max": 320,
         "lift_to_drag_k": 3,
         "x_rot_input_drag_k": 1.2,
         "y_rot_input_drag_k": 0.25,
@@ -19,6 +19,11 @@
         "z_turn_rate": 6.0,
         "vortex_offsets": [[10.48125, 2.81875, -7.3421875], [-10.48125, 2.81875, -7.3421875]],
         "afterburner_offsets": [[1.4578125, 3.05625, -7.9328125, 0.7], [0, 3.115625, -7.9328125, 0.7], [-1.4578125, 3.05625, -7.9328125, 0.7]]
+    },
+    "physics_info": {
+        "mass": 40000,
+        "friction": 80000,
+        "radar_cross_section": 0.1
     },
     "landing_gear_part_id": "landing_gear",
     "airbrake_part_id": "airbrake",
@@ -31,15 +36,12 @@
         "sound_distance": 8
     },
     "energy_info": {
-        "energy_capacity": 0.25,
-        "energy_consumption_per_tick": 0.00001
+        "energy_capacity": 20000,
+        "energy_consumption_per_tick": 0.166666667
     },
     "defense_stats": {
         "damage_threshold": 10,
         "impact_multiplier": 3
-    },
-    "physics_info": {
-        "radar_cross_section": 0.1
     },
     "with_warning_receiver": true,
     "center_offset": [0, 1.625, 0],
