@@ -664,7 +664,7 @@ public class PhysicsEngine {
                 }
             }
         }
-        double buoyancyForce = G * physicsInfo.mass * displacedFluidMass / (physicsInfo.density * physicsCubeVolume);
+        double buoyancyForce = G * physicsInfo.mass * displacedFluidMass / (physicsInfo.density * 1000.0 * physicsCubeVolume);
         double buoyancyAcceleration = buoyancyForce / physicsInfo.mass;
         submergedRatio = (float) (displacedVolume / physicsCubeVolume);
         double damping = Mth.clamp(1 - physicsInfo.liquidDamping * submergedRatio, 0, 1);

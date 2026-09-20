@@ -27,23 +27,16 @@ public class TrackUnit extends SuspensionUnit<TrackUnitData> {
     private static final double MAX_FRAME_SECONDS = 0.25;
     private static final double CURVE_SAMPLES_PER_METER = 16.0;
     private final List<TrackPath> tracks;
-    private final List<Vec3> supportOffsets;
     private long lastRenderNanos;
 
     public TrackUnit(int index, AbstractVehicle vehicle, TrackUnitData data) {
         super(index, vehicle, data);
         this.tracks = createPaths(data.getTracks());
-        this.supportOffsets = data.getSupportOffsets();
     }
 
     @Override
     protected boolean isActive() {
-        return super.isActive() && !supportOffsets.isEmpty();
-    }
-
-    @Override
-    protected List<Vec3> getSupportOffsets() {
-        return supportOffsets;
+        return super.isActive() && !partCubeOBBs.isEmpty();
     }
 
     private static List<TrackPath> createPaths(List<List<Vec3>> rawTracks) {
