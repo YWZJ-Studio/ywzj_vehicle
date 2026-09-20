@@ -1,13 +1,19 @@
 {
     "type": "ywzj_vehicle:wheeled_vehicle",
     "attributes": {
-        "brake_force": 0.013,
-        "forward_force": 0.013,
-        "backward_force": 0.01,
+        "brake_force": 936,
+        "forward_force": 936,
+        "backward_force": 720,
         "max_speed_forward": 0.8,
         "max_speed_backward": 0.1,
         "turn_step": 0.5,
         "max_turn": 4
+    },
+    "physics_info": {
+        "mass": 180,
+        "friction": 360,
+        "suspension_response": 0.5,
+        "center": [0, -1, 0]
     },
     "max_health": 100,
     "view_info": {
@@ -20,11 +26,8 @@
         }
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001
-    },
-    "physics_info": {
-        "center": [0, -1, 0]
+        "energy_capacity": 12,
+        "energy_consumption_per_tick": 0.000055556
     },
     "structure_model": "ywzj_vehicle:vehicle/motorcycle",
     "parts": [
@@ -35,6 +38,32 @@
             "is_seat": true,
             "seat_offset": [0, 1.7, -0.3],
             "owner_view_offset": [0, 1.7, 0]
+        },
+        {
+            "id": "suspension_wheel_back",
+            "name": "suspension_wheel_back",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel_back",
+            "structure_bone": "wheel_back",
+            "is_seat": false,
+            "spring_stiffness": 8640,
+            "damping": 144,
+            "rest_length": 0.35,
+            "max_compression": 0.35,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_wheel_front",
+            "name": "suspension_wheel_front",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "wheel_front",
+            "structure_bone": "wheel_front",
+            "is_seat": false,
+            "spring_stiffness": 8640,
+            "damping": 144,
+            "rest_length": 0.35,
+            "max_compression": 0.35,
+            "max_extension": 0.22
         }
     ]
 }

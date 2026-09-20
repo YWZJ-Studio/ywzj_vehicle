@@ -174,11 +174,10 @@ public class RopeUnit extends PartUnit<RopeUnitData> {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+    public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
         if (ropeNodes.size() < 2) {
             return;
         }
-        float partialTick = Minecraft.getInstance().getFrameTime();
         Vec3 renderVehiclePosition = new Vec3(
                 Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
                 Mth.lerp(partialTick, vehicle.yo, vehicle.getY()),

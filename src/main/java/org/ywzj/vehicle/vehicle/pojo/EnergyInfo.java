@@ -15,10 +15,10 @@ public class EnergyInfo {
     public float energyDensity = 1f;
 
     @SerializedName("energy_capacity")
-    public float energyCapacity = 1f;
+    public float energyCapacity = 80f;
 
     @SerializedName("energy_consumption_per_tick")
-    public float energyConsumptionPerTick = 0.00001f;
+    public float energyConsumptionPerTick = 0.001f;
 
     @SerializedName("engine_particle_offsets")
     public List<Vec3> engineParticleOffsets = new ArrayList<>();

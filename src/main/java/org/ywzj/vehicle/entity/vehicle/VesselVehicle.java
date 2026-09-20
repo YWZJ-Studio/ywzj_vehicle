@@ -18,6 +18,7 @@ import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.render.animation.context.VesselVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VesselVehicleDisplay;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -27,9 +28,9 @@ public class VesselVehicle extends AbstractVehicle implements IAnimationEntity<V
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(VesselVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_ANGLE = SynchedEntityData.defineId(VesselVehicle.class, EntityDataSerializers.FLOAT);
-    public float brakeForce = 0.025f;
-    public float forwardForce = 0.01f;
-    public float backwardForce = 0.01f;
+    public float brakeForce = 10000f;
+    public float forwardForce = 4000f;
+    public float backwardForce = 4000f;
     public float maxSpeedForward = 0.5f;
     public float maxSpeedBackward = 0.2f;
     public float turnStep = 0.1f;
@@ -105,9 +106,9 @@ public class VesselVehicle extends AbstractVehicle implements IAnimationEntity<V
         if (isInWater()) {
             double powerScale = getPower() / 100;
             if (controlUnit.forward && forwardSpeed < maxSpeedForward) {
-                velocity = velocity.add(direction.scale(forwardForce * powerScale / physicsEngine.physicsInfo.mass));
+                velocity = velocity.add(direction.scale(PhysicsHelper.accelerationPerTick(forwardForce * powerScale, physicsEngine.physicsInfo.mass)));
             } else if (controlUnit.backward && forwardSpeed > -maxSpeedBackward) {
-                velocity = velocity.add(direction.scale(-backwardForce * powerScale / physicsEngine.physicsInfo.mass));
+                velocity = velocity.add(direction.scale(PhysicsHelper.accelerationPerTick(-backwardForce * powerScale, physicsEngine.physicsInfo.mass)));
             }
             if (maxTurn > 0 && mainCubeOBB.depth > 0) {
                 float yawStep = (float) Math.toDegrees(Math.atan2(motion * rudder / maxTurn * (forwardSpeed < 0 ? -1 : 1), mainCubeOBB.depth)) * 0.2f;

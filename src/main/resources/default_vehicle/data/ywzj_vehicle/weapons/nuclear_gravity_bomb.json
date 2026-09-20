@@ -1,4 +1,6 @@
 {
+    "mass": 320,
+    "drag_coefficient": 1.6,
     "type": "ywzj_vehicle:aerial_bomb",
     "name": "Nuclear Gravity Bomb",
     "damage": 10,

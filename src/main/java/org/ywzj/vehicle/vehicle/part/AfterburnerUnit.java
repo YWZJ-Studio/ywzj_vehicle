@@ -91,7 +91,7 @@ public class AfterburnerUnit extends SwitchableUnit<PartUnitData> {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight) {
+    public void render(PoseStack pPoseStack, MultiBufferSource bufferSource, int pPackedLight, float partialTick) {
         FixedWingVehicleDisplay display = getFixedWingDisplay();
         if (display == null) {
             return;

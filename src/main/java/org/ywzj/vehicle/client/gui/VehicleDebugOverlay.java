@@ -66,8 +66,8 @@ public class VehicleDebugOverlay implements IGuiOverlay {
             guiGraphics.drawString(mc.font, "engineSpeed: " + String.format("%.2f", vehicle.getEngineSpeed()), COL1_X, y, Color.WHITE); y += LINE_H;
             guiGraphics.drawString(mc.font, "power: " + String.format("%.2f", vehicle.getPower()), COL1_X, y, Color.WHITE); y += LINE_H;
             guiGraphics.drawString(mc.font, "energy: " + String.format("%.2f", vehicle.getEnergy()), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "mass: " + String.format("%.2f", vehicle.physicsEngine.physicsInfo.mass), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "curbWeight: " + String.format("%.2f", vehicle.curbWeight), COL1_X, y, Color.WHITE); y += LINE_H;
+            guiGraphics.drawString(mc.font, "mass (kg): " + String.format("%.2f", vehicle.physicsEngine.physicsInfo.mass), COL1_X, y, Color.WHITE); y += LINE_H;
+            guiGraphics.drawString(mc.font, "curbWeight (kg): " + String.format("%.2f", vehicle.curbWeight), COL1_X, y, Color.WHITE); y += LINE_H;
             guiGraphics.drawString(mc.font, "engineOn: " + vehicle.isEngineOn(), COL1_X, y, Color.WHITE); y += LINE_H;
             guiGraphics.drawString(mc.font, "destroyed: " + vehicle.isDestroyed(), COL1_X, y, Color.WHITE); y += LINE_H;
             guiGraphics.drawString(mc.font, "onGround: " + vehicle.onGround(), COL1_X, y, Color.WHITE); y += LINE_H;

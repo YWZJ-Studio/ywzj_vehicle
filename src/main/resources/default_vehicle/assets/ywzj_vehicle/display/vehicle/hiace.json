@@ -5,6 +5,28 @@
     "slot_texture": "ywzj_vehicle:textures/slot/hiace.png",
     "animations": "ywzj_vehicle:entity/hiace.animation",
     "animation_controller": "ywzj_vehicle:hiace_controller",
+    "special_bone_effects": [
+        {
+            "bone": "front_door_left",
+            "type": "transparent"
+        },
+        {
+            "bone": "front_door_right",
+            "type": "transparent"
+        },
+        {
+            "bone": "side_door_left",
+            "type": "transparent"
+        },
+        {
+            "bone": "side_door_right",
+            "type": "transparent"
+        },
+        {
+            "bone": "window",
+            "type": "transparent"
+        }
+    ],
     "sounds": {
         "engine_start": "ywzj_vehicle:lav150_engine_start",
         "engine_idle": "ywzj_vehicle:lav150_engine_idle",

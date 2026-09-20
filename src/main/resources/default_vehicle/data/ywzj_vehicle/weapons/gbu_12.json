@@ -1,4 +1,6 @@
 {
+    "mass": 230,
+    "drag_coefficient": 1.15,
     "type": "ywzj_vehicle:aerial_bomb",
     "name": "GBU-12",
     "damage": 10,

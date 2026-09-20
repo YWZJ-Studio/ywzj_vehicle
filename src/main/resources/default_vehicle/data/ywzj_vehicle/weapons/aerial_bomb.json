@@ -1,4 +1,6 @@
 {
+    "mass": 227,
+    "drag_coefficient": 1.135,
     "type": "ywzj_vehicle:aerial_bomb",
     "name": "aerial_bomb",
     "damage": 10,

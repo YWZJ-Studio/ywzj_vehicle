@@ -28,7 +28,6 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -54,7 +53,6 @@ import org.ywzj.vehicle.api.entity.ICustomVehicle;
 import org.ywzj.vehicle.api.entity.OBBEntity;
 import org.ywzj.vehicle.api.entity.RemoteTickEntity;
 import org.ywzj.vehicle.api.event.VehicleAttackEvent;
-import org.ywzj.vehicle.api.event.VehicleCollectCollisionEvent;
 import org.ywzj.vehicle.api.event.VehicleMoveEvent;
 import org.ywzj.vehicle.capability.VehicleCapabilityProvider;
 import org.ywzj.vehicle.client.particle.BulletHoleParticle;
@@ -75,10 +73,7 @@ import org.ywzj.vehicle.vehicle.DamageSystem;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.control.ControlUnit;
-import org.ywzj.vehicle.vehicle.part.DecorationUnit;
-import org.ywzj.vehicle.vehicle.part.DoorUnit;
-import org.ywzj.vehicle.vehicle.part.PartUnit;
-import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.part.*;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.pojo.DefenseStats;
@@ -110,6 +105,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public List<Seat> seats;
     protected final List<PartUnit<?>> partUnits;
     protected Map<String, PartUnit<?>> partUnitMap;
+    protected final List<SuspensionUnit<?>> suspensionUnits;
     protected final Map<String, DecorationUnit> decorationUnits;
     protected final HashSet<BulletHoleParticle> bulletHoleParticles;
     protected ViewInfo viewInfo;
@@ -128,6 +124,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     private float zRot;
     public float zRotO;
     private float lerpZRot;
+    private int lerpRotSteps;
     protected List<VehicleCubeOBB> vehicleCubeOBBs;
     protected VehicleCubeOBB mainCubeOBB;
     protected double structureLength;
@@ -147,7 +144,6 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected int destroyedTick;
     protected int engineParticleTick;
     public long lastRenderTime;
-    private boolean finalRotUpdate;
 
     protected AbstractVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -156,10 +152,11 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.controlUnit = new ControlUnit(this);
         this.partUnits = new ArrayList<>();
         this.partUnitMap = Map.of();
+        this.suspensionUnits = new ArrayList<>();
         this.decorationUnits = new HashMap<>();
         this.bulletHoleParticles = new HashSet<>();
         this.vehicleCubeOBBs = new ArrayList<>();
-        this.curbWeight = 1;
+        this.curbWeight = 1000;
         this.viewInfo = new ViewInfo();
         this.energyInfo = new EnergyInfo();
         this.setMaxUpStep(1.0f);
@@ -178,6 +175,23 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.entityData.define(ENGINE_SPEED, 0f);
         this.entityData.define(ENGINE_ON, false);
         this.entityData.define(DESTROYED, false);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(List<SynchedEntityData.DataValue<?>> dataValues) {
+        super.onSyncedDataUpdated(dataValues);
+        physicsEngine.physicsInfo.mass = curbWeight + entityData.get(ENERGY);
+        if (dataValues.stream().anyMatch(value -> value.id() == X_ROT.getId() || value.id() == Y_ROT.getId() || value.id() == Z_ROT.getId())) {
+            float targetXRot = entityData.get(X_ROT);
+            float targetYRot = entityData.get(Y_ROT);
+            float targetZRot = entityData.get(Z_ROT);
+            if (targetXRot != lerpXRot || targetYRot != lerpYRot || targetZRot != lerpZRot) {
+                this.lerpRotSteps = 3;
+            }
+            this.lerpXRot = targetXRot;
+            this.lerpYRot = targetYRot;
+            this.lerpZRot = targetZRot;
+        }
     }
 
     @Override
@@ -427,6 +441,8 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.viewInfo = vehicleData.getViewInfo();
         this.energyInfo = vehicleData.getEnergyInfo();
         this.physicsEngine.physicsInfo = vehicleData.getPhysicsInfo().copy();
+        this.curbWeight = this.physicsEngine.physicsInfo.mass;
+        this.physicsEngine.physicsInfo.mass = curbWeight + entityData.get(ENERGY);
         this.defenseStats = vehicleData.getDefenseStats();
         this.centerOffset = vehicleData.getCenterOffset();
         VehicleStructOBBs vehicleStruct = vehicleData.getVehicleStructObbs();
@@ -435,6 +451,12 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.structureLength = vehicleData.getStructureLength();
         BaseVehicleData.PartUnitsAndSeats partUnitsAndSeats = vehicleData.createPartUnits(this);
         this.partUnits.addAll(partUnitsAndSeats.partUnitMap().values());
+        this.suspensionUnits.clear();
+        for (PartUnit<?> partUnit : partUnits) {
+            if (partUnit instanceof SuspensionUnit<?> suspension) {
+                suspensionUnits.add(suspension);
+            }
+        }
         this.seats.addAll(partUnitsAndSeats.seats());
         this.uav = vehicleData.isUav();
         this.canWade = vehicleData.canWade();
@@ -448,6 +470,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         }
         this.partUnitMap = map;
         vehicleData.inject(this);
+        SuspensionUnit.calibrateRestLengths(this);
         updateOBBs();
         this.dataInitialized = true;
     }
@@ -540,8 +563,6 @@ public abstract class AbstractVehicle extends ContainerCraft
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             float fuel = cap.getFuel();
             fuel = Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100);
-            physicsEngine.physicsInfo.mass = curbWeight + fuel;
-            entityData.set(ENERGY, fuel);
             setEnergy(fuel);
         });
     }
@@ -571,70 +592,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     protected void tickPhysics(Vec3 force) {
-        Vector3f[] axes = mainCubeOBB.obb().getAxes();
-        // 车体大OBB的表面采样点
-        List<VehicleCubeOBB.CubePoint> surfacePoints = mainCubeOBB.cubePoints();
-        // 接触方块的采样点
-        List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
-
-        for (VehicleCubeOBB.CubePoint point : surfacePoints) {
-            Vec3 worldPos = new Vec3(point.worldPos(axes));
-            BlockPos blockPos = BlockPos.containing(worldPos);
-
-            // 调试
-//            DebugUtil.particle(level(), worldPos, point.cubeFace());
-//            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()));
-
-            BlockState blockState = level().getBlockState(blockPos);
-            if (blockState.isSolid()) {
-                point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
-                point.cubePointContext.setBlockState(blockState);
-                touchPoints.add(point);
-            }
-        }
-        MinecraftForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(this, touchPoints));
-
-        // 调试
-//        touchPoints.forEach(p -> DebugUtil.particle(level(), new Vec3(p.worldPos(axes)), p.cubeFace()));
-//        touchPoints.forEach(p -> {
-//            BlockPos blockPos = p.cubePointContext.blockPos();
-//            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()), p.cubeFace());
-//        });
-
-        physicsEngine.beginTick(getDeltaMovement());
-
-        // 碰撞
-        if (collision) {
-            physicsEngine.motionByImpact(touchPoints, axes);
-        }
-        // 摩擦力
-        physicsEngine.decelerationByFriction(touchPoints);
-        // 浮力
-        force = force.add(physicsEngine.motionByBuoyancy());
-        // 重力与旋转
-        physicsEngine.rotAndFallByGravity(touchPoints, axes, force.toVector3f());
-
-        setDeltaMovement(physicsEngine.endTick());
-
-//        if (this instanceof Ztz99a) {
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).aimContext().position);
-//
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(2).worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getSubWeaponUnits().get(2).aimContext().position);
-
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).weapons.get(2).getWeaponUnit().worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).weapons.get(2).getWeaponUnit().aimContext().position);
-
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getCurrentWeapon().get().getWeaponUnit().worldCurrentBoltPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)partUnits.get(0)).getCurrentWeapon().get().getWeaponUnit().aimContext().position);
-
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).ammoSpawnPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOwnerViewPosition());
-//            DebugUtil.particle(level(), ((WeaponUnit)seats.get(0).partUnit).worldOpticalSightPosition());
-//            DebugUtil.particle(level(), seats.get(0).partUnit.worldSeatPosition());
-//        }
-
+        physicsEngine.tick(force);
     }
 
     @Override
@@ -755,14 +713,6 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected abstract Vec3 tickMove();
 
     protected void tickPosAndRot() {
-        if (!level().isClientSide()) {
-            if (this.xRotO == this.xRot && this.yRotO == this.yRot && !finalRotUpdate) {
-                triggerPosRotUpdate();
-                finalRotUpdate = true;
-            } else {
-                finalRotUpdate = false;
-            }
-        }
         this.xRotO = this.xRot;
         this.yRotO = this.yRot;
         this.zRotO = this.zRot;
@@ -771,6 +721,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                 double dX = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
                 double dY = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
                 double dZ = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
+                this.lerpSteps -= 1;
+                this.setPos(dX, dY, dZ);
+            }
+            if (this.lerpRotSteps > 0) {
                 float dXRot = Mth.wrapDegrees(lerpXRot - this.getXRot());
                 float dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot());
                 float dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot());
@@ -785,11 +739,10 @@ public abstract class AbstractVehicle extends ContainerCraft
                     dYRot = Mth.wrapDegrees(lerpYRot - this.getYRot());
                     dZRot = Mth.wrapDegrees(lerpZRot - this.getZRot());
                 }
-                this.setXRot(this.getXRot() + dXRot / this.lerpSteps);
-                this.setYRot(this.getYRot() + dYRot / this.lerpSteps);
-                this.setZRot(this.getZRot() + dZRot / this.lerpSteps);
-                this.lerpSteps -= 1;
-                this.setPos(dX, dY, dZ);
+                this.setXRot(this.getXRot() + dXRot / this.lerpRotSteps);
+                this.setYRot(this.getYRot() + dYRot / this.lerpRotSteps);
+                this.setZRot(this.getZRot() + dZRot / this.lerpRotSteps);
+                this.lerpRotSteps -= 1;
             }
         }
     }
@@ -1217,6 +1170,14 @@ public abstract class AbstractVehicle extends ContainerCraft
         return Optional.ofNullable(partUnitMap.get(id));
     }
 
+    public List<SuspensionUnit<?>> getSuspensionUnits() {
+        return suspensionUnits;
+    }
+
+    public boolean hasSuspension() {
+        return !suspensionUnits.isEmpty();
+    }
+
     public Map<String, DecorationUnit> getDecorationUnits() {
         return decorationUnits;
     }
@@ -1557,21 +1518,13 @@ public abstract class AbstractVehicle extends ContainerCraft
         double relVelocity = (velocity - entityVelocity) * 10;
         if (relVelocity > 1) {
             entity.hurt(AllDamageTypes.Sources.vehicleCollision(level().registryAccess(), this, this.getDriver(), null),
-                    (float) (0.5 * curbWeight * relVelocity * relVelocity));
+                    (float) (0.5 * (curbWeight / PhysicsHelper.KILOGRAMS_PER_TONNE) * relVelocity * relVelocity));
         }
     }
 
     public void triggerPosRotUpdate() {
         ClientboundMoveEntityPacket.PosRot packet = new ClientboundMoveEntityPacket.PosRot(this.getId(), (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, this.onGround());
         ((ServerLevel) this.level()).getChunkSource().broadcast(this, packet);
-    }
-
-    @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYaw, float pPitch, int pPosRotationIncrements, boolean pTeleport) {
-        super.lerpTo(pX, pY, pZ, pYaw, pPitch, pPosRotationIncrements, pTeleport);
-        this.lerpXRot = entityData.get(X_ROT);
-        this.lerpYRot = entityData.get(Y_ROT);
-        this.lerpZRot = entityData.get(Z_ROT);
     }
 
     public void aiStep() {

@@ -20,6 +20,8 @@ public class ParagliderCanopy extends Entity {
     private static final double FALLING_DRAG = 0.98;
     private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(ParagliderCanopy.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> FALLING = SynchedEntityData.defineId(ParagliderCanopy.class, EntityDataSerializers.BOOLEAN);
+    private Entity attachedOwner;
+    private boolean requireOpenPack;
     private boolean landed;
     private int landedTicks;
 
@@ -30,12 +32,34 @@ public class ParagliderCanopy extends Entity {
     }
 
     public void equip(ServerPlayer player) {
-        entityData.set(OWNER_ID, player.getId());
-        setPos(player.position());
-        level().addFreshEntity(this);
+        equipWithPack(player);
+    }
+
+    public void equipWithPack(LivingEntity owner) {
+        equip(owner);
+        requireOpenPack = true;
+    }
+
+    public void equip(Entity owner) {
+        if (level().isClientSide || owner == this || owner.level() != level() || !owner.isAlive()) {
+            throw new IllegalArgumentException("Canopy requires a live owner in the same server world");
+        }
+        attachedOwner = owner;
+        requireOpenPack = false;
+        entityData.set(OWNER_ID, owner.getId());
+        setPos(owner.position());
+        setYRot(owner.getYRot());
+        if (!level().addFreshEntity(this)) {
+            attachedOwner = null;
+            discard();
+            throw new IllegalStateException("Could not spawn paraglider canopy");
+        }
     }
 
     public void fallThenDiscard() {
+        if (isFalling()) {
+            return;
+        }
         entityData.set(FALLING, true);
         Vec3 movement = getDeltaMovement();
         setDeltaMovement(0, movement.y, 0);
@@ -43,10 +67,12 @@ public class ParagliderCanopy extends Entity {
         if (owner != null && (owner.onGround() || owner.isInWater())) {
             landed = true;
         }
+        attachedOwner = null;
+        entityData.set(OWNER_ID, -1);
     }
 
     public Entity getOwner() {
-        return level().getEntity(entityData.get(OWNER_ID));
+        return level().isClientSide ? level().getEntity(entityData.get(OWNER_ID)) : attachedOwner;
     }
 
     public boolean isFalling() {
@@ -64,18 +90,28 @@ public class ParagliderCanopy extends Entity {
             return;
         }
         Entity owner = getOwner();
-        if (owner instanceof LivingEntity living && living.isAlive()) {
-            if (!living.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(AllItems.PARACHUTE_PACK.get())
-                    || !ParachutePackItem.isOpen(living.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST))) {
-                fallThenDiscard();
-                return;
-            }
-            setPos(living.position());
-            setYRot(living.getYHeadRot());
-            setDeltaMovement(living.getDeltaMovement());
+        if (owner == null || !owner.isAlive() || owner.level() != level()) {
+            fallThenDiscard();
             return;
         }
-        fallThenDiscard();
+        setPos(owner.position());
+        setYRot(owner instanceof LivingEntity living ? living.getYHeadRot() : owner.getYRot());
+        setDeltaMovement(owner.getDeltaMovement());
+        if (owner.onGround() || owner.isInWater()) {
+            fallThenDiscard();
+            return;
+        }
+        if (requireOpenPack && owner instanceof LivingEntity living
+                && (!living.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(AllItems.PARACHUTE_PACK.get())
+                || !ParachutePackItem.isOpen(living.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST)))) {
+            fallThenDiscard();
+        }
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        attachedOwner = null;
+        super.onRemovedFromWorld();
     }
 
     private void tickFalling() {

@@ -1,4 +1,7 @@
 {
+    "mass": 49,
+    "thrust": 19600,
+    "drag_coefficient": 0.245,
     "type": "ywzj_vehicle:missile",
     "name": "missile",
     "damage": 999,

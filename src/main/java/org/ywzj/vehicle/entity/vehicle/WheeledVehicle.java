@@ -20,6 +20,7 @@ import org.ywzj.vehicle.client.render.animation.context.WheeledVehicleContext;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.WheeledVehicleDisplay;
 import org.ywzj.vehicle.util.ParticleUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
@@ -30,9 +31,9 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_ANGLE = SynchedEntityData.defineId(WheeledVehicle.class, EntityDataSerializers.FLOAT);
-    public float brakeForce = 0.025f;
-    public float forwardForce = 0.01f;
-    public float backwardForce = 0.01f;
+    public float brakeForce = 10000f;
+    public float forwardForce = 4000f;
+    public float backwardForce = 4000f;
     public float maxSpeedForward = 0.5f;
     public float maxSpeedBackward = 0.2f;
     public float turnStep = 0.1f;
@@ -169,10 +170,10 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
                 * (turnAngle / maxTurn)
                 * (1 - motion / maxSpeedForward * 0.5)
                 * (loseTraction ? 0.8 : 1), mainCubeOBB.depth));
-        Vec3 turnForce = turnDirection.normalize().scale(turnStep / 100);
+        Vec3 turnAcceleration = turnDirection.normalize().scale(turnStep / 100);
         this.setYRot(this.getYRot() + turnStep);
         // 受力产生加速度
-        Vec3 deltaVelocity = propulsiveForce.add(turnForce).scale(1 / physicsEngine.physicsInfo.mass);
+        Vec3 deltaVelocity = propulsiveForce.scale(PhysicsHelper.accelerationPerTick(1, physicsEngine.physicsInfo.mass)).add(turnAcceleration);
         velocity = velocity.add(deltaVelocity);
         motion = velocity.length();
         angle = (float) Math.toDegrees(VectorUtil.angleBetween(velocity, vehicleDirection));

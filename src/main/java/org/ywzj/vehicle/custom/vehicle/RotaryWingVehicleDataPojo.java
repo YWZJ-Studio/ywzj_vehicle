@@ -13,7 +13,7 @@ public class RotaryWingVehicleDataPojo extends BaseVehicleDataPojo {
     public static class RotaryWingAttributes {
 
         @SerializedName("main_rotor_force")
-        public float mainRotorForce;
+        public float mainRotorForce = 13720f;
 
         @SerializedName("ceiling")
         public float ceiling = 256;

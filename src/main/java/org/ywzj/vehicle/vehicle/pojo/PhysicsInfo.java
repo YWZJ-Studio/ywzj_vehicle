@@ -6,16 +6,19 @@ import net.minecraft.world.phys.Vec3;
 public class PhysicsInfo {
 
     @SerializedName("mass")
-    public float mass = 1;
+    public float mass = 1000;
 
     @SerializedName("density")
-    public float density = 8;
+    public float density = 8000;
 
     @SerializedName("friction")
-    public float friction = 0.005f;
+    public float friction = 2000f;
 
     @SerializedName("liquid_damping")
     public float liquidDamping = 0.1f;
+
+    @SerializedName("suspension_response")
+    public float suspensionResponse = 2.0f;
 
     @SerializedName("center")
     public Vec3 center = Vec3.ZERO;
@@ -35,6 +38,7 @@ public class PhysicsInfo {
         copy.density = this.density;
         copy.friction = this.friction;
         copy.liquidDamping = this.liquidDamping;
+        copy.suspensionResponse = this.suspensionResponse;
         copy.center = new Vec3(this.center.x, this.center.y, this.center.z);
         copy.canDestroyBlock = this.canDestroyBlock;
         copy.radarCrossSection = this.radarCrossSection;

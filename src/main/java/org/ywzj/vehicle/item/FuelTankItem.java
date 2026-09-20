@@ -33,7 +33,7 @@ public class FuelTankItem extends VehicleItem {
                 if (target instanceof AbstractVehicle vehicle) {
                     ItemStack fuelTankItemStack = player.getItemInHand(pHand);
                     int amount = fuelTankItemStack.getMaxDamage() - fuelTankItemStack.getDamageValue();
-                    amount = (int) (vehicle.addEnergy((float) amount / 1000) * 1000);
+                    amount = (int) vehicle.addEnergy(amount);
                     ((FuelTankItem) AllItems.FUEL_TANK.get()).remain(fuelTankItemStack, amount);
                     return InteractionResult.sidedSuccess(player.level().isClientSide);
                 }

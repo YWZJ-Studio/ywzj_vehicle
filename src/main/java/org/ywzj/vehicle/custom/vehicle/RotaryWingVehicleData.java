@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class RotaryWingVehicleData extends BaseVehicleData<RotaryWingVehicle> {
 
-    public float mainRotorForce = 1.4f * 0.7f * 1;
+    public float mainRotorForce = 13720f;
     public float ceiling = 256;
     public float xRotSpeedAcceleration = 1f;
     public float xRotSpeedMax = 4;

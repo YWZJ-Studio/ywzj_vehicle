@@ -1,13 +1,19 @@
 {
     "type": "ywzj_vehicle:wheeled_vehicle",
     "attributes": {
-        "brake_force": 0.025,
-        "forward_force": 0.02,
-        "backward_force": 0.02,
+        "brake_force": 8670,
+        "forward_force": 6936,
+        "backward_force": 6936,
         "max_speed_forward": 0.8,
         "max_speed_backward": 0.2,
         "turn_step": 0.4,
         "max_turn": 2
+    },
+    "physics_info": {
+        "mass": 867,
+        "friction": 1734,
+        "suspension_response": 0.5,
+        "center": [0, -1, 0]
     },
     "max_health": 300,
     "defense_stats": {
@@ -22,11 +28,8 @@
         "sound_distance": 3
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001
-    },
-    "physics_info": {
-        "center": [0, -2, 0]
+        "energy_capacity": 27,
+        "energy_consumption_per_tick": 0.000138889
     },
     "structure_model": "ywzj_vehicle:vehicle/atv_mrzr4",
     "parts": [
@@ -65,6 +68,58 @@
             "is_seat": true,
             "seat_offset": [-0.4, 2.1, -0.8],
             "owner_view_offset": [-0.4, 2.1, -0.8]
+        },
+        {
+            "id": "suspension_ctr_wheel_f_l",
+            "name": "suspension_ctr_wheel_f_l",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "ctr_wheel_f_l",
+            "structure_bone": "ctr_wheel_f_l",
+            "is_seat": false,
+            "spring_stiffness": 20808,
+            "damping": 346.8,
+            "rest_length": 0.35,
+            "max_compression": 0.35,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_ctr_wheel_f_r",
+            "name": "suspension_ctr_wheel_f_r",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "ctr_wheel_f_r",
+            "structure_bone": "ctr_wheel_f_r",
+            "is_seat": false,
+            "spring_stiffness": 20808,
+            "damping": 346.8,
+            "rest_length": 0.35,
+            "max_compression": 0.35,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_ctr_wheel_b_l",
+            "name": "suspension_ctr_wheel_b_l",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "ctr_wheel_b_l",
+            "structure_bone": "ctr_wheel_b_l",
+            "is_seat": false,
+            "spring_stiffness": 20808,
+            "damping": 346.8,
+            "rest_length": 0.35,
+            "max_compression": 0.35,
+            "max_extension": 0.22
+        },
+        {
+            "id": "suspension_ctr_wheel_b_r",
+            "name": "suspension_ctr_wheel_b_r",
+            "type": "ywzj_vehicle:suspension",
+            "render_bone": "ctr_wheel_b_r",
+            "structure_bone": "ctr_wheel_b_r",
+            "is_seat": false,
+            "spring_stiffness": 20808,
+            "damping": 346.8,
+            "rest_length": 0.35,
+            "max_compression": 0.35,
+            "max_extension": 0.22
         }
     ]
 }

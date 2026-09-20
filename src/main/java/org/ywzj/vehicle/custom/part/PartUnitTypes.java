@@ -115,6 +115,12 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<SuspensionUnit<SuspensionUnitData>, SuspensionUnitData> SUSPENSION =
+            PartUnitType.Builder.<SuspensionUnit<SuspensionUnitData>, SuspensionUnitData>of(YwzjVehicle.modLocation("suspension"))
+                    .setFactory(SuspensionUnit::new)
+                    .setDataSerializer(json -> new SuspensionUnitData(GsonUtil.GSON.fromJson(json, SuspensionUnitPojo.class)))
+                    .build();
+
     public static final PartUnitType<TrackUnit, TrackUnitData> TRACK =
             PartUnitType.Builder.<TrackUnit, TrackUnitData>of(YwzjVehicle.modLocation("track"))
                     .setFactory(TrackUnit::new)

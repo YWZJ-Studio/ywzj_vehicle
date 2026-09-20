@@ -30,6 +30,7 @@ import org.ywzj.vehicle.custom.weapon.data.VehicleRocketWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
 import org.ywzj.vehicle.util.EntityUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 
@@ -121,12 +122,12 @@ public class RocketEntity extends AmmoEntity {
         Vec3 velocity = this.getDeltaMovement();
         Vec3 lookDir = this.getLookAngle();
         if (isMotorBurning()) {
-            double acceleration = (this.thrust / this.mass);
+            double acceleration = (PhysicsHelper.accelerationPerTick(this.thrust, this.mass));
             velocity = velocity.add(lookDir.scale(acceleration));
         }
         double speedSqr = velocity.lengthSqr();
         if (speedSqr > 0) {
-            Vec3 drag = velocity.normalize().scale(-dragCoefficient * speedSqr);
+            Vec3 drag = velocity.normalize().scale(-PhysicsHelper.dragAccelerationPerTick(dragCoefficient, mass, speedSqr));
             velocity = velocity.add(drag);
         }
         velocity = velocity.subtract(0, PhysicsEngine.G, 0);

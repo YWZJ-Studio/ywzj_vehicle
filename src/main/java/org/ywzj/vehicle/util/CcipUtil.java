@@ -49,11 +49,11 @@ public class CcipUtil {
         int maxTicks = Math.min(MAX_TICKS, life + 1);
         for (int tickCount = 1; tickCount <= maxTicks; tickCount++) {
             if (tickCount <= motorBurnTime) {
-                velocity = velocity.add(lookDirection.scale(thrust / mass));
+                velocity = velocity.add(lookDirection.scale(PhysicsHelper.accelerationPerTick(thrust, mass)));
             }
             double speedSqr = velocity.lengthSqr();
             if (speedSqr > 0) {
-                Vec3 drag = velocity.normalize().scale(-friction * speedSqr);
+                Vec3 drag = velocity.normalize().scale(-PhysicsHelper.dragAccelerationPerTick(friction, mass, speedSqr));
                 velocity = velocity.add(drag);
             }
             velocity = velocity.subtract(0, PhysicsEngine.G, 0);

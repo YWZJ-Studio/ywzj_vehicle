@@ -2,12 +2,19 @@
     "type": "ywzj_vehicle:vessel_vehicle",
     "attributes": {
         "brake_force": 0,
-        "forward_force": 0.03,
-        "backward_force": 0.01,
+        "forward_force": 3000,
+        "backward_force": 1000,
         "max_speed_forward": 1,
         "max_speed_backward": 0.5,
         "turn_step": 0.3,
         "max_turn": 3
+    },
+    "physics_info": {
+        "mass": 250,
+        "friction": 500,
+        "density": 200,
+        "liquid_damping": 0.1,
+        "center": [0, 0, -0.2]
     },
     "max_health": 200,
     "protect_passenger": false,
@@ -17,13 +24,8 @@
         "sound_distance": 3
     },
     "energy_info": {
-        "energy_capacity": 1,
-        "energy_consumption_per_tick": 0.00001
-    },
-    "physics_info": {
-        "density": 0.2,
-        "liquid_damping": 0.1,
-        "center": [0, 0, -0.2]
+        "energy_capacity": 40,
+        "energy_consumption_per_tick": 0.000208333
     },
     "structure_model": "ywzj_vehicle:vehicle/assault_boat",
     "parts": [

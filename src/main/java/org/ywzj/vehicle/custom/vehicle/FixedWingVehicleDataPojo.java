@@ -24,7 +24,7 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
     public static class FixedWingAttributes {
 
         @SerializedName("thrust")
-        public float thrust = 0.02f;
+        public float thrust = 8000f;
 
         @SerializedName("thrust_k")
         public float thrustK = 1.5f;
@@ -42,10 +42,10 @@ public class FixedWingVehicleDataPojo extends BaseVehicleDataPojo {
         public float zRotInputStep = 0.2f;
 
         @SerializedName("air_drag_k_min")
-        public float airDragKMin = 1f / 500;
+        public float airDragKMin = 2f;
 
         @SerializedName("air_drag_k_max")
-        public float airDragKMax = 4f / 500;
+        public float airDragKMax = 8f;
 
         @SerializedName("lift_to_drag_k")
         public float liftToDragK = 6;

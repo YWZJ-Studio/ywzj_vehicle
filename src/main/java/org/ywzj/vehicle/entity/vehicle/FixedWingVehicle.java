@@ -31,6 +31,7 @@ import org.ywzj.vehicle.client.resource.vehicle.FixedWingVehicleDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.util.ParticleUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.*;
@@ -52,14 +53,14 @@ public class FixedWingVehicle extends AbstractVehicle
     public static final EntityDataAccessor<Integer> AEROBATIC_SMOKE_G = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.INT);
     public static final EntityDataAccessor<Integer> AEROBATIC_SMOKE_B = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.INT);
     public VehicleCubeOBB aerodynamicCubeOBB;
-    public float thrust = 0.02f;
+    public float thrust = 8000f;
     public float thrustK = 1.5f;
     public float ceiling = 512;
     public float xRotInputStep = 0.2f;
     public float yRotInputStep = 0.5f;
     public float zRotInputStep = 0.2f;
-    public float airDragKMin = 1f / 500;
-    public float airDragKMax = 4f / 500;
+    public float airDragKMin = 2f;
+    public float airDragKMax = 8f;
     public float liftToDragK = 6;
     public float angleOfAttackMin = -10f;
     public float angleOfAttackMax = 25f;
@@ -222,8 +223,6 @@ public class FixedWingVehicle extends AbstractVehicle
         getCapability(VehicleCapabilityProvider.CAPABILITY).ifPresent(cap -> {
             float fuel = cap.getFuel();
             fuel = org.joml.Math.max(0, fuel - energyInfo.energyConsumptionPerTick * getPower() / 100 * getThrottleLevel() / 100);
-            physicsEngine.physicsInfo.mass = curbWeight + fuel;
-            entityData.set(ENERGY, fuel);
             setEnergy(fuel);
         });
     }
@@ -373,7 +372,7 @@ public class FixedWingVehicle extends AbstractVehicle
         float power = throttleLevel / 100 * getPower() / 100;
         float thrust = this.thrust * power;
         // 推力加速度
-        double a = thrust / mass;
+        double a = PhysicsHelper.accelerationPerTick(thrust, mass);
         Vec3 thrustDirection = onGround ? new Vec3(forwardDirection.x, 0, forwardDirection.z).normalize() : forwardDirection;
         if (thrustUnit != null) {
             thrustDirection = thrustUnit.worldVec();
@@ -387,8 +386,9 @@ public class FixedWingVehicle extends AbstractVehicle
         double liftToDragK = this.liftToDragK * scaleAir;
         double k = ((airDragKMax - airDragKMin) * Math.abs(Math.sin(angelX)) + airDragKMin);
         double al = airSpeed.length();
-        double f = al * al * k;
-        airSpeed = airSpeed.normalize().scale(al - f / mass);
+        double speedSquared = al * al * PhysicsHelper.TICKS_PER_SECOND_SQUARED;
+        double f = speedSquared * k;
+        airSpeed = airSpeed.normalize().scale(al - PhysicsHelper.accelerationPerTick(f, mass));
         // 升力
         double aRaw = airSpeed.length();
         double degreeX = Math.toDegrees(angelX);
@@ -405,13 +405,13 @@ public class FixedWingVehicle extends AbstractVehicle
         }
         Vec3 force = upDirection.scale(fl);
         if (fl != 0) {
-            airSpeed = airSpeed.add(upDirection.scale(fl / mass));
+            airSpeed = airSpeed.add(upDirection.scale(PhysicsHelper.accelerationPerTick(fl, mass)));
         }
         // 尾舵力
         double angelY = VectorUtil.angleBetween(airSpeed, leftDirection) - Math.PI / 2;
         double at = airSpeed.dot(forwardDirection);
-        double ft = at * at * 8 * k * Math.sin(angelY);
-        airSpeed = airSpeed.add(leftDirection.scale(ft / mass));
+        double ft = at * at * PhysicsHelper.TICKS_PER_SECOND_SQUARED * 8 * k * Math.sin(angelY);
+        airSpeed = airSpeed.add(leftDirection.scale(PhysicsHelper.accelerationPerTick(ft, mass)));
         // 操控面与部件阻力
         double controlDrag = (Math.abs(xRotInput) * xRotInputDragK
                 + Math.abs(yRotInput) * yRotInputDragK
@@ -419,8 +419,8 @@ public class FixedWingVehicle extends AbstractVehicle
                 + (landingGear != null ? landingGear.level() * landingGear.getDragK() : 0)
                 + (airbrakeUnit != null ? airbrakeUnit.level() * airbrakeUnit.getDragK() : 0)
         ) * airDragKMin;
-        double fc = al * al * controlDrag;
-        aRaw -= fc / mass;
+        double fc = speedSquared * controlDrag;
+        aRaw -= PhysicsHelper.accelerationPerTick(fc, mass);
         airSpeed = airSpeed.normalize().scale(aRaw);
         al = airSpeed.length();
         Quaternionf q = rotYXZ();

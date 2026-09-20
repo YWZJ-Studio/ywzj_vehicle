@@ -22,10 +22,10 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     private float seekerFov = 30f;
 
     @SerializedName("mass")
-    private float mass = 0.01f;
+    private float mass = 10f;
 
     @SerializedName("thrust")
-    private float thrust = 0.01f;
+    private float thrust = 4000f;
 
     @SerializedName("motor_burn_time")
     private float motorBurnTime = 300f;
@@ -34,7 +34,7 @@ public class VehicleMissileWeaponData extends BaseVehicleWeaponData {
     private Vec3 engineNozzleOffset = new Vec3(0, 0, -1);
 
     @SerializedName("drag_coefficient")
-    private float dragCoefficient = 0.005f;
+    private float dragCoefficient = 0.05f;
 
     @SerializedName("max_g")
     private float maxG = 30f;
