@@ -9,7 +9,7 @@ public class PhysicsInfo {
     public float mass = 1000;
 
     @SerializedName("density")
-    public float density = 8000;
+    public float density = 8;
 
     @SerializedName("friction")
     public float friction = 2000f;

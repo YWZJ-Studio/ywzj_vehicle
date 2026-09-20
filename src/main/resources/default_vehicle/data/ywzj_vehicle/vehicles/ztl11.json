@@ -13,7 +13,7 @@
         "mass": 22500,
         "friction": 45000,
         "suspension_response": 1,
-        "density": 750,
+        "density": 0.75,
         "center": [0, -2, 0]
     },
     "max_health": 2000,
