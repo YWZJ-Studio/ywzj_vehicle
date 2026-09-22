@@ -12,7 +12,7 @@
     "physics_info": {
         "mass": 867,
         "friction": 1734,
-        "suspension_response": 0.5,
+        "suspension_response": 0.8,
         "center": [0, -1, 0]
     },
     "max_health": 300,
@@ -77,10 +77,11 @@
             "structure_bone": "ctr_wheel_f_l",
             "is_seat": false,
             "spring_stiffness": 20808,
-            "damping": 346.8,
+            "damping": 650,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.2
         },
         {
             "id": "suspension_ctr_wheel_f_r",
@@ -90,10 +91,11 @@
             "structure_bone": "ctr_wheel_f_r",
             "is_seat": false,
             "spring_stiffness": 20808,
-            "damping": 346.8,
+            "damping": 650,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.2
         },
         {
             "id": "suspension_ctr_wheel_b_l",
@@ -103,10 +105,11 @@
             "structure_bone": "ctr_wheel_b_l",
             "is_seat": false,
             "spring_stiffness": 20808,
-            "damping": 346.8,
+            "damping": 650,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.2
         },
         {
             "id": "suspension_ctr_wheel_b_r",
@@ -116,10 +119,11 @@
             "structure_bone": "ctr_wheel_b_r",
             "is_seat": false,
             "spring_stiffness": 20808,
-            "damping": 346.8,
+            "damping": 650,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.2
         }
     ]
 }
