@@ -66,7 +66,8 @@ public class PhysicsEngine {
 
     private record BodyContacts(List<VehicleCubeOBB.CubePoint> touchPoints, Map<VehicleCubeOBB.CubePoint, Double> supports) {}
     private record BodySupportContact(double pitchArm, double rollArm, double gap) {}
-    private record SuspensionContact(SuspensionUnit<?> unit, double verticalArm, double pitchArm, double rollArm) {}
+    private record SuspensionContact(SuspensionUnit<?> unit, double compression, double minCompression, double maxCompression, double weight, double verticalArm, double pitchArm, double rollArm) {}
+    private record SupportCorrection(double verticalArm, double pitchArm, double rollArm, double gap, double maxSpeed) {}
 
     public PhysicsEngine(AbstractVehicle vehicle) {
         this.vehicle = vehicle;
@@ -187,16 +188,21 @@ public class PhysicsEngine {
                 cube.width * cube.width + cube.height * cube.height + 12 * (center.x * center.x + center.y * center.y)));
         List<SuspensionContact> contacts = new ArrayList<>();
         double supportHeight = 0;
+        double supportWeight = 0;
         for (SuspensionUnit<?> suspension : suspensions) {
             if (!suspension.isGrounded()) {
                 continue;
             }
             double travelPerVertical = 1 / -suspension.getSuspensionDirection().y;
-            Vec3 support = suspension.getSupportWorld();
-            Vector3f arm = inverseYaw.transform(support.subtract(centerWorld).toVector3f());
-            contacts.add(new SuspensionContact(suspension, travelPerVertical,
-                    -arm.z * travelPerVertical, arm.x * travelPerVertical));
-            supportHeight += support.y - centerWorld.y;
+            for (SuspensionUnit.SupportContact point : suspension.getSupportContacts()) {
+                Vec3 support = point.position();
+                Vector3f arm = inverseYaw.transform(support.subtract(centerWorld).toVector3f());
+                contacts.add(new SuspensionContact(suspension, point.compression(), point.minCompression(),
+                        point.maxCompression(), point.weight(), travelPerVertical,
+                        -arm.z * travelPerVertical, arm.x * travelPerVertical));
+                supportHeight += (support.y - centerWorld.y) * point.weight();
+                supportWeight += point.weight();
+            }
         }
         // 接地后的衰减由悬挂阻尼控制，只有悬空时使用空气角阻尼。
         double angularRetention = contacts.isEmpty() ? angularDampingAir : 1;
@@ -206,14 +212,15 @@ public class PhysicsEngine {
         double rollAcceleration = 0;
         if (!contacts.isEmpty()) {
             Vector3f acceleration = inverseYaw.transform(new Vector3f(velocity.x - velocityO.x, 0, velocity.z - velocityO.z));
-            double leverY = supportHeight / contacts.size();
+            double leverY = supportHeight / supportWeight;
             // 簧载力臂设下限，避免低重心使行驶姿态响应反向。
             double responseLever = Math.max(-leverY, cube.height * 0.35);
             double rollStiffness = 0;
             double pitchStiffness = 0;
             for (SuspensionContact contact : contacts) {
-                rollStiffness += PhysicsHelper.forcePerTick(contact.unit.getData().getSpringStiffness()) * contact.rollArm * contact.rollArm;
-                pitchStiffness += PhysicsHelper.forcePerTick(contact.unit.getData().getSpringStiffness()) * contact.pitchArm * contact.pitchArm;
+                double stiffness = PhysicsHelper.forcePerTick(contact.unit.getData().getSpringStiffness()) * contact.weight;
+                rollStiffness += stiffness * contact.rollArm * contact.rollArm;
+                pitchStiffness += stiffness * contact.pitchArm * contact.pitchArm;
             }
             // 行驶力矩按静态偏角限幅，坡面支撑和碰撞不受此限。
             double maxDrivePitchTorque = pitchStiffness * Math.toRadians(6);
@@ -233,9 +240,18 @@ public class PhysicsEngine {
             double gap = point.y - entry.getValue();
             bodyContacts.add(new BodySupportContact(-arm.z, arm.x, gap));
         }
+        List<SupportCorrection> corrections = new ArrayList<>();
+        for (SuspensionContact contact : contacts) {
+            corrections.add(new SupportCorrection(contact.verticalArm, contact.pitchArm, contact.rollArm,
+                    contact.maxCompression - contact.compression, 0.05));
+        }
+        for (BodySupportContact contact : bodyContacts) {
+            corrections.add(new SupportCorrection(1, contact.pitchArm, contact.rollArm, contact.gap, 0.03));
+        }
         double[] impulses = new double[contacts.size()];
         double[] stopImpulses = new double[contacts.size()];
         double[] bodyImpulses = new double[bodyContacts.size()];
+        double[] correctionImpulses = new double[corrections.size()];
         double dt = 1.0 / SUSPENSION_SUBSTEPS;
         double verticalDisplacement = 0;
         double pitchDisplacement = 0;
@@ -255,19 +271,19 @@ public class PhysicsEngine {
                     double verticalArm = contact.verticalArm;
                     double pitchArm = contact.pitchArm;
                     double rollArm = contact.rollArm;
-                    double stiffness = PhysicsHelper.forcePerTick(contact.unit.getData().getSpringStiffness());
-                    double damping = PhysicsHelper.dampingPerTick(contact.unit.getData().getDamping());
+                    double stiffness = PhysicsHelper.forcePerTick(contact.unit.getData().getSpringStiffness()) * contact.weight;
+                    double damping = PhysicsHelper.dampingPerTick(contact.unit.getData().getDamping()) * contact.weight;
                     double pointVelocity = verticalArm * verticalVelocity + pitchArm * pitchVelocity + rollArm * rollVelocity;
                     double inverseEffectiveMass = verticalArm * verticalArm * inverseMass + pitchArm * pitchArm * inversePitchInertia
                             + rollArm * rollArm * inverseRollInertia;
-                    double contactCompression = contact.unit.getContactCompression()
+                    double contactCompression = contact.compression
                             - verticalArm * verticalDisplacement - pitchArm * pitchDisplacement - rollArm * rollDisplacement;
                     double compression = Mth.clamp(contactCompression,
-                            contact.unit.getMinCompression(), contact.unit.getMaxCompression());
+                            contact.minCompression, contact.maxCompression);
                     // J = dt * (k * (compression - dt * v) - damping * v)。
                     double velocityResponse = dt * (damping + dt * stiffness);
                     double residual = dt * stiffness * compression - velocityResponse * pointVelocity - impulses[i];
-                    double nextImpulse = contactCompression < contact.unit.getMinCompression() ? 0
+                    double nextImpulse = contactCompression < contact.minCompression ? 0
                             : Math.max(0, impulses[i] + residual / (1 + velocityResponse * inverseEffectiveMass));
                     double deltaImpulse = nextImpulse - impulses[i];
                     impulses[i] = nextImpulse;
@@ -275,9 +291,9 @@ public class PhysicsEngine {
                     pitchVelocity += deltaImpulse * pitchArm * inversePitchInertia;
                     rollVelocity += deltaImpulse * rollArm * inverseRollInertia;
 
-                    // 预测本子步的行程限位，穿透恢复速度仍限制为 0.05 格/tick。
-                    double minimumVelocity = Math.min(0.05,
-                            (contactCompression - contact.unit.getMaxCompression()) / dt);
+                    // 行程限位
+                    double minimumVelocity = Math.min(0,
+                            (contactCompression - contact.maxCompression) / dt);
                     pointVelocity = verticalArm * verticalVelocity + pitchArm * pitchVelocity + rollArm * rollVelocity;
                     double nextStopImpulse = Math.max(0,
                             stopImpulses[i] + (minimumVelocity - pointVelocity) / inverseEffectiveMass);
@@ -294,8 +310,7 @@ public class PhysicsEngine {
                             + contact.rollArm * contact.rollArm * inverseRollInertia;
                     double gap = contact.gap + verticalDisplacement
                             + contact.pitchArm * pitchDisplacement + contact.rollArm * rollDisplacement;
-                    double minimumVelocity = gap >= 0 ? -gap / dt
-                            : Math.min(0.03, Math.max(0, -gap - BODY_CONTACT_SLOP) * 0.2);
+                    double minimumVelocity = gap >= 0 ? -gap / dt : 0;
                     double nextImpulse = Math.max(0,
                             bodyImpulses[i] + (minimumVelocity - pointVelocity) / inverseEffectiveMass);
                     double deltaImpulse = nextImpulse - bodyImpulses[i];
@@ -305,9 +320,36 @@ public class PhysicsEngine {
                     rollVelocity += deltaImpulse * contact.rollArm * inverseRollInertia;
                 }
             }
-            verticalDisplacement += verticalVelocity * dt;
-            pitchDisplacement += pitchVelocity * dt;
-            rollDisplacement += rollVelocity * dt;
+            // 穿透修正
+            double verticalCorrection = 0;
+            double pitchCorrection = 0;
+            double rollCorrection = 0;
+            Arrays.fill(correctionImpulses, 0);
+            for (int iteration = 0; iteration < 16; iteration++) {
+                for (int i = 0; i < corrections.size(); i++) {
+                    SupportCorrection contact = corrections.get(i);
+                    double gap = contact.gap + contact.verticalArm * (verticalDisplacement + verticalVelocity * dt)
+                            + contact.pitchArm * (pitchDisplacement + pitchVelocity * dt)
+                            + contact.rollArm * (rollDisplacement + rollVelocity * dt);
+                    double minimumVelocity = gap >= 0 ? -gap / dt
+                            : Math.min(contact.maxSpeed, Math.max(0, -gap - BODY_CONTACT_SLOP) * 0.2 / dt);
+                    double pointVelocity = contact.verticalArm * verticalCorrection
+                            + contact.pitchArm * pitchCorrection + contact.rollArm * rollCorrection;
+                    double inverseEffectiveMass = contact.verticalArm * contact.verticalArm * inverseMass
+                            + contact.pitchArm * contact.pitchArm * inversePitchInertia
+                            + contact.rollArm * contact.rollArm * inverseRollInertia;
+                    double nextImpulse = Math.max(0,
+                            correctionImpulses[i] + (minimumVelocity - pointVelocity) / inverseEffectiveMass);
+                    double deltaImpulse = nextImpulse - correctionImpulses[i];
+                    correctionImpulses[i] = nextImpulse;
+                    verticalCorrection += deltaImpulse * contact.verticalArm * inverseMass;
+                    pitchCorrection += deltaImpulse * contact.pitchArm * inversePitchInertia;
+                    rollCorrection += deltaImpulse * contact.rollArm * inverseRollInertia;
+                }
+            }
+            verticalDisplacement += (verticalVelocity + verticalCorrection) * dt;
+            pitchDisplacement += (pitchVelocity + pitchCorrection) * dt;
+            rollDisplacement += (rollVelocity + rollCorrection) * dt;
             for (double impulse : bodyImpulses) {
                 bodyGrounded |= impulse > 1.0E-8;
             }
@@ -498,6 +540,7 @@ public class PhysicsEngine {
     private void motionByImpact(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes,
                                 Set<VehicleCubeOBB.CubePoint> bodySupports) {
         VehicleCubeOBB physicsCube = vehicle.getMainCubeOBB();
+        boolean hasSuspension = vehicle.hasSuspension();
         boolean isStuck = false;
         Vec3 velocity = new Vec3(this.velocity);
 
@@ -568,7 +611,7 @@ public class PhysicsEngine {
                     if (d < 0) {
                         velocity = VectorUtil.projectToPlane(velocity, axes, 0, 2);
                     }
-                    if (velocity.dot(axesY) < 0.1f) {
+                    if (!hasSuspension && velocity.dot(axesY) < 0.1f) {
                         float offsetY = (float) (physicsCube().offset().y - physicsCube.height / 2);
                         Vec3 testPos = new Vec3(touchPoint.cachedWorldPos().add(0, 0.1f + offsetY, 0));
                         BlockPos testBlockPos = BlockPos.containing(testPos);
@@ -592,7 +635,7 @@ public class PhysicsEngine {
         Vec3 testPos = new Vec3(physicsCube.obb().center());
         BlockPos testBlockPos = BlockPos.containing(testPos);
         BlockState blockState = vehicle.level().getBlockState(testBlockPos);
-        if (blockState.isSolid()) {
+        if (!hasSuspension && blockState.isSolid()) {
             velocity = velocity.add(0, 0.1, 0);
         }
         if (!isStuck) {

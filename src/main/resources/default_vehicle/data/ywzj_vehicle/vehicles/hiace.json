@@ -121,10 +121,11 @@
             "structure_bone": "wheel1",
             "is_seat": false,
             "spring_stiffness": 50400,
-            "damping": 1200,
+            "damping": 3000,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.22
         },
         {
             "id": "suspension_wheel2",
@@ -134,10 +135,11 @@
             "structure_bone": "wheel2",
             "is_seat": false,
             "spring_stiffness": 50400,
-            "damping": 1200,
+            "damping": 3000,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.22
         },
         {
             "id": "suspension_wheel4",
@@ -147,10 +149,11 @@
             "structure_bone": "wheel4",
             "is_seat": false,
             "spring_stiffness": 50400,
-            "damping": 1200,
+            "damping": 3000,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.22
         },
         {
             "id": "suspension_wheel3",
@@ -160,10 +163,11 @@
             "structure_bone": "wheel3",
             "is_seat": false,
             "spring_stiffness": 50400,
-            "damping": 1200,
+            "damping": 3000,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.22
         }
     ]
 }

@@ -84,7 +84,7 @@ public class VehiclePart extends AbstractVehicle {
         this.mainCubeOBB = cube;
         this.curbWeight = 1000;
         this.physicsEngine.physicsInfo.mass = curbWeight;
-        this.physicsEngine.physicsInfo.friction = 0.01f;
+        this.physicsEngine.physicsInfo.friction = 2000f;
         this.physicsEngine.physicsInfo.center = new Vec3(0, halfH, 0);
         this.defenseStats = partUnit.getDefenseStats();
     }

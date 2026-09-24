@@ -12,7 +12,7 @@
     "physics_info": {
         "mass": 180,
         "friction": 360,
-        "suspension_response": 0.5,
+        "suspension_response": 0.75,
         "center": [0, -1, 0]
     },
     "max_health": 100,
@@ -47,10 +47,11 @@
             "structure_bone": "wheel_back",
             "is_seat": false,
             "spring_stiffness": 8640,
-            "damping": 144,
+            "damping": 350,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.2
         },
         {
             "id": "suspension_wheel_front",
@@ -60,10 +61,11 @@
             "structure_bone": "wheel_front",
             "is_seat": false,
             "spring_stiffness": 8640,
-            "damping": 144,
+            "damping": 350,
             "rest_length": 0.35,
             "max_compression": 0.35,
-            "max_extension": 0.22
+            "max_extension": 0.22,
+            "max_droop": 0.2
         }
     ]
 }

@@ -15,6 +15,7 @@ import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.particle.BulletHoleOption;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.particle.TrackDustOption;
 
 public class AllParticleTypes {
 
@@ -30,6 +31,10 @@ public class AllParticleTypes {
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> TRACK = PARTICLE_TYPES.register("track",
             () -> new SimpleParticleType(false)
+    );
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<TrackDustOption>> TRACK_DUST = PARTICLE_TYPES.register("track_dust",
+            () -> createOptions(TrackDustOption.CODEC, TrackDustOption.STREAM_CODEC)
     );
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<BulletHoleOption>> BULLET_HOLE = PARTICLE_TYPES.register("bullet_hole",
