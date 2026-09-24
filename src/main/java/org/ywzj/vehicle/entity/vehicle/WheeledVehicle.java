@@ -306,9 +306,21 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
         trackLength += getDeltaMovement().length();
         if (trackLength >= 0.5) {
             trackLength = 0;
+            if (hasSuspension()) {
+                ParticleUtil.spawnSuspensionTracks(this);
+            } else {
+                Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+                Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+                ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackLeftPos, trackRightPos);
+            }
+        }
+        // 扬尘
+        if (hasSuspension()) {
+            ParticleUtil.spawnSuspensionDust(this);
+        } else {
             Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
             Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackLeftPos, trackRightPos);
+            ParticleUtil.spawnTrackDust(this, trackLeftPos, trackRightPos);
         }
         // 引擎烟
         if (hasPower()) {

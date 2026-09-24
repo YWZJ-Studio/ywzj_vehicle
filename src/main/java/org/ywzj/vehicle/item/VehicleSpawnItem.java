@@ -13,12 +13,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.client.render.item.VehicleSpawnItemRenderer;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.vehicle.BaseVehicleData;
+import org.ywzj.vehicle.util.VectorUtil;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -64,8 +66,12 @@ public class VehicleSpawnItem extends Item {
         if (level.isClientSide()) {
             return InteractionResultHolder.sidedSuccess(itemStack, true);
         }
-        HitResult hitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY);
-        if (hitResult.getType() != HitResult.Type.BLOCK) {
+        HitResult blockHitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY);
+        if (blockHitResult.getType() != HitResult.Type.BLOCK) {
+            return InteractionResultHolder.pass(itemStack);
+        }
+        EntityHitResult entityHitResult = VectorUtil.hitEntity(player, player.getEyePosition(), blockHitResult.getLocation());
+        if (entityHitResult != null) {
             return InteractionResultHolder.pass(itemStack);
         }
         CompoundTag tag = itemStack.getTag();
@@ -75,7 +81,7 @@ public class VehicleSpawnItem extends Item {
         ResourceLocation vehicleId = YwzjVehicle.resourceLocation(tag.getString(TAG_VEHICLE_ID));
         Optional<BaseVehicleData> vehicleDataOptional = CommonAssetsManager.vehicleDataManager().getVehicleData(vehicleId);
         if (vehicleDataOptional.isPresent()) {
-            Entity vehicle = vehicleDataOptional.get().construct(level, hitResult.getLocation(), 0, player.getYRot());
+            Entity vehicle = vehicleDataOptional.get().construct(level, blockHitResult.getLocation(), 0, player.getYRot());
             if (level.addFreshEntity(vehicle)) {
                 itemStack.shrink(1);
                 return InteractionResultHolder.sidedSuccess(itemStack, false);

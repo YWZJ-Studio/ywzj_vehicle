@@ -1,8 +1,11 @@
 package org.ywzj.vehicle.util;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -10,10 +13,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.all.AllParticleTypes;
+import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.particle.DustSmokeOption;
 import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.particle.TrackDustOption;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
@@ -93,6 +100,108 @@ public final class ParticleUtil {
             if (surfaceY.isPresent()) {
                 level.addParticle(AllParticleTypes.TRACK.get(), true, position.x, surfaceY.getAsDouble() + 0.001, position.z,
                         trackSize, yaw, 0);
+            }
+        }
+    }
+
+    public static void spawnSuspensionTracks(AbstractVehicle vehicle) {
+        double rearRowZ = vehicle.getSuspensionUnits().stream()
+                .filter(suspension -> suspension.getStructureGroup() != null
+                        && !suspension.getPartCubeOBBs().isEmpty())
+                .mapToDouble(suspension -> suspension.getPivotOffset().z)
+                .min().orElse(Double.NEGATIVE_INFINITY);
+        for (var suspension : vehicle.getSuspensionUnits()) {
+            if (suspension.getPivotOffset().z > rearRowZ + 1.0 / 16 || !suspension.isGrounded()) {
+                continue;
+            }
+            for (VehicleCubeOBB cube : suspension.getPartCubeOBBs()) {
+                var transform = cube.group.globalTransform();
+                Vector3f forward = transform.rotation().transform(new Vector3f(0, 0, 1));
+                double rearZ = forward.z >= 0 ? cube.z : cube.z + cube.depth;
+                Vector3f point = transform.rotation().transform(new Vector3f(
+                        (float) (cube.x + cube.width / 2), (float) cube.y, (float) rearZ));
+                Vec3 position = vehicle.relativeRotPos(vehicle.position()
+                        .add(transform.offset()).add(new Vec3(point)), false);
+                Vec3 worldForward = vehicle.relativeRotDirection(new Vec3(forward), false);
+                float yaw = (float) Math.toDegrees(Math.atan2(-worldForward.x, worldForward.z));
+                spawnTracks(vehicle.level(), (float) (cube.width * 0.5 / 2), yaw, position);
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void spawnSuspensionDust(AbstractVehicle vehicle) {
+        if (!vehicle.level().isClientSide() || vehicle.getDeltaMovement().horizontalDistanceSqr() <= 0.01) {
+            return;
+        }
+        for (var suspension : vehicle.getSuspensionUnits()) {
+            if (!suspension.isGrounded()) {
+                continue;
+            }
+            for (VehicleCubeOBB cube : suspension.getPartCubeOBBs()) {
+                var transform = cube.group.globalTransform();
+                Vector3f forward = transform.rotation().transform(new Vector3f(0, 0, 1));
+                double rearZ = forward.z >= 0 ? cube.z : cube.z + cube.depth;
+                int count = Mth.clamp(Mth.ceil(cube.depth / 1.5), 1, 8);
+                for (int sample = 0; sample < count; sample++) {
+                    double z = count > 1
+                            ? cube.z + cube.depth * (sample + vehicle.level().random.nextDouble()) / count
+                            : rearZ;
+                    Vector3f point = transform.rotation().transform(new Vector3f(
+                            (float) (cube.x + cube.width / 2), (float) cube.y, (float) z));
+                    Vec3 position = vehicle.relativeRotPos(vehicle.position()
+                            .add(transform.offset()).add(new Vec3(point)), false);
+                    spawnTrackDust(vehicle, position);
+                }
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void spawnTrackDust(AbstractVehicle vehicle, Vec3... positions) {
+        Level level = vehicle.level();
+        Vec3 movement = vehicle.getDeltaMovement();
+        if (!level.isClientSide() || movement.horizontalDistanceSqr() <= 0.01) {
+            return;
+        }
+        RandomSource random = level.random;
+        float speed = (float) Math.min(movement.length(), 0.5);
+        for (Vec3 position : positions) {
+            var surfaceY = EntityUtil.blockSurfaceY(level, position, 0.25);
+            if (surfaceY.isEmpty()) {
+                continue;
+            }
+            double groundY = surfaceY.getAsDouble();
+            BlockPos groundPos = BlockPos.containing(position.x, groundY - 0.01, position.z);
+            var state = level.getBlockState(groundPos);
+            if (state.isAir() || !state.getFluidState().isEmpty()
+                    || !level.getFluidState(BlockPos.containing(position.x, groundY + 0.1, position.z)).isEmpty()) {
+                continue;
+            }
+            if (state.is(BlockTags.SAND) || state.is(BlockTags.SNOW)) {
+                var sprite = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper()
+                        .getBlockModel(state).getParticleIcon();
+                int pixel = sprite.getPixelRGBA(0, random.nextInt(sprite.contents().width()),
+                        random.nextInt(sprite.contents().height()));
+                // ABGR 转 RGB。
+                int color = (pixel & 255) << 16 | (pixel & 0xFF00) | (pixel >> 16 & 255);
+                float scale = 1 + 7 * speed + (float) Math.random() * 2;
+                float gravity = (float) Math.random() * -0.12f;
+                float randomX = 2 * (random.nextFloat() - 0.5f);
+                float randomY = 2 * (random.nextFloat() - 0.5f);
+                float randomZ = 2 * (random.nextFloat() - 0.5f);
+                level.addAlwaysVisibleParticle(new TrackDustOption(color, scale, gravity), true,
+                        position.x - movement.x * 1.5 + speed * randomX,
+                        position.y + 0.2 - movement.y * 1.5 + speed * randomY,
+                        position.z - movement.z * 1.5 + speed * randomZ,
+                        movement.x, movement.y, movement.z);
+            } else {
+                float randomX = 2 * (random.nextFloat() - 0.5f);
+                float randomY = 2 * (random.nextFloat() - 0.5f);
+                float randomZ = 2 * (random.nextFloat() - 0.5f);
+                level.addAlwaysVisibleParticle(new BlockParticleOption(ParticleTypes.BLOCK, state), true,
+                        position.x + 0.2f * randomX, position.y + 0.1 + 0.2f * randomY,
+                        position.z + 0.2f * randomZ, 0, 0, 0);
             }
         }
     }

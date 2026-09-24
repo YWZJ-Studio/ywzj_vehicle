@@ -108,72 +108,51 @@ public class TrackedVehicle extends AbstractVehicle
             controlUnit.reset();
         }
 
-        float vt = entityData.get(TURN_SPEED);
-        int sig = (getLookAngle().dot(getDeltaMovement()) > 0 ? 1 : -1);
-        float vf = (float) (new Vec3(getDeltaMovement().x, 0, getDeltaMovement().z).length() * sig);
-        vf = Math.min(Math.abs(vf), Math.abs(entityData.get(FORWARD_SPEED))) * sig;
-        if (!hasPower()) {
-            entityData.set(FORWARD_SPEED, vf);
+        // 车身轴向速度
+        Vec3 velocity = getDeltaMovement();
+        Vec3 direction = VectorUtil.rotToVec(getXRot(), getYRot());
+        Vec3 horizontalDirection = VectorUtil.rotToVec(0, getYRot());
+        float forwardSpeed = (float) velocity.dot(direction);
+        if (!hasPower() || !(onGround() || (isInWater() && canWade))) {
+            entityData.set(FORWARD_SPEED, forwardSpeed);
             entityData.set(TURN_SPEED, 0f);
-            return new Vec3(0, 0, 0);
+            return Vec3.ZERO;
         }
 
         // 前后控制
-        if (controlUnit.forward || controlUnit.backward) {
-            if (controlUnit.forward) {
-                if (vf < 0) {
-                    vf += brakeAcceleration;
-                } else {
-                    vf += forwardAcceleration;
-                }
-            } else {
-                if (vf > 0) {
-                    vf -= brakeAcceleration;
-                } else {
-                    vf -= backwardAcceleration;
-                }
-            }
+        float previousForwardSpeed = forwardSpeed;
+        int throttle = (controlUnit.forward ? 1 : 0) - (controlUnit.backward ? 1 : 0);
+        int steering = (controlUnit.right ? 1 : 0) - (controlUnit.left ? 1 : 0);
+        if (throttle > 0) {
+            forwardSpeed = forwardSpeed < 0 ? Math.min(0, forwardSpeed + brakeAcceleration)
+                    : forwardSpeed + forwardAcceleration;
+        } else if (throttle < 0) {
+            forwardSpeed = forwardSpeed > 0 ? Math.max(0, forwardSpeed - brakeAcceleration)
+                    : forwardSpeed - backwardAcceleration;
+        } else if (steering != 0 && forwardSpeed < 0) {
+            forwardSpeed = Math.min(0, forwardSpeed + brakeAcceleration);
         }
-        if (controlUnit.left || controlUnit.right) {
-            if (vf < 0 && !controlUnit.backward) {
-                vf += brakeAcceleration;
-            }
-        }
-        vf = Mth.clamp(vf, -maxSpeedBackward, maxSpeedForward);
-        entityData.set(FORWARD_SPEED, vf);
+        forwardSpeed = Mth.clamp(forwardSpeed, -maxSpeedBackward, maxSpeedForward);
 
         // 转向控制
-        if (controlUnit.left || controlUnit.right) {
-            vt += controlUnit.right ? turnAcceleration : -turnAcceleration;
-            vt = Mth.clamp(vt, -maxTurn, maxTurn);
-        } else {
-            if (vt < 0) {
-                vt += turnAcceleration;
-                vt = Math.min(vt, 0);
-            } else if (vt > 0) {
-                vt -= turnAcceleration;
-                vt = Math.max(vt, 0);
-            }
+        float turnSpeed = Mth.approach(entityData.get(TURN_SPEED), steering * maxTurn, turnAcceleration);
+        // 转向幅度应用于车身朝向
+        float yawStep = forwardSpeed < 0 ? -turnSpeed : turnSpeed;
+        float speedRatio = maxSpeedForward > 0 ? Mth.clamp(Math.abs(forwardSpeed) / maxSpeedForward, 0, 1) : 0;
+        setYRot(getYRot() + yawStep * (1 + speedRatio / 5));
+        if (turnSpeed != 0) {
+            forwardSpeed *= 0.98f;
         }
-        entityData.set(TURN_SPEED, vt);
 
-        if (onGround() || (isInWater() && canWade)) {
-            // 转向幅度应用于车身朝向
-            if (controlUnit.backward) {
-                vt *= -1;
-            }
-            this.setYRot(this.getYRot() + vt + Math.abs(vf) / maxSpeedForward * vt / 5);
-            if (Math.abs(vt) > 0) {
-                vf *= 0.98f;
-            }
-
-            // 前进速度应用于车身朝向
-            Vec3 direction = getLookAngle();
-            Vec3 motion = direction.normalize().scale(vf);
-            motion = motion.add(0, Math.min(0, getDeltaMovement().y), 0);
-            this.setDeltaMovement(motion);
-        }
-        return new Vec3(0, 0, 0);
+        // 轴向加速
+        velocity = velocity.add(direction.scale(forwardSpeed - previousForwardSpeed));
+        // 水平转向
+        double horizontalSpeed = velocity.dot(horizontalDirection);
+        horizontalDirection = VectorUtil.rotToVec(0, getYRot());
+        setDeltaMovement(horizontalDirection.x * horizontalSpeed, velocity.y, horizontalDirection.z * horizontalSpeed);
+        entityData.set(FORWARD_SPEED, forwardSpeed);
+        entityData.set(TURN_SPEED, turnSpeed);
+        return Vec3.ZERO;
     }
 
     @Override
@@ -276,9 +255,21 @@ public class TrackedVehicle extends AbstractVehicle
         trackLength += getDeltaMovement().length();
         if (trackLength >= 1) {
             trackLength = 0;
+            if (hasSuspension()) {
+                ParticleUtil.spawnSuspensionTracks(this);
+            } else {
+                Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+                Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+                ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackLeftPos, trackRightPos);
+            }
+        }
+        // 扬尘
+        if (hasSuspension()) {
+            ParticleUtil.spawnSuspensionDust(this);
+        } else {
             Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
             Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackLeftPos, trackRightPos);
+            ParticleUtil.spawnTrackDust(this, trackLeftPos, trackRightPos);
         }
         // 引擎烟
         if (hasPower()) {

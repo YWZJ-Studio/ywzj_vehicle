@@ -26,6 +26,8 @@ import org.ywzj.vehicle.vehicle.PhysicsEngine;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -33,59 +35,104 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
 
     private static final double CONTACT_EPSILON = 0.001;
     private static final double CONTACT_RECOVERY = 0.25;
+    private static final double SUPPORT_SPACING = 1.0;
     private float restLength;
     private float maxCompression;
     private float compression;
     private float remoteCompression;
     private boolean grounded;
-    private double supportDrop;
     private double contactCompression;
-    private Vec3 mountWorld = Vec3.ZERO;
-    private Vec3 supportOffsetWorld = Vec3.ZERO;
+    private List<Vec3> supportOffsets = List.of(Vec3.ZERO);
+    private double[] supportRestLengths;
+    private double[] supportMaxCompressions;
+    private final List<SupportContact> supportContacts = new ArrayList<>();
 
-    private record Contact(double length, Vec3 offset) {}
+    private record Contact(double length, Vec3 offset, int index) {}
+    private record CalibrationPoint(SuspensionUnit<?> unit, int index, Vec3 bottom, Vector3d arm) {}
+    public record SupportContact(Vec3 position, double compression, double minCompression, double maxCompression, double weight) {}
 
     public SuspensionUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
         restLength = data.getRestLength();
         maxCompression = data.getMaxCompression();
+        supportRestLengths = new double[]{restLength};
+        supportMaxCompressions = new double[]{maxCompression};
         compression = remoteCompression = getMinCompression();
         contactCompression = compression;
-        syncData.define(SyncDataSerializers.FLOAT, value -> remoteCompression = value,
-                this::getCompression, compression);
+        syncData.define(SyncDataSerializers.FLOAT, value -> remoteCompression = value, this::getCompression, compression);
         syncData.define(SyncDataSerializers.BOOLEAN, value -> grounded = value, this::isGrounded, false);
     }
 
     @Override
     public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> groups) {
         super.buildStructure(groups);
+        supportOffsets = buildSupportOffsets();
+        supportRestLengths = new double[supportOffsets.size()];
+        supportMaxCompressions = new double[supportOffsets.size()];
+        Arrays.fill(supportRestLengths, restLength);
+        Arrays.fill(supportMaxCompressions, maxCompression);
+        supportContacts.clear();
+    }
+
+    private List<Vec3> buildSupportOffsets() {
         if (structureGroup == null) {
-            return;
+            return List.of(Vec3.ZERO);
         }
         Quaternionf parentRotation = structureGroup.parent == null ? new Quaternionf()
                 : structureGroup.parent.globalTransform().rotation();
-        Vec3 up = new Vec3(parentRotation.transform(new Vector3f(0, 1, 0)));
+        Quaternionf inverseParentRotation = new Quaternionf(parentRotation).invert();
         // 以轮底采样，兼容轮心和轮底枢轴。
         double bottom = 0;
+        List<AABB> bounds = new ArrayList<>();
+        AABB totalBounds = null;
         for (VehicleCubeOBB cube : partCubeOBBs) {
             var transform = cube.group.globalTransform();
+            Vector3f min = new Vector3f(Float.POSITIVE_INFINITY);
+            Vector3f max = new Vector3f(Float.NEGATIVE_INFINITY);
             for (int corner = 0; corner < 8; corner++) {
                 Vector3f point = new Vector3f((float) (cube.x + ((corner & 1) == 0 ? 0 : cube.width)),
                         (float) (cube.y + ((corner & 2) == 0 ? 0 : cube.height)),
                         (float) (cube.z + ((corner & 4) == 0 ? 0 : cube.depth)));
                 transform.rotation().transform(point);
                 Vec3 relativePoint = transform.offset().add(new Vec3(point)).subtract(pivotOffset);
-                bottom = Math.min(bottom, relativePoint.dot(up));
+                Vector3f localPoint = inverseParentRotation.transform(relativePoint.toVector3f());
+                min.min(localPoint);
+                max.max(localPoint);
+                bottom = Math.min(bottom, localPoint.y);
+            }
+            AABB box = new AABB(min.x, min.y, min.z, max.x, max.y, max.z);
+            bounds.add(box);
+            totalBounds = totalBounds == null ? box : totalBounds.minmax(box);
+        }
+        if (totalBounds == null) {
+            return List.of(new Vec3(0, bottom, 0));
+        }
+        double splitLength = Math.max(SUPPORT_SPACING, totalBounds.getYsize() * 1.5);
+        if (Math.max(totalBounds.getXsize(), totalBounds.getZsize()) <= splitLength) {
+            return List.of(new Vec3(0, bottom, 0));
+        }
+        List<Vec3> offsets = new ArrayList<>();
+        for (AABB box : bounds) {
+            int countX = box.getXsize() > splitLength ? (int) Math.ceil(box.getXsize() / SUPPORT_SPACING) : 1;
+            int countZ = box.getZsize() > splitLength ? (int) Math.ceil(box.getZsize() / SUPPORT_SPACING) : 1;
+            for (int x = 0; x < countX; x++) {
+                for (int z = 0; z < countZ; z++) {
+                    Vec3 offset = new Vec3(box.minX + box.getXsize() * (x + 0.5) / countX,
+                            box.minY, box.minZ + box.getZsize() * (z + 0.5) / countZ);
+                    if (offsets.stream().noneMatch(existing -> existing.distanceToSqr(offset) < 1.0E-6)) {
+                        offsets.add(offset);
+                    }
+                }
             }
         }
-        supportDrop = -bottom;
+        return List.copyOf(offsets);
     }
 
     /** 初始化时按空载重力及力矩平衡标定自由长度，不随燃油或轮组损坏重新标定。 */
     public static void calibrateRestLengths(AbstractVehicle vehicle) {
-        List<SuspensionUnit<?>> units = vehicle.getSuspensionUnits().stream()
-                .filter(unit -> unit.structureGroup != null && unit.data.getSpringStiffness() > 0).toList();
-        if (units.isEmpty()) {
+        List<SuspensionUnit<?>> suspensionUnits = vehicle.getSuspensionUnits().stream()
+                .filter(suspensionUnit -> suspensionUnit.structureGroup != null && suspensionUnit.data.getSpringStiffness() > 0).toList();
+        if (suspensionUnits.isEmpty()) {
             return;
         }
         var physics = vehicle.physicsEngine;
@@ -96,34 +143,35 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                 + Math.abs(bodyRotation.transform(new Vector3f(0, 1, 0)).y) * cube.height
                 + Math.abs(bodyRotation.transform(new Vector3f(0, 0, 1)).y) * cube.depth) / 2;
         double ground = cube.offset().y - bodyHalfHeight;
-        Vec3[] bottoms = new Vec3[units.size()];
-        Vector3d[] arms = new Vector3d[units.size()];
+        List<CalibrationPoint> points = new ArrayList<>();
         // 微小正则项兼容两轮、共线支撑以及锁定旋转的情形。
         Matrix3d stiffness = new Matrix3d().scaling(1.0E-9);
-        for (int i = 0; i < units.size(); i++) {
-            SuspensionUnit<?> unit = units.get(i);
-            Quaternionf parentRotation = unit.structureGroup.parent == null ? new Quaternionf()
-                    : unit.structureGroup.parent.globalTransform().rotation();
+        for (SuspensionUnit<?> suspensionUnit : suspensionUnits) {
+            Quaternionf parentRotation = suspensionUnit.structureGroup.parent == null ? new Quaternionf()
+                    : suspensionUnit.structureGroup.parent.globalTransform().rotation();
             Vec3 direction = new Vec3(parentRotation.transform(new Vector3f(0, -1, 0)));
             if (direction.y >= -0.25) {
                 return;
             }
-            bottoms[i] = unit.pivotOffset.add(direction.scale(unit.supportDrop));
-            ground = Math.min(ground, bottoms[i].y);
-            Vec3 arm = bottoms[i].subtract(center);
-            Vector3d a = new Vector3d(1, physics.lockCenterRot ? 0 : -arm.z,
-                    physics.lockCenterRot || physics.lockZRot ? 0 : arm.x).div(-direction.y);
-            arms[i] = a;
-            double k = PhysicsHelper.forcePerTick(unit.data.getSpringStiffness());
-            stiffness.add(new Matrix3d(
-                    k * a.x * a.x, k * a.x * a.y, k * a.x * a.z,
-                    k * a.y * a.x, k * a.y * a.y, k * a.y * a.z,
-                    k * a.z * a.x, k * a.z * a.y, k * a.z * a.z));
+            List<Vec3> offsets = suspensionUnit.getSupportOffsets();
+            double k = PhysicsHelper.forcePerTick(suspensionUnit.data.getSpringStiffness()) / offsets.size();
+            for (int i = 0; i < offsets.size(); i++) {
+                Vec3 bottom = suspensionUnit.pivotOffset.add(new Vec3(parentRotation.transform(offsets.get(i).toVector3f())));
+                ground = Math.min(ground, bottom.y);
+                Vec3 arm = bottom.subtract(center);
+                Vector3d a = new Vector3d(1, physics.lockCenterRot ? 0 : -arm.z,
+                        physics.lockCenterRot || physics.lockZRot ? 0 : arm.x).div(-direction.y);
+                points.add(new CalibrationPoint(suspensionUnit, i, bottom, a));
+                stiffness.add(new Matrix3d(
+                        k * a.x * a.x, k * a.x * a.y, k * a.x * a.z,
+                        k * a.y * a.x, k * a.y * a.y, k * a.y * a.z,
+                        k * a.z * a.x, k * a.z * a.y, k * a.z * a.z));
+            }
         }
         Vector3d deflection = stiffness.invert().transform(new Vector3d(vehicle.curbWeight * PhysicsEngine.G, 0, 0));
-        double[] staticCompression = new double[units.size()];
-        for (int i = 0; i < units.size(); i++) {
-            staticCompression[i] = arms[i].dot(deflection);
+        double[] staticCompression = new double[points.size()];
+        for (int i = 0; i < points.size(); i++) {
+            staticCompression[i] = points.get(i).arm().dot(deflection);
             // 无法仅靠向上支撑平衡的布局继续使用包内参数。
             if (!Double.isFinite(staticCompression[i]) || staticCompression[i] < 0) {
                 return;
@@ -131,14 +179,19 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         }
         // 留 0.01 格间隙，避免绑定轮底或车体恰好贴地时重复托底。
         ground -= 0.01;
-        for (int i = 0; i < units.size(); i++) {
-            SuspensionUnit<?> unit = units.get(i);
-            unit.restLength = (float) (staticCompression[i] + (bottoms[i].y - ground) * arms[i].x);
+        for (int i = 0; i < points.size(); i++) {
+            CalibrationPoint point = points.get(i);
+            SuspensionUnit<?> suspensionUnit = point.unit();
+            suspensionUnit.supportRestLengths[point.index()] = staticCompression[i] + (point.bottom().y - ground) * point.arm().x;
             // 保留配置的压缩行程，但至少保证空载标定点位于行程内。
-            unit.maxCompression = Math.max(unit.data.getMaxCompression(), (float) staticCompression[i] + 0.01f);
-            unit.compression = unit.clampCompression(unit.compression);
-            unit.remoteCompression = unit.clampCompression(unit.remoteCompression);
-            unit.contactCompression = unit.compression;
+            suspensionUnit.supportMaxCompressions[point.index()] = Math.max(suspensionUnit.data.getMaxCompression(), staticCompression[i] + 0.01);
+        }
+        for (SuspensionUnit<?> suspensionUnit : suspensionUnits) {
+            suspensionUnit.restLength = (float) Arrays.stream(suspensionUnit.supportRestLengths).average().orElse(suspensionUnit.restLength);
+            suspensionUnit.maxCompression = (float) Arrays.stream(suspensionUnit.supportMaxCompressions).average().orElse(suspensionUnit.maxCompression);
+            suspensionUnit.compression = suspensionUnit.clampCompression(suspensionUnit.compression);
+            suspensionUnit.remoteCompression = suspensionUnit.clampCompression(suspensionUnit.remoteCompression);
+            suspensionUnit.contactCompression = suspensionUnit.compression;
         }
     }
 
@@ -148,7 +201,11 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
 
     public float getMinCompression() {
         // 压缩量以自由长度为零点；总下垂量则以模型绑定位置为零点。
-        return Math.max(-data.getMaxExtension(), restLength - data.getMaxDroop());
+        return (float) getMinCompression(restLength);
+    }
+
+    private double getMinCompression(double length) {
+        return Math.max(-data.getMaxExtension(), length - data.getMaxDroop());
     }
 
     protected boolean isActive() {
@@ -157,25 +214,34 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
 
     /** 绑定姿态下相对安装枢轴的接地采样点，使用父组坐标系。 */
     protected List<Vec3> getSupportOffsets() {
-        return List.of(new Vec3(0, -supportDrop, 0));
+        return supportOffsets;
     }
 
     public void simulate() {
-        mountWorld = worldPositionWithBaseRot(pivotOffset);
+        Vec3 mountWorld = worldPositionWithBaseRot(pivotOffset);
         grounded = false;
+        supportContacts.clear();
         compression = getMinCompression();
         contactCompression = compression;
         Vec3 direction = getSuspensionDirection();
         if (!isActive() || direction.y >= -0.25) {
             return;
         }
-        Contact contact = findContact(mountWorld, direction, CONTACT_RECOVERY, false, 1);
+        List<Contact> contacts = findContacts(mountWorld, direction, CONTACT_RECOVERY, false, 1);
+        double weight = 1.0 / getSupportOffsets().size();
+        for (Contact point : contacts) {
+            double pointRestLength = supportRestLengths[point.index()];
+            double minCompression = getMinCompression(pointRestLength);
+            supportContacts.add(new SupportContact(mountWorld.add(point.offset()).add(direction.scale(point.length())),
+                    pointRestLength - point.length(), minCompression,
+                    Math.max(supportMaxCompressions[point.index()], minCompression), weight));
+        }
+        Contact contact = nearestContact(contacts);
         double contactLength = contact.length();
         if (contactLength != Double.POSITIVE_INFINITY) {
             // 限位求解保留穿透量，轮组变换限制在机械行程内。
             contactCompression = restLength - contactLength;
             compression = clampCompression((float) contactCompression);
-            supportOffsetWorld = contact.offset();
             grounded = true;
         }
     }
@@ -189,23 +255,53 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             return 0;
         }
         Vec3 mount = worldPositionWithBaseRot(pivotOffset);
-        double length = findContact(mount, direction, maxStep / -direction.y, true, 1).length();
-        double penetration = (restLength - getMaxCompression() - length) * -direction.y;
-        return penetration > CONTACT_RECOVERY
-                && penetration <= maxStep + CONTACT_EPSILON ? penetration : 0;
+        double height = 0;
+        for (Contact contact : findContacts(mount, direction, maxStep / -direction.y, true, 1)) {
+            double pointRestLength = supportRestLengths[contact.index()];
+            double maxCompression = Math.max(supportMaxCompressions[contact.index()], getMinCompression(pointRestLength));
+            double penetration = (pointRestLength - maxCompression - contact.length()) * -direction.y;
+            if (penetration > CONTACT_RECOVERY && penetration <= maxStep + CONTACT_EPSILON) {
+                height = Math.max(height, penetration);
+            }
+        }
+        return height;
     }
 
     private Contact findContact(Vec3 mount, Vec3 direction, double recovery, boolean stepProbe, float partialTick) {
-        double maxLength = restLength - getMinCompression();
-        double minLength = restLength - getMaxCompression();
-        // 允许恢复轻微穿透，避免触底后误判悬空。
-        double probeMinLength = minLength - recovery;
-        double contactLength = Double.POSITIVE_INFINITY;
-        Vec3 contactOffset = Vec3.ZERO;
-        int contactCount = 0;
+        return nearestContact(findContacts(mount, direction, recovery, stepProbe, partialTick));
+    }
+
+    private Contact nearestContact(List<Contact> contacts) {
+        double length = Double.POSITIVE_INFINITY;
+        Vec3 offset = Vec3.ZERO;
+        int count = 0;
+        for (Contact contact : contacts) {
+            if (contact.length() < length - 1.0E-6) {
+                length = contact.length();
+                offset = contact.offset();
+                count = 1;
+            } else if (Math.abs(contact.length() - length) <= 1.0E-6) {
+                length = Math.min(length, contact.length());
+                offset = offset.add(contact.offset());
+                count++;
+            }
+        }
+        return new Contact(length, count > 0 ? offset.scale(1.0 / count) : Vec3.ZERO, -1);
+    }
+
+    private List<Contact> findContacts(Vec3 mount, Vec3 direction, double recovery, boolean stepProbe, float partialTick) {
+        List<Contact> contacts = new ArrayList<>();
         Quaternionf rotation = getSuspensionRotation(partialTick);
-        for (Vec3 offset : getSupportOffsets()) {
-            Vec3 worldOffset = new Vec3(rotation.transform(offset.toVector3f()));
+        List<Vec3> offsets = getSupportOffsets();
+        for (int i = 0; i < offsets.size(); i++) {
+            double pointRestLength = supportRestLengths[i];
+            double minCompression = getMinCompression(pointRestLength);
+            double maxLength = pointRestLength - minCompression;
+            double minLength = pointRestLength - Math.max(supportMaxCompressions[i], minCompression);
+            // 允许恢复轻微穿透，避免触底后误判悬空。
+            double probeMinLength = minLength - recovery;
+            double contactLength = Double.POSITIVE_INFINITY;
+            Vec3 worldOffset = new Vec3(rotation.transform(offsets.get(i).toVector3f()));
             Vec3 origin = mount.add(worldOffset);
             double compressedBottomY = origin.y + direction.y * minLength;
             Vec3 start = origin.add(direction.scale(probeMinLength));
@@ -220,20 +316,14 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                 if (contact.x >= box.minX - CONTACT_EPSILON && contact.x <= box.maxX + CONTACT_EPSILON
                         && contact.z >= box.minZ - CONTACT_EPSILON && contact.z <= box.maxZ + CONTACT_EPSILON
                         && length >= probeMinLength && length <= maxLength + CONTACT_EPSILON) {
-                    if (length < contactLength - 1.0E-6) {
-                        contactLength = length;
-                        contactOffset = worldOffset;
-                        contactCount = 1;
-                    } else if (Math.abs(length - contactLength) <= 1.0E-6) {
-                        // 共面接触取平均支撑点，避免平地上总是偏向第一条履带。
-                        contactLength = Math.min(contactLength, length);
-                        contactOffset = contactOffset.add(worldOffset);
-                        contactCount++;
-                    }
+                    contactLength = Math.min(contactLength, length);
                 }
             }
+            if (contactLength != Double.POSITIVE_INFINITY) {
+                contacts.add(new Contact(contactLength, worldOffset, i));
+            }
         }
-        return new Contact(contactLength, contactCount > 0 ? contactOffset.scale(1.0 / contactCount) : Vec3.ZERO);
+        return contacts;
     }
 
     @Override
@@ -284,9 +374,8 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         return compression;
     }
 
-    // 未截断的压缩量用于求解压缩端限位。
-    public double getContactCompression() {
-        return contactCompression;
+    public List<SupportContact> getSupportContacts() {
+        return List.copyOf(supportContacts);
     }
 
     private float getVisualCompression(float partialTick, float fallback) {
@@ -306,10 +395,6 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     @Override
     public Vec3 worldPivotPosition() {
         return worldPositionWithSelfRot(pivotOffset);
-    }
-
-    public Vec3 getSupportWorld() {
-        return mountWorld.add(supportOffsetWorld).add(getSuspensionDirection().scale(restLength - contactCompression));
     }
 
     @Override
