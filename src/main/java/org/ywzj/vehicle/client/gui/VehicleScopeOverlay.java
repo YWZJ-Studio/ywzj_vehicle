@@ -124,6 +124,9 @@ public class VehicleScopeOverlay implements IGuiOverlay {
 
     public void renderCrosshair(GuiGraphics guiGraphics, float partialTick, AbstractVehicle vehicle) {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+            if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.OPTICAL_SCOPE) {
+                GuiHelper.drawOpticalScope(guiGraphics, guiGraphics.guiWidth(), guiGraphics.guiHeight());
+            }
             Vec3 posO = VectorUtil.worldToScreen(weaponUnit.weaponHitPosO);
             Vec3 pos = VectorUtil.worldToScreen(weaponUnit.weaponHitPos);
             PoseStack poseStack = guiGraphics.pose();
@@ -173,7 +176,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                             guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("ui.focus_lock").getString(), 25, 40, color);
                         }
                     }
-                } else {
+                } else if (weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPTICAL_SCOPE) {
                     poseStack.pushPose();
                     {
                         poseStack.translate(-0.5, -0.5, 0);

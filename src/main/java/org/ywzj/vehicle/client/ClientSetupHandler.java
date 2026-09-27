@@ -94,11 +94,11 @@ public class ClientSetupHandler {
 
     @SubscribeEvent
     public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
+        event.registerBelowAll("vehicle_scope", new VehicleScopeOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle", new VehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_rotary_wing", new RotaryWingVehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_fixed_wing", new FixedWingVehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_aim_at", new VehicleAimAtOverlay());
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_scope", new VehicleScopeOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_weapon", new VehicleWeaponOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_hit_indicator", new VehicleHitIndicatorOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_radar", new VehicleRadarOverlay());

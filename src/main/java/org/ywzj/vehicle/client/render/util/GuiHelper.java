@@ -117,4 +117,33 @@ public class GuiHelper {
         RenderSystem.disableBlend();
     }
 
+    public static void drawOpticalScope(GuiGraphics guiGraphics, int width, int height) {
+        ShaderInstance shader = ModShaders.getOpticalScopeShader();
+        if (shader == null || width <= 0 || height <= 0) {
+            return;
+        }
+        guiGraphics.flush();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(() -> shader);
+        shader.safeGetUniform("ScreenSize").set((float) width, (float) height);
+        try {
+            Matrix4f matrix = guiGraphics.pose().last().pose();
+            BufferBuilder buffer = Tesselator.getInstance().getBuilder();
+            buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            buffer.vertex(matrix, 0, height, 0).uv(0, 1).endVertex();
+            buffer.vertex(matrix, width, height, 0).uv(1, 1).endVertex();
+            buffer.vertex(matrix, width, 0, 0).uv(1, 0).endVertex();
+            buffer.vertex(matrix, 0, 0, 0).uv(0, 0).endVertex();
+            BufferUploader.drawWithShader(buffer.end());
+        } finally {
+            RenderSystem.depthMask(true);
+            RenderSystem.enableDepthTest();
+            RenderSystem.disableBlend();
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        }
+    }
+
 }

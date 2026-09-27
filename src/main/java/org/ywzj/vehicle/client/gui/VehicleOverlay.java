@@ -94,11 +94,11 @@ public class VehicleOverlay implements IGuiOverlay {
         {
             RenderSystem.enableBlend();
             float centerX = screenWidth / 2f;
-            poseStack.translate(centerX - 0.5f, 12, 0);
+            poseStack.translate(centerX, 12, 0);
             poseStack.pushPose();
             {
                 guiGraphics.enableScissor((int) (centerX - 120), 0, (int) (centerX + 120), 40);
-                poseStack.translate(-yaw * 4, 0, 0);
+                poseStack.translate(-yaw * 4 - 0.5f, 0, 0);
                 for (int x = -225; x <= 225; x += 5) {
                     switch (x) {
                         case -135, 225 -> renderDirection(guiGraphics, poseStack, font, x, "NE");
