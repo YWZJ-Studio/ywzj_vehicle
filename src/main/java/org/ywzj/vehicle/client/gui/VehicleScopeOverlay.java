@@ -27,8 +27,13 @@ import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
+import org.ywzj.vehicle.vehicle.weapon.VehicleCannon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMissile;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
+
+import java.util.Locale;
 
 import static org.ywzj.vehicle.util.RenderHelper.drawRectByCorner;
 import static org.ywzj.vehicle.util.RenderHelper.drawSquare;
@@ -127,6 +132,9 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
 
     public void renderCrosshair(GuiGraphics guiGraphics, float partialTick, AbstractVehicle vehicle) {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+            if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.OPTICAL_SCOPE) {
+                GuiHelper.drawOpticalScope(guiGraphics, guiGraphics.guiWidth(), guiGraphics.guiHeight());
+            }
             Vec3 posO = VectorUtil.worldToScreen(weaponUnit.weaponHitPosO);
             Vec3 pos = VectorUtil.worldToScreen(weaponUnit.weaponHitPos);
             PoseStack poseStack = guiGraphics.pose();
@@ -176,7 +184,7 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
                             guiGraphics.drawString(Minecraft.getInstance().font, Component.translatable("ui.focus_lock").getString(), 25, 40, color);
                         }
                     }
-                } else {
+                } else if (weaponUnit.getOpticalSightType() != WeaponUnitData.OpticalSightType.OPTICAL_SCOPE) {
                     poseStack.pushPose();
                     {
                         poseStack.translate(-0.5, -0.5, 0);
@@ -196,6 +204,27 @@ public class VehicleScopeOverlay implements LayeredDraw.Layer {
     }
 
     public void renderWeaponEngagementEnvelope(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
+        // 射击诸元
+        if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
+            weaponUnit.getCurrentWeapon().ifPresent(weapon -> {
+                var selectedWeapon = weapon instanceof VehicleMultiWeapons multiWeapons ? multiWeapons.getSelectedWeapon() : weapon;
+                if (selectedWeapon instanceof VehicleCannon cannon && cannon.getData().isArtillery()) {
+                    WeaponUnit aimingWeaponUnit = weapon.getWeaponUnit();
+                    if (aimingWeaponUnit.isParentWeaponUnitAim()) {
+                        aimingWeaponUnit = aimingWeaponUnit.getRootParentWeaponUnit();
+                    }
+                    AimContext aimContext = aimingWeaponUnit.aimContext();
+                    float azimuth = Mth.wrapDegrees(aimContext.direction.y);
+                    double range = weaponUnit.weaponHitRange;
+                    int x = screenWidth / 2 - 120;
+                    int y = screenHeight / 2 - 69;
+                    var font = Minecraft.getInstance().font;
+                    guiGraphics.drawString(font, Component.translatable("ui.artillery.azimuth", String.format(Locale.ROOT, "%.1f", azimuth)), x, y, color);
+                    guiGraphics.drawString(font, Component.translatable("ui.artillery.elevation", String.format(Locale.ROOT, "%.1f", -aimContext.direction.x)), x, y + 12, color);
+                    guiGraphics.drawString(font, Component.translatable("ui.artillery.range", Double.isFinite(range) ? String.format(Locale.ROOT, "%.0f", range) : "--"), x, y + 24, color);
+                }
+            });
+        }
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         PoseStack poseStack = guiGraphics.pose();

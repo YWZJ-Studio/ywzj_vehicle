@@ -17,17 +17,28 @@ public class ModShaders {
 
     private static final ResourceLocation CIRCLE_SHADER_LOCATION = YwzjVehicle.modLocation("circle");
     private static ShaderInstance circleShader;
+    private static final ResourceLocation OPTICAL_SCOPE_SHADER_LOCATION = YwzjVehicle.modLocation("optical_scope");
+    private static ShaderInstance opticalScopeShader;
     public static final VertexFormat HUD_CIRCLE = DefaultVertexFormat.BLOCK;
+
     @SubscribeEvent
     public static void registerShaders(RegisterShadersEvent event) throws IOException {
         event.registerShader(
                 new ShaderInstance(event.getResourceProvider(), CIRCLE_SHADER_LOCATION, HUD_CIRCLE),
                 shaderInstance -> circleShader = shaderInstance
         );
+        event.registerShader(
+                new ShaderInstance(event.getResourceProvider(), OPTICAL_SCOPE_SHADER_LOCATION, DefaultVertexFormat.POSITION_TEX),
+                shaderInstance -> opticalScopeShader = shaderInstance
+        );
     }
 
     public static ShaderInstance getCircleShader() {
         return circleShader;
+    }
+
+    public static ShaderInstance getOpticalScopeShader() {
+        return opticalScopeShader;
     }
 
 }

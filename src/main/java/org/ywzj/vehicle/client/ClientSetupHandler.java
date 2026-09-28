@@ -98,7 +98,7 @@ public class ClientSetupHandler {
         event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_rotary_wing"), new RotaryWingVehicleOverlay());
         event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_fixed_wing"), new FixedWingVehicleOverlay());
         event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_aim_at"), new VehicleAimAtOverlay());
-        event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_scope"), new VehicleScopeOverlay());
+        event.registerBelowAll(YwzjVehicle.modLocation("vehicle_scope"), new VehicleScopeOverlay());
         event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_weapon"), new VehicleWeaponOverlay());
         event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_hit_indicator"), new VehicleHitIndicatorOverlay());
         event.registerBelow(VanillaGuiLayers.CHAT, YwzjVehicle.modLocation("vehicle_radar"), new VehicleRadarOverlay());
