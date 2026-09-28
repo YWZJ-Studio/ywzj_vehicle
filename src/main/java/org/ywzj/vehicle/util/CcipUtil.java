@@ -12,6 +12,24 @@ public class CcipUtil {
 
     private static final int MAX_TICKS = 1200;
 
+    public static Vec3 computeCcipSameHeight(Vec3 startPos, Vec3 startVelocity, float friction) {
+        Vec3 position = Vec3.ZERO;
+        Vec3 velocity = startVelocity;
+        double gravity = PhysicsEngine.G;
+        int maxTicks = (int) Math.ceil(2 * Math.max(startVelocity.y, 0) / gravity) + 2;
+        for (int tick = 0; tick < maxTicks; tick++) {
+            Vec3 nextPosition = position.add(velocity);
+            if (velocity.y < 0 && nextPosition.y <= 0) {
+                double fraction = position.y / -velocity.y;
+                Vec3 impact = position.add(velocity.scale(fraction));
+                return startPos.add(impact.x, 0, impact.z);
+            }
+            position = nextPosition;
+            velocity = velocity.scale(1 - friction).add(0, -gravity, 0);
+        }
+        return null;
+    }
+
     public static Vec3 computeCcip(Level level, Vec3 startPos, Vec3 startVelocity, float friction) {
         double x = startPos.x;
         double y = startPos.y;
@@ -76,8 +94,7 @@ public class CcipUtil {
         int maxTicks = Math.min(MAX_TICKS, life + 1);
         for (int tick = 0; tick < maxTicks; tick++) {
             Vec3 nextPosition = position.add(velocity);
-            HitResult result = level.clip(new ClipContext(position, nextPosition,
-                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
+            HitResult result = level.clip(new ClipContext(position, nextPosition, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
             if (result.getType() != HitResult.Type.MISS) {
                 return result.getLocation();
             }

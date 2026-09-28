@@ -132,6 +132,7 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public boolean rotByAim = true;
     public Vec3 weaponHitPos;
     public Vec3 weaponHitPosO;
+    public double weaponHitRange;
     public int ignoreRemoteRotTick;
     private VehicleSound irTrackAlarmSound;
 
@@ -837,11 +838,23 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (currentWeaponUnit.isParentWeaponUnitAim()) {
                 currentWeaponUnit = currentWeaponUnit.getRootParentWeaponUnit();
             }
+            if (vehicleWeapon instanceof VehicleMultiWeapons vehicleMultiWeapons) {
+                vehicleWeapon = vehicleMultiWeapons.getSelectedWeapon();
+            }
+            if (vehicleWeapon instanceof VehicleCannon cannon && cannon.getData().isArtillery()) {
+                weaponHitRange = Double.NaN;
+                var data = cannon.getData();
+                AimContext aimContext = currentWeaponUnit.aimContext();
+                Vec3 aimDir = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize();
+                Vec3 startVelocity = aimDir.scale(data.getVelocity()).add(vehicle.getDeltaMovement());
+                Vec3 releasePos = aimContext.from.add(vehicle.getDeltaMovement());
+                Vec3 rangeHitPosition = CcipUtil.computeCcipSameHeight(releasePos, startVelocity, data.getFriction());
+                if (rangeHitPosition != null) {
+                    weaponHitRange = rangeHitPosition.subtract(releasePos).horizontalDistance();
+                }
+            }
             Vec3 aimHitPosition = null;
             if (getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP) {
-                if (vehicleWeapon instanceof VehicleMultiWeapons vehicleMultiWeapons) {
-                    vehicleWeapon = vehicleMultiWeapons.getSelectedWeapon();
-                }
                 List<Vec3> releasePositions = currentWeaponUnit.aimContexts().stream()
                         .map(context -> context.from)
                         .toList();

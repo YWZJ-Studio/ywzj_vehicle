@@ -1,10 +1,12 @@
 package org.ywzj.vehicle.entity.weapon;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,6 +22,7 @@ import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleCannonWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.PhysicsEngine;
 
@@ -89,6 +92,7 @@ public class BulletEntity extends AmmoEntity {
     }
 
     private void initBullet(VehicleCannonWeaponData data) {
+        this.keepChunkLoaded = data.isArtillery();
         this.damage = data.getDamage();
         this.headShot = data.getHeadshotMultiplier();
         this.explosion = data.getExplosion();
@@ -139,6 +143,11 @@ public class BulletEntity extends AmmoEntity {
         double nextPosX = this.getX() + x;
         double nextPosY = this.getY() + y;
         double nextPosZ = this.getZ() + z;
+        if (keepChunkLoaded && !level().isClientSide()
+                && !((ServerLevel) level()).isPositionEntityTicking(BlockPos.containing(nextPosX, nextPosY, nextPosZ))) {
+            EntityUtil.keepChunkLoaded(this, new Vec3(nextPosX, nextPosY, nextPosZ));
+            return;
+        }
         this.setPos(nextPosX, nextPosY, nextPosZ);
         float friction = this.friction;
         float gravity = PhysicsEngine.G;

@@ -97,6 +97,9 @@
 
   "ui.stabilizer_on": "STAB ON",
   "ui.focus_lock": "FOCUS LOCK",
+  "ui.artillery.azimuth": "AZIMUTH: %s°",
+  "ui.artillery.elevation": "ELEVATION: %s°",
+  "ui.artillery.range": "RANGE: %s m",
   "ui.vehicle_rotary_wing.rpm": "RPM:  %d",
   "ui.vehicle_rotary_wing.throttle_level": "THR:  ",
   "ui.vehicle_rotary_wing.collective_pitch": "COL:  %d",

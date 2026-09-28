@@ -8,6 +8,9 @@ public class VehicleCannonWeaponData extends BaseVehicleWeaponData {
     @SerializedName("friction")
     private float friction = 0.01f;
 
+    @SerializedName("artillery")
+    private boolean artillery = false;
+
     @SerializedName("tracer_r")
     private Float tracerR = 0.7f;
 
@@ -22,6 +25,10 @@ public class VehicleCannonWeaponData extends BaseVehicleWeaponData {
 
     public float getFriction() {
         return friction;
+    }
+
+    public boolean isArtillery() {
+        return artillery;
     }
 
     public Float getTracerR() {
