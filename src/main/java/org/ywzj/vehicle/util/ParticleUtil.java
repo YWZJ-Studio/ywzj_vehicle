@@ -131,9 +131,6 @@ public final class ParticleUtil {
 
     @OnlyIn(Dist.CLIENT)
     public static void spawnSuspensionDust(AbstractVehicle vehicle) {
-        if (!vehicle.level().isClientSide() || vehicle.getDeltaMovement().horizontalDistanceSqr() <= 0.01) {
-            return;
-        }
         for (var suspension : vehicle.getSuspensionUnits()) {
             if (!suspension.isGrounded()) {
                 continue;
@@ -161,9 +158,6 @@ public final class ParticleUtil {
     public static void spawnTrackDust(AbstractVehicle vehicle, Vec3... positions) {
         Level level = vehicle.level();
         Vec3 movement = vehicle.getDeltaMovement();
-        if (!level.isClientSide() || movement.horizontalDistanceSqr() <= 0.01) {
-            return;
-        }
         RandomSource random = level.random;
         float speed = (float) Math.min(movement.length(), 0.5);
         for (Vec3 position : positions) {

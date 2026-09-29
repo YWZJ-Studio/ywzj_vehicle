@@ -51,11 +51,13 @@ public class Motorcycle extends WheeledVehicle {
                 ParticleUtil.spawnTracks(level(), trackSize, getYRot(), trackPos);
             }
         }
-        if (hasSuspension()) {
-            ParticleUtil.spawnSuspensionDust(this);
-        } else {
-            Vec3 trackPos = relativeRotPos(position().add(0, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTrackDust(this, trackPos);
+        if (level().isClientSide() && getDeltaMovement().horizontalDistanceSqr() > 0.01) {
+            if (hasSuspension()) {
+                ParticleUtil.spawnSuspensionDust(this);
+            } else {
+                Vec3 trackPos = relativeRotPos(position().add(0, 0, -mainCubeOBB.obb().extents().z), false);
+                ParticleUtil.spawnTrackDust(this, trackPos);
+            }
         }
 
         double speedSqr = this.getDeltaMovement().lengthSqr();

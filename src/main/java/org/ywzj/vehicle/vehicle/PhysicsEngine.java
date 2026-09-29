@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -66,6 +67,7 @@ public class PhysicsEngine {
 
     private record BodyContacts(List<VehicleCubeOBB.CubePoint> touchPoints, Map<VehicleCubeOBB.CubePoint, Double> supports) {}
     private record BodySupportContact(double pitchArm, double rollArm, double gap) {}
+    private record SuspensionImpactContact(double pitchArm, double rollArm, double inverseEffectiveMass) {}
     private record SuspensionContact(SuspensionUnit<?> unit, double compression, double minCompression, double maxCompression, double weight, double verticalArm, double pitchArm, double rollArm) {}
     private record SupportCorrection(double verticalArm, double pitchArm, double rollArm, double gap, double maxSpeed) {}
 
@@ -87,10 +89,17 @@ public class PhysicsEngine {
             double movedY = Math.abs(vehicle.deltaMovementO.y) < 0.001 ? 0 : vehicle.deltaMovementO.y;
             vehicle.setPos(vehicle.getX(), vehicle.getY() - movedY, vehicle.getZ());
             cube.update(vehicle);
-            stepUpBySuspension(suspensions);
         }
         Vector3f[] axes = cube.obb().getAxes();
         BodyContacts contacts = collectContacts(axes, hasSuspension && vehicle.collision);
+        if (hasSuspension && vehicle.collision) {
+            double previousY = vehicle.getY();
+            climb(contacts.touchPoints);
+            if (vehicle.getY() != previousY) {
+                cube.update(vehicle);
+                contacts = collectContacts(axes, true);
+            }
+        }
         suspensionGrounded = false;
         velocityO.set(this.velocity);
         Vec3 velocity = vehicle.getDeltaMovement();
@@ -100,7 +109,7 @@ public class PhysicsEngine {
             suspensionGrounded |= suspension.isGrounded();
         }
         if (vehicle.collision) {
-            motionByImpact(contacts.touchPoints, axes, contacts.supports.keySet());
+            motionByImpact(contacts.touchPoints, axes);
         }
         decelerationByFriction(contacts.touchPoints);
         force = force.add(motionByBuoyancy());
@@ -114,55 +123,6 @@ public class PhysicsEngine {
             rightInLiquid();
         }
         vehicle.setDeltaMovement(new Vec3(this.velocity));
-    }
-
-    private void stepUpBySuspension(List<SuspensionUnit<?>> suspensions) {
-        double maxStep = vehicle.maxUpStep();
-        VehicleCubeOBB cube = physicsCube();
-        Vector3f[] axes = cube.obb().getAxes();
-        if (!vehicle.collision || maxStep <= 0 || axes[1].y <= 0.5) {
-            return;
-        }
-        double lift = 0;
-        for (SuspensionUnit<?> suspension : suspensions) {
-            lift = Math.max(lift, suspension.getStepUpHeight(maxStep));
-        }
-        // 车体前沿可能先于轮心接触台阶。
-        Map<BlockPos, List<AABB>> shapes = new HashMap<>();
-        for (VehicleCubeOBB.CubePoint point : cube.cubePoints()) {
-            if (bodySupportAlignment(point, axes) <= 0) {
-                continue;
-            }
-            Vec3 position = new Vec3(point.worldPos(axes));
-            BlockPos blockPos = BlockPos.containing(position);
-            List<AABB> boxes = shapes.computeIfAbsent(blockPos, this::blockCollisionBoxes);
-            for (AABB box : boxes) {
-                double penetration = box.maxY - position.y;
-                if (box.contains(position) && penetration > BODY_CONTACT_RECOVERY
-                        && penetration <= maxStep + BODY_CONTACT_SLOP) {
-                    lift = Math.max(lift, penetration);
-                }
-            }
-        }
-        if (lift <= 0) {
-            return;
-        }
-        lift += BODY_CONTACT_SLOP;
-        OBB raisedBody = cube.obb().copy();
-        raisedBody.setCenter(new Vector3f(cube.obb().center()).add(0, (float) lift, 0));
-        AABB bodyBounds = OBB.toAABB(List.of(cube.obb()));
-        AABB raisedBounds = OBB.toAABB(List.of(raisedBody));
-        // 排除抬升后碰撞和抬升路径上的顶棚。
-        for (AABB box : getBlockCollisionBoxes(bodyBounds.minmax(raisedBounds))) {
-            if (OBB.isColliding(raisedBody, box)
-                    || box.minY >= bodyBounds.maxY - BODY_CONTACT_SLOP) {
-                return;
-            }
-        }
-        vehicle.setPos(vehicle.position().add(0, lift, 0));
-        Vec3 movement = vehicle.getDeltaMovement();
-        vehicle.setDeltaMovement(movement.x, Math.max(0, movement.y), movement.z);
-        cube.update(vehicle);
     }
 
     /**
@@ -537,18 +497,15 @@ public class PhysicsEngine {
      * 为助于攀爬方块，一定车体高度下的方块碰撞会被忽略
      * 车体底面若有陷地则会施加较大的向上速度
      */
-    private void motionByImpact(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes,
-                                Set<VehicleCubeOBB.CubePoint> bodySupports) {
+    private void motionByImpact(List<VehicleCubeOBB.CubePoint> touchPoints, Vector3f[] axes) {
         VehicleCubeOBB physicsCube = vehicle.getMainCubeOBB();
         boolean hasSuspension = vehicle.hasSuspension();
         boolean isStuck = false;
         Vec3 velocity = new Vec3(this.velocity);
+        List<VehicleCubeOBB.CubePoint> bottomContacts = new ArrayList<>();
 
         double velocityO = velocity.length();
         for (VehicleCubeOBB.CubePoint touchPoint : touchPoints) {
-            if (bodySupports.contains(touchPoint)) {
-                continue;
-            }
             VehicleCubeOBB.CubeFace face = touchPoint.cubeFace();
             if (face == VehicleCubeOBB.CubeFace.LEFT || face == VehicleCubeOBB.CubeFace.RIGHT
                     || face == VehicleCubeOBB.CubeFace.FRONT || face == VehicleCubeOBB.CubeFace.BACK) {
@@ -599,6 +556,10 @@ public class PhysicsEngine {
                 if (velocity.y > -0.1 && touchPoint.obbLocalPos().y < -physicsCube.obb().extents().y - 0.01) {
                     continue;
                 }
+                if (hasSuspension && face == VehicleCubeOBB.CubeFace.BOTTOM) {
+                    bottomContacts.add(touchPoint);
+                    continue;
+                }
                 Vec3 axesY = new Vec3(axes[1]).normalize();
                 double d = velocity.dot(axesY);
                 if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP) {
@@ -632,6 +593,7 @@ public class PhysicsEngine {
                 }
             }
         }
+        velocity = motionBySuspensionImpact(velocity, bottomContacts, axes);
         Vec3 testPos = new Vec3(physicsCube.obb().center());
         BlockPos testBlockPos = BlockPos.containing(testPos);
         BlockState blockState = vehicle.level().getBlockState(testBlockPos);
@@ -646,6 +608,59 @@ public class PhysicsEngine {
         if (velocityDiff > 0.5) {
             DamageSystem.impactHurt(velocityDiff, vehicle);
         }
+    }
+
+    private Vec3 motionBySuspensionImpact(Vec3 velocity, List<VehicleCubeOBB.CubePoint> contacts, Vector3f[] axes) {
+        if (contacts.isEmpty() || physicsInfo.mass <= 0) {
+            return velocity;
+        }
+        VehicleCubeOBB cube = physicsCube();
+        double mass = physicsInfo.mass;
+        double inverseMass = 1 / mass;
+        Vec3 center = physicsInfo.center;
+        double inversePitchInertia = lockCenterRot ? 0 : 12.0 / (mass * Math.max(0.01,
+                cube.height * cube.height + cube.depth * cube.depth + 12 * (center.y * center.y + center.z * center.z)));
+        double inverseRollInertia = lockCenterRot || lockZRot ? 0 : 12.0 / (mass * Math.max(0.01,
+                cube.width * cube.width + cube.height * cube.height + 12 * (center.x * center.x + center.y * center.y)));
+        Quaternionf yaw = new Quaternionf().rotateY((float) Math.toRadians(-vehicle.getYRot()));
+        Quaternionf inverseYaw = new Quaternionf(yaw).invert();
+        Vec3 centerLocal = cube.offset().add(new Vec3(cube.selfRot().transform(center.toVector3f())));
+        Vec3 centerWorld = vehicle.position().add(vehicle.centerOffset)
+                .add(new Vec3(vehicle.rotYXZ().transform(centerLocal.subtract(vehicle.centerOffset).toVector3f())));
+        Vec3 normal = new Vec3(axes[1]).normalize();
+        List<SuspensionImpactContact> constraints = new ArrayList<>();
+        for (VehicleCubeOBB.CubePoint contact : new LinkedHashSet<>(contacts)) {
+            Vec3 arm = new Vec3(contact.cachedWorldPos()).subtract(centerWorld);
+            Vector3f torque = inverseYaw.transform(arm.cross(normal).toVector3f());
+            double inverseEffectiveMass = inverseMass + torque.x * torque.x * inversePitchInertia
+                    + torque.z * torque.z * inverseRollInertia;
+            constraints.add(new SuspensionImpactContact(torque.x, torque.z, inverseEffectiveMass));
+        }
+        double pitchVelocity = inversePitchInertia == 0 ? 0 : suspensionPitchVelocity;
+        double rollVelocity = inverseRollInertia == 0 ? 0 : suspensionRollVelocity;
+        double[] impulses = new double[constraints.size()];
+        // 约束接触点速度，允许重心随车身绕支点回落。
+        for (int iteration = 0; iteration < 32; iteration++) {
+            double maxChange = 0;
+            for (int i = 0; i < constraints.size(); i++) {
+                SuspensionImpactContact contact = constraints.get(i);
+                double pointVelocity = velocity.dot(normal)
+                        + contact.pitchArm * pitchVelocity + contact.rollArm * rollVelocity;
+                double nextImpulse = Math.max(0, impulses[i] - pointVelocity / contact.inverseEffectiveMass);
+                double deltaImpulse = nextImpulse - impulses[i];
+                impulses[i] = nextImpulse;
+                velocity = velocity.add(normal.scale(deltaImpulse * inverseMass));
+                pitchVelocity += deltaImpulse * contact.pitchArm * inversePitchInertia;
+                rollVelocity += deltaImpulse * contact.rollArm * inverseRollInertia;
+                maxChange = Math.max(maxChange, Math.abs(deltaImpulse) * contact.inverseEffectiveMass);
+            }
+            if (maxChange < 1.0E-7) {
+                break;
+            }
+        }
+        suspensionPitchVelocity = (float) pitchVelocity;
+        suspensionRollVelocity = (float) rollVelocity;
+        return velocity;
     }
 
     /**
@@ -806,8 +821,8 @@ public class PhysicsEngine {
                 .summaryStatistics();
         double yRange = stats.getMax() - stats.getMin();
         double liftLimit = physicsCube.spaceY * 2;
-        if ((yRange >= liftLimit || yRange < physicsCube.spaceY)
-                && !(vehicle.getXRot() == 0 && vehicle.getZRot() == 0)) {
+        if (yRange >= liftLimit - BODY_CONTACT_SLOP || (yRange < physicsCube.spaceY - BODY_CONTACT_SLOP
+                && !(Math.abs(vehicle.getXRot()) < 0.1 && Math.abs(vehicle.getZRot()) < 0.1))) {
             return;
         }
         climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
@@ -823,19 +838,19 @@ public class PhysicsEngine {
     private BodyContacts collectContacts(Vector3f[] axes, boolean withBodySupports) {
         // 接触方块的采样点
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
+        Map<BlockPos, List<AABB>> shapes = new HashMap<>();
         // 车体大OBB的表面采样点
         for (VehicleCubeOBB.CubePoint point : physicsCube().cubePoints()) {
-            BlockPos blockPos = BlockPos.containing(new Vec3(point.worldPos(axes)));
-
-            // 调试
-//            DebugUtil.particle(level(), worldPos, point.cubeFace());
-//            DebugUtil.particle(level(), new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()));
-
-            BlockState blockState = vehicle.level().getBlockState(blockPos);
-            if (blockState.isSolid()) {
-                point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
-                point.cubePointContext.setBlockState(blockState);
-                touchPoints.add(point);
+            Vec3 position = new Vec3(point.worldPos(axes));
+            BlockPos blockPos = BlockPos.containing(position);
+            List<AABB> boxes = shapes.computeIfAbsent(blockPos, this::blockCollisionBoxes);
+            for (AABB box : boxes) {
+                if (box.contains(position)) {
+                    point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
+                    point.cubePointContext.setBlockState(vehicle.level().getBlockState(blockPos));
+                    touchPoints.add(point);
+                    break;
+                }
             }
         }
         Map<VehicleCubeOBB.CubePoint, Double> supports = withBodySupports
@@ -882,7 +897,8 @@ public class PhysicsEngine {
                 double gap = position.y - box.maxY;
                 if (position.x >= box.minX && position.x <= box.maxX
                         && position.z >= box.minZ && position.z <= box.maxZ
-                        && gap >= -BODY_CONTACT_RECOVERY && gap <= BODY_CONTACT_SKIN) {
+                        && gap <= BODY_CONTACT_SKIN
+                        && (gap >= -BODY_CONTACT_RECOVERY || point.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM)) {
                     supportHeight = Math.max(supportHeight, box.maxY);
                 }
             }
@@ -1041,8 +1057,10 @@ public class PhysicsEngine {
         if (blockState == null) {
             return false;
         }
-        return blockState.hasProperty(BlockStateProperties.HALF)
-                || blockState.getBlock() instanceof SlabBlock;
+        if (blockState.getBlock() instanceof SlabBlock) {
+            return blockState.getValue(SlabBlock.TYPE) != SlabType.DOUBLE;
+        }
+        return blockState.hasProperty(BlockStateProperties.HALF);
     }
 
     /**
