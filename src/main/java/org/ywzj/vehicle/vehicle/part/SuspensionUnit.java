@@ -228,7 +228,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         if (!isActive() || direction.y >= -0.25) {
             return;
         }
-        List<Contact> contacts = findContacts(mountWorld, direction, CONTACT_RECOVERY, false, 1);
+        List<Contact> contacts = findContacts(mountWorld, direction, CONTACT_RECOVERY, 1);
         double weight = 1.0 / getSupportOffsets().size();
         for (Contact point : contacts) {
             double pointRestLength = supportRestLengths[point.index()];
@@ -245,31 +245,6 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             compression = clampCompression((float) contactCompression);
             grounded = true;
         }
-    }
-
-    public double getStepUpHeight(double maxStep) {
-        if (!isActive()) {
-            return 0;
-        }
-        Vec3 direction = getSuspensionDirection();
-        if (direction.y >= -0.5) {
-            return 0;
-        }
-        Vec3 mount = worldPositionWithBaseRot(pivotOffset);
-        double height = 0;
-        for (Contact contact : findContacts(mount, direction, maxStep / -direction.y, true, 1)) {
-            double pointRestLength = supportRestLengths[contact.index()];
-            double maxCompression = Math.max(supportMaxCompressions[contact.index()], getMinCompression(pointRestLength));
-            double penetration = (pointRestLength - maxCompression - contact.length()) * -direction.y;
-            if (penetration > CONTACT_RECOVERY && penetration <= maxStep + CONTACT_EPSILON) {
-                height = Math.max(height, penetration);
-            }
-        }
-        return height;
-    }
-
-    private Contact findContact(Vec3 mount, Vec3 direction, double recovery, boolean stepProbe, float partialTick) {
-        return nearestContact(findContacts(mount, direction, recovery, stepProbe, partialTick));
     }
 
     private Contact nearestContact(List<Contact> contacts) {
@@ -290,7 +265,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         return new Contact(length, count > 0 ? offset.scale(1.0 / count) : Vec3.ZERO, -1);
     }
 
-    private List<Contact> findContacts(Vec3 mount, Vec3 direction, double recovery, boolean stepProbe, float partialTick) {
+    private List<Contact> findContacts(Vec3 mount, Vec3 direction, double recovery, float partialTick) {
         List<Contact> contacts = new ArrayList<>();
         Quaternionf rotation = getSuspensionRotation(partialTick);
         List<Vec3> offsets = getSupportOffsets();
@@ -304,14 +279,10 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             double contactLength = Double.POSITIVE_INFINITY;
             Vec3 worldOffset = new Vec3(rotation.transform(offsets.get(i).toVector3f()));
             Vec3 origin = mount.add(worldOffset);
-            double compressedBottomY = origin.y + direction.y * minLength;
             Vec3 start = origin.add(direction.scale(probeMinLength));
             Vec3 end = origin.add(direction.scale(maxLength));
             AABB probe = new AABB(start, end).inflate(CONTACT_EPSILON);
             for (AABB box : vehicle.physicsEngine.getBlockCollisionBoxes(probe)) {
-                if (stepProbe && box.minY > compressedBottomY + CONTACT_EPSILON) {
-                    continue;
-                }
                 double length = (box.maxY - origin.y) / direction.y;
                 Vec3 contact = origin.add(direction.scale(length));
                 if (contact.x >= box.minX - CONTACT_EPSILON && contact.x <= box.maxX + CONTACT_EPSILON
@@ -385,7 +356,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             return clampCompression(fallback);
         }
         Vec3 mount = worldPositionWithBaseRot(pivotOffset, partialTick);
-        double length = findContact(mount, direction, CONTACT_RECOVERY, false, partialTick).length();
+        double length = nearestContact(findContacts(mount, direction, CONTACT_RECOVERY, partialTick)).length;
         return clampCompression(length != Double.POSITIVE_INFINITY ? (float) (restLength - length) : fallback);
     }
 

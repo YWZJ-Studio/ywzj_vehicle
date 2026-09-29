@@ -315,12 +315,14 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             }
         }
         // 扬尘
-        if (hasSuspension()) {
-            ParticleUtil.spawnSuspensionDust(this);
-        } else {
-            Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
-            ParticleUtil.spawnTrackDust(this, trackLeftPos, trackRightPos);
+        if (level().isClientSide() && getDeltaMovement().horizontalDistanceSqr() > 0.01) {
+            if (hasSuspension()) {
+                ParticleUtil.spawnSuspensionDust(this);
+            } else {
+                Vec3 trackLeftPos = relativeRotPos(position().add(mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+                Vec3 trackRightPos = relativeRotPos(position().add(-mainCubeOBB.obb().extents().x, 0, -mainCubeOBB.obb().extents().z), false);
+                ParticleUtil.spawnTrackDust(this, trackLeftPos, trackRightPos);
+            }
         }
         // 引擎烟
         if (hasPower()) {
