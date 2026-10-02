@@ -68,11 +68,21 @@ public class EntityUtil {
         Entity hitEntity = null;
         boolean headshot = false;
         // 获取子弹 tick 路径上所有的实体
-        List<Entity> entities = bulletEntity.level().getEntities(bulletEntity, bulletEntity.getBoundingBox().expandTowards(bulletEntity.getDeltaMovement()).inflate(1.0), PROJECTILE_TARGETS);
+        AABB searchBox = bulletEntity.getBoundingBox().expandTowards(bulletEntity.getDeltaMovement()).inflate(1.0);
+        Level level = bulletEntity.level();
+        List<Entity> entities = level.getEntities(bulletEntity, searchBox, PROJECTILE_TARGETS);
+        if (level instanceof ServerLevel serverLevel) {
+            for (Entity entity : serverLevel.getAllEntities()) {
+                if (entity instanceof AbstractVehicle
+                        && entity.getBoundingBox().intersects(searchBox)
+                        && !entities.contains(entity)) {
+                    entities.add(entity);
+                }
+            }
+        }
         double closestDistance = Double.MAX_VALUE;
         Entity owner = bulletEntity.getOwner();
         for (Entity entity : entities) {
-            // 禁止对自己造成伤害（如有需要可以增加 Config 开启对自己的伤害）
             if (!entity.equals(owner)) {
                 // 射击无视自己的载具和该载具上的其他乘客
                 if (owner != null && entity.isPassengerOfSameVehicle(owner)) {
