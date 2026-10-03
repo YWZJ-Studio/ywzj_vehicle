@@ -62,7 +62,7 @@ public class RocketPropelledEntityRenderer<T extends AmmoEntity> extends AmmoEnt
         poseStack.pushPose();
         try {
             Vec3 root = Vec3.ZERO;
-            poseStack.rotateAround(Axis.YP.rotationDegrees(-entityYaw),
+            poseStack.rotateAround(Axis.YP.rotationDegrees(-Mth.rotLerp(partialTick, ammoEntity.yRotO, ammoEntity.getYRot())),
                     (float) root.x, (float) root.y, (float) root.z);
             poseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(partialTick, ammoEntity.xRotO, ammoEntity.getXRot())),
                     (float) root.x, (float) root.y, (float) root.z);
