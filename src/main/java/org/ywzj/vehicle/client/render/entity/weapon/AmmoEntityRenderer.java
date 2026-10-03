@@ -52,7 +52,7 @@ public class AmmoEntityRenderer<T extends AmmoEntity> extends EntityRenderer<T> 
         pPoseStack.pushPose();
         {
             Vec3 root = new Vec3(0, 0, 0);
-            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-pEntityYaw), (float) root.x, (float) root.y, (float) root.z);
+            pPoseStack.rotateAround(Axis.YP.rotationDegrees(-Mth.rotLerp(pPartialTick, ammoEntity.yRotO, ammoEntity.getYRot())), (float) root.x, (float) root.y, (float) root.z);
             pPoseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(pPartialTick, ammoEntity.xRotO, ammoEntity.getXRot())), (float) root.x, (float) root.y, (float) root.z);
             VehicleBedrockModel ammoModel = null;
             ResourceLocation ammoTexture = null;

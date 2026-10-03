@@ -262,7 +262,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
                 delta = delta.normalize().scale(speed);
             }
             this.setPos(pos.add(delta));
-            this.setRot(Mth.lerp(maneuverability, this.getYRot(), rot.y), Mth.lerp(maneuverability, this.getXRot(), rot.x));
+            this.setRot(Mth.rotLerp(maneuverability, this.getYRot(), rot.y), Mth.lerp(maneuverability, this.getXRot(), rot.x));
         }
     }
 
@@ -298,11 +298,9 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         // 自动归正
         if (targetEntity == null && targetPos == null) {
             if (velocity.lengthSqr() > 0.01) {
-                Vec3 normVel = velocity.normalize();
-                double pitch = Math.toDegrees(-Math.asin(normVel.y));
-                double yaw = Math.toDegrees(Math.atan2(normVel.z, normVel.x)) - 90.0;
-                this.setXRot((float) Mth.lerp(0.2, this.getXRot(), pitch));
-                this.setYRot((float) Mth.lerp(0.2, this.getYRot(), yaw));
+                Vec2 velocityRot = VectorUtil.vecToRot(velocity);
+                this.setXRot(Mth.lerp(0.2f, this.getXRot(), velocityRot.x));
+                this.setYRot(Mth.rotLerp(0.2f, this.getYRot(), velocityRot.y));
             }
         }
     }
