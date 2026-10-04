@@ -51,11 +51,11 @@ public class LocalVehiclePlayer {
     public float playerLocalXRot;
     public float playerLocalYRot;
     public float currentG = 1;
+    public float displayG = 1;
     public float stamina = 100;
     public boolean lostControl;
     public int endureTick;
     public int unconsciousnessTick;
-    public Vec3 lastVelocity = Vec3.ZERO;
     public double aimLocationDistance;
     public boolean outOfRangeFinding;
     public boolean thermalImaging;
@@ -132,7 +132,7 @@ public class LocalVehiclePlayer {
             endureTick = 0;
             unconsciousnessTick = 0;
             currentG = 1;
-            lastVelocity = Vec3.ZERO;
+            displayG = 1;
             if (OverloadHandler.isActive()) {
                 OverloadHandler.setActive(false);
             }
@@ -153,22 +153,15 @@ public class LocalVehiclePlayer {
         if (vehicle == null || vehicle.uav || vehicle.onGround()) {
             endureTick = 0;
             currentG = 1;
-            lastVelocity = Vec3.ZERO;
+            displayG = 1;
             return;
         } else {
             if (!OverloadHandler.isActive()) {
                 OverloadHandler.setActive(true);
             }
         }
-        float gravity = PhysicsEngine.G * 400;
-        Vec3 currentVelocity = vehicle.getDeltaMovement();
-        Vec3 deltaV = currentVelocity.subtract(lastVelocity);
-        Vec3 accelerationVec = deltaV.scale(400);
-        Vec3 gravityVec = new Vec3(0, -gravity, 0);
-        Vec3 apparentAcceleration = accelerationVec.subtract(gravityVec);
-        Vec3 upDirection = new Vec3(vehicle.getMainCubeOBB().obb().getAxes()[1]).normalize();
-        double verticalAcceleration = apparentAcceleration.dot(upDirection);
-        currentG = (float) (verticalAcceleration / gravity);
+        currentG = vehicle.getOverload();
+        displayG = Mth.lerp(0.35f, displayG, currentG);
         if (!lostControl) {
             if (currentG >= 2 || currentG <= -1) {
                 endureTick += 1;
@@ -185,7 +178,6 @@ public class LocalVehiclePlayer {
                 unconsciousnessTick = 60;
             }
         }
-        lastVelocity = currentVelocity;
     }
 
     private void tickRemote() {
@@ -624,6 +616,8 @@ public class LocalVehiclePlayer {
     public void clear() {
         seat = null;
         vehicle = null;
+        currentG = 1;
+        displayG = 1;
         serverEntities.clear();
         missiles.clear();
         CrtHandler.setActive(false);
