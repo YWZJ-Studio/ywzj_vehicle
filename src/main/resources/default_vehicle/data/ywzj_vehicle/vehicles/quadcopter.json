@@ -24,6 +24,10 @@
         "energy_capacity": 1,
         "energy_consumption_per_tick": 0.000027778
     },
+    "defense_stats": {
+        "damage_threshold": 10,
+        "impact_multiplier": 32
+    },
     "uav": true,
     "structure_model": "ywzj_vehicle:vehicle/quadcopter",
     "parts": [

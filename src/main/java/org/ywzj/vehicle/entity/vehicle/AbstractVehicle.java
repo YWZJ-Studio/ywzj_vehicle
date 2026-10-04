@@ -91,6 +91,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Z_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> OVERLOAD = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ENERGY = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> POWER = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> ENGINE_SPEED = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
@@ -170,6 +171,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         this.entityData.define(X_ROT, 0f);
         this.entityData.define(Y_ROT, 0f);
         this.entityData.define(Z_ROT, 0f);
+        this.entityData.define(OVERLOAD, 1f);
         this.entityData.define(ENERGY, 0f);
         this.entityData.define(POWER, 0f);
         this.entityData.define(ENGINE_SPEED, 0f);
@@ -543,6 +545,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             tickPower();
             tickEngineSpeed();
             tickPhysics(tickMove());
+            tickOverload();
             if (MinecraftForge.EVENT_BUS.post(new VehicleMoveEvent(this))) {
                 this.setDeltaMovement(Vec3.ZERO);
             }
@@ -593,6 +596,16 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     protected void tickPhysics(Vec3 force) {
         physicsEngine.tick(force);
+    }
+
+    private void tickOverload() {
+        float overload = 1f;
+        if (!onGround()) {
+            Vec3 apparentAcceleration = getDeltaMovement().subtract(deltaMovementO).add(0, PhysicsEngine.G, 0);
+            Vec3 upDirection = new Vec3(mainCubeOBB.obb().getAxes()[1]).normalize();
+            overload = (float) (apparentAcceleration.dot(upDirection) / PhysicsEngine.G);
+        }
+        this.entityData.set(OVERLOAD, overload, true);
     }
 
     @Override
@@ -1310,6 +1323,10 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public abstract void shoot(int partUnitIndex, int weaponIndex, List<AimContext> aimContexts, @Nullable LivingEntity operator);
 
+    public float getOverload() {
+        return this.entityData.get(OVERLOAD);
+    }
+
     public float getEnergy() {
         float amount = entityData.get(ENERGY);
         if (amount == 0 && AllConfigs.common.infiniteFuel.get()) {
@@ -1511,7 +1528,7 @@ public abstract class AbstractVehicle extends ContainerCraft
             }
         }
         double velocity = this.getDeltaMovement().length();
-        if (velocity == 0) {
+        if (velocity <= 0.1) {
             return;
         }
         double entityVelocity = entity.getDeltaMovement().dot(this.getDeltaMovement()) / velocity;

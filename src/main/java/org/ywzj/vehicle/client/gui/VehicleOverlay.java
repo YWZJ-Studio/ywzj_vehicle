@@ -179,9 +179,9 @@ public class VehicleOverlay implements IGuiOverlay {
                         Component.translatable("ui.lost_control"),
                         0, -45, Color.RED);
             } else if (localVehiclePlayer.endureTick > 5
-                    && (LocalVehiclePlayer.instance.currentG >= 2 || LocalVehiclePlayer.instance.currentG <= -1)) {
+                    && (localVehiclePlayer.displayG >= 2 || localVehiclePlayer.displayG <= -1)) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                        Component.translatable("ui.overload", String.format("%.1f", localVehiclePlayer.currentG)).append("G"),
+                        Component.translatable("ui.overload", String.format("%.1f", localVehiclePlayer.displayG)).append("G"),
                         0, -45, Color.RED);
             } else if (!localVehiclePlayer.missiles.isEmpty()) {
                 guiGraphics.drawCenteredString(Minecraft.getInstance().font,

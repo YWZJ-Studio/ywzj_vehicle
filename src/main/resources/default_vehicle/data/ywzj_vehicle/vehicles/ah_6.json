@@ -30,7 +30,7 @@
     },
     "defense_stats": {
         "damage_threshold": 10,
-        "impact_multiplier": 3
+        "impact_multiplier": 16
     },
     "with_warning_receiver": true,
     "center_offset": [0, 1.65, 0],
