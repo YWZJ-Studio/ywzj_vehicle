@@ -51,6 +51,9 @@ public class VehicleHitIndicatorOverlay implements LayeredDraw.Layer {
 
     @SubscribeEvent(receiveCanceled = true)
     public static void onRenderOverlay(RenderGuiLayerEvent.Pre event) {
+        if (Minecraft.getInstance().options.hideGui) {
+            return;
+        }
         if (event.getName().equals(VanillaGuiLayers.CROSSHAIR)) {
             renderHitMarker(event.getGuiGraphics(), event.getPartialTick().getGameTimeDeltaPartialTick(true));
         }

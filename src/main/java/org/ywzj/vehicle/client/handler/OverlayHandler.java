@@ -9,6 +9,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.Set;
@@ -31,6 +32,10 @@ public class OverlayHandler {
     @SubscribeEvent
     public static void onRenderOverlay(RenderGuiLayerEvent.Pre event) {
         Minecraft mc = Minecraft.getInstance();
+        if (mc.options.hideGui && YwzjVehicle.MOD_ID.equals(event.getName().getNamespace())) {
+            event.setCanceled(true);
+            return;
+        }
         Player player = mc.player;
         if (player == null || !player.isAlive()) {
             return;
