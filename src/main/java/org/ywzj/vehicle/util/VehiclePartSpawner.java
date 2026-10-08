@@ -4,6 +4,7 @@ import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.entity.misc.VehiclePart;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.SuspensionUnit;
 
 public final class VehiclePartSpawner {
 
@@ -17,12 +18,20 @@ public final class VehiclePartSpawner {
             if (!partUnit.isDetachable()) {
                 continue;
             }
+            boolean isSuspension = partUnit instanceof SuspensionUnit<?>;
+            if (isSuspension && vehicle.level().random.nextFloat() < 0.75) {
+                continue;
+            }
             VehiclePart vehiclePart = partUnit.detach();
             if (vehiclePart == null) {
                 continue;
             }
+            Vec3 velocity = flingVelocity(vehicle, partUnit);
+            if (isSuspension) {
+                velocity = velocity.scale(0.25);
+            }
             vehiclePart.setDestroyed();
-            vehiclePart.setDeltaMovement(flingVelocity(vehicle, partUnit));
+            vehiclePart.setDeltaMovement(velocity);
             vehicle.level().addFreshEntity(vehiclePart);
         }
     }

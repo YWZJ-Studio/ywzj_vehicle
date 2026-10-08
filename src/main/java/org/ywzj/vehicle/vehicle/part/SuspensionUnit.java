@@ -47,7 +47,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     private double[] supportMaxCompressions;
     private final List<SupportContact> supportContacts = new ArrayList<>();
 
-    private record Contact(double length, Vec3 offset, int index) {}
+    private record Contact(double length, Vec3 position, int index) {}
     private record CalibrationPoint(SuspensionUnit<?> unit, int index, Vec3 bottom, Vector3d arm) {}
     public record SupportContact(Vec3 position, double compression, double minCompression, double maxCompression, double weight) {}
 
@@ -209,7 +209,12 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     }
 
     protected boolean isActive() {
-        return structureGroup != null && !isDetached() && !isDestroyed();
+        return structureGroup != null && !isDetached() && !isDestroyed() && !vehicle.isDestroyed();
+    }
+
+    @Override
+    public boolean isDetachable() {
+        return !isDestroyed() && super.isDetachable();
     }
 
     /** 绑定姿态下相对安装枢轴的接地采样点，使用父组坐标系。 */
@@ -232,12 +237,11 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         for (Contact point : contacts) {
             double pointRestLength = supportRestLengths[point.index()];
             double minCompression = getMinCompression(pointRestLength);
-            supportContacts.add(new SupportContact(mountWorld.add(point.offset()).add(direction.scale(point.length())),
+            supportContacts.add(new SupportContact(point.position(),
                     pointRestLength - point.length(), minCompression,
                     Math.max(supportMaxCompressions[point.index()], minCompression), weight));
         }
-        Contact contact = nearestContact(contacts);
-        double contactLength = contact.length();
+        double contactLength = nearestContactLength(contacts);
         if (contactLength != Double.POSITIVE_INFINITY) {
             // 限位求解保留穿透量，轮组变换限制在机械行程内。
             contactCompression = restLength - contactLength;
@@ -246,22 +250,12 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         }
     }
 
-    private Contact nearestContact(List<Contact> contacts) {
+    private double nearestContactLength(List<Contact> contacts) {
         double length = Double.POSITIVE_INFINITY;
-        Vec3 offset = Vec3.ZERO;
-        int count = 0;
         for (Contact contact : contacts) {
-            if (contact.length() < length - 1.0E-6) {
-                length = contact.length();
-                offset = contact.offset();
-                count = 1;
-            } else if (Math.abs(contact.length() - length) <= 1.0E-6) {
-                length = Math.min(length, contact.length());
-                offset = offset.add(contact.offset());
-                count++;
-            }
+            length = Math.min(length, contact.length());
         }
-        return new Contact(length, count > 0 ? offset.scale(1.0 / count) : Vec3.ZERO, -1);
+        return length;
     }
 
     private List<Contact> findContacts(Vec3 mount, Vec3 direction, double recovery, float partialTick) {
@@ -275,23 +269,31 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             double minLength = pointRestLength - Math.max(supportMaxCompressions[i], minCompression);
             // 允许恢复轻微穿透，避免触底后误判悬空。
             double probeMinLength = minLength - recovery;
-            double contactLength = Double.POSITIVE_INFINITY;
+            Contact nearest = null;
             Vec3 worldOffset = new Vec3(rotation.transform(offsets.get(i).toVector3f()));
             Vec3 origin = mount.add(worldOffset);
+            Vec3 compressedPoint = origin.add(direction.scale(minLength));
             Vec3 start = origin.add(direction.scale(probeMinLength));
             Vec3 end = origin.add(direction.scale(maxLength));
             AABB probe = new AABB(start, end).inflate(CONTACT_EPSILON);
             for (AABB box : vehicle.physicsEngine.getBlockCollisionBoxes(probe)) {
                 double length = (box.maxY - origin.y) / direction.y;
                 Vec3 contact = origin.add(direction.scale(length));
-                if (contact.x >= box.minX - CONTACT_EPSILON && contact.x <= box.maxX + CONTACT_EPSILON
+                boolean onTop = contact.x >= box.minX - CONTACT_EPSILON && contact.x <= box.maxX + CONTACT_EPSILON
                         && contact.z >= box.minZ - CONTACT_EPSILON && contact.z <= box.maxZ + CONTACT_EPSILON
-                        && length >= probeMinLength && length <= maxLength + CONTACT_EPSILON) {
-                    contactLength = Math.min(contactLength, length);
+                        && length >= probeMinLength && length <= maxLength + CONTACT_EPSILON;
+                if (!onTop) {
+                    if (!box.contains(compressedPoint)) {
+                        continue;
+                    }
+                    contact = new Vec3(compressedPoint.x, box.maxY, compressedPoint.z);
+                }
+                if (nearest == null || length < nearest.length()) {
+                    nearest = new Contact(length, contact, i);
                 }
             }
-            if (contactLength != Double.POSITIVE_INFINITY) {
-                contacts.add(new Contact(contactLength, worldOffset, i));
+            if (nearest != null) {
+                contacts.add(nearest);
             }
         }
         return contacts;
@@ -355,7 +357,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             return clampCompression(fallback);
         }
         Vec3 mount = worldPositionWithBaseRot(pivotOffset, partialTick);
-        double length = nearestContact(findContacts(mount, direction, CONTACT_RECOVERY, partialTick)).length;
+        double length = nearestContactLength(findContacts(mount, direction, CONTACT_RECOVERY, partialTick));
         return clampCompression(length != Double.POSITIVE_INFINITY ? (float) (restLength - length) : fallback);
     }
 
@@ -394,7 +396,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     @Override
     @OnlyIn(Dist.CLIENT)
     public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
-        if (isDetached() || structureGroup == null || renderBoneName == null) {
+        if (isDestroyed() || isDetached() || structureGroup == null || renderBoneName == null) {
             return;
         }
         var display = ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).orElse(null);

@@ -12,7 +12,7 @@
     "physics_info": {
         "mass": 180,
         "friction": 360,
-        "suspension_response": 0.75,
+        "suspension_response": 0.5,
         "center": [0, -1, 0]
     },
     "max_health": 100,
@@ -43,12 +43,15 @@
             "id": "suspension_wheel_back",
             "name": "suspension_wheel_back",
             "type": "ywzj_vehicle:suspension",
-            "detachable": false,
+            "max_health": 50,
+            "defense_stats": {
+                "damage_threshold": 0
+            },
             "render_bone": "wheel_back",
             "structure_bone": "wheel_back",
             "is_seat": false,
-            "spring_stiffness": 8640,
-            "damping": 350,
+            "spring_stiffness": 10800,
+            "damping": 850,
             "rest_length": 0.35,
             "max_compression": 0.35,
             "max_extension": 0.22,
@@ -58,12 +61,15 @@
             "id": "suspension_wheel_front",
             "name": "suspension_wheel_front",
             "type": "ywzj_vehicle:suspension",
-            "detachable": false,
+            "max_health": 50,
+            "defense_stats": {
+                "damage_threshold": 0
+            },
             "render_bone": "wheel_front",
             "structure_bone": "wheel_front",
             "is_seat": false,
-            "spring_stiffness": 8640,
-            "damping": 350,
+            "spring_stiffness": 10800,
+            "damping": 850,
             "rest_length": 0.35,
             "max_compression": 0.35,
             "max_extension": 0.22,

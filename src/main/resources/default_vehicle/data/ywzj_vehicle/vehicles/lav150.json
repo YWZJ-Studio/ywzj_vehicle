@@ -1,0 +1,134 @@
+{
+    "type": "ywzj_vehicle:wheeled_vehicle",
+    "attributes": {
+        "brake_force": 10000,
+        "forward_force": 8000,
+        "backward_force": 8000,
+        "max_speed_forward": 0.5,
+        "max_speed_backward": 0.2,
+        "turn_step": 0.3,
+        "max_turn": 2
+    },
+    "physics_info": {
+        "mass": 1000,
+        "friction": 2000,
+        "suspension_response": 0.6,
+        "center": [0.0, -1.01375631, 0.0]
+    },
+    "max_health": 1000,
+    "view_info": {
+        "third_person_center_offset": [0.0, 3.04126892, 0.0],
+        "third_person_distance": 8.11005046,
+        "sound_distance": 3.04126892
+    },
+    "energy_info": {
+        "energy_capacity": 200,
+        "energy_consumption_per_tick": 0.0004,
+        "engine_particle_offsets": [[0.3234375, 1.9875, -2.7796875]]
+    },
+    "structure_model": "ywzj_vehicle:vehicle/lav150",
+    "parts": [
+        {
+            "id": "turret",
+            "name": "turret",
+            "type": "ywzj_vehicle:weapon",
+            "max_health": 400,
+            "render_bone": "canno",
+            "structure_bone": "turret",
+            "seat_offset": [0.0, 2.2, 0.0],
+            "rot_info": {
+                "x_rot_speed": 3,
+                "y_rot_speed": 3,
+                "x_rot_max": 15,
+                "x_rot_min": -30
+            },
+            "optical_sight_offset": [-0.2, 0.34163588, 1.3411996],
+            "operator_view_offset": [-0.01866325, 0.62656222, 0.07388256],
+            "optical_sight_type": "optical_scope",
+            "zoom_max": 8,
+            "weapons": [
+                "ywzj_vehicle:auto_cannon"
+            ]
+        },
+        {
+            "id": "seat1",
+            "name": "seat1",
+            "type": "ywzj_vehicle:generic",
+            "is_seat": true,
+            "seat_offset": [0.1, 1.6, 1],
+            "owner_view_offset": [0.1, 2, 1]
+        },
+        {
+            "id": "suspension_wheel1",
+            "name": "suspension_wheel1",
+            "type": "ywzj_vehicle:suspension",
+            "max_health": 50,
+            "defense_stats": {
+                "damage_threshold": 0
+            },
+            "render_bone": "wheel1",
+            "structure_bone": "wheel1",
+            "is_seat": false,
+            "spring_stiffness": 30000.0,
+            "damping": 2475,
+            "rest_length": 0.35481471,
+            "max_compression": 0.35481471,
+            "max_extension": 0.22302639,
+            "max_droop": 0.26357664
+        },
+        {
+            "id": "suspension_wheel2",
+            "name": "suspension_wheel2",
+            "type": "ywzj_vehicle:suspension",
+            "max_health": 50,
+            "defense_stats": {
+                "damage_threshold": 0
+            },
+            "render_bone": "wheel2",
+            "structure_bone": "wheel2",
+            "is_seat": false,
+            "spring_stiffness": 30000.0,
+            "damping": 2475,
+            "rest_length": 0.35481471,
+            "max_compression": 0.35481471,
+            "max_extension": 0.22302639,
+            "max_droop": 0.26357664
+        },
+        {
+            "id": "suspension_wheel3",
+            "name": "suspension_wheel3",
+            "type": "ywzj_vehicle:suspension",
+            "max_health": 50,
+            "defense_stats": {
+                "damage_threshold": 0
+            },
+            "render_bone": "wheel3",
+            "structure_bone": "wheel3",
+            "is_seat": false,
+            "spring_stiffness": 30000.0,
+            "damping": 2475,
+            "rest_length": 0.35481471,
+            "max_compression": 0.35481471,
+            "max_extension": 0.22302639,
+            "max_droop": 0.26357664
+        },
+        {
+            "id": "suspension_wheel4",
+            "name": "suspension_wheel4",
+            "type": "ywzj_vehicle:suspension",
+            "max_health": 50,
+            "defense_stats": {
+                "damage_threshold": 0
+            },
+            "render_bone": "wheel4",
+            "structure_bone": "wheel4",
+            "is_seat": false,
+            "spring_stiffness": 30000.0,
+            "damping": 2475,
+            "rest_length": 0.35481471,
+            "max_compression": 0.35481471,
+            "max_extension": 0.22302639,
+            "max_droop": 0.26357664
+        }
+    ]
+}

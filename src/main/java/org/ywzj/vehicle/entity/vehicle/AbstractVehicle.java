@@ -581,10 +581,10 @@ public abstract class AbstractVehicle extends ContainerCraft
             return;
         }
         if (isDestroyed()) {
-            setPower(Math.max(getPower() - 2, 0));
+            setPower(Math.max(getPower() - 10, 0));
             return;
         }
-        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -1), 0, 100));
+        setPower(Mth.clamp(getPower() + (isEngineOn() ? 1 : -5), 0, 100));
     }
 
     protected void tickEngineSpeed() {
@@ -1189,6 +1189,19 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     public boolean hasSuspension() {
         return !suspensionUnits.isEmpty();
+    }
+
+    protected float getSuspensionPowerScale() {
+        if (!hasSuspension()) {
+            return 1;
+        }
+        int intactCount = 0;
+        for (SuspensionUnit<?> suspension : suspensionUnits) {
+            if (!suspension.isDestroyed() && !suspension.isDetached()) {
+                intactCount++;
+            }
+        }
+        return (float) intactCount / suspensionUnits.size();
     }
 
     public Map<String, DecorationUnit> getDecorationUnits() {

@@ -12,6 +12,17 @@
             },
             "bones": [
                 {
+                    "name": "main_structure",
+                    "pivot": [0, 0, 0],
+                    "cubes": [
+                        {
+                            "origin": [-24.35, 10.5, -65.35],
+                            "size": [48.575, 26.5, 132.225],
+                            "uv": [0, 0]
+                        }
+                    ]
+                },
+                {
                     "name": "vehicle_body",
                     "pivot": [0, 0, 0],
                     "cubes": [

@@ -103,7 +103,7 @@ public class WheeledVehicle extends AbstractVehicle implements IAnimationEntity<
             controlUnit.reset();
         }
 
-        double powerScale = getPower() / 100;
+        double powerScale = (hasPower() ? 1 : 0) * getSuspensionPowerScale();
         Vec3 velocity = getDeltaMovement();
         double gVelocity = velocity.y;
         velocity = new Vec3(velocity.x, 0, velocity.z);

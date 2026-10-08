@@ -44,20 +44,15 @@ public class VehiclePart extends AbstractVehicle {
         this.displayId = sourceVehicle.getDisplayId();
         this.partUnitId = partUnit.getId();
         this.partUnitData = partUnit.serializeNBT();
-        if (!createPartUnitCopy(true)) {
+        if (!createPartUnitCopy()) {
             throw new IllegalArgumentException("Unable to copy PartUnit: " + partUnit.getId());
         }
     }
 
-    private void initializePart(PartUnit<?> partUnit, boolean copyHealth) {
+    private void initializePart(PartUnit<?> partUnit) {
         this.partUnit = partUnit;
-        if (copyHealth) {
-            this.setMaxHealth(partUnit.getMaxHealth());
-            this.setHealth(partUnit.getHealth());
-        } else if (this.getMaxHealth() < 0) {
-            this.setMaxHealth(partUnit.getMaxHealth());
-            this.setHealth(partUnit.getHealth());
-        }
+        this.setMaxHealth(partUnit.getMaxHealth());
+        this.setHealth(this.getMaxHealth());
         this.excludedBoneNames = collectExcludedBoneNames(partUnit);
         this.centerOffset = Vec3.ZERO;
         this.dataInitialized = true;
@@ -109,7 +104,7 @@ public class VehiclePart extends AbstractVehicle {
         if (compound.contains("PartZRot", Tag.TAG_ANY_NUMERIC)) {
             this.setZRot(compound.getFloat("PartZRot"));
         }
-        createPartUnitCopy(false);
+        createPartUnitCopy();
     }
 
     @Override
@@ -128,7 +123,7 @@ public class VehiclePart extends AbstractVehicle {
         this.destroyedTick = buffer.readInt();
         partUnitId = buffer.readUtf();
         partUnitData = buffer.readNbt();
-        createPartUnitCopy(false);
+        createPartUnitCopy();
         initDisplayData();
     }
 
@@ -142,7 +137,7 @@ public class VehiclePart extends AbstractVehicle {
 
     @Override
     public void tick() {
-        if (partUnit != null || createPartUnitCopy(false)) {
+        if (partUnit != null || createPartUnitCopy()) {
             if (!initialObbsUpdated) {
                 updateOBBs();
                 initialObbsUpdated = true;
@@ -203,7 +198,7 @@ public class VehiclePart extends AbstractVehicle {
     @Nullable
     public PartUnit<?> getPartUnit() {
         if (partUnit == null) {
-            createPartUnitCopy(false);
+            createPartUnitCopy();
         }
         return partUnit;
     }
@@ -215,7 +210,7 @@ public class VehiclePart extends AbstractVehicle {
         return partUnitData != null ? partUnitData.copy() : new CompoundTag();
     }
 
-    private boolean createPartUnitCopy(boolean copyHealth) {
+    private boolean createPartUnitCopy() {
         if (partUnit != null) {
             return true;
         }
@@ -226,7 +221,7 @@ public class VehiclePart extends AbstractVehicle {
         if (vehicleDataOptional.isPresent()) {
             Optional<PartUnit<?>> partUnitOptional = vehicleDataOptional.get().copyPartUnit(this, partUnitId, partUnitData);
             if (partUnitOptional.isPresent()) {
-                initializePart(partUnitOptional.get(), copyHealth);
+                initializePart(partUnitOptional.get());
                 partUnitData = null;
                 return true;
             }
