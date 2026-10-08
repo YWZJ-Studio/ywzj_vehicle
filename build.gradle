@@ -149,10 +149,10 @@ dependencies {
         exclude group: 'org.joml', module: 'joml'
     }
     // apricityui
-    jarJar(modImplementation 'com.sighs:ApricityUI-forge-1.20.1:1.2.6') {
+    jarJar(modImplementation 'com.sighs:ApricityUI-forge-1.20.1:1.2.7') {
         version {
-            strictly '[1.2.6,)'
-            prefer '1.2.6'
+            strictly '[1.2.7,)'
+            prefer '1.2.7'
         }
     }
     // mixinextras
