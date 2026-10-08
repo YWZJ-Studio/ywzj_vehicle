@@ -129,8 +129,8 @@
             "is_seat": false,
             "spring_stiffness": 2592500,
             "damping": 115900,
-            "rest_length": 0.2,
-            "max_compression": 0.2,
+            "rest_length": 0.1,
+            "max_compression": 0.1,
             "max_extension": 0.1,
             "max_droop": 0.1
         },
@@ -145,8 +145,8 @@
             "is_seat": false,
             "spring_stiffness": 2592500,
             "damping": 115900,
-            "rest_length": 0.2,
-            "max_compression": 0.2,
+            "rest_length": 0.1,
+            "max_compression": 0.1,
             "max_extension": 0.1,
             "max_droop": 0.1
         }
