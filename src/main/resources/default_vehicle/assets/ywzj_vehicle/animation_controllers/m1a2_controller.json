@@ -18,19 +18,13 @@
                             "type": "bone_binding",
                             "special_bindings": [
                                 {
-                                    "bones": [
-                                        "wheel0", "wheel1", "wheel2", "wheel3", "wheel4",
-                                        "wheel5", "wheel6", "wheel7", "wheel8", "wheel9"
-                                    ],
+                                    "bones": ["wheel1", "wheel2", "wheel3", "wheel4", "wheel5", "wheel6", "wheel7", "wheel8", "wheel9"],
                                     "source": "left_wheel_rotation",
                                     "axis": "x",
                                     "param": 0.375
                                 },
                                 {
-                                    "bones": [
-                                        "wheel10", "wheel11", "wheel12", "wheel13", "wheel14",
-                                        "wheel15", "wheel16", "wheel17", "wheel18", "wheel19"
-                                    ],
+                                    "bones": ["wheel10", "wheel11", "wheel12", "wheel13", "wheel14", "wheel15", "wheel16", "wheel17", "wheel18"],
                                     "source": "right_wheel_rotation",
                                     "axis": "x",
                                     "param": 0.375

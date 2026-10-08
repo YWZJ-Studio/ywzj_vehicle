@@ -19,23 +19,26 @@
                             "type": "bone_binding",
                             "special_bindings": [
                                 {
-                                    "bones": [
-                                        "hull_big_0", "hull_big_1", "hull_big_2", "hull_big_3", "hull_big_4",
-                                        "hull_big_5", "hull_big_6", "hull_big_7", "hull_big_8", "hull_big_9"
-                                    ],
+                                    "bones": ["hull_big_1", "hull_big_2", "hull_big_3", "hull_big_4", "hull_big_5", "hull_big_6"],
                                     "source": "left_wheel_rotation",
                                     "axis": "x",
                                     "param": 0.375
                                 },
                                 {
-                                    "bones": ["hull_big_10", "hull_big_11", "hull_big_12"],
+                                    "bones": ["hull_big_7", "hull_big_8", "hull_big_9", "hull_big_10", "hull_big_11", "hull_big_12"],
                                     "source": "right_wheel_rotation",
                                     "axis": "x",
                                     "param": 0.375
                                 },
                                 {
-                                    "bones": ["hull_small_0", "hull_small_1", "hull_small_2", "hull_small_3", "hull_small_4"],
+                                    "bones": ["hull_small_1", "hull_small_2"],
                                     "source": "left_wheel_rotation",
+                                    "axis": "x",
+                                    "param": 0.28
+                                },
+                                {
+                                    "bones": ["hull_small_3", "hull_small_4"],
+                                    "source": "right_wheel_rotation",
                                     "axis": "x",
                                     "param": 0.28
                                 }
