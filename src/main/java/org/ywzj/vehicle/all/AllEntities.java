@@ -179,7 +179,7 @@ public class AllEntities {
 
     public static final DeferredHolder<EntityType<?>, EntityType<DumpTruck>> DUMP_TRUCK = registerVehicle("dump_truck", DumpTruck::new);
 
-//    public static final DeferredHolder<EntityType<?>, EntityType<Lav150>> LAV150 = registerVehicle("lav150", Lav150::new);
+    public static final DeferredHolder<EntityType<?>, EntityType<Lav150>> LAV150 = registerVehicle("lav150", Lav150::new);
 
     public static final DeferredHolder<EntityType<?>, EntityType<Ztl11>> ZTL11 = registerVehicle("ztl11", Ztl11::new);
 

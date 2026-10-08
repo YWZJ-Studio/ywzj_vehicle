@@ -288,6 +288,11 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return new Quaternionf(group.rotation);
     }
 
+    @NotNull
+    public String getId() {
+        return id;
+    }
+
     public Component getName() {
         return name;
     }
@@ -453,6 +458,30 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         return attPartUnits;
     }
 
+    public T getData() {
+        return data;
+    }
+
+    public boolean isDefensive() {
+        return health > 0;
+    }
+
+    public boolean isDestroyed() {
+        return health == 0;
+    }
+
+    public boolean isDetachable() {
+        return data.isDetachable() && renderBoneName != null && !renderBoneName.isBlank() && structureGroup != null;
+    }
+
+    public boolean isDetached() {
+        return detached || (basePartUnit != null && basePartUnit.isDetached());
+    }
+
+    public void setDetached(boolean detached) {
+        this.detached = detached;
+    }
+
     @OnlyIn(Dist.CLIENT)
     public void onUpdateReceived(List<SyncDataEntry<?>> entries) {
         syncData.onUpdateReceived(entries);
@@ -471,10 +500,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
                 }
             }
         }
-    }
-
-    public T getData() {
-        return data;
     }
 
     @Override
@@ -521,31 +546,6 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         vehiclePart.setPos(bottomWorld.x, bottomWorld.y, bottomWorld.z);
         setDetached(true);
         return vehiclePart;
-    }
-
-    @NotNull
-    public String getId() {
-        return id;
-    }
-
-    public boolean isDefensive() {
-        return health > 0;
-    }
-
-    public boolean isDestroyed() {
-        return health == 0;
-    }
-
-    public boolean isDetachable() {
-        return data.isDetachable() && renderBoneName != null && !renderBoneName.isBlank() && structureGroup != null;
-    }
-
-    public boolean isDetached() {
-        return detached || (basePartUnit != null && basePartUnit.isDetached());
-    }
-
-    public void setDetached(boolean detached) {
-        this.detached = detached;
     }
 
     @Deprecated

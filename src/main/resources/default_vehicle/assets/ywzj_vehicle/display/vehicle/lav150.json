@@ -1,12 +1,14 @@
 {
+    "type": "ywzj_vehicle:wheeled_vehicle",
     "model": "ywzj_vehicle:entity/lav150",
     "texture": "ywzj_vehicle:textures/entity/lav150.png",
-//  "animations": "ywzj_vehicle:entity/ztz99a.animation",
-    // 音效，需要先去assets/<namespace>/sounds.json注册
+    "slot_texture": "ywzj_vehicle:textures/slot/lav150.png",
+    "animations": "ywzj_vehicle:entity/lav150.animation",
+    "animation_controller": "ywzj_vehicle:lav150_controller",
     "sounds": {
-        "engine_start": "",
-        "engine_stop": "",
-        "engine_idle": "",
-        "engine_run": ""
-    }
+        "engine_start": "ywzj_vehicle:lav150_engine_start",
+        "engine_idle": "ywzj_vehicle:lav150_engine_idle",
+        "engine_run": "ywzj_vehicle:lav150_engine_run"
+    },
+    "tab_index": 203
 }

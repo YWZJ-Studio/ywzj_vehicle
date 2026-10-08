@@ -404,7 +404,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         if (!isMotorBurning() || engineNozzleOffset == null) {
             return;
         }
-        Vec3 rotatedOffset = engineNozzleOffset.add(0, 0, -caliber / 100f)
+        Vec3 rotatedOffset = engineNozzleOffset.add(0, 0, -caliber / 150f)
                 .xRot(-this.xRotO * Mth.DEG_TO_RAD)
                 .yRot(-this.yRotO * Mth.DEG_TO_RAD);
         Vec3 pos = new Vec3(this.xo, this.yo, this.zo).add(rotatedOffset);

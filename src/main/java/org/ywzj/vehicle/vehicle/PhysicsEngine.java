@@ -92,13 +92,9 @@ public class PhysicsEngine {
         }
         Vector3f[] axes = cube.obb().getAxes();
         BodyContacts contacts = collectContacts(axes, hasSuspension && vehicle.collision);
-        if (hasSuspension && vehicle.collision) {
-            double previousY = vehicle.getY();
-            climb(contacts.touchPoints);
-            if (vehicle.getY() != previousY) {
-                cube.update(vehicle);
-                contacts = collectContacts(axes, true);
-            }
+        if (hasSuspension && vehicle.collision && climb(contacts.touchPoints)) {
+            cube.update(vehicle);
+            contacts = collectContacts(axes, true);
         }
         suspensionGrounded = false;
         velocityO.set(this.velocity);
@@ -802,17 +798,17 @@ public class PhysicsEngine {
         }
     }
 
-    public void climb(List<VehicleCubeOBB.CubePoint> touchPoints) {
+    public boolean climb(List<VehicleCubeOBB.CubePoint> touchPoints) {
         List<VehicleCubeOBB.CubePoint> climbPoints = new ArrayList<>(touchPoints.stream().filter(p ->
                         p.cubeFace() == VehicleCubeOBB.CubeFace.FRONT
                                 || p.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM
                                 || p.cubeFace() == VehicleCubeOBB.CubeFace.BACK)
                 .toList());
         if (climbPoints.isEmpty()) {
-            return;
+            return false;
         }
         if (vehicle.getXRot() < -15) {
-            return;
+            return false;
         }
         VehicleCubeOBB physicsCube = physicsCube();
         // 自动爬高
@@ -823,7 +819,7 @@ public class PhysicsEngine {
         double liftLimit = physicsCube.spaceY * 2;
         if (yRange >= liftLimit - BODY_CONTACT_SLOP || (yRange < physicsCube.spaceY - BODY_CONTACT_SLOP
                 && !(Math.abs(vehicle.getXRot()) < 0.1 && Math.abs(vehicle.getZRot()) < 0.1))) {
-            return;
+            return false;
         }
         climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
         VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
@@ -832,7 +828,11 @@ public class PhysicsEngine {
                 .add(vehicle.position()), true);
         double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
         double toLift = Mth.clamp(liftHeight - bottomPosition.y, 0, vehicle.maxUpStep());
+        if (toLift <= 0) {
+            return false;
+        }
         vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
+        return true;
     }
 
     private BodyContacts collectContacts(Vector3f[] axes, boolean withBodySupports) {
@@ -911,7 +911,6 @@ public class PhysicsEngine {
         return supports;
     }
 
-    /** 车体与悬挂统一沿用旧物理的地形近似：半砖高 0.5，其余实体方块高 1。 */
     public List<AABB> getBlockCollisionBoxes(AABB bounds) {
         List<AABB> boxes = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(BlockPos.containing(bounds.minX, bounds.minY, bounds.minZ),

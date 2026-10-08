@@ -120,22 +120,23 @@ public class TrackedVehicle extends AbstractVehicle
         }
 
         // 前后控制
+        float powerScale = getSuspensionPowerScale();
         float previousForwardSpeed = forwardSpeed;
         int throttle = (controlUnit.forward ? 1 : 0) - (controlUnit.backward ? 1 : 0);
         int steering = (controlUnit.right ? 1 : 0) - (controlUnit.left ? 1 : 0);
         if (throttle > 0) {
             forwardSpeed = forwardSpeed < 0 ? Math.min(0, forwardSpeed + brakeAcceleration)
-                    : forwardSpeed + forwardAcceleration;
+                    : forwardSpeed + forwardAcceleration * powerScale;
         } else if (throttle < 0) {
             forwardSpeed = forwardSpeed > 0 ? Math.max(0, forwardSpeed - brakeAcceleration)
-                    : forwardSpeed - backwardAcceleration;
+                    : forwardSpeed - backwardAcceleration * powerScale;
         } else if (steering != 0 && forwardSpeed < 0) {
             forwardSpeed = Math.min(0, forwardSpeed + brakeAcceleration);
         }
         forwardSpeed = Mth.clamp(forwardSpeed, -maxSpeedBackward, maxSpeedForward);
 
         // 转向控制
-        float turnSpeed = Mth.approach(entityData.get(TURN_SPEED), steering * maxTurn, turnAcceleration);
+        float turnSpeed = Mth.approach(entityData.get(TURN_SPEED), steering * maxTurn * powerScale, turnAcceleration * powerScale);
         // 转向幅度应用于车身朝向
         float yawStep = forwardSpeed < 0 ? -turnSpeed : turnSpeed;
         float speedRatio = maxSpeedForward > 0 ? Mth.clamp(Math.abs(forwardSpeed) / maxSpeedForward, 0, 1) : 0;

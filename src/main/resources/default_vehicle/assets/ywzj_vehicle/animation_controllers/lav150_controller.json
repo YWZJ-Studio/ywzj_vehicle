@@ -1,0 +1,65 @@
+{
+    "name": "lav150_controller",
+    "event_animations": {
+        "turret_fire": ["turret_shoot"]
+    },
+    "graph": {
+        "type": "merge",
+        "inputs": [
+            {
+                "type": "additive",
+                "base": {
+                    "type": "merge",
+                    "inputs": [
+                        {
+                            "type": "bone_binding",
+                            "special_bindings": [
+                                {
+                                    "bones": [
+                                        "wheel1",
+                                        "wheel2",
+                                        "wheel3",
+                                        "wheel4"
+                                    ],
+                                    "source": "wheel_rotation",
+                                    "axis": "x",
+                                    "param": -0.63359769
+                                },
+                                {
+                                    "bones": [
+                                        "wheel1",
+                                        "wheel2"
+                                    ],
+                                    "source": "steering_angle",
+                                    "axis": "y",
+                                    "multiplier": 1,
+                                    "min": -30,
+                                    "max": 30
+                                }
+                            ],
+                            "part_bindings": [
+                                {
+                                    "bone": "canno",
+                                    "part": "turret",
+                                    "rotation_type": "y",
+                                    "axis": "y",
+                                    "invert": true
+                                },
+                                {
+                                    "bone": "barrel",
+                                    "part": "turret",
+                                    "rotation_type": "x",
+                                    "axis": "x",
+                                    "invert": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "add": {
+                    "type": "event_animation"
+                }
+            }
+        ]
+    }
+}

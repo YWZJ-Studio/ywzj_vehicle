@@ -52,7 +52,7 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ROTARY_WING_VEHICLE.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FIXED_WING_VEHICLE.get(), VehicleRender::new));
 
-//        event.enqueueWork(() -> EntityRenderers.register(AllEntities.LAV150.get(), Lav150Renderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.LAV150.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ZTL11.get(), Ztl11Renderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.ZTZ99A.get(), VehicleRender::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.Z10.get(), VehicleRender::new));

@@ -67,7 +67,7 @@ public class RocketPropelledEntityRenderer<T extends AmmoEntity> extends AmmoEnt
             poseStack.rotateAround(Axis.XP.rotationDegrees(Mth.lerp(partialTick, ammoEntity.xRotO, ammoEntity.getXRot())),
                     (float) root.x, (float) root.y, (float) root.z);
             poseStack.translate(nozzleOffset.x, nozzleOffset.y, nozzleOffset.z);
-            float scale = ammoEntity.getCaliber() / 1000;
+            float scale = ammoEntity.getCaliber() / 1500f;
             poseStack.scale(scale, scale, scale);
             flameModel.renderToBuffer(poseStack, bufferSource,
                     RenderType.eyes(InternalAssets.ROCKET_MOTOR_FLAME_TEXTURE),
