@@ -209,7 +209,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     }
 
     protected boolean isActive() {
-        return structureGroup != null && !isDetached() && !isDestroyed() && !vehicle.isDestroyed();
+        return structureGroup != null && !isDetached() && !isDestroyed();
     }
 
     @Override
