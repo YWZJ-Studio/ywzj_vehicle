@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 
-public class TrackUnit extends SuspensionUnit<TrackUnitData> {
+public class TrackUnit extends PartUnit<TrackUnitData> {
 
     private static final double MAX_FRAME_SECONDS = 0.25;
     private static final double CURVE_SAMPLES_PER_METER = 16.0;
@@ -32,11 +32,6 @@ public class TrackUnit extends SuspensionUnit<TrackUnitData> {
     public TrackUnit(int index, AbstractVehicle vehicle, TrackUnitData data) {
         super(index, vehicle, data);
         this.tracks = createPaths(data.getTracks());
-    }
-
-    @Override
-    protected boolean isActive() {
-        return super.isActive() && !partCubeOBBs.isEmpty();
     }
 
     private static List<TrackPath> createPaths(List<List<Vec3>> rawTracks) {
@@ -68,21 +63,9 @@ public class TrackUnit extends SuspensionUnit<TrackUnitData> {
         advanceAnimation();
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutout(texture));
         int modelLight = vehicle.isDestroyed() ? 64 : packedLight;
-        poseStack.pushPose();
-        try {
-            Vec3 offset = getVisualOffset(partialTick);
-            poseStack.translate(offset.x, offset.y, offset.z);
-            for (TrackPath track : tracks) {
-                renderTrack(track, model, poseStack, buffer, modelLight);
-            }
-        } finally {
-            poseStack.popPose();
+        for (TrackPath track : tracks) {
+            renderTrack(track, model, poseStack, buffer, modelLight);
         }
-    }
-
-    @Override
-    public boolean rendersBone() {
-        return false;
     }
 
     @OnlyIn(Dist.CLIENT)
