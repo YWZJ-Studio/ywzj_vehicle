@@ -37,9 +37,9 @@ public class AllPartUnitType {
 
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<RopeUnit, RopeUnitData>> ROPE = register(PartUnitTypes.ROPE);
 
-    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<SuspensionUnit<SuspensionUnitData>, SuspensionUnitData>> SUSPENSION = register(PartUnitTypes.SUSPENSION);
-
     public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<TrackUnit, TrackUnitData>> TRACK = register(PartUnitTypes.TRACK);
+
+    public static final DeferredHolder<PartUnitType<?, ?>, PartUnitType<SuspensionUnit<SuspensionUnitData>, SuspensionUnitData>> SUSPENSION = register(PartUnitTypes.SUSPENSION);
 
     private static <T extends PartUnit<D>, D extends PartUnitData> DeferredHolder<PartUnitType<?, ?>, PartUnitType<T, D>> register(
             PartUnitType<T, D> type
