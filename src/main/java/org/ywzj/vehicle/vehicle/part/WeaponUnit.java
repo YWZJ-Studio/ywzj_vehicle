@@ -410,15 +410,19 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 if (xTurnGroup == null) {
                     return;
                 }
+                VehicleCubeGroup.GlobalTransform renderTransform = xTurnGroup.globalTransform(Vec3.ZERO, false,
+                        group -> weaponUnit.getViewGroupRotation(group, partialTick),
+                        group -> group.offsetO.lerp(group.offset, partialTick));
                 int boltsSize = weaponUnit.getBolts().size();
                 int remainAmmo = Math.min(proxyWeapon.getRemainAmmo(), boltsSize);
                 for (int index = boltsSize - 1; index > boltsSize - 1 - remainAmmo; index -= 1) {
                     Bolt bolt = weaponUnit.getBolts().get(index);
                     pPoseStack.pushPose();
                     {
-                        Vec3 offset = xTurnGroup.pivotOffset.add(bolt.offset);
-                        pPoseStack.translate(offset.x(), offset.y(), offset.z());
-                        pPoseStack.mulPose(weaponUnit.xTurnGroup.rotation);
+                        Vec3 pivot = renderTransform.offset();
+                        pPoseStack.translate(pivot.x(), pivot.y(), pivot.z());
+                        pPoseStack.mulPose(renderTransform.rotation());
+                        pPoseStack.translate(bolt.offset.x(), bolt.offset.y(), bolt.offset.z());
                         pPoseStack.mulPose(Axis.YN.rotationDegrees(bolt.yRot));
                         pPoseStack.mulPose(Axis.XP.rotationDegrees(bolt.xRot));
                         pPoseStack.translate(0, 0, bolt.barrelLength / 2);
