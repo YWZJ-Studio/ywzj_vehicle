@@ -4,6 +4,7 @@
     "drag_coefficient": 0.245,
     "type": "ywzj_vehicle:missile",
     "name": "missile",
+    "caliber": 200,
     "damage": 999,
     "headshot_multiplier": 1.5,
     "shoot_interval": 1000,

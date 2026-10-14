@@ -1,6 +1,7 @@
 {
     "type": "ywzj_vehicle:missile",
     "name": "FIM-92",
+    "caliber": 70,
     "damage": 99,
     "headshot_multiplier": 1.5,
     "recoil": 0.6,
