@@ -1,6 +1,7 @@
 {
     "type": "ywzj_vehicle:missile",
     "name": "BGM-71 TOW",
+    "caliber": 152,
     "damage": 1000,
     "headshot_multiplier": 1.5,
     "recoil": 0.6,

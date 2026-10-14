@@ -1,6 +1,7 @@
 {
     "type": "ywzj_vehicle:missile",
     "name": "PL-8",
+    "caliber": 160,
     "damage": 100,
     "headshot_multiplier": 1.5,
     "recoil": 0.1,

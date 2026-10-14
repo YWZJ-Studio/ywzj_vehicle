@@ -1,6 +1,7 @@
 {
     "type": "ywzj_vehicle:missile",
     "name": "AGM-114 Hellfire",
+    "caliber": 178,
     "damage": 1000,
     "headshot_multiplier": 1.5,
     "shoot_interval": 1000,

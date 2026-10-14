@@ -1,68 +1,80 @@
 {
-    "format_version": "1.12.0",
-    "minecraft:geometry": [
-        {
-            "description": {
-                "identifier": "geometry.unknown",
-                "texture_width": 128,
-                "texture_height": 128,
-                "visible_bounds_width": 5,
-                "visible_bounds_height": 2.5,
-                "visible_bounds_offset": [0, 0.75, 0]
-            },
-            "bones": [
-                {
-                    "name": "main_structure",
-                    "pivot": [0, 0, 0],
-                    "cubes": [
-                        {
-                            "origin": [-7.225, 5.5, -19.35],
-                            "size": [14.275, 17.65, 37.525],
-                            "uv": [0, 0]
-                        }
-                    ]
-                },
-                {
-                    "name": "vehicle_body",
-                    "pivot": [0, 0, 0],
-                    "cubes": [
-                        {
-                            "origin": [-7.225, 0, -19.35],
-                            "size": [14.275, 23.15, 37.525],
-                            "uv": {
-                                "north": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
-                                "east": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
-                                "south": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
-                                "west": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
-                                "up": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]},
-                                "down": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]}
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "wheel_back",
-                    "pivot": [0.125, 5.5, -11.75],
-                    "cubes": [
-                        {
-                            "origin": [-1.75, 0.06667, -17.18333],
-                            "size": [3.75, 10.86666, 10.86666],
-                            "uv": [0, 0]
-                        }
-                    ]
-                },
-                {
-                    "name": "wheel_front",
-                    "pivot": [0.49733, 5.5, 13.75],
-                    "cubes": [
-                        {
-                            "origin": [-1.00533, 0.06667, 8.31667],
-                            "size": [3.00533, 10.86666, 10.86666],
-                            "uv": [0, 0]
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 128,
+				"texture_height": 128,
+				"visible_bounds_width": 5,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "main_structure",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-7.225, 5.5, -19.35], "size": [14.275, 17.65, 37.525], "uv": [0, 0]}
+					]
+				},
+				{
+					"name": "vehicle_body",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-2.8, 2.775, -6.575],
+							"size": [5.65, 9.55, 14],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
+								"east": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
+								"south": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
+								"west": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
+								"up": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]},
+								"down": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]}
+							}
+						},
+						{
+							"origin": [-3.325, 12.325, -1.925],
+							"size": [6.35, 4.625, 9.35],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
+								"east": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
+								"south": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
+								"west": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
+								"up": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]},
+								"down": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]}
+							}
+						},
+						{
+							"origin": [-3.325, 12.325, -13.875],
+							"size": [6.35, 2.025, 11.35],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
+								"east": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
+								"south": {"uv": [0, 0], "uv_size": [14.35, 23.15]},
+								"west": {"uv": [0, 0], "uv_size": [37.9, 23.15]},
+								"up": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]},
+								"down": {"uv": [14.35, 37.9], "uv_size": [-14.35, -37.9]}
+							}
+						}
+					]
+				},
+				{
+					"name": "wheel_back",
+					"pivot": [0.125, 5.5, -11.75],
+					"cubes": [
+						{"origin": [-1.75, 0.06667, -17.18333], "size": [3.75, 10.86666, 10.86666], "uv": [0, 0]}
+					]
+				},
+				{
+					"name": "wheel_front",
+					"pivot": [0.49733, 5.5, 13.75],
+					"cubes": [
+						{"origin": [-1.00533, 0.06667, 8.31667], "size": [3.00533, 10.86666, 10.86666], "uv": [0, 0]}
+					]
+				}
+			]
+		}
+	]
 }

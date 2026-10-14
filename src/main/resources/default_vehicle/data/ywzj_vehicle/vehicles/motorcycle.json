@@ -16,6 +16,7 @@
         "center": [0, -1, 0]
     },
     "max_health": 100,
+    "protect_passenger": false,
     "view_info": {
         "third_person_center_offset": [0, 4, 0],
         "third_person_distance": 7,

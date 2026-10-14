@@ -1,8 +1,8 @@
 {
     "type": "ywzj_vehicle:missile",
     "name": "DF-41",
-    "life": 12000,
     "caliber": 2250,
+    "life": 12000,
     "damage": 1000,
     "headshot_multiplier": 1.5,
     "shoot_interval": 1000,

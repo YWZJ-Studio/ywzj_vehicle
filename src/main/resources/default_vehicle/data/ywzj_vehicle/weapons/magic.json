@@ -1,6 +1,7 @@
 {
     "type": "ywzj_vehicle:missile",
     "name": "R.550 Magic",
+    "caliber": 157,
     "damage": 100,
     "headshot_multiplier": 1.5,
     "recoil": 0.1,
