@@ -70,8 +70,8 @@ public class MachineMaxScreen extends ApricityScreen {
     private double previewZoom = 1.0;
     private double previewPanX;
     private double previewPanY;
-    private float previewRotationX = 165.0F;
-    private float previewRotationY;
+    private float previewRotationX = 165;
+    private float previewRotationY = 30;
     private boolean previewDragging;
     private int previewDragButton = -1;
     private int lastProgress = -1;
@@ -602,8 +602,8 @@ public class MachineMaxScreen extends ApricityScreen {
         previewZoom = 1.0;
         previewPanX = 0;
         previewPanY = 0;
-        previewRotationX = 165.0F;
-        previewRotationY = 0;
+        previewRotationX = 165;
+        previewRotationY = 30;
         previewDragButton = -1;
         setPreviewDragging(false);
     }
