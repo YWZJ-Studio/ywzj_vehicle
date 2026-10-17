@@ -164,9 +164,9 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
         private final double[] basePointDistances;
         private final double[] baseSegmentDistances;
         private final double baseLength;
+        private final Vec3 planeNormal;
         private List<PathSegment> segments;
         private double length;
-        private Vec3 center;
         private int linkCount;
         private double spacing;
         private double lateralOffset;
@@ -184,7 +184,22 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             this.basePointDistances = buildPointDistances(basePoints);
             this.baseSegmentDistances = buildSegmentDistances(baseSegments);
             this.baseLength = baseSegments.stream().mapToDouble(PathSegment::length).sum();
+            this.planeNormal = buildPlaneNormal(basePoints);
             rebuild(basePoints);
+        }
+
+        private static Vec3 buildPlaneNormal(List<Vec3> points) {
+            if (points.size() < 3) {
+                return new Vec3(1, 0, 0);
+            }
+            Vec3 origin = points.get(0);
+            Vec3 normal = Vec3.ZERO;
+            for (int index = 1; index < points.size() - 1; index++) {
+                normal = normal.add(points.get(index).subtract(origin)
+                        .cross(points.get(index + 1).subtract(origin)));
+            }
+            // 由绑定路径的绕行方向固定内侧，避免下垂或悬挂起伏时翻面。
+            return normal.lengthSqr() > 1.0E-12 ? normal.normalize() : new Vec3(1, 0, 0);
         }
 
         private void setSuspensions(List<SuspensionUnit<?>> suspensions) {
@@ -327,7 +342,6 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             List<PathSegment> builtSegments = new ArrayList<>();
             double totalLength = 0;
             double weightedX = 0;
-            Vec3 weightedCenter = Vec3.ZERO;
             if (smoothedPoints.size() >= 2) {
                 for (int index = 0; index < smoothedPoints.size() - 1; index++) {
                     Vec3 start = smoothedPoints.get(index);
@@ -340,12 +354,10 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
                     builtSegments.add(new PathSegment(start, end, offset.scale(1 / segmentLength), segmentLength));
                     totalLength += segmentLength;
                     weightedX += (start.x + end.x) * 0.5 * segmentLength;
-                    weightedCenter = weightedCenter.add(start.add(end).scale(0.5 * segmentLength));
                 }
             }
             segments = List.copyOf(builtSegments);
             length = totalLength;
-            center = totalLength > 0 ? weightedCenter.scale(1 / totalLength) : Vec3.ZERO;
             lateralOffset = totalLength > 0 ? weightedX / totalLength : 0;
             phase = totalLength > 0 ? positiveModulo(phaseRatio * totalLength, totalLength) : 0;
         }
@@ -424,8 +436,9 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             }
 
             List<Vec3> tangents = new ArrayList<>(keyPoints.size());
+            boolean closed = keyPoints.get(0).distanceToSqr(keyPoints.get(keyPoints.size() - 1)) <= 1.0E-12;
             for (int index = 0; index < keyPoints.size(); index++) {
-                tangents.add(tangentAt(keyPoints, index));
+                tangents.add(tangentAt(keyPoints, index, closed));
             }
 
             List<Vec3> result = new ArrayList<>();
@@ -443,16 +456,18 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             return List.copyOf(result);
         }
 
-        private static Vec3 tangentAt(List<Vec3> points, int index) {
-            if (index == 0) {
+        private static Vec3 tangentAt(List<Vec3> points, int index, boolean closed) {
+            if (!closed && index == 0) {
                 return points.get(1).subtract(points.get(0));
             }
-            if (index == points.size() - 1) {
+            if (!closed && index == points.size() - 1) {
                 return points.get(index).subtract(points.get(index - 1));
             }
-            Vec3 previous = points.get(index).subtract(points.get(index - 1));
-            Vec3 next = points.get(index + 1).subtract(points.get(index));
-            Vec3 direction = points.get(index + 1).subtract(points.get(index - 1));
+            Vec3 previousPoint = points.get(index == 0 ? points.size() - 2 : index - 1);
+            Vec3 nextPoint = points.get(index == points.size() - 1 ? 1 : index + 1);
+            Vec3 previous = points.get(index).subtract(previousPoint);
+            Vec3 next = nextPoint.subtract(points.get(index));
+            Vec3 direction = nextPoint.subtract(previousPoint);
             if (direction.lengthSqr() <= 1.0E-12) {
                 direction = next;
             }
@@ -487,8 +502,7 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             } else {
                 tangent = tangent.normalize();
             }
-            Vec3 inwardNormal = this.center.subtract(center.position());
-            inwardNormal = inwardNormal.subtract(tangent.scale(inwardNormal.dot(tangent)));
+            Vec3 inwardNormal = planeNormal.cross(tangent);
             if (inwardNormal.lengthSqr() <= 1.0E-8) {
                 Vec3 fallback = Math.abs(tangent.y) < 0.9 ? new Vec3(0, 1, 0) : new Vec3(0, 0, 1);
                 inwardNormal = fallback.subtract(tangent.scale(fallback.dot(tangent)));

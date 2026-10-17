@@ -329,7 +329,15 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                     if (!box.contains(compressedPoint)) {
                         continue;
                     }
+                    // 轮底进入台阶后，由限位求解恢复超行程穿透。
                     contact = new Vec3(compressedPoint.x, box.maxY, compressedPoint.z);
+                }
+                // 支撑顶面不能被上层方块覆盖。
+                AABB surfaceProbe = new AABB(contact.x - CONTACT_EPSILON, box.maxY + CONTACT_EPSILON,
+                        contact.z - CONTACT_EPSILON, contact.x + CONTACT_EPSILON,
+                        box.maxY + CONTACT_EPSILON * 2, contact.z + CONTACT_EPSILON);
+                if (!vehicle.physicsEngine.getBlockCollisionBoxes(surfaceProbe).isEmpty()) {
+                    continue;
                 }
                 if (nearest == null || length < nearest.length()) {
                     nearest = new Contact(length, contact, i);
