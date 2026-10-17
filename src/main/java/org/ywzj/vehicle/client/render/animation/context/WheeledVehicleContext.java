@@ -28,9 +28,12 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
     }
 
     private void advanceWheelRotation() {
-        float deltaTime = (this.currentTimeMillis() - this.lastRenderTime()) / 1000f;
+        long lastTime = this.lastRenderTime();
+        if (lastTime == 0) {
+            return;
+        }
+        float deltaTime = Math.max(0f, Math.min((this.currentTimeMillis() - lastTime) / 1000f, 0.1f));
         float forwardSpeed = this.getForwardSpeed();
-        
         // 累积轮胎旋转角度，速度单位已经是方块/tick，需要转换为方块/秒
         float distance = forwardSpeed * deltaTime * 20; // 转换为方块/秒
         wheelRotation += distance * 360f; // 简化计算，后续在getWheelDegrees中根据半径调整

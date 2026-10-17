@@ -11,6 +11,9 @@ import java.util.Map;
  */
 public class BaseDisplayPojo {
 
+    @SerializedName("display_group")
+    public ResourceLocation displayGroup;
+
     @SerializedName("model")
     public ResourceLocation model;
 

@@ -70,7 +70,7 @@ public class VehicleModdingToolScreen extends ApricityScreen {
         this.viewRotX = 180 - vehicle.getXRot();
         this.viewRotY = 180 + LocalVehiclePlayer.instance.getPlayer().getYRot();
         ClientAssetsManager.INSTANCE.getVehicleDisplay(vehicle.getDisplayId()).ifPresent(display -> {
-            List<BaseDisplay> displays = ClientAssetsManager.INSTANCE.getVariableDisplay(display.getModelPath());
+            List<BaseDisplay> displays = ClientAssetsManager.INSTANCE.getVariableDisplay(display.getDisplayGroup());
             displays.stream().map(BaseDisplay::getDisplayId).distinct().forEach(variableDisplayIds::add);
         });
         variableDisplayIds.sort((left, right) -> left.toString().compareTo(right.toString()));

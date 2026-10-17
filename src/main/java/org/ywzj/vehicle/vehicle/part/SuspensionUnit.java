@@ -45,6 +45,10 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     private List<Vec3> supportOffsets = List.of(Vec3.ZERO);
     private double[] supportRestLengths;
     private double[] supportMaxCompressions;
+    private double trackCenterZ = Double.NaN;
+    private Vec3 trackBottomCenter;
+    private float visualOffsetPartialTick = Float.NaN;
+    private Vec3 visualOffsetCache = Vec3.ZERO;
     private final List<SupportContact> supportContacts = new ArrayList<>();
 
     private record Contact(double length, Vec3 position, int index) {}
@@ -67,11 +71,50 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     public void buildStructure(Map<VehicleCubeGroup, VehicleCubeGroup> groups) {
         super.buildStructure(groups);
         supportOffsets = buildSupportOffsets();
+        calculateTrackBounds();
         supportRestLengths = new double[supportOffsets.size()];
         supportMaxCompressions = new double[supportOffsets.size()];
         Arrays.fill(supportRestLengths, restLength);
         Arrays.fill(supportMaxCompressions, maxCompression);
         supportContacts.clear();
+    }
+
+    private void calculateTrackBounds() {
+        trackCenterZ = Double.NaN;
+        trackBottomCenter = null;
+        if (partCubeOBBs == null || partCubeOBBs.isEmpty()) {
+            return;
+        }
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        List<Vec3> bottomPoints = new ArrayList<>();
+        for (VehicleCubeOBB cube : partCubeOBBs) {
+            if (cube.group == null) {
+                continue;
+            }
+            for (int corner = 0; corner < 8; corner++) {
+                Vec3 point = new Vec3(
+                        cube.x + ((corner & 1) == 0 ? 0 : cube.width),
+                        cube.y + ((corner & 2) == 0 ? 0 : cube.height),
+                        cube.z + ((corner & 4) == 0 ? 0 : cube.depth)
+                );
+                Vec3 transformed = cube.group.globalTransform(point, true,
+                        group -> group.baseRotation, group -> Vec3.ZERO).offset();
+                minZ = Math.min(minZ, transformed.z);
+                maxZ = Math.max(maxZ, transformed.z);
+                if ((corner & 2) == 0) {
+                    bottomPoints.add(transformed);
+                }
+            }
+        }
+        if (Double.isFinite(minZ) && Double.isFinite(maxZ)) {
+            trackCenterZ = (minZ + maxZ) * 0.5;
+            trackBottomCenter = averageTrackPoints(bottomPoints);
+        }
+    }
+
+    private static Vec3 averageTrackPoints(List<Vec3> points) {
+        return points.stream().reduce(Vec3.ZERO, Vec3::add).scale(1.0 / points.size());
     }
 
     private List<Vec3> buildSupportOffsets() {
@@ -320,6 +363,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         if (structureGroup == null) {
             return;
         }
+        visualOffsetPartialTick = Float.NaN;
         structureGroup.offsetO = structureGroup.offset;
         structureGroup.rotationO = new Quaternionf(structureGroup.rotation);
         setOffset(new Vec3(0, compression - restLength, 0));
@@ -380,8 +424,10 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         if (structureGroup == null) {
             return Vec3.ZERO;
         }
-        float interpolatedCompression = (float) Mth.lerp(partialTick,
-                structureGroup.offsetO.y + restLength, compression);
+        if (Float.floatToIntBits(partialTick) == Float.floatToIntBits(visualOffsetPartialTick)) {
+            return visualOffsetCache;
+        }
+        float interpolatedCompression = (float) Mth.lerp(partialTick, structureGroup.offsetO.y + restLength, compression);
         float visualCompression = getVisualCompression(partialTick, interpolatedCompression);
         Vec3 visualOffset = new Vec3(0, visualCompression - restLength, 0);
         Vec3 position = structureGroup.globalTransform(Vec3.ZERO, false,
@@ -390,7 +436,37 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                         : group.offsetO.lerp(group.offset, partialTick)).offset();
         Vec3 basePosition = structureGroup.globalTransform(Vec3.ZERO, false,
                 group -> getViewGroupRotation(group, partialTick), group -> Vec3.ZERO).offset();
-        return position.subtract(basePosition);
+        visualOffsetPartialTick = partialTick;
+        visualOffsetCache = position.subtract(basePosition);
+        return visualOffsetCache;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public Vec3 getTrackFloatingPoint(float partialTick, double trackAxisX) {
+        return getTrackFloatingPoint(partialTick, getTrackFloatingReference(trackAxisX));
+    }
+
+    double getTrackCenterZ() {
+        return trackCenterZ;
+    }
+
+    Vec3 getTrackFloatingReference(double trackAxisX) {
+        return trackBottomCenter == null ? null : new Vec3(trackAxisX, trackBottomCenter.y, trackBottomCenter.z);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    Vec3 getTrackFloatingPoint(float partialTick, Vec3 reference) {
+        if (structureGroup == null || reference == null) {
+            return null;
+        }
+        Vec3 visualOffset = getVisualOffset(partialTick);
+        return reference.add(0, visualOffset.y, visualOffset.z);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public List<Vec3> getTrackFloatingPoints(float partialTick, double trackAxisX) {
+        Vec3 point = getTrackFloatingPoint(partialTick, trackAxisX);
+        return point == null ? List.of() : List.of(point);
     }
 
     @Override

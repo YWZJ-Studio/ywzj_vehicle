@@ -119,6 +119,16 @@
             "owner_view_offset": [0, 3.2, 0]
         },
         {
+            "id": "track",
+            "name": "track",
+            "type": "ywzj_vehicle:track",
+            "structure_bone": "tracks",
+            "suspensions": {
+                "track_left": ["suspension_left_1", "suspension_left_2", "suspension_left_3", "suspension_left_4", "suspension_left_5", "suspension_left_6", "suspension_left_7"],
+                "track_right": ["suspension_right_1", "suspension_right_2", "suspension_right_3", "suspension_right_4", "suspension_right_5", "suspension_right_6", "suspension_right_7"]
+            }
+        },
+        {
             "id": "suspension_left_1",
             "name": "suspension_left_1",
             "type": "ywzj_vehicle:suspension",

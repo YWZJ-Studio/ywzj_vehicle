@@ -149,8 +149,8 @@ public enum ClientAssetsManager {
     }
 
     @NotNull
-    public List<BaseDisplay> getVariableDisplay(ResourceLocation model) {
-        return vehicleDisplayManager.getModelWithVariableDisplay().get(model);
+    public List<BaseDisplay> getVariableDisplay(ResourceLocation displayGroup) {
+        return vehicleDisplayManager == null ? List.of() : vehicleDisplayManager.getDisplayGroups().getOrDefault(displayGroup, List.of());
     }
 
     @NotNull

@@ -18,9 +18,7 @@ import org.ywzj.vehicle.custom.part.data.TrackUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalDouble;
+import java.util.*;
 
 public class TrackUnit extends PartUnit<TrackUnitData> {
 
@@ -31,12 +29,27 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
 
     public TrackUnit(int index, AbstractVehicle vehicle, TrackUnitData data) {
         super(index, vehicle, data);
-        this.tracks = createPaths(data.getTracks());
+        this.tracks = createPaths(data.getTrackDefinitions());
     }
 
-    private static List<TrackPath> createPaths(List<List<Vec3>> rawTracks) {
-        return rawTracks.stream()
-                .map(TrackPath::new)
+    @Override
+    public void combineAndInit(Map<String, PartUnit<?>> partUnitsView, AbstractVehicle vehicle) {
+        super.combineAndInit(partUnitsView, vehicle);
+        for (TrackPath track : tracks) {
+            List<SuspensionUnit<?>> suspensions = new ArrayList<>();
+            for (String suspensionUnitId : track.suspensionUnitIds()) {
+                PartUnit<?> partUnit = partUnitsView.get(suspensionUnitId);
+                if (partUnit instanceof SuspensionUnit<?> suspension) {
+                    suspensions.add(suspension);
+                }
+            }
+            track.setSuspensions(suspensions);
+        }
+    }
+
+    private static List<TrackPath> createPaths(List<TrackUnitData.TrackDefinition> definitions) {
+        return definitions.stream()
+                .map(definition -> new TrackPath(definition.points(), definition.suspensionUnitIds()))
                 .filter(TrackPath::isValid)
                 .toList();
     }
@@ -58,6 +71,7 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             return;
         }
         for (TrackPath track : tracks) {
+            track.updateFloatingPoints(partialTick);
             track.setModuleLength(config.moduleLength);
         }
         advanceAnimation();
@@ -139,18 +153,176 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
     private record PathSample(Vec3 position, Vec3 tangent, Vec3 inwardNormal) {}
     private record PathSegment(Vec3 start, Vec3 end, Vec3 tangent, double length) {}
     private record PositionSample(Vec3 position, Vec3 tangent) {}
+    private record OrderedPoint(double distance, int order, Vec3 point) {}
+    private record SuspensionPoint(SuspensionUnit<?> suspension, Vec3 reference, double distance) {}
 
     private static final class TrackPath {
 
-        private final List<PathSegment> segments;
-        private final double length;
-        private final Vec3 center;
+        private final List<Vec3> basePoints;
+        private final List<String> suspensionUnitIds;
+        private final List<PathSegment> baseSegments;
+        private final double[] basePointDistances;
+        private final double[] baseSegmentDistances;
+        private final double baseLength;
+        private List<PathSegment> segments;
+        private double length;
+        private Vec3 center;
         private int linkCount;
         private double spacing;
-        private final double lateralOffset;
+        private double lateralOffset;
         private double phase;
+        private List<SuspensionPoint> suspensionPoints = List.of();
+        private double floatingMinZ;
+        private double floatingMaxZ;
+        private List<Vec3> floatingPoints = List.of();
+        private boolean floatingPathActive;
 
-        private TrackPath(List<Vec3> points) {
+        private TrackPath(List<Vec3> points, List<String> suspensionUnitIds) {
+            this.basePoints = List.copyOf(points);
+            this.suspensionUnitIds = List.copyOf(suspensionUnitIds);
+            this.baseSegments = buildSegments(basePoints);
+            this.basePointDistances = buildPointDistances(basePoints);
+            this.baseSegmentDistances = buildSegmentDistances(baseSegments);
+            this.baseLength = baseSegments.stream().mapToDouble(PathSegment::length).sum();
+            rebuild(basePoints);
+        }
+
+        private void setSuspensions(List<SuspensionUnit<?>> suspensions) {
+            List<SuspensionUnit<?>> validSuspensions = suspensions.stream()
+                    .filter(suspension -> Double.isFinite(suspension.getTrackCenterZ()))
+                    .toList();
+            SuspensionUnit<?> positiveEndSuspension = validSuspensions.stream()
+                    .max(Comparator.comparingDouble(SuspensionUnit::getTrackCenterZ)).orElse(null);
+            SuspensionUnit<?> negativeEndSuspension = validSuspensions.stream()
+                    .min(Comparator.comparingDouble(SuspensionUnit::getTrackCenterZ)).orElse(null);
+            List<SuspensionPoint> points = new ArrayList<>();
+            for (SuspensionUnit<?> suspension : validSuspensions) {
+                Vec3 reference = suspension.getTrackFloatingReference(lateralOffset);
+                if (reference == null) {
+                    continue;
+                }
+                double distance = projectDistance(new Vec3(reference.x, trackAxisYAtZ(reference.z), reference.z));
+                points.add(new SuspensionPoint(suspension, reference, distance));
+                int zDirection = suspension == positiveEndSuspension ? 1 : suspension == negativeEndSuspension ? -1 : 0;
+                if (zDirection != 0) {
+                    // 首尾保留底面中心点，并额外接管前方或后方最近的下行段结构点。
+                    int nearestIndex = nearestLowerPointIndex(reference, zDirection);
+                    if (nearestIndex >= 0) {
+                        points.add(new SuspensionPoint(suspension, basePoints.get(nearestIndex),
+                                basePointDistances[nearestIndex]));
+                    }
+                }
+            }
+            suspensionPoints = List.copyOf(points);
+            floatingMinZ = points.stream().mapToDouble(point -> point.reference().z).min().orElse(0);
+            floatingMaxZ = points.stream().mapToDouble(point -> point.reference().z).max().orElse(0);
+        }
+
+        private int nearestLowerPointIndex(Vec3 reference, int zDirection) {
+            int nearestIndex = -1;
+            double nearestDistance = Double.POSITIVE_INFINITY;
+            for (int index = 0; index < basePoints.size(); index++) {
+                Vec3 point = basePoints.get(index);
+                if ((point.z - reference.z) * zDirection <= 1.0E-6
+                        || point.y > trackAxisYAtZ(point.z) + 1.0E-6) {
+                    continue;
+                }
+                double distance = point.distanceToSqr(reference);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestIndex = index;
+                }
+            }
+            return nearestIndex;
+        }
+
+        private List<String> suspensionUnitIds() {
+            return suspensionUnitIds;
+        }
+
+        @OnlyIn(Dist.CLIENT)
+        private void updateFloatingPoints(float partialTick) {
+            if (baseLength <= 0) {
+                return;
+            }
+            List<Vec3> floatingPoints = new ArrayList<>();
+            List<OrderedPoint> ordered = new ArrayList<>(basePoints.size() + suspensionPoints.size());
+            for (SuspensionPoint binding : suspensionPoints) {
+                Vec3 point = binding.suspension().getTrackFloatingPoint(partialTick, binding.reference());
+                if (point != null) {
+                    ordered.add(new OrderedPoint(binding.distance(), basePoints.size() + floatingPoints.size(), point));
+                    floatingPoints.add(point);
+                }
+            }
+            if (floatingPoints.isEmpty()) {
+                if (floatingPathActive) {
+                    rebuild(basePoints);
+                    this.floatingPoints = List.of();
+                    floatingPathActive = false;
+                }
+                return;
+            }
+            if (samePoints(this.floatingPoints, floatingPoints)) {
+                return;
+            }
+            this.floatingPoints = List.copyOf(floatingPoints);
+            floatingPathActive = true;
+            for (int index = 0; index < basePoints.size(); index++) {
+                Vec3 point = basePoints.get(index);
+                // 下行段由悬挂点接管；同一 Z 范围内的上方回程路径仍由结构模型定义。
+                if (point.z >= floatingMinZ - 1.0E-6 && point.z <= floatingMaxZ + 1.0E-6
+                        && point.y <= trackAxisYAtZ(point.z) + 1.0E-6) {
+                    continue;
+                }
+                ordered.add(new OrderedPoint(basePointDistances[index], index, point));
+            }
+            ordered.sort(Comparator.comparingDouble(OrderedPoint::distance)
+                    .thenComparingInt(OrderedPoint::order));
+            List<Vec3> points = new ArrayList<>(ordered.stream().map(OrderedPoint::point).toList());
+            if (basePoints.get(0).distanceToSqr(basePoints.get(basePoints.size() - 1)) <= 1.0E-12
+                    && points.get(0).distanceToSqr(points.get(points.size() - 1)) > 1.0E-12) {
+                points.add(points.get(0));
+            }
+            rebuild(points);
+        }
+
+        private double trackAxisYAtZ(double z) {
+            double bestY = Double.POSITIVE_INFINITY;
+            double bestError = Double.POSITIVE_INFINITY;
+            for (PathSegment segment : baseSegments) {
+                double zDelta = segment.end().z - segment.start().z;
+                if (Math.abs(zDelta) <= 1.0E-6) {
+                    double error = Math.abs(z - segment.start().z);
+                    if (error < bestError + 1.0E-6) {
+                        if (error < bestError - 1.0E-6) {
+                            bestY = Double.POSITIVE_INFINITY;
+                            bestError = error;
+                        }
+                        bestY = Math.min(bestY, Math.min(segment.start().y, segment.end().y));
+                    }
+                    continue;
+                }
+                double progress = Math.max(0, Math.min(1, (z - segment.start().z) / zDelta));
+                Vec3 point = segment.start().lerp(segment.end(), progress);
+                double error = Math.abs(z - point.z);
+                if (error < bestError - 1.0E-6) {
+                    bestError = error;
+                    bestY = point.y;
+                } else if (error < bestError + 1.0E-6) {
+                    bestY = Math.min(bestY, point.y);
+                }
+            }
+            if (Double.isFinite(bestY)) {
+                return bestY;
+            }
+            return basePoints.stream()
+                    .min(Comparator.comparingDouble(point -> Math.abs(point.z - z)))
+                    .map(Vec3::y)
+                    .orElse(0.0);
+        }
+
+        private void rebuild(List<Vec3> points) {
+            double phaseRatio = length > 1.0E-6 ? phase / length : 0;
             List<Vec3> smoothedPoints = smoothPoints(points);
             List<PathSegment> builtSegments = new ArrayList<>();
             double totalLength = 0;
@@ -171,10 +343,73 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
                     weightedCenter = weightedCenter.add(start.add(end).scale(0.5 * segmentLength));
                 }
             }
-            this.segments = List.copyOf(builtSegments);
-            this.length = totalLength;
-            this.center = totalLength > 0 ? weightedCenter.scale(1 / totalLength) : Vec3.ZERO;
-            this.lateralOffset = totalLength > 0 ? weightedX / totalLength : 0;
+            segments = List.copyOf(builtSegments);
+            length = totalLength;
+            center = totalLength > 0 ? weightedCenter.scale(1 / totalLength) : Vec3.ZERO;
+            lateralOffset = totalLength > 0 ? weightedX / totalLength : 0;
+            phase = totalLength > 0 ? positiveModulo(phaseRatio * totalLength, totalLength) : 0;
+        }
+
+        private static List<PathSegment> buildSegments(List<Vec3> points) {
+            List<PathSegment> result = new ArrayList<>();
+            for (int index = 0; index < points.size() - 1; index++) {
+                Vec3 start = points.get(index);
+                Vec3 end = points.get(index + 1);
+                Vec3 offset = end.subtract(start);
+                double segmentLength = offset.length();
+                if (segmentLength > 1.0E-6) {
+                    result.add(new PathSegment(start, end, offset.scale(1 / segmentLength), segmentLength));
+                }
+            }
+            return List.copyOf(result);
+        }
+
+        private static double[] buildPointDistances(List<Vec3> points) {
+            double[] distances = new double[points.size()];
+            for (int index = 1; index < points.size(); index++) {
+                distances[index] = distances[index - 1] + points.get(index - 1).distanceTo(points.get(index));
+            }
+            return distances;
+        }
+
+        private static double[] buildSegmentDistances(List<PathSegment> segments) {
+            double[] distances = new double[segments.size()];
+            double distance = 0;
+            for (int index = 0; index < segments.size(); index++) {
+                distances[index] = distance;
+                distance += segments.get(index).length();
+            }
+            return distances;
+        }
+
+        private static boolean samePoints(List<Vec3> previous, List<Vec3> current) {
+            if (previous.size() != current.size()) {
+                return false;
+            }
+            for (int index = 0; index < previous.size(); index++) {
+                if (previous.get(index).distanceToSqr(current.get(index)) > 1.0E-8) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private double projectDistance(Vec3 point) {
+            double bestDistance = 0;
+            double bestError = Double.POSITIVE_INFINITY;
+            for (int index = 0; index < baseSegments.size(); index++) {
+                PathSegment segment = baseSegments.get(index);
+                Vec3 offset = point.subtract(segment.start());
+                double progress = Math.max(0, Math.min(segment.length(), offset.dot(segment.tangent())))
+                        / segment.length();
+                Vec3 projected = segment.start().lerp(segment.end(), progress);
+                double error = projected.distanceToSqr(point);
+                if (error < bestError) {
+                    bestError = error;
+                    bestDistance = baseSegmentDistances[index] + progress * segment.length();
+                }
+            }
+            return bestDistance;
         }
 
         private static List<Vec3> smoothPoints(List<Vec3> points) {
