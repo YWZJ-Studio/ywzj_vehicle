@@ -10,6 +10,9 @@ public class SuspensionUnitPojo extends PartUnitPojo {
     @SerializedName("damping")
     public float damping = 800f;
 
+    @SerializedName("acceleration")
+    public float acceleration = 32f;
+
     @SerializedName("rest_length")
     public float restLength = 0.1f;
 

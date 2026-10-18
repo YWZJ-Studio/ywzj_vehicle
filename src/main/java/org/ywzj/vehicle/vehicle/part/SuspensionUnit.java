@@ -40,6 +40,8 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     private float maxCompression;
     private float compression;
     private float remoteCompression;
+    private float extensionVelocity;
+    private int extensionTick = Integer.MIN_VALUE;
     private boolean grounded;
     private double contactCompression;
     private List<Vec3> supportOffsets = List.of(Vec3.ZERO);
@@ -269,27 +271,55 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         Vec3 mountWorld = worldPositionWithBaseRot(pivotOffset);
         grounded = false;
         supportContacts.clear();
-        compression = getMinCompression();
+        compression = clampCompression(compression);
         contactCompression = compression;
         Vec3 direction = getSuspensionDirection();
         if (!isActive() || direction.y >= -0.25) {
+            extensionVelocity = 0;
             return;
         }
         List<Contact> contacts = findContacts(mountWorld, direction, CONTACT_RECOVERY, 1);
+        double contactLength = nearestContactLength(contacts);
+        contactCompression = contactLength == Double.POSITIVE_INFINITY
+                ? getMinCompression() : restLength - contactLength;
+        advanceCompression(clampCompression((float) contactCompression));
         double weight = 1.0 / getSupportOffsets().size();
         for (Contact point : contacts) {
+            if (point.length() > restLength - compression + CONTACT_EPSILON) {
+                continue;
+            }
             double pointRestLength = supportRestLengths[point.index()];
             double minCompression = getMinCompression(pointRestLength);
             supportContacts.add(new SupportContact(point.position(),
                     pointRestLength - point.length(), minCompression,
                     Math.max(supportMaxCompressions[point.index()], minCompression), weight));
         }
-        double contactLength = nearestContactLength(contacts);
-        if (contactLength != Double.POSITIVE_INFINITY) {
-            // 限位求解保留穿透量，轮组变换限制在机械行程内。
-            contactCompression = restLength - contactLength;
-            compression = clampCompression((float) contactCompression);
-            grounded = true;
+        grounded = !supportContacts.isEmpty();
+    }
+
+    private void advanceCompression(float target) {
+        // 物理解算前、角积分后都会采样；一个 tick 只能推进一次行程。
+        if (extensionTick == vehicle.tickCount) {
+            return;
+        }
+        extensionTick = vehicle.tickCount;
+        float remaining = compression - target;
+        if (remaining == 0) {
+            extensionVelocity = 0;
+            return;
+        }
+        if (extensionVelocity * remaining < 0) {
+            extensionVelocity = 0;
+        }
+        float acceleration = data.getAcceleration() / PhysicsHelper.TICKS_PER_SECOND_SQUARED;
+        float signedAcceleration = Math.copySign(acceleration, remaining);
+        float travel = extensionVelocity + 0.5f * signedAcceleration;
+        if (Math.abs(travel) >= Math.abs(remaining)) {
+            compression = target;
+            extensionVelocity = 0;
+        } else {
+            compression = clampCompression(compression - travel);
+            extensionVelocity += signedAcceleration;
         }
     }
 
@@ -329,15 +359,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                     if (!box.contains(compressedPoint)) {
                         continue;
                     }
-                    // 轮底进入台阶后，由限位求解恢复超行程穿透。
                     contact = new Vec3(compressedPoint.x, box.maxY, compressedPoint.z);
-                }
-                // 支撑顶面不能被上层方块覆盖。
-                AABB surfaceProbe = new AABB(contact.x - CONTACT_EPSILON, box.maxY + CONTACT_EPSILON,
-                        contact.z - CONTACT_EPSILON, contact.x + CONTACT_EPSILON,
-                        box.maxY + CONTACT_EPSILON * 2, contact.z + CONTACT_EPSILON);
-                if (!vehicle.physicsEngine.getBlockCollisionBoxes(surfaceProbe).isEmpty()) {
-                    continue;
                 }
                 if (nearest == null || length < nearest.length()) {
                     nearest = new Contact(length, contact, i);
@@ -353,8 +375,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     @Override
     public void tick() {
         if (vehicle.level().isClientSide()) {
-            // 按插值车身重建轮组几何，接地状态仍由服务端同步。
-            compression = getVisualCompression(1, Mth.lerp(0.5f, compression, remoteCompression));
+            compression = clampCompression(remoteCompression);
         } else {
             // 角积分后重新采样安装轴。
             simulate();
@@ -403,16 +424,6 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         return List.copyOf(supportContacts);
     }
 
-    private float getVisualCompression(float partialTick, float fallback) {
-        Vec3 direction = getSuspensionDirection(partialTick);
-        if (!isActive() || direction.y >= -0.25) {
-            return clampCompression(fallback);
-        }
-        Vec3 mount = worldPositionWithBaseRot(pivotOffset, partialTick);
-        double length = nearestContactLength(findContacts(mount, direction, CONTACT_RECOVERY, partialTick));
-        return clampCompression(length != Double.POSITIVE_INFINITY ? (float) (restLength - length) : fallback);
-    }
-
     public boolean isGrounded() {
         return grounded && isActive();
     }
@@ -436,7 +447,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             return visualOffsetCache;
         }
         float interpolatedCompression = (float) Mth.lerp(partialTick, structureGroup.offsetO.y + restLength, compression);
-        float visualCompression = getVisualCompression(partialTick, interpolatedCompression);
+        float visualCompression = clampCompression(interpolatedCompression);
         Vec3 visualOffset = new Vec3(0, visualCompression - restLength, 0);
         Vec3 position = structureGroup.globalTransform(Vec3.ZERO, false,
                 group -> getViewGroupRotation(group, partialTick),
@@ -518,6 +529,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     public CompoundTag serializeNBT() {
         CompoundTag tag = super.serializeNBT();
         tag.putFloat("Compression", compression);
+        tag.putFloat("ExtensionVelocity", extensionVelocity);
         tag.putBoolean("Grounded", grounded);
         return tag;
     }
@@ -528,6 +540,9 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         if (tag.contains("Compression", Tag.TAG_ANY_NUMERIC)) {
             compression = remoteCompression = clampCompression(tag.getFloat("Compression"));
         }
+        float savedExtensionVelocity = tag.getFloat("ExtensionVelocity");
+        extensionVelocity = Float.isFinite(savedExtensionVelocity) ? savedExtensionVelocity : 0;
+        extensionTick = Integer.MIN_VALUE;
         contactCompression = compression;
         grounded = tag.getBoolean("Grounded");
         updateTransform();
