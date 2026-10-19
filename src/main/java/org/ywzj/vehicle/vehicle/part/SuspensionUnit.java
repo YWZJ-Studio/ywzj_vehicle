@@ -361,6 +361,9 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                     }
                     contact = new Vec3(compressedPoint.x, box.maxY, compressedPoint.z);
                 }
+                if (!vehicle.physicsEngine.isOpenSupportSurface(contact)) {
+                    continue;
+                }
                 if (nearest == null || length < nearest.length()) {
                     nearest = new Contact(length, contact, i);
                 }
