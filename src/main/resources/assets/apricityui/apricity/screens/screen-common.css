@@ -4,6 +4,11 @@ body {
     user-select: none;
 }
 
+.ore-theme,
+.ore-theme * {
+    font-family: "Microsoft YaHei", sans-serif !important;
+}
+
 .ore-theme {
     --ore-canvas: transparent;
     --ore-surface: rgba(72, 73, 74, 0.80);
@@ -133,7 +138,7 @@ body.ore-theme.machine-screen .navbar-brand {
 .ore-theme .profile-description,
 .ore-theme #vehicle-description,
 .ore-theme .description-panel .card-body {
-    font-family: "Noto Sans SC", "Segoe UI", OreRegular, sans-serif;
+    font-family: "Microsoft YaHei", sans-serif;
     font-weight: bold;
 }
 

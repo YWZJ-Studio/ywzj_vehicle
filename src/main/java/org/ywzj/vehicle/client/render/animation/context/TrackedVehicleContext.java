@@ -34,9 +34,12 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
         this.advanceTrackProgress();
     }
 
-    // tick里会自动调用
     public void advanceTrackProgress() {
-        float deltaTime = (this.currentTimeMillis() - this.lastRenderTime()) / 1000f;
+        long lastTime = this.lastRenderTime();
+        if (lastTime == 0) {
+            return;
+        }
+        float deltaTime = Math.max(0f, Math.min((this.currentTimeMillis() - lastTime) / 1000f, 0.1f));
         float forwardSpeed = this.getForwardSpeed();
         float turnSpeed = this.getTurnSpeed();
         if (trackAnimationInstance != null) {

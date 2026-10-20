@@ -60,9 +60,6 @@
                                     "invert": false
                                 }
                             ]
-                        },
-                        {
-                            "type": "track_animation"
                         }
                     ]
                 },

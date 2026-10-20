@@ -4,6 +4,7 @@ public class SuspensionUnitData extends PartUnitData {
 
     private final float springStiffness;
     private final float damping;
+    private final float acceleration;
     private final float restLength;
     private final float maxCompression;
     private final float maxExtension;
@@ -13,6 +14,7 @@ public class SuspensionUnitData extends PartUnitData {
         super(pojo);
         springStiffness = pojo.springStiffness;
         damping = pojo.damping;
+        acceleration = pojo.acceleration;
         restLength = pojo.restLength;
         maxCompression = Math.min(restLength, pojo.maxCompression);
         maxExtension = pojo.maxExtension;
@@ -25,6 +27,10 @@ public class SuspensionUnitData extends PartUnitData {
 
     public float getDamping() {
         return damping;
+    }
+
+    public float getAcceleration() {
+        return acceleration;
     }
 
     public float getRestLength() {

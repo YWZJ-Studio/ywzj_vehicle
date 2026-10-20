@@ -32,7 +32,7 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
     public final Marker marker;
     private final String path;
     private Map<ResourceLocation, BaseDisplay> displayMap = Map.of();
-    private final Map<ResourceLocation, List<BaseDisplay>> modelWithVariableDisplay = new ConcurrentHashMap<>();
+    private final Map<ResourceLocation, List<BaseDisplay>> displayGroups = new ConcurrentHashMap<>();
     private final ScriptManager scriptManager;
     private final ScriptContextFactory scriptContextFactory;
 
@@ -54,6 +54,7 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
     @Override
     public void apply(@NotNull Map<ResourceLocation, JsonElement> resources, @NotNull ResourceManager manager, @NotNull ProfilerFiller pProfiler) {
         ImmutableMap.Builder<ResourceLocation, BaseDisplay> displayMapBuilder = ImmutableMap.builder();
+        displayGroups.clear();
         
         for (var displayIdAndDataJson : resources.entrySet()) {
             try {
@@ -86,8 +87,8 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
 
                 displayMapBuilder.put(displayIdAndDataJson.getKey(), display);
                 display.setDisplayId(displayIdAndDataJson.getKey());
-                if (display.getModelPath() != null) {
-                    modelWithVariableDisplay.computeIfAbsent(display.getModelPath(), k -> new ArrayList<>()).add(display);
+                if (display.getDisplayGroup() != null) {
+                    displayGroups.computeIfAbsent(display.getDisplayGroup(), k -> new ArrayList<>()).add(display);
                 }
             } catch (Exception e) {
                 YwzjVehicle.LOGGER.error(marker, "Failed to load vehicle display: {}", displayIdAndDataJson.getKey(), e);
@@ -101,8 +102,8 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
         return displayMap;
     }
 
-    public Map<ResourceLocation, List<BaseDisplay>> getModelWithVariableDisplay() {
-        return modelWithVariableDisplay;
+    public Map<ResourceLocation, List<BaseDisplay>> getDisplayGroups() {
+        return displayGroups;
     }
 
 }

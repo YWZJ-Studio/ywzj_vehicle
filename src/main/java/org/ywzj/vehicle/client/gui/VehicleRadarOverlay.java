@@ -3,12 +3,9 @@ package org.ywzj.vehicle.client.gui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -20,6 +17,7 @@ import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.weapon.MissileEntity;
 import org.ywzj.vehicle.util.RenderHelper;
+import org.ywzj.vehicle.util.VehicleHudText;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
@@ -31,6 +29,9 @@ import java.util.Map;
 
 public class VehicleRadarOverlay implements LayeredDraw.Layer {
 
+    private static final float INSTRUMENT_SCALE = 1.0f;
+    private static final float RWR_RADAR_SPACING = 70;
+
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         float partialTick = deltaTracker.getGameTimeDeltaPartialTick(true);
@@ -40,23 +41,28 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
         if (weaponUnit == null) {
             return;
         }
+        try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
+            float radarX = layout.upperRightX();
+            float radarY = VehicleHudLayout.TELEMETRY_Y
+                    + (VehicleHudLayout.ROW_HEIGHT * 3 + VehicleHudText.LINE_HEIGHT) / 2f;
+            renderInstruments(guiGraphics, partialTick, weaponUnit, radarX, radarY);
+        }
+    }
+
+    private void renderInstruments(GuiGraphics guiGraphics, float partialTick, WeaponUnit weaponUnit,
+                                   float centerX, float radarY) {
         AbstractVehicle vehicle = weaponUnit.getVehicle();
         PoseStack poseStack = guiGraphics.pose();
-        int centerX = screenWidth / 2 + 128;
-        int centerY = screenHeight - 80;
         poseStack.pushPose();
         {
             List<RadarUnit> radarUnits = weaponUnit.getRadarUnits();
             if (!radarUnits.isEmpty()) {
-                poseStack.translate(centerX - (radarUnits.size() - 1) * 32, centerY, 0);
+                poseStack.translate(centerX - (radarUnits.size() - 1) * 32, radarY, 0);
+                poseStack.scale(INSTRUMENT_SCALE, INSTRUMENT_SCALE, 1);
                 int radarCount = radarUnits.size();
                 float radius = radarCount == 1 ? 50.0f : 50.0f / radarCount / 0.6f;
                 for (RadarUnit radarUnit : radarUnits) {
-                    if (radarUnit.isUiHide()) {
-                        continue;
-                    }
-                    // 雷达
-                    if (!radarUnit.isOn()) {
+                    if (radarUnit.isUiHide() || !radarUnit.isOn()) {
                         continue;
                     }
                     double maxScanDistance = radarUnit.getMaxScanDistance();
@@ -66,12 +72,22 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
                     double yRot = radarUnit.getYRot();
                     int radarColor = Color.RADAR_SECTOR;
                     int lineColor = Color.GREEN;
-                    Matrix4f matrix = poseStack.last().pose();
-                    // 扫描扇区
                     if (yRotMax - yRotMin >= 360) {
                         yRotMin = 0;
                         yRotMax = 360;
-                    } else {
+                    }
+                    double minY = Math.min(0, Math.min(-Math.cos(Math.toRadians(yRotMin)), -Math.cos(Math.toRadians(yRotMax))));
+                    double maxY = Math.max(0, Math.max(-Math.cos(Math.toRadians(yRotMin)), -Math.cos(Math.toRadians(yRotMax))));
+                    if (Math.ceil(yRotMin / 360) <= Math.floor(yRotMax / 360)) {
+                        minY = -1;
+                    }
+                    if (Math.ceil((yRotMin - 180) / 360) <= Math.floor((yRotMax - 180) / 360)) {
+                        maxY = 1;
+                    }
+                    double visualCenterY = (minY + maxY) * radius / 2;
+                    poseStack.translate(0, -visualCenterY, 0);
+                    Matrix4f matrix = poseStack.last().pose();
+                    if (yRotMax - yRotMin < 360) {
                         drawRotatedText(guiGraphics, yRotMin + "°", -8, 0, radius + 8, (float) -yRotMin, Color.GREEN);
                         drawRotatedText(guiGraphics, yRotMax + "°", 8, 0, radius + 8, (float) -yRotMax, Color.GREEN);
                     }
@@ -94,7 +110,7 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
                             RenderHelper.drawLine(poseStack, v, 0.5f, Color.GREEN, 3, 1);
                         }
                     });
-                    poseStack.translate(-radius * Math.sin(yRotMax) * 1.3f, 0, 0);
+                    poseStack.translate(-radius * Math.sin(yRotMax) * 1.3f, visualCenterY, 0);
                 }
             }
         }
@@ -104,28 +120,19 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
         if (warningReceiver != null) {
             poseStack.pushPose();
             {
-                poseStack.pushPose();
-                {
-                    poseStack.translate((float) screenWidth / 2, (float) screenHeight / 2, 0);
-                    if (warningReceiver.targets.values().stream().anyMatch(warnTarget -> warnTarget.warnType() == WarnType.MISSILE_LAUNCH)) {
-                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.missile_incoming"), 0, -55, Color.RED);
-                    } else if (warningReceiver.targets.values().stream().anyMatch(warnTarget -> warnTarget.warnType() == WarnType.RADAR_LOCK)) {
-                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, Component.translatable("ui.being_locked"), 0, -55, Color.RED);
-                    }
-                }
-                poseStack.popPose();
-                poseStack.translate(centerX, centerY - 100, 0);
+                poseStack.translate(centerX, radarY - RWR_RADAR_SPACING * INSTRUMENT_SCALE, 0);
+                poseStack.scale(INSTRUMENT_SCALE, INSTRUMENT_SCALE, 1);
                 // RWR
                 poseStack.pushPose();
                 {
                     poseStack.scale(0.8f, 0.8f, 0.8f);
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, "RWR", 0, -40, Color.GREEN);
+                    VehicleHudText.drawCenteredString(guiGraphics, "RWR", 0, -40, Color.GREEN);
                 }
                 poseStack.popPose();
+                GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 25, Color.BG_DARK_DIM, 1f, 0, 0);
                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 3, Color.GREEN, 0.1f, 0, 0);
                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 25, Color.GREEN, 0.01f, 0, 0);
                 GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 20, Color.GREEN, 0.01f, 0, 0);
-                GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 25, Color.BG_DARK_DIM, 1f, 0, 0);
                 for (Map.Entry<Integer, WarningReceiver.WarnTarget> warnTargetEntry : warningReceiver.targets.entrySet()) {
                     Entity entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(warnTargetEntry.getKey());
                     WarningReceiver.WarnTarget warnTarget = warnTargetEntry.getValue();
@@ -158,7 +165,7 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
                             int alphaInt = Math.max(4, (int) (alpha * 255));
                             color = (alphaInt << 24) | (Color.GREEN & 0x00FFFFFF);
                         }
-                        guiGraphics.drawCenteredString(Minecraft.getInstance().font, StringUtils.isEmpty(info) ? "?" : info, 0, 0, color);
+                        VehicleHudText.drawCenteredString(guiGraphics, StringUtils.isEmpty(info) ? "?" : info, 0, 0, color);
                     }
                     poseStack.popPose();
                 }
@@ -193,7 +200,6 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
     }
 
     private void drawRotatedText(GuiGraphics guiGraphics, String text, int cx, int cy, float r, float angleDeg, int color) {
-        Font font = Minecraft.getInstance().font;
         float rad = -(float) Math.toRadians(angleDeg + 90);
         float x = cx + (float) Math.cos(rad) * r;
         float y = cy + (float) Math.sin(rad) * r;
@@ -202,7 +208,7 @@ public class VehicleRadarOverlay implements LayeredDraw.Layer {
         {
             poseStack.translate(x, y, 0);
             poseStack.scale(0.8f, 0.8f, 0.8f);
-            guiGraphics.drawCenteredString(font, text, 0, 0, color);
+            VehicleHudText.drawCenteredString(guiGraphics, text, 0, 0, color);
         }
         poseStack.popPose();
     }

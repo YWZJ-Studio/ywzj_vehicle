@@ -98,10 +98,10 @@ dependencies {
         exclude group: 'org.joml', module: 'joml'
     }
     // apricityui
-    jarJar(implementation 'com.sighs:ApricityUI-neoforge-1.21.1:1.2.7') {
+    jarJar(implementation 'com.sighs:ApricityUI-neoforge-1.21.1:1.2.8') {
         version {
-            strictly '[1.2.7,)'
-            prefer '1.2.7'
+            strictly '[1.2.8,)'
+            prefer '1.2.8'
         }
     }
     // spark

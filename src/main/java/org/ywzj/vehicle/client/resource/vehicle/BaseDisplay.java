@@ -21,6 +21,7 @@ import java.util.*;
 public class BaseDisplay {
 
     protected ResourceLocation displayId;
+    protected ResourceLocation displayGroup;
     protected ResourceLocation modelPath;
     protected BedrockModelPOJO modelPojo;
     protected VehicleBedrockModel model;
@@ -44,6 +45,7 @@ public class BaseDisplay {
         var animationPojo = pojo.animations == null ? null : ClientAssetsManager.INSTANCE.getAnimation(pojo.animations).orElse(null);
         Set<String> animatedBones = animationPojo == null ? Set.of() : BakerOptions.collectAnimatedBones(animationPojo);
         var loadedModelPojo = ClientAssetsManager.INSTANCE.getModel(pojo.model);
+        this.displayGroup = pojo.displayGroup;
         this.modelPath = pojo.model;
         this.specialBoneEffects = pojo.specialBoneEffects == null ? List.of() : List.copyOf(pojo.specialBoneEffects);
         this.bakerOptions = createBakerOptions(pojo, animatedBones);
@@ -157,6 +159,10 @@ public class BaseDisplay {
 
     public void setDisplayId(ResourceLocation displayId) {
         this.displayId = displayId;
+    }
+
+    public ResourceLocation getDisplayGroup() {
+        return displayGroup != null ? displayGroup : modelPath;
     }
 
     public ResourceLocation getModelPath() {

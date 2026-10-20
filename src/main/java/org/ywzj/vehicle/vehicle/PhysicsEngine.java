@@ -63,6 +63,8 @@ public class PhysicsEngine {
     private float suspensionPitchVelocity;
     private float suspensionRollVelocity;
     private float submergedRatio;
+    private double climbStartHeight = Double.NaN;
+    private boolean climbBlocked;
     public int stuckTick;
 
     private record BodyContacts(List<VehicleCubeOBB.CubePoint> touchPoints, Map<VehicleCubeOBB.CubePoint, Double> supports) {}
@@ -91,6 +93,7 @@ public class PhysicsEngine {
             cube.update(vehicle);
         }
         Vector3f[] axes = cube.obb().getAxes();
+        climbBlocked = false;
         BodyContacts contacts = collectContacts(axes, hasSuspension && vehicle.collision);
         if (hasSuspension && vehicle.collision && climb(contacts.touchPoints)) {
             cube.update(vehicle);
@@ -310,7 +313,7 @@ public class PhysicsEngine {
                 bodyGrounded |= impulse > 1.0E-8;
             }
         }
-        velocity.y = (float) verticalVelocity;
+        velocity.y = (float) (climbBlocked ? Math.min(verticalVelocity, 0) : verticalVelocity);
         suspensionPitchVelocity = (float) pitchVelocity;
         suspensionRollVelocity = (float) rollVelocity;
         Quaternionf step = new Quaternionf(yaw)
@@ -505,15 +508,19 @@ public class PhysicsEngine {
             VehicleCubeOBB.CubeFace face = touchPoint.cubeFace();
             if (face == VehicleCubeOBB.CubeFace.LEFT || face == VehicleCubeOBB.CubeFace.RIGHT
                     || face == VehicleCubeOBB.CubeFace.FRONT || face == VehicleCubeOBB.CubeFace.BACK) {
-                if (touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + physicsCube.spaceY) {
+                if (!climbBlocked && touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + physicsCube.spaceY) {
                     continue;
                 }
                 boolean lateral = face == VehicleCubeOBB.CubeFace.LEFT || face == VehicleCubeOBB.CubeFace.RIGHT;
                 Vec3 normal = new Vec3(axes[lateral ? 0 : 2]).normalize();
+                if (climbBlocked) {
+                    normal = new Vec3(normal.x, 0, normal.z).normalize();
+                }
                 double normalVelocity = velocity.dot(normal);
                 int direction = face == VehicleCubeOBB.CubeFace.LEFT || face == VehicleCubeOBB.CubeFace.FRONT ? -1 : 1;
                 if (normalVelocity * direction < 0) {
-                    velocity = lateral ? VectorUtil.projectToPlane(velocity, axes, 1, 2)
+                    velocity = climbBlocked ? velocity.subtract(normal.scale(normalVelocity))
+                            : lateral ? VectorUtil.projectToPlane(velocity, axes, 1, 2)
                             : VectorUtil.projectToPlane(velocity, axes, 0, 1);
                     isStuck = true;
                     stuckTick += 1;
@@ -545,7 +552,7 @@ public class PhysicsEngine {
                         }
                         stuckTick -= 2;
                     }
-                } else {
+                } else if (!climbBlocked) {
                     velocity = velocity.subtract(normal.scale(normalVelocity)).add(normal.scale(direction * bounce));
                 }
             } else if (touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.TOP || touchPoint.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM) {
@@ -590,6 +597,23 @@ public class PhysicsEngine {
             }
         }
         velocity = motionBySuspensionImpact(velocity, bottomContacts, axes);
+        if (climbBlocked) {
+            // 底面冲量可能带有水平分量，重新满足已接触墙面的速度约束。
+            for (VehicleCubeOBB.CubePoint point : touchPoints) {
+                Vec3 normal = switch (point.cubeFace()) {
+                    case FRONT -> new Vec3(axes[2]).scale(-1);
+                    case BACK -> new Vec3(axes[2]);
+                    case LEFT -> new Vec3(axes[0]).scale(-1);
+                    case RIGHT -> new Vec3(axes[0]);
+                    default -> Vec3.ZERO;
+                };
+                normal = new Vec3(normal.x, 0, normal.z).normalize();
+                double outwardSpeed = velocity.dot(normal);
+                if (outwardSpeed < 0) {
+                    velocity = velocity.subtract(normal.scale(outwardSpeed));
+                }
+            }
+        }
         Vec3 testPos = new Vec3(physicsCube.obb().center());
         BlockPos testBlockPos = BlockPos.containing(testPos);
         BlockState blockState = vehicle.level().getBlockState(testBlockPos);
@@ -799,6 +823,13 @@ public class PhysicsEngine {
     }
 
     public boolean climb(List<VehicleCubeOBB.CubePoint> touchPoints) {
+        VehicleCubeOBB physicsCube = physicsCube();
+        Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
+                .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
+                .add(vehicle.position()), true);
+        if (vehicle.hasSuspension() && !canSuspensionClimb(touchPoints, bottomPosition.y)) {
+            return false;
+        }
         List<VehicleCubeOBB.CubePoint> climbPoints = new ArrayList<>(touchPoints.stream().filter(p ->
                         p.cubeFace() == VehicleCubeOBB.CubeFace.FRONT
                                 || p.cubeFace() == VehicleCubeOBB.CubeFace.BOTTOM
@@ -810,7 +841,6 @@ public class PhysicsEngine {
         if (vehicle.getXRot() < -15) {
             return false;
         }
-        VehicleCubeOBB physicsCube = physicsCube();
         // 自动爬高
         DoubleSummaryStatistics stats = climbPoints.stream()
                 .mapToDouble(p -> p.obbLocalPos().y)
@@ -823,9 +853,6 @@ public class PhysicsEngine {
         }
         climbPoints.sort(Comparator.comparingDouble(p -> -p.cubePointContext.blockPos().y));
         VehicleCubeOBB.CubePoint liftPoint = climbPoints.get(0);
-        Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
-                .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
-                .add(vehicle.position()), true);
         double liftHeight = liftPoint.cubePointContext.blockPos().y + (isHalfBlock(liftPoint.cubePointContext.blockState()) ? 0.5f : 1f);
         double toLift = Mth.clamp(liftHeight - bottomPosition.y, 0, vehicle.maxUpStep());
         if (toLift <= 0) {
@@ -833,6 +860,70 @@ public class PhysicsEngine {
         }
         vehicle.setPos(vehicle.position().x, vehicle.position().y + toLift, vehicle.position().z);
         return true;
+    }
+
+    private boolean canSuspensionClimb(List<VehicleCubeOBB.CubePoint> touchPoints, double bottomHeight) {
+        List<VehicleCubeOBB.CubePoint> obstacles = touchPoints.stream()
+                .filter(point -> point.cubeFace() != VehicleCubeOBB.CubeFace.TOP)
+                .filter(point -> point.cubePointContext.blockPos().y
+                        + (isHalfBlock(point.cubePointContext.blockState()) ? 0.5 : 1) > bottomHeight + BODY_CONTACT_SLOP)
+                .toList();
+        if (obstacles.isEmpty()) {
+            // 只有离开障碍并重新接地才能开始下一次爬升，悬空时不能刷新额度。
+            if (suspensionGrounded) {
+                climbStartHeight = Double.NaN;
+            }
+            return true;
+        }
+        if (Double.isNaN(climbStartHeight)) {
+            climbStartHeight = vehicle.getSuspensionUnits().stream()
+                    .filter(SuspensionUnit::isGrounded)
+                    .flatMap(unit -> unit.getSupportContacts().stream())
+                    .mapToDouble(contact -> contact.position().y)
+                    .min().orElse(Double.NaN);
+            // 尚未接地时不能以悬空的底盘高度作为新的起跳平面。
+            if (Double.isNaN(climbStartHeight)) {
+                return false;
+            }
+        }
+        double ceiling = climbStartHeight + Math.max(1, vehicle.getStructureLength() * 0.6);
+        Map<BlockPos, Boolean> climbable = new HashMap<>();
+        for (VehicleCubeOBB.CubePoint point : obstacles) {
+            BlockPos pos = BlockPos.containing(point.cubePointContext.blockPos());
+            if (climbable.computeIfAbsent(pos, block -> hasReachableClimbSurface(block, ceiling))) {
+                continue;
+            }
+            climbBlocked = true;
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasReachableClimbSurface(BlockPos pos, double ceiling) {
+        double surface = pos.getY();
+        // 沿同一列合并相连的实体块；墙体中间每一层的顶面都不是开放高平面。
+        double clearance = Math.max(BODY_CONTACT_SKIN, physicsCube().height);
+        AABB column = new AABB(pos.getX(), surface, pos.getZ(), pos.getX() + 1,
+                Math.max(surface + 1, ceiling + clearance), pos.getZ() + 1);
+        List<AABB> boxes = getBlockCollisionBoxes(column);
+        boxes.sort(Comparator.comparingDouble(box -> box.minY));
+        for (AABB box : boxes) {
+            if (box.minY > surface + BODY_CONTACT_SLOP) {
+                return box.minY >= surface + clearance - BODY_CONTACT_SLOP;
+            }
+            surface = Math.max(surface, box.maxY);
+            if (surface > ceiling + BODY_CONTACT_SLOP) {
+                return false;
+            }
+        }
+        return surface > pos.getY();
+    }
+
+    public boolean isOpenSupportSurface(Vec3 position) {
+        return getBlockCollisionBoxes(new AABB(position.x - BODY_CONTACT_SLOP,
+                position.y + BODY_CONTACT_SLOP, position.z - BODY_CONTACT_SLOP,
+                position.x + BODY_CONTACT_SLOP, position.y + BODY_CONTACT_SKIN,
+                position.z + BODY_CONTACT_SLOP)).isEmpty();
     }
 
     private BodyContacts collectContacts(Vector3f[] axes, boolean withBodySupports) {
@@ -902,7 +993,8 @@ public class PhysicsEngine {
                     supportHeight = Math.max(supportHeight, box.maxY);
                 }
             }
-            if (supportHeight != Double.NEGATIVE_INFINITY) {
+            if (supportHeight != Double.NEGATIVE_INFINITY
+                    && isOpenSupportSurface(new Vec3(position.x, supportHeight, position.z))) {
                 supports.put(point, supportHeight);
                 point.cubePointContext.setBlockPos(Vec3.atBottomCenterOf(blockPos));
                 point.cubePointContext.setBlockState(vehicle.level().getBlockState(blockPos));
