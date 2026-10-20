@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.render.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
@@ -87,8 +88,14 @@ public class GuiHelper {
         float g = ((color >>  8) & 255) / 255f;
         float b = ((color      ) & 255) / 255f;
 
-        float inner = radius - thickness;
-        int   segs  = Math.max(4, (int)(64 * (endFrac - startFrac)));
+        float inner = Math.max(0, radius - thickness);
+        int segs = Math.max(8, (int) Math.ceil(192 * (endFrac - startFrac)));
+        Matrix4f matrix = gg.pose().last().pose();
+        float screenScale = (float) (Math.hypot(matrix.m00(), matrix.m01())
+                * Minecraft.getInstance().getWindow().getGuiScale());
+        float feather = Math.min((radius - inner) * 0.5f, 0.5f / Math.max(0.001f, screenScale));
+        float[] radii = {radius, radius - feather, inner + feather, inner};
+        float[] alphas = {0, a, a, 0};
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -96,21 +103,27 @@ public class GuiHelper {
 
         Tesselator tess = Tesselator.getInstance();
         BufferBuilder buf = tess.getBuilder();
-        buf.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        PoseStack.Pose last = gg.pose().last();
-
-        for (int i = 0; i <= segs; i++) {
-            float frac = startFrac + (endFrac - startFrac) * i / segs;
-            // 从 -π/2（12点）顺时针
-            double ang = (frac * 2 * Math.PI) - Math.PI / 2;
-            float cos = (float) Math.cos(ang);
-            float sin = (float) Math.sin(ang);
-
-            buf.vertex(last.pose(), cx + cos * radius, cy + sin * radius, 0)
-                    .color(r, g, b, a).endVertex();
-            buf.vertex(last.pose(), cx + cos * inner, cy + sin * inner, 0)
-                    .color(r, g, b, a).endVertex();
+        for (int i = 0; i < segs; i++) {
+            double angle0 = (startFrac + (endFrac - startFrac) * i / segs) * 2 * Math.PI - Math.PI / 2;
+            double angle1 = (startFrac + (endFrac - startFrac) * (i + 1) / segs) * 2 * Math.PI - Math.PI / 2;
+            float cos0 = (float) Math.cos(angle0);
+            float sin0 = (float) Math.sin(angle0);
+            float cos1 = (float) Math.cos(angle1);
+            float sin1 = (float) Math.sin(angle1);
+            for (int band = 0; band < radii.length - 1; band++) {
+                float outer = radii[band];
+                float inset = radii[band + 1];
+                buf.vertex(matrix, cx + cos0 * outer, cy + sin0 * outer, 0)
+                        .color(r, g, b, alphas[band]).endVertex();
+                buf.vertex(matrix, cx + cos0 * inset, cy + sin0 * inset, 0)
+                        .color(r, g, b, alphas[band + 1]).endVertex();
+                buf.vertex(matrix, cx + cos1 * inset, cy + sin1 * inset, 0)
+                        .color(r, g, b, alphas[band + 1]).endVertex();
+                buf.vertex(matrix, cx + cos1 * outer, cy + sin1 * outer, 0)
+                        .color(r, g, b, alphas[band]).endVertex();
+            }
         }
 
         tess.end();

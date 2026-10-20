@@ -16,15 +16,19 @@ import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
+import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.*;
@@ -37,6 +41,15 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
     public static double screenAimX = 0;
     public static double screenAimY = 0;
     public static boolean showAim = true;
+    private static final Map<AbstractVehicleWeapon<?>, ReloadAnimation> reloadAnimations = new WeakHashMap<>();
+
+    private static final class ReloadAnimation {
+        int remainingTicks;
+        int totalTicks;
+        double sampleTick;
+        double lastTick;
+        float progress;
+    }
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -50,6 +63,8 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
             boolean isHelicopter = vehicle instanceof RotaryWingVehicle;
+            float markerScale = isHelicopter || vehicle instanceof FixedWingVehicle
+                    ? guiGraphics.guiHeight() / VehicleHudLayout.HEIGHT * 1.2f : 1;
             int color = isHelicopter ? Color.GREEN : Color.WHITE;
             PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(player);
             if (operatorUnit instanceof WeaponUnit weaponUnit) {
@@ -60,14 +75,15 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                     poseStack.pushPose();
                     {
                         poseStack.translate(x, y, 0);
+                        poseStack.scale(markerScale, markerScale, 1);
                         float alpha = FREE_CAMERA.isDown() ? 0.25f : 0.5f;
                         int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
                         GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
                         // 装填进度
-                        weaponUnit.getCurrentWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 7f, 1.2f));
-                        weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 5.6f, 1f));
+                        weaponUnit.getCurrentWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 7f, 0.9f, partialTick));
+                        weaponUnit.getCurrentSecondaryWeapon().ifPresent(weapon -> renderReloadProgress(guiGraphics, weapon, 5.6f, 0.75f, partialTick));
                         if (!weaponUnit.independentWeapons.isEmpty()) {
-                            renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.8f);
+                            renderReloadProgress(guiGraphics, weaponUnit.independentWeapons.get(0), 4.4f, 0.6f, partialTick);
                         }
                     }
                     poseStack.popPose();
@@ -99,6 +115,7 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                                     poseStack.pushPose();
                                     {
                                         poseStack.translate(x, y, 0);
+                                        poseStack.scale(markerScale, markerScale, 1);
                                         drawCrosshair(guiGraphics, aimingWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP ? Color.GREEN : color, poseStack, crosshairStyle);
                                     }
                                     poseStack.popPose();
@@ -120,6 +137,7 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                                 poseStack.pushPose();
                                 {
                                     poseStack.translate(x, y, 0);
+                                    poseStack.scale(markerScale, markerScale, 1);
                                     float alpha = 0.4f;
                                     // 导引头冷却中提示
                                     alpha += (float) Math.sin((double) weaponUnit.getLockCoolingTick() / 5 * Math.PI) * 0.2f;
@@ -147,15 +165,41 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
         }
     }
 
-    public static void renderReloadProgress(GuiGraphics guiGraphics, AbstractVehicleWeapon<?> weapon, float arcRadius, float thickness) {
-        int reloadTime = weapon.getReloadTime();
-        int maxReload  = weapon.getData().getReload().getTime();
-        if (reloadTime > 0 && maxReload > 0) {
-            float reloadFrac = 1f - (float) reloadTime / maxReload;
-            int reloadArcColor = Color.RELOAD_ARC;
+    public static void renderReloadProgress(GuiGraphics guiGraphics, AbstractVehicleWeapon<?> weapon, float arcRadius, float thickness, float partialTick) {
+        float progress = reloadProgress(weapon, partialTick);
+        if (progress >= 0) {
             GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, 1f, Color.RELOAD_ARC_BG);
-            GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, reloadFrac, reloadArcColor);
+            GuiHelper.drawArc(guiGraphics, 0, 0, arcRadius, thickness, 0f, progress, Color.RELOAD_ARC);
         }
+    }
+
+    private static float reloadProgress(AbstractVehicleWeapon<?> weapon, float partialTick) {
+        while (weapon instanceof VehicleMultiWeapons multi) {
+            weapon = multi.getSelectedWeapon();
+        }
+        int remainingTicks = weapon.getReloadTime();
+        int totalTicks = weapon.getData().getReload().getTime();
+        Minecraft mc = Minecraft.getInstance();
+        if (remainingTicks <= 0 || totalTicks <= 0 || mc.level == null) {
+            reloadAnimations.remove(weapon);
+            return -1;
+        }
+        double frameTick = (double) mc.level.getGameTime() + partialTick;
+        ReloadAnimation animation = reloadAnimations.computeIfAbsent(weapon, key -> new ReloadAnimation());
+        boolean reset = animation.totalTicks != totalTicks || remainingTicks > animation.remainingTicks
+                || frameTick < animation.lastTick || frameTick - animation.lastTick > 20;
+        if (reset || remainingTicks != animation.remainingTicks) {
+            animation.remainingTicks = remainingTicks;
+            animation.totalTicks = totalTicks;
+            animation.sampleTick = frameTick;
+        }
+        if (reset) {
+            animation.progress = 0;
+        }
+        double remaining = Math.max(0, remainingTicks - (frameTick - animation.sampleTick));
+        animation.progress = Math.max(animation.progress, Mth.clamp((float) (1 - remaining / totalTicks), 0, 1));
+        animation.lastTick = frameTick;
+        return animation.progress;
     }
 
     @SubscribeEvent

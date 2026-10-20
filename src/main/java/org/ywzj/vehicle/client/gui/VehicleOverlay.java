@@ -2,6 +2,7 @@ package org.ywzj.vehicle.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -28,14 +29,19 @@ import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.util.VehicleHudText;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
+import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class VehicleOverlay implements IGuiOverlay {
@@ -66,20 +72,30 @@ public class VehicleOverlay implements IGuiOverlay {
      * 乘员组
      */
     public static void renderCrew(GuiGraphics guiGraphics, int centerX, int centerY, AbstractVehicle vehicle) {
-        int x = centerX - 160;
-        int y = centerY + guiGraphics.guiHeight() / 5;
-        for (int index = 0; index < vehicle.seats.size(); index++) {
-            Integer playerId = vehicle.seats.get(index).passengerId;
-            Entity entity = null;
-            if (playerId != null) {
-                entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
+        try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
+            float leftX = VehicleHudLayout.crewX(layout.width() / 2);
+            int rowHeight = VehicleHudText.LINE_HEIGHT;
+            int maxRows = Math.max(1, (int) ((VehicleHudLayout.HEIGHT - 18 - VehicleHudText.LINE_HEIGHT
+                    - VehicleHudLayout.CREW_Y) / rowHeight) + 1);
+            int columns = Math.max(1, (vehicle.seats.size() + maxRows - 1) / maxRows);
+            int rows = Math.max(1, (vehicle.seats.size() + columns - 1) / columns);
+            int columnWidth = Math.min(80, (int) ((layout.width() / 2 - 72 - leftX) / columns));
+            float topY = Math.min(VehicleHudLayout.CREW_Y,
+                    VehicleHudLayout.HEIGHT - 18 - VehicleHudText.LINE_HEIGHT - (rows - 1) * rowHeight);
+            for (int index = 0; index < vehicle.seats.size(); index++) {
+                Integer playerId = vehicle.seats.get(index).passengerId;
+                Entity entity = null;
+                if (playerId != null) {
+                    entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
+                }
+                String info = "[]";
+                if (entity != null) {
+                    info = "[" + entity.getDisplayName().getString() + "]";
+                }
+                float x = leftX + index / rows * columnWidth;
+                float y = topY + index % rows * rowHeight;
+                VehicleHudText.drawString(guiGraphics, VehicleHudText.truncate(info, columnWidth - 8), x, y, Color.GREEN);
             }
-            String info = "[]";
-            if (entity != null) {
-                info = "[" + entity.getDisplayName().getString() + "]";
-            }
-            guiGraphics.drawString(Minecraft.getInstance().font, info, x, y, Color.GREEN);
-            y += 10;
         }
     }
 
@@ -87,52 +103,56 @@ public class VehicleOverlay implements IGuiOverlay {
      * 罗盘
      */
     public static void renderCompassBar(GuiGraphics guiGraphics, int screenWidth) {
-        float yaw = Minecraft.getInstance().gameRenderer.getMainCamera().getYRot();
-        Font font = Minecraft.getInstance().font;
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            RenderSystem.enableBlend();
-            float centerX = screenWidth / 2f;
-            poseStack.translate(centerX, 12, 0);
+        try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
+            float yaw = Minecraft.getInstance().gameRenderer.getMainCamera().getYRot();
+
+            PoseStack poseStack = guiGraphics.pose();
             poseStack.pushPose();
             {
-                guiGraphics.enableScissor((int) (centerX - 120), 0, (int) (centerX + 120), 40);
-                poseStack.translate(-yaw * 4 - 0.5f, 0, 0);
-                for (int x = -225; x <= 225; x += 5) {
-                    switch (x) {
-                        case -135, 225 -> renderDirection(guiGraphics, poseStack, font, x, "NE");
-                        case -90 -> renderDirection(guiGraphics, poseStack, font, x, "E");
-                        case -45 -> renderDirection(guiGraphics, poseStack, font, x, "SE");
-                        case 0 -> renderDirection(guiGraphics, poseStack, font, x, "S");
-                        case 45 -> renderDirection(guiGraphics, poseStack, font, x, "SW");
-                        case 90 -> renderDirection(guiGraphics, poseStack, font, x, "W");
-                        case 135, -225 -> renderDirection(guiGraphics, poseStack, font, x, "NW");
-                        case 180, -180 -> renderDirection(guiGraphics, poseStack, font, x, "N");
-                        default -> {
-                            if (x % 15 == 0) {
-                                int s = x > 180 ? x - 360 : (x < -180 ? x + 360 : x);
-                                renderDirection(guiGraphics, poseStack, font, x, s + "");
-                            } else {
-                                guiGraphics.vLine(x * 4, 0, 6, Color.GREEN);
+                RenderSystem.enableBlend();
+                float centerX = layout.width() / 2;
+                poseStack.translate(centerX, 32, 0);
+                poseStack.pushPose();
+                {
+                    float hudScale = guiGraphics.guiHeight() / VehicleHudLayout.HEIGHT;
+                    guiGraphics.enableScissor((int) ((centerX - 120) * hudScale), (int) (30 * hudScale),
+                            (int) ((centerX + 120) * hudScale), (int) (72 * hudScale));
+                    poseStack.translate(-yaw * 4 - 0.5f, 0, 0);
+                    for (int x = -225; x <= 225; x += 5) {
+                        switch (x) {
+                            case -135, 225 -> renderDirection(guiGraphics, poseStack, x, "NE");
+                            case -90 -> renderDirection(guiGraphics, poseStack, x, "E");
+                            case -45 -> renderDirection(guiGraphics, poseStack, x, "SE");
+                            case 0 -> renderDirection(guiGraphics, poseStack, x, "S");
+                            case 45 -> renderDirection(guiGraphics, poseStack, x, "SW");
+                            case 90 -> renderDirection(guiGraphics, poseStack, x, "W");
+                            case 135, -225 -> renderDirection(guiGraphics, poseStack, x, "NW");
+                            case 180, -180 -> renderDirection(guiGraphics, poseStack, x, "N");
+                            default -> {
+                                if (x % 15 == 0) {
+                                    int s = x > 180 ? x - 360 : (x < -180 ? x + 360 : x);
+                                    renderDirection(guiGraphics, poseStack, x, s + "");
+                                } else {
+                                    guiGraphics.vLine(x * 4, 0, 6, Color.GREEN);
+                                }
                             }
                         }
                     }
+                    guiGraphics.disableScissor();
                 }
-                guiGraphics.disableScissor();
+                poseStack.popPose();
+                RenderSystem.defaultBlendFunc();
+                RenderSystem.setShader(GameRenderer::getPositionColorShader);
+                BufferBuilder buf = Tesselator.getInstance().getBuilder();
+                buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                buf.vertex(poseStack.last().pose(), 0, 23, 0).color(0, 255, 0, 255).endVertex();
+                buf.vertex(poseStack.last().pose(), -3, 29, 0).color(0, 255, 0, 255).endVertex();
+                buf.vertex(poseStack.last().pose(), 3, 29, 0).color(0, 255, 0, 255).endVertex();
+                Tesselator.getInstance().end();
+                RenderSystem.disableBlend();
             }
             poseStack.popPose();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            BufferBuilder buf = Tesselator.getInstance().getBuilder();
-            buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            buf.vertex(poseStack.last().pose(), 0, 23, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(poseStack.last().pose(), -3, 29, 0).color(0, 255, 0, 255).endVertex();
-            buf.vertex(poseStack.last().pose(), 3, 29, 0).color(0, 255, 0, 255).endVertex();
-            Tesselator.getInstance().end();
-            RenderSystem.disableBlend();
         }
-        poseStack.popPose();
     }
 
     private void renderBaseInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
@@ -141,65 +161,79 @@ public class VehicleOverlay implements IGuiOverlay {
         {
             poseStack.translate((float) screenWidth / 2, screenHeight + 16, 0);
             renderHealth(guiGraphics, 0, -20, 120, 5, vehicle, 1);
-            Font font = Minecraft.getInstance().font;
+
             float energyCapacity = vehicle.energyInfo.energyCapacity;
             float fuelPercent = energyCapacity > 0 ? vehicle.getEnergy() / energyCapacity * 100 : 0;
             float powerPercent = vehicle.getPower();
-            renderFuelAndPower(guiGraphics, font, fuelPercent, powerPercent);
+            renderFuelAndPower(guiGraphics, fuelPercent, powerPercent);
         }
         poseStack.popPose();
     }
 
-    private void renderFuelAndPower(GuiGraphics guiGraphics, Font font, float fuelPercent, float powerPercent) {
+    private void renderFuelAndPower(GuiGraphics guiGraphics, float fuelPercent, float powerPercent) {
         PoseStack poseStack = guiGraphics.pose();
-        String fuelText = String.format("FUEL %.1f%%", fuelPercent);
-        String powerText = String.format("POWER %.1f%%", powerPercent);
-        float scale = 0.4F;
+        Component fuelText = Component.translatable("ui.vehicle_hud.fuel").append(String.format(java.util.Locale.ROOT, " %.1f%%", fuelPercent));
+        Component powerText = Component.translatable("ui.vehicle_hud.power").append(String.format(java.util.Locale.ROOT, " %.1f%%", powerPercent));
+        Font font = Minecraft.getInstance().font;
         poseStack.pushPose();
-        {
+        try {
             poseStack.translate(64, -29, 0);
-            poseStack.scale(scale, scale, 1);
+            poseStack.scale(0.4f, 0.4f, 1);
             guiGraphics.drawString(font, fuelText, 0, 0,
                     fuelPercent < 5 ? Color.RED : Color.WHITE, true);
             guiGraphics.drawString(font, powerText, 0, font.lineHeight,
                     powerPercent < 30 ? Color.RED : Color.WHITE, true);
+        } finally {
+            poseStack.popPose();
         }
-        poseStack.popPose();
     }
 
     public void renderTips(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
         LocalVehiclePlayer localVehiclePlayer = LocalVehiclePlayer.instance;
-        guiGraphics.pose().pushPose();
-        {
-            guiGraphics.pose().translate(centerX, centerY, 0);
-            if (localVehiclePlayer.lostControl) {
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                        Component.translatable("ui.lost_control"),
-                        0, -45, Color.RED);
-            } else if (localVehiclePlayer.endureTick > 5
-                    && (localVehiclePlayer.displayG >= 2 || localVehiclePlayer.displayG <= -1)) {
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                        Component.translatable("ui.overload", String.format("%.1f", localVehiclePlayer.displayG)).append("G"),
-                        0, -45, Color.RED);
-            } else if (!localVehiclePlayer.missiles.isEmpty()) {
-                guiGraphics.drawCenteredString(Minecraft.getInstance().font,
-                        Component.translatable("ui.homing"),
-                        0, -45, Color.GREEN);
-                tips.clear();
+        Set<Component> alerts = new LinkedHashSet<>();
+        WarningReceiver warningReceiver = localVehiclePlayer.vehicle.warningReceiver;
+        if (warningReceiver != null) {
+            if (warningReceiver.targets.values().stream().anyMatch(target -> target.warnType() == WarnType.MISSILE_LAUNCH)) {
+                alerts.add(Component.translatable("ui.missile_incoming"));
             }
-            if (!tips.isEmpty()) {
-                for (Map.Entry<Long, Component> tip : tips.entrySet()) {
-                    if (tip.getKey() + 3000 < System.currentTimeMillis()) {
-                        tips.remove(tip.getKey());
-                        continue;
-                    }
-                    guiGraphics.drawCenteredString(Minecraft.getInstance().font, tip.getValue(), 0, -45, Color.RED);
-                }
+            if (warningReceiver.targets.values().stream().anyMatch(target -> target.warnType() == WarnType.RADAR_LOCK)) {
+                alerts.add(Component.translatable("ui.being_locked"));
             }
         }
-        guiGraphics.pose().popPose();
+        if (localVehiclePlayer.lostControl) {
+            alerts.add(Component.translatable("ui.lost_control"));
+        }
+        if (localVehiclePlayer.endureTick > 5
+                && (localVehiclePlayer.displayG >= 2 || localVehiclePlayer.displayG <= -1)) {
+            alerts.add(Component.translatable("ui.overload", String.format(java.util.Locale.ROOT, "%.1f", localVehiclePlayer.displayG)).append("G"));
+        }
+        if (!localVehiclePlayer.missiles.isEmpty()) {
+            alerts.add(Component.translatable("ui.homing").withStyle(ChatFormatting.GREEN));
+        }
+        long now = System.currentTimeMillis();
+        tips.entrySet().removeIf(tip -> now - tip.getKey() >= 3000);
+        tips.entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue).forEach(alerts::add);
+        if (alerts.isEmpty()) {
+            return;
+        }
+        try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
+            float centerX = layout.width() / 2;
+            float centerY = VehicleHudLayout.CENTER_Y;
+            guiGraphics.pose().pushPose();
+            try {
+                float topY = centerY - 45 - (alerts.size() - 1) * VehicleHudLayout.ROW_HEIGHT * 1.2f;
+                guiGraphics.pose().translate(centerX, topY, 0);
+                guiGraphics.pose().scale(1.2f, 1.2f, 1);
+                int row = 0;
+                for (Component alert : alerts) {
+                    VehicleHudText.drawCenteredString(guiGraphics, alert, 0, row * VehicleHudLayout.ROW_HEIGHT, Color.RED);
+                    row++;
+                }
+            } finally {
+                guiGraphics.pose().popPose();
+            }
+        }
     }
 
     private void renderLookAt(GuiGraphics guiGraphics, float partialTick) {
@@ -271,14 +305,14 @@ public class VehicleOverlay implements IGuiOverlay {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        Font font = mc.font;
+
         int screenWidth = mc.getWindow().getGuiScaledWidth();
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         int maxNameWidth = 0;
         for (var weapon : weapons) {
-            maxNameWidth = Math.max(maxNameWidth, font.width(weaponUnit.proxyWeapon(weapon).getDisplayName().getString()));
+            maxNameWidth = Math.max(maxNameWidth, VehicleHudText.width(weaponUnit.proxyWeapon(weapon).getDisplayName().getString()));
         }
         int cardWidth = maxNameWidth + 8;
         int cardHeight = 14;
@@ -305,11 +339,11 @@ public class VehicleOverlay implements IGuiOverlay {
             int textColor = selected ? Color.GREEN : Color.WHITE;
             poseStack.pushPose();
             {
-                poseStack.translate(listX + 4, cardY + (cardHeight - font.lineHeight) / 2f + 1, 0);
-                guiGraphics.drawString(font, name, 0, 0, textColor, true);
+                poseStack.translate(listX + 4, cardY + (cardHeight - mc.font.lineHeight) / 2f + 1, 0);
+                VehicleHudText.drawString(guiGraphics, name, 0, 0, textColor, true);
                 if (i == weapons.size() - 1) {
                     poseStack.translate(-4, 16, 0);
-                    guiGraphics.drawString(font, Component.translatable("tips.sneak_use_modding_tool"), 0, 0, Color.WHITE, true);
+                    VehicleHudText.drawString(guiGraphics, Component.translatable("tips.sneak_use_modding_tool"), 0, 0, Color.WHITE, true);
                 }
             }
             poseStack.popPose();
@@ -324,12 +358,12 @@ public class VehicleOverlay implements IGuiOverlay {
         BaseDisplay decorationDisplay =  decorationDisplayOptional.get();
         String displayId = decorationDisplay.getDisplayId().toString();
         Minecraft mc = Minecraft.getInstance();
-        Font font = mc.font;
+
         int screenWidth = mc.getWindow().getGuiScaledWidth();
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
-        int cardWidth = font.width(displayId) + 6;
+        int cardWidth = VehicleHudText.width(displayId) + 6;
         int cardHeight = 64;
         int cardPadding = 16;
         int listX = centerX + 32;
@@ -345,10 +379,10 @@ public class VehicleOverlay implements IGuiOverlay {
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         {
-            poseStack.translate(listX + 4, listY + (float) font.lineHeight / 2, 0);
-            guiGraphics.drawString(font, decorationDisplay.getDisplayId().toString(), 0, 0, Color.WHITE, true);
+            poseStack.translate(listX + 4, listY + (float) mc.font.lineHeight / 2, 0);
+            VehicleHudText.drawString(guiGraphics, decorationDisplay.getDisplayId().toString(), 0, 0, Color.WHITE, true);
             poseStack.translate(-4, 16, 0);
-            guiGraphics.drawString(font, Component.translatable("tips.edit_decoration"), 0, 0, Color.WHITE, true);
+            VehicleHudText.drawString(guiGraphics, Component.translatable("tips.edit_decoration"), 0, 0, Color.WHITE, true);
         }
         poseStack.popPose();
     }
@@ -462,10 +496,10 @@ public class VehicleOverlay implements IGuiOverlay {
         poseStack.popPose();
     }
 
-    public static void renderDirection(GuiGraphics graphics, PoseStack poseStack, Font font, int x, String s) {
+    public static void renderDirection(GuiGraphics graphics, PoseStack poseStack, int x, String s) {
         graphics.vLine(x * 4, 0, 8, Color.GREEN);
         poseStack.translate(1f, 0, 0);
-        RenderHelper.drawCenteredString(graphics, font, s, x * 4, 12, Color.GREEN);
+        VehicleHudText.drawCenteredString(graphics, s, x * 4, 12, Color.GREEN);
         poseStack.translate(-1f, 0, 0);
     }
 

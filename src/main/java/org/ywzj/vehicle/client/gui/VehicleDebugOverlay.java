@@ -15,6 +15,7 @@ import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.command.sub.DebugCommand;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.VehicleHudText;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
@@ -56,62 +57,62 @@ public class VehicleDebugOverlay implements IGuiOverlay {
             poseStack.scale(0.5f, 0.5f, 0.5f);
             WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
             int y = 2;
-            guiGraphics.drawString(mc.font, "-- vehicle --", COL1_X, y, Color.GRAY); y += LINE_H;
-            guiGraphics.drawString(mc.font, "vehicleId: " + vehicle.getVehicleId(), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "displayId: " + vehicle.getDisplayId(), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "-- vehicle --", COL1_X, y, Color.GRAY); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "vehicleId: " + vehicle.getVehicleId(), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "displayId: " + vehicle.getDisplayId(), COL1_X, y, Color.WHITE); y += LINE_H;
             Vec3 vel = new Vec3(vehicle.physicsEngine.velocity);
-            guiGraphics.drawString(mc.font, "velocity: " + String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "speed: " + String.format("%.2f", vehicle.physicsEngine.velocity.length()), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "xRot: " + String.format("%.2f", vehicle.getXRot()) + "  yRot: " + String.format("%.2f", vehicle.getYRot()) + "  zRot: " + String.format("%.2f", vehicle.getZRot()), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "engineSpeed: " + String.format("%.2f", vehicle.getEngineSpeed()), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "power: " + String.format("%.2f", vehicle.getPower()), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "energy: " + String.format("%.2f", vehicle.getEnergy()), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "mass (kg): " + String.format("%.2f", vehicle.physicsEngine.physicsInfo.mass), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "curbWeight (kg): " + String.format("%.2f", vehicle.curbWeight), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "engineOn: " + vehicle.isEngineOn(), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "destroyed: " + vehicle.isDestroyed(), COL1_X, y, Color.WHITE); y += LINE_H;
-            guiGraphics.drawString(mc.font, "onGround: " + vehicle.onGround(), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "velocity: " + String.format("%.2f, %.2f, %.2f", vel.x, vel.y, vel.z), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "speed: " + String.format("%.2f", vehicle.physicsEngine.velocity.length()), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "xRot: " + String.format("%.2f", vehicle.getXRot()) + "  yRot: " + String.format("%.2f", vehicle.getYRot()) + "  zRot: " + String.format("%.2f", vehicle.getZRot()), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "engineSpeed: " + String.format("%.2f", vehicle.getEngineSpeed()), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "power: " + String.format("%.2f", vehicle.getPower()), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "energy: " + String.format("%.2f", vehicle.getEnergy()), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "mass (kg): " + String.format("%.2f", vehicle.physicsEngine.physicsInfo.mass), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "curbWeight (kg): " + String.format("%.2f", vehicle.curbWeight), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "engineOn: " + vehicle.isEngineOn(), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "destroyed: " + vehicle.isDestroyed(), COL1_X, y, Color.WHITE); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "onGround: " + vehicle.onGround(), COL1_X, y, Color.WHITE); y += LINE_H;
             y += LINE_H;
-            guiGraphics.drawString(mc.font, "-- weapon data --", COL2_X, y, Color.GRAY); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "-- weapon data --", COL2_X, y, Color.GRAY); y += LINE_H;
             if (weaponUnit != null) {
                 var currentWeapon = weaponUnit.getCurrentWeapon();
                 if (currentWeapon.isPresent()) {
                     BaseVehicleWeaponData data = currentWeapon.get().getData();
                     for (String line : getGetterLines(data, 0)) {
-                        guiGraphics.drawString(mc.font, line, COL2_X, y, Color.WHITE);
+                        VehicleHudText.drawString(guiGraphics, line, COL2_X, y, Color.WHITE);
                         y += LINE_H;
                     }
                 } else {
-                    guiGraphics.drawString(mc.font, "no weapon selected", COL2_X, y, Color.WHITE);
+                    VehicleHudText.drawString(guiGraphics, "no weapon selected", COL2_X, y, Color.WHITE);
                 }
             } else {
-                guiGraphics.drawString(mc.font, "no weaponUnit", COL2_X, y, Color.WHITE);
+                VehicleHudText.drawString(guiGraphics, "no weaponUnit", COL2_X, y, Color.WHITE);
             }
             y = 2;
-            guiGraphics.drawString(mc.font, "-- weapon unit --", COL3_X, y, Color.GRAY); y += LINE_H;
+            VehicleHudText.drawString(guiGraphics, "-- weapon unit --", COL3_X, y, Color.GRAY); y += LINE_H;
             if (weaponUnit == null) {
-                guiGraphics.drawString(mc.font, "null", COL3_X, y, Color.WHITE);
+                VehicleHudText.drawString(guiGraphics, "null", COL3_X, y, Color.WHITE);
             } else {
-                guiGraphics.drawString(mc.font, "name: " + weaponUnit.getName().getString(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "currentWeaponIndex: " + (weaponUnit.getCurrentWeaponIndex() + 1) + " / " + weaponUnit.weapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "currentSecondaryWeaponIndex: " + (weaponUnit.getCurrentSecondaryWeaponIndex() + 1)  + " / " + weaponUnit.secondaryWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "ammoCapacity: " + weaponUnit.getAmmoCapacity(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "firingMode: " + weaponUnit.getData().getFiringMode(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "withStabilizer: " + weaponUnit.getData().withStabilizer(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "withFocusLocker: " + weaponUnit.getData().withFocusLocker(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "withThermalImager: " + weaponUnit.getData().withThermalImager(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "zoom: " + String.format("%.1f", weaponUnit.getZoom()), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "zoomRange: " + String.format("%.1f", weaponUnit.getData().getZoomMin()) + " ~ " + String.format("%.1f", weaponUnit.getData().getZoomMax()), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "opticalSightType: " + weaponUnit.opticalSightType, COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "fireControlSensorType: " + weaponUnit.getData().getFireControlSensorType(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "crosshairStyle: " + weaponUnit.crosshairStyle, COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "seeker: " + weaponUnit.isSeekerOn(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "name: " + weaponUnit.getName().getString(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "currentWeaponIndex: " + (weaponUnit.getCurrentWeaponIndex() + 1) + " / " + weaponUnit.weapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "currentSecondaryWeaponIndex: " + (weaponUnit.getCurrentSecondaryWeaponIndex() + 1)  + " / " + weaponUnit.secondaryWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "ammoCapacity: " + weaponUnit.getAmmoCapacity(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "firingMode: " + weaponUnit.getData().getFiringMode(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "withStabilizer: " + weaponUnit.getData().withStabilizer(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "withFocusLocker: " + weaponUnit.getData().withFocusLocker(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "withThermalImager: " + weaponUnit.getData().withThermalImager(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "zoom: " + String.format("%.1f", weaponUnit.getZoom()), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "zoomRange: " + String.format("%.1f", weaponUnit.getData().getZoomMin()) + " ~ " + String.format("%.1f", weaponUnit.getData().getZoomMax()), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "opticalSightType: " + weaponUnit.opticalSightType, COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "fireControlSensorType: " + weaponUnit.getData().getFireControlSensorType(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "crosshairStyle: " + weaponUnit.crosshairStyle, COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "seeker: " + weaponUnit.isSeekerOn(), COL3_X, y, Color.WHITE); y += LINE_H;
                 y += 2;
-                guiGraphics.drawString(mc.font, "weapons: " + weaponUnit.weapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "secondaryWeapons: " + weaponUnit.secondaryWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "independentWeapons: " + weaponUnit.independentWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "indexedWeapons: " + weaponUnit.indexedWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
-                guiGraphics.drawString(mc.font, "weaponBayUnits: " + weaponUnit.weaponBayUnits.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "weapons: " + weaponUnit.weapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "secondaryWeapons: " + weaponUnit.secondaryWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "independentWeapons: " + weaponUnit.independentWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "indexedWeapons: " + weaponUnit.indexedWeapons.size(), COL3_X, y, Color.WHITE); y += LINE_H;
+                VehicleHudText.drawString(guiGraphics, "weaponBayUnits: " + weaponUnit.weaponBayUnits.size(), COL3_X, y, Color.WHITE); y += LINE_H;
             }
         } finally {
             poseStack.popPose();
