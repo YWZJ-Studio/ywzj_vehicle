@@ -10,12 +10,10 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.particle.BulletHoleOption;
-import org.ywzj.vehicle.particle.DustSmokeOption;
-import org.ywzj.vehicle.particle.SmokeCloudOption;
-import org.ywzj.vehicle.particle.TrackDustOption;
+import org.ywzj.vehicle.particle.*;
 
 public class AllParticleTypes {
+
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, YwzjVehicle.MOD_ID);
 
     public static final RegistryObject<ParticleType<DustSmokeOption>> DUST_SMOKE = PARTICLE_TYPES.register("dust_smoke",
@@ -44,6 +42,10 @@ public class AllParticleTypes {
 
     public static final RegistryObject<ParticleType<SmokeCloudOption>> FIXED_CLOUD = PARTICLE_TYPES.register("fixed_cloud",
             () -> createOptions(SmokeCloudOption.CODEC, SmokeCloudOption.DESERIALIZER)
+    );
+
+    public static final RegistryObject<ParticleType<MissileTrailOption>> MISSILE_TRAIL = PARTICLE_TYPES.register("missile_trail",
+            () -> createOptions(MissileTrailOption.CODEC, MissileTrailOption.DESERIALIZER)
     );
 
     public static void register(IEventBus eventBus) {

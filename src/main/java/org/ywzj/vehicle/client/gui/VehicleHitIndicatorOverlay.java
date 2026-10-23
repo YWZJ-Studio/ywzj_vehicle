@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -32,6 +31,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.util.VehicleHudText;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -172,8 +172,21 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         int size = (int) (16 * scale);
         int sizeHalf = size / 2;
 
-        double x = Mth.lerp(partialTick, VehicleAimAtOverlay.screenAimXO, VehicleAimAtOverlay.screenAimX) - sizeHalf;
-        double y = Mth.lerp(partialTick, VehicleAimAtOverlay.screenAimYO, VehicleAimAtOverlay.screenAimY) - sizeHalf;
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        Player player = instance.getPlayer();
+        if (player == null || !player.isAlive()) {
+            return;
+        }
+        WeaponUnit weaponUnit = instance.getWeaponUnit();
+        if (weaponUnit == null) {
+            return;
+        }
+        Vec3 aimScreenPos = VehicleAimAtOverlay.aimScreenPosition(weaponUnit);
+        if (aimScreenPos.z < 0) {
+            return;
+        }
+        double x = aimScreenPos.x - sizeHalf;
+        double y = aimScreenPos.y - sizeHalf;
 
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();

@@ -1,26 +1,29 @@
 package org.ywzj.vehicle.client.gui;
 
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.entity.vehicle.FixedWingVehicle;
 import org.ywzj.vehicle.entity.vehicle.RotaryWingVehicle;
+import org.ywzj.vehicle.entity.weapon.AmmoEntity;
+import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.util.VehicleHudText;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
+import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
 import org.ywzj.vehicle.vehicle.weapon.VehicleMultiWeapons;
@@ -33,14 +36,8 @@ import java.util.WeakHashMap;
 import static org.ywzj.vehicle.all.AllKeys.FREE_CAMERA;
 import static org.ywzj.vehicle.util.RenderHelper.*;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class VehicleAimAtOverlay implements IGuiOverlay {
 
-    public static double screenAimXO = 0;
-    public static double screenAimYO = 0;
-    public static double screenAimX = 0;
-    public static double screenAimY = 0;
-    public static boolean showAim = true;
     private static final Map<AbstractVehicleWeapon<?>, ReloadAnimation> reloadAnimations = new WeakHashMap<>();
 
     private static final class ReloadAnimation {
@@ -53,30 +50,27 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-            return;
-        }
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || !player.isAlive()) {
             return;
         }
         if (player.getVehicle() instanceof AbstractVehicle vehicle) {
+            boolean isScope = LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.SCOPE;
             boolean isHelicopter = vehicle instanceof RotaryWingVehicle;
             float markerScale = isHelicopter || vehicle instanceof FixedWingVehicle
                     ? guiGraphics.guiHeight() / VehicleHudLayout.HEIGHT * 1.2f : 1;
             int color = isHelicopter ? Color.GREEN : Color.WHITE;
             PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(player);
             if (operatorUnit instanceof WeaponUnit weaponUnit) {
-                if (showAim) {
-                    double x = Mth.lerp(partialTick, screenAimXO, screenAimX);
-                    double y = Mth.lerp(partialTick, screenAimYO, screenAimY);
+                Vec3 aimScreenPos = aimScreenPosition(weaponUnit);
+                if (aimScreenPos.z >= 0) {
                     PoseStack poseStack = guiGraphics.pose();
                     poseStack.pushPose();
                     {
-                        poseStack.translate(x, y, 0);
+                        poseStack.translate(aimScreenPos.x, aimScreenPos.y, 0);
                         poseStack.scale(markerScale, markerScale, 1);
-                        float alpha = FREE_CAMERA.isDown() ? 0.25f : 0.5f;
+                        float alpha = !isScope && FREE_CAMERA.isDown() ? 0.25f : 0.5f;
                         int aimCircleColor = (color & 0x00FFFFFF) | ((int) (alpha * 255) << 24);
                         GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 8, aimCircleColor, 0.05f, 0, 0);
                         // 装填进度
@@ -94,31 +88,33 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                     if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.FULL_SALVO) {
                         aimingWeapons.addAll(weaponUnit.fullSalvoWeapons);
                     }
-                    for (AbstractVehicleWeapon<?> aimingWeapon : aimingWeapons) {
+                    if (!isScope) {
                         // 落点
-                        WeaponUnit aimingWeaponUnit = aimingWeapon.getWeaponUnit();
-                        WeaponUnitData.CrosshairStyle crosshairStyle = aimingWeaponUnit.crosshairStyle;
-                        if (crosshairStyle != null) {
-                            if (aimingWeaponUnit.isParentWeaponUnitAim()
-                                    || (aimingWeaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP && aimingWeaponUnit.getCurrentWeapon().isEmpty())) {
-                                aimingWeaponUnit = weaponUnit;
-                            }
-                            Vec3 weaponHitPos = aimingWeaponUnit.weaponHitPos;
-                            Vec3 weaponHitPosO = aimingWeaponUnit.weaponHitPosO;
-                            if (weaponHitPos != null && weaponHitPosO != null) {
-                                Vec3 screenHitPos = VectorUtil.worldToScreen(weaponHitPos);
-                                Vec3 screenHitPosO = VectorUtil.worldToScreen(weaponHitPosO);
-                                if (screenHitPos.z >= 0) {
-                                    double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
-                                    double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
-                                    PoseStack poseStack = guiGraphics.pose();
-                                    poseStack.pushPose();
-                                    {
-                                        poseStack.translate(x, y, 0);
-                                        poseStack.scale(markerScale, markerScale, 1);
-                                        drawCrosshair(guiGraphics, aimingWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP ? Color.GREEN : color, poseStack, crosshairStyle);
+                        for (AbstractVehicleWeapon<?> aimingWeapon : aimingWeapons) {
+                            WeaponUnit aimingWeaponUnit = aimingWeapon.getWeaponUnit();
+                            WeaponUnitData.CrosshairStyle crosshairStyle = aimingWeaponUnit.crosshairStyle;
+                            if (crosshairStyle != null) {
+                                if (aimingWeaponUnit.isParentWeaponUnitAim()
+                                        || (aimingWeaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP && aimingWeaponUnit.getCurrentWeapon().isEmpty())) {
+                                    aimingWeaponUnit = weaponUnit;
+                                }
+                                Vec3 weaponHitPos = aimingWeaponUnit.weaponHitPos;
+                                Vec3 weaponHitPosO = aimingWeaponUnit.weaponHitPosO;
+                                if (weaponHitPos != null && weaponHitPosO != null) {
+                                    Vec3 screenHitPos = VectorUtil.worldToScreen(weaponHitPos);
+                                    Vec3 screenHitPosO = VectorUtil.worldToScreen(weaponHitPosO);
+                                    if (screenHitPos.z >= 0) {
+                                        double x = Mth.lerp(partialTick, screenHitPosO.x, screenHitPos.x);
+                                        double y = Mth.lerp(partialTick, screenHitPosO.y, screenHitPos.y);
+                                        PoseStack poseStack = guiGraphics.pose();
+                                        poseStack.pushPose();
+                                        {
+                                            poseStack.translate(x, y, 0);
+                                            poseStack.scale(markerScale, markerScale, 1);
+                                            drawCrosshair(guiGraphics, aimingWeapon.getWeaponUnit().getFireControlSensorType() == WeaponUnitData.FireControlSensorType.CCIP ? Color.GREEN : color, poseStack, crosshairStyle);
+                                        }
+                                        poseStack.popPose();
                                     }
-                                    poseStack.popPose();
                                 }
                             }
                         }
@@ -160,8 +156,148 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
                     }
                 });
                 // 目标
-                VehicleScopeOverlay.renderAimLockTarget(guiGraphics, partialTick);
+                renderAimLockTarget(guiGraphics, partialTick);
             }
+        }
+    }
+
+    private static void renderAimLockTarget(GuiGraphics guiGraphics, float partialTick) {
+        WeaponUnit weaponUnit = LocalVehiclePlayer.instance.getWeaponUnit();
+        if (weaponUnit == null) {
+            return;
+        }
+        WeaponUnitData.FireControlSensorType sensorType = weaponUnit.getFireControlSensorType();
+        // 武器站锁定目标
+        if (weaponUnit.getLockedEntity() != null) {
+            Entity entity = weaponUnit.getLockedEntity();
+            double curX = Mth.lerp(partialTick, entity.xo, entity.getX());
+            double curY = Mth.lerp(partialTick, entity.yo, entity.getY());
+            double curZ = Mth.lerp(partialTick, entity.zo, entity.getZ());
+            Vec3 centerOffset = entity.getBoundingBox().getCenter().subtract(entity.position());
+            Vec3 targetPosition = new Vec3(curX, curY, curZ).add(centerOffset);
+            Vec3 screenPos = VectorUtil.worldToScreen(targetPosition);
+            if (screenPos.z >= 0) {
+                PoseStack poseStack = guiGraphics.pose();
+                poseStack.pushPose();
+                {
+                    poseStack.translate(screenPos.x, screenPos.y, 0);
+                    if (weaponUnit.isSeekerOn()) {
+                        // 导引头小圈
+                        if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.IR) {
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 15, Color.RED, 0.03f, 0, 0);
+                        } else if (weaponUnit.getFireControlSensorType() == WeaponUnitData.FireControlSensorType.RF) {
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 5, Color.RED, 0.05f, 0, 0);
+                            GuiHelper.drawCircle(guiGraphics.pose(), 0, 0, 4, Color.RED, 0.06f, 0, 0);
+                        }
+                    }
+                    // 光电锁定
+                    if (sensorType == WeaponUnitData.FireControlSensorType.EO) {
+                        RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+                    }
+                }
+                poseStack.popPose();
+            }
+        }
+        // 雷达锁定目标
+        RadarUnit mainRadarUnit = weaponUnit.getMainRadarUnit();
+        if (mainRadarUnit != null) {
+            if (sensorType == WeaponUnitData.FireControlSensorType.RF && mainRadarUnit.getLockedEntity() != null) {
+                RadarUnit.DetectedObject detectedObject = weaponUnit.getMainRadarUnit().getDetectedEntities().get(mainRadarUnit.getLockedEntity().getId());
+                if (detectedObject != null) {
+                    Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.entity.getBoundingBox().getCenter());
+                    if (screenPos.z >= 0) {
+                        PoseStack poseStack = guiGraphics.pose();
+                        poseStack.pushPose();
+                        {
+                            poseStack.translate(screenPos.x, screenPos.y, 0);
+                            RenderHelper.drawSquare(guiGraphics, 0, 0, 15, Color.GREEN);
+                            RenderHelper.drawSquare(guiGraphics, 0, 0, 10, Color.GREEN);
+                            alliesInfo(guiGraphics, detectedObject);
+                            radarInfo(guiGraphics, poseStack, detectedObject);
+                        }
+                        poseStack.popPose();
+                    }
+                }
+            }
+            // 雷达可锁定的目标
+            for (RadarUnit.DetectedObject detectedObject : weaponUnit.getRadarDetectedEntities()) {
+                Entity lockedEntity = mainRadarUnit.getLockedEntity();
+                if (lockedEntity != null && detectedObject.entity.getId() == lockedEntity.getId()) {
+                    continue;
+                }
+                Vec3 screenPos = VectorUtil.worldToScreen(detectedObject.detectedPosition);
+                if (screenPos.z < 0) {
+                    continue;
+                }
+                PoseStack poseStack = guiGraphics.pose();
+                poseStack.pushPose();
+                {
+                    poseStack.translate(screenPos.x, screenPos.y, 0);
+                    if (detectedObject.entity instanceof AmmoEntity) {
+                        RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 10, 3, Color.GREEN);
+                    } else {
+                        RenderHelper.drawSquareCorners(guiGraphics, 0, 0, 15, 5, Color.GREEN);
+                        alliesInfo(guiGraphics, detectedObject);
+                        radarInfo(guiGraphics, poseStack, detectedObject);
+                    }
+                }
+                poseStack.popPose();
+            }
+        }
+    }
+
+    private static void radarInfo(GuiGraphics guiGraphics, PoseStack poseStack, RadarUnit.DetectedObject detectedObject) {
+        AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
+        if (vehicle == null) {
+            return;
+        }
+        Vec3 velocity = detectedObject.entity.getDeltaMovement();
+        // 速度线
+        poseStack.pushPose();
+        {
+            poseStack.translate(0, 12, 0);
+            RenderHelper.drawSquare(guiGraphics, 0, 0, 4, Color.GREEN);
+            if (velocity.length() != 0) {
+                poseStack.translate(0.5, 0, 0);
+                Vec3 direction = velocity.normalize().scale(-8);
+                direction = vehicle.relativeRotDirection(direction, true);
+                RenderHelper.drawLine(poseStack, direction, 1f, Color.GREEN, -1, -1);
+            }
+        }
+        poseStack.popPose();
+        poseStack.pushPose();
+        {
+            if (detectedObject.entity instanceof AmmoEntity) {
+                poseStack.translate(8, 12, 0);
+            } else {
+                poseStack.translate(12, -12, 0);
+            }
+            poseStack.scale(0.8f, 0.8f, 0.8f);
+            // 距离
+            double distance = detectedObject.detectedPosition.distanceTo(vehicle.position());
+            VehicleHudText.drawString(guiGraphics, String.format("%.2f m", distance), 0, 0, Color.GREEN, false);
+            poseStack.translate(0, 12, 0);
+            // 接近率
+            Vec3 approach = velocity.subtract(vehicle.getDeltaMovement());
+            Vec3 relative = detectedObject.entity.position().subtract(vehicle.position());
+            int sig = approach.dot(relative) > 0 ? -1 : 1;
+            double approachRate = sig * approach.length() * 20;
+            VehicleHudText.drawString(guiGraphics, String.format("%.2f m/s", approachRate), 0, 0, Color.GREEN, false);
+        }
+        poseStack.popPose();
+    }
+
+    private static void alliesInfo(GuiGraphics guiGraphics, RadarUnit.DetectedObject detectedObject) {
+        Team team = detectedObject.entity.getTeam();
+        // 友军标记
+        if (team != null && team.isAlliedTo(LocalVehiclePlayer.instance.getPlayer().getTeam())) {
+            Integer teamColor = team.getColor().getColor();
+            if (teamColor == null) {
+                teamColor = Color.GREEN;
+            } else {
+                teamColor = 0xFF000000 | teamColor;
+            }
+            guiGraphics.hLine(-6, 6, -11, teamColor);
         }
     }
 
@@ -202,31 +338,14 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
         return animation.progress;
     }
 
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        if (player == null || !player.isAlive()) {
-            return;
-        }
-        if (player.getVehicle() instanceof AbstractVehicle vehicle) {
-            if (vehicle.getOwnOperatorUnit(player) instanceof WeaponUnit) {
-                // 瞄准位置
-                LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
-                Vec3 aimScreenPos = VectorUtil.worldToScreen(instance.viewType == LocalVehiclePlayer.ViewType.SCOPE ? instance.scopeAimPos() : instance.freeAimPos());
-                if (aimScreenPos.z >= 0) {
-                    screenAimXO = screenAimX;
-                    screenAimYO = screenAimY;
-                    screenAimX = aimScreenPos.x;
-                    screenAimY = aimScreenPos.y;
-                    showAim = true;
-                } else  {
-                    showAim = false;
-                }
-            }
+    public static Vec3 aimScreenPosition(WeaponUnit weaponUnit) {
+        LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+        if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
+            return VectorUtil.worldToScreen(weaponUnit.toAimPosition());
+        } else {
+            Window window = Minecraft.getInstance().getWindow();
+            double y = 0.5 - Math.tan(Math.toRadians(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE)) * VectorUtil.projectionMatrix.m11() * 0.5;
+            return new Vec3(window.getGuiScaledWidth() * 0.5, window.getGuiScaledHeight() * y, 1);
         }
     }
 

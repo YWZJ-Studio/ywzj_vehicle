@@ -33,7 +33,7 @@
     "parts": [
         {
             "id": "sighting_system",
-            "name": "sighting_system",
+            "name": "part.ywzj_vehicle.sighting_system",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "sighting_system",
             "seat_offset": [0, 2, 0.2],

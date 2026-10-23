@@ -5,13 +5,17 @@ import com.google.gson.JsonSyntaxException;
 import cpw.mods.jarhandling.SecureJar;
 import net.minecraft.SharedConstants;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.FilePackResources;
+import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.server.packs.resources.IoSupplier;
+import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.resource.DelegatingPackResources;
@@ -23,8 +27,10 @@ import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.resource.vehicle.BaseDisplayPojo;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 import org.ywzj.vehicle.util.GetJarResources;
+import org.ywzj.vehicle.util.ResourceScanner;
 
 import java.io.File;
 import java.io.IOException;
@@ -271,6 +277,20 @@ public enum VehiclePackLoader implements RepositorySource {
 
     public List<VehiclePack> getVehiclePacks() {
         return vehiclePacks;
+    }
+
+    public Map<ResourceLocation, BaseDisplayPojo> scanVehicleDisplayDefinitions() {
+        List<PackResources> resources = new ArrayList<>();
+        for (VehiclePack vehiclePack : vehiclePacks) {
+            String namespace = vehiclePack.meta().getNamespace();
+            resources.add(Files.isDirectory(vehiclePack.path())
+                    ? new PathPackResources(namespace, false, vehiclePack.path())
+                    : new FilePackResources(namespace, vehiclePack.path().toFile(), false));
+        }
+        try (var manager = new MultiPackResourceManager(PackType.CLIENT_RESOURCES, resources)) {
+            return ResourceScanner.scanDirectory(manager, FileToIdConverter.json("display/vehicle"),
+                    GsonUtil.GSON, BaseDisplayPojo.class);
+        }
     }
 
     public record VehiclePack(Path path, PackMeta meta) {}

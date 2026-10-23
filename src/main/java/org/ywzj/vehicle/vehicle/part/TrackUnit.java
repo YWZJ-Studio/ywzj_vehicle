@@ -528,11 +528,8 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
         }
 
         private void setModuleLength(double moduleLength) {
-            int count = Math.max(1, (int) Math.round(length / moduleLength));
-            if (count != linkCount) {
-                linkCount = count;
-                spacing = length / linkCount;
-            }
+            linkCount = Math.max(1, (int) Math.round(length / moduleLength));
+            spacing = length / linkCount;
         }
 
         private static double positiveModulo(double value, double modulus) {

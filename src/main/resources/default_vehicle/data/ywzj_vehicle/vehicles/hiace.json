@@ -34,7 +34,7 @@
     "parts": [
         {
             "id": "seat0",
-            "name": "seat0",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "passenger_pose": {
@@ -46,7 +46,7 @@
         },
         {
             "id": "seat1",
-            "name": "seat1",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 1.9, 1.5],
@@ -54,7 +54,7 @@
         },
         {
             "id": "seat2",
-            "name": "seat2",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.2, 2, -0.1],
@@ -62,7 +62,7 @@
         },
         {
             "id": "seat3",
-            "name": "seat3",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 2, -0.1],
@@ -70,7 +70,7 @@
         },
         {
             "id": "seat4",
-            "name": "seat4",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.2, 2, -1.3],
@@ -78,7 +78,7 @@
         },
         {
             "id": "seat5",
-            "name": "seat5",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 2, -1.3],
@@ -86,7 +86,7 @@
         },
         {
             "id": "front_door_left",
-            "name": "front_door_left",
+            "name": "part.ywzj_vehicle.door",
             "type": "ywzj_vehicle:door",
             "structure_bone": "front_door_left",
             "is_seat": false,
@@ -94,28 +94,28 @@
         },
         {
             "id": "front_door_right",
-            "name": "front_door_right",
+            "name": "part.ywzj_vehicle.door",
             "type": "ywzj_vehicle:door",
             "structure_bone": "front_door_right",
             "is_seat": false
         },
         {
             "id": "side_door_left",
-            "name": "side_door_left",
+            "name": "part.ywzj_vehicle.door",
             "type": "ywzj_vehicle:door",
             "structure_bone": "side_door_left",
             "is_seat": false
         },
         {
             "id": "side_door_right",
-            "name": "side_door_right",
+            "name": "part.ywzj_vehicle.door",
             "type": "ywzj_vehicle:door",
             "structure_bone": "side_door_right",
             "is_seat": false
         },
         {
             "id": "suspension_wheel1",
-            "name": "suspension_wheel1",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -133,7 +133,7 @@
         },
         {
             "id": "suspension_wheel2",
-            "name": "suspension_wheel2",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -151,7 +151,7 @@
         },
         {
             "id": "suspension_wheel4",
-            "name": "suspension_wheel4",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -169,7 +169,7 @@
         },
         {
             "id": "suspension_wheel3",
-            "name": "suspension_wheel3",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {

@@ -30,7 +30,7 @@
     "parts": [
         {
             "id": "turret",
-            "name": "turret",
+            "name": "part.ywzj_vehicle.turret",
             "type": "ywzj_vehicle:weapon",
             "max_health": 400,
             "render_bone": "canno",
@@ -52,7 +52,7 @@
         },
         {
             "id": "seat1",
-            "name": "seat1",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.1, 1.78, 1],
@@ -60,7 +60,7 @@
         },
         {
             "id": "suspension_wheel1",
-            "name": "suspension_wheel1",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -78,7 +78,7 @@
         },
         {
             "id": "suspension_wheel2",
-            "name": "suspension_wheel2",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -96,7 +96,7 @@
         },
         {
             "id": "suspension_wheel3",
-            "name": "suspension_wheel3",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -114,7 +114,7 @@
         },
         {
             "id": "suspension_wheel4",
-            "name": "suspension_wheel4",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {

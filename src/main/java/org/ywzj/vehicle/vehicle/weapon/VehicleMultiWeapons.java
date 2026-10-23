@@ -264,7 +264,7 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         }
 
         oldWeapon.setRemainAmmo(0);
-        oldWeapon.startReload();
+        oldWeapon.reloadTime = 0;
         int size = subWeapons.size();
         selectedIndex = (selectedIndex + (next ? 1 : size - 1)) % size;
         getSelectedWeapon().setRemainAmmo(0);

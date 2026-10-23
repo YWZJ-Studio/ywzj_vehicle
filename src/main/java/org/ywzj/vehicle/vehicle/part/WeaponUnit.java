@@ -463,12 +463,14 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 && VectorUtil.angleBetween(worldAimVec, worldVec) < Math.PI / 36) {
             Vec2 aimLocalRot = worldVecToLocalRot(worldAimVec);
             Vec2 currentLocalRot = worldVecToLocalRot(worldVec);
-            float targetXRot = Mth.approachDegrees(currentLocalRot.x, aimLocalRot.x, xRotSpeed);
-            float targetYRot = Mth.approachDegrees(currentLocalRot.y, aimLocalRot.y, yRotSpeed);
+            float aimXRot = Mth.clamp(aimLocalRot.x, xRotMin - xSelfRot, xRotMax - xSelfRot);
+            float aimYRot = Mth.clamp(aimLocalRot.y, yRotMin - ySelfRot, yRotMax - ySelfRot);
+            float targetXRot = Mth.approachDegrees(currentLocalRot.x, aimXRot, xRotSpeed);
+            float targetYRot = Mth.approachDegrees(currentLocalRot.y, aimYRot, yRotSpeed);
             targetXRot = Mth.clamp(targetXRot, xRotMin - xSelfRot, xRotMax - xSelfRot);
             targetYRot = Mth.clamp(targetYRot, yRotMin - ySelfRot, yRotMax - ySelfRot);
-            setXAimRot(targetXRot);
-            setYAimRot(targetYRot);
+            setXAimRot(aimXRot);
+            setYAimRot(aimYRot);
             setXRot(targetXRot);
             setYRot(targetYRot);
             float dXRot = xRot - xRotO;

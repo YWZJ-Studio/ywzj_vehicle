@@ -30,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.api.distmarker.Dist;
@@ -774,18 +775,31 @@ public abstract class AbstractVehicle extends ContainerCraft
         float dZRot = zRot - zRotO;
         partUnits.forEach(partUnit -> partUnit.afterVehicleRot(dXRot, dYRot, dZRot));
         if (level().isClientSide()) {
-            Player player = LocalVehiclePlayer.instance.getPlayer();
+            LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
+            Player player = instance.getPlayer();
+            WeaponUnit weaponUnit = instance.getWeaponUnit();
             if (player.getVehicle() == this && (!driverXYRotControl || player != getDriver())) {
-                boolean rotTp = viewInfo.passengerViewRot.rotByVehicleInThirdPerson && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON;
-                boolean rotOp = viewInfo.passengerViewRot.rotByVehicleInOperator && LocalVehiclePlayer.instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR;
+                boolean rotTp = viewInfo.passengerViewRot.rotByVehicleInThirdPerson
+                        && instance.viewType == LocalVehiclePlayer.ViewType.THIRD_PERSON;
+                boolean rotOp = viewInfo.passengerViewRot.rotByVehicleInOperator
+                        && instance.viewType == LocalVehiclePlayer.ViewType.OPERATOR 
+                        && !(weaponUnit != null && weaponUnit.withStabilizer());
                 if (rotTp || rotOp) {
+                    float passengerYRotDelta = Mth.wrapDegrees(dYRot);
                     if (rotOp) {
-                        player.xRotO = player.xRotO + dXRot;
-                        player.setXRot(player.getXRot() + dXRot);
+                        Quaternionf passengerRotation = rotYXZ().mul(rotYXZ(0.0F).invert())
+                                .rotateY(Math.toRadians(-player.getYRot()))
+                                .rotateX(Math.toRadians(player.getXRot()));
+                        Vec2 passengerRot = VectorUtil.vecToRot(new Vec3(
+                                passengerRotation.transform(new Vector3f(0, 0, 1))));
+                        float passengerXRotDelta = passengerRot.x - player.getXRot();
+                        passengerYRotDelta = Mth.wrapDegrees(passengerRot.y - player.getYRot());
+                        player.xRotO += passengerXRotDelta;
+                        player.setXRot(passengerRot.x);
                     }
-                    player.yRotO = player.yRotO + dYRot;
-                    player.setYRot(player.getYRot() + dYRot);
-                    player.setYBodyRot(player.yBodyRot + dYRot);
+                    player.yRotO += passengerYRotDelta;
+                    player.setYRot(player.getYRot() + passengerYRotDelta);
+                    player.setYBodyRot(player.yBodyRot + passengerYRotDelta);
                 }
             }
         } else {

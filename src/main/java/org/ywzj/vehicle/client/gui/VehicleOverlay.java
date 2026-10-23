@@ -25,7 +25,6 @@ import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -55,48 +54,10 @@ public class VehicleOverlay implements IGuiOverlay {
         if (!localVehiclePlayer.onVehicle()) {
             return;
         }
-        AbstractVehicle vehicle = localVehiclePlayer.vehicle;
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
-        renderCrew(guiGraphics, centerX, centerY, vehicle);
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             renderCompassBar(guiGraphics, screenWidth);
         }
-        if (!(vehicle instanceof NoneVehicle)) {
-            renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
-        }
         renderTips(guiGraphics, screenWidth, screenHeight);
-    }
-
-    /**
-     * 乘员组
-     */
-    public static void renderCrew(GuiGraphics guiGraphics, int centerX, int centerY, AbstractVehicle vehicle) {
-        try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
-            float leftX = VehicleHudLayout.crewX(layout.width() / 2);
-            int rowHeight = VehicleHudText.LINE_HEIGHT;
-            int maxRows = Math.max(1, (int) ((VehicleHudLayout.HEIGHT - 18 - VehicleHudText.LINE_HEIGHT
-                    - VehicleHudLayout.CREW_Y) / rowHeight) + 1);
-            int columns = Math.max(1, (vehicle.seats.size() + maxRows - 1) / maxRows);
-            int rows = Math.max(1, (vehicle.seats.size() + columns - 1) / columns);
-            int columnWidth = Math.min(80, (int) ((layout.width() / 2 - 72 - leftX) / columns));
-            float topY = Math.min(VehicleHudLayout.CREW_Y,
-                    VehicleHudLayout.HEIGHT - 18 - VehicleHudText.LINE_HEIGHT - (rows - 1) * rowHeight);
-            for (int index = 0; index < vehicle.seats.size(); index++) {
-                Integer playerId = vehicle.seats.get(index).passengerId;
-                Entity entity = null;
-                if (playerId != null) {
-                    entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
-                }
-                String info = "[]";
-                if (entity != null) {
-                    info = "[" + entity.getDisplayName().getString() + "]";
-                }
-                float x = leftX + index / rows * columnWidth;
-                float y = topY + index % rows * rowHeight;
-                VehicleHudText.drawString(guiGraphics, VehicleHudText.truncate(info, columnWidth - 8), x, y, Color.GREEN);
-            }
-        }
     }
 
     /**
@@ -151,39 +112,6 @@ public class VehicleOverlay implements IGuiOverlay {
                 Tesselator.getInstance().end();
                 RenderSystem.disableBlend();
             }
-            poseStack.popPose();
-        }
-    }
-
-    private void renderBaseInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.translate((float) screenWidth / 2, screenHeight + 16, 0);
-            renderHealth(guiGraphics, 0, -20, 120, 5, vehicle, 1);
-
-            float energyCapacity = vehicle.energyInfo.energyCapacity;
-            float fuelPercent = energyCapacity > 0 ? vehicle.getEnergy() / energyCapacity * 100 : 0;
-            float powerPercent = vehicle.getPower();
-            renderFuelAndPower(guiGraphics, fuelPercent, powerPercent);
-        }
-        poseStack.popPose();
-    }
-
-    private void renderFuelAndPower(GuiGraphics guiGraphics, float fuelPercent, float powerPercent) {
-        PoseStack poseStack = guiGraphics.pose();
-        Component fuelText = Component.translatable("ui.vehicle_hud.fuel").append(String.format(java.util.Locale.ROOT, " %.1f%%", fuelPercent));
-        Component powerText = Component.translatable("ui.vehicle_hud.power").append(String.format(java.util.Locale.ROOT, " %.1f%%", powerPercent));
-        Font font = Minecraft.getInstance().font;
-        poseStack.pushPose();
-        try {
-            poseStack.translate(64, -29, 0);
-            poseStack.scale(0.4f, 0.4f, 1);
-            guiGraphics.drawString(font, fuelText, 0, 0,
-                    fuelPercent < 5 ? Color.RED : Color.WHITE, true);
-            guiGraphics.drawString(font, powerText, 0, font.lineHeight,
-                    powerPercent < 30 ? Color.RED : Color.WHITE, true);
-        } finally {
             poseStack.popPose();
         }
     }
@@ -465,7 +393,7 @@ public class VehicleOverlay implements IGuiOverlay {
                     green = (int) (255 * (percent * 2f));
                 }
             }
-            int barColor = (0xFF << 24) | (red << 16) | (green << 8); // ARGB
+            int barColor = (0xFF << 24) | (red << 16) | (green << 8);
 
             int filledWidth = (int) (barWidth * percent);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, -512, barColor);

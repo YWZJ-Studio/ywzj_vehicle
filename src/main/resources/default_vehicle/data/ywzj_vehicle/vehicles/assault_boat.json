@@ -31,7 +31,7 @@
     "parts": [
         {
             "id": "seat0",
-            "name": "seat0",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.4, 1.6, -1],
@@ -44,7 +44,7 @@
         },
         {
             "id": "seat1",
-            "name": "seat1",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.4, 1.1, -0.3],
@@ -52,7 +52,7 @@
         },
         {
             "id": "seat2",
-            "name": "seat2",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.4, 1.1, -0.3],
@@ -60,7 +60,7 @@
         },
         {
             "id": "seat3",
-            "name": "seat3",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.4, 1.1, 0.7],
@@ -68,7 +68,7 @@
         },
         {
             "id": "seat4",
-            "name": "seat4",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0.4, 1.1, 0.7],

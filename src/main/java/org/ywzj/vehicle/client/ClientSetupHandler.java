@@ -96,6 +96,7 @@ public class ClientSetupHandler {
     public static void onRegisterHud(RegisterGuiOverlaysEvent event) {
         event.registerBelowAll("vehicle_scope", new VehicleScopeOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle", new VehicleOverlay());
+        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_status", new VehicleStatusOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_rotary_wing", new RotaryWingVehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_fixed_wing", new FixedWingVehicleOverlay());
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(), "vehicle_aim_at", new VehicleAimAtOverlay());
@@ -113,6 +114,7 @@ public class ClientSetupHandler {
         event.registerSpriteSet(AllParticleTypes.TRACK_DUST.get(), TrackDustParticle.Provider::new);
         event.registerSpriteSet(AllParticleTypes.CHANGING_CLOUD.get(), SmokeCloudParticle::provider);
         event.registerSpriteSet(AllParticleTypes.FIXED_CLOUD.get(), SmokeCloudParticle::provider);
+        event.registerSpriteSet(AllParticleTypes.MISSILE_TRAIL.get(), MissileTrailParticle.Provider::new);
         event.registerSpecial(AllParticleTypes.BULLET_HOLE.get(), new BulletHoleParticle.Provider());
     }
 
