@@ -3,6 +3,7 @@ package org.ywzj.vehicle.vehicle.part;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCubePerFace;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -139,6 +140,9 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     @OnlyIn(Dist.CLIENT)
     public void render(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {}
+
+    @OnlyIn(Dist.CLIENT)
+    public void renderTips(GuiGraphics graphics) {}
 
     public void tick() {
         if (!this.getVehicle().level().isClientSide()) {

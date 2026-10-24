@@ -3,6 +3,7 @@ package org.ywzj.vehicle.vehicle.part;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.nbt.CompoundTag;
@@ -42,6 +43,7 @@ import org.ywzj.vehicle.network.message.ClientVehicleAction;
 import org.ywzj.vehicle.network.message.ServerVehicleFire;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
 import org.ywzj.vehicle.util.CcipUtil;
+import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
@@ -433,6 +435,29 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
                 }
             });
         });
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void renderTips(GuiGraphics graphics) {
+        if (!isInteractive() || weapons.isEmpty()) {
+            return;
+        }
+        int count = weapons.size();
+        int selected = getCurrentWeaponIndex();
+        int visible = Math.min(count, 10);
+        int first = Mth.clamp(selected - visible / 2, 0, count - visible);
+        List<RenderHelper.TipRow> rows = new ArrayList<>();
+        for (int index = first; index < first + visible; index++) {
+            Component name = proxyWeapon(weapons.get(index)).getDisplayName();
+            rows.add(new RenderHelper.TipRow(Component.literal((index + 1) + ". ").append(name), index == selected));
+        }
+        List<Component> hints = new ArrayList<>();
+        if (count > visible) {
+            hints.add(Component.literal((first + 1) + "–" + (first + visible) + " / " + count));
+        }
+        hints.add(Component.translatable("tips.sneak_use_modding_tool"));
+        RenderHelper.renderTipsPanel(graphics, getName(), rows, hints);
     }
 
     @Override

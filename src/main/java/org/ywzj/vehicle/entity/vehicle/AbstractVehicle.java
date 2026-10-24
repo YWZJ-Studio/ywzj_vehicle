@@ -557,7 +557,7 @@ public abstract class AbstractVehicle extends ContainerCraft
                 }
             }
         }
-        afterVehicleRot();
+        afterVehicleRot(xRot - xRotO, yRot - yRotO, zRot - zRotO);
         tickParts();
         tickDecorations();
         updateOBBs();
@@ -769,10 +769,7 @@ public abstract class AbstractVehicle extends ContainerCraft
         decorationUnits.values().forEach(PartUnit::tick);
     }
 
-    protected void afterVehicleRot() {
-        float dXRot = xRot - xRotO;
-        float dYRot = yRot - yRotO;
-        float dZRot = zRot - zRotO;
+    public void afterVehicleRot(float dXRot, float dYRot, float dZRot) {
         partUnits.forEach(partUnit -> partUnit.afterVehicleRot(dXRot, dYRot, dZRot));
         if (level().isClientSide()) {
             LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
@@ -834,7 +831,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     }
 
     @Override
-    protected AABB makeBoundingBox() {
+    public AABB makeBoundingBox() {
         if (remote || !dataInitialized) {
             return AABB.ofSize(position(), 1, 1, 1);
         }

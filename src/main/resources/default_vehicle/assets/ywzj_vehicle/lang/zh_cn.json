@@ -46,6 +46,8 @@
     "entity.ywzj_vehicle.assault_boat": "突击艇",
 
     "part.ywzj_vehicle.seat": "座位",
+    "part.ywzj_vehicle.hook_front": "前牵引挂钩",
+    "part.ywzj_vehicle.hook_rear": "后牵引挂钩",
     "part.ywzj_vehicle.wheel": "车轮",
     "part.ywzj_vehicle.road_wheel": "负重轮",
     "part.ywzj_vehicle.door": "车门",

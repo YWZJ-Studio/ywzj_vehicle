@@ -152,6 +152,22 @@
             "max_compression": 0.35,
             "max_extension": 0.22,
             "max_droop": 0.22
+        },
+        {
+            "id": "hook_front",
+            "name": "part.ywzj_vehicle.hook_front",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_front",
+            "is_seat": false,
+            "detachable": false
+        },
+        {
+            "id": "hook_rear",
+            "name": "part.ywzj_vehicle.hook_rear",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_rear",
+            "is_seat": false,
+            "detachable": false
         }
     ]
 }

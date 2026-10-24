@@ -39,6 +39,9 @@ public final class VehicleStatusOverlay implements IGuiOverlay {
     private static final int GAP = 8;
     private static final int ROW_HEIGHT = 14;
     private static final int CREW_ROWS_PER_COLUMN = 8;
+    private static final int HEALTH_BAR_HEIGHT = 6;
+    private static final int FUEL_BAR_HEIGHT = 4;
+    private static final int BAR_GAP = 3;
 
     @Override
     public void render(ForgeGui gui, GuiGraphics graphics, float partialTick, int screenWidth, int screenHeight) {
@@ -85,7 +88,7 @@ public final class VehicleStatusOverlay implements IGuiOverlay {
             renderCrew(graphics, vehicle, crewLeft, top, crewWidth, size);
             if (showStatus) {
                 renderHealth(graphics, vehicle, left, bottom + 4, size);
-                renderFuel(graphics, vehicle, left, bottom + 14, size);
+                renderFuel(graphics, vehicle, left, bottom + 4 + HEALTH_BAR_HEIGHT + BAR_GAP, size);
             }
         }
     }
@@ -275,23 +278,8 @@ public final class VehicleStatusOverlay implements IGuiOverlay {
         float difference = vehicle.healthO - vehicle.getHealth();
         String delta = difference > 0 ? String.format(Locale.ROOT, "-%.2f", difference)
                 : difference < 0 && !vehicle.isDestroyed() ? String.format(Locale.ROOT, "+%.2f", -difference) : "";
-        float barTop = top;
-        fill(graphics, left, barTop, left + width, barTop + 8, 0x80404040);
-        fill(graphics, left, barTop, left + width * percent, barTop + 8, color);
-        if (lastPercent != percent) {
-            fill(graphics, left + width * Math.min(percent, lastPercent), barTop,
-                    left + width * Math.max(percent, lastPercent), barTop + 8, WHITE);
-        }
-        float textScale = Math.min(1, (width - 4) / Math.max(1, VehicleHudText.width(health)));
-        graphics.pose().pushPose();
-        try {
-            graphics.pose().translate(left + width / 2, barTop + (8 - 7 * textScale) / 2, 0);
-            graphics.pose().scale(textScale, textScale, 1);
-            RenderHelper.drawCenteredString(graphics, Minecraft.getInstance().font, health, 0, 0, Color.WHITE);
-        } finally {
-            graphics.pose().popPose();
-        }
-        VehicleHudText.drawString(graphics, delta, left + width + GAP, barTop,
+        renderStatusBar(graphics, left, top, width, HEALTH_BAR_HEIGHT, percent, lastPercent, color, health);
+        VehicleHudText.drawString(graphics, delta, left + width + GAP, top,
                 difference > 0 ? Color.RED : Color.GREEN, false);
     }
 
@@ -299,11 +287,24 @@ public final class VehicleStatusOverlay implements IGuiOverlay {
         float capacity = Math.max(0, vehicle.energyInfo.energyCapacity);
         float fuel = Math.max(0, vehicle.getEnergy());
         float percent = capacity > 0 ? Mth.clamp(fuel / capacity, 0, 1) : 0;
-        float height = 5;
-        fill(graphics, left, top, left + width, top + height, 0x80404040);
-        fill(graphics, left, top, left + width * percent, top + height, FUEL_YELLOW);
         String text = String.format(Locale.ROOT, "%.0f/%.0f", fuel, capacity);
-        float scale = Math.min(0.6f, (width - 4) / Math.max(1, VehicleHudText.width(text)));
+        renderStatusBar(graphics, left, top, width, FUEL_BAR_HEIGHT, percent, percent, FUEL_YELLOW, text);
+    }
+
+    private static void renderStatusBar(GuiGraphics graphics, float left, float top, float width, float height,
+                                        float percent, float lastPercent, int color, String text) {
+        float stroke = VehicleHudLayout.HEIGHT / Math.max(1, Minecraft.getInstance().getWindow().getHeight());
+        fill(graphics, left, top, left + width, top + height, Color.BG_DARK);
+        fill(graphics, left - stroke, top, left, top + height, Color.GRAY);
+        fill(graphics, left + width, top, left + width + stroke, top + height, Color.GRAY);
+        fill(graphics, left, top - stroke, left + width, top, Color.GRAY);
+        fill(graphics, left, top + height, left + width, top + height + stroke, Color.GRAY);
+        fill(graphics, left, top, left + width * percent, top + height, color);
+        if (lastPercent != percent) {
+            fill(graphics, left + width * Math.min(percent, lastPercent), top,
+                    left + width * Math.max(percent, lastPercent), top + height, Color.WHITE);
+        }
+        float scale = Math.min(height / 8, (width - 4) / Math.max(1, VehicleHudText.width(text)));
         graphics.pose().pushPose();
         try {
             graphics.pose().translate(left + width / 2, top + (height - 7 * scale) / 2, 0);

@@ -46,6 +46,8 @@
     "entity.ywzj_vehicle.assault_boat": "Assault Boat",
 
     "part.ywzj_vehicle.seat": "Seat",
+    "part.ywzj_vehicle.hook_front": "Front tow hook",
+    "part.ywzj_vehicle.hook_rear": "Rear tow hook",
     "part.ywzj_vehicle.wheel": "Wheel",
     "part.ywzj_vehicle.road_wheel": "Road Wheel",
     "part.ywzj_vehicle.door": "Door",

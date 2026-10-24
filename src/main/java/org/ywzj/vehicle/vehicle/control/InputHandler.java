@@ -22,6 +22,7 @@ import org.ywzj.vehicle.network.Channel;
 import org.ywzj.vehicle.network.message.*;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
+import org.ywzj.vehicle.vehicle.part.HookUnit;
 import org.ywzj.vehicle.vehicle.part.RadarUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.weapon.AbstractVehicleWeapon;
@@ -276,6 +277,13 @@ public class InputHandler {
         var mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isSpectator() || mc.gameMode == null) {
+            return;
+        }
+        if (mc.screen == null && player.isShiftKeyDown() && event.getScrollDelta() != 0
+                && LocalVehiclePlayer.instance.lookAtPartUnit instanceof HookUnit hook
+                && hook.isConnected() && hook.canInteract(player)) {
+            Channel.CHANNEL.sendToServer(new ClientHookAdjustLength(hook.getVehicle().getId(), hook.getIndex(), event.getScrollDelta() < 0));
+            event.setCanceled(true);
             return;
         }
         if (LocalVehiclePlayer.instance.onVehicle()) {

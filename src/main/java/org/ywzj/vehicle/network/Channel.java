@@ -138,6 +138,11 @@ public class Channel {
                 ServerSlicedPacket::encode, ServerSlicedPacket::decode,
                 ServerSlicedPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(PacketId.C_HOOK_ADJUST_LENGTH.value(), ClientHookAdjustLength.class,
+                ClientHookAdjustLength::encode, ClientHookAdjustLength::decode,
+                ClientHookAdjustLength::handle,
+                Optional.of(PLAY_TO_SERVER));
     }
 
 }
@@ -166,6 +171,7 @@ enum PacketId {
     C_RADAR_ACTION(119),
     C_VEHICLE_SELECT_PART_WEAPON(120),
     C_OPEN_PARACHUTE(121),
+    C_HOOK_ADJUST_LENGTH(122),
     S_SLICED_PACKET(200);
 
     private final int id;

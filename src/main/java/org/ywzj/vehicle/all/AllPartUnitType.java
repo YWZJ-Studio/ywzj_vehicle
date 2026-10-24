@@ -37,6 +37,8 @@ public class AllPartUnitType {
 
     public static final RegistryObject<PartUnitType<RopeUnit, RopeUnitData>> ROPE = register(PartUnitTypes.ROPE);
 
+    public static final RegistryObject<PartUnitType<HookUnit, PartUnitData>> HOOK = register(PartUnitTypes.HOOK);
+
     public static final RegistryObject<PartUnitType<TrackUnit, TrackUnitData>> TRACK = register(PartUnitTypes.TRACK);
 
     public static final RegistryObject<PartUnitType<SuspensionUnit<SuspensionUnitData>, SuspensionUnitData>> SUSPENSION = register(PartUnitTypes.SUSPENSION);
