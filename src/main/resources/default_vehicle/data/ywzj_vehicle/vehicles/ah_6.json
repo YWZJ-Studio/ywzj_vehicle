@@ -38,7 +38,7 @@
     "parts": [
         {
             "id": "sighting_system",
-            "name": "sighting_system",
+            "name": "part.ywzj_vehicle.sighting_system",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "sighting_system",
             "seat_offset": [0.5, 2.5, 1.13],
@@ -63,7 +63,7 @@
         },
         {
             "id": "gun",
-            "name": "gun",
+            "name": "part.ywzj_vehicle.gun",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "gun",
             "is_seat": false,
@@ -80,7 +80,7 @@
         },
         {
             "id": "rocket",
-            "name": "rocket",
+            "name": "part.ywzj_vehicle.rocket",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "rocket",
             "is_seat": false,
@@ -93,7 +93,7 @@
         },
         {
             "id": "seat2",
-            "name": "passenger_seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-0.5, 2.5, 1.13],
@@ -101,7 +101,7 @@
         },
         {
             "id": "seat3",
-            "name": "passenger_seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [1.679, 1.890, 0.683],
@@ -111,7 +111,7 @@
         },
         {
             "id": "seat4",
-            "name": "passenger_seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [1.679, 1.890, -0.5],
@@ -121,7 +121,7 @@
         },
         {
             "id": "seat5",
-            "name": "passenger_seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-1.679, 1.890, 0.683],
@@ -131,7 +131,7 @@
         },
         {
             "id": "seat6",
-            "name": "passenger_seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-1.679, 1.890, -0.5],

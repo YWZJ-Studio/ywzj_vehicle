@@ -15,8 +15,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -29,6 +32,7 @@ import org.ywzj.vehicle.api.entity.SightObstruction;
 import org.ywzj.vehicle.api.entity.TargetObstruction;
 import org.ywzj.vehicle.audio.VehicleSound;
 import org.ywzj.vehicle.client.handler.FirstPersonHandler;
+import org.ywzj.vehicle.client.particle.MissileTrailParticle;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.InternalAssets;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -37,7 +41,7 @@ import org.ywzj.vehicle.custom.weapon.VehicleWeaponIndex;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 import org.ywzj.vehicle.network.message.ServerVehicleWarn;
-import org.ywzj.vehicle.particle.SmokeCloudOption;
+import org.ywzj.vehicle.particle.MissileTrailOption;
 import org.ywzj.vehicle.util.EntityUtil;
 import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
@@ -86,6 +90,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
     public AnimationRunner animationRunner;
     private VehicleSound sound;
     private Vec3 particlePosO;
+    private boolean launchDustPending;
 
     private enum PresetPhase {
         ASCENT,
@@ -130,6 +135,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         super.writeSpawnData(buffer);
         buffer.writeInt(getOwner() == null ? -1 : getOwner().getId());
         buffer.writeInt(coldLaunchTimeTick);
+        buffer.writeBoolean(tickCount <= 1);
     }
 
     @Override
@@ -137,6 +143,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         super.readSpawnData(additionalData);
         ownerId = additionalData.readInt();
         coldLaunchTimeTick = additionalData.readInt();
+        launchDustPending = additionalData.readBoolean();
         VehicleWeaponIndex<?, ?> vehicleWeaponIndex = CommonAssetsManager.vehicleWeaponManager().getIndex(getWeaponId()).orElse(null);
         if (vehicleWeaponIndex != null && vehicleWeaponIndex.data() instanceof VehicleMissileWeaponData data) {
             initMissile(data);
@@ -401,46 +408,55 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
 
     @OnlyIn(Dist.CLIENT)
     public void tickParticle() {
-        if (!isMotorBurning() || engineNozzleOffset == null) {
+        if (engineNozzleOffset == null) {
+            particlePosO = null;
+            return;
+        }
+        float size = Math.max(caliber / 1000f, 0.12f);
+        int lingerTicks = Math.round(600 * Mth.clamp((caliber - 500f) / 1750f, 0, 1));
+        float dustRange = Mth.lerp(Mth.clamp(caliber / 2250f, 0, 1), 32f, 48f);
+        MissileTrailOption option = new MissileTrailOption(size, lingerTicks, dustRange);
+        if (launchDustPending) {
+            launchDustPending = false;
+            spawnLaunchDust(option);
+        }
+        if (!isMotorBurning()) {
+            particlePosO = null;
             return;
         }
         Vec3 rotatedOffset = engineNozzleOffset.add(0, 0, -caliber / 150f)
                 .xRot(-this.xRotO * Mth.DEG_TO_RAD)
                 .yRot(-this.yRotO * Mth.DEG_TO_RAD);
         Vec3 pos = new Vec3(this.xo, this.yo, this.zo).add(rotatedOffset);
-        Vec3 posO = particlePosO == null ? pos : particlePosO;
-        Vec3 step = pos.subtract(posO);
-        double dist = step.length();
-        int segments = (int) (dist / 0.5);
-        Vec3 dir = step.normalize();
-        if (caliber > 152) {
-            float scale = caliber / 2250f;
-            float lifeScale = 1 - (float) Math.pow(1 - Mth.clamp(scale, 0, 1), 3);
-            float size = 0.2f * (float) Math.pow(5, scale);
-            for (int i = 0; i <= segments; i++) {
-                double x = this.random.triangle(0, 0.1f * size * size);
-                double y = this.random.triangle(0, 0.1f * size * size);
-                double z = this.random.triangle(0, 0.1f * size * size);
-                Vec3 particlePos = posO.add(dir.scale(i * 0.5));
-                level().addParticle(new SmokeCloudOption(false,
-                                0.9f, 0.9f, 0.9f,
-                                0.6f, 0.6f, 0.6f,
-                                0.8f, 0f, (int) (1200 * lifeScale),
-                                size, 3 * size, 0.005f), true,
-                        particlePos.x, particlePos.y, particlePos.z,
-                        x, y, z);
-            }
-        } else {
-            for (int i = 0; i <= segments; i++) {
-                Vec3 particlePos = posO.add(dir.scale(i * 0.5));
-                level().addParticle(
-                        ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true,
-                        particlePos.x, particlePos.y, particlePos.z,
-                        0.0D, 0.0D, 0.0D
-                );
-            }
+        boolean resetTrail = particlePosO == null || particlePosO.distanceToSqr(pos) > 128 * 128;
+        Vec3 posO = resetTrail ? pos : particlePosO;
+        double dist = pos.distanceTo(posO);
+        float smokeSize = 0.2f * (float) Math.pow(5, caliber / 2250f);
+        double spacing = caliber > 152 ? Mth.clamp(smokeSize * 0.5, 0.1, 1.5) : 0.5;
+        for (double distance = 0; distance <= dist; distance += spacing) {
+            Vec3 particlePos = dist > 1.0E-6 ? posO.lerp(pos, distance / dist) : pos;
+            level().addParticle(caliber > 152 ? option : ParticleTypes.CAMPFIRE_SIGNAL_SMOKE,
+                    true, particlePos.x, particlePos.y, particlePos.z,
+                    0, 0, 0);
         }
         particlePosO = pos;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void spawnLaunchDust(MissileTrailOption option) {
+        Vec3 nozzle = new Vec3(xo, yo, zo).add(engineNozzleOffset
+                .xRot(-xRotO * Mth.DEG_TO_RAD)
+                .yRot(-yRotO * Mth.DEG_TO_RAD));
+        Vec3 dustDirection = new Vec3(0, -1, 0);
+        BlockHitResult impact = level().clip(new ClipContext(nozzle,
+                nozzle.add(dustDirection.scale(option.range())),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        if (impact.getType() == HitResult.Type.BLOCK && !impact.isInside()) {
+            int count = 3 * Math.max(Mth.clamp(Mth.ceil(caliber / 250f), 3, 16),
+                    Mth.ceil(6 + 3 * Mth.sqrt(Mth.clamp(caliber / 2250f, 0, 1))));
+            MissileTrailParticle.spawnSurface(option, impact, dustDirection,
+                    nozzle.distanceTo(impact.getLocation()), count);
+        }
     }
 
     @OnlyIn(Dist.CLIENT)

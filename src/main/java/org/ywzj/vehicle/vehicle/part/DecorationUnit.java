@@ -11,11 +11,13 @@ import com.maydaymemory.mae.control.runner.LoopingState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -33,12 +35,14 @@ import org.ywzj.vehicle.client.screen.DecorationSettingsScreen;
 import org.ywzj.vehicle.custom.part.data.PartUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.pojo.DecorationAction;
 import org.ywzj.vehicle.vehicle.structure.OBB;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -218,6 +222,13 @@ public class DecorationUnit extends PartUnit<PartUnitData> {
             decorationModel.renderSpecialBones(modelInstance, pPoseStack, bufferSource, decorationTexture, modelLight, OverlayTexture.NO_OVERLAY, null, false);
         }
         pPoseStack.popPose();
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void renderTips(GuiGraphics graphics) {
+        ClientAssetsManager.INSTANCE.getDecorationDisplay(getDisplayId()).ifPresent(display ->
+                RenderHelper.renderTipsPanel(graphics, Component.literal(display.getDisplayId().toString()), List.of(), List.of(Component.translatable("tips.edit_decoration"))));
     }
 
     @Override

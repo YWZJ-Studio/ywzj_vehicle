@@ -34,6 +34,7 @@ public class Channel {
         registrar.playToServer(ClientRadarAction.TYPE, ClientRadarAction.STREAM_CODEC, ClientRadarAction::handle);
         registrar.playToServer(ClientVehicleSelectPartWeapon.TYPE, ClientVehicleSelectPartWeapon.STREAM_CODEC, ClientVehicleSelectPartWeapon::handle);
         registrar.playToServer(ClientOpenParachute.TYPE, ClientOpenParachute.STREAM_CODEC, ClientOpenParachute::handle);
+        registrar.playToServer(ClientHookAdjustLength.TYPE, ClientHookAdjustLength.STREAM_CODEC, ClientHookAdjustLength::handle);
         registrar.playToClient(ServerSlicedPacket.TYPE, ServerSlicedPacket.STREAM_CODEC, ServerSlicedPacket::handle);
     }
 

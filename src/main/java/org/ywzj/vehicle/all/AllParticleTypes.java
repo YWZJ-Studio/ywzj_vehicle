@@ -12,10 +12,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.YwzjVehicle;
-import org.ywzj.vehicle.particle.BulletHoleOption;
-import org.ywzj.vehicle.particle.DustSmokeOption;
-import org.ywzj.vehicle.particle.SmokeCloudOption;
-import org.ywzj.vehicle.particle.TrackDustOption;
+import org.ywzj.vehicle.particle.*;
 
 public class AllParticleTypes {
 
@@ -47,6 +44,10 @@ public class AllParticleTypes {
 
     public static final DeferredHolder<ParticleType<?>, ParticleType<SmokeCloudOption>> FIXED_CLOUD = PARTICLE_TYPES.register("fixed_cloud",
             () -> createOptions(SmokeCloudOption.CODEC, SmokeCloudOption.STREAM_CODEC)
+    );
+
+    public static final DeferredHolder<ParticleType<?>, ParticleType<MissileTrailOption>> MISSILE_TRAIL = PARTICLE_TYPES.register("missile_trail",
+            () -> createOptions(MissileTrailOption.CODEC, MissileTrailOption.STREAM_CODEC)
     );
 
     public static void register(IEventBus eventBus) {

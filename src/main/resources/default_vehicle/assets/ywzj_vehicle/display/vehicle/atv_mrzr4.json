@@ -9,5 +9,6 @@
         "engine_idle": "ywzj_vehicle:car_engine_idle",
         "engine_run": "ywzj_vehicle:car_engine_run"
     },
+    "description": "ywzj_vehicle.atv_mrzr4.description",
     "tab_index": 3
 }

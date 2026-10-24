@@ -34,7 +34,7 @@
     "parts": [
         {
             "id": "passenger_seat",
-            "name": "passenger_seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [0, 1.7, -0.3],
@@ -42,7 +42,7 @@
         },
         {
             "id": "suspension_wheel_back",
-            "name": "suspension_wheel_back",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -60,7 +60,7 @@
         },
         {
             "id": "suspension_wheel_front",
-            "name": "suspension_wheel_front",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -75,6 +75,22 @@
             "max_compression": 0.35,
             "max_extension": 0.22,
             "max_droop": 0.2
+        },
+        {
+            "id": "hook_front",
+            "name": "part.ywzj_vehicle.hook_front",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_front",
+            "is_seat": false,
+            "detachable": false
+        },
+        {
+            "id": "hook_rear",
+            "name": "part.ywzj_vehicle.hook_rear",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_rear",
+            "is_seat": false,
+            "detachable": false
         }
     ]
 }

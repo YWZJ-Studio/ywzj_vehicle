@@ -24,6 +24,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4fStack;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.particle.MissileTrailParticle;
 import org.ywzj.vehicle.client.particle.SmokeCloudParticle;
 import org.ywzj.vehicle.mixin.client.ParticleEngineAccessor;
 
@@ -197,7 +198,7 @@ public class ThermalHandler implements ResourceManagerReloadListener {
             RenderSystem.depthMask(false);
             Vec3 cameraPos = camera.getPosition();
             for (Particle particle : particles) {
-                if (!(particle instanceof SmokeCloudParticle) || !particle.isAlive()) {
+                if (!(particle instanceof SmokeCloudParticle || particle instanceof MissileTrailParticle) || !particle.isAlive()) {
                     continue;
                 }
                 if (particle.getBoundingBox().getCenter().distanceToSqr(cameraPos) > THERMAL_RANGE_SQ) {

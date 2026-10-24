@@ -49,7 +49,7 @@
     "parts": [
         {
             "id": "sighting_system",
-            "name": "sighting_system",
+            "name": "part.ywzj_vehicle.sighting_system",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "sighting_system",
             "seat_offset": [0, 3, 4.7],
@@ -91,7 +91,7 @@
         },
         {
             "id": "auto_cannon",
-            "name": "auto_cannon",
+            "name": "part.ywzj_vehicle.auto_cannon",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "auto_cannon",
             "ammo_capacity": 200,
@@ -104,7 +104,7 @@
         },
         {
             "id": "pl_12",
-            "name": "pl_12",
+            "name": "part.ywzj_vehicle.pl_12",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "pl_12",
             "render_model": true,
@@ -120,7 +120,7 @@
         },
         {
             "id": "pl_8",
-            "name": "pl_8",
+            "name": "part.ywzj_vehicle.pl_8",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "pl_8",
             "render_model": true,
@@ -136,7 +136,7 @@
         },
         {
             "id": "variable_weapon_1",
-            "name": "variable_weapon_1",
+            "name": "part.ywzj_vehicle.weapon_pylon",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "variable_weapon_1",
             "render_selected_weapon": true,
@@ -152,7 +152,7 @@
         },
         {
             "id": "variable_weapon_nuke_1",
-            "name": "nuke",
+            "name": "part.ywzj_vehicle.nuke",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "variable_weapon_1",
             "render_model": true,
@@ -167,7 +167,7 @@
         },
         {
             "id": "variable_weapon_pl_12_1",
-            "name": "pl_12",
+            "name": "part.ywzj_vehicle.pl_12",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "variable_weapon_1",
             "render_model": true,
@@ -182,7 +182,7 @@
         },
         {
             "id": "decoy_flare",
-            "name": "decoy_flare",
+            "name": "part.ywzj_vehicle.decoy_flare",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "decoy_flare",
             "is_seat": false,
@@ -195,7 +195,7 @@
         },
         {
             "id": "radar",
-            "name": "radar",
+            "name": "part.ywzj_vehicle.radar",
             "type": "ywzj_vehicle:radar",
             "structure_bone": "radar",
             "is_seat": false,
@@ -211,7 +211,7 @@
         },
         {
             "id": "landing_gear",
-            "name": "landing_gear",
+            "name": "part.ywzj_vehicle.landing_gear",
             "type": "ywzj_vehicle:landing_gear",
             "structure_bone": "landing_gear",
             "is_seat": false,
@@ -219,7 +219,7 @@
         },
         {
             "id": "airbrake",
-            "name": "airbrake",
+            "name": "part.ywzj_vehicle.airbrake",
             "type": "ywzj_vehicle:airbrake",
             "structure_bone": "airbrake",
             "is_seat": false,

@@ -115,6 +115,18 @@ public class PartUnitTypes {
                     })
                     .build();
 
+    public static final PartUnitType<HookUnit, PartUnitData> HOOK =
+            PartUnitType.Builder.<HookUnit, PartUnitData>of(YwzjVehicle.modLocation("hook"))
+                    .setFactory(HookUnit::new)
+                    .setDataSerializer(json -> {
+                        var pojo = GsonUtil.GSON.fromJson(json, PartUnitPojo.class);
+                        if (!json.getAsJsonObject().has("is_seat")) {
+                            pojo.isSeat = false;
+                        }
+                        return new PartUnitData(pojo);
+                    })
+                    .build();
+
     public static final PartUnitType<TrackUnit, TrackUnitData> TRACK =
             PartUnitType.Builder.<TrackUnit, TrackUnitData>of(YwzjVehicle.modLocation("track"))
                     .setFactory(TrackUnit::new)

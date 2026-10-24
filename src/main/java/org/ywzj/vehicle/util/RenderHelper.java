@@ -3,19 +3,104 @@ package org.ywzj.vehicle.util;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.YwzjVehicle;
+import org.ywzj.vehicle.client.gui.VehicleHudLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RenderHelper {
+
+    public record TipRow(Component text, boolean selected) {}
+
+    @OnlyIn(Dist.CLIENT)
+    public static void renderTipsPanel(GuiGraphics graphics, Component title, List<TipRow> rows, List<Component> hints) {
+        Font font = Minecraft.getInstance().font;
+        try (VehicleHudLayout layout = VehicleHudLayout.begin(graphics)) {
+            float textWidth = font.width(title.getString());
+            for (TipRow row : rows) {
+                textWidth = Math.max(textWidth, font.width(row.text().getString()));
+            }
+            for (Component hint : hints) {
+                textWidth = Math.max(textWidth, font.width(hint) * 0.75f);
+            }
+            float maxWidth = Math.min(216, layout.width() - 36);
+            float width = Math.min(Mth.ceil(textWidth) + 12, maxWidth);
+            if (width <= 12) {
+                return;
+            }
+            int contentWidth = (int) (width - 12);
+            List<FormattedCharSequence> hintLines = new ArrayList<>();
+            for (Component hint : hints) {
+                hintLines.addAll(font.split(hint, (int) (contentWidth / 0.75f)));
+            }
+            float headerHeight = font.lineHeight + 12;
+            float bodyHeight = rows.isEmpty() ? 0 : 6 + rows.size() * 14;
+            float hintLineHeight = (font.lineHeight + 3) * 0.75f;
+            float footerHeight = hintLines.isEmpty() ? 0 : 12 + hintLines.size() * hintLineHeight;
+            float height = headerHeight + bodyHeight + footerHeight;
+            float scale = Math.min(1, (VehicleHudLayout.HEIGHT - 36) / height);
+            float left = Mth.clamp(layout.width() / 2 + 32, 18, layout.width() - 18 - width * scale);
+            float top = Mth.clamp(VehicleHudLayout.HEIGHT / 2 - height * scale / 2,
+                    18, VehicleHudLayout.HEIGHT - 18 - height * scale);
+            float stroke = VehicleHudLayout.HEIGHT / Math.max(1, Minecraft.getInstance().getWindow().getHeight()) / scale;
+            graphics.pose().pushPose();
+            try {
+                graphics.pose().translate(left, top, 0);
+                graphics.pose().scale(scale, scale, 1);
+                fill(graphics, RenderType.gui(), 0, 0, width, height, 0, 0x80404040);
+                fill(graphics, RenderType.gui(), 0, 0, width, stroke, 0, 0xFFF2F2F2);
+                fill(graphics, RenderType.gui(), 0, height - stroke, width, height, 0, 0xFFF2F2F2);
+                fill(graphics, RenderType.gui(), 0, 0, stroke, height, 0, 0xFFF2F2F2);
+                fill(graphics, RenderType.gui(), width - stroke, 0, width, height, 0, 0xFFF2F2F2);
+                VehicleHudText.drawString(graphics, VehicleHudText.truncate(title.getString(), contentWidth),
+                        6, 6, 0xFFF2F2F2);
+                fill(graphics, RenderType.gui(), 0, headerHeight, width, headerHeight + stroke, 0, 0xFFF2F2F2);
+
+                float rowTop = headerHeight + 3f;
+                for (TipRow row : rows) {
+                    if (row.selected()) {
+                        fill(graphics, RenderType.gui(), stroke, rowTop, width - stroke, rowTop + 12, 0, 0xFFF2F2F2);
+                    }
+                    VehicleHudText.drawString(graphics, VehicleHudText.truncate(row.text().getString(), contentWidth),
+                            6, rowTop + 2, row.selected() ? 0xFF161616 : 0xFFF2F2F2, !row.selected());
+                    rowTop += 14;
+                }
+                float footerTop = headerHeight + bodyHeight;
+                if (!rows.isEmpty() && !hintLines.isEmpty()) {
+                    fill(graphics, RenderType.gui(), 0, footerTop, width, footerTop + stroke, 0, 0xFFF2F2F2);
+                }
+                graphics.pose().pushPose();
+                try {
+                    graphics.pose().translate(6, footerTop + 6, 0);
+                    graphics.pose().scale(0.75f, 0.75f, 1);
+                    for (int index = 0; index < hintLines.size(); index++) {
+                        graphics.drawString(font, hintLines.get(index), 0, index * (font.lineHeight + 3), 0xFFB8B8B8, true);
+                    }
+                } finally {
+                    graphics.pose().popPose();
+                }
+            } finally {
+                graphics.pose().popPose();
+            }
+        }
+    }
 
     public static void drawCenteredString(GuiGraphics guiGraphics, Font pFont, String pText, int pX, int pY, int pColor) {
         guiGraphics.drawString(pFont, pText, pX - pFont.width(pText) / 2, pY, pColor, false);

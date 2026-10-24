@@ -38,7 +38,7 @@
     "parts": [
         {
             "id": "sighting_system",
-            "name": "sighting_system",
+            "name": "part.ywzj_vehicle.sighting_system",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "sighting_system",
             "seat_offset": [0, 2.5, 5.13],
@@ -79,7 +79,7 @@
         },
         {
             "id": "auto_cannon",
-            "name": "auto_cannon",
+            "name": "part.ywzj_vehicle.auto_cannon",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "auto_cannon",
             "fire_control_sensor_type": "eo",
@@ -96,7 +96,7 @@
         },
         {
             "id": "missile",
-            "name": "missile",
+            "name": "part.ywzj_vehicle.missile",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "missile",
             "fire_control_sensor_type": "eo",
@@ -110,7 +110,7 @@
         },
         {
             "id": "rocket",
-            "name": "rocket",
+            "name": "part.ywzj_vehicle.rocket",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "rocket",
             "is_seat": false,
@@ -123,7 +123,7 @@
         },
         {
             "id": "decoy_flare",
-            "name": "decoy_flare",
+            "name": "part.ywzj_vehicle.decoy_flare",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "decoy_flare",
             "is_seat": false,

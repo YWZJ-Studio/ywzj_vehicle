@@ -22,25 +22,19 @@ import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.all.AllKeys;
 import org.ywzj.vehicle.client.render.util.Color;
-import org.ywzj.vehicle.client.resource.ClientAssetsManager;
-import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
-import org.ywzj.vehicle.entity.vehicle.NoneVehicle;
 import org.ywzj.vehicle.network.message.ServerHitVehicleEvent;
 import org.ywzj.vehicle.util.RenderHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleHudText;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
-import org.ywzj.vehicle.vehicle.part.DecorationUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
-import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.passenger.WarningReceiver;
 import org.ywzj.vehicle.vehicle.pojo.WarnType;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,48 +52,10 @@ public class VehicleOverlay implements LayeredDraw.Layer {
         if (!localVehiclePlayer.onVehicle()) {
             return;
         }
-        AbstractVehicle vehicle = localVehiclePlayer.vehicle;
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
-        renderCrew(guiGraphics, centerX, centerY, vehicle);
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
             renderCompassBar(guiGraphics, screenWidth);
         }
-        if (!(vehicle instanceof NoneVehicle)) {
-            renderBaseInfo(guiGraphics, screenWidth, screenHeight, vehicle);
-        }
         renderTips(guiGraphics, screenWidth, screenHeight);
-    }
-
-    /**
-     * 乘员组
-     */
-    public static void renderCrew(GuiGraphics guiGraphics, int centerX, int centerY, AbstractVehicle vehicle) {
-        try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
-            float leftX = VehicleHudLayout.crewX(layout.width() / 2);
-            int rowHeight = VehicleHudText.LINE_HEIGHT;
-            int maxRows = Math.max(1, (int) ((VehicleHudLayout.HEIGHT - 18 - VehicleHudText.LINE_HEIGHT
-                    - VehicleHudLayout.CREW_Y) / rowHeight) + 1);
-            int columns = Math.max(1, (vehicle.seats.size() + maxRows - 1) / maxRows);
-            int rows = Math.max(1, (vehicle.seats.size() + columns - 1) / columns);
-            int columnWidth = Math.min(80, (int) ((layout.width() / 2 - 72 - leftX) / columns));
-            float topY = Math.min(VehicleHudLayout.CREW_Y,
-                    VehicleHudLayout.HEIGHT - 18 - VehicleHudText.LINE_HEIGHT - (rows - 1) * rowHeight);
-            for (int index = 0; index < vehicle.seats.size(); index++) {
-                Integer playerId = vehicle.seats.get(index).passengerId;
-                Entity entity = null;
-                if (playerId != null) {
-                    entity = LocalVehiclePlayer.instance.getPlayer().level().getEntity(playerId);
-                }
-                String info = "[]";
-                if (entity != null) {
-                    info = "[" + entity.getDisplayName().getString() + "]";
-                }
-                float x = leftX + index / rows * columnWidth;
-                float y = topY + index % rows * rowHeight;
-                VehicleHudText.drawString(guiGraphics, VehicleHudText.truncate(info, columnWidth - 8), x, y, Color.GREEN);
-            }
-        }
     }
 
     /**
@@ -153,39 +109,6 @@ public class VehicleOverlay implements LayeredDraw.Layer {
                 BufferUploader.drawWithShader(buf.buildOrThrow());
                 RenderSystem.disableBlend();
             }
-            poseStack.popPose();
-        }
-    }
-
-    private void renderBaseInfo(GuiGraphics guiGraphics, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.translate((float) screenWidth / 2, screenHeight + 16, 0);
-            renderHealth(guiGraphics, 0, -20, 120, 5, vehicle, 1);
-
-            float energyCapacity = vehicle.energyInfo.energyCapacity;
-            float fuelPercent = energyCapacity > 0 ? vehicle.getEnergy() / energyCapacity * 100 : 0;
-            float powerPercent = vehicle.getPower();
-            renderFuelAndPower(guiGraphics, fuelPercent, powerPercent);
-        }
-        poseStack.popPose();
-    }
-
-    private void renderFuelAndPower(GuiGraphics guiGraphics, float fuelPercent, float powerPercent) {
-        PoseStack poseStack = guiGraphics.pose();
-        Component fuelText = Component.translatable("ui.vehicle_hud.fuel").append(String.format(java.util.Locale.ROOT, " %.1f%%", fuelPercent));
-        Component powerText = Component.translatable("ui.vehicle_hud.power").append(String.format(java.util.Locale.ROOT, " %.1f%%", powerPercent));
-        Font font = Minecraft.getInstance().font;
-        poseStack.pushPose();
-        try {
-            poseStack.translate(64, -29, 0);
-            poseStack.scale(0.4f, 0.4f, 1);
-            guiGraphics.drawString(font, fuelText, 0, 0,
-                    fuelPercent < 5 ? Color.RED : Color.WHITE, true);
-            guiGraphics.drawString(font, powerText, 0, font.lineHeight,
-                    powerPercent < 30 ? Color.RED : Color.WHITE, true);
-        } finally {
             poseStack.popPose();
         }
     }
@@ -271,10 +194,8 @@ public class VehicleOverlay implements LayeredDraw.Layer {
                 }
             }
             poseStack.popPose();
-            if (partUnit instanceof WeaponUnit weaponUnit && weaponUnit.isInteractive()) {
-                renderWeaponList(guiGraphics, weaponUnit);
-            } else if (partUnit instanceof DecorationUnit decorationUnit) {
-                renderDecorationTips(guiGraphics, decorationUnit);
+            if (partUnit != null) {
+                partUnit.renderTips(guiGraphics);
             }
         }
         if (!VehicleHitIndicatorOverlay.events.isEmpty()) {
@@ -296,97 +217,6 @@ public class VehicleOverlay implements LayeredDraw.Layer {
                 }
             }
         }
-    }
-
-    /**
-     * 可选武器列表
-     */
-    private void renderWeaponList(GuiGraphics guiGraphics, WeaponUnit weaponUnit) {
-        var weapons = weaponUnit.weapons;
-        if (weapons.isEmpty()) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-
-        int screenWidth = mc.getWindow().getGuiScaledWidth();
-        int screenHeight = mc.getWindow().getGuiScaledHeight();
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
-        int maxNameWidth = 0;
-        for (var weapon : weapons) {
-            maxNameWidth = Math.max(maxNameWidth, VehicleHudText.width(weaponUnit.proxyWeapon(weapon).getDisplayName().getString()));
-        }
-        int cardWidth = maxNameWidth + 8;
-        int cardHeight = 14;
-        int cardPadding = 2;
-        int listX = centerX + 24;
-        int currentWeaponIndex = weaponUnit.getCurrentWeaponIndex();
-        int totalHeight = weapons.size() * (cardHeight + cardPadding) - cardPadding;
-        int listY = centerY - totalHeight / 2;
-        RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
-                listX - 2, listY - 2,
-                listX + cardWidth + 2, listY + totalHeight + 2,
-                -512, Color.BG_DARK);
-        PoseStack poseStack = guiGraphics.pose();
-        for (int i = 0; i < weapons.size(); i++) {
-            var weapon = weaponUnit.proxyWeapon(weapons.get(i));
-            int cardY = listY + i * (cardHeight + cardPadding);
-            boolean selected = (i == currentWeaponIndex);
-            int cardBg = selected ? Color.BG_SELECTED : Color.BG_DARK;
-            RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
-                    listX, cardY,
-                    listX + cardWidth, cardY + cardHeight,
-                    -512, cardBg);
-            String name = weapon.getDisplayName().getString();
-            int textColor = selected ? Color.GREEN : Color.WHITE;
-            poseStack.pushPose();
-            {
-                poseStack.translate(listX + 4, cardY + (cardHeight - mc.font.lineHeight) / 2f + 1, 0);
-                VehicleHudText.drawString(guiGraphics, name, 0, 0, textColor, true);
-                if (i == weapons.size() - 1) {
-                    poseStack.translate(-4, 16, 0);
-                    VehicleHudText.drawString(guiGraphics, Component.translatable("tips.sneak_use_modding_tool"), 0, 0, Color.WHITE, true);
-                }
-            }
-            poseStack.popPose();
-        }
-    }
-
-    private void renderDecorationTips(GuiGraphics guiGraphics, DecorationUnit decorationUnit) {
-        Optional<BaseDisplay> decorationDisplayOptional = ClientAssetsManager.INSTANCE.getDecorationDisplay(decorationUnit.getDisplayId());
-        if (decorationDisplayOptional.isEmpty()) {
-            return;
-        }
-        BaseDisplay decorationDisplay =  decorationDisplayOptional.get();
-        String displayId = decorationDisplay.getDisplayId().toString();
-        Minecraft mc = Minecraft.getInstance();
-
-        int screenWidth = mc.getWindow().getGuiScaledWidth();
-        int screenHeight = mc.getWindow().getGuiScaledHeight();
-        int centerX = screenWidth / 2;
-        int centerY = screenHeight / 2;
-        int cardWidth = VehicleHudText.width(displayId) + 6;
-        int cardHeight = 64;
-        int cardPadding = 16;
-        int listX = centerX + 32;
-        int listY = centerY - cardHeight / 2 + 16;
-        RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
-                listX - 2, listY - 2,
-                listX + cardWidth + 2, listY + cardPadding + 2,
-                -512, Color.BG_DARK);
-        RenderHelper.fill(guiGraphics, RenderType.guiOverlay(),
-                listX, listY,
-                listX + cardWidth, listY + cardPadding,
-                -512, Color.BG_DARK);
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        {
-            poseStack.translate(listX + 4, listY + (float) mc.font.lineHeight / 2, 0);
-            VehicleHudText.drawString(guiGraphics, decorationDisplay.getDisplayId().toString(), 0, 0, Color.WHITE, true);
-            poseStack.translate(-4, 16, 0);
-            VehicleHudText.drawString(guiGraphics, Component.translatable("tips.edit_decoration"), 0, 0, Color.WHITE, true);
-        }
-        poseStack.popPose();
     }
 
     public static void renderHealth(GuiGraphics guiGraphics, double x, double y, int barWidth, int barHeight, AbstractVehicle vehicle, float size) {
@@ -467,7 +297,7 @@ public class VehicleOverlay implements LayeredDraw.Layer {
                     green = (int) (255 * (percent * 2f));
                 }
             }
-            int barColor = (0xFF << 24) | (red << 16) | (green << 8); // ARGB
+            int barColor = (0xFF << 24) | (red << 16) | (green << 8);
 
             int filledWidth = (int) (barWidth * percent);
             RenderHelper.fill(guiGraphics, RenderType.guiOverlay(), -barHalfWidth, -barHalfHeight, -barHalfWidth + filledWidth, barHalfHeight, -512, barColor);

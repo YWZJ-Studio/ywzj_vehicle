@@ -8,5 +8,6 @@
         "engine_idle": "ywzj_vehicle:boat_engine_idle",
         "engine_run": "ywzj_vehicle:boat_engine_run"
     },
+    "description": "ywzj_vehicle.assault_boat.description",
     "tab_index": 300
 }

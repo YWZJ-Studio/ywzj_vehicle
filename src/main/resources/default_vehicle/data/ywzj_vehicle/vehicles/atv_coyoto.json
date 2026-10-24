@@ -36,7 +36,7 @@
     "parts": [
         {
             "id": "seat0",
-            "name": "seat0",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "passenger_pose": {
@@ -50,7 +50,7 @@
         },
         {
             "id": "turret",
-            "name": "turret",
+            "name": "part.ywzj_vehicle.turret",
             "type": "ywzj_vehicle:weapon",
             "max_health": 100,
             "render_bone": "ctr_machine_gun",
@@ -83,7 +83,7 @@
         },
         {
             "id": "suspension_ctr_wheel_f_l",
-            "name": "suspension_ctr_wheel_f_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -101,7 +101,7 @@
         },
         {
             "id": "suspension_ctr_wheel_f_r",
-            "name": "suspension_ctr_wheel_f_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -119,7 +119,7 @@
         },
         {
             "id": "suspension_ctr_wheel_b_l",
-            "name": "suspension_ctr_wheel_b_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -137,7 +137,7 @@
         },
         {
             "id": "suspension_ctr_wheel_b_r",
-            "name": "suspension_ctr_wheel_b_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -152,6 +152,22 @@
             "max_compression": 0.35,
             "max_extension": 0.22,
             "max_droop": 0.22
+        },
+        {
+            "id": "hook_front",
+            "name": "part.ywzj_vehicle.hook_front",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_front",
+            "is_seat": false,
+            "detachable": false
+        },
+        {
+            "id": "hook_rear",
+            "name": "part.ywzj_vehicle.hook_rear",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_rear",
+            "is_seat": false,
+            "detachable": false
         }
     ]
 }

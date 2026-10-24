@@ -21,7 +21,7 @@
     "parts": [
         {
             "id": "tow",
-            "name": "tow",
+            "name": "part.ywzj_vehicle.tow",
             "type": "ywzj_vehicle:weapon",
             "max_health": 15,
             "render_bone": "rot",

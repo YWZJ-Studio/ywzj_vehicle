@@ -176,7 +176,7 @@ public class VehicleWeaponOverlay implements LayeredDraw.Layer {
                 String prefix = (entry.sourceIndex() + 1) + ". ";
                 String ammo = showAmmo ? ammoText(entry.weapon()) : "";
                 int ammoWidth = font.width(ammo);
-                int nameWidth = width - PADDING * 2 - font.width(prefix) - (showAmmo ? ammoWidth + 12 : 0);
+                int nameWidth = width - PADDING * 2 - font.width(prefix) - (showAmmo ? ammoWidth + 4 : 0);
                 String name = truncate(font, entry.name(), nameWidth);
                 graphics.drawString(font, prefix + name, PADDING, y + 2, active ? DARK_TEXT : WHITE, !active);
                 if (showAmmo) {
@@ -282,17 +282,19 @@ public class VehicleWeaponOverlay implements LayeredDraw.Layer {
         float hintOffset = width - font.width(switchHint) * hintScale;
         float nameScale = compact ? 0.65f : 1.1f;
         float nameInset = width * 0.04f;
-        int nameWidth = (int) (Math.max(0, hintOffset - nameInset - 2) / nameScale);
+        float nameRight = withAmmunition ? hintOffset - 2 : width - nameInset;
+        int nameWidth = (int) (Math.max(0, nameRight - nameInset) / nameScale);
         String name = truncate(font, entry.name(), nameWidth);
         drawScaledText(graphics, font, name, left + nameInset, top, nameScale, WHITE);
         if (withAmmunition) {
             drawScaledText(graphics, font, switchHint, left + hintOffset, top + 1, hintScale, GRAY);
         }
-        float ammoWidth = withAmmunition ? width * 0.4f : width;
+        float ammoWidth = withAmmunition ? Math.min(width * 0.4f,
+                ammoNumberWidth(font, weapon) * AMMO_SCALE + font.width("/" + Math.max(0, weapon.getMaxCapacity())) * CAPACITY_SCALE + 3) : width;
         float ammoY = top + (compact ? 9 : READOUT_CONTENT_Y);
         renderAmmoReadout(graphics, font, weapon, left + width - ammoWidth, ammoY, ammoWidth, compact);
         if (withAmmunition) {
-            renderWeaponGroup(graphics, font, ammunition, left, top + READOUT_CONTENT_Y, (int) (width - ammoWidth - 6), false);
+            renderWeaponGroup(graphics, font, ammunition, left, top + READOUT_CONTENT_Y, (int) (width - ammoWidth - 4), false);
         }
     }
 
@@ -303,12 +305,17 @@ public class VehicleWeaponOverlay implements LayeredDraw.Layer {
         String capacity = "/" + maximum;
         float capacityScale = compact ? 0.6f : CAPACITY_SCALE;
         float capacityWidth = font.width(capacity) * capacityScale;
-        int maximumWidth = Math.max(1, font.width(maximum));
+        int maximumWidth = ammoNumberWidth(font, weapon);
         float ammoScale = Math.min(compact ? 1 : AMMO_SCALE, (width - capacityWidth - 3) / maximumWidth);
         float capacityLeft = left + width - capacityWidth;
         float remainingLeft = capacityLeft - 3 - font.width(remaining) * ammoScale;
         drawScaledText(graphics, font, remaining, remainingLeft, top, ammoScale, ammoColor(weapon));
         drawScaledText(graphics, font, capacity, capacityLeft, top + 1, capacityScale, GRAY);
+    }
+
+    private static int ammoNumberWidth(Font font, AbstractVehicleWeapon<?> weapon) {
+        return Math.max(1, Math.max(font.width(String.valueOf(Math.max(0, weapon.getMaxCapacity()))),
+                font.width(String.valueOf(Math.max(0, weapon.getRemainAmmo())))));
     }
 
     private float reloadProgress(AbstractVehicleWeapon<?> weapon, float partialTick) {

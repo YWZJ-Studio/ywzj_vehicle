@@ -218,7 +218,7 @@ public class RopeUnit extends PartUnit<RopeUnitData> {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private static void renderSegment(VertexConsumer builder, Matrix4f matrix, Vec3 p1, Vec3 p2,
+    protected static void renderSegment(VertexConsumer builder, Matrix4f matrix, Vec3 p1, Vec3 p2,
                                       Vector3f lookRight, int packedLight) {
         Vec3 segmentAxis = p2.subtract(p1);
         if (segmentAxis.lengthSqr() < 1.0E-8) {

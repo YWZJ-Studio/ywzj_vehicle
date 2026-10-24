@@ -9,5 +9,6 @@
         "engine_start": "ywzj_vehicle:ah_6_engine_start",
         "engine_run": "ywzj_vehicle:ah_6_engine_run"
     },
+    "description": "ywzj_vehicle.ah_6.description",
     "tab_index": 402
 }

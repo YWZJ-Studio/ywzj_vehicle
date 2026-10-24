@@ -37,6 +37,7 @@ public class PhysicsEngine {
     private static final double BODY_CONTACT_RECOVERY = 0.25;
     private static final double BODY_CONTACT_SLOP = 0.002;
     private static final int SUSPENSION_SUBSTEPS = 8;
+    private static final double SPEED_EPSILON = 1.0E-6;
     public final AbstractVehicle vehicle;
     public PhysicsInfo physicsInfo;
     public float bounce = 0.05f;
@@ -76,10 +77,6 @@ public class PhysicsEngine {
     public PhysicsEngine(AbstractVehicle vehicle) {
         this.vehicle = vehicle;
         this.physicsInfo = new PhysicsInfo();
-    }
-
-    public VehicleCubeOBB physicsCube() {
-        return vehicle.getMainCubeOBB();
     }
 
     public void tick(Vec3 force) {
@@ -136,7 +133,7 @@ public class PhysicsEngine {
         Quaternionf bodyRotation = vehicle.rotYXZ();
         Quaternionf yaw = new Quaternionf().rotateY((float) Math.toRadians(-vehicle.getYRot()));
         Quaternionf inverseYaw = new Quaternionf(yaw).invert();
-        Vec3 centerLocal = cube.offset().add(new Vec3(cube.selfRot().transform(physicsInfo.center.toVector3f())));
+        Vec3 centerLocal = getLocalCenterOfMass();
         Vector3f centerOffset = bodyRotation.transform(centerLocal.subtract(vehicle.centerOffset).toVector3f());
         Vec3 centerWorld = vehicle.position().add(vehicle.centerOffset).add(new Vec3(centerOffset));
         double inverseMass = 1.0 / mass;
@@ -320,10 +317,7 @@ public class PhysicsEngine {
                 .mul(new Quaternionf().rotationXYZ((float) pitchDisplacement, 0, (float) rollDisplacement))
                 .mul(inverseYaw);
         Quaternionf rotation = step.mul(bodyRotation);
-        Vector3f euler = rotation.getEulerAnglesYXZ(new Vector3f());
-        vehicle.setXRot((float) Math.toDegrees(euler.x));
-        vehicle.setYRot((float) -Math.toDegrees(euler.y));
-        vehicle.setZRot(lockZRot ? 0 : (float) Math.toDegrees(euler.z));
+        setRotation(rotation);
         if (bodyGrounded && AllConfigs.common.selfRighting.get()
                 && (Math.abs(Mth.wrapDegrees(vehicle.getXRot())) >= 75
                 || Math.abs(Mth.wrapDegrees(vehicle.getZRot())) >= 75)) {
@@ -644,9 +638,7 @@ public class PhysicsEngine {
                 cube.width * cube.width + cube.height * cube.height + 12 * (center.x * center.x + center.y * center.y)));
         Quaternionf yaw = new Quaternionf().rotateY((float) Math.toRadians(-vehicle.getYRot()));
         Quaternionf inverseYaw = new Quaternionf(yaw).invert();
-        Vec3 centerLocal = cube.offset().add(new Vec3(cube.selfRot().transform(center.toVector3f())));
-        Vec3 centerWorld = vehicle.position().add(vehicle.centerOffset)
-                .add(new Vec3(vehicle.rotYXZ().transform(centerLocal.subtract(vehicle.centerOffset).toVector3f())));
+        Vec3 centerWorld = getCenterOfMass();
         Vec3 normal = new Vec3(axes[1]).normalize();
         List<SuspensionImpactContact> constraints = new ArrayList<>();
         for (VehicleCubeOBB.CubePoint contact : new LinkedHashSet<>(contacts)) {
@@ -771,12 +763,6 @@ public class PhysicsEngine {
         } else {
             vehicle.setZRot(rightInLiquid(vehicle.getZRot(), liquidInfluence));
         }
-    }
-
-    private static float rightInLiquid(float angle, float liquidInfluence) {
-        // 大倾角快速回正，接近水平时减速；最小步长避免回正末段拖尾。
-        float rightingStep = Mth.clamp(Math.abs(Mth.wrapDegrees(angle)) * 0.2f, 1.5f, 6.0f) * liquidInfluence;
-        return Mth.approachDegrees(angle, 0, rightingStep);
     }
 
     /**
@@ -919,13 +905,6 @@ public class PhysicsEngine {
         return surface > pos.getY();
     }
 
-    public boolean isOpenSupportSurface(Vec3 position) {
-        return getBlockCollisionBoxes(new AABB(position.x - BODY_CONTACT_SLOP,
-                position.y + BODY_CONTACT_SLOP, position.z - BODY_CONTACT_SLOP,
-                position.x + BODY_CONTACT_SLOP, position.y + BODY_CONTACT_SKIN,
-                position.z + BODY_CONTACT_SLOP)).isEmpty();
-    }
-
     private BodyContacts collectContacts(Vector3f[] axes, boolean withBodySupports) {
         // 接触方块的采样点
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
@@ -1016,35 +995,118 @@ public class PhysicsEngine {
         return boxes;
     }
 
-    private List<AABB> blockCollisionBoxes(BlockPos pos) {
-        BlockState state = vehicle.level().getBlockState(pos);
-        if (!state.isSolid()) {
-            return List.of();
+    /**
+     * 在高速端调用，按质量转移动能并平滑调整低速端的速度方向。
+     */
+    public void transferEnergyTo(PhysicsEngine follower, Vec3 pullDirection, double transferRate, double directionResponse) {
+        double leaderMass = physicsInfo.mass;
+        double followerMass = follower.physicsInfo.mass;
+        if (!(leaderMass > 0) || !(followerMass > 0)
+                || !Double.isFinite(leaderMass) || !Double.isFinite(followerMass)) {
+            return;
         }
-        double height = isHalfBlock(state) ? 0.5 : 1;
-        return List.of(new AABB(pos.getX(), pos.getY(), pos.getZ(),
-                pos.getX() + 1, pos.getY() + height, pos.getZ() + 1));
+        Vec3 leaderVelocity = vehicle.getDeltaMovement();
+        Vec3 followerVelocity = follower.vehicle.getDeltaMovement();
+        double leaderSpeedSquared = leaderVelocity.lengthSqr();
+        double followerSpeedSquared = followerVelocity.lengthSqr();
+        double leaderSpeed = Math.sqrt(leaderSpeedSquared);
+        double followerSpeed = Math.sqrt(followerSpeedSquared);
+        if (leaderSpeed <= SPEED_EPSILON) {
+            return;
+        }
+
+        // E = 1/2 m v²；每 tick 转移达到共同速率所需动能的固定比例。
+        // 两端等量扣减/增加动能，速度平方差单调收敛，不会跨过平衡点。
+        // 这里统一使用格/tick，换算到 m/s 的公共系数会在能量转移中抵消。
+        double totalMass = leaderMass + followerMass;
+        double speedSquaredGap = leaderSpeedSquared - followerSpeedSquared;
+        double transferredEnergy = 0.5 * leaderMass * (followerMass / totalMass)
+                * speedSquaredGap * transferRate;
+        double nextLeaderSpeed = Math.sqrt(Math.max(0, leaderSpeedSquared - 2 * transferredEnergy / leaderMass));
+        double nextFollowerSpeed = Math.sqrt(Math.max(0, followerSpeedSquared + 2 * transferredEnergy / followerMass));
+        if (leaderSpeed - followerSpeed <= SPEED_EPSILON) {
+            // 消除浮点尾差，确保最终速率一致；方向仍逐 tick 归正。
+            double commonSpeed = Math.sqrt((leaderMass / totalMass) * leaderSpeedSquared
+                    + (followerMass / totalMass) * followerSpeedSquared);
+            nextLeaderSpeed = commonSpeed;
+            nextFollowerSpeed = commonSpeed;
+        }
+        setVelocity(leaderVelocity.scale(nextLeaderSpeed / leaderSpeed));
+        follower.setVelocity(steerDirection(followerVelocity, pullDirection, directionResponse).scale(nextFollowerSpeed));
     }
 
-    private static double bodySupportAlignment(VehicleCubeOBB.CubePoint point, Vector3f[] axes) {
-        return switch (point.cubeFace()) {
-            case LEFT -> -axes[0].y;
-            case RIGHT -> axes[0].y;
-            case FRONT -> -axes[2].y;
-            case BACK -> axes[2].y;
-            case TOP -> -axes[1].y;
-            case BOTTOM -> axes[1].y;
-        };
+    /**
+     * 按逆质量分摊两刚体之间的超长位置修正。
+     */
+    public void limitDistance(PhysicsEngine other, Vec3 anchor, Vec3 otherAnchor, double maxDistance) {
+        Vec3 separation = otherAnchor.subtract(anchor);
+        double distance = separation.length();
+        if (distance <= maxDistance || distance <= SPEED_EPSILON) {
+            return;
+        }
+        double mass = physicsInfo.mass;
+        double otherMass = other.physicsInfo.mass;
+        if (!(mass > 0) || !(otherMass > 0) || !Double.isFinite(mass) || !Double.isFinite(otherMass)) {
+            return;
+        }
+        Vec3 correction = separation.scale((distance - maxDistance) / distance);
+        applyPositionCorrection(correction.scale(otherMass / (mass + otherMass)));
+        other.applyPositionCorrection(correction.scale(-mass / (mass + otherMass)));
     }
 
-    private void checkDirection(Vector3f localRotToPoint) {
-        // 左手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
-        Vector3f v1 = new Vector3f(localRotAxisStart).sub(localRotToPoint);
-        Vector3f v2 = new Vector3f(localRotAxisEnd).sub(localRotToPoint);
-        if (v1.cross(v2).dot(planeSupport) < 0) {
-            Vector3f tmp = localRotAxisEnd;
-            localRotAxisEnd = localRotAxisStart;
-            localRotAxisStart = tmp;
+    /**
+     * 有限速率地将刚体方向转向目标方向。
+     */
+    public void alignDirection(Vec3 pivot, Vec3 direction, Vec3 targetDirection, double response, double maxStep) {
+        if (direction.lengthSqr() < 1.0E-4 || targetDirection.lengthSqr() < 1.0E-4) {
+            return;
+        }
+        Vec3 from = direction.normalize();
+        Vec3 to = targetDirection.normalize();
+        double angle = Math.acos(Mth.clamp(from.dot(to), -1, 1));
+        if (angle <= SPEED_EPSILON) {
+            return;
+        }
+        Quaternionf target = new Quaternionf().rotationTo(from.toVector3f(), to.toVector3f());
+        rotateAround(pivot, new Quaternionf().slerp(target, (float) Math.min(response, maxStep / angle)));
+    }
+
+    /**
+     * 绕刚体上的世界坐标支点旋转，补偿实体原点偏移。
+     */
+    public void rotateAround(Vec3 pivot, Quaternionf step) {
+        Quaternionf rotation = vehicle.rotYXZ();
+        Vec3 origin = vehicle.position().add(vehicle.centerOffset);
+        Vector3f localPivot = new Quaternionf(rotation).invert().transform(pivot.subtract(origin).toVector3f());
+        float oldXRot = vehicle.getXRot();
+        float oldYRot = vehicle.getYRot();
+        float oldZRot = vehicle.getZRot();
+        if (!setRotation(new Quaternionf(step).mul(rotation))) {
+            return;
+        }
+        vehicle.afterVehicleRot(Mth.wrapDegrees(vehicle.getXRot() - oldXRot),
+                Mth.wrapDegrees(vehicle.getYRot() - oldYRot), Mth.wrapDegrees(vehicle.getZRot() - oldZRot));
+        Vec3 rotatedPivot = origin.add(new Vec3(vehicle.rotYXZ().transform(localPivot)));
+        applyPositionCorrection(pivot.subtract(rotatedPivot));
+    }
+
+    private void centerRot(Vector3f center, Vector3f[] axes) {
+        if (lockCenterRot) {
+            return;
+        }
+        if (localRotAxisVec != null) {
+            localRotAxisStart = new Vector3f(center).sub(localRotAxisVec);
+            localRotAxisEnd = new Vector3f(center).add(localRotAxisVec);
+            // 目前仅考虑重力
+            Vector3f g = new Vector3f(0, -1, 0);
+            // 重力方向在局部坐标系下的矢量
+            float gx = g.dot(axes[0]);
+            float gy = g.dot(axes[1]);
+            float gz = g.dot(axes[2]);
+            Vector3f gLocal = new Vector3f(gx, gy, gz);
+            getPlaneXY(gLocal, center);
+            checkDirection(center);
+            rot(axes);
         }
     }
 
@@ -1077,26 +1139,6 @@ public class PhysicsEngine {
         }
     }
 
-    private void centerRot(Vector3f center, Vector3f[] axes) {
-        if (lockCenterRot) {
-            return;
-        }
-        if (localRotAxisVec != null) {
-            localRotAxisStart = new Vector3f(center).sub(localRotAxisVec);
-            localRotAxisEnd = new Vector3f(center).add(localRotAxisVec);
-            // 目前仅考虑重力
-            Vector3f g = new Vector3f(0, -1, 0);
-            // 重力方向在局部坐标系下的矢量
-            float gx = g.dot(axes[0]);
-            float gy = g.dot(axes[1]);
-            float gz = g.dot(axes[2]);
-            Vector3f gLocal = new Vector3f(gx, gy, gz);
-            getPlaneXY(gLocal, center);
-            checkDirection(center);
-            rot(axes);
-        }
-    }
-
     private void rot(Vector3f[] axes) {
         if (localRotAxisStart == null || localRotAxisEnd == null || rotV == 0) {
             return;
@@ -1107,20 +1149,67 @@ public class PhysicsEngine {
                 physicsCube.obb().localToWorld(localRotAxisEnd, axes),
                 rotV));
         Quaternionf q = new Quaternionf(stepRot).mul(vehicle.rotYXZ());
-        Vector3f as = new Vector3f();
-        q.getEulerAnglesYXZ(as);
-        if (Double.isNaN(as.x) || Double.isNaN(as.y) || Double.isNaN(as.z)) {
+        if (!setRotation(q)) {
             return;
         }
         rotTick = 10;
         vehicle.setPos(pRot);
-        vehicle.setYRot(-(float) Math.toDegrees(as.y));
-        vehicle.setXRot((float) Math.toDegrees(as.x));
-        if (lockZRot) {
-            vehicle.setZRot(0);
-        } else {
-            vehicle.setZRot((float) Math.toDegrees(as.z));
+    }
+
+    private static Vec3 steerDirection(Vec3 velocity, Vec3 targetDirection, double directionResponse) {
+        double speed = velocity.length();
+        if (speed <= SPEED_EPSILON) {
+            return targetDirection;
         }
+        Vec3 direction = velocity.scale(1 / speed);
+        double angle = Math.acos(Mth.clamp(direction.dot(targetDirection), -1, 1));
+        if (angle <= SPEED_EPSILON) {
+            return targetDirection;
+        }
+        Vec3 axis = direction.cross(targetDirection);
+        if (axis.lengthSqr() < 1.0E-12) {
+            // 完全反向时也能平滑转向；水平运动优先绕世界 Y 轴转动。
+            axis = new Vec3(0, 1, 0).subtract(direction.scale(direction.y));
+            if (axis.lengthSqr() < 1.0E-12) {
+                axis = new Vec3(1, 0, 0);
+            }
+        }
+        // Vec3.normalize 会把长度小于 1e-4 的向量归零，小夹角需显式归一化。
+        axis = axis.scale(1 / axis.length());
+        double step = angle * directionResponse;
+        // 绕垂直于速度的轴旋转，只改变朝向，不额外增加或损失动能。
+        return direction.scale(Math.cos(step)).add(axis.cross(direction).scale(Math.sin(step))).normalize();
+    }
+
+    /**
+     * 计算长方体绕任意空间轴（过枢轴点）的转动惯量
+     * 使用主轴转动惯量 + 平行轴定理
+     */
+    private float computeMomentOfInertia(Vector3f axisStart, Vector3f axisEnd, VehicleCubeOBB cube, float mass, Vector3f com) {
+        float w = (float) cube.getWidth();
+        float h = (float) cube.getHeight();
+        float d = (float) cube.getDepth();
+        float Ix = mass / 12f * (h * h + d * d);
+        float Iy = mass / 12f * (w * w + d * d);
+        float Iz = mass / 12f * (w * w + h * h);
+        Vector3f axis = new Vector3f(axisEnd).sub(axisStart).normalize();
+        float I_center = Ix * axis.x * axis.x + Iy * axis.y * axis.y + Iz * axis.z * axis.z;
+        Vector3f r = new Vector3f(com).sub(axisStart);
+        Vector3f projOnAxis = new Vector3f(axis).mul(r.dot(axis));
+        Vector3f perp = new Vector3f(r).sub(projOnAxis);
+        float distSq = perp.lengthSquared();
+        return I_center + mass * distSq;
+    }
+
+    /**
+     * 计算合力绕旋转轴的力矩标量
+     * τ = (r × F) · axis
+     */
+    private float computeTorque(Vector3f axisStart, Vector3f axisEnd, Vector3f com, Vector3f netForceLocal) {
+        Vector3f r = new Vector3f(com).sub(axisStart);
+        Vector3f torqueVec = r.cross(netForceLocal);
+        Vector3f axis = new Vector3f(axisEnd).sub(axisStart).normalize();
+        return Math.abs(torqueVec.dot(axis));
     }
 
     private Vector3f rotateAroundAxis(Vector3f point, Vector3f a, Vector3f b, float radians) {
@@ -1144,6 +1233,62 @@ public class PhysicsEngine {
         return new Vector2f(projected.dot(planeU), projected.dot(planeV));
     }
 
+    /**
+     * 应用位置约束，并立即刷新碰撞盒和乘员位置。
+     */
+    public void applyPositionCorrection(Vec3 movement) {
+        vehicle.setPos(vehicle.position().add(movement));
+        vehicle.updateOBBs();
+        vehicle.setBoundingBox(vehicle.makeBoundingBox());
+        vehicle.getPassengers().forEach(vehicle::positionRider);
+        vehicle.hasImpulse = true;
+    }
+
+    private List<AABB> blockCollisionBoxes(BlockPos pos) {
+        BlockState state = vehicle.level().getBlockState(pos);
+        if (!state.isSolid()) {
+            return List.of();
+        }
+        double height = isHalfBlock(state) ? 0.5 : 1;
+        return List.of(new AABB(pos.getX(), pos.getY(), pos.getZ(),
+                pos.getX() + 1, pos.getY() + height, pos.getZ() + 1));
+    }
+
+    private static double bodySupportAlignment(VehicleCubeOBB.CubePoint point, Vector3f[] axes) {
+        return switch (point.cubeFace()) {
+            case LEFT -> -axes[0].y;
+            case RIGHT -> axes[0].y;
+            case FRONT -> -axes[2].y;
+            case BACK -> axes[2].y;
+            case TOP -> -axes[1].y;
+            case BOTTOM -> axes[1].y;
+        };
+    }
+
+    private void checkDirection(Vector3f localRotToPoint) {
+        // 左手系下，拇指为rotAxisStart -> rotAxisEnd方向，四指为重力旋转方向
+        Vector3f v1 = new Vector3f(localRotAxisStart).sub(localRotToPoint);
+        Vector3f v2 = new Vector3f(localRotAxisEnd).sub(localRotToPoint);
+        if (v1.cross(v2).dot(planeSupport) < 0) {
+            Vector3f tmp = localRotAxisEnd;
+            localRotAxisEnd = localRotAxisStart;
+            localRotAxisStart = tmp;
+        }
+    }
+
+    private static float rightInLiquid(float angle, float liquidInfluence) {
+        // 大倾角快速回正，接近水平时减速；最小步长避免回正末段拖尾。
+        float rightingStep = Mth.clamp(Math.abs(Mth.wrapDegrees(angle)) * 0.2f, 1.5f, 6.0f) * liquidInfluence;
+        return Mth.approachDegrees(angle, 0, rightingStep);
+    }
+
+    public boolean isOpenSupportSurface(Vec3 position) {
+        return getBlockCollisionBoxes(new AABB(position.x - BODY_CONTACT_SLOP,
+                position.y + BODY_CONTACT_SLOP, position.z - BODY_CONTACT_SLOP,
+                position.x + BODY_CONTACT_SLOP, position.y + BODY_CONTACT_SKIN,
+                position.z + BODY_CONTACT_SLOP)).isEmpty();
+    }
+
     public static boolean isHalfBlock(BlockState blockState) {
         if (blockState == null) {
             return false;
@@ -1154,43 +1299,46 @@ public class PhysicsEngine {
         return blockState.hasProperty(BlockStateProperties.HALF);
     }
 
-    /**
-     * 计算合力绕旋转轴的力矩标量
-     * τ = (r × F) · axis
-     */
-    private float computeTorque(Vector3f axisStart, Vector3f axisEnd, Vector3f com, Vector3f netForceLocal) {
-        Vector3f r = new Vector3f(com).sub(axisStart);
-        Vector3f torqueVec = r.cross(netForceLocal);
-        Vector3f axis = new Vector3f(axisEnd).sub(axisStart).normalize();
-        return Math.abs(torqueVec.dot(axis));
-    }
-
-    /**
-     * 计算长方体绕任意空间轴（过枢轴点）的转动惯量
-     * 使用主轴转动惯量 + 平行轴定理
-     */
-    private float computeMomentOfInertia(Vector3f axisStart, Vector3f axisEnd, VehicleCubeOBB cube, float mass, Vector3f com) {
-        float w = (float) cube.getWidth();
-        float h = (float) cube.getHeight();
-        float d = (float) cube.getDepth();
-        float Ix = mass / 12f * (h * h + d * d);
-        float Iy = mass / 12f * (w * w + d * d);
-        float Iz = mass / 12f * (w * w + h * h);
-        Vector3f axis = new Vector3f(axisEnd).sub(axisStart).normalize();
-        float I_center = Ix * axis.x * axis.x + Iy * axis.y * axis.y + Iz * axis.z * axis.z;
-        Vector3f r = new Vector3f(com).sub(axisStart);
-        Vector3f projOnAxis = new Vector3f(axis).mul(r.dot(axis));
-        Vector3f perp = new Vector3f(r).sub(projOnAxis);
-        float distSq = perp.lengthSquared();
-        return I_center + mass * distSq;
-    }
-
     private static int buoyancySamples(float size) {
         return Mth.clamp(Mth.ceil(size * 2), 1, 8);
     }
 
     private static float sampleCoordinate(float extent, int sample, int sampleCount) {
         return -extent + extent * 2 * (sample + 0.5f) / sampleCount;
+    }
+
+    public VehicleCubeOBB physicsCube() {
+        return vehicle.getMainCubeOBB();
+    }
+
+    private Vec3 getLocalCenterOfMass() {
+        VehicleCubeOBB cube = physicsCube();
+        return cube.offset().add(new Vec3(cube.selfRot().transform(physicsInfo.center.toVector3f())));
+    }
+
+    public Vec3 getCenterOfMass() {
+        return vehicle.position().add(vehicle.centerOffset).add(new Vec3(vehicle.rotYXZ()
+                .transform(getLocalCenterOfMass().subtract(vehicle.centerOffset).toVector3f())));
+    }
+
+    /**
+     * 同步外部约束修改后的实体速度和物理速度。
+     */
+    public void setVelocity(Vec3 velocity) {
+        vehicle.setDeltaMovement(velocity);
+        this.velocity.set(velocity.toVector3f());
+        vehicle.hasImpulse = true;
+    }
+
+    private boolean setRotation(Quaternionf rotation) {
+        Vector3f euler = rotation.getEulerAnglesYXZ(new Vector3f());
+        if (!Float.isFinite(euler.x) || !Float.isFinite(euler.y) || !Float.isFinite(euler.z)) {
+            return false;
+        }
+        vehicle.setXRot((float) Math.toDegrees(euler.x));
+        vehicle.setYRot(-(float) Math.toDegrees(euler.y));
+        vehicle.setZRot(lockZRot ? 0 : (float) Math.toDegrees(euler.z));
+        return true;
     }
 
 }

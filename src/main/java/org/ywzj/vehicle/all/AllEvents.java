@@ -54,6 +54,7 @@ import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.util.VehicleExplosion;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.DoorUnit;
+import org.ywzj.vehicle.vehicle.part.HookUnit;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 import java.util.ArrayList;
@@ -142,6 +143,9 @@ public class AllEvents {
                 PartUnit<?> partUnit = VectorUtil.hitPartUnit(vehicle, eyePosition, eyePosition.add(player.getLookAngle().scale(4)));
                 if (partUnit != null) {
                     if (!partUnit.onInteract(player, event.getHand())) {
+                        if (partUnit instanceof HookUnit) {
+                            event.setCancellationResult(InteractionResult.SUCCESS);
+                        }
                         event.setCanceled(true);
                     }
                     return;

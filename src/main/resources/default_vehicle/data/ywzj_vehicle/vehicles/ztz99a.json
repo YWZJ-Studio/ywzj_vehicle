@@ -30,7 +30,7 @@
     "parts": [
         {
             "id": "turret",
-            "name": "turret",
+            "name": "part.ywzj_vehicle.turret",
             "type": "ywzj_vehicle:weapon",
             "max_health": 1000,
             "render_bone": "turret",
@@ -63,7 +63,7 @@
         },
         {
             "id": "turret_machine_gun",
-            "name": "turret_machine_gun",
+            "name": "part.ywzj_vehicle.turret_machine_gun",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "turret_machine_gun",
             "is_seat": false,
@@ -76,7 +76,7 @@
         },
         {
             "id": "turret_smoke_grenade",
-            "name": "turret_smoke_grenade",
+            "name": "part.ywzj_vehicle.turret_smoke_grenade",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "turret_smoke_grenade",
             "is_seat": false,
@@ -87,7 +87,7 @@
         },
         {
             "id": "commander_machine_gun",
-            "name": "commander_machine_gun",
+            "name": "part.ywzj_vehicle.commander_machine_gun",
             "type": "ywzj_vehicle:weapon",
             "max_health": 200,
             "render_bone": "machine_gun",
@@ -110,14 +110,14 @@
         },
         {
             "id": "seat",
-            "name": "seat",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "seat_offset": [0, 1.7, 1],
             "owner_view_offset": [0, 3.2, 0]
         },
         {
             "id": "track",
-            "name": "track",
+            "name": "part.ywzj_vehicle.track",
             "type": "ywzj_vehicle:track",
             "structure_bone": "tracks",
             "suspensions": {
@@ -127,7 +127,7 @@
         },
         {
             "id": "suspension_left_1",
-            "name": "suspension_left_1",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_1",
@@ -142,7 +142,7 @@
         },
         {
             "id": "suspension_left_2",
-            "name": "suspension_left_2",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_2",
@@ -157,7 +157,7 @@
         },
         {
             "id": "suspension_left_3",
-            "name": "suspension_left_3",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_3",
@@ -172,7 +172,7 @@
         },
         {
             "id": "suspension_left_4",
-            "name": "suspension_left_4",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_4",
@@ -187,7 +187,7 @@
         },
         {
             "id": "suspension_left_5",
-            "name": "suspension_left_5",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_5",
@@ -202,7 +202,7 @@
         },
         {
             "id": "suspension_left_6",
-            "name": "suspension_left_6",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_6",
@@ -217,7 +217,7 @@
         },
         {
             "id": "suspension_right_1",
-            "name": "suspension_right_1",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_7",
@@ -232,7 +232,7 @@
         },
         {
             "id": "suspension_right_2",
-            "name": "suspension_right_2",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_8",
@@ -247,7 +247,7 @@
         },
         {
             "id": "suspension_right_3",
-            "name": "suspension_right_3",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_9",
@@ -262,7 +262,7 @@
         },
         {
             "id": "suspension_right_4",
-            "name": "suspension_right_4",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_10",
@@ -277,7 +277,7 @@
         },
         {
             "id": "suspension_right_5",
-            "name": "suspension_right_5",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_11",
@@ -292,7 +292,7 @@
         },
         {
             "id": "suspension_right_6",
-            "name": "suspension_right_6",
+            "name": "part.ywzj_vehicle.road_wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "render_bone": "hull_big_12",
@@ -304,6 +304,22 @@
             "max_compression": 0.2,
             "max_extension": 0.15,
             "max_droop": 0.1
+        },
+        {
+            "id": "hook_front",
+            "name": "part.ywzj_vehicle.hook_front",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_front",
+            "is_seat": false,
+            "detachable": false
+        },
+        {
+            "id": "hook_rear",
+            "name": "part.ywzj_vehicle.hook_rear",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_rear",
+            "is_seat": false,
+            "detachable": false
         }
     ]
 }

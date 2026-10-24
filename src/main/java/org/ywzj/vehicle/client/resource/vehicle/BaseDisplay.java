@@ -31,7 +31,9 @@ public class BaseDisplay {
     protected ResourceLocation animationControllerPath;
     protected Map<String, SoundEvent> soundEvents = new HashMap<>();
     protected String description;
+    protected String tabName;
     protected int tabIndex;
+    protected ResourceLocation tabIcon;
     protected List<SpecialBoneEffect> specialBoneEffects = new ArrayList<>();
     protected BakerOptions bakerOptions;
 
@@ -76,7 +78,9 @@ public class BaseDisplay {
         }
 
         this.description = pojo.description;
+        this.tabName = pojo.tabName;
         this.tabIndex = pojo.tabIndex;
+        this.tabIcon = pojo.tabIcon;
     }
 
     @Nullable
@@ -201,8 +205,16 @@ public class BaseDisplay {
         return description;
     }
 
+    public String getTabName() {
+        return tabName;
+    }
+
     public int getTabIndex() {
         return tabIndex;
+    }
+
+    public ResourceLocation getTabIcon() {
+        return tabIcon;
     }
 
     public List<SpecialBoneEffect> getSpecialBoneEffects() {

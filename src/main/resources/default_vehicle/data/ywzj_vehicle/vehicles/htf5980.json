@@ -33,7 +33,7 @@
     "parts": [
         {
             "id": "driver",
-            "name": "driver",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "driver",
             "seat_offset": [1.25, 2.0203125, 7.4078125],
@@ -58,7 +58,7 @@
         },
         {
             "id": "missile",
-            "name": "missile",
+            "name": "part.ywzj_vehicle.missile",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "missile",
             "cold_launch_time_tick": 15,
@@ -77,14 +77,14 @@
         },
         {
             "id": "pipe",
-            "name": "pipe",
+            "name": "part.ywzj_vehicle.pipe",
             "type": "ywzj_vehicle:weapon_bay",
             "structure_bone": "pipe",
             "is_seat": false
         },
         {
             "id": "seat1",
-            "name": "seat1",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-1.25, 2.0203125, 7.4078125],
@@ -92,7 +92,7 @@
         },
         {
             "id": "seat2",
-            "name": "seat2",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [1.25, 2.0203125, 6.3703125],
@@ -100,7 +100,7 @@
         },
         {
             "id": "seat3",
-            "name": "seat3",
+            "name": "part.ywzj_vehicle.seat",
             "type": "ywzj_vehicle:generic",
             "is_seat": true,
             "seat_offset": [-1.25, 2.0203125, 6.3703125],
@@ -108,7 +108,7 @@
         },
         {
             "id": "suspension_wheel_1_r",
-            "name": "suspension_wheel_1_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -126,7 +126,7 @@
         },
         {
             "id": "suspension_wheel_2_r",
-            "name": "suspension_wheel_2_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -144,7 +144,7 @@
         },
         {
             "id": "suspension_wheel_3_r",
-            "name": "suspension_wheel_3_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -162,7 +162,7 @@
         },
         {
             "id": "suspension_wheel_4_r",
-            "name": "suspension_wheel_4_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -180,7 +180,7 @@
         },
         {
             "id": "suspension_wheel_5_r",
-            "name": "suspension_wheel_5_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -198,7 +198,7 @@
         },
         {
             "id": "suspension_wheel_6_r",
-            "name": "suspension_wheel_6_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -216,7 +216,7 @@
         },
         {
             "id": "suspension_wheel_7_r",
-            "name": "suspension_wheel_7_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -234,7 +234,7 @@
         },
         {
             "id": "suspension_wheel_8_r",
-            "name": "suspension_wheel_8_r",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -252,7 +252,7 @@
         },
         {
             "id": "suspension_wheel_1_l",
-            "name": "suspension_wheel_1_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -270,7 +270,7 @@
         },
         {
             "id": "suspension_wheel_2_l",
-            "name": "suspension_wheel_2_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -288,7 +288,7 @@
         },
         {
             "id": "suspension_wheel_3_l",
-            "name": "suspension_wheel_3_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -306,7 +306,7 @@
         },
         {
             "id": "suspension_wheel_4_l",
-            "name": "suspension_wheel_4_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -324,7 +324,7 @@
         },
         {
             "id": "suspension_wheel_5_l",
-            "name": "suspension_wheel_5_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -342,7 +342,7 @@
         },
         {
             "id": "suspension_wheel_6_l",
-            "name": "suspension_wheel_6_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -360,7 +360,7 @@
         },
         {
             "id": "suspension_wheel_7_l",
-            "name": "suspension_wheel_7_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -378,7 +378,7 @@
         },
         {
             "id": "suspension_wheel_8_l",
-            "name": "suspension_wheel_8_l",
+            "name": "part.ywzj_vehicle.wheel",
             "type": "ywzj_vehicle:suspension",
             "max_health": 50,
             "defense_stats": {
@@ -393,6 +393,22 @@
             "max_compression": 0.6,
             "max_extension": 0.28,
             "max_droop": 0.28
+        },
+        {
+            "id": "hook_front",
+            "name": "part.ywzj_vehicle.hook_front",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_front",
+            "is_seat": false,
+            "detachable": false
+        },
+        {
+            "id": "hook_rear",
+            "name": "part.ywzj_vehicle.hook_rear",
+            "type": "ywzj_vehicle:hook",
+            "structure_bone": "hook_rear",
+            "is_seat": false,
+            "detachable": false
         }
     ]
 }

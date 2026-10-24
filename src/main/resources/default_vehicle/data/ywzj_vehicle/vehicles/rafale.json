@@ -49,7 +49,7 @@
     "parts": [
         {
             "id": "sighting_system",
-            "name": "sighting_system",
+            "name": "part.ywzj_vehicle.sighting_system",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "sighting_system",
             "seat_offset": [0, 3.5, 4.2],
@@ -95,7 +95,7 @@
         },
         {
             "id": "auto_cannon",
-            "name": "auto_cannon",
+            "name": "part.ywzj_vehicle.auto_cannon",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "auto_cannon",
             "ammo_capacity": 125,
@@ -108,7 +108,7 @@
         },
         {
             "id": "magic",
-            "name": "magic",
+            "name": "part.ywzj_vehicle.magic",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "magic",
             "ammo_capacity": 2,
@@ -123,7 +123,7 @@
         },
         {
             "id": "mica",
-            "name": "mica",
+            "name": "part.ywzj_vehicle.mica",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "mica",
             "ammo_capacity": 2,
@@ -138,7 +138,7 @@
         },
         {
             "id": "gbu_12",
-            "name": "gbu_12",
+            "name": "part.ywzj_vehicle.gbu_12",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "gbu_12",
             "ammo_capacity": 6,
@@ -152,7 +152,7 @@
         },
         {
             "id": "decoy_flare",
-            "name": "decoy_flare",
+            "name": "part.ywzj_vehicle.decoy_flare",
             "type": "ywzj_vehicle:weapon",
             "structure_bone": "decoy_flare",
             "is_seat": false,
@@ -165,7 +165,7 @@
         },
         {
             "id": "radar",
-            "name": "radar",
+            "name": "part.ywzj_vehicle.radar",
             "type": "ywzj_vehicle:radar",
             "structure_bone": "radar",
             "is_seat": false,
@@ -181,14 +181,14 @@
         },
         {
             "id": "door",
-            "name": "door",
+            "name": "part.ywzj_vehicle.door",
             "type": "ywzj_vehicle:door",
             "structure_bone": "door",
             "is_seat": false
         },
         {
             "id": "landing_gear",
-            "name": "landing_gear",
+            "name": "part.ywzj_vehicle.landing_gear",
             "type": "ywzj_vehicle:landing_gear",
             "structure_bone": "landing_gear",
             "is_seat": false,
@@ -196,7 +196,7 @@
         },
         {
             "id": "airbrake",
-            "name": "airbrake",
+            "name": "part.ywzj_vehicle.airbrake",
             "type": "ywzj_vehicle:airbrake",
             "is_seat": false,
             "drag_k": 2
