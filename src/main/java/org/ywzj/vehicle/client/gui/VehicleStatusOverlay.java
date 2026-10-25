@@ -23,11 +23,10 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.PartUnit;
 import org.ywzj.vehicle.vehicle.part.RotatableUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
+import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public final class VehicleStatusOverlay implements LayeredDraw.Layer {
 
@@ -100,38 +99,43 @@ public final class VehicleStatusOverlay implements LayeredDraw.Layer {
     private static void renderVehicleHeading(GuiGraphics guiGraphics, float partialTick, AbstractVehicle vehicle,
                                             float left, float top, float width, float height, float stroke) {
         List<HeadingCube> cubes = new ArrayList<>();
+        Map<VehicleCubeGroup, Quaternionf> rotations = new HashMap<>();
+        for (PartUnit<?> part : vehicle.getPartUnits()) {
+            if (part instanceof RotatableUnit<?> rotatableUnit && part.getStructureGroup() != null) {
+                VehicleCubeGroup group = part.getStructureGroup();
+                rotations.put(group, new Quaternionf(group.baseRotation)
+                        .mul(Axis.YN.rotationDegrees(rotatableUnit.getViewYRot(partialTick))));
+            }
+            if (part instanceof WeaponUnit weapon && weapon.xTurnGroup != null
+                    && weapon.xTurnGroup != weapon.getStructureGroup()) {
+                VehicleCubeGroup group = weapon.xTurnGroup;
+                rotations.put(group, new Quaternionf(group.baseRotation));
+            }
+        }
         Player player = LocalVehiclePlayer.instance.getPlayer();
         PartUnit<?> playerPartUnit = vehicle.getOwnOperatorUnit(player);
-        float zRot = playerPartUnit instanceof RotatableUnit<?> rotatableUnit
-                ? lerpZRotDiff(rotatableUnit, vehicle, partialTick) : 0;
+        float zRot = playerPartUnit instanceof RotatableUnit<?> && playerPartUnit.getStructureGroup() != null
+                ? headingYRot(headingTransform(playerPartUnit.getStructureGroup(), Vec3.ZERO, rotations, partialTick).rotation()) : 0;
         float heading = (float) Math.toRadians(180 - zRot);
-        Vec3 vehiclePos = new Vec3(Mth.lerp(partialTick, vehicle.xo, vehicle.getX()),
-                Mth.lerp(partialTick, vehicle.yo, vehicle.getY()),
-                Mth.lerp(partialTick, vehicle.zo, vehicle.getZ()));
-        Quaternionf rotation = new Quaternionf()
-                .rotateY((float) Math.toRadians(-vehicle.getViewYRot(partialTick)))
-                .rotateX((float) Math.toRadians(vehicle.getViewXRot(partialTick)))
-                .rotateZ((float) Math.toRadians(vehicle.getViewZRot(partialTick)));
-        Vector3f axisX = rotation.transform(new Vector3f(1, 0, 0));
-        Vector3f axisZ = rotation.transform(new Vector3f(0, 0, 1));
         for (VehicleCubeOBB cube : vehicle.getVehicleCubeOBBs()) {
-            addHeadingCube(cubes, cube, vehiclePos, axisX, axisZ, heading, 0, partialTick, Color.WHITE, 0);
+            addHeadingCube(cubes, cube, rotations, heading, partialTick, 0);
         }
         for (PartUnit<?> part : vehicle.getPartUnits()) {
             if (part instanceof WeaponUnit weapon && !weapon.isSeat()) {
                 continue;
             }
+            if (!part.renderInVehicleStatus) {
+                continue;
+            }
             int fillColor = damageFillColor(part.getHealth(), part.getMaxHealth());
             for (VehicleCubeOBB cube : part.getPartCubeOBBs()) {
-                addHeadingCube(cubes, cube, vehiclePos, axisX, axisZ, heading,
-                        lerpZRotDiff(cube, vehicle, partialTick), partialTick, Color.WHITE, fillColor);
+                addHeadingCube(cubes, cube, rotations, heading, partialTick, fillColor);
             }
             if (part instanceof WeaponUnit weapon) {
                 for (WeaponUnit subWeapon : weapon.getSubWeaponUnits()) {
                     int subFillColor = damageFillColor(subWeapon.getHealth(), subWeapon.getMaxHealth());
                     for (VehicleCubeOBB cube : subWeapon.getPartCubeOBBs()) {
-                        addHeadingCube(cubes, cube, vehiclePos, axisX, axisZ, heading,
-                                lerpZRotDiff(cube, vehicle, partialTick), partialTick, Color.WHITE, subFillColor);
+                        addHeadingCube(cubes, cube, rotations, heading, partialTick, subFillColor);
                     }
                 }
             }
@@ -174,35 +178,6 @@ public final class VehicleStatusOverlay implements LayeredDraw.Layer {
         }
     }
 
-    private static int damageFillColor(float health, float maxHealth) {
-        if (maxHealth <= 0 || health < 0 || health >= maxHealth) {
-            return 0;
-        }
-        int green = Math.round(255 * Mth.clamp(health / maxHealth, 0, 1));
-        return 0x80FF0000 | green << 8;
-    }
-
-    private record HeadingCube(float x, float y, float halfWidth, float halfDepth, float rotation, int color, int fillColor) {
-    }
-
-    private static void addHeadingCube(List<HeadingCube> cubes, VehicleCubeOBB cube, Vec3 vehiclePos,
-                                       Vector3f axisX, Vector3f axisZ, float heading, float rotation,
-                                       float partialTick, int color, int fillColor) {
-        if (cube.position == null) {
-            return;
-        }
-        Vec3 position = cube.positionO == null ? cube.position : cube.positionO.lerp(cube.position, partialTick);
-        Vec3 offset = position.subtract(vehiclePos);
-        float x = (float) (offset.x * axisX.x() + offset.y * axisX.y() + offset.z * axisX.z());
-        float y = (float) (offset.x * axisZ.x() + offset.y * axisZ.y() + offset.z * axisZ.z());
-        float cos = Mth.cos(heading);
-        float sin = Mth.sin(heading);
-        int borderColor = fillColor == 0 ? color : fillColor | 0xFF000000;
-        cubes.add(new HeadingCube(x * cos - y * sin, x * sin + y * cos,
-                (float) cube.width / 2, (float) cube.depth / 2,
-                heading + (float) Math.toRadians(rotation), borderColor, fillColor));
-    }
-
     private static void renderHeadingCube(GuiGraphics graphics, HeadingCube cube, float stroke, boolean fill) {
         if (fill && cube.fillColor == 0) {
             return;
@@ -229,21 +204,46 @@ public final class VehicleStatusOverlay implements LayeredDraw.Layer {
         }
     }
 
-    private static float lerpZRotDiff(RotatableUnit<?> rotatableUnit, AbstractVehicle vehicle, float partialTick) {
-        float zRot = Mth.wrapDegrees(rotatableUnit.worldRot().y - vehicle.getYRot());
-        float zRotO = Mth.wrapDegrees(rotatableUnit.worldRot(rotatableUnit.xRotO, rotatableUnit.yRotO).y - vehicle.getYRot());
-        float zRotDiff = Mth.wrapDegrees(zRot - zRotO);
-        return Mth.lerp(partialTick, zRot - zRotDiff, zRot);
+    private record HeadingCube(float x, float y, float halfWidth, float halfDepth, float rotation, int color, int fillColor) {}
+
+    private static void addHeadingCube(List<HeadingCube> cubes, VehicleCubeOBB cube,
+                                       Map<VehicleCubeGroup, Quaternionf> rotations, float heading,
+                                       float partialTick, int fillColor) {
+        if (cube.group == null) {
+            return;
+        }
+        VehicleCubeGroup.GlobalTransform transform = headingTransform(cube.group,
+                new Vec3(cube.x + cube.width / 2, cube.y + cube.height / 2, cube.z + cube.depth / 2),
+                rotations, partialTick);
+        float x = (float) transform.offset().x;
+        float y = (float) transform.offset().z;
+        float cos = Mth.cos(heading);
+        float sin = Mth.sin(heading);
+        int borderColor = fillColor == 0 ? Color.WHITE : fillColor | 0xFF000000;
+        cubes.add(new HeadingCube(x * cos - y * sin, x * sin + y * cos,
+                (float) cube.width / 2, (float) cube.depth / 2,
+                heading + (float) Math.toRadians(headingYRot(transform.rotation())), borderColor, fillColor));
     }
 
-    private static float lerpZRotDiff(VehicleCubeOBB cubeOBB, AbstractVehicle vehicle, float partialTick) {
-        if (cubeOBB.rotationO == null || cubeOBB.rotation == null) {
+    private static VehicleCubeGroup.GlobalTransform headingTransform(VehicleCubeGroup group, Vec3 offset,
+                                                                     Map<VehicleCubeGroup, Quaternionf> rotations,
+                                                                     float partialTick) {
+        return group.globalTransform(offset, true,
+                current -> rotations.getOrDefault(current, current.rotation),
+                current -> current.offsetO.lerp(current.offset, partialTick));
+    }
+
+    private static float headingYRot(Quaternionf rotation) {
+        Vector3f forward = rotation.transform(new Vector3f(0, 0, 1));
+        return VectorUtil.vecToRot(new Vec3(forward)).y;
+    }
+
+    private static int damageFillColor(float health, float maxHealth) {
+        if (maxHealth <= 0 || health < 0 || health >= maxHealth) {
             return 0;
         }
-        Quaternionf rotation = new Quaternionf(cubeOBB.rotationO).slerp(cubeOBB.rotation, partialTick);
-        Vector3f forward = rotation.transform(new Vector3f(0, 0, 1));
-        float worldYRot = VectorUtil.vecToRot(new Vec3(forward)).y;
-        return Mth.wrapDegrees(worldYRot - vehicle.getViewYRot(partialTick));
+        int green = Math.round(255 * Mth.clamp(health / maxHealth, 0, 1));
+        return 0x80FF0000 | green << 8;
     }
 
     private static void renderCrew(GuiGraphics graphics, AbstractVehicle vehicle,

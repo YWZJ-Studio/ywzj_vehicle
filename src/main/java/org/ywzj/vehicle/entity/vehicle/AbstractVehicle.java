@@ -107,6 +107,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     protected final HashSet<BulletHoleParticle> bulletHoleParticles;
     protected ViewInfo viewInfo;
     protected boolean viewZoomed;
+    private final ZoomSmoother viewZoomSmoother = new ZoomSmoother(0);
     public EnergyInfo energyInfo;
     public DefenseStats defenseStats;
     public Vec3 centerOffset;
@@ -1070,7 +1071,7 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @OnlyIn(Dist.CLIENT)
     public Vec3 thirdPersonPosition(float partialTick) {
-        Vec3 offset = isViewZoomed() ? getViewInfo().thirdPersonCenterOffsetZoomed : getViewInfo().thirdPersonCenterOffset;
+        Vec3 offset = getViewInfo().thirdPersonCenterOffset.lerp(getViewInfo().thirdPersonCenterOffsetZoomed, getViewZoomProgress());
         Matrix3f axisRollMat = new Matrix3f();
         Quaternionf q = new Quaternionf();
         float vehicleYRot = partialTick == 1.0F ? this.getYRot() : this.getViewYRot(partialTick);
@@ -1082,13 +1083,14 @@ public abstract class AbstractVehicle extends ContainerCraft
 
     @OnlyIn(Dist.CLIENT)
     public double thirdPersonDistance(float cameraXRot) {
-        double distance = isViewZoomed()
-                ? getViewInfo().thirdPersonDistanceZoomed
-                : getViewInfo().thirdPersonDistance;
-        if (!isViewZoomed()) {
-            distance = Math.max(0, distance - cameraXRot / 90 * getViewInfo().thirdPersonCenterOffset.y);
-        }
-        return distance;
+        double distance = Math.max(0, getViewInfo().thirdPersonDistance
+                - cameraXRot / 90 * getViewInfo().thirdPersonCenterOffset.y);
+        return Mth.lerp(getViewZoomProgress(), distance, getViewInfo().thirdPersonDistanceZoomed);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    protected double getViewZoomProgress() {
+        return viewZoomSmoother.update(isViewZoomed() ? 1 : 0);
     }
 
     @NotNull
@@ -1454,46 +1456,20 @@ public abstract class AbstractVehicle extends ContainerCraft
         if (this.isPassengerOfSameVehicle(pEntity)) {
             return;
         }
-        OBB mainCubeOBB = getMainCubeOBB().obb();
         if (pEntity instanceof AbstractVehicle vehicle) {
-            if (!OBB.isColliding(vehicle.getMainCubeOBB().obb(), mainCubeOBB)) {
-                return;
-            }
-        } else {
-            AABB entityAABB = pEntity.getBoundingBox();
-            if (!OBB.isColliding(mainCubeOBB, entityAABB)) {
-                return;
-            }
-            Vec3 contactNormal = new Vec3(mainCubeOBB.calculateMTV(entityAABB));
-            if (contactNormal.dot(getDeltaMovement()) <= 0) {
-                return;
-            }
+            physicsEngine.push(vehicle.physicsEngine);
+            return;
+        }
+        OBB mainCubeOBB = getMainCubeOBB().obb();
+        AABB entityAABB = pEntity.getBoundingBox();
+        if (!OBB.isColliding(mainCubeOBB, entityAABB)) {
+            return;
+        }
+        Vec3 contactNormal = new Vec3(mainCubeOBB.calculateMTV(entityAABB));
+        if (contactNormal.dot(getDeltaMovement()) <= 0) {
+            return;
         }
         impact(pEntity);
-        if (pEntity instanceof AbstractVehicle vehicle) {
-            if (this.getId() > vehicle.getId() || !vehicle.isPushable()) {
-                return;
-            }
-            Vec3 separation = new Vec3(vehicle.getX() - this.getX(), 0, vehicle.getZ() - this.getZ());
-            if (separation.horizontalDistanceSqr() < 1.0E-4) {
-                return;
-            }
-            Vec3 normal = separation.normalize();
-            Vec3 thisVelocity = this.getDeltaMovement();
-            Vec3 otherVelocity = vehicle.getDeltaMovement();
-            double relativeNormalSpeed = otherVelocity.subtract(thisVelocity).dot(normal);
-            double separationSpeed = 0.01;
-            if (relativeNormalSpeed < separationSpeed) {
-                double thisMass = Math.max(this.physicsEngine.physicsInfo.mass, 1.0E-3);
-                double otherMass = Math.max(vehicle.physicsEngine.physicsInfo.mass, 1.0E-3);
-                double velocityChange = separationSpeed - relativeNormalSpeed;
-                double totalMass = thisMass + otherMass;
-                Vec3 thisPush = normal.scale(-velocityChange * otherMass / totalMass);
-                Vec3 otherPush = normal.scale(velocityChange * thisMass / totalMass);
-                this.push(thisPush.x, 0, thisPush.z);
-                vehicle.push(otherPush.x, 0, otherPush.z);
-            }
-        }
     }
 
     public void support(Entity pEntity) {

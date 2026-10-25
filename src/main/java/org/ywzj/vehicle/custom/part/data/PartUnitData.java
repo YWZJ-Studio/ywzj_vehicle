@@ -31,6 +31,7 @@ public class PartUnitData {
     protected PassengerPose passengerPose;
     protected boolean passengerCanUseItem;
     protected Vec3 ownerViewOffset = null;
+    protected float ownerRenderScale = 1.0F;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected boolean renderModel;
     protected ResourceLocation displayId;
@@ -62,6 +63,7 @@ public class PartUnitData {
         this.passengerPose = pojo.passengerPose;
         this.passengerCanUseItem = pojo.passengerCanUseItem;
         this.ownerViewOffset = pojo.ownerViewOffset;
+        this.ownerRenderScale = pojo.ownerRenderScale;
         this.renderModel = pojo.renderModel;
         this.displayId = pojo.displayId;
         this.displayOffset = pojo.displayOffset;
@@ -174,6 +176,10 @@ public class PartUnitData {
 
     public Vec3 getOwnerViewOffset() {
         return ownerViewOffset;
+    }
+
+    public float getOwnerRenderScale() {
+        return ownerRenderScale;
     }
 
     public Vec3 getPivotOffset() {

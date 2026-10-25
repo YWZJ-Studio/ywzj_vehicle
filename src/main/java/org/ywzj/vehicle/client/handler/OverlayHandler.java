@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderBlockScreenEffectEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.ywzj.vehicle.YwzjVehicle;
@@ -43,6 +44,14 @@ public class OverlayHandler {
         if (mc.options.getCameraType() == CameraType.FIRST_PERSON
                 && player.getVehicle() instanceof AbstractVehicle
                 && HOTBAR_ELEMENTS.contains(event.getName())) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderBlockScreenEffect(RenderBlockScreenEffectEvent event) {
+        if (event.getOverlayType() == RenderBlockScreenEffectEvent.OverlayType.BLOCK
+                && event.getPlayer().getVehicle() instanceof AbstractVehicle) {
             event.setCanceled(true);
         }
     }

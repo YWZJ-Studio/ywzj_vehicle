@@ -56,6 +56,9 @@ public class PartUnitPojo {
     @SerializedName("owner_view_offset")
     public Vec3 ownerViewOffset = null;
 
+    @SerializedName("owner_render_scale")
+    public float ownerRenderScale = 1.0F;
+
     @SerializedName("render_model")
     public boolean renderModel = false;
 

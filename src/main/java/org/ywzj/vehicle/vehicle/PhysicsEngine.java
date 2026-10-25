@@ -60,6 +60,7 @@ public class PhysicsEngine {
     public Vector3f velocityO = new Vector3f(0, 0, 0);
     public boolean lockZRot;
     public boolean lockCenterRot;
+    private final Set<VehicleCubeOBB.CubePoint> vehicleContactPoints = new HashSet<>();
     private boolean suspensionGrounded;
     private float suspensionPitchVelocity;
     private float suspensionRollVelocity;
@@ -87,8 +88,8 @@ public class PhysicsEngine {
         if (hasSuspension) {
             double movedY = Math.abs(vehicle.deltaMovementO.y) < 0.001 ? 0 : vehicle.deltaMovementO.y;
             vehicle.setPos(vehicle.getX(), vehicle.getY() - movedY, vehicle.getZ());
-            cube.update(vehicle);
         }
+        cube.update(vehicle);
         Vector3f[] axes = cube.obb().getAxes();
         climbBlocked = false;
         BodyContacts contacts = collectContacts(axes, hasSuspension && vehicle.collision);
@@ -119,6 +120,36 @@ public class PhysicsEngine {
             rightInLiquid();
         }
         vehicle.setDeltaMovement(new Vec3(this.velocity));
+    }
+
+    public void push(PhysicsEngine other) {
+        if (!vehicle.collision || !other.vehicle.collision || vehicle.noPhysics || other.vehicle.noPhysics
+                || vehicle.isPassengerOfSameVehicle(other.vehicle)) {
+            return;
+        }
+        physicsCube().update(vehicle);
+        other.physicsCube().update(other.vehicle);
+        if (!OBB.isColliding(physicsCube().obb(), other.physicsCube().obb())) {
+            return;
+        }
+        vehicle.impact(other.vehicle);
+        if (vehicle.getId() > other.vehicle.getId() || !other.vehicle.isPushable()) {
+            return;
+        }
+        Vec3 separation = other.vehicle.position().subtract(vehicle.position()).multiply(1, 0, 1);
+        if (separation.horizontalDistanceSqr() < 1.0E-4) {
+            return;
+        }
+        Vec3 normal = separation.normalize();
+        double speed = other.vehicle.getDeltaMovement().subtract(vehicle.getDeltaMovement()).dot(normal);
+        double separationSpeed = 0.01;
+        if (speed < separationSpeed) {
+            double mass = Math.max(physicsInfo.mass, 1.0E-3);
+            double otherMass = Math.max(other.physicsInfo.mass, 1.0E-3);
+            double velocityChange = separationSpeed - speed;
+            setVelocity(vehicle.getDeltaMovement().subtract(normal.scale(velocityChange * otherMass / (mass + otherMass))));
+            other.setVelocity(other.vehicle.getDeltaMovement().add(normal.scale(velocityChange * mass / (mass + otherMass))));
+        }
     }
 
     /**
@@ -502,6 +533,9 @@ public class PhysicsEngine {
             VehicleCubeOBB.CubeFace face = touchPoint.cubeFace();
             if (face == VehicleCubeOBB.CubeFace.LEFT || face == VehicleCubeOBB.CubeFace.RIGHT
                     || face == VehicleCubeOBB.CubeFace.FRONT || face == VehicleCubeOBB.CubeFace.BACK) {
+                if (vehicleContactPoints.contains(touchPoint)) {
+                    continue;
+                }
                 if (!climbBlocked && touchPoint.obbLocalPos().y < -physicsCube.getHeight() / 2 + physicsCube.spaceY) {
                     continue;
                 }
@@ -594,6 +628,9 @@ public class PhysicsEngine {
         if (climbBlocked) {
             // 底面冲量可能带有水平分量，重新满足已接触墙面的速度约束。
             for (VehicleCubeOBB.CubePoint point : touchPoints) {
+                if (vehicleContactPoints.contains(point)) {
+                    continue;
+                }
                 Vec3 normal = switch (point.cubeFace()) {
                     case FRONT -> new Vec3(axes[2]).scale(-1);
                     case BACK -> new Vec3(axes[2]);
@@ -809,6 +846,7 @@ public class PhysicsEngine {
     }
 
     public boolean climb(List<VehicleCubeOBB.CubePoint> touchPoints) {
+        touchPoints = touchPoints.stream().filter(point -> !vehicleContactPoints.contains(point)).toList();
         VehicleCubeOBB physicsCube = physicsCube();
         Vec3 bottomPosition = vehicle.relativeRotPos(physicsCube.offset()
                 .add(new Vec3(0, physicsCube.bottomPoint.obbLocalPos().y + 0.01f, 0))
@@ -906,6 +944,7 @@ public class PhysicsEngine {
     }
 
     private BodyContacts collectContacts(Vector3f[] axes, boolean withBodySupports) {
+        vehicleContactPoints.clear();
         // 接触方块的采样点
         List<VehicleCubeOBB.CubePoint> touchPoints = new ArrayList<>();
         Map<BlockPos, List<AABB>> shapes = new HashMap<>();
@@ -923,18 +962,41 @@ public class PhysicsEngine {
                 }
             }
         }
+        // 地形支撑
         Map<VehicleCubeOBB.CubePoint, Double> supports = withBodySupports
                 ? collectBodySupports(axes) : new LinkedHashMap<>();
+        // 载具支撑
+        List<OBB> vehicleBoxes = getVehicleCollisionBoxes(OBB.toAABB(List.of(physicsCube().obb()))
+                .inflate(BODY_CONTACT_RECOVERY));
+        for (VehicleCubeOBB.CubePoint point : physicsCube().cubePoints()) {
+            if (touchPoints.contains(point) || supports.containsKey(point)) {
+                continue;
+            }
+            Vec3 position = new Vec3(point.cachedWorldPos());
+            Optional<Vec3> support = bodySupportAlignment(point, axes) > 0
+                    ? findVehicleSupport(vehicleBoxes, position.add(0, BODY_CONTACT_RECOVERY, 0),
+                            position.add(0, -BODY_CONTACT_SKIN, 0)) : Optional.empty();
+            if (support.isEmpty() && vehicleBoxes.stream().noneMatch(box -> box.contains(position))) {
+                continue;
+            }
+            point.cubePointContext.setBlockPos(support.orElse(position).add(0, -1, 0));
+            point.cubePointContext.setBlockState(null);
+            touchPoints.add(point);
+            vehicleContactPoints.add(point);
+            if (withBodySupports && support.isPresent()) {
+                supports.put(point, support.get().y);
+            }
+        }
         for (VehicleCubeOBB.CubePoint point : supports.keySet()) {
             if (!touchPoints.contains(point)) {
                 touchPoints.add(point);
             }
         }
         Set<VehicleCubeOBB.CubePoint> blockContacts = new HashSet<>(touchPoints);
+        // 兼容支撑
         NeoForge.EVENT_BUS.post(new VehicleCollectCollisionEvent(vehicle, touchPoints));
         supports.keySet().retainAll(touchPoints);
         if (withBodySupports) {
-            // 兼容事件未提供接触面高度，新增接触按零间隙支撑处理。
             for (VehicleCubeOBB.CubePoint point : touchPoints) {
                 if (!blockContacts.contains(point) && bodySupportAlignment(point, axes) > 0) {
                     supports.putIfAbsent(point, (double) point.cachedWorldPos().y);
@@ -993,6 +1055,47 @@ public class PhysicsEngine {
             }
         }
         return boxes;
+    }
+
+    private List<OBB> getVehicleCollisionBoxes(AABB bounds) {
+        if (!vehicle.collision || vehicle.noPhysics) {
+            return List.of();
+        }
+        List<OBB> boxes = new ArrayList<>();
+        for (AbstractVehicle other : vehicle.level().getEntitiesOfClass(AbstractVehicle.class, bounds,
+                other -> other != vehicle && other.collision && !other.noPhysics
+                        && !vehicle.isPassengerOfSameVehicle(other))) {
+            other.getMainCubeOBB().update(other);
+            boxes.add(other.getMainCubeOBB().obb());
+        }
+        return boxes;
+    }
+
+    public Optional<Vec3> findVehicleSupport(Vec3 start, Vec3 end) {
+        return findVehicleSupport(getVehicleCollisionBoxes(new AABB(start, end).inflate(BODY_CONTACT_SKIN)), start, end);
+    }
+
+    private Optional<Vec3> findVehicleSupport(List<OBB> boxes, Vec3 start, Vec3 end) {
+        Vec3 nearest = null;
+        for (OBB box : boxes) {
+            if (box.embeddingDepth(start) > BODY_CONTACT_SLOP) {
+                continue;
+            }
+            Optional<Vector3f> hit = box.clip(start.toVector3f(), end.toVector3f());
+            if (hit.isEmpty()) {
+                continue;
+            }
+            Vec3 position = new Vec3(hit.get());
+            int face = box.embeddingFace(position);
+            Vec3 normal = new Vec3(box.getAxes()[Math.abs(face) - 1]).scale(face > 0 ? 1 : -1);
+            if (normal.y <= 0.25 || end.subtract(start).dot(normal) >= 0 || !isOpenSupportSurface(position)) {
+                continue;
+            }
+            if (nearest == null || start.distanceToSqr(position) < start.distanceToSqr(nearest)) {
+                nearest = position;
+            }
+        }
+        return Optional.ofNullable(nearest);
     }
 
     /**

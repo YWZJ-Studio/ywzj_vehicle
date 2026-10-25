@@ -48,15 +48,15 @@ public class TrackUnitData extends PartUnitData {
         BedrockBone structureBone = model == null ? null : model.getBoneMap().get(this.structureBone);
         List<BedrockBone> trackBones = structureBone == null ? List.of() : structureBone.getChildren();
         int trackCount = structureBone == null ? tracks.size() : trackBones.size();
-        if (trackCount != suspensions.size()) {
+        if (!suspensions.isEmpty() && trackCount != suspensions.size()) {
             throw new IllegalArgumentException("Track and suspension counts must match");
         }
         if (structureBone == null) {
             List<String> trackNames = new ArrayList<>(suspensions.keySet());
             List<TrackDefinition> definitions = new ArrayList<>(tracks.size());
             for (int index = 0; index < tracks.size(); index++) {
-                String trackName = trackNames.get(index);
-                definitions.add(new TrackDefinition(trackName, tracks.get(index), suspensions.get(trackName)));
+                String trackName = suspensions.isEmpty() ? "track_" + index : trackNames.get(index);
+                definitions.add(new TrackDefinition(trackName, tracks.get(index), suspensions.getOrDefault(trackName, List.of())));
             }
             this.trackDefinitions = List.copyOf(definitions);
             return;
@@ -78,7 +78,7 @@ public class TrackUnitData extends PartUnitData {
                     points.add(trackGroup.globalTransform(cubePivot, true).offset());
                 }
             }
-            definitions.add(new TrackDefinition(trackName, List.copyOf(points), suspensions.get(trackName)));
+            definitions.add(new TrackDefinition(trackName, List.copyOf(points), suspensions.getOrDefault(trackName, List.of())));
         }
         this.trackDefinitions = List.copyOf(definitions);
     }
