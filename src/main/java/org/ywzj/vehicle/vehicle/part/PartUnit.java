@@ -67,6 +67,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected Vec3 dismountOffset;
     protected PassengerPose passengerPose;
     protected Vec3 ownerViewOffset = null;
+    protected float ownerRenderScale = 1.0F;
     protected Vec3 pivotOffset = Vec3.ZERO;
     protected boolean renderModel;
     protected ResourceLocation displayId;
@@ -77,6 +78,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
     protected List<PartUnit<?>> attPartUnits = new ArrayList<>();
     protected T data;
     protected PartUnitSyncData syncData;
+    public boolean renderInVehicleStatus = true;
     public float healthO = -1;
     public int hurtTick = 0;
 
@@ -96,6 +98,7 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
         this.dismountOffset = data.getDismountOffset();
         this.passengerPose = data.getPassengerPose();
         this.ownerViewOffset = data.getOwnerViewOffset();
+        this.ownerRenderScale = data.getOwnerRenderScale();
         this.pivotOffset = data.getPivotOffset();
         this.renderModel = data.isRenderModel();
         this.displayId = data.getDisplayId();
@@ -374,6 +377,10 @@ public class PartUnit<T extends PartUnitData> implements INBTSerializable<Compou
 
     public Vec3 getOwnerViewOffset() {
         return ownerViewOffset;
+    }
+
+    public float getOwnerRenderScale() {
+        return ownerRenderScale;
     }
 
     public Vec3 getPivotOffset() {

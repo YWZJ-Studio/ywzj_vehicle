@@ -41,6 +41,7 @@ public class RopeUnit extends PartUnit<RopeUnitData> {
         this.partCubeOBBs = new ArrayList<>();
         this.syncData.define(SyncDataSerializers.VEC3, this::setPivotOffset, this::getPivotOffset, this.pivotOffset);
         this.syncData.define(SyncDataSerializers.FLOAT, this::applySyncedLength, this::getLength, 0f);
+        this.renderInVehicleStatus = false;
         ensureFixedNode();
     }
 

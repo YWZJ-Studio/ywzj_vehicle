@@ -51,10 +51,11 @@ public class HookUnit extends PartUnit<PartUnitData> {
 
     public HookUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
         super(index, vehicle, data);
-        syncData.define(SyncDataSerializers.INT, value -> connectedEntityId = value, () -> connectedEntityId, -1);
-        syncData.define(SyncDataSerializers.STRING, value -> connectedPart = value, () -> connectedPart, "");
-        syncData.define(SyncDataSerializers.STRING, value -> connectionId = value, () -> connectionId, "");
-        syncData.define(SyncDataSerializers.FLOAT, this::setLength, this::getLength, MIN_LENGTH);
+        this.syncData.define(SyncDataSerializers.INT, value -> connectedEntityId = value, () -> connectedEntityId, -1);
+        this.syncData.define(SyncDataSerializers.STRING, value -> connectedPart = value, () -> connectedPart, "");
+        this.syncData.define(SyncDataSerializers.STRING, value -> connectionId = value, () -> connectionId, "");
+        this.syncData.define(SyncDataSerializers.FLOAT, this::setLength, this::getLength, MIN_LENGTH);
+        this.renderInVehicleStatus = false;
     }
 
     public boolean isConnected() {

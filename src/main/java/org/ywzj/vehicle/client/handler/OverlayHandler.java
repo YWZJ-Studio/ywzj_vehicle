@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderBlockScreenEffectEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -38,6 +39,14 @@ public class OverlayHandler {
         if (mc.options.getCameraType() == CameraType.FIRST_PERSON
                 && player.getVehicle() instanceof AbstractVehicle
                 && HOTBAR_ELEMENTS.contains(event.getOverlay().id())) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderBlockScreenEffect(RenderBlockScreenEffectEvent event) {
+        if (event.getOverlayType() == RenderBlockScreenEffectEvent.OverlayType.BLOCK
+                && event.getPlayer().getVehicle() instanceof AbstractVehicle) {
             event.setCanceled(true);
         }
     }

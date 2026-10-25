@@ -335,15 +335,15 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         List<Contact> contacts = new ArrayList<>();
         Quaternionf rotation = getSuspensionRotation(partialTick);
         List<Vec3> offsets = getSupportOffsets();
-        for (int i = 0; i < offsets.size(); i++) {
-            double pointRestLength = supportRestLengths[i];
+        for (int index = 0; index < offsets.size(); index++) {
+            double pointRestLength = supportRestLengths[index];
             double minCompression = getMinCompression(pointRestLength);
             double maxLength = pointRestLength - minCompression;
-            double minLength = pointRestLength - Math.max(supportMaxCompressions[i], minCompression);
+            double minLength = pointRestLength - Math.max(supportMaxCompressions[index], minCompression);
             // 允许恢复轻微穿透，避免触底后误判悬空。
             double probeMinLength = minLength - recovery;
             Contact nearest = null;
-            Vec3 worldOffset = new Vec3(rotation.transform(offsets.get(i).toVector3f()));
+            Vec3 worldOffset = new Vec3(rotation.transform(offsets.get(index).toVector3f()));
             Vec3 origin = mount.add(worldOffset);
             Vec3 compressedPoint = origin.add(direction.scale(minLength));
             Vec3 start = origin.add(direction.scale(probeMinLength));
@@ -365,7 +365,15 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                     continue;
                 }
                 if (nearest == null || length < nearest.length()) {
-                    nearest = new Contact(length, contact, i);
+                    nearest = new Contact(length, contact, index);
+                }
+            }
+            var vehicleSupport = vehicle.physicsEngine.findVehicleSupport(start, end);
+            if (vehicleSupport.isPresent()) {
+                Vec3 contact = vehicleSupport.get();
+                double length = contact.subtract(origin).dot(direction);
+                if (nearest == null || length < nearest.length()) {
+                    nearest = new Contact(length, contact, index);
                 }
             }
             if (nearest != null) {

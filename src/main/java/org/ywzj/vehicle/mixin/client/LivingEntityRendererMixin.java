@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
+import org.ywzj.vehicle.vehicle.part.PartUnit;
 
 @Mixin(LivingEntityRenderer.class)
 public class LivingEntityRendererMixin<T extends LivingEntity> {
@@ -30,6 +31,13 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             pPoseStack.mulPose(Axis.YP.rotation(rot.y));
             pPoseStack.mulPose(Axis.XP.rotation(rot.x));
             pPoseStack.mulPose(Axis.ZP.rotation(rot.z));
+            if (entity.getVehicle() == vehicle) {
+                PartUnit<?> partUnit = vehicle.getOwnOperatorUnit(entity);
+                if (partUnit != null) {
+                    float scale = partUnit.getOwnerRenderScale();
+                    pPoseStack.scale(scale, scale, scale);
+                }
+            }
             ci.cancel();
         }
     }
