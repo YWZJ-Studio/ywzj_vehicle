@@ -63,7 +63,7 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
             int color = isHelicopter ? Color.GREEN : Color.WHITE;
             PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(player);
             if (operatorUnit instanceof WeaponUnit weaponUnit) {
-                Vec3 aimScreenPos = aimScreenPosition(weaponUnit);
+                Vec3 aimScreenPos = aimScreenPosition(weaponUnit, partialTick);
                 if (aimScreenPos.z >= 0) {
                     PoseStack poseStack = guiGraphics.pose();
                     poseStack.pushPose();
@@ -338,10 +338,10 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
         return animation.progress;
     }
 
-    public static Vec3 aimScreenPosition(WeaponUnit weaponUnit) {
+    public static Vec3 aimScreenPosition(WeaponUnit weaponUnit, float partialTick) {
         LocalVehiclePlayer instance = LocalVehiclePlayer.instance;
         if (instance.viewType == LocalVehiclePlayer.ViewType.SCOPE) {
-            return VectorUtil.worldToScreen(weaponUnit.toAimPosition());
+            return VectorUtil.worldToScreen(weaponUnit.aimAtPosition(partialTick));
         } else {
             Window window = Minecraft.getInstance().getWindow();
             double y = 0.5 - Math.tan(Math.toRadians(LocalVehiclePlayer.CAMERA_UPWARD_ANGLE)) * VectorUtil.projectionMatrix.m11() * 0.5;

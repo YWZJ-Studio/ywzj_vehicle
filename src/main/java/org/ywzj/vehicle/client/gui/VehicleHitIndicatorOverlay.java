@@ -181,7 +181,7 @@ public class VehicleHitIndicatorOverlay implements IGuiOverlay {
         if (weaponUnit == null) {
             return;
         }
-        Vec3 aimScreenPos = VehicleAimAtOverlay.aimScreenPosition(weaponUnit);
+        Vec3 aimScreenPos = VehicleAimAtOverlay.aimScreenPosition(weaponUnit, partialTick);
         if (aimScreenPos.z < 0) {
             return;
         }

@@ -189,8 +189,8 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                         VehicleMissileWeaponData vehicleMissileWeaponData = vehicleMissile.getData();
                         // 导弹射界框
                         drawMissileEngagementFrame(guiGraphics,
-                                (int) (baseX + vehicleMissileWeaponData.getYRotMin() - weaponUnit.ySelfRot),
-                                (int) (baseX + vehicleMissileWeaponData.getYRotMax() - weaponUnit.ySelfRot),
+                                (int) (baseX + Math.max(vehicleMissileWeaponData.getYRotMin(), weaponUnit.getYRotMin()) - weaponUnit.ySelfRot),
+                                (int) (baseX + Math.min(vehicleMissileWeaponData.getYRotMax(), weaponUnit.getYRotMax()) - weaponUnit.ySelfRot),
                                 (int) (baseY + Math.max(vehicleMissileWeaponData.getXRotMin(), weaponUnit.getXRotMin()) - weaponUnit.xSelfRot),
                                 (int) (baseY + Math.min(vehicleMissileWeaponData.getXRotMax(), weaponUnit.getXRotMax()) - weaponUnit.xSelfRot),
                                 color);
