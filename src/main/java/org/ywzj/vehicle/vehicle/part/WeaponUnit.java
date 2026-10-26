@@ -927,18 +927,15 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         }
     }
 
-    public Vec3 toAimPosition() {
-        if (xTurnGroup == null) {
-            return aimHitPosition();
-        }
-        VehicleCubeGroup.GlobalTransform globalTransform = aimGlobalTransform();
+    public Vec3 aimAtPosition(float partialTick) {
+        VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup == null ? null : aimGlobalTransform(partialTick);
         List<Vec3> positions = bolts.stream()
-                .map(bolt -> aimContext(bolt, globalTransform).from)
+                .map(bolt -> aimContext(bolt, globalTransform, partialTick).from)
                 .toList();
         double x = positions.stream().mapToDouble(pos -> pos.x).average().orElse(0);
         double y = positions.stream().mapToDouble(pos -> pos.y).average().orElse(0);
         double z = positions.stream().mapToDouble(pos -> pos.z).average().orElse(0);
-        AimContext aimContext = aimContext(getCurrentBolt(), globalTransform);
+        AimContext aimContext = aimContext(getCurrentBolt(), globalTransform, partialTick);
         Vec3 start = new Vec3(x, y, z);
         Vec3 end = start.add(VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y).normalize().scale(1024));
         return VectorUtil.hitPosition(vehicle, start, end);
@@ -974,15 +971,21 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             aimContext.direction = new Vec2(this.vehicle.getXRot(), this.vehicle.getYRot());
             return aimContext;
         }
-        return aimContext(bolt, xTurnGroup.globalTransform());
+        return aimContext(bolt, xTurnGroup.globalTransform(), 1);
     }
 
-    private AimContext aimContext(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform) {
+    private AimContext aimContext(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform, float partialTick) {
         AimContext aimContext = new AimContext();
+        if (globalTransform == null) {
+            aimContext.from = vehicle.position(partialTick);
+            Vector3f worldRot = vehicle.rotYXZ(partialTick).getEulerAnglesYXZ(new Vector3f());
+            aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x), (float) Math.toDegrees(-worldRot.y));
+            return aimContext;
+        }
         Quaternionf rotation = globalTransform.rotation();
-        Vec3 boltPosition = worldBoltPosition(bolt, globalTransform);
+        Vec3 boltPosition = worldBoltPosition(bolt, globalTransform, partialTick);
         Vector3f worldRot = new Vector3f();
-        vehicle.rotYXZ().mul(rotation).getEulerAnglesYXZ(worldRot);
+        vehicle.rotYXZ(partialTick).mul(rotation).getEulerAnglesYXZ(worldRot);
         aimContext.direction = new Vec2((float) Math.toDegrees(worldRot.x) + bolt.xRot, (float) Math.toDegrees(-worldRot.y) + bolt.yRot);
         Vec3 direction = VectorUtil.rotToVec(aimContext.direction.x, aimContext.direction.y);
         aimContext.from = boltPosition.add(direction.scale(bolt.barrelLength));
@@ -992,18 +995,18 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     public Vec3 worldCurrentBoltPosition() {
         Bolt bolt = getCurrentBolt();
         VehicleCubeGroup.GlobalTransform globalTransform = xTurnGroup.globalTransform();
-        return worldBoltPosition(bolt, globalTransform);
+        return worldBoltPosition(bolt, globalTransform, 1);
     }
 
-    public Vec3 worldBoltPosition(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform) {
+    private Vec3 worldBoltPosition(Bolt bolt, VehicleCubeGroup.GlobalTransform globalTransform, float partialTick) {
         Quaternionf rotation = globalTransform.rotation();
         Vector3f boltOffset = new Vector3f((float) bolt.offset.x, (float) bolt.offset.y, (float) bolt.offset.z);
         rotation.transform(boltOffset);
         Vec3 pivot = globalTransform.offset();
-        Vector3f rotatedBoltOffset = vehicle.rotYXZ().transform(pivot
+        Vector3f rotatedBoltOffset = vehicle.rotYXZ(partialTick).transform(pivot
                 .add(boltOffset.x, boltOffset.y, boltOffset.z).toVector3f()
                 .sub(vehicle.centerOffset.toVector3f()));
-        return vehicle.position().add(vehicle.centerOffset).add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
+        return vehicle.position(partialTick).add(vehicle.centerOffset).add(rotatedBoltOffset.x, rotatedBoltOffset.y, rotatedBoltOffset.z);
     }
 
     @Override
@@ -1058,28 +1061,20 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
         return rotation;
     }
 
-    private VehicleCubeGroup.GlobalTransform aimGlobalTransform() {
-        Quaternionf globalRotation;
-        if (xTurnGroup == structureGroup) {
-            globalRotation = new Quaternionf(xTurnGroup.baseRotation)
-                    .mul(Axis.YN.rotationDegrees(yAimRot))
-                    .mul(Axis.XP.rotationDegrees(xAimRot));
-        } else {
-            globalRotation = new Quaternionf(xTurnGroup.baseRotation)
-                    .mul(Axis.XP.rotationDegrees(xAimRot));
-        }
-        Vector3f globalPivot = xTurnGroup.pivot.toVector3f();
-        VehicleCubeGroup parentGroup = xTurnGroup.parent;
-        while (parentGroup != null) {
-            Quaternionf parentRotation = parentGroup == structureGroup
-                    ? new Quaternionf(parentGroup.baseRotation).mul(Axis.YN.rotationDegrees(yAimRot))
-                    : parentGroup.rotation;
-            parentRotation.transform(globalPivot);
-            globalPivot.add((float) parentGroup.pivot.x, (float) parentGroup.pivot.y, (float) parentGroup.pivot.z);
-            globalRotation.premul(parentRotation);
-            parentGroup = parentGroup.parent;
-        }
-        return new VehicleCubeGroup.GlobalTransform(new Vec3(globalPivot), globalRotation);
+    private VehicleCubeGroup.GlobalTransform aimGlobalTransform(float partialTick) {
+        return xTurnGroup.globalTransform(Vec3.ZERO, false, group -> {
+            if (group == structureGroup || group == xTurnGroup) {
+                Quaternionf rotation = new Quaternionf(group.baseRotation);
+                if (group == structureGroup) {
+                    rotation.mul(Axis.YN.rotationDegrees(yAimRot));
+                }
+                if (group == xTurnGroup) {
+                    rotation.mul(Axis.XP.rotationDegrees(xAimRot));
+                }
+                return rotation;
+            }
+            return getViewGroupRotation(group, partialTick);
+        }, group -> group.offsetO.lerp(group.offset, partialTick));
     }
 
     public void updateWorldAimVec() {

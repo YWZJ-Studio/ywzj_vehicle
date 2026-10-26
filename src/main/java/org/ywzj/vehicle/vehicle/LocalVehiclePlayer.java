@@ -348,8 +348,8 @@ public class LocalVehiclePlayer {
                 cameraAimRotYO = cameraAimRotY;
                 cameraAimRotZO = cameraAimRotZ;
             } else {
-                Vec3 position = enter ? weaponUnit.aimHitPosition() : weaponUnit.toAimPosition();
-                Vec3 cameraAnchor = vehicle.thirdPersonPosition(1.0F);
+                Vec3 position = enter ? weaponUnit.aimHitPosition() : weaponUnit.aimAtPosition(1);
+                Vec3 cameraAnchor = vehicle.thirdPersonPosition(1);
                 Vec3 direction = position.subtract(cameraAnchor);
                 if (direction.lengthSqr() < 1.0E-8) {
                     return;
