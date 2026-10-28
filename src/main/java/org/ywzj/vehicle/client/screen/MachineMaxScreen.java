@@ -7,12 +7,14 @@ import com.mojang.math.Axis;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import com.sighs.apricityui.render.Drawer;
+import com.sighs.apricityui.render.GeometryQueryScope;
 import com.sighs.apricityui.screen.ApricityScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -20,7 +22,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.blockentity.MachineMaxBlockEntity;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
@@ -35,13 +42,19 @@ import org.ywzj.vehicle.util.AuiTextHelper;
 
 import java.util.*;
 
+@Mod.EventBusSubscriber(modid = YwzjVehicle.MOD_ID, value = Dist.CLIENT)
 public class MachineMaxScreen extends ApricityScreen {
 
     private static final String TEMPLATE = "screens/machine_max.html";
+    private static final int CATALOG_INDEX_BATCH_SIZE = 128;
+    private static final long CATALOG_BATCH_BUDGET_NS = 2_000_000L;
     private final MachineMaxBlockEntity machine;
-    private final List<BaseVehicleData<?>> allVehicles;
+    private VehicleCatalogCache.Catalog catalog;
+    private List<BaseVehicleData<?>> allVehicles;
     private final List<BaseVehicleData<?>> visibleVehicles = new ArrayList<>();
     private final List<Element> vehicleEntries = new ArrayList<>();
+    private Element selectedVehicleEntry;
+    private boolean pageRendered;
     private final List<MaterialRequirementView> materialRequirementViews = new ArrayList<>();
     private Document document;
     private Element searchInput;
@@ -81,20 +94,16 @@ public class MachineMaxScreen extends ApricityScreen {
     public MachineMaxScreen(MachineMaxBlockEntity machine) {
         super(TEMPLATE);
         this.machine = machine;
-        this.allVehicles = new ArrayList<>();
-        CommonAssetsManager.vehicleDataManager().getVehicleData().values().forEach(vehicle -> {
-            BaseVehicleData<?> vehicleData = (BaseVehicleData<?>) vehicle;
-            if (!vehicleData.isExperimental()) {
-                allVehicles.add(vehicleData);
-            }
-        });
-        allVehicles.sort((left, right) -> left.getName().getString().compareToIgnoreCase(right.getName().getString()));
+        this.catalog = VehicleCatalogCache.current();
+        this.allVehicles = catalog.vehicles();
+        this.selectedVehicleData = catalog.vehicle(VehicleCatalogCache.lastSelectedVehicleId);
         setPauseGame(false);
         setShowDefaultBackground(false);
     }
 
     @Override
     protected void init() {
+        pageRendered = false;
         appliedQuery = null;
         vehicleDetailsDirty = true;
         super.init();
@@ -120,8 +129,9 @@ public class MachineMaxScreen extends ApricityScreen {
         craftButton = element("craft-button");
         closeButton = element("close-button");
 
-        buildVehicleCatalog();
+        resetVehicleCatalog();
         if (searchInput != null) {
+            searchInput.setAttribute("placeholder", Component.translatable("screen.search").getString());
             searchInput.setValue(filter);
         }
         if (craftButton != null) {
@@ -131,7 +141,8 @@ public class MachineMaxScreen extends ApricityScreen {
             closeButton.addEventListener("click", event -> onClose());
         }
 
-        applyFilter(filter);
+        refreshCatalog();
+        showCatalog();
         updateMachineState(true);
     }
 
@@ -146,49 +157,105 @@ public class MachineMaxScreen extends ApricityScreen {
         return document.getElementById(id);
     }
 
-    private void buildVehicleCatalog() {
+    private void resetVehicleCatalog() {
         if (vehicleList == null) {
             return;
         }
 
+        if (vehicleList.getScrollTop() != 0 || vehicleList.getTargetScrollTop() != 0) {
+            try (GeometryQueryScope ignored = GeometryQueryScope.open()) {
+                vehicleList.setScrollTop(0);
+            }
+        }
         vehicleList.setTextContent("");
         vehicleEntries.clear();
-        for (int index = 0; index < allVehicles.size(); index++) {
-            BaseVehicleData<?> vehicleData = allVehicles.get(index);
+        selectedVehicleEntry = null;
+    }
+
+    private boolean refreshCatalog() {
+        VehicleCatalogCache.Catalog current = VehicleCatalogCache.current();
+        if (catalog == current) {
+            return false;
+        }
+        ResourceLocation selectedId = selectedVehicleData == null
+                ? VehicleCatalogCache.lastSelectedVehicleId : selectedVehicleData.getVehicleId();
+        catalog = current;
+        allVehicles = catalog.vehicles();
+        appliedQuery = null;
+        visibleVehicles.clear();
+        resetVehicleCatalog();
+        clearSelection();
+        selectedVehicleData = catalog.vehicle(selectedId);
+        vehicleDetailsDirty = selectedVehicleData != null;
+        return true;
+    }
+
+    private void showCatalog() {
+        if (catalog.isReady()) {
+            applyFilter(filter);
+        } else {
+            setText(vehicleCount, "0/" + allVehicles.size());
+            setText(vehicleListEmpty, Component.translatable("screen.machine_max.loading").getString());
+            setHidden(vehicleListEmpty, false);
+        }
+    }
+
+    private void indexVehicleCatalog() {
+        if (catalog.indexBatch(CATALOG_INDEX_BATCH_SIZE, CATALOG_BATCH_BUDGET_NS)) {
+            applyFilter(filter);
+        }
+    }
+
+    private void createVehicleCatalogEntries() {
+        if (vehicleList == null) {
+            return;
+        }
+        while (vehicleEntries.size() < visibleVehicles.size()) {
+            int visibleIndex = vehicleEntries.size();
+            BaseVehicleData<?> vehicleData = visibleVehicles.get(visibleIndex);
+            VehicleCatalogCache.Text text = catalog.text(vehicleData);
             Element entry = document.createElement("div");
-            entry.setClassName("list-group-item vehicle-entry");
+            boolean selected = vehicleData == selectedVehicleData;
+            entry.setClassName(selected ? "list-group-item vehicle-entry active" : "list-group-item vehicle-entry");
 
             Element name = document.createElement("div");
             name.setClassName("vehicle-entry-name");
-            name.setTextContent(vehicleData.getName().getString());
+            name.setTextContent(text.name());
 
             Element code = document.createElement("div");
             code.setClassName("vehicle-entry-code");
-            code.setTextContent(vehicleData.getVehicleId().toString());
+            code.setTextContent(text.id());
 
             entry.appendChild(name);
             entry.appendChild(code);
-            int catalogIndex = index;
-            entry.addEventListener("click", event -> selectCatalogVehicle(catalogIndex));
+            entry.addEventListener("click", event -> {
+                if (visibleIndex < vehicleEntries.size() && vehicleEntries.get(visibleIndex) == entry) {
+                    selectVehicle(visibleIndex, true);
+                }
+            });
             vehicleList.appendChild(entry);
             vehicleEntries.add(entry);
+            if (selected) {
+                selectedVehicleEntry = entry;
+            }
         }
     }
 
     private void applyFilter(String text) {
         filter = text == null ? "" : text;
+        if (!catalog.isReady()) {
+            return;
+        }
         String query = filter.strip().toLowerCase(Locale.ROOT);
         if (query.equals(appliedQuery)) {
             return;
         }
         appliedQuery = query;
+        resetVehicleCatalog();
         visibleVehicles.clear();
 
-        for (int index = 0; index < allVehicles.size(); index++) {
-            BaseVehicleData<?> vehicleData = allVehicles.get(index);
-            boolean visible = matches(vehicleData, query);
-            setVehicleEntryVisible(vehicleEntries.get(index), visible);
-            if (visible) {
+        for (BaseVehicleData<?> vehicleData : allVehicles) {
+            if (matches(vehicleData, query)) {
                 visibleVehicles.add(vehicleData);
             }
         }
@@ -196,37 +263,28 @@ public class MachineMaxScreen extends ApricityScreen {
         if (vehicleCount != null) {
             vehicleCount.setTextContent(visibleVehicles.size() + "/" + allVehicles.size());
         }
+        setText(vehicleListEmpty, Component.translatable("screen.machine_max.no_results").getString());
         setHidden(vehicleListEmpty, !visibleVehicles.isEmpty());
 
-        int retainedIndex = selectedVehicleData == null ? -1 : visibleVehicles.indexOf(selectedVehicleData);
+        BaseVehicleData<?> retainedVehicle = selectedVehicleData == null
+                ? catalog.vehicle(VehicleCatalogCache.lastSelectedVehicleId) : selectedVehicleData;
+        int retainedIndex = visibleVehicles.indexOf(retainedVehicle);
         if (retainedIndex >= 0) {
-            selectedIndex = retainedIndex;
-            refreshEntrySelection();
-            if (vehicleDetailsDirty) {
-                updateVehicleDetails(selectedVehicleData);
-            }
+            selectVehicle(retainedIndex, false);
         } else if (!visibleVehicles.isEmpty()) {
             selectVehicle(0, false);
         } else {
             clearSelection();
         }
-        vehicleDetailsDirty = false;
+        createVehicleCatalogEntries();
     }
 
     private boolean matches(BaseVehicleData<?> vehicleData, String query) {
         if (query.isEmpty()) {
             return true;
         }
-        return vehicleData.getName().getString().toLowerCase(Locale.ROOT).contains(query)
-                || vehicleData.getVehicleId().toString().toLowerCase(Locale.ROOT).contains(query);
-    }
-
-    private void selectCatalogVehicle(int catalogIndex) {
-        BaseVehicleData<?> vehicleData = allVehicles.get(catalogIndex);
-        int visibleIndex = visibleVehicles.indexOf(vehicleData);
-        if (visibleIndex >= 0) {
-            selectVehicle(visibleIndex, true);
-        }
+        VehicleCatalogCache.Text text = catalog.text(vehicleData);
+        return text.searchName().contains(query) || text.searchId().contains(query);
     }
 
     private void selectVehicle(int visibleIndex, boolean playSound) {
@@ -239,10 +297,13 @@ public class MachineMaxScreen extends ApricityScreen {
         boolean changed = selectedVehicleData != vehicleData;
         selectedIndex = visibleIndex;
         selectedVehicleData = vehicleData;
+        VehicleCatalogCache.lastSelectedVehicleId = vehicleData.getVehicleId();
         refreshEntrySelection();
 
         if (changed) {
-            updateVehicleDetails(vehicleData);
+            vehicleDetailsDirty = true;
+            previewVehicle = null;
+            selectedVehicleHasRecipe = false;
             if (playSound) {
                 Minecraft.getInstance().getSoundManager()
                         .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
@@ -252,26 +313,17 @@ public class MachineMaxScreen extends ApricityScreen {
     }
 
     private void refreshEntrySelection() {
-        for (int index = 0; index < allVehicles.size(); index++) {
-            boolean selected = allVehicles.get(index) == selectedVehicleData;
-            String className = selected
-                    ? "list-group-item vehicle-entry active"
-                    : "list-group-item vehicle-entry";
-            setVehicleEntryClass(vehicleEntries.get(index), className);
+        Element nextEntry = selectedIndex >= 0 && selectedIndex < vehicleEntries.size()
+                ? vehicleEntries.get(selectedIndex) : null;
+        if (nextEntry == selectedVehicleEntry) {
+            return;
         }
-    }
-
-    private void setVehicleEntryVisible(Element entry, boolean visible) {
-        entry.setInlineStyleProperty("display", visible ? "flex" : "none");
-        if (document != null) {
-            document.markDirty(entry, Drawer.RELAYOUT | Drawer.REPAINT);
+        if (selectedVehicleEntry != null) {
+            selectedVehicleEntry.setClassName("list-group-item vehicle-entry");
         }
-    }
-
-    private void setVehicleEntryClass(Element entry, String className) {
-        entry.setClassName(className);
-        if (document != null) {
-            document.markDirty(entry, Drawer.RELAYOUT | Drawer.REPAINT);
+        selectedVehicleEntry = nextEntry;
+        if (selectedVehicleEntry != null) {
+            selectedVehicleEntry.setClassName("list-group-item vehicle-entry active");
         }
     }
 
@@ -417,6 +469,7 @@ public class MachineMaxScreen extends ApricityScreen {
     }
 
     private void clearSelection() {
+        vehicleDetailsDirty = false;
         selectedIndex = -1;
         selectedVehicleData = null;
         previewVehicle = null;
@@ -453,11 +506,26 @@ public class MachineMaxScreen extends ApricityScreen {
     @Override
     public void tick() {
         super.tick();
+        if (!pageRendered || document == null || document.getLayout().needsInitialFullCommit()) {
+            return;
+        }
+        if (refreshCatalog()) {
+            showCatalog();
+        }
         if (searchInput != null) {
             String currentFilter = searchInput.getValue() == null ? "" : searchInput.getValue();
             if (!filter.equals(currentFilter)) {
                 applyFilter(currentFilter);
             }
+        }
+        if (!catalog.isReady()) {
+            indexVehicleCatalog();
+            updateMachineState(false);
+            return;
+        }
+        if (vehicleDetailsDirty && selectedVehicleData != null) {
+            vehicleDetailsDirty = false;
+            updateVehicleDetails(selectedVehicleData);
         }
         updateMaterialCounts();
         updateMachineState(false);
@@ -580,6 +648,10 @@ public class MachineMaxScreen extends ApricityScreen {
         if (previewAnchor == null || document == null) {
             return null;
         }
+        // AUI 可能分多帧完成初始布局；布局完成前，不能用尚未确定的边界绘制预览或处理交互。
+        if (document.getLayout().needsInitialFullCommit()) {
+            return null;
+        }
         Element.DOMRect rect = previewAnchor.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) {
             return null;
@@ -618,31 +690,27 @@ public class MachineMaxScreen extends ApricityScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
+        pageRendered = true;
         renderVehiclePreview(graphics);
     }
 
     private void renderVehiclePreview(GuiGraphics graphics) {
-        if (previewVehicle == null || previewAnchor == null || document == null) {
+        if (previewVehicle == null) {
             return;
         }
 
-        Element.DOMRect rect = previewAnchor.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) {
+        PreviewBounds bounds = getPreviewBounds();
+        if (bounds == null) {
             return;
         }
 
-        float viewportScale = (float) document.getViewport().renderScale();
-        double left = rect.x * viewportScale;
-        double top = rect.y * viewportScale;
-        double right = (rect.x + rect.width) * viewportScale;
-        double bottom = (rect.y + rect.height) * viewportScale;
-        double centerX = (left + right) / 2 + previewPanX;
-        double centerY = (top + bottom) / 2 + (bottom - top) * 0.08 + previewPanY;
+        double centerX = bounds.centerX() + previewPanX;
+        double centerY = bounds.modelCenterY() + previewPanY;
         double modelLength = Math.max(previewVehicle.getStructureLength(), 3);
-        float modelScale = (float) (Math.min(right - left, bottom - top) * 0.78 / modelLength * previewZoom);
+        float modelScale = (float) (Math.min(bounds.width(), bounds.height()) * 0.78 / modelLength * previewZoom);
 
-        graphics.enableScissor((int) Math.floor(left), (int) Math.floor(top),
-                (int) Math.ceil(right), (int) Math.ceil(bottom));
+        graphics.enableScissor((int) Math.floor(bounds.left), (int) Math.floor(bounds.top),
+                (int) Math.ceil(bounds.right), (int) Math.ceil(bounds.bottom));
         PoseStack poseStack = graphics.pose();
         EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         poseStack.pushPose();
@@ -681,6 +749,94 @@ public class MachineMaxScreen extends ApricityScreen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @SubscribeEvent
+    public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        VehicleCatalogCache.cached = null;
+        VehicleCatalogCache.lastSelectedVehicleId = null;
+    }
+
+    private static final class VehicleCatalogCache {
+
+        private static Catalog cached;
+        private static ResourceLocation lastSelectedVehicleId;
+
+        record Text(String name, String id, String searchName, String searchId) {}
+
+        private VehicleCatalogCache() {}
+
+        static Catalog current() {
+            Map<ResourceLocation, BaseVehicleData> source = CommonAssetsManager.vehicleDataManager().getVehicleData();
+            Language language = Language.getInstance();
+            if (cached == null || cached.source != source || cached.language != language) {
+                cached = new Catalog(source, language);
+            }
+            return cached;
+        }
+
+        static final class Catalog {
+
+            private final Map<ResourceLocation, BaseVehicleData> source;
+            private final Language language;
+            private final List<BaseVehicleData<?>> vehicles = new ArrayList<>();
+            private final List<BaseVehicleData<?>> vehicleView = Collections.unmodifiableList(vehicles);
+            private final Map<BaseVehicleData<?>, Text> texts = new IdentityHashMap<>();
+            private int indexedVehicles;
+            private boolean ready;
+
+            private Catalog(Map<ResourceLocation, BaseVehicleData> source, Language language) {
+                this.source = source;
+                this.language = language;
+                for (BaseVehicleData<?> vehicle : source.values()) {
+                    if (!vehicle.isExperimental()) {
+                        vehicles.add(vehicle);
+                    }
+                }
+            }
+
+            List<BaseVehicleData<?>> vehicles() {
+                return vehicleView;
+            }
+
+            BaseVehicleData<?> vehicle(ResourceLocation id) {
+                BaseVehicleData<?> vehicle = id == null ? null : source.get(id);
+                return vehicle != null && !vehicle.isExperimental() ? vehicle : null;
+            }
+
+            Text text(BaseVehicleData<?> vehicle) {
+                return texts.get(vehicle);
+            }
+
+            boolean isReady() {
+                return ready;
+            }
+
+            boolean indexBatch(int batchSize, long budgetNs) {
+                if (ready) {
+                    return true;
+                }
+                long deadline = System.nanoTime() + budgetNs;
+                int end = Math.min(indexedVehicles + batchSize, vehicles.size());
+                while (indexedVehicles < end) {
+                    BaseVehicleData<?> vehicle = vehicles.get(indexedVehicles++);
+                    String name = vehicle.getName().getString();
+                    String id = vehicle.getVehicleId().toString();
+                    texts.put(vehicle, new Text(name, id,
+                            name.toLowerCase(Locale.ROOT), id.toLowerCase(Locale.ROOT)));
+                    if (System.nanoTime() >= deadline) {
+                        break;
+                    }
+                }
+                if (indexedVehicles == vehicles.size()) {
+                    vehicles.sort(Comparator.comparing(vehicle -> texts.get(vehicle).name(),
+                            String.CASE_INSENSITIVE_ORDER));
+                    ready = true;
+                }
+                return ready;
+            }
+        }
+
     }
 
     private enum MachineState {
@@ -724,4 +880,5 @@ public class MachineMaxScreen extends ApricityScreen {
             return (top + bottom) / 2 + height() * 0.08;
         }
     }
+
 }

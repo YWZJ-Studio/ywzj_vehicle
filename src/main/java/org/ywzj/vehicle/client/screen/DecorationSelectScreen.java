@@ -86,6 +86,7 @@ public class DecorationSelectScreen extends ApricityScreen {
 
         buildDecorationCatalog();
         if (searchInput != null) {
+            searchInput.setAttribute("placeholder", Component.translatable("screen.search").getString());
             searchInput.setValue(filter);
             searchInput.addEventListener("input", event -> applyFilter(searchInput.getValue()));
             searchInput.addEventListener("change", event -> applyFilter(searchInput.getValue()));
