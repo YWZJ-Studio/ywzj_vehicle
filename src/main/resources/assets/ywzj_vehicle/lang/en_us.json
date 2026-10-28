@@ -130,6 +130,7 @@
   "ui.aerobatic_smoke": "Aerobatic Smoke",
   "ui.vehicle_hud.mouse_wheel": "Wheel",
 
+  "screen.search": "Search",
   "screen.no_description": "No description",
   "screen.machine_max.catalog": "Vehicle Catalog",
   "screen.machine_max.preview": "Vehicle Preview",
@@ -139,6 +140,7 @@
   "screen.machine_max.progress": "Progress",
   "screen.machine_max.progress.crafting": "Progress (%s)",
   "screen.machine_max.no_results": "No matching vehicles",
+  "screen.machine_max.loading": "Loading vehicles...",
   "screen.machine_max.select_vehicle": "Select a vehicle from the catalog",
   "screen.machine_max.options": "%s alternatives",
   "screen.machine_max.status.ready": "Ready",

@@ -1066,10 +1066,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (group == structureGroup || group == xTurnGroup) {
                 Quaternionf rotation = new Quaternionf(group.baseRotation);
                 if (group == structureGroup) {
-                    rotation.mul(Axis.YN.rotationDegrees(yAimRot));
+                    rotation.mul(Axis.YN.rotationDegrees(getViewYRot(partialTick) + Mth.wrapDegrees(yAimRot - yRot)));
                 }
                 if (group == xTurnGroup) {
-                    rotation.mul(Axis.XP.rotationDegrees(xAimRot));
+                    rotation.mul(Axis.XP.rotationDegrees(getViewXRot(partialTick) + Mth.wrapDegrees(xAimRot - xRot)));
                 }
                 return rotation;
             }

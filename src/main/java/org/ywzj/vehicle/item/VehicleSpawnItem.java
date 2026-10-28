@@ -86,7 +86,7 @@ public class VehicleSpawnItem extends Item {
         if (vehicleDataOptional.isPresent()) {
             Entity vehicle = vehicleDataOptional.get().construct(level, blockHitResult.getLocation(), 0, player.getYRot());
             if (level.addFreshEntity(vehicle)) {
-                itemStack.shrink(1);
+                itemStack.consume(1, player);
                 return InteractionResultHolder.sidedSuccess(itemStack, false);
             }
         }
