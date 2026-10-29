@@ -38,16 +38,21 @@ public class HookUnit extends PartUnit<PartUnitData> {
     public static final float LENGTH_STEP = 0.5f;
     public static final double INTERACTION_DISTANCE = 4;
     private static final String PENDING_KEY = "ywzj_vehicle:pending_hook";
-    private static final double ENERGY_TRANSFER_RATE = 0.2;
     private static final double DIRECTION_RESPONSE = 0.2;
     private static final double MAX_YAW_STEP = Math.toRadians(12);
     private static final double MAX_TILT_STEP = Math.toRadians(6);
     private static final double SPEED_EPSILON = 1.0E-6;
+    private static final double TAUT_SLOP = 0.03;
     private UUID connectedVehicle;
     private int connectedEntityId = -1;
     private String connectedPart = "";
     private String connectionId = "";
     private float length = MIN_LENGTH;
+    private long lastTensionTick = -1;
+    private float towYawStep;
+    private boolean taut;
+    private float tautProgress;
+    private float tautProgressO;
 
     public HookUnit(int index, AbstractVehicle vehicle, PartUnitData data) {
         super(index, vehicle, data);
@@ -55,6 +60,7 @@ public class HookUnit extends PartUnit<PartUnitData> {
         this.syncData.define(SyncDataSerializers.STRING, value -> connectedPart = value, () -> connectedPart, "");
         this.syncData.define(SyncDataSerializers.STRING, value -> connectionId = value, () -> connectionId, "");
         this.syncData.define(SyncDataSerializers.FLOAT, this::setLength, this::getLength, MIN_LENGTH);
+        this.syncData.define(SyncDataSerializers.BOOLEAN, value -> taut = value, () -> taut, false);
         this.renderInVehicleStatus = false;
     }
 
@@ -80,9 +86,7 @@ public class HookUnit extends PartUnit<PartUnitData> {
     }
 
     private Vec3 getTowRotationPivot() {
-        // 挂点关于载具中心的对称点：前挂点拖拽时绕后端归正，反之亦然。
-        Vec3 center = vehicle.position().add(vehicle.centerOffset);
-        return center.add(center.subtract(getAnchorPosition(1)));
+        return vehicle.physicsEngine.getCenterOfMass();
     }
 
     public HookUnit getConnectedHook() {
@@ -220,6 +224,10 @@ public class HookUnit extends PartUnit<PartUnitData> {
     }
 
     private void clearConnection() {
+        taut = false;
+        tautProgress = tautProgressO = 0;
+        lastTensionTick = -1;
+        towYawStep = 0;
         connectedVehicle = null;
         connectedEntityId = -1;
         connectedPart = "";
@@ -230,6 +238,10 @@ public class HookUnit extends PartUnit<PartUnitData> {
 
     @Override
     public void tick() {
+        if (vehicle.level().isClientSide()) {
+            tautProgressO = tautProgress;
+            tautProgress = Mth.approach(tautProgress, isConnected() && taut ? 1f : 0f, 0.2f);
+        }
         if (!vehicle.level().isClientSide() && isConnected()) {
             if (!isUsable()) {
                 disconnect();
@@ -250,6 +262,8 @@ public class HookUnit extends PartUnit<PartUnitData> {
                 } else {
                     // 区块卸载时保留 UUID，等待另一端重新加载。
                     connectedEntityId = -1;
+                    taut = false;
+                    towYawStep = 0;
                 }
             }
         }
@@ -266,52 +280,74 @@ public class HookUnit extends PartUnit<PartUnitData> {
     }
 
     private void tickTow(HookUnit other) {
-        Vec3 velocity = vehicle.getDeltaMovement();
-        Vec3 otherVelocity = other.vehicle.getDeltaMovement();
         Vec3 separation = other.getAnchorPosition(1).subtract(getAnchorPosition(1));
-        Vec3 nextSeparation = separation.add(otherVelocity.subtract(velocity));
-        double tautLength = length - 0.01;
-        if (separation.lengthSqr() < tautLength * tautLength
-                && nextSeparation.lengthSqr() < tautLength * tautLength) {
-            return;
-        }
-
         double distance = separation.length();
         if (distance <= SPEED_EPSILON) {
+            taut = false;
+            other.taut = false;
+            towYawStep = 0;
+            other.towYawStep = 0;
             return;
         }
-        // 各端只处理自身的悬吊姿态；静止或低速端也需要响应挂点拉力。
-        alignSuspendedToTow(separation.scale(1 / distance));
-        // 低速端不处理动能转移，也不代高速端执行。
-        if (velocity.lengthSqr() < otherVelocity.lengthSqr()) {
+        if (distance >= length) {
+            alignSuspendedToTow(separation.scale(1 / distance));
+        }
+        if (!ownsConnection()) {
             return;
         }
-        // 拉力沿两端挂点连线
-        Vec3 pullDirection = separation.scale(-1 / distance);
-        vehicle.physicsEngine.transferEnergyTo(other.vehicle.physicsEngine, pullDirection,
-                ENERGY_TRANSFER_RATE, DIRECTION_RESPONSE);
-        Vec3 pullVelocity = vehicle.getDeltaMovement();
-        if (pullVelocity.lengthSqr() > SPEED_EPSILON * SPEED_EPSILON) {
-            other.alignToTow(pullDirection.scale(pullVelocity.length()));
+        separation = other.getAnchorPosition(1).subtract(getAnchorPosition(1));
+        distance = separation.length();
+        if (distance >= length && distance > SPEED_EPSILON) {
+            Vec3 velocity = vehicle.getDeltaMovement();
+            vehicle.physicsEngine.applyTowImpulse(other.vehicle.physicsEngine,
+                    getAnchorPosition(1), other.getAnchorPosition(1));
+            Vec3 change = vehicle.getDeltaMovement().subtract(velocity);
+            if (change.lengthSqr() > SPEED_EPSILON * SPEED_EPSILON) {
+                lastTensionTick = other.lastTensionTick = vehicle.level().getGameTime();
+            }
+        }
+        long tensionTick = Math.max(lastTensionTick, other.lastTensionTick);
+        boolean pulling = tensionTick >= 0 && vehicle.level().getGameTime() - tensionTick <= 2
+                && distance >= length - TAUT_SLOP && distance > SPEED_EPSILON;
+        double mass = vehicle.physicsEngine.physicsInfo.mass;
+        double otherMass = other.vehicle.physicsEngine.physicsInfo.mass;
+        if (pulling && mass > 0 && otherMass > 0 && Double.isFinite(mass + otherMass)) {
+            double speed = Math.max(vehicle.getDeltaMovement().horizontalDistance(),
+                    other.vehicle.getDeltaMovement().horizontalDistance());
+            Vec3 pull = separation.scale(speed / distance);
+            alignToTow(pull.scale(otherMass / (mass + otherMass)));
+            other.alignToTow(pull.scale(-mass / (mass + otherMass)));
+        } else {
+            alignToTow(Vec3.ZERO);
+            other.alignToTow(Vec3.ZERO);
         }
         enforceLength(other);
+        taut = tensionTick >= 0 && vehicle.level().getGameTime() - tensionTick <= 2
+                && getAnchorPosition(1).distanceTo(other.getAnchorPosition(1)) >= length - TAUT_SLOP;
+        other.taut = taut;
     }
 
     private void alignToTow(Vec3 pullVelocity) {
-        if (isSuspendedTow(pullVelocity)) {
-            return;
-        }
         Vec3 arm = getAnchorPosition(1).subtract(getTowRotationPivot()).multiply(1, 0, 1);
         Vec3 horizontalPull = pullVelocity.multiply(1, 0, 1);
-        if (arm.lengthSqr() < 1.0E-4 || horizontalPull.lengthSqr() <= SPEED_EPSILON * SPEED_EPSILON) {
+        boolean pulling = arm.lengthSqr() >= 1.0E-4
+                && horizontalPull.lengthSqr() > SPEED_EPSILON * SPEED_EPSILON;
+        double angle = 0;
+        double targetStep = 0;
+        if (pulling) {
+            angle = Math.atan2(arm.cross(horizontalPull).y, arm.dot(horizontalPull));
+            double maxStep = Math.min(MAX_YAW_STEP, horizontalPull.length() / arm.length());
+            targetStep = Mth.clamp(angle * DIRECTION_RESPONSE, -maxStep, maxStep);
+        }
+        towYawStep += (float) ((targetStep - towYawStep) * DIRECTION_RESPONSE);
+        if (pulling) {
+            towYawStep = (float) Mth.clamp(towYawStep, -Math.abs(angle), Math.abs(angle));
+        }
+        if (Math.abs(towYawStep) <= SPEED_EPSILON) {
+            towYawStep = 0;
             return;
         }
-        double angle = Math.atan2(arm.cross(horizontalPull).y, arm.dot(horizontalPull));
-        // 低速或长力臂时缓慢归正，避免刚拉紧就以固定角速度甩动车身。
-        double response = Math.min(DIRECTION_RESPONSE, horizontalPull.length() / arm.length());
-        float yawStep = (float) Mth.clamp(angle * response, -MAX_YAW_STEP, MAX_YAW_STEP);
-        // 绕挂点对侧端归正，使受拉挂点朝向实际绳向。
-        vehicle.physicsEngine.rotateAround(getTowRotationPivot(), new Quaternionf().rotateY(yawStep));
+        vehicle.physicsEngine.rotateAround(getTowRotationPivot(), new Quaternionf().rotateY(towYawStep));
     }
 
     private boolean isSuspendedTow(Vec3 pullDirection) {
@@ -320,7 +356,7 @@ public class HookUnit extends PartUnit<PartUnitData> {
     }
 
     private void alignSuspendedToTow(Vec3 pullDirection) {
-        if (!isSuspendedTow(pullDirection)) {
+        if (vehicle.hasSuspension() || !isSuspendedTow(pullDirection)) {
             return;
         }
         // 让重心逐渐落到受拉挂点下方，以挂点为支点补上俯仰和侧倾。
@@ -329,7 +365,6 @@ public class HookUnit extends PartUnit<PartUnitData> {
     }
 
     private void enforceLength(HookUnit other) {
-        // 按逆质量分摊超长位置修正；不直接覆盖速度，避免绕过逐 tick 动能转移。
         vehicle.physicsEngine.limitDistance(other.vehicle.physicsEngine, getAnchorPosition(1), other.getAnchorPosition(1), length);
     }
 
@@ -376,7 +411,10 @@ public class HookUnit extends PartUnit<PartUnitData> {
         inverse.transform(right);
         var builder = buffer.getBuffer(RenderType.entityCutoutNoCull(YwzjVehicle.resourceLocation("minecraft:textures/block/chain.png")));
         int segments = Math.max(1, Mth.ceil(length));
-        double sag = Math.min(3, Math.sqrt(Math.max(0, length * length - start.distanceToSqr(end))) * 0.5);
+        double distance = start.distanceTo(end);
+        double sag = Math.min(3, Math.sqrt(Math.max(0, length * length - distance * distance)) * 0.5);
+        float progress = Mth.lerp(partialTick, tautProgressO, tautProgress);
+        sag *= 1 - progress * progress * (3 - 2 * progress);
         Vec3 previous = start;
         for (int i = 1; i <= segments; i++) {
             double t = (double) i / segments;

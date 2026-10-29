@@ -60,7 +60,7 @@ public class VehicleAimAtOverlay implements IGuiOverlay {
             boolean isHelicopter = vehicle instanceof RotaryWingVehicle;
             float markerScale = isHelicopter || vehicle instanceof FixedWingVehicle
                     ? guiGraphics.guiHeight() / VehicleHudLayout.HEIGHT * 1.2f : 1;
-            int color = isHelicopter ? Color.GREEN : Color.WHITE;
+            int color = Color.WHITE;
             PartUnit<?> operatorUnit = vehicle.getOwnOperatorUnit(player);
             if (operatorUnit instanceof WeaponUnit weaponUnit) {
                 Vec3 aimScreenPos = aimScreenPosition(weaponUnit, partialTick);

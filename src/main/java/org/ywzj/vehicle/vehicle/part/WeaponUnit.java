@@ -111,6 +111,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
     private int lockCoolingTick;
     private Vec3 worldAimVec = Vec3.ZERO;
     private Vec3 worldVec = Vec3.ZERO;
+    private float xAimRotTickDelta;
+    private float yAimRotTickDelta;
     // 第三人称准心样式
     public WeaponUnitData.CrosshairStyle crosshairStyle;
     // 是否仅渲染选中武器的部件模型
@@ -462,6 +464,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
 
     @Override
     public void tick() {
+        float previousXAimRot = xAimRot;
+        float previousYAimRot = yAimRot;
         if (vehicle.level().isClientSide()) {
             tickFireControl();
         } else {
@@ -476,6 +480,8 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             }
         }
         super.tick();
+        xAimRotTickDelta = Mth.wrapDegrees(xAimRot - previousXAimRot);
+        yAimRotTickDelta = Mth.wrapDegrees(yAimRot - previousYAimRot);
         indexedWeapons.forEach(AbstractVehicleWeapon::tick);
     }
 
@@ -1061,10 +1067,10 @@ public class WeaponUnit extends RotatableUnit<WeaponUnitData> {
             if (group == structureGroup || group == xTurnGroup) {
                 Quaternionf rotation = new Quaternionf(group.baseRotation);
                 if (group == structureGroup) {
-                    rotation.mul(Axis.YN.rotationDegrees(getViewYRot(partialTick) + Mth.wrapDegrees(yAimRot - yRot)));
+                    rotation.mul(Axis.YN.rotationDegrees(yAimRot - (1 - partialTick) * yAimRotTickDelta));
                 }
                 if (group == xTurnGroup) {
-                    rotation.mul(Axis.XP.rotationDegrees(getViewXRot(partialTick) + Mth.wrapDegrees(xAimRot - xRot)));
+                    rotation.mul(Axis.XP.rotationDegrees(xAimRot - (1 - partialTick) * xAimRotTickDelta));
                 }
                 return rotation;
             }

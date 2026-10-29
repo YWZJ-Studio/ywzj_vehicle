@@ -21,7 +21,9 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.TrackedVehicleDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.util.ParticleUtil;
+import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
+import org.ywzj.vehicle.vehicle.part.SuspensionUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -150,7 +152,15 @@ public class TrackedVehicle extends AbstractVehicle
         // 水平转向
         double horizontalSpeed = velocity.dot(horizontalDirection);
         horizontalDirection = VectorUtil.rotToVec(0, getYRot());
-        setDeltaMovement(horizontalDirection.x * horizontalSpeed, velocity.y, horizontalDirection.z * horizontalSpeed);
+        velocity = new Vec3(horizontalDirection.x * horizontalSpeed, velocity.y, horizontalDirection.z * horizontalSpeed);
+        // 摩擦力补偿
+        if (throttle != 0 && powerScale > 0 && onGround() && horizontalSpeed != 0) {
+            Vec3 frictionVelocity = getSuspensionUnits().stream().anyMatch(SuspensionUnit::isGrounded)
+                    ? new Vec3(velocity.x, 0, velocity.z) : velocity;
+            velocity = velocity.add(frictionVelocity.normalize().scale(PhysicsHelper.accelerationPerTick(
+                    physicsEngine.physicsInfo.friction, physicsEngine.physicsInfo.mass)));
+        }
+        setDeltaMovement(velocity);
         entityData.set(FORWARD_SPEED, forwardSpeed);
         entityData.set(TURN_SPEED, turnSpeed);
         return Vec3.ZERO;

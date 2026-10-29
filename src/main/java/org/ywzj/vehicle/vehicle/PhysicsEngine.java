@@ -72,6 +72,7 @@ public class PhysicsEngine {
     private record BodyContacts(List<VehicleCubeOBB.CubePoint> touchPoints, Map<VehicleCubeOBB.CubePoint, Double> supports) {}
     private record BodySupportContact(double pitchArm, double rollArm, double gap) {}
     private record SuspensionImpactContact(double pitchArm, double rollArm, double inverseEffectiveMass) {}
+    private record TowContact(double pitchArm, double rollArm, double inversePitchInertia, double inverseRollInertia) {}
     private record SuspensionContact(SuspensionUnit<?> unit, double compression, double minCompression, double maxCompression, double weight, double verticalArm, double pitchArm, double rollArm) {}
     private record SupportCorrection(double verticalArm, double pitchArm, double rollArm, double gap, double maxSpeed) {}
 
@@ -1098,10 +1099,7 @@ public class PhysicsEngine {
         return Optional.ofNullable(nearest);
     }
 
-    /**
-     * 在高速端调用，按质量转移动能并平滑调整低速端的速度方向。
-     */
-    public void transferEnergyTo(PhysicsEngine follower, Vec3 pullDirection, double transferRate, double directionResponse) {
+    public void applyTowImpulse(PhysicsEngine follower, Vec3 anchor, Vec3 otherAnchor) {
         double leaderMass = physicsInfo.mass;
         double followerMass = follower.physicsInfo.mass;
         if (!(leaderMass > 0) || !(followerMass > 0)
@@ -1110,32 +1108,44 @@ public class PhysicsEngine {
         }
         Vec3 leaderVelocity = vehicle.getDeltaMovement();
         Vec3 followerVelocity = follower.vehicle.getDeltaMovement();
-        double leaderSpeedSquared = leaderVelocity.lengthSqr();
-        double followerSpeedSquared = followerVelocity.lengthSqr();
-        double leaderSpeed = Math.sqrt(leaderSpeedSquared);
-        double followerSpeed = Math.sqrt(followerSpeedSquared);
-        if (leaderSpeed <= SPEED_EPSILON) {
+        Vec3 direction = anchor.subtract(otherAnchor).normalize();
+        TowContact contact = towContact(anchor, direction);
+        TowContact otherContact = follower.towContact(otherAnchor, direction);
+        double separatingSpeed = leaderVelocity.subtract(followerVelocity).dot(direction)
+                + contact.pitchArm * suspensionPitchVelocity + contact.rollArm * suspensionRollVelocity
+                - otherContact.pitchArm * follower.suspensionPitchVelocity
+                - otherContact.rollArm * follower.suspensionRollVelocity;
+        if (separatingSpeed <= SPEED_EPSILON) {
             return;
         }
+        double inverseEffectiveMass = 1 / leaderMass + 1 / followerMass
+                + contact.pitchArm * contact.pitchArm * contact.inversePitchInertia
+                + contact.rollArm * contact.rollArm * contact.inverseRollInertia
+                + otherContact.pitchArm * otherContact.pitchArm * otherContact.inversePitchInertia
+                + otherContact.rollArm * otherContact.rollArm * otherContact.inverseRollInertia;
+        double impulse = separatingSpeed / inverseEffectiveMass;
+        setVelocity(leaderVelocity.subtract(direction.scale(impulse / leaderMass)));
+        follower.setVelocity(followerVelocity.add(direction.scale(impulse / followerMass)));
+        suspensionPitchVelocity -= (float) (contact.pitchArm * contact.inversePitchInertia * impulse);
+        suspensionRollVelocity -= (float) (contact.rollArm * contact.inverseRollInertia * impulse);
+        follower.suspensionPitchVelocity += (float) (otherContact.pitchArm * otherContact.inversePitchInertia * impulse);
+        follower.suspensionRollVelocity += (float) (otherContact.rollArm * otherContact.inverseRollInertia * impulse);
+    }
 
-        // E = 1/2 m v²；每 tick 转移达到共同速率所需动能的固定比例。
-        // 两端等量扣减/增加动能，速度平方差单调收敛，不会跨过平衡点。
-        // 这里统一使用格/tick，换算到 m/s 的公共系数会在能量转移中抵消。
-        double totalMass = leaderMass + followerMass;
-        double speedSquaredGap = leaderSpeedSquared - followerSpeedSquared;
-        double transferredEnergy = 0.5 * leaderMass * (followerMass / totalMass)
-                * speedSquaredGap * transferRate;
-        double nextLeaderSpeed = Math.sqrt(Math.max(0, leaderSpeedSquared - 2 * transferredEnergy / leaderMass));
-        double nextFollowerSpeed = Math.sqrt(Math.max(0, followerSpeedSquared + 2 * transferredEnergy / followerMass));
-        if (leaderSpeed - followerSpeed <= SPEED_EPSILON) {
-            // 消除浮点尾差，确保最终速率一致；方向仍逐 tick 归正。
-            double commonSpeed = Math.sqrt((leaderMass / totalMass) * leaderSpeedSquared
-                    + (followerMass / totalMass) * followerSpeedSquared);
-            nextLeaderSpeed = commonSpeed;
-            nextFollowerSpeed = commonSpeed;
+    private TowContact towContact(Vec3 anchor, Vec3 direction) {
+        if (!vehicle.hasSuspension() || lockCenterRot) {
+            return new TowContact(0, 0, 0, 0);
         }
-        setVelocity(leaderVelocity.scale(nextLeaderSpeed / leaderSpeed));
-        follower.setVelocity(steerDirection(followerVelocity, pullDirection, directionResponse).scale(nextFollowerSpeed));
+        VehicleCubeOBB cube = physicsCube();
+        Vec3 center = physicsInfo.center;
+        double mass = physicsInfo.mass;
+        double inversePitchInertia = 12.0 / (mass * Math.max(0.01,
+                cube.height * cube.height + cube.depth * cube.depth + 12 * (center.y * center.y + center.z * center.z)));
+        double inverseRollInertia = lockZRot ? 0 : 12.0 / (mass * Math.max(0.01,
+                cube.width * cube.width + cube.height * cube.height + 12 * (center.x * center.x + center.y * center.y)));
+        Vector3f torque = new Quaternionf().rotateY((float) Math.toRadians(vehicle.getYRot()))
+                .transform(anchor.subtract(getCenterOfMass()).cross(direction).toVector3f());
+        return new TowContact(torque.x, torque.z, inversePitchInertia, inverseRollInertia);
     }
 
     /**
@@ -1153,6 +1163,14 @@ public class PhysicsEngine {
             return;
         }
         Vec3 correction = separation.scale((distance - maxDistance) / distance);
+        if (vehicle.onGround() && other.vehicle.onGround() && Math.abs(separation.y) < maxDistance) {
+            double horizontalDistance = separation.horizontalDistance();
+            double horizontalLimit = Math.sqrt(maxDistance * maxDistance - separation.y * separation.y);
+            if (horizontalDistance > SPEED_EPSILON) {
+                correction = separation.multiply(1, 0, 1)
+                        .scale((horizontalDistance - horizontalLimit) / horizontalDistance);
+            }
+        }
         applyPositionCorrection(correction.scale(otherMass / (mass + otherMass)));
         other.applyPositionCorrection(correction.scale(-mass / (mass + otherMass)));
     }
@@ -1257,31 +1275,6 @@ public class PhysicsEngine {
         }
         rotTick = 10;
         vehicle.setPos(pRot);
-    }
-
-    private static Vec3 steerDirection(Vec3 velocity, Vec3 targetDirection, double directionResponse) {
-        double speed = velocity.length();
-        if (speed <= SPEED_EPSILON) {
-            return targetDirection;
-        }
-        Vec3 direction = velocity.scale(1 / speed);
-        double angle = Math.acos(Mth.clamp(direction.dot(targetDirection), -1, 1));
-        if (angle <= SPEED_EPSILON) {
-            return targetDirection;
-        }
-        Vec3 axis = direction.cross(targetDirection);
-        if (axis.lengthSqr() < 1.0E-12) {
-            // 完全反向时也能平滑转向；水平运动优先绕世界 Y 轴转动。
-            axis = new Vec3(0, 1, 0).subtract(direction.scale(direction.y));
-            if (axis.lengthSqr() < 1.0E-12) {
-                axis = new Vec3(1, 0, 0);
-            }
-        }
-        // Vec3.normalize 会把长度小于 1e-4 的向量归零，小夹角需显式归一化。
-        axis = axis.scale(1 / axis.length());
-        double step = angle * directionResponse;
-        // 绕垂直于速度的轴旋转，只改变朝向，不额外增加或损失动能。
-        return direction.scale(Math.cos(step)).add(axis.cross(direction).scale(Math.sin(step))).normalize();
     }
 
     /**
