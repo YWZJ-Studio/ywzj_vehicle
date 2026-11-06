@@ -112,7 +112,7 @@ public abstract class AbstractVehicle extends ContainerCraft
     public DefenseStats defenseStats;
     public Vec3 centerOffset;
     public float curbWeight;
-    public Vec3 deltaMovementO;
+    public Vec3 deltaMovementO = Vec3.ZERO;
     private float xRot;
     public float xRotO;
     private float lerpXRot;
