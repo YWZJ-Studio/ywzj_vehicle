@@ -4,6 +4,7 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -81,6 +82,8 @@ public class ClientSetupHandler {
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FRAG_GRENADE.get(),
                 ctx -> new AmmoEntityRenderer<>(ctx, GrenadeEntity::getWeaponId, InternalAssets.GRENADE_40MM_MODEL, InternalAssets.GRENADE_40MM_TEXTURE)));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.DECOY_FLARE.get(), DecoyFlareEntityRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.WATER.get(), NoopRenderer::new));
+        event.enqueueWork(() -> EntityRenderers.register(AllEntities.FIRE.get(), NoopRenderer::new));
 
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.FAKE_PLAYER.get(), FakePlayerRenderer::new));
         event.enqueueWork(() -> EntityRenderers.register(AllEntities.RADAR_MARKER.get(), RadarMarkerRenderer::new));

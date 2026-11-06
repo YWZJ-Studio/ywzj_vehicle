@@ -116,6 +116,28 @@ public class AllEntities {
                     .setShouldReceiveVelocityUpdates(false)
                     .build("decoy_flare"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<WaterEntity>> WATER = ENTITIES.register("water",
+            () -> EntityType.Builder.<WaterEntity>of(WaterEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(0.15F, 0.15F)
+                    .clientTrackingRange(4)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .build("water"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<FireEntity>> FIRE = ENTITIES.register("fire",
+            () -> EntityType.Builder.<FireEntity>of(FireEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(0.15F, 0.15F)
+                    .clientTrackingRange(4)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .build("fire"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<FakePlayer>> FAKE_PLAYER = ENTITIES.register("fake_player",
             () -> EntityType.Builder.of(FakePlayer::new, MobCategory.CREATURE).sized(0.6f, 1.8f)
                     .clientTrackingRange(32)

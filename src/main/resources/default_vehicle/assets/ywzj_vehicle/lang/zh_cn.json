@@ -78,6 +78,9 @@
     "part.ywzj_vehicle.gbu_12": "GBU-12制导炸弹",
     "part.ywzj_vehicle.tow": "陶式导弹发射器",
 
+    "weapon.ywzj_vehicle.water_cannon": "水炮",
+    "weapon.ywzj_vehicle.flamethrower": "喷火器",
+
     "ywzj_vehicle.dump_truck.description": "自卸卡车是一类配有可倾卸货厢的运输车辆，主要用于搬运砂石、土方等散装物料。常见车型通过液压机构举升货厢，使货物依靠重力卸出，广泛用于建筑施工、道路工程和采矿作业。",
     "ywzj_vehicle.ztl11.description": "ZTL-11是中国研制的八轮两栖装甲突击车，属于08式轮式装甲车族，主要装备105毫米线膛炮。它用于为轮式机械化部队提供直接火力支援，并可攻击轻型装甲车辆和工事，兼顾公路机动与越野通行能力。",
     "ywzj_vehicle.ztz99a.description": "ZTZ-99A是中国99式主战坦克的改进型号，采用履带式底盘，配备125毫米滑膛炮和自动装弹机。相较早期99式，它在火控、观瞄、动力和防护方面进行了改进，是中国陆军重型合成部队使用的主战坦克之一。",

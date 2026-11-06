@@ -2,12 +2,19 @@ package org.ywzj.vehicle.client.render.animation.context;
 
 import org.ywzj.vehicle.client.render.animation.util.PoseHelper;
 import org.ywzj.vehicle.entity.vehicle.TrackedVehicle;
+import org.ywzj.vehicle.vehicle.part.SuspensionUnit;
 import org.ywzj.vehicle.vehicle.part.TrackUnit;
 
 import java.util.OptionalDouble;
 
 public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
 
+    private static final float AIRBORNE_TRACK_DAMPING = 2f;
+    private float rollingForwardSpeed;
+    private float rollingTurnSpeed;
+    private long lastProgressRenderTime = -1;
+    private float frameForwardDistance;
+    private float frameTurnDistance;
     private TrackAnimationInstance trackAnimationInstance;
     private float leftTrackDisplacement;
     private float rightTrackDisplacement;
@@ -36,12 +43,33 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
 
     public void advanceTrackProgress() {
         long lastTime = this.lastRenderTime();
+        if (lastProgressRenderTime == lastTime) {
+            return;
+        }
+        lastProgressRenderTime = lastTime;
+        frameForwardDistance = 0;
+        frameTurnDistance = 0;
         if (lastTime == 0) {
             return;
         }
         float deltaTime = Math.max(0f, Math.min((this.currentTimeMillis() - lastTime) / 1000f, 0.1f));
-        float forwardSpeed = this.getForwardSpeed();
-        float turnSpeed = this.getTurnSpeed();
+        boolean grounded = entity.hasSuspension()
+                ? entity.getSuspensionUnits().stream().anyMatch(SuspensionUnit::isGrounded)
+                : entity.onGround();
+        if (grounded) {
+            rollingForwardSpeed = this.getForwardSpeed();
+            rollingTurnSpeed = this.getTurnSpeed();
+        }
+        float forwardSpeed = rollingForwardSpeed;
+        float turnSpeed = rollingTurnSpeed;
+        if (!grounded) {
+            float retention = (float) Math.exp(-AIRBORNE_TRACK_DAMPING * deltaTime);
+            rollingForwardSpeed *= retention;
+            rollingTurnSpeed *= retention;
+            deltaTime = (1 - retention) / AIRBORNE_TRACK_DAMPING;
+        }
+        frameForwardDistance = forwardSpeed * 20 * deltaTime;
+        frameTurnDistance = turnSpeed * deltaTime;
         if (trackAnimationInstance != null) {
             float trackWidth = trackAnimationInstance.getTrackWidth() / 20f;
             float leftTrackSpeed = (forwardSpeed + turnSpeed * trackWidth / 2) * 20;
@@ -49,11 +77,14 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
             trackAnimationInstance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime);
             return;
         }
-        float linearSpeed = forwardSpeed * 20;
         firstTrackLateralOffset(true).ifPresent(offset ->
-                leftTrackDisplacement += (float) (linearSpeed + turnSpeed * offset) * deltaTime);
+                leftTrackDisplacement += (float) getTrackFrameDistance(offset));
         firstTrackLateralOffset(false).ifPresent(offset ->
-                rightTrackDisplacement += (float) (linearSpeed + turnSpeed * offset) * deltaTime);
+                rightTrackDisplacement += (float) getTrackFrameDistance(offset));
+    }
+
+    public double getTrackFrameDistance(double lateralOffset) {
+        return frameForwardDistance + frameTurnDistance * lateralOffset;
     }
 
     public PoseHelper getTrackPose() {

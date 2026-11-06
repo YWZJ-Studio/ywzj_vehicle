@@ -16,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import org.ywzj.vehicle.all.AllItems;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
-import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.sync.PartUnitSyncData;
 import org.ywzj.vehicle.custom.weapon.data.BaseVehicleWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -25,7 +24,6 @@ import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -105,7 +103,7 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         if (__fireEvent.isCanceled()) {
             return false;
         }
-        if (selected.isCoolingDown()) {
+        if (selected.isCoolingDown() || selected.isReloading()) {
             return false;
         }
         if (!selected.hasAmmo()) {
@@ -118,12 +116,8 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         } else {
             partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
         }
-        List<AimContext> aimContexts;
-        if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
-            aimContexts = Collections.singletonList(weaponUnit.aimContext());
-        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO || weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.FULL_SALVO) {
-            aimContexts = weaponUnit.aimContexts();
-        } else {
+        List<AimContext> aimContexts = getFiringAimContexts();
+        if (aimContexts.isEmpty()) {
             return false;
         }
         WeaponUnit rootParentWeaponUnit = weaponUnit.getRootParentWeaponUnit();
@@ -142,7 +136,14 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         });
         selected.lastShootTime = System.currentTimeMillis();
         sendShoot(vehicle, partUnitIndex, getIndex(), aimContexts);
+        refreshFireLoopSound();
         return true;
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void refreshFireLoopSound() {
+        getSelectedWeapon().refreshFireLoopSound();
     }
 
     @Override
@@ -164,6 +165,11 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
     @Override
     public SoundEvent getFireSound() {
         return getSelectedWeapon().getFireSound();
+    }
+
+    @Override
+    public SoundEvent getFireLoopSound() {
+        return getSelectedWeapon().getFireLoopSound();
     }
 
     @Override
@@ -240,7 +246,7 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
         AbstractVehicleWeapon<?> oldWeapon = getSelectedWeapon();
         int oldAmmo = oldWeapon.getRemainAmmo();
 
-        if (oldAmmo > 0 && !vehicle.level().isClientSide()) {
+        if (oldWeapon.shouldUnloadOnSwitch() && oldAmmo > 0 && !vehicle.level().isClientSide()) {
             ItemStack[] matchingItems = oldWeapon.getData().getReload().getAmmo().getItems();
             if (matchingItems.length > 0) {
                 AtomicReference<ItemStack> returnStack = new AtomicReference<>(matchingItems[0].copy());
@@ -268,11 +274,15 @@ public class VehicleMultiWeapons extends AbstractVehicleWeapon<BaseVehicleWeapon
             }
         }
 
-        oldWeapon.setRemainAmmo(0);
+        if (oldWeapon.shouldUnloadOnSwitch()) {
+            oldWeapon.setRemainAmmo(0);
+        }
         oldWeapon.reloadTime = 0;
         int size = subWeapons.size();
         selectedIndex = (selectedIndex + (next ? 1 : size - 1)) % size;
-        getSelectedWeapon().setRemainAmmo(0);
+        if (getSelectedWeapon().shouldUnloadOnSwitch()) {
+            getSelectedWeapon().setRemainAmmo(0);
+        }
     }
 
     @Override

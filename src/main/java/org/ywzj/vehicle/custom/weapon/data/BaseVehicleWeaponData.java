@@ -54,6 +54,9 @@ public class BaseVehicleWeaponData {
         @SerializedName("ammo")
         private Ingredient ammo;
 
+        @SerializedName("unload_on_switch")
+        private Boolean unloadOnSwitch;
+
         public Reload(int time, Ingredient ammo) {
             this.time = time;
             this.ammo = ammo;
@@ -77,6 +80,14 @@ public class BaseVehicleWeaponData {
 
         public boolean isAmmo(ItemStack stack) {
             return ammo.test(stack);
+        }
+
+        public boolean shouldUnloadOnSwitch() {
+            return unloadOnSwitch == null || unloadOnSwitch;
+        }
+
+        public void setUnloadOnSwitch(boolean unloadOnSwitch) {
+            this.unloadOnSwitch = unloadOnSwitch;
         }
 
     }

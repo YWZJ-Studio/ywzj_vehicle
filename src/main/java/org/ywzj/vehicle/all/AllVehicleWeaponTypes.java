@@ -37,6 +37,10 @@ public class AllVehicleWeaponTypes {
             "decoy_flare", json -> GsonUtil.GSON.fromJson(json, BaseVehicleWeaponData.class), VehicleDecoyFlare::new
     );
 
+    public static final DeferredHolder<VehicleWeaponType<?, ?>, VehicleWeaponType<VehicleThrower, VehicleThrowerWeaponData>> THROWER = register(
+            "thrower", json -> GsonUtil.GSON.fromJson(json, VehicleThrowerWeaponData.class), VehicleThrower::new
+    );
+
     private static <T extends AbstractVehicleWeapon<D>, D extends BaseVehicleWeaponData> DeferredHolder<VehicleWeaponType<?, ?>, VehicleWeaponType<T, D>> register(
             String name,
             VehicleWeaponType.DataSerializer<D> dataSerializer,

@@ -78,6 +78,9 @@
     "part.ywzj_vehicle.gbu_12": "GBU-12 Guided Bomb",
     "part.ywzj_vehicle.tow": "TOW Missile Launcher",
 
+    "weapon.ywzj_vehicle.water_cannon": "Water Cannon",
+    "weapon.ywzj_vehicle.flamethrower": "Flamethrower",
+
     "ywzj_vehicle.dump_truck.description": "A dump truck carries loose materials such as sand, gravel and soil in a tipping cargo bed. Most designs use hydraulic equipment to raise the bed and unload by gravity. Dump trucks are widely used in construction, road works and mining.",
     "ywzj_vehicle.ztl11.description": "The ZTL-11 is a Chinese eight-wheeled amphibious assault vehicle in the Type 08 armored vehicle family, armed primarily with a 105 mm rifled gun. It provides direct fire support for wheeled mechanized units and can engage lightly armored vehicles and fortifications, combining road mobility with off-road capability.",
     "ywzj_vehicle.ztz99a.description": "The ZTZ-99A is an improved variant of China's Type 99 main battle tank. It uses a tracked chassis and a 125 mm smoothbore gun with an autoloader. Compared with earlier Type 99 tanks, it incorporates improvements to fire control, sights, propulsion and protection, and serves in Chinese Army heavy combined-arms formations.",

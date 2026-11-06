@@ -31,6 +31,30 @@
         ],
         "subtitle": "ywzj_vehicle.sounds.auto_cannon_shot"
     },
+    "rotary_cannon_shot_start": {
+        "sounds": ["ywzj_vehicle:weapon/auto_cannon/rotary_cannon_shot_light_start"],
+        "subtitle": "ywzj_vehicle.sounds.rotary_cannon_shot"
+    },
+    "rotary_cannon_shot": {
+        "sounds": ["ywzj_vehicle:weapon/auto_cannon/rotary_cannon_shot_light"],
+        "subtitle": "ywzj_vehicle.sounds.rotary_cannon_shot"
+    },
+    "large_rotary_cannon_shot_start": {
+        "sounds": ["ywzj_vehicle:weapon/auto_cannon/rotary_cannon_shot_med_start"],
+        "subtitle": "ywzj_vehicle.sounds.rotary_cannon_shot"
+    },
+    "large_rotary_cannon_shot": {
+        "sounds": ["ywzj_vehicle:weapon/auto_cannon/rotary_cannon_shot_med"],
+        "subtitle": "ywzj_vehicle.sounds.rotary_cannon_shot"
+    },
+    "flamethrower_shot_start": {
+        "sounds": ["ywzj_vehicle:weapon/thrower/flamethrower_shot_start"],
+        "subtitle": "subtitles.item.firecharge.use"
+    },
+    "flamethrower_shot": {
+        "sounds": ["ywzj_vehicle:weapon/thrower/flamethrower_shot"],
+        "subtitle": "subtitles.item.firecharge.use"
+    },
     "cannon_125mm_shot": {
         "sounds": [
             "ywzj_vehicle:weapon/artillery/cannon_125mm_shot_01",

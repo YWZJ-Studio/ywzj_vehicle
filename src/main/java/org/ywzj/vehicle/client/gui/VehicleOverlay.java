@@ -53,7 +53,7 @@ public class VehicleOverlay implements LayeredDraw.Layer {
             return;
         }
         if (localVehiclePlayer.viewType != LocalVehiclePlayer.ViewType.THIRD_PERSON) {
-            renderCompassBar(guiGraphics, screenWidth);
+            renderCompassBar(guiGraphics);
         }
         renderTips(guiGraphics, screenWidth, screenHeight);
     }
@@ -61,10 +61,9 @@ public class VehicleOverlay implements LayeredDraw.Layer {
     /**
      * 罗盘
      */
-    public static void renderCompassBar(GuiGraphics guiGraphics, int screenWidth) {
+    public static void renderCompassBar(GuiGraphics guiGraphics) {
         try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
             float yaw = Minecraft.getInstance().gameRenderer.getMainCamera().getYRot();
-
             PoseStack poseStack = guiGraphics.pose();
             poseStack.pushPose();
             {
@@ -170,7 +169,7 @@ public class VehicleOverlay implements LayeredDraw.Layer {
         Player player = instance.getPlayer();
         AbstractVehicle vehicle = instance.lookAtVehicle;
         PartUnit<?> partUnit = instance.lookAtPartUnit;
-        if (vehicle != null) {
+        if (vehicle != null && vehicle != instance.vehicle) {
             double distance = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(instance.lookAtVehicle.getEyePosition());
             if (distance > showVehicleInfoDistance) {
                 return;
