@@ -38,6 +38,7 @@
         .range-input { min-height: 20px; }
         .form-input.range-value-input { width: 76px; min-width: 76px; min-height: 30px; padding: 5px 6px; font-size: 14px; }
         .check-row { padding: 6px 0; font-size: 14px; }
+        .check-row input[type="checkbox"] { flex: 0 0 20px; width: 20px; height: 20px; }
         .button-row { gap: 8px; padding-top: 10px; }
         .button-row .button { min-height: 34px; font-size: 12px; }
         .preview-viewport { inset: 5px; }
@@ -58,7 +59,7 @@
                 <div class="setting-row"><span class="setting-label"><translation>slider.x_rot</translation></span><input id="figure-box-x-rotation" class="range-input" type="range" min="-180" max="180" step="0.01"><input id="figure-box-x-rotation-value" class="form-input range-value-input" type="text" inputmode="decimal"></div>
                 <div class="setting-row"><span class="setting-label"><translation>slider.y_rot</translation></span><input id="figure-box-y-rotation" class="range-input" type="range" min="-180" max="180" step="0.01"><input id="figure-box-y-rotation-value" class="form-input range-value-input" type="text" inputmode="decimal"></div>
                 <div class="setting-row"><span class="setting-label"><translation>slider.z_rot</translation></span><input id="figure-box-z-rotation" class="range-input" type="range" min="-180" max="180" step="0.01"><input id="figure-box-z-rotation-value" class="form-input range-value-input" type="text" inputmode="decimal"></div>
-                <label class="check-row"><input id="figure-box-open" type="checkbox"> <translation>check_box.figure_box.open</translation></label>
+                <label class="choice check-row" for="figure-box-open"><input id="figure-box-open" type="checkbox"> <translation>check_box.figure_box.open</translation></label>
                 <div class="button-row"><button id="close-button" class="button button-primary" type="button"><translation>button.done</translation></button></div>
             </div>
         </section>

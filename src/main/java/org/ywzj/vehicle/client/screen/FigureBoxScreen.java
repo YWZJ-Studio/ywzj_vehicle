@@ -48,7 +48,6 @@ public class FigureBoxScreen extends ApricityScreen {
     private float xRotationInputValue;
     private float yRotationInputValue;
     private float zRotationInputValue;
-    private Bounds previewBounds;
     private long lastRangeValueUpdateNanos;
 
     public FigureBoxScreen(FigureBoxBlockEntity figureBoxBlockEntity) {
@@ -60,7 +59,6 @@ public class FigureBoxScreen extends ApricityScreen {
 
     @Override
     protected void init() {
-        previewBounds = null;
         super.init();
         document = getLinkedDocument();
         if (document == null) {
@@ -183,7 +181,6 @@ public class FigureBoxScreen extends ApricityScreen {
     @Override
     public void tick() {
         super.tick();
-        previewBounds = readPreviewBounds();
         if (serverUpdatePending) {
             if (serverUpdateCooldown > 0) {
                 serverUpdateCooldown--;
@@ -232,9 +229,7 @@ public class FigureBoxScreen extends ApricityScreen {
     }
 
     private void renderFigureBox(GuiGraphics graphics, float partialTick) {
-        if (previewBounds == null) {
-            previewBounds = readPreviewBounds();
-        }
+        Bounds previewBounds = readPreviewBounds();
         if (previewBounds == null) {
             return;
         }
@@ -282,6 +277,9 @@ public class FigureBoxScreen extends ApricityScreen {
 
     private Bounds readPreviewBounds() {
         if (previewAnchor == null || document == null) {
+            return null;
+        }
+        if (document.getLayout().needsInitialFullCommit()) {
             return null;
         }
         Element.DOMRect rect = previewAnchor.getBoundingClientRect();
