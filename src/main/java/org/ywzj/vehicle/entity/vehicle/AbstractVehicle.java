@@ -86,8 +86,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleStructOBBs;
 
 import java.util.*;
 
-public abstract class AbstractVehicle extends ContainerCraft
-        implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData {
+public abstract class AbstractVehicle extends ContainerCraft implements RemoteTickEntity, OBBEntity, ICustomVehicle, IEntityAdditionalSpawnData {
 
     public static final EntityDataAccessor<Float> X_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> Y_ROT = SynchedEntityData.defineId(AbstractVehicle.class, EntityDataSerializers.FLOAT);

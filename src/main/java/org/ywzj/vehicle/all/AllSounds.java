@@ -24,6 +24,12 @@ public class AllSounds {
     public static final RegistryObject<SoundEvent> GUN_12_7MM_SHOT = registerSoundEvent("gun_12.7mm_shot", YwzjVehicle.modLocation("gun_12.7mm_shot"));
     public static final RegistryObject<SoundEvent> GUN_14_5MM_SHOT = registerSoundEvent("gun_14.5mm_shot", YwzjVehicle.modLocation("gun_14.5mm_shot"));
     public static final RegistryObject<SoundEvent> AUTO_CANNON_SHOT = registerSoundEvent("auto_cannon_shot", YwzjVehicle.modLocation("auto_cannon_shot"));
+    public static final RegistryObject<SoundEvent> ROTARY_CANNON_SHOT_START = registerSoundEvent("rotary_cannon_shot_start", YwzjVehicle.modLocation("rotary_cannon_shot_start"));
+    public static final RegistryObject<SoundEvent> ROTARY_CANNON_SHOT = registerSoundEvent("rotary_cannon_shot", YwzjVehicle.modLocation("rotary_cannon_shot"));
+    public static final RegistryObject<SoundEvent> LARGE_ROTARY_CANNON_SHOT_START = registerSoundEvent("large_rotary_cannon_shot_start", YwzjVehicle.modLocation("large_rotary_cannon_shot_start"));
+    public static final RegistryObject<SoundEvent> LARGE_ROTARY_CANNON_SHOT = registerSoundEvent("large_rotary_cannon_shot", YwzjVehicle.modLocation("large_rotary_cannon_shot"));
+    public static final RegistryObject<SoundEvent> FLAMETHROWER_SHOT_START = registerSoundEvent("flamethrower_shot_start", YwzjVehicle.modLocation("flamethrower_shot_start"));
+    public static final RegistryObject<SoundEvent> FLAMETHROWER_SHOT = registerSoundEvent("flamethrower_shot", YwzjVehicle.modLocation("flamethrower_shot"));
     public static final RegistryObject<SoundEvent> CANNON_125_MM_SHOT = registerSoundEvent("cannon_125mm_shot", YwzjVehicle.modLocation("cannon_125mm_shot"));
     public static final RegistryObject<SoundEvent> ROCKET_LAUNCH = registerSoundEvent("rocket_launch", YwzjVehicle.modLocation("rocket_launch"));
     public static final RegistryObject<SoundEvent> MISSILE_LAUNCH = registerSoundEvent("missile_launch", YwzjVehicle.modLocation("missile_launch"));

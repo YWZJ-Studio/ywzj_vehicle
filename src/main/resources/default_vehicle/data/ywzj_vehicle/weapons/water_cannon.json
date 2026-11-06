@@ -1,0 +1,19 @@
+{
+    "type": "ywzj_vehicle:thrower",
+    "name": "weapon.ywzj_vehicle.water_cannon",
+    "entity_id": "ywzj_vehicle:water",
+    "muzzle_particle": "minecraft:bubble_pop",
+    "velocity": 2.4,
+    "inaccuracy": 0.3,
+    "life": 60,
+    "damage": 0,
+    "headshot_multiplier": 1,
+    "recoil": 0,
+    "shoot_interval": 50,
+    "max_capacity": 200,
+    "reload": {
+        "time": 40,
+        "ammo": "minecraft:water_bucket",
+        "unload_on_switch": false
+    }
+}

@@ -20,6 +20,7 @@ import org.ywzj.vehicle.api.YwzjVehicleAPI;
 import org.ywzj.vehicle.api.custom.sync.SyncDataSerializers;
 import org.ywzj.vehicle.api.event.VehicleFireEvent;
 import org.ywzj.vehicle.audio.VehicleSound;
+import org.ywzj.vehicle.audio.VehicleWeaponLoopSound;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.client.screen.CoordinateInputScreen;
@@ -63,6 +64,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     protected SyncDataHolder<Integer> remainAmmoHolder;
     protected SyncDataHolder<Integer> reloadTimeHolder;
     protected Vec3 targetLocation;
+    private VehicleWeaponLoopSound fireLoopSound;
     protected final ThreadPoolExecutor soundsExecutor = new ThreadPoolExecutor(
             3,
             8,
@@ -101,6 +103,10 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     public void onSwitchTo() {}
 
     public void onSwitchFrom() {}
+
+    public boolean shouldUnloadOnSwitch() {
+        return getData().getReload().shouldUnloadOnSwitch();
+    }
 
     public void setRemainAmmo(int remainAmmo) {
         this.remainAmmo = remainAmmo;
@@ -171,7 +177,7 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         if (MinecraftForge.EVENT_BUS.post(new VehicleFireEvent.Pre(vehicle, this, Minecraft.getInstance().player))) {
             return false;
         }
-        if (isCoolingDown()) {
+        if (isCoolingDown() || isReloading()) {
             return false;
         }
         if (!hasAmmo()) {
@@ -184,12 +190,8 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         } else {
             partUnitIndex = weaponUnit.getParentWeaponUnit() != null ? weaponUnit.getParentWeaponUnit().getIndex() : weaponUnit.getIndex();
         }
-        List<AimContext> aimContexts;
-        if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
-            aimContexts = Collections.singletonList(weaponUnit.aimContext());
-        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO || weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.FULL_SALVO) {
-            aimContexts = weaponUnit.aimContexts();
-        } else {
+        List<AimContext> aimContexts = getFiringAimContexts();
+        if (aimContexts.isEmpty()) {
             return false;
         }
         Vec3 aimHitPosition = targetLocation != null ? targetLocation : currentAimHitPosition();
@@ -199,7 +201,15 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
         });
         lastShootTime = System.currentTimeMillis();
         sendShoot(this.getVehicle(), partUnitIndex, getIndex(), aimContexts);
+        refreshFireLoopSound();
         return true;
+    }
+
+    protected List<AimContext> getFiringAimContexts() {
+        return switch (weaponUnit.getFiringMode()) {
+            case RIPPLE -> Collections.singletonList(weaponUnit.aimContext());
+            case SALVO, FULL_SALVO -> weaponUnit.aimContexts();
+        };
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -217,7 +227,63 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     @OnlyIn(Dist.CLIENT)
+    public void refreshFireLoopSound() {
+        SoundEvent sound = getFireLoopSound();
+        var soundManager = Minecraft.getInstance().getSoundManager();
+        if (sound == null) {
+            if (fireLoopSound != null) {
+                fireLoopSound.cancel();
+                fireLoopSound = null;
+            }
+            return;
+        }
+        if (fireLoopSound == null || fireLoopSound.isStopped() || fireLoopSound.isFinishing() || !soundManager.isActive(fireLoopSound)
+                || !fireLoopSound.getLocation().equals(sound.getLocation())) {
+            if (fireLoopSound != null) {
+                fireLoopSound.cancel();
+            }
+            fireLoopSound = new VehicleWeaponLoopSound(sound, this);
+            fireLoopSound.play();
+        } else {
+            fireLoopSound.refresh();
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public void onClientFire() {
+        playFireSounds();
+        Level level = vehicle.level();
+        List<AimContext> aimContexts = getFiringAimContexts();
+        if (aimContexts.isEmpty()) {
+            return;
+        }
+        weaponUnit.countFire(aimContexts.size());
+        float recoil = data.getRecoil();
+        float caliber = data.getCaliber();
+        float scaleDivisor = 20f + 30f * caliber / 1000f;
+        float scale = caliber / scaleDivisor;
+        for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
+            for (int i = 0; i < 3 * recoil + 1; i++) {
+                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
+                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                level.addParticle(new SmokeCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 0.5f, 0f, 5, 0.18f * scale, 0.1f), true,
+                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
+                        0.015, 0.015, 0.015);
+            }
+            for (int i = 0; i < 3 * recoil + 1; i++) {
+                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
+                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
+                level.addParticle(new SmokeCloudOption(0.7f, 0.7f, 0.7f, 0.5f, 0f, 10, 0.3f * scale, 0.1f), true,
+                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
+                        0.015, 0.015, 0.015);
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    protected void playFireSounds() {
         Level level = vehicle.level();
         Vec3 soundPosition = getWeaponUnit().worldPivotPosition();
         if (getFireSound() != null) {
@@ -243,38 +309,6 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
                         shellSound.play();
                     });
                 });
-            }
-        }
-        List<AimContext> aimContexts;
-        if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.RIPPLE) {
-            aimContexts = Collections.singletonList(weaponUnit.aimContext());
-            weaponUnit.countFire(1);
-        } else if (weaponUnit.getFiringMode() == WeaponUnitData.FiringMode.SALVO) {
-            aimContexts = weaponUnit.aimContexts();
-            weaponUnit.countFire(aimContexts.size());
-        } else {
-            return;
-        }
-        float recoil = data.getRecoil();
-        float caliber = data.getCaliber();
-        float scaleDivisor = 20f + 30f * caliber / 1000f;
-        float scale = caliber / scaleDivisor;
-        for (Vec3 muzzlePos : aimContexts.stream().map(aimContext -> aimContext.from).toList()) {
-            for (int i = 0; i < 3 * recoil + 1; i++) {
-                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
-                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(new SmokeCloudOption(1f, 0.35f + (float) level.random.nextDouble() * 0.3f, 0f, 0.5f, 0f, 5, 0.18f * scale, 0.1f), true,
-                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
-                        0.015, 0.015, 0.015);
-            }
-            for (int i = 0; i < 3 * recoil + 1; i++) {
-                double dx = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                double dy = (level.random.nextDouble() - 0.5) * 0.2 * recoil;
-                double dz = (level.random.nextDouble() - 0.5) * 0.4 * recoil;
-                level.addParticle(new SmokeCloudOption(0.7f, 0.7f, 0.7f, 0.5f, 0f, 10, 0.3f * scale, 0.1f), true,
-                        muzzlePos.x + dx, muzzlePos.y + dy, muzzlePos.z + dz,
-                        0.015, 0.015, 0.015);
             }
         }
     }
@@ -370,7 +404,10 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public void startReload() {
-        this.reloadTime = this.getData().getReload().getTime();
+        this.reloadTime = Math.max(0, this.getData().getReload().getTime());
+        if (reloadTime == 0) {
+            reload();
+        }
     }
 
     public void tickReload() {
@@ -383,20 +420,27 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     }
 
     public void reload() {
-        int maxCap = getMaxCapacity();
+        int maxCapacity = getMaxCapacity();
+        if (vehicle.level().isClientSide() || remainAmmo >= maxCapacity) {
+            return;
+        }
         if (vehicle.getItemStacks().stream().anyMatch(stack -> stack.getItem() == AllItems.AMMO_CREATIVE.get())) {
-            remainAmmo = maxCap;
+            remainAmmo = maxCapacity;
         } else {
-            for (var item : vehicle.getItemStacks()) {
-                int need = maxCap - remainAmmo;
-                if (need <= 0) {
-                    break;
-                }
-                if (this.isAmmoForWeapon(item)) {
-                    int toTake = Math.min(need, item.getCount());
-                    item.shrink(toTake);
-                    remainAmmo += toTake;
-                }
+            reloadFromInventory(maxCapacity);
+        }
+    }
+
+    protected void reloadFromInventory(int maxCapacity) {
+        for (var item : vehicle.getItemStacks()) {
+            int need = maxCapacity - remainAmmo;
+            if (need <= 0) {
+                break;
+            }
+            if (this.isAmmoForWeapon(item)) {
+                int toTake = Math.min(need, item.getCount());
+                item.shrink(toTake);
+                remainAmmo += toTake;
             }
         }
     }
@@ -449,6 +493,11 @@ public abstract class AbstractVehicleWeapon<T extends BaseVehicleWeaponData> imp
     public SoundEvent getFireSound() {
         Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(data.getWeaponId());
         return displayOptional.map(display -> display.getSoundEvents().get("fire")).orElse(null);
+    }
+
+    public SoundEvent getFireLoopSound() {
+        Optional<BaseDisplay> displayOptional = ClientAssetsManager.INSTANCE.getWeaponDisplay(data.getWeaponId());
+        return displayOptional.map(display -> display.getSoundEvents().get("fire_loop")).orElse(null);
     }
 
     public SoundEvent getShellSound() {

@@ -225,6 +225,7 @@ public class AllEvents {
         @SubscribeEvent
         public static void onVehicleFire(VehicleFireEvent.Post event) {
             if (event.isClientSide()) {
+                event.getWeapon().refreshFireLoopSound();
                 event.getWeapon().onClientFire();
                 event.getWeapon().getWeaponUnit().onClientFire();
             }

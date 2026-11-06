@@ -9,7 +9,7 @@ import java.lang.reflect.Type;
 
 public class IngredientSerializer implements JsonDeserializer<Ingredient> {
     public Ingredient deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx) throws JsonParseException {
-        if (GsonHelper.isStringValue(json.getAsJsonPrimitive())) {
+        if (GsonHelper.isStringValue(json)) {
             String str = json.getAsString();
 
             JsonObject object = new JsonObject();

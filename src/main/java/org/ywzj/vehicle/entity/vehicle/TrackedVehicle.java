@@ -30,8 +30,7 @@ import org.ywzj.vehicle.vehicle.pojo.AimContext;
 import java.util.List;
 import java.util.Optional;
 
-public class TrackedVehicle extends AbstractVehicle
-        implements IAnimationEntity<TrackedVehicle, TrackedVehicleContext> {
+public class TrackedVehicle extends AbstractVehicle implements IAnimationEntity<TrackedVehicle, TrackedVehicleContext> {
 
     public static final EntityDataAccessor<Float> FORWARD_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> TURN_SPEED = SynchedEntityData.defineId(TrackedVehicle.class, EntityDataSerializers.FLOAT);

@@ -1,7 +1,8 @@
 {
     "type": "ywzj_vehicle:weapon",
     "sounds": {
-        "fire": "ywzj_vehicle:auto_cannon_shot",
+        "fire_loop_start": "ywzj_vehicle:large_rotary_cannon_shot_start",
+        "fire_loop": "ywzj_vehicle:large_rotary_cannon_shot",
         "reload": "ywzj_vehicle:gun_reload"
     }
 }

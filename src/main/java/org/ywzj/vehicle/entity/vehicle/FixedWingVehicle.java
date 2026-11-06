@@ -41,8 +41,7 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 import java.util.List;
 import java.util.Optional;
 
-public class FixedWingVehicle extends AbstractVehicle
-        implements IAnimationEntity<FixedWingVehicle, FixedWingVehicleContext> {
+public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntity<FixedWingVehicle, FixedWingVehicleContext> {
 
     public static final EntityDataAccessor<Float> THROTTLE_LEVEL = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(FixedWingVehicle.class, EntityDataSerializers.FLOAT);
@@ -402,6 +401,9 @@ public class FixedWingVehicle extends AbstractVehicle
                     (degreeX - angleOfAttackMax) :
                     (angleOfAttackMin - degreeX);
             fl = f * liftToDragK * Math.exp(-1 * exceed);
+        }
+        if (isDestroyed()) {
+            fl *= 0.2;
         }
         Vec3 force = upDirection.scale(fl);
         if (fl != 0) {

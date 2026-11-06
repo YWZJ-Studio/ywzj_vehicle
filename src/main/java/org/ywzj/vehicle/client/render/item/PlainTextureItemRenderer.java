@@ -3,6 +3,7 @@ package org.ywzj.vehicle.client.render.item;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.client.model.SlotModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -33,6 +34,10 @@ public class PlainTextureItemRenderer extends BlockEntityWithoutLevelRenderer {
             poseStack.pushPose();
             {
                 poseStack.translate(0.5, 0.5, 0.5);
+                if (transformType == ItemDisplayContext.FIXED) {
+                    poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+                    poseStack.translate(0.0D, 0.0D, -0.5D);
+                }
                 VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(textureLocation));
                 PLAIN_TEXTURE_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
             }

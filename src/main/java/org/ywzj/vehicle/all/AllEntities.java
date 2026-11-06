@@ -129,6 +129,30 @@ public class AllEntities {
                     .setCustomClientFactory(DecoyFlareEntity::new)
                     .build("decoy_flare"));
 
+    public static final RegistryObject<EntityType<WaterEntity>> WATER = ENTITIES.register("water",
+            () -> EntityType.Builder.<WaterEntity>of(WaterEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(0.15F, 0.15F)
+                    .clientTrackingRange(4)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .setCustomClientFactory(WaterEntity::new)
+                    .build("water"));
+
+    public static final RegistryObject<EntityType<FireEntity>> FIRE = ENTITIES.register("fire",
+            () -> EntityType.Builder.<FireEntity>of(FireEntity::new, MobCategory.MISC)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .sized(0.15F, 0.15F)
+                    .clientTrackingRange(4)
+                    .updateInterval(1)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .setCustomClientFactory(FireEntity::new)
+                    .build("fire"));
+
     public static final RegistryObject<EntityType<VehiclePart>> VEHICLE_PART = ENTITIES.register("vehicle_part",
             () -> EntityType.Builder.of(VehiclePart::new, MobCategory.MISC)
                     .noSummon()

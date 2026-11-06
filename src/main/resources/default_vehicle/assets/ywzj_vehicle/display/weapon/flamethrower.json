@@ -1,0 +1,8 @@
+{
+    "type": "ywzj_vehicle:weapon",
+    "sounds": {
+        "fire_loop_start": "ywzj_vehicle:flamethrower_shot_start",
+        "fire_loop": "ywzj_vehicle:flamethrower_shot",
+        "reload": "minecraft:item.bucket.empty_lava"
+    }
+}

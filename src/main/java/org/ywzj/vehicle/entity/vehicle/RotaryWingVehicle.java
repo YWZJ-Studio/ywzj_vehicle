@@ -43,8 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-public class RotaryWingVehicle extends AbstractVehicle
-        implements IAnimationEntity<RotaryWingVehicle, RotaryWingVehicleContext> {
+public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEntity<RotaryWingVehicle, RotaryWingVehicleContext> {
 
     public static final EntityDataAccessor<Float> COLLECTIVE_PITCH = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);
     public static final EntityDataAccessor<Float> PITCH_INPUT = SynchedEntityData.defineId(RotaryWingVehicle.class, EntityDataSerializers.FLOAT);

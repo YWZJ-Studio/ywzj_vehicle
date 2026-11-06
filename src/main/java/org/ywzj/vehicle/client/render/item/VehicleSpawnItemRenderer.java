@@ -43,10 +43,14 @@ public class VehicleSpawnItemRenderer extends BlockEntityWithoutLevelRenderer {
             poseStack.pushPose();
             {
                 poseStack.translate(0.5, 0.5, 0.5);
+                if (transformType == ItemDisplayContext.FIXED) {
+                    poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+                    poseStack.translate(0.0D, 0.0D, -0.5D);
+                }
                 if (display != null) {
                     ResourceLocation slotTexture = display.getSlotTexture();
                     if (slotTexture != null) {
-                        if (transformType != ItemDisplayContext.GUI) {
+                        if (transformType != ItemDisplayContext.GUI && transformType != ItemDisplayContext.FIXED) {
                             poseStack.mulPose(Axis.YN.rotationDegrees(-45f));
                         }
                         renderExperimentalMark(transformType, vehicleId, poseStack, pBuffer, pPackedLight);

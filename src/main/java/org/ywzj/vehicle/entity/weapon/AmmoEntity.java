@@ -249,6 +249,10 @@ public abstract class AmmoEntity extends Projectile implements IEntityAdditional
         return weaponId;
     }
 
+    public void setWeaponId(ResourceLocation weaponId) {
+        this.weaponId = weaponId;
+    }
+
     public float getCaliber() {
         return 5.8f;
     }

@@ -22,10 +22,9 @@ import java.util.*;
 
 public class TrackUnit extends PartUnit<TrackUnitData> {
 
-    private static final double MAX_FRAME_SECONDS = 0.25;
     private static final double CURVE_SAMPLES_PER_METER = 16.0;
     private final List<TrackPath> tracks;
-    private long lastRenderNanos;
+    private long lastAnimationRenderTime = -1;
 
     public TrackUnit(int index, AbstractVehicle vehicle, TrackUnitData data) {
         super(index, vehicle, data);
@@ -108,21 +107,21 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
 
     @OnlyIn(Dist.CLIENT)
     private void advanceAnimation() {
-        long now = System.nanoTime();
-        if (lastRenderNanos == 0) {
-            lastRenderNanos = now;
-            return;
-        }
-        double deltaSeconds = Math.min((now - lastRenderNanos) / 1_000_000_000.0, MAX_FRAME_SECONDS);
-        lastRenderNanos = now;
         if (!(vehicle instanceof TrackedVehicle trackedVehicle)) {
             return;
         }
-        double forwardSpeed = trackedVehicle.getForwardSpeed() * 20.0;
-        double turnSpeed = trackedVehicle.getTurnSpeed();
+        var animationInstance = trackedVehicle.getAnimationInstance();
+        if (animationInstance == null) {
+            return;
+        }
+        if (lastAnimationRenderTime == vehicle.lastRenderTime) {
+            return;
+        }
+        lastAnimationRenderTime = vehicle.lastRenderTime;
+        var context = animationInstance.getContext();
+        context.advanceTrackProgress();
         for (TrackPath track : tracks) {
-            double linearSpeed = forwardSpeed + turnSpeed * track.lateralOffset();
-            track.advance(linearSpeed * deltaSeconds);
+            track.advance(context.getTrackFrameDistance(track.lateralOffset()));
         }
     }
 
@@ -164,6 +163,7 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
         private final double[] basePointDistances;
         private final double[] baseSegmentDistances;
         private final double baseLength;
+        private final double baseCurveLength;
         private final Vec3 planeNormal;
         private List<PathSegment> segments;
         private double length;
@@ -186,6 +186,7 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
             this.baseLength = baseSegments.stream().mapToDouble(PathSegment::length).sum();
             this.planeNormal = buildPlaneNormal(basePoints);
             rebuild(basePoints);
+            this.baseCurveLength = length;
         }
 
         private static Vec3 buildPlaneNormal(List<Vec3> points) {
@@ -528,7 +529,8 @@ public class TrackUnit extends PartUnit<TrackUnitData> {
         }
 
         private void setModuleLength(double moduleLength) {
-            linkCount = Math.max(1, (int) Math.round(length / moduleLength));
+            // 按绑定姿态固定节数，避免悬挂起伏跨过取整阈值时整圈履带跳变。
+            linkCount = Math.max(1, (int) Math.round(baseCurveLength / moduleLength));
             spacing = length / linkCount;
         }
 

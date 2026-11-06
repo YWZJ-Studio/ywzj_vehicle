@@ -43,7 +43,10 @@ public class DecorationItemRenderer extends BlockEntityWithoutLevelRenderer {
                     VehicleBedrockModel model = decorationDisplay.getModel();
                     ResourceLocation texture = decorationDisplay.getTexture();
                     if (slotTexture != null) {
-                        if (transformType != ItemDisplayContext.GUI) {
+                        if (transformType == ItemDisplayContext.FIXED) {
+                            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+                            poseStack.translate(0.0D, 0.0D, -0.5D);
+                        } else if (transformType != ItemDisplayContext.GUI) {
                             poseStack.mulPose(Axis.YN.rotationDegrees(-45f));
                         }
                         VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(slotTexture));
@@ -55,6 +58,10 @@ public class DecorationItemRenderer extends BlockEntityWithoutLevelRenderer {
                         poseStack.popPose();
                         return;
                     }
+                }
+                if (transformType == ItemDisplayContext.FIXED) {
+                    poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+                    poseStack.translate(0.0D, 0.0D, -0.5D);
                 }
                 VertexConsumer buffer = pBuffer.getBuffer(RenderType.entityTranslucent(InternalAssets.DECORATION_ITEM_TEXTURE));
                 DECORATION_ITEM_MODEL.renderToBuffer(poseStack, buffer, pPackedLight, pPackedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);

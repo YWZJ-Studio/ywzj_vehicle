@@ -1,0 +1,7 @@
+{
+    "type": "ywzj_vehicle:weapon",
+    "sounds": {
+        "fire_loop": "minecraft:block.water.ambient",
+        "reload": "minecraft:item.bucket.empty"
+    }
+}

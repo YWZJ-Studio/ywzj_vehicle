@@ -2,9 +2,12 @@ package org.ywzj.vehicle.client.render.animation.context;
 
 import net.minecraft.util.Mth;
 import org.ywzj.vehicle.entity.vehicle.WheeledVehicle;
+import org.ywzj.vehicle.vehicle.part.SuspensionUnit;
 
 public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
 
+    private static final float AIRBORNE_WHEEL_DAMPING = 2f;
+    private float wheelRollingSpeed = 0f;
     private float wheelRotation = 0f;
     private float steeringAngle = 0f;
 
@@ -33,10 +36,19 @@ public class WheeledVehicleContext extends VehicleContext<WheeledVehicle> {
             return;
         }
         float deltaTime = Math.max(0f, Math.min((this.currentTimeMillis() - lastTime) / 1000f, 0.1f));
-        float forwardSpeed = this.getForwardSpeed();
-        // 累积轮胎旋转角度，速度单位已经是方块/tick，需要转换为方块/秒
-        float distance = forwardSpeed * deltaTime * 20; // 转换为方块/秒
-        wheelRotation += distance * 360f; // 简化计算，后续在getWheelDegrees中根据半径调整
+        boolean grounded = entity.hasSuspension()
+                ? entity.getSuspensionUnits().stream().anyMatch(SuspensionUnit::isGrounded)
+                : entity.onGround();
+        float distance;
+        if (grounded) {
+            wheelRollingSpeed = this.getForwardSpeed();
+            distance = wheelRollingSpeed * deltaTime * 20;
+        } else {
+            float previousSpeed = wheelRollingSpeed;
+            wheelRollingSpeed *= (float) Math.exp(-AIRBORNE_WHEEL_DAMPING * deltaTime);
+            distance = (previousSpeed - wheelRollingSpeed) / AIRBORNE_WHEEL_DAMPING * 20;
+        }
+        wheelRotation += distance * 360f;
     }
 
     private void updateSteeringAngle() {
