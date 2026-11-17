@@ -29,6 +29,10 @@ import java.util.Locale;
 
 public class VehicleScopeOverlay implements IGuiOverlay {
 
+    private static final int ARTILLERY_VALUE_COLOR = 0xFFF2F2F2;
+    private static final int ARTILLERY_LABEL_COLOR = 0xFFB8B8B8;
+    private static final int ARTILLERY_ROW_HEIGHT = 14;
+    private static final int ARTILLERY_COLUMN_GAP = 10;
     private static final float[] CRT_RETICLE_SEGMENTS = {
             -90, 0, -50, 0, 50, 0, 90, 0,
             0, -90, 0, -50, 0, 50, 0, 90,
@@ -52,6 +56,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         }
         AbstractVehicle vehicle = LocalVehiclePlayer.instance.vehicle;
         renderCrosshair(guiGraphics, partialTick, vehicle);
+        renderArtilleryReadout(guiGraphics, vehicle);
         renderWeaponEngagementEnvelope(guiGraphics, partialTick, screenWidth, screenHeight, vehicle);
     }
 
@@ -140,8 +145,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
         }
     }
 
-    public void renderWeaponEngagementEnvelope(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
-        // 射击诸元
+    private void renderArtilleryReadout(GuiGraphics guiGraphics, AbstractVehicle vehicle) {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
             weaponUnit.getCurrentWeapon().ifPresent(weapon -> {
                 var selectedWeapon = weapon instanceof VehicleMultiWeapons multiWeapons ? multiWeapons.getSelectedWeapon() : weapon;
@@ -153,15 +157,36 @@ public class VehicleScopeOverlay implements IGuiOverlay {
                     AimContext aimContext = aimingWeaponUnit.aimContext();
                     float azimuth = Mth.wrapDegrees(aimContext.direction.y);
                     double range = weaponUnit.weaponHitRange;
-                    int x = screenWidth / 2 - 120;
-                    int y = screenHeight / 2 - 69;
-
-                    VehicleHudText.drawString(guiGraphics, Component.translatable("ui.artillery.azimuth", String.format(Locale.ROOT, "%.1f", azimuth)), x, y, color);
-                    VehicleHudText.drawString(guiGraphics, Component.translatable("ui.artillery.elevation", String.format(Locale.ROOT, "%.1f", -aimContext.direction.x)), x, y + 12, color);
-                    VehicleHudText.drawString(guiGraphics, Component.translatable("ui.artillery.range", Double.isFinite(range) ? String.format(Locale.ROOT, "%.0f", range) : "--"), x, y + 24, color);
+                    try (VehicleHudLayout layout = VehicleHudLayout.begin(guiGraphics)) {
+                        float left = Math.max(18, layout.width() / 2 - 180);
+                        float top = VehicleHudLayout.HEIGHT / 2 - 108;
+                        Component azimuthLabel = Component.translatable("ui.artillery.azimuth");
+                        Component elevationLabel = Component.translatable("ui.artillery.elevation");
+                        Component rangeLabel = Component.translatable("ui.artillery.range");
+                        var font = Minecraft.getInstance().font;
+                        float valueX = left + Math.max(font.width(azimuthLabel),
+                                Math.max(font.width(elevationLabel), font.width(rangeLabel))) + ARTILLERY_COLUMN_GAP;
+                        renderArtilleryRow(guiGraphics, azimuthLabel,
+                                String.format(Locale.ROOT, "%.1f°", azimuth), left, valueX, top);
+                        renderArtilleryRow(guiGraphics, elevationLabel,
+                                String.format(Locale.ROOT, "%.1f°", -aimContext.direction.x),
+                                left, valueX, top + ARTILLERY_ROW_HEIGHT);
+                        renderArtilleryRow(guiGraphics, rangeLabel,
+                                Double.isFinite(range) ? String.format(Locale.ROOT, "%.0f m", range) : "-- m",
+                                left, valueX, top + ARTILLERY_ROW_HEIGHT * 2);
+                    }
                 }
             });
         }
+    }
+
+    private static void renderArtilleryRow(GuiGraphics graphics, Component label, String value,
+                                           float left, float valueX, float top) {
+        VehicleHudText.drawString(graphics, label, left, top, ARTILLERY_LABEL_COLOR);
+        VehicleHudText.drawString(graphics, value, valueX, top, ARTILLERY_VALUE_COLOR);
+    }
+
+    public void renderWeaponEngagementEnvelope(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, AbstractVehicle vehicle) {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
         PoseStack poseStack = guiGraphics.pose();

@@ -108,9 +108,9 @@
 
   "ui.stabilizer_on": "稳定器开",
   "ui.focus_lock": "焦点锁定",
-  "ui.artillery.azimuth": "方位: %s°",
-  "ui.artillery.elevation": "俯仰: %s°",
-  "ui.artillery.range": "射程: %s m",
+  "ui.artillery.azimuth": "方位",
+  "ui.artillery.elevation": "俯仰",
+  "ui.artillery.range": "射程",
   "ui.vehicle_hud.rpm": "转速",
   "ui.vehicle_hud.collective_pitch": "总距",
   "ui.vehicle_hud.throttle": "节流阀",
@@ -198,6 +198,8 @@
   "message.vehicle.damage_system.explosion": "爆炸",
 
   "commands.vehicle.reload.success": "§a§l[YWZJ]§r 所有载具包已重新加载！耗时: %.3f ms",
+  "commands.vehicle.summon.empty": "载具包 %s 中没有可生成的载具",
+  "commands.vehicle.summon.pack": "已生成来自载具包 %s 的 %s 辆载具",
 
   "spotter": "乘员"
 }

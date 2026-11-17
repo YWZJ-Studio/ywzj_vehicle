@@ -14,6 +14,7 @@ import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
 import org.ywzj.vehicle.resource.VehiclePackLoader;
+import org.ywzj.vehicle.resource.VehicleTabOrder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -45,14 +46,8 @@ public class AllTabs {
                                 CommonAssetsManager.vehicleDataManager().getVehicleData().values().stream()
                                         .filter(vehicleData -> vehicleData.getVehicleId().getNamespace().equals(namespace))
                                         .filter(vehicleData -> filter.test(vehicleData.getVehicleId()))
-                                        .sorted(Comparator.comparingInt(vehicleData ->
-                                                ClientAssetsManager.INSTANCE
-                                                        .getVehicleDisplay(vehicleData.getVehicleId())
-                                                        .map(baseDisplay -> baseDisplay.getTabIndex()
-                                                                + (vehicleData.isExperimental()
-                                                                && (baseDisplay.getTabName() == null || baseDisplay.getTabName().isBlank())
-                                                                ? 1_000_000 : 0))
-                                                        .orElse(0)))
+                                        .sorted(VehicleTabOrder.comparator(AllTabs::getTabName,
+                                                id -> ClientAssetsManager.INSTANCE.getVehicleDisplay(id).map(BaseDisplay::getTabIndex).orElse(0)))
                                         .forEach(vehicleData -> output.accept(AllItems.VEHICLE_SPAWN_ITEM.get().createInstance(vehicleData.getVehicleId()))))
                         .build());
     }

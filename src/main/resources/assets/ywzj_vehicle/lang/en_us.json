@@ -108,9 +108,9 @@
 
   "ui.stabilizer_on": "STAB ON",
   "ui.focus_lock": "FOCUS LOCK",
-  "ui.artillery.azimuth": "AZIMUTH: %s°",
-  "ui.artillery.elevation": "ELEVATION: %s°",
-  "ui.artillery.range": "RANGE: %s m",
+  "ui.artillery.azimuth": "AZIMUTH",
+  "ui.artillery.elevation": "ELEVATION",
+  "ui.artillery.range": "RANGE",
   "ui.vehicle_hud.rpm": "RPM",
   "ui.vehicle_hud.collective_pitch": "COLL",
   "ui.vehicle_hud.throttle": "THR",
@@ -198,6 +198,8 @@
   "message.vehicle.damage_system.explosion": "EXPLOSION",
 
   "commands.vehicle.reload.success": "§a§l[YWZJ]§r All vehicle packs reloaded! Time: %.3f ms",
+  "commands.vehicle.summon.empty": "No vehicles found in pack %s",
+  "commands.vehicle.summon.pack": "Summoned %s vehicles from pack %s",
 
   "spotter": "Crew"
 }
