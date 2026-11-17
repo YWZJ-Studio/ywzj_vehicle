@@ -419,7 +419,7 @@ public class MissileEntity extends AmmoEntity implements RemoteTickEntity {
         int lingerTicks = Math.round(600 * Mth.clamp((caliber - 500f) / 1750f, 0, 1));
         float dustRange = Mth.lerp(Mth.clamp(caliber / 2250f, 0, 1), 32f, 48f);
         MissileTrailOption option = new MissileTrailOption(size, lingerTicks, dustRange);
-        if (launchDustPending) {
+        if (isMotorBurning() && launchDustPending) {
             launchDustPending = false;
             spawnLaunchDust(option);
         }
