@@ -81,6 +81,8 @@ public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntit
     public float yawInputO;
     public float rollInput;
     public float rollInputO;
+    private double yRotDiffO;
+    private double stallSpinDirection;
     public LandingGearUnit landingGear;
     public AirbrakeUnit airbrakeUnit;
     public ThrustUnit thrustUnit;
@@ -96,6 +98,7 @@ public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntit
     public FixedWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.driverXYRotControl = true;
+        this.renderBeyondRenderDistance = true;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -154,6 +157,25 @@ public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntit
         if (landingGear != null) {
             landingGear.setOn(isLandingGearUp());
         }
+    }
+
+    @Override
+    public CompoundTag serializeDistantRenderData() {
+        CompoundTag data = super.serializeDistantRenderData();
+        data.putFloat("ThrottleLevel", getThrottleLevel());
+        data.putFloat("PitchInput", getPitchInput());
+        data.putFloat("YawInput", getYawInput());
+        data.putFloat("RollInput", getRollInput());
+        return data;
+    }
+
+    @Override
+    public void deserializeDistantRenderData(CompoundTag data) {
+        super.deserializeDistantRenderData(data);
+        throttleLevelO = throttleLevel = data.getFloat("ThrottleLevel");
+        pitchInputO = pitchInput = data.getFloat("PitchInput");
+        yawInputO = yawInput = data.getFloat("YawInput");
+        rollInputO = rollInput = data.getFloat("RollInput");
     }
 
     @Override
@@ -439,6 +461,7 @@ public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntit
             q.rotateX((float) Math.toRadians(xRotInput * d));
         }
         // 偏航
+        double yRotDiff;
         if (yRotInput != 0) {
             double d0 = Math.min(yTurnRate, ke * yTurnRate);
             double d1 = yRotInput * d0;
@@ -448,19 +471,23 @@ public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntit
             if (thrustUnit != null) {
                 r1 += yRotInput * yTurnRate / 2f * power * Math.abs(thrustUnit.worldRot().x - getXRot()) / 90;
             }
-            q.rotateY((float) Math.toRadians(r1));
+            yRotDiff = Math.toRadians(r1);
         } else {
             // 无输入时尾舵使得自动回正
             double d = VectorUtil.angleBetween(airSpeed, leftDirection) - Math.PI / 2;
-            q.rotateY((float) (ke * -d / 5));
+            yRotDiff = ke * -d / 5;
         }
         // 失速尾旋
         Vec3 downDirection = upDirection.scale(-1);
-        if (VectorUtil.angleBetween(airSpeed, downDirection) < Math.PI / 4) {
+        double stallAngle = VectorUtil.angleBetween(airSpeed, downDirection);
+        if (onGround || airSpeed.lengthSqr() < 1.0E-6 || stallAngle >= Math.toRadians(50)) {
+            stallSpinDirection = 0;
+        } else if (stallAngle < Math.PI / 4) {
             double vd = airSpeed.dot(downDirection);
-            double kvd = Math.min(1.5, vd);
-            q.rotateY((float) (Math.PI / 72 * kvd));
+            yRotDiff += stallSpinRotation(yRotDiff, -leftDirection.y, vd);
         }
+        q.rotateY((float) yRotDiff);
+        yRotDiffO = onGround ? 0 : yRotDiff;
         Vector3f rot = new Vector3f();
         q.getEulerAnglesYXZ(rot);
         setXRot((float) Math.toDegrees(rot.x));
@@ -471,6 +498,20 @@ public class FixedWingVehicle extends AbstractVehicle implements IAnimationEntit
         setYawInput(yRotInput);
         setRollInput(zRotInput);
         return force;
+    }
+
+    private double stallSpinRotation(double yRotDiff, double bank, double downwardSpeed) {
+        // 一次连续失速只选择一次方向
+        if (stallSpinDirection == 0) {
+            if (Math.abs(yRotDiffO) > Math.toRadians(0.05)) {
+                stallSpinDirection = Math.signum(yRotDiffO);
+            } else if (Math.abs(bank) > 0.01) {
+                stallSpinDirection = Math.signum(bank);
+            } else {
+                stallSpinDirection = Math.signum(yRotDiff);
+            }
+        }
+        return Math.PI / 72 * Math.min(1.5, downwardSpeed) * stallSpinDirection;
     }
 
     @Override

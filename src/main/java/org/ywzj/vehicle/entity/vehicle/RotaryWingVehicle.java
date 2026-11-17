@@ -85,6 +85,7 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
     public RotaryWingVehicle(EntityType<? extends AbstractVehicle> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.driverXYRotControl = true;
+        this.renderBeyondRenderDistance = true;
         this.physicsEngine.lockCenterRot = true;
     }
 
@@ -138,6 +139,23 @@ public class RotaryWingVehicle extends AbstractVehicle implements IAnimationEnti
         if (landingGear != null) {
             landingGear.setOn(isLandingGearUp());
         }
+    }
+
+    @Override
+    public CompoundTag serializeDistantRenderData() {
+        CompoundTag data = super.serializeDistantRenderData();
+        data.putFloat("CollectivePitch", getCollectivePitch());
+        data.putFloat("PitchInput", getPitchInput());
+        data.putFloat("RollInput", getRollInput());
+        return data;
+    }
+
+    @Override
+    public void deserializeDistantRenderData(CompoundTag data) {
+        super.deserializeDistantRenderData(data);
+        collectivePitchO = collectivePitch = data.getFloat("CollectivePitch");
+        pitchInputO = pitchInput = data.getFloat("PitchInput");
+        rollInputO = rollInput = data.getFloat("RollInput");
     }
 
     @Override

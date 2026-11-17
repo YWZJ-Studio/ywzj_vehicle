@@ -141,7 +141,8 @@
             "rest_length": 0.2,
             "max_compression": 0.2,
             "max_extension": 0.15,
-            "max_droop": 0.1
+            "max_droop": 0.1,
+            "center_offset": [0, 0, -0.3246246875]
         },
         {
             "id": "suspension_left_2",
@@ -231,7 +232,8 @@
             "rest_length": 0.2,
             "max_compression": 0.2,
             "max_extension": 0.15,
-            "max_droop": 0.1
+            "max_droop": 0.1,
+            "center_offset": [0, 0, 0.2855934375]
         },
         {
             "id": "suspension_right_1",
@@ -246,7 +248,8 @@
             "rest_length": 0.2,
             "max_compression": 0.2,
             "max_extension": 0.15,
-            "max_droop": 0.1
+            "max_droop": 0.1,
+            "center_offset": [0, 0, -0.3246246875]
         },
         {
             "id": "suspension_right_2",
@@ -336,7 +339,8 @@
             "rest_length": 0.2,
             "max_compression": 0.2,
             "max_extension": 0.15,
-            "max_droop": 0.1
+            "max_droop": 0.1,
+            "center_offset": [0, 0, 0.2855934375]
         },
         {
             "id": "hook_front",

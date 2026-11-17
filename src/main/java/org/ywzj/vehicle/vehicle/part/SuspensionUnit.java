@@ -27,7 +27,6 @@ import org.ywzj.vehicle.vehicle.structure.VehicleCubeGroup;
 import org.ywzj.vehicle.vehicle.structure.VehicleCubeOBB;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -45,24 +44,20 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     private boolean grounded;
     private double contactCompression;
     private List<Vec3> supportOffsets = List.of(Vec3.ZERO);
-    private double[] supportRestLengths;
-    private double[] supportMaxCompressions;
+    private Vec3 supportCenter = Vec3.ZERO;
     private double trackCenterZ = Double.NaN;
     private Vec3 trackBottomCenter;
     private float visualOffsetPartialTick = Float.NaN;
     private Vec3 visualOffsetCache = Vec3.ZERO;
     private final List<SupportContact> supportContacts = new ArrayList<>();
 
-    private record Contact(double length, Vec3 position, int index) {}
-    private record CalibrationPoint(SuspensionUnit<?> unit, int index, Vec3 bottom, Vector3d arm) {}
+    private record CalibrationPoint(SuspensionUnit<?> unit, Vec3 bottom, Vector3d arm) {}
     public record SupportContact(Vec3 position, double compression, double minCompression, double maxCompression, double weight) {}
 
     public SuspensionUnit(int index, AbstractVehicle vehicle, T data) {
         super(index, vehicle, data);
         restLength = data.getRestLength();
         maxCompression = data.getMaxCompression();
-        supportRestLengths = new double[]{restLength};
-        supportMaxCompressions = new double[]{maxCompression};
         compression = remoteCompression = getMinCompression();
         contactCompression = compression;
         syncData.define(SyncDataSerializers.FLOAT, value -> remoteCompression = value, this::getCompression, compression);
@@ -74,10 +69,6 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         super.buildStructure(groups);
         supportOffsets = buildSupportOffsets();
         calculateTrackBounds();
-        supportRestLengths = new double[supportOffsets.size()];
-        supportMaxCompressions = new double[supportOffsets.size()];
-        Arrays.fill(supportRestLengths, restLength);
-        Arrays.fill(supportMaxCompressions, maxCompression);
         supportContacts.clear();
     }
 
@@ -120,6 +111,7 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     }
 
     private List<Vec3> buildSupportOffsets() {
+        supportCenter = Vec3.ZERO;
         if (structureGroup == null) {
             return List.of(Vec3.ZERO);
         }
@@ -127,7 +119,6 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                 : structureGroup.parent.globalTransform().rotation();
         Quaternionf inverseParentRotation = new Quaternionf(parentRotation).invert();
         // 以轮底采样，兼容轮心和轮底枢轴。
-        double bottom = 0;
         List<AABB> bounds = new ArrayList<>();
         AABB totalBounds = null;
         for (VehicleCubeOBB cube : partCubeOBBs) {
@@ -143,31 +134,38 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                 Vector3f localPoint = inverseParentRotation.transform(relativePoint.toVector3f());
                 min.min(localPoint);
                 max.max(localPoint);
-                bottom = Math.min(bottom, localPoint.y);
             }
             AABB box = new AABB(min.x, min.y, min.z, max.x, max.y, max.z);
             bounds.add(box);
             totalBounds = totalBounds == null ? box : totalBounds.minmax(box);
         }
         if (totalBounds == null) {
-            return List.of(new Vec3(0, bottom, 0));
+            return List.of(Vec3.ZERO);
         }
+        supportCenter = new Vec3((totalBounds.minX + totalBounds.maxX) * 0.5,
+                totalBounds.minY, (totalBounds.minZ + totalBounds.maxZ) * 0.5);
         double splitLength = Math.max(SUPPORT_SPACING, totalBounds.getYsize() * 1.5);
         if (Math.max(totalBounds.getXsize(), totalBounds.getZsize()) <= splitLength) {
-            return List.of(new Vec3(0, bottom, 0));
+            bounds = List.of(totalBounds);
         }
-        List<Vec3> offsets = new ArrayList<>();
+        List<Vec3> samples = new ArrayList<>();
         for (AABB box : bounds) {
+            double centerX = (box.minX + box.maxX) * 0.5;
+            samples.add(new Vec3(centerX, box.minY, box.minZ));
+            samples.add(new Vec3(centerX, box.minY, box.maxZ));
             int countX = box.getXsize() > splitLength ? (int) Math.ceil(box.getXsize() / SUPPORT_SPACING) : 1;
             int countZ = box.getZsize() > splitLength ? (int) Math.ceil(box.getZsize() / SUPPORT_SPACING) : 1;
             for (int x = 0; x < countX; x++) {
                 for (int z = 0; z < countZ; z++) {
-                    Vec3 offset = new Vec3(box.minX + box.getXsize() * (x + 0.5) / countX,
-                            box.minY, box.minZ + box.getZsize() * (z + 0.5) / countZ);
-                    if (offsets.stream().noneMatch(existing -> existing.distanceToSqr(offset) < 1.0E-6)) {
-                        offsets.add(offset);
-                    }
+                    samples.add(new Vec3(box.minX + box.getXsize() * (x + 0.5) / countX,
+                            box.minY, box.minZ + box.getZsize() * (z + 1) / (countZ + 1)));
                 }
+            }
+        }
+        List<Vec3> offsets = new ArrayList<>();
+        for (Vec3 sample : samples) {
+            if (offsets.stream().noneMatch(existing -> existing.distanceToSqr(sample) < 1.0E-6)) {
+                offsets.add(sample);
             }
         }
         return List.copyOf(offsets);
@@ -198,20 +196,17 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             if (direction.y >= -0.25) {
                 return;
             }
-            List<Vec3> offsets = suspensionUnit.getSupportOffsets();
-            double k = PhysicsHelper.forcePerTick(suspensionUnit.data.getSpringStiffness()) / offsets.size();
-            for (int i = 0; i < offsets.size(); i++) {
-                Vec3 bottom = suspensionUnit.pivotOffset.add(new Vec3(parentRotation.transform(offsets.get(i).toVector3f())));
-                ground = Math.min(ground, bottom.y);
-                Vec3 arm = bottom.subtract(center);
-                Vector3d a = new Vector3d(1, physics.lockCenterRot ? 0 : -arm.z,
-                        physics.lockCenterRot || physics.lockZRot ? 0 : arm.x).div(-direction.y);
-                points.add(new CalibrationPoint(suspensionUnit, i, bottom, a));
-                stiffness.add(new Matrix3d(
-                        k * a.x * a.x, k * a.x * a.y, k * a.x * a.z,
-                        k * a.y * a.x, k * a.y * a.y, k * a.y * a.z,
-                        k * a.z * a.x, k * a.z * a.y, k * a.z * a.z));
-            }
+            double k = PhysicsHelper.forcePerTick(suspensionUnit.data.getSpringStiffness());
+            Vec3 bottom = suspensionUnit.pivotOffset.add(new Vec3(parentRotation.transform(suspensionUnit.supportCenter.toVector3f())));
+            ground = Math.min(ground, bottom.y);
+            Vec3 arm = bottom.subtract(center);
+            Vector3d a = new Vector3d(1, physics.lockCenterRot ? 0 : -arm.z,
+                    physics.lockCenterRot || physics.lockZRot ? 0 : arm.x).div(-direction.y);
+            points.add(new CalibrationPoint(suspensionUnit, bottom, a));
+            stiffness.add(new Matrix3d(
+                    k * a.x * a.x, k * a.x * a.y, k * a.x * a.z,
+                    k * a.y * a.x, k * a.y * a.y, k * a.y * a.z,
+                    k * a.z * a.x, k * a.z * a.y, k * a.z * a.z));
         }
         Vector3d deflection = stiffness.invert().transform(new Vector3d(vehicle.curbWeight * PhysicsEngine.G, 0, 0));
         double[] staticCompression = new double[points.size()];
@@ -227,13 +222,11 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         for (int i = 0; i < points.size(); i++) {
             CalibrationPoint point = points.get(i);
             SuspensionUnit<?> suspensionUnit = point.unit();
-            suspensionUnit.supportRestLengths[point.index()] = staticCompression[i] + (point.bottom().y - ground) * point.arm().x;
+            suspensionUnit.restLength = (float) (staticCompression[i] + (point.bottom().y - ground) * point.arm().x);
             // 保留配置的压缩行程，但至少保证空载标定点位于行程内。
-            suspensionUnit.supportMaxCompressions[point.index()] = Math.max(suspensionUnit.data.getMaxCompression(), staticCompression[i] + 0.01);
+            suspensionUnit.maxCompression = (float) Math.max(suspensionUnit.data.getMaxCompression(), staticCompression[i] + 0.01);
         }
         for (SuspensionUnit<?> suspensionUnit : suspensionUnits) {
-            suspensionUnit.restLength = (float) Arrays.stream(suspensionUnit.supportRestLengths).average().orElse(suspensionUnit.restLength);
-            suspensionUnit.maxCompression = (float) Arrays.stream(suspensionUnit.supportMaxCompressions).average().orElse(suspensionUnit.maxCompression);
             suspensionUnit.compression = suspensionUnit.clampCompression(suspensionUnit.compression);
             suspensionUnit.remoteCompression = suspensionUnit.clampCompression(suspensionUnit.remoteCompression);
             suspensionUnit.contactCompression = suspensionUnit.compression;
@@ -278,23 +271,18 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
             extensionVelocity = 0;
             return;
         }
-        List<Contact> contacts = findContacts(mountWorld, direction, CONTACT_RECOVERY, 1);
-        double contactLength = nearestContactLength(contacts);
+        double contactLength = findContactLength(mountWorld, direction, CONTACT_RECOVERY, 1);
         contactCompression = contactLength == Double.POSITIVE_INFINITY
                 ? getMinCompression() : restLength - contactLength;
         advanceCompression(clampCompression((float) contactCompression));
-        double weight = 1.0 / getSupportOffsets().size();
-        for (Contact point : contacts) {
-            if (point.length() > restLength - compression + CONTACT_EPSILON) {
-                continue;
-            }
-            double pointRestLength = supportRestLengths[point.index()];
-            double minCompression = getMinCompression(pointRestLength);
-            supportContacts.add(new SupportContact(point.position(),
-                    pointRestLength - point.length(), minCompression,
-                    Math.max(supportMaxCompressions[point.index()], minCompression), weight));
+        if (contactLength > restLength - compression + CONTACT_EPSILON) {
+            return;
         }
-        grounded = !supportContacts.isEmpty();
+        Vec3 position = mountWorld.add(new Vec3(getSuspensionRotation(1).transform(supportCenter.toVector3f())))
+                .add(direction.scale(contactLength));
+        supportContacts.add(new SupportContact(position, contactCompression,
+                getMinCompression(), getMaxCompression(), 1));
+        grounded = true;
     }
 
     private void advanceCompression(float target) {
@@ -323,27 +311,15 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
         }
     }
 
-    private double nearestContactLength(List<Contact> contacts) {
-        double length = Double.POSITIVE_INFINITY;
-        for (Contact contact : contacts) {
-            length = Math.min(length, contact.length());
-        }
-        return length;
-    }
-
-    private List<Contact> findContacts(Vec3 mount, Vec3 direction, double recovery, float partialTick) {
-        List<Contact> contacts = new ArrayList<>();
+    private double findContactLength(Vec3 mount, Vec3 direction, double recovery, float partialTick) {
+        double nearest = Double.POSITIVE_INFINITY;
         Quaternionf rotation = getSuspensionRotation(partialTick);
-        List<Vec3> offsets = getSupportOffsets();
-        for (int index = 0; index < offsets.size(); index++) {
-            double pointRestLength = supportRestLengths[index];
-            double minCompression = getMinCompression(pointRestLength);
-            double maxLength = pointRestLength - minCompression;
-            double minLength = pointRestLength - Math.max(supportMaxCompressions[index], minCompression);
+        double maxLength = restLength - getMinCompression();
+        double minLength = restLength - getMaxCompression();
+        for (Vec3 offset : getSupportOffsets()) {
             // 允许恢复轻微穿透，避免触底后误判悬空。
             double probeMinLength = minLength - recovery;
-            Contact nearest = null;
-            Vec3 worldOffset = new Vec3(rotation.transform(offsets.get(index).toVector3f()));
+            Vec3 worldOffset = new Vec3(rotation.transform(offset.toVector3f()));
             Vec3 origin = mount.add(worldOffset);
             Vec3 compressedPoint = origin.add(direction.scale(minLength));
             Vec3 start = origin.add(direction.scale(probeMinLength));
@@ -364,23 +340,16 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
                 if (!vehicle.physicsEngine.isOpenSupportSurface(contact)) {
                     continue;
                 }
-                if (nearest == null || length < nearest.length()) {
-                    nearest = new Contact(length, contact, index);
-                }
+                nearest = Math.min(nearest, length);
             }
             var vehicleSupport = vehicle.physicsEngine.findVehicleSupport(start, end);
             if (vehicleSupport.isPresent()) {
                 Vec3 contact = vehicleSupport.get();
                 double length = contact.subtract(origin).dot(direction);
-                if (nearest == null || length < nearest.length()) {
-                    nearest = new Contact(length, contact, index);
-                }
-            }
-            if (nearest != null) {
-                contacts.add(nearest);
+                nearest = Math.min(nearest, length);
             }
         }
-        return contacts;
+        return nearest;
     }
 
     @Override
@@ -477,11 +446,12 @@ public class SuspensionUnit<T extends SuspensionUnitData> extends PartUnit<T> {
     }
 
     double getTrackCenterZ() {
-        return trackCenterZ;
+        return trackCenterZ + data.getCenterOffset().z;
     }
 
     Vec3 getTrackFloatingReference(double trackAxisX) {
-        return trackBottomCenter == null ? null : new Vec3(trackAxisX, trackBottomCenter.y, trackBottomCenter.z);
+        return trackBottomCenter == null ? null
+                : new Vec3(trackAxisX, trackBottomCenter.y, trackBottomCenter.z).add(data.getCenterOffset());
     }
 
     @OnlyIn(Dist.CLIENT)

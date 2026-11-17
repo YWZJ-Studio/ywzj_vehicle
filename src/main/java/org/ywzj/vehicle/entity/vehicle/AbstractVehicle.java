@@ -140,6 +140,7 @@ public abstract class AbstractVehicle extends ContainerCraft implements RemoteTi
     private FakePlayer fakeOperator;
     public boolean collision = true;
     public boolean remote = false;
+    public boolean renderBeyondRenderDistance = false;
     public Team remoteTeam;
     public boolean protectPassenger;
     protected boolean dataInitialized;
@@ -374,6 +375,29 @@ public abstract class AbstractVehicle extends ContainerCraft implements RemoteTi
                 decorationUnit.deserializeNBT(partTag);
                 decorationUnits.put(id, decorationUnit);
             }
+        }
+    }
+
+    public CompoundTag serializeDistantRenderData() {
+        CompoundTag data = new CompoundTag();
+        data.putBoolean("Engine", isEngineOn());
+        data.putFloat("Power", getPower());
+        data.putFloat("EngineSpeed", getEngineSpeed());
+        data.put("PartUnits", serializePartUnitsData());
+        data.put("DecorationUnits", serializeDecorationUnitsData());
+        return data;
+    }
+
+    public void deserializeDistantRenderData(CompoundTag data) {
+        toggleEngine(data.getBoolean("Engine"));
+        setPower(data.getFloat("Power"));
+        setEngineSpeed(data.getFloat("EngineSpeed"));
+        if (data.contains("PartUnits", Tag.TAG_COMPOUND)) {
+            deserializePartUnitsData(data.getCompound("PartUnits"));
+        }
+        if (data.contains("DecorationUnits", Tag.TAG_COMPOUND)) {
+            decorationUnits.clear();
+            deserializeDecorationUnitsData(data.getCompound("DecorationUnits"));
         }
     }
 

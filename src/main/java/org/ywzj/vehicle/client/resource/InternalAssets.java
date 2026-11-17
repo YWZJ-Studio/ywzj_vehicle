@@ -71,7 +71,7 @@ public class InternalAssets extends SimplePreparableReloadListener<Void> {
         rocketMotorFlameModel = ClientAssetsManager.INSTANCE.getModel(ROCKET_MOTOR_FLAME_MODEL)
                 .map(modelPojo -> {
                     var model = new VehicleBedrockModel(modelPojo, List.of());
-                    model.getBone("flare").illuminated = true;
+                    model.getBoneMap().values().forEach(bone -> bone.illuminated = true);
                     return model;
                 })
                 .orElseThrow(() -> new IllegalStateException("Failed to load rocket motor flame model."));

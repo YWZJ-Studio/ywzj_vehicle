@@ -83,37 +83,53 @@ public class AllConfigs {
         public final ForgeConfigSpec.ConfigValue<Integer> aerobaticSmokeB;
 
         public CommonConfig(ForgeConfigSpec.Builder builder) {
-            allowMeleeDamageVehicle = builder.comment("近战是否能伤害载具")
+            allowMeleeDamageVehicle = builder.comment("近战是否能伤害载具",
+                            "Whether melee attacks can damage vehicles")
                     .define("allowMeleeDamageVehicle", false);
-            canDestroyBlock = builder.comment("载具是否能破坏方块")
+            canDestroyBlock = builder.comment("载具是否能破坏方块",
+                            "Whether vehicles can destroy blocks")
                     .define("canDestroyBlock", true);
-            explosionDropBlock = builder.comment("爆炸是否掉落方块")
+            explosionDropBlock = builder.comment("爆炸是否掉落方块",
+                            "Whether explosions cause blocks to drop as items")
                     .define("explosionDropBlock", true);
-            vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值")
+            vehicleExplosionHurtPassengerDamage = builder.comment("载具爆炸对乘客造成的伤害值",
+                            "Damage dealt to passengers when a vehicle explodes")
                     .defineInRange("vehicleExplosionHurtPassengerDamage", 512.0, 0.0, Double.MAX_VALUE);
-            cameraShakeMultiplier = builder.comment("镜头晃动强度倍率")
+            cameraShakeMultiplier = builder.comment("镜头晃动强度倍率",
+                            "Camera shake intensity multiplier")
                     .defineInRange("cameraShakeMultiplier", 1.0, 0.0, 10.0);
-            selfRighting = builder.comment("倾角过大时是否自动回正")
+            selfRighting = builder.comment("倾角过大时是否自动回正",
+                            "Whether vehicles automatically right themselves when tilted too far")
                     .define("selfRighting", true);
-            infiniteFuel = builder.comment("无需燃油仍可运作")
+            infiniteFuel = builder.comment("无需燃油仍可运作",
+                            "Allow vehicles to operate without fuel")
                     .define("infiniteFuel", false);
-            fuelNameWhiteList = builder.comment("允许视作燃油的液体")
+            fuelNameWhiteList = builder.comment("允许视作燃油的液体",
+                            "Fluids allowed to be used as fuel")
                     .defineList("fuelNameWhiteList", Arrays.asList("fuel", "gas", "lava"), obj -> obj instanceof String);
-            hitIndicator = builder.comment("开启命中提示")
+            hitIndicator = builder.comment("开启命中提示",
+                            "Enable hit indicators")
                     .define("hitIndicator", true);
-            checkTeamOnEnterVehicle = builder.comment("载具乘客是否需为同队")
+            checkTeamOnEnterVehicle = builder.comment("载具乘客是否需为同队",
+                            "Whether vehicle passengers must be on the same team")
                     .define("checkTeamOnEnterVehicle", true);
-            figureBoxOnlyCaptureVehicle = builder.comment("手办盒是否只能收纳载具")
+            figureBoxOnlyCaptureVehicle = builder.comment("手办盒是否只能收纳载具",
+                            "Whether figure boxes can only capture vehicles")
                     .define("figureBoxOnlyCaptureVehicle", false);
-            overload = builder.comment("是否启用过载机制")
+            overload = builder.comment("是否启用过载机制",
+                            "Whether to enable the G-force overload mechanic")
                     .define("overload", true);
-            overloadCapacityMultiplier = builder.comment("过载耐受倍率")
+            overloadCapacityMultiplier = builder.comment("过载耐受倍率",
+                            "G-force overload tolerance multiplier")
                     .defineInRange("overloadCapacityMultiplier", 1.0, 0.1, 100.0);
-            aerobaticSmokeR = builder.comment("特技飞行烟雾颜色 - 红")
+            aerobaticSmokeR = builder.comment("特技飞行烟雾颜色 - 红",
+                            "Aerobatic smoke color - Red")
                     .defineInRange("aerobaticSmokeR", 255, 0, 255);
-            aerobaticSmokeG = builder.comment("特技飞行烟雾颜色 - 绿")
+            aerobaticSmokeG = builder.comment("特技飞行烟雾颜色 - 绿",
+                            "Aerobatic smoke color - Green")
                     .defineInRange("aerobaticSmokeG", 0, 0, 255);
-            aerobaticSmokeB = builder.comment("特技飞行烟雾颜色 - 蓝")
+            aerobaticSmokeB = builder.comment("特技飞行烟雾颜色 - 蓝",
+                            "Aerobatic smoke color - Blue")
                     .defineInRange("aerobaticSmokeB", 0, 0, 255);
         }
 
@@ -122,12 +138,18 @@ public class AllConfigs {
     public static class ServerConfig {
 
         public final ForgeConfigSpec.ConfigValue<Double> showVehicleInfoDistance;
+        public final ForgeConfigSpec.ConfigValue<Double> extendedRenderDistance;
         public final ForgeConfigSpec.ConfigValue<Integer> serverBroadcastEntitiesInterval;
 
         public ServerConfig(ForgeConfigSpec.Builder builder) {
-            showVehicleInfoDistance = builder.comment("允许看向载具时展示信息的最大距离（单位：block）")
+            showVehicleInfoDistance = builder.comment("看向载具时允许展示信息的最大距离（单位：block）",
+                            "Maximum distance at which information can be displayed when looking at a vehicle (unit: block)")
                     .defineInRange("showVehicleInfoDistance", 512.0, 0.0, 1024.0);
-            serverBroadcastEntitiesInterval = builder.comment("服务端向玩家广播其所在世界超视距实体的时间间隔（单位：tick）")
+            extendedRenderDistance = builder.comment("超视距渲染载具的最大距离（单位：block）",
+                            "Maximum distance for rendering vehicles beyond the normal render distance (unit: block)")
+                    .defineInRange("extendedRenderDistance", 2048.0, 0.0, 65536.0);
+            serverBroadcastEntitiesInterval = builder.comment("服务端向玩家广播其所在世界超视距实体的时间间隔（单位：tick）",
+                            "Interval at which the server broadcasts entities beyond the normal render distance to players in their world (unit: tick)")
                     .defineInRange("serverBroadcastEntitiesInterval", 5, 1, 72000);
         }
 

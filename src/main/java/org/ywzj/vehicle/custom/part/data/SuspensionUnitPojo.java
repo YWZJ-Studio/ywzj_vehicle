@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.custom.part.data;
 
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.world.phys.Vec3;
 
 public class SuspensionUnitPojo extends PartUnitPojo {
 
@@ -24,6 +25,9 @@ public class SuspensionUnitPojo extends PartUnitPojo {
 
     @SerializedName("max_droop")
     public Float maxDroop = 0.1f;
+
+    @SerializedName("center_offset")
+    public Vec3 centerOffset = Vec3.ZERO;
 
     public SuspensionUnitPojo() {
         this.isSeat = false;
