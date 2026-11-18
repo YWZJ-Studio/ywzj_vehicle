@@ -178,6 +178,13 @@
   "screen.coordinate_input.y": "Y Coordinate",
   "screen.coordinate_input.z": "Z Coordinate",
   "screen.coordinate_input.confirm": "Confirm",
+  "screen.vehicle_packs.title": "Vehicle packs could not be loaded",
+  "screen.vehicle_packs.hint": "Update the listed mods or replace the affected packs with compatible versions, then restart Minecraft.",
+  "screen.vehicle_packs.open_folder": "Open packs folder",
+  "screen.vehicle_packs.namespace": "Invalid or missing namespace in vehicle_pack.meta.json.",
+  "screen.vehicle_packs.minimum": "%s or newer",
+  "screen.vehicle_packs.missing": "%s is not installed. Required: %s.",
+  "screen.vehicle_packs.version": "%s: installed %s; required %s.",
 
   "button.vehicle.weapon_selections": "Weapon Selections",
   "button.machine_max.printing": "Print",

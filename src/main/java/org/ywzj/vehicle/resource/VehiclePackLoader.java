@@ -22,7 +22,6 @@ import net.minecraftforge.resource.DelegatingPackResources;
 import net.minecraftforge.resource.PathPackResources;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +55,9 @@ public enum VehiclePackLoader implements RepositorySource {
     private static final Path VEHICLE_PACKS_BACKUP_PATH = FMLPaths.GAMEDIR.get().resolve("limitless_vehicle_backup");
     private static final String DEFAULT_VEHICLE_PACK_PATH = "default_vehicle";
     private List<VehiclePack> vehiclePacks;
+    private List<PackIssue> issues = List.of();
+    public record VehiclePack(Path path, PackMeta meta) {}
+    public record PackIssue(Path path, Component reason) {}
     static {
         try {
             File folder = VEHICLE_PACKS_PATH.toFile();
@@ -81,7 +83,13 @@ public enum VehiclePackLoader implements RepositorySource {
     public void scanVehiclePacks() {
         checkDefaultVehiclePack();
         YwzjVehicle.LOGGER.info(MARKER, "Start scanning for vehicle packs in {}", VEHICLE_PACKS_PATH);
-        vehiclePacks = scanVehiclePacks(VEHICLE_PACKS_PATH);
+        issues = buildVehiclePacks(VEHICLE_PACKS_PATH);
+        for (PackIssue issue : issues) {
+            YwzjVehicle.LOGGER.error(MARKER, "Vehicle pack {}: {}", issue.path(), issue.reason().getString());
+        }
+        if (!issues.isEmpty() && packType == PackType.SERVER_DATA) {
+            throw new IllegalStateException("Vehicle pack validation failed; see the errors above.");
+        }
         YwzjVehicle.LOGGER.info(MARKER, "Found {} possible vehicle pack(s)", vehiclePacks.size());
     }
 
@@ -158,121 +166,98 @@ public enum VehiclePackLoader implements RepositorySource {
         return packs;
     }
 
-    private static VehiclePack fromDirPath(Path path) throws IOException {
-        Path packMetaPath = path.resolve("vehicle_pack.meta.json");
-        try (InputStream stream = Files.newInputStream(packMetaPath)) {
-            PackMeta packMeta = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
-
-            if (packMeta == null) {
-                throw new RuntimeException("Failed to read packMeta json");
+    private static PackMeta readMeta(Path path) throws IOException {
+        String filename = "vehicle_pack.meta.json";
+        if (Files.isDirectory(path)) {
+            try (var reader = Files.newBufferedReader(path.resolve(filename), StandardCharsets.UTF_8)) {
+                return GsonUtil.GSON.fromJson(reader, PackMeta.class);
             }
-
-            if (packMeta.getNamespace() == null) {
-                throw new RuntimeException("Failed to read namespace");
-            }
-
-            if (packMeta.getDependencies() != null) {
-                List<String> incompatible = modVersionAllMatch(packMeta);
-                if (!incompatible.isEmpty()) {
-                    throw new RuntimeException("Mod version mismatch: " + String.join(", ", incompatible));
-                }
-            }
-
-            return new VehiclePack(path, packMeta);
-        } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException exception) {
-            YwzjVehicle.LOGGER.warn(MARKER, "Failed to read info json: {}", path.getFileName());
-            YwzjVehicle.LOGGER.warn(exception.getMessage());
         }
-        return null;
-    }
-
-    private static VehiclePack fromZipPath(Path path)  {
-        try (ZipFile zipFile = new ZipFile(path.toFile())) {
-            ZipEntry packMetaEntry = zipFile.getEntry("vehicle_pack.meta.json");
-            if (packMetaEntry == null) {
-                YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), "No vehicle_pack.meta.json found");
-                return null;
+        try (ZipFile zip = new ZipFile(path.toFile())) {
+            ZipEntry entry = zip.getEntry(filename);
+            if (entry == null) throw new IOException("Missing " + filename);
+            try (var reader = new InputStreamReader(zip.getInputStream(entry), StandardCharsets.UTF_8)) {
+                return GsonUtil.GSON.fromJson(reader, PackMeta.class);
             }
-
-            try (InputStream stream = zipFile.getInputStream(packMetaEntry)) {
-                PackMeta packMeta = GsonUtil.GSON.fromJson(new InputStreamReader(stream, StandardCharsets.UTF_8), PackMeta.class);
-
-                if (packMeta == null) {
-                    throw new RuntimeException("Failed to read packMeta json");
-                }
-
-                if (packMeta.getNamespace() == null) {
-                    throw new RuntimeException("Failed to read namespace");
-                }
-
-                if (packMeta.getDependencies() != null) {
-                    List<String> incompatible = modVersionAllMatch(packMeta);
-                    if (!incompatible.isEmpty()) {
-                        throw new RuntimeException("Mod version mismatch: " + String.join(", ", incompatible));
-                    }
-                }
-
-                return new VehiclePack(path, packMeta);
-            } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException e) {
-                YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), e);
-                return null;
-            }
-        } catch (IOException e) {
-            YwzjVehicle.LOGGER.error(MARKER,"Failed to load extension from ZIP {}. Error: {}", path.getFileName(), e);
-            return null;
         }
     }
 
-    private static List<VehiclePack> scanVehiclePacks(Path path) {
-        List<VehiclePack> vehiclePacks = new ArrayList<>();
+    private List<PackIssue> buildVehiclePacks(Path path) {
+        List<VehiclePack> validPacks = new ArrayList<>();
+        List<PackIssue> issues = new ArrayList<>();
         Set<String> namespaces = new HashSet<>();
-
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path entry : stream) {
+                if (Files.isDirectory(entry)) {
+                    if (Files.notExists(entry.resolve("vehicle_pack.meta.json"))) {
+                        continue;
+                    }
+                } else if (!entry.toString().endsWith(".zip")) {
+                    continue;
+                }
                 try {
-                    VehiclePack vehiclePack = null;
-                    if (Files.isDirectory(entry)) {
-                        vehiclePack = fromDirPath(entry);
-                    } else if (entry.toString().endsWith(".zip")) {
-                        vehiclePack = fromZipPath(entry);
+                    PackMeta meta = readMeta(entry);
+                    if (meta == null || meta.getNamespace() == null || meta.getNamespace().isEmpty()
+                            || !ResourceLocation.isValidNamespace(meta.getNamespace())) {
+                        issues.add(new PackIssue(entry, Component.translatableWithFallback("screen.vehicle_packs.namespace", "Invalid or missing namespace in vehicle_pack.meta.json.")));
+                        continue;
                     }
-                    if (vehiclePack != null) {
-                        if (namespaces.contains(vehiclePack.meta().getNamespace())) {
-                            YwzjVehicle.LOGGER.error(MARKER, "- {}, Duplicated namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
-                            continue;
-                        }
-                        namespaces.add(vehiclePack.meta().getNamespace());
-                        YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", vehiclePack.path.getFileName(), vehiclePack.meta.getNamespace());
-                        vehiclePacks.add(vehiclePack);
+                    List<Component> problems = checkDependencies(meta);
+                    if (!problems.isEmpty()) {
+                        problems.forEach(reason -> issues.add(new PackIssue(entry, reason)));
+                        continue;
                     }
-                } catch (RuntimeException runtimeException) {
-                    throw new RuntimeException("Failed to load vehicle pack: " + entry + "\n" + runtimeException.getMessage());
+                    if (!namespaces.add(meta.getNamespace())) {
+                        YwzjVehicle.LOGGER.error(MARKER, "- {}, Duplicated namespace: {}", entry.getFileName(), meta.getNamespace());
+                        continue;
+                    }
+                    validPacks.add(new VehiclePack(entry, meta));
+                    YwzjVehicle.LOGGER.info(MARKER, "- {}, Main namespace: {}", entry.getFileName(), meta.getNamespace());
+                } catch (IOException | JsonSyntaxException | JsonIOException | InvalidVersionSpecificationException e) {
+                    YwzjVehicle.LOGGER.warn(MARKER, "Skipping unreadable vehicle pack {}", entry, e);
                 }
             }
         } catch (IOException ioException) {
-            YwzjVehicle.LOGGER.error(MARKER, "Failed to scan vehicle packs from {}. Error: {}", path, ioException);
+            YwzjVehicle.LOGGER.error(MARKER, "Failed to scan vehicle packs from {}", path, ioException);
         }
-
-        return vehiclePacks;
+        this.vehiclePacks = validPacks;
+        return List.copyOf(issues);
     }
 
-    private static List<String> modVersionAllMatch(PackMeta info) throws InvalidVersionSpecificationException {
-        HashMap<String, String> dependencies = info.getDependencies();
-        List<String> incompatible = new ArrayList<>();
-        for (Map.Entry<String, String> modIdAndVersion : dependencies.entrySet()) {
-            if (!modVersionMatch(modIdAndVersion.getKey(), modIdAndVersion.getValue())) {
-                incompatible.add(modIdAndVersion.getKey() + ": " + modIdAndVersion.getValue());
+    private static List<Component> checkDependencies(PackMeta meta) throws InvalidVersionSpecificationException {
+        List<Component> problems = new ArrayList<>();
+        if (meta.getDependencies() == null) {
+            return problems;
+        }
+        for (var dependency : meta.getDependencies().entrySet()) {
+            String id = dependency.getKey();
+            String spec = dependency.getValue();
+            if (spec == null || spec.isBlank()) {
+                throw new InvalidVersionSpecificationException("Missing version for " + id);
             }
+            VersionRange range = VersionRange.createFromVersionSpec(spec);
+            var installed = ModList.get().getModContainerById(id).map(mod -> mod.getModInfo().getVersion());
+            if (installed.isPresent() && range.containsVersion(installed.get())) continue;
+            Component required = Component.literal(spec);
+            if (range.getRestrictions().size() == 1) {
+                var bound = range.getRestrictions().get(0);
+                if (bound.getLowerBound() != null && bound.isLowerBoundInclusive() && bound.getUpperBound() == null) {
+                    required = Component.translatableWithFallback("screen.vehicle_packs.minimum", "%s or newer", bound.getLowerBound().toString());
+                }
+            }
+            problems.add(installed.isEmpty()
+                    ? Component.translatableWithFallback("screen.vehicle_packs.missing", "%s is not installed. Required: %s.", id, required)
+                    : Component.translatableWithFallback("screen.vehicle_packs.version", "%s: installed %s; required %s.", id, installed.get().toString(), required));
         }
-        return incompatible;
+        return problems;
     }
 
-    private static boolean modVersionMatch(String modId, String version) throws InvalidVersionSpecificationException {
-        VersionRange versionRange = VersionRange.createFromVersionSpec(version);
-        return ModList.get().getModContainerById(modId).map(mod -> {
-            ArtifactVersion modVersion = mod.getModInfo().getVersion();
-            return versionRange.containsVersion(modVersion);
-        }).orElse(false);
+    public List<PackIssue> getIssues() {
+        return issues;
+    }
+
+    public Path getPacksDirectory() {
+        return VEHICLE_PACKS_PATH;
     }
 
     public List<VehiclePack> getVehiclePacks() {
@@ -292,7 +277,5 @@ public enum VehiclePackLoader implements RepositorySource {
                     GsonUtil.GSON, BaseDisplayPojo.class);
         }
     }
-
-    public record VehiclePack(Path path, PackMeta meta) {}
 
 }

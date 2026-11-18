@@ -178,6 +178,13 @@
   "screen.coordinate_input.y": "Y 坐标",
   "screen.coordinate_input.z": "Z 坐标",
   "screen.coordinate_input.confirm": "确认",
+  "screen.vehicle_packs.title": "载具包未能加载",
+  "screen.vehicle_packs.hint": "请安装所需版本的模组，或更换为兼容的载具包，然后重启游戏。",
+  "screen.vehicle_packs.open_folder": "打开载具包目录",
+  "screen.vehicle_packs.namespace": "vehicle_pack.meta.json 中的 namespace 缺失或无效。",
+  "screen.vehicle_packs.minimum": "%s 或更高版本",
+  "screen.vehicle_packs.missing": "未安装 %s，需要 %s。",
+  "screen.vehicle_packs.version": "%s：已安装 %s，需要 %s。",
 
   "button.vehicle.weapon_selections": "武器切换",
   "button.machine_max.printing": "打印",
