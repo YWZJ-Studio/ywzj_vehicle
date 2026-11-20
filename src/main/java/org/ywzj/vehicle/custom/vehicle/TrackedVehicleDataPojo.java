@@ -24,6 +24,9 @@ public class TrackedVehicleDataPojo extends BaseVehicleDataPojo {
         @SerializedName("max_speed_backward")
         public float maxSpeedBackward;
 
+        @SerializedName("dual_flow")
+        public boolean dualFlow = true;
+
         @SerializedName("turn_acceleration")
         public float turnAcceleration;
 

@@ -12,6 +12,7 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
     public float backwardAcceleration;
     public float maxSpeedForward;
     public float maxSpeedBackward;
+    public boolean dualFlow;
     public float turnAcceleration;
     public float maxTurn;
     public float trackSize;
@@ -28,6 +29,7 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
         this.backwardAcceleration = pojo.attributes.backwardAcceleration;
         this.maxSpeedForward = pojo.attributes.maxSpeedForward;
         this.maxSpeedBackward = pojo.attributes.maxSpeedBackward;
+        this.dualFlow = pojo.attributes.dualFlow;
         this.turnAcceleration = pojo.attributes.turnAcceleration;
         this.maxTurn = pojo.attributes.maxTurn;
         this.trackSize = pojo.attributes.trackSize;
@@ -39,9 +41,13 @@ public class TrackedVehicleData extends BaseVehicleData<TrackedVehicle> {
         vehicle.backwardAcceleration = this.backwardAcceleration;
         vehicle.maxSpeedForward = this.maxSpeedForward;
         vehicle.maxSpeedBackward = this.maxSpeedBackward;
+        vehicle.dualFlow = this.dualFlow;
         vehicle.turnAcceleration = this.turnAcceleration;
         vehicle.maxTurn = this.maxTurn;
         vehicle.trackSize = this.trackSize;
+        if (!dualFlow) {
+            vehicle.initTrackPivots();
+        }
     }
 
 }

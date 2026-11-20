@@ -8,6 +8,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -24,6 +25,7 @@ import org.ywzj.vehicle.util.ParticleUtil;
 import org.ywzj.vehicle.util.PhysicsHelper;
 import org.ywzj.vehicle.util.VectorUtil;
 import org.ywzj.vehicle.vehicle.part.SuspensionUnit;
+import org.ywzj.vehicle.vehicle.part.TrackUnit;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 import org.ywzj.vehicle.vehicle.pojo.AimContext;
 
@@ -39,9 +41,13 @@ public class TrackedVehicle extends AbstractVehicle implements IAnimationEntity<
     public float backwardAcceleration = 0.01f;
     public float maxSpeedForward = 0.5f;
     public float maxSpeedBackward = 0.2f;
+    public boolean dualFlow = true;
     public float turnAcceleration = 1f;
     public float maxTurn = 2f;
     public float trackSize = 0.3f;
+    private Vec3 leftTrackPivot;
+    private Vec3 rightTrackPivot;
+    private Vec3 lastSingleFlowDrive = Vec3.ZERO;
     public double trackLength;
     private VehicleSound engineIdleSoundInstance;
     private VehicleSound engineRunSoundInstance;
@@ -74,6 +80,37 @@ public class TrackedVehicle extends AbstractVehicle implements IAnimationEntity<
                 this.animationInstance.getContext().setTrackAnimationInstance(instance);
             }
         }
+    }
+
+    public void initTrackPivots() {
+        AABB left = null;
+        AABB right = null;
+        for (var part : getPartUnits()) {
+            if (part instanceof TrackUnit track) {
+                for (var path : track.getData().getTrackDefinitions()) {
+                    if (path.points().isEmpty()) {
+                        continue;
+                    }
+                    Vec3 first = path.points().get(0);
+                    AABB bounds = new AABB(first, first);
+                    for (Vec3 point : path.points()) {
+                        bounds = bounds.minmax(new AABB(point, point));
+                    }
+                    if (bounds.getCenter().x > 0) {
+                        left = left == null ? bounds : left.minmax(bounds);
+                    } else {
+                        right = right == null ? bounds : right.minmax(bounds);
+                    }
+                }
+            }
+        }
+        double halfWidth = mainCubeOBB.obb().extents().x;
+        leftTrackPivot = left == null ? centerOffset.add(halfWidth, 0, 0) : left.getCenter();
+        rightTrackPivot = right == null ? centerOffset.add(-halfWidth, 0, 0) : right.getCenter();
+    }
+
+    public float innerTrackBrake(float turnSpeed) {
+        return maxTurn > 0 ? Math.min(Math.abs(turnSpeed) / maxTurn, 1f) : 0f;
     }
 
     public float getForwardSpeed() {
@@ -109,35 +146,36 @@ public class TrackedVehicle extends AbstractVehicle implements IAnimationEntity<
             controlUnit.reset();
         }
 
-        // 车身轴向速度
         Vec3 velocity = getDeltaMovement();
-        Vec3 direction = VectorUtil.rotToVec(getXRot(), getYRot());
-        Vec3 horizontalDirection = VectorUtil.rotToVec(0, getYRot());
-        float forwardSpeed = (float) velocity.dot(direction);
         if (!hasPower() || !(onGround() || (isInWater() && canWade))) {
-            entityData.set(FORWARD_SPEED, forwardSpeed);
+            lastSingleFlowDrive = Vec3.ZERO;
+            Vec3 direction = VectorUtil.rotToVec(getXRot(), getYRot());
+            entityData.set(FORWARD_SPEED, (float) velocity.dot(direction));
             entityData.set(TURN_SPEED, 0f);
             return Vec3.ZERO;
         }
 
-        // 前后控制
         float powerScale = getSuspensionPowerScale();
-        float previousForwardSpeed = forwardSpeed;
         int throttle = (controlUnit.forward ? 1 : 0) - (controlUnit.backward ? 1 : 0);
         int steering = (controlUnit.right ? 1 : 0) - (controlUnit.left ? 1 : 0);
-        if (throttle > 0) {
-            forwardSpeed = forwardSpeed < 0 ? Math.min(0, forwardSpeed + brakeAcceleration)
-                    : forwardSpeed + forwardAcceleration * powerScale;
-        } else if (throttle < 0) {
-            forwardSpeed = forwardSpeed > 0 ? Math.max(0, forwardSpeed - brakeAcceleration)
-                    : forwardSpeed - backwardAcceleration * powerScale;
-        } else if (steering != 0 && forwardSpeed < 0) {
+        float turnSpeed = Mth.approach(getTurnSpeed(), steering * maxTurn * powerScale, turnAcceleration * powerScale);
+        Vec3 heading = VectorUtil.rotToVec(0, getYRot());
+        if (dualFlow) {
+            moveDualFlow(velocity, heading, throttle, steering, powerScale, turnSpeed);
+        } else {
+            moveSingleFlow(velocity, heading, throttle, steering, powerScale, turnSpeed);
+        }
+        return Vec3.ZERO;
+    }
+
+    private void moveDualFlow(Vec3 velocity, Vec3 heading, int throttle, int steering, float powerScale, float turnSpeed) {
+        Vec3 direction = VectorUtil.rotToVec(getXRot(), getYRot());
+        float previousForwardSpeed = (float) velocity.dot(direction);
+        float forwardSpeed = previousForwardSpeed;
+        if (throttle == 0 && steering != 0 && forwardSpeed < 0) {
             forwardSpeed = Math.min(0, forwardSpeed + brakeAcceleration);
         }
-        forwardSpeed = Mth.clamp(forwardSpeed, -maxSpeedBackward, maxSpeedForward);
-
-        // 转向控制
-        float turnSpeed = Mth.approach(entityData.get(TURN_SPEED), steering * maxTurn * powerScale, turnAcceleration * powerScale);
+        forwardSpeed = applyThrottle(forwardSpeed, throttle, powerScale);
         // 转向幅度应用于车身朝向
         float yawStep = forwardSpeed < 0 ? -turnSpeed : turnSpeed;
         float speedRatio = maxSpeedForward > 0 ? Mth.clamp(Math.abs(forwardSpeed) / maxSpeedForward, 0, 1) : 0;
@@ -149,20 +187,86 @@ public class TrackedVehicle extends AbstractVehicle implements IAnimationEntity<
         // 轴向加速
         velocity = velocity.add(direction.scale(forwardSpeed - previousForwardSpeed));
         // 水平转向
-        double horizontalSpeed = velocity.dot(horizontalDirection);
-        horizontalDirection = VectorUtil.rotToVec(0, getYRot());
-        velocity = new Vec3(horizontalDirection.x * horizontalSpeed, velocity.y, horizontalDirection.z * horizontalSpeed);
-        // 摩擦力补偿
-        if (throttle != 0 && powerScale > 0 && onGround() && horizontalSpeed != 0) {
-            Vec3 frictionVelocity = getSuspensionUnits().stream().anyMatch(SuspensionUnit::isGrounded)
-                    ? new Vec3(velocity.x, 0, velocity.z) : velocity;
-            velocity = velocity.add(frictionVelocity.normalize().scale(PhysicsHelper.accelerationPerTick(
-                    physicsEngine.physicsInfo.friction, physicsEngine.physicsInfo.mass)));
+        double horizontalSpeed = velocity.dot(heading);
+        Vec3 newHeading = VectorUtil.rotToVec(0, getYRot());
+        Vec3 movement = new Vec3(newHeading.x * horizontalSpeed, velocity.y, newHeading.z * horizontalSpeed);
+        applyDriveMovement(movement, forwardSpeed, turnSpeed, throttle != 0 && powerScale > 0);
+    }
+
+    private void moveSingleFlow(Vec3 velocity, Vec3 heading, int throttle, int steering, float powerScale, float turnSpeed) {
+        // 旋转中心与两履带中点可能不重合。用物理结算后保留的位移比例还原履带均速。
+        double previousDistanceSqr = lastSingleFlowDrive.horizontalDistanceSqr();
+        float meanSpeed = previousDistanceSqr > 1.0E-10
+                ? (float) (getForwardSpeed() * velocity.dot(lastSingleFlowDrive) / previousDistanceSqr)
+                : (float) velocity.dot(heading);
+        float outerSpeed = meanSpeed / (1 - 0.5f * innerTrackBrake(getTurnSpeed()));
+        outerSpeed = applyThrottle(outerSpeed, throttle, powerScale);
+        double gauge = leftTrackPivot.x - rightTrackPivot.x;
+        float turn = powerScale > 0 && gauge > 1.0E-5 ? turnSpeed : 0;
+        float maxMeanSpeed = Math.abs(applyThrottle(meanSpeed, throttle, powerScale));
+        if (throttle == 0 && steering != 0 && turn != 0 && outerSpeed >= 0) {
+            // 仅打方向时，外履带也能带动车辆从静止起转。
+            float pivotSpeed = Math.min(maxSpeedForward, (float) (Math.toRadians(maxTurn * powerScale) * gauge));
+            if (outerSpeed < pivotSpeed) {
+                outerSpeed = Math.min(pivotSpeed, outerSpeed + forwardAcceleration * powerScale);
+                maxMeanSpeed += forwardAcceleration * powerScale;
+            }
         }
-        setDeltaMovement(velocity);
+        // 高速时限制履带速差，保证实际偏航和动画使用同一个制动比例。
+        float brake = innerTrackBrake(turn);
+        if (outerSpeed != 0) {
+            float maxDifference = (float) (Math.toRadians(maxTurn * powerScale) * Math.max(0, gauge));
+            brake = Math.min(brake, maxDifference / Math.abs(outerSpeed));
+        }
+        float meanRatio = 1 - 0.5f * brake;
+        // 松开内侧制动或反打方向时，车体只能按可用驱动力恢复速度。
+        meanSpeed = Mth.clamp(outerSpeed * meanRatio, -maxMeanSpeed, maxMeanSpeed);
+        outerSpeed = meanSpeed / meanRatio;
+        double yaw = brake > 0 ? Math.signum(turn) * outerSpeed * brake / gauge : 0;
+        float yawDegrees = (float) Math.toDegrees(yaw);
+        Vec3 drive = heading.scale(meanSpeed);
+        if (yaw != 0) {
+            Vec3 midpoint = leftTrackPivot.add(rightTrackPivot).scale(0.5).subtract(centerOffset);
+            Vec3 offset = relativeRotDirection(midpoint, false);
+            // 均速给出中点弧长，换成弦位移，再扣除中点绕实体原点的偏移。
+            double halfYaw = yaw * 0.5;
+            Vec3 travel = VectorUtil.rotToVec(0, getYRot() + yawDegrees * 0.5f)
+                    .scale(meanSpeed * Math.sin(halfYaw) / halfYaw);
+            drive = travel.add(offset.subtract(offset.yRot((float) -yaw)));
+            setYRot(getYRot() + yawDegrees);
+        }
+        lastSingleFlowDrive = new Vec3(drive.x, 0, drive.z);
+        Vec3 movement = new Vec3(drive.x, velocity.y, drive.z);
+        boolean poweredDrive = powerScale > 0 && (throttle != 0 || (steering != 0 && turn != 0 && outerSpeed > 0));
+        applyDriveMovement(movement, meanSpeed, Math.signum(turn) * brake * maxTurn, poweredDrive);
+    }
+
+    private float applyThrottle(float forwardSpeed, int throttle, float powerScale) {
+        if (throttle > 0) {
+            forwardSpeed = forwardSpeed < 0 ? Math.min(0, forwardSpeed + brakeAcceleration)
+                    : forwardSpeed + forwardAcceleration * powerScale;
+        } else if (throttle < 0) {
+            forwardSpeed = forwardSpeed > 0 ? Math.max(0, forwardSpeed - brakeAcceleration)
+                    : forwardSpeed - backwardAcceleration * powerScale;
+        }
+        return Mth.clamp(forwardSpeed, -maxSpeedBackward, maxSpeedForward);
+    }
+
+    private void applyDriveMovement(Vec3 movement, float forwardSpeed, float turnSpeed, boolean poweredDrive) {
+        if (poweredDrive && movement.horizontalDistanceSqr() > 0) {
+            movement = compensateDriveFriction(movement);
+        }
+        setDeltaMovement(movement);
         entityData.set(FORWARD_SPEED, forwardSpeed);
         entityData.set(TURN_SPEED, turnSpeed);
-        return Vec3.ZERO;
+    }
+
+    private Vec3 compensateDriveFriction(Vec3 velocity) {
+        if (!onGround()) return velocity;
+        Vec3 frictionVelocity = getSuspensionUnits().stream().anyMatch(SuspensionUnit::isGrounded)
+                ? new Vec3(velocity.x, 0, velocity.z) : velocity;
+        return velocity.add(frictionVelocity.normalize().scale(PhysicsHelper.accelerationPerTick(
+                physicsEngine.physicsInfo.friction, physicsEngine.physicsInfo.mass)));
     }
 
     @Override

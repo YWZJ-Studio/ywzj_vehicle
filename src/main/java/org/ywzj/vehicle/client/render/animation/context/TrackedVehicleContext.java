@@ -15,6 +15,7 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
     private long lastProgressRenderTime = -1;
     private float frameForwardDistance;
     private float frameTurnDistance;
+    private float innerBrake;
     private TrackAnimationInstance trackAnimationInstance;
     private float leftTrackDisplacement;
     private float rightTrackDisplacement;
@@ -68,12 +69,13 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
             rollingTurnSpeed *= retention;
             deltaTime = (1 - retention) / AIRBORNE_TRACK_DAMPING;
         }
+        innerBrake = entity.dualFlow ? 0 : entity.innerTrackBrake(turnSpeed);
         frameForwardDistance = forwardSpeed * 20 * deltaTime;
         frameTurnDistance = turnSpeed * deltaTime;
         if (trackAnimationInstance != null) {
-            float trackWidth = trackAnimationInstance.getTrackWidth() / 20f;
-            float leftTrackSpeed = (forwardSpeed + turnSpeed * trackWidth / 2) * 20;
-            float rightTrackSpeed = (forwardSpeed - turnSpeed * trackWidth / 2) * 20;
+            float halfWidth = trackAnimationInstance.getTrackWidth() / 2f;
+            float leftTrackSpeed = (float) trackTravel(forwardSpeed * 20, turnSpeed, halfWidth);
+            float rightTrackSpeed = (float) trackTravel(forwardSpeed * 20, turnSpeed, -halfWidth);
             trackAnimationInstance.advanceProgress(leftTrackSpeed, rightTrackSpeed, deltaTime);
             return;
         }
@@ -84,7 +86,16 @@ public class TrackedVehicleContext extends VehicleContext<TrackedVehicle> {
     }
 
     public double getTrackFrameDistance(double lateralOffset) {
-        return frameForwardDistance + frameTurnDistance * lateralOffset;
+        return trackTravel(frameForwardDistance, frameTurnDistance, lateralOffset);
+    }
+
+    private double trackTravel(float forward, float turn, double lateralOffset) {
+        if (innerBrake > 0) {
+            double outer = forward / (1 - innerBrake * 0.5f);
+            boolean inner = (lateralOffset > 0) == (turn < 0);
+            return inner ? outer * (1 - innerBrake) : outer;
+        }
+        return forward + turn * lateralOffset;
     }
 
     public PoseHelper getTrackPose() {
