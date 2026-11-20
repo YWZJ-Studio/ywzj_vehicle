@@ -4,6 +4,7 @@ import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockBone;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockCube;
 import com.github.mcmodderanchor.simplebedrockmodel.v1.common.model.BedrockModel;
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.ywzj.vehicle.vehicle.pojo.Bolt;
@@ -25,6 +26,7 @@ public class WeaponUnitData extends RotatableUnitData {
     private Vec3 operatorViewOffset;
     private boolean operatorOnWeaponUnit;
     private OpticalSightType opticalSightType;
+    private ResourceLocation opticalSightDisplay;
     private boolean withStabilizer;
     private boolean withFocusLocker;
     private boolean withThermalImager;
@@ -53,6 +55,7 @@ public class WeaponUnitData extends RotatableUnitData {
         this.operatorOnWeaponUnit = pojo.operatorOnWeaponUnit;
         this.fireControlSensorType = pojo.fireControlSensorType;
         this.opticalSightType = pojo.opticalSightType;
+        this.opticalSightDisplay = pojo.opticalSightDisplay;
         this.withStabilizer = pojo.withStabilizer;
         this.withFocusLocker = pojo.withFocusLocker;
         this.withThermalImager = pojo.withThermalImager;
@@ -105,6 +108,10 @@ public class WeaponUnitData extends RotatableUnitData {
 
     public OpticalSightType getOpticalSightType() {
         return opticalSightType;
+    }
+
+    public ResourceLocation getOpticalSightDisplay() {
+        return opticalSightDisplay;
     }
 
     public boolean withStabilizer() {
@@ -238,7 +245,10 @@ public class WeaponUnitData extends RotatableUnitData {
         OPTICAL_SCOPE,
         // 以观瞄视角开镜（模拟电视）
         @SerializedName("crt")
-        CRT
+        CRT,
+        // 以自定义准心开镜
+        @SerializedName("custom")
+        CUSTOM
     }
 
     public enum FireControlSensorType {

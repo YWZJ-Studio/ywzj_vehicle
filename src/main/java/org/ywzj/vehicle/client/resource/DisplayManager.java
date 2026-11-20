@@ -31,6 +31,7 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
 
     public final Marker marker;
     private final String path;
+    private final String defaultType;
     private Map<ResourceLocation, BaseDisplay> displayMap = Map.of();
     private final Map<ResourceLocation, List<BaseDisplay>> displayGroups = new ConcurrentHashMap<>();
     private final ScriptManager scriptManager;
@@ -39,7 +40,13 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
     public DisplayManager(String path,
                          ScriptManager scriptManager,
                          ScriptContextFactory scriptContextFactory) {
+        this(path, scriptManager, scriptContextFactory, "ywzj_vehicle:generic");
+    }
+
+    public DisplayManager(String path, ScriptManager scriptManager, ScriptContextFactory scriptContextFactory,
+                          String defaultType) {
         this.path = path;
+        this.defaultType = defaultType;
         this.marker = MarkerManager.getMarker("DisplayManager$" + path);
         this.scriptManager = scriptManager;
         this.scriptContextFactory = scriptContextFactory;
@@ -59,7 +66,7 @@ public class DisplayManager extends SimplePreparableReloadListener<Map<ResourceL
         for (var displayIdAndDataJson : resources.entrySet()) {
             try {
                 var obj = GsonHelper.convertToJsonObject(displayIdAndDataJson.getValue(), "vehicle display");
-                String type = GsonHelper.getAsString(obj, "type", "ywzj_vehicle:generic");
+                String type = GsonHelper.getAsString(obj, "type", defaultType);
                 ResourceLocation typeId = ResourceLocation.tryParse(type);
                 if (typeId == null) {
                     YwzjVehicle.LOGGER.warn(marker, "Failed to load vehicle display: {}, invalid type id {}", displayIdAndDataJson.getKey(), type);

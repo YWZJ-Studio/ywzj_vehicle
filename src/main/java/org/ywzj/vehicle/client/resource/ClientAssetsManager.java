@@ -18,14 +18,12 @@ import org.mozillaa.javascript.Script;
 import org.ywzj.vehicle.api.scripts.ScriptContextFactory;
 import org.ywzj.vehicle.client.resource.animation.AnimationControllerDefinition;
 import org.ywzj.vehicle.client.resource.vehicle.BaseDisplay;
+import org.ywzj.vehicle.client.resource.vehicle.SightDisplay;
 import org.ywzj.vehicle.client.resource.vehicle.VehicleDisplay;
 import org.ywzj.vehicle.custom.serialize.GsonUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 public enum ClientAssetsManager {
@@ -36,6 +34,7 @@ public enum ClientAssetsManager {
     private AnimationControllerDefinitionManager animationControllerDefinitionManager;
     private DisplayManager vehicleDisplayManager;
     private DisplayManager weaponDisplayManager;
+    private DisplayManager sightDisplayManager;
     private DisplayManager decorationDisplayManager;
     private ScriptManager scriptManager;
     private InternalAssets internalAssets;
@@ -49,6 +48,7 @@ public enum ClientAssetsManager {
         // 具有模型、贴图、音效、动画的各类抽象实例
         vehicleDisplayManager = new DisplayManager("vehicle", scriptManager, ScriptContextFactory.get());
         weaponDisplayManager = new DisplayManager("weapon", scriptManager, ScriptContextFactory.get());
+        sightDisplayManager = new DisplayManager("sight", scriptManager, ScriptContextFactory.get(), "ywzj_vehicle:sight");
         decorationDisplayManager = new DisplayManager("decoration", scriptManager, ScriptContextFactory.get());
 
         internalAssets = new InternalAssets();
@@ -59,6 +59,7 @@ public enum ClientAssetsManager {
         consumer.accept(scriptManager);
         consumer.accept(vehicleDisplayManager);
         consumer.accept(weaponDisplayManager);
+        consumer.accept(sightDisplayManager);
         consumer.accept(decorationDisplayManager);
         consumer.accept(internalAssets);
 
@@ -85,33 +86,22 @@ public enum ClientAssetsManager {
         animations.apply(animations.prepare(resourceManager, null), null, null);
         animationControllerDefinitionManager.apply(animationControllerDefinitionManager.prepare(resourceManager, null), null, null);
         scriptManager.apply(scriptManager.prepare(resourceManager, null), null, null);
-        vehicleDisplayManager.apply(vehicleDisplayManager.prepare(resourceManager, null), null, null);
-        weaponDisplayManager.apply(weaponDisplayManager.prepare(resourceManager, null), null, null);
-        decorationDisplayManager.apply(decorationDisplayManager.prepare(resourceManager, null), null, null);
-        vehicleDisplayManager.getDisplayMap().values().forEach(vehicleDisplay -> {
-            try {
-                if (vehicleDisplay.getTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(vehicleDisplay.getTexture(), new SimpleTexture(vehicleDisplay.getTexture()));
+        var textures = new LinkedHashSet<ResourceLocation>();
+        for (var manager : List.of(vehicleDisplayManager, weaponDisplayManager, sightDisplayManager, decorationDisplayManager)) {
+            manager.apply(manager.prepare(resourceManager, null), resourceManager, null);
+            for (BaseDisplay display : manager.getDisplayMap().values()) {
+                if (display.getTexture() != null) {
+                    textures.add(display.getTexture());
                 }
-                if (vehicleDisplay.getSlotTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(vehicleDisplay.getSlotTexture(), new SimpleTexture(vehicleDisplay.getSlotTexture()));
+                if (display.getSlotTexture() != null) {
+                    textures.add(display.getSlotTexture());
                 }
-            } catch (Exception exception) {
-                exception.printStackTrace();
             }
-        });
-        decorationDisplayManager.getDisplayMap().values().forEach(decorationDisplay -> {
-            try {
-                if (decorationDisplay.getTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(decorationDisplay.getTexture(), new SimpleTexture(decorationDisplay.getTexture()));
-                }
-                if (decorationDisplay.getSlotTexture() != null) {
-                    Minecraft.getInstance().textureManager.register(decorationDisplay.getSlotTexture(), new SimpleTexture(decorationDisplay.getSlotTexture()));
-                }
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-        });
+        }
+        var textureManager = Minecraft.getInstance().getTextureManager();
+        for (ResourceLocation texture : textures) {
+            textureManager.register(texture, new SimpleTexture(texture));
+        }
     }
 
     @UnmodifiableView
@@ -122,7 +112,7 @@ public enum ClientAssetsManager {
 
     @NotNull
     public Optional<BedrockModelPOJO> getModel(ResourceLocation id) {
-        if (models == null) {
+        if (id == null || models == null) {
             return Optional.empty();
         }
         return Optional.ofNullable(models.getAllData().get(id));
@@ -170,6 +160,16 @@ public enum ClientAssetsManager {
             return Optional.empty();
         }
         return Optional.ofNullable(weaponDisplayManager.getDisplayMap().get(id));
+    }
+
+    public Optional<SightDisplay> getSightDisplay(ResourceLocation id) {
+        if (id == null || sightDisplayManager == null) {
+            return Optional.empty();
+        }
+        var display = sightDisplayManager.getDisplayMap().get(id);
+        return display instanceof SightDisplay sight
+                ? Optional.of(sight)
+                : Optional.empty();
     }
 
     @NotNull

@@ -7,6 +7,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 import org.ywzj.vehicle.client.shader.ModShaders;
 
@@ -130,8 +131,10 @@ public class GuiHelper {
         RenderSystem.disableBlend();
     }
 
-    public static void drawOpticalScope(GuiGraphics guiGraphics, int width, int height) {
-        ShaderInstance shader = ModShaders.getOpticalScopeShader();
+    public static void drawOpticalScope(GuiGraphics guiGraphics, int width, int height, ResourceLocation texture, float scale) {
+        ShaderInstance shader = texture == null
+                ? ModShaders.getOpticalScopeShader()
+                : ModShaders.getCustomScopeShader();
         if (shader == null || width <= 0 || height <= 0) {
             return;
         }
@@ -141,6 +144,10 @@ public class GuiHelper {
         RenderSystem.disableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.setShader(() -> shader);
+        if (texture != null) {
+            RenderSystem.setShaderTexture(0, texture);
+            shader.safeGetUniform("SightScale").set(scale);
+        }
         shader.safeGetUniform("ScreenSize").set((float) width, (float) height);
         try {
             Matrix4f matrix = guiGraphics.pose().last().pose();

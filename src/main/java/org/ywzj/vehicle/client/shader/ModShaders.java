@@ -21,6 +21,7 @@ public class ModShaders {
     private static ShaderInstance circleShader;
     private static final ResourceLocation OPTICAL_SCOPE_SHADER_LOCATION = YwzjVehicle.modLocation("optical_scope");
     private static ShaderInstance opticalScopeShader;
+    private static ShaderInstance customScopeShader;
 
     public static final VertexFormat HUD_CIRCLE = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
@@ -41,6 +42,10 @@ public class ModShaders {
                 new ShaderInstance(event.getResourceProvider(), OPTICAL_SCOPE_SHADER_LOCATION, DefaultVertexFormat.POSITION_TEX),
                 shaderInstance -> opticalScopeShader = shaderInstance
         );
+        event.registerShader(
+                new ShaderInstance(event.getResourceProvider(), YwzjVehicle.modLocation("custom_scope"), DefaultVertexFormat.POSITION_TEX),
+                shaderInstance -> customScopeShader = shaderInstance
+        );
     }
 
     public static ShaderInstance getCircleShader() {
@@ -49,6 +54,10 @@ public class ModShaders {
 
     public static ShaderInstance getOpticalScopeShader() {
         return opticalScopeShader;
+    }
+
+    public static ShaderInstance getCustomScopeShader() {
+        return customScopeShader;
     }
 
 }

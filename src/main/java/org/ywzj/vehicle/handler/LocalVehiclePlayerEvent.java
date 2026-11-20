@@ -14,6 +14,7 @@ import org.ywzj.vehicle.util.ZoomSmoother;
 import org.ywzj.vehicle.vehicle.LocalVehiclePlayer;
 import org.ywzj.vehicle.vehicle.part.WeaponUnit;
 
+import static org.ywzj.vehicle.util.MathUtil.fovToMagnification;
 import static org.ywzj.vehicle.util.MathUtil.magnificationToFov;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
@@ -53,6 +54,7 @@ public class LocalVehiclePlayerEvent {
                     fov = (float) worldFovSmoother.update(event.getFOV());
                 }
                 VehicleScopeOverlay.fov = fov;
+                VehicleScopeOverlay.magnification = (float) fovToMagnification(fov, event.getFOV());
                 event.setFOV(fov);
             } else {
                 float fov = (float) worldFovSmoother.update(event.getFOV());

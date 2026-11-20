@@ -30,6 +30,12 @@ public class AllDisplayTypes {
             null
     );
 
+    public static final RegistryObject<VehicleDisplayType<SightDisplay>> SIGHT = register(
+            "sight",
+            json -> new SightDisplay(GsonUtil.GSON.fromJson(json, SightDisplayPojo.class)),
+            null
+    );
+
     public static final RegistryObject<VehicleDisplayType<WheeledVehicleDisplay>> WHEELED_VEHICLE = register(
             "wheeled_vehicle",
             json -> {

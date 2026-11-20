@@ -1,6 +1,7 @@
 package org.ywzj.vehicle.custom.part.data;
 
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.ywzj.vehicle.vehicle.pojo.Bolt;
 import org.ywzj.vehicle.vehicle.pojo.WeaponInfo;
@@ -41,6 +42,9 @@ public class WeaponUnitPojo extends RotatableUnitPojo {
 
     @SerializedName("optical_sight_type")
     public WeaponUnitData.OpticalSightType opticalSightType;
+
+    @SerializedName("optical_sight_display")
+    public ResourceLocation opticalSightDisplay;
 
     @SerializedName("with_stabilizer")
     public boolean withStabilizer = false;

@@ -12,6 +12,7 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.ywzj.vehicle.client.render.util.Color;
 import org.ywzj.vehicle.client.render.util.GuiHelper;
+import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.custom.part.data.WeaponUnitData;
 import org.ywzj.vehicle.custom.weapon.data.VehicleMissileWeaponData;
 import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
@@ -47,6 +48,7 @@ public class VehicleScopeOverlay implements IGuiOverlay {
     };
 
     public static double fov;
+    public static float magnification = 1f;
     public static int color = Color.GREEN;
 
     @Override
@@ -62,8 +64,17 @@ public class VehicleScopeOverlay implements IGuiOverlay {
 
     public void renderCrosshair(GuiGraphics guiGraphics, float partialTick, AbstractVehicle vehicle) {
         if (vehicle.getOwnOperatorUnit(LocalVehiclePlayer.instance.getPlayer()) instanceof WeaponUnit weaponUnit) {
-            if (weaponUnit.getOpticalSightType() == WeaponUnitData.OpticalSightType.OPTICAL_SCOPE) {
-                GuiHelper.drawOpticalScope(guiGraphics, guiGraphics.guiWidth(), guiGraphics.guiHeight());
+            var type = weaponUnit.getOpticalSightType();
+            if (type == WeaponUnitData.OpticalSightType.OPTICAL_SCOPE || type == WeaponUnitData.OpticalSightType.CUSTOM) {
+                var sight = type == WeaponUnitData.OpticalSightType.CUSTOM
+                        ? ClientAssetsManager.INSTANCE.getSightDisplay(weaponUnit.getData().getOpticalSightDisplay()).orElse(null)
+                        : null;
+                if (sight != null) {
+                    GuiHelper.drawOpticalScope(guiGraphics, guiGraphics.guiWidth(), guiGraphics.guiHeight(), sight.getTexture(), sight.getScale() * magnification);
+                } else {
+                    GuiHelper.drawOpticalScope(guiGraphics, guiGraphics.guiWidth(), guiGraphics.guiHeight(), null, 1);
+                }
+                return;
             }
             Vec3 posO = VectorUtil.worldToScreen(weaponUnit.weaponHitPosO);
             Vec3 pos = VectorUtil.worldToScreen(weaponUnit.weaponHitPos);

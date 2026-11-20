@@ -19,6 +19,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.time.StopWatch;
+import org.ywzj.vehicle.YwzjVehicle;
 import org.ywzj.vehicle.all.AllConfigs;
 import org.ywzj.vehicle.client.resource.ClientAssetsManager;
 import org.ywzj.vehicle.custom.CommonAssetsManager;
@@ -26,6 +27,7 @@ import org.ywzj.vehicle.entity.vehicle.AbstractVehicle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ReloadCommand {
@@ -40,20 +42,34 @@ public class ReloadCommand {
 
     private static int reload(CommandContext<CommandSourceStack> context) {
         StopWatch watch = StopWatch.createStarted();
-        {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                LocalPlayer player = Minecraft.getInstance().player;
-                ClientAssetsManager.INSTANCE.reload(Minecraft.getInstance().getResourceManager());
-                CreativeModeTabs.tryRebuildTabContents(player.connection.enabledFeatures(), true, player.level().registryAccess());
-            });
-            MinecraftServer server = context.getSource().getServer();
-            CommonAssetsManager.INSTANCE.reload(server.getResourceManager());
-            reloadAllVehicles(context.getSource());
-        }
-        watch.stop();
-        double time = watch.getTime(TimeUnit.MICROSECONDS) / 1000.0;
-        context.getSource().sendSystemMessage(Component.translatable("commands.vehicle.reload.success", time));
+        CommandSourceStack source = context.getSource();
+        MinecraftServer server = source.getServer();
+        CommonAssetsManager.INSTANCE.reload(server.getResourceManager());
         AllConfigs.loadExternal();
+        CompletableFuture<Void> clientReload = DistExecutor.unsafeCallWhenOn(Dist.CLIENT, () -> () -> {
+            Minecraft client = Minecraft.getInstance();
+            return client.submit(() -> {
+                ClientAssetsManager.INSTANCE.reload(client.getResourceManager());
+                LocalPlayer player = client.player;
+                if (player != null) {
+                    CreativeModeTabs.tryRebuildTabContents(player.connection.enabledFeatures(), true, player.level().registryAccess());
+                }
+            });
+        });
+        if (clientReload == null) {
+            clientReload = CompletableFuture.completedFuture(null);
+        }
+        clientReload.whenCompleteAsync((ignored, error) -> {
+            if (error != null) {
+                YwzjVehicle.LOGGER.error("Failed to reload client vehicle assets", error);
+                source.sendFailure(Component.translatable("commands.reload.failure"));
+                return;
+            }
+            reloadAllVehicles(source);
+            watch.stop();
+            double time = watch.getTime(TimeUnit.MICROSECONDS) / 1000.0;
+            source.sendSystemMessage(Component.translatable("commands.vehicle.reload.success", time));
+        }, server);
         return Command.SINGLE_SUCCESS;
     }
 
